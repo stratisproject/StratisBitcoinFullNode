@@ -103,10 +103,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             // Get set of transaction IDs present in wallet before staking is started.
             this.transactionsBeforeStaking.Clear();
-            foreach (TransactionData transactionData in this.PremineNodeWithCoins.FullNode.WalletManager().Wallets
-                .First()
-                .GetAllTransactionsByCoinType((CoinType)this.PremineNodeWithCoins.FullNode.Network.Consensus
-                    .CoinType))
+            foreach (TransactionData transactionData in this.GetTransactionsSnapshot())
             {
                 this.transactionsBeforeStaking.Add(transactionData.Id);
             }
@@ -122,10 +119,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             // determine whether staking occurred.
             TestHelper.WaitLoop(() =>
             {
-                foreach (TransactionData transactionData in this.PremineNodeWithCoins.FullNode.WalletManager().Wallets
-                    .First()
-                    .GetAllTransactionsByCoinType((CoinType)this.PremineNodeWithCoins.FullNode.Network.Consensus
-                        .CoinType))
+                List<TransactionData> transactions = this.GetTransactionsSnapshot();
+
+                foreach (TransactionData transactionData in transactions)
                 {
                     if (!this.transactionsBeforeStaking.Contains(transactionData.Id) && (transactionData.IsCoinStake ?? false))
                     {
@@ -140,18 +136,16 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void PosRewardForAllCoinstakeTransactionsIsCorrect()
         {
             // build a dictionary of coinstake tx's indexed by tx id.
-            foreach (var tx in this.PremineNodeWithCoins.FullNode.WalletManager().Wallets.First().GetAllTransactionsByCoinType((CoinType)
-                this.PremineNodeWithCoins.FullNode.Network.Consensus.CoinType))
+            foreach (var tx in this.GetTransactionsSnapshot())
             {
                 this.txLookup[tx.Id] = tx;
             }
 
             TestHelper.WaitLoop(() =>
             {
-                foreach (TransactionData transactionData in this.PremineNodeWithCoins.FullNode.WalletManager().Wallets
-                    .First()
-                    .GetAllTransactionsByCoinType((CoinType)this.PremineNodeWithCoins.FullNode.Network.Consensus
-                        .CoinType))
+                List<TransactionData> transactions = this.GetTransactionsSnapshot();
+
+                foreach (TransactionData transactionData in transactions)
                 {
                     if (!this.transactionsBeforeStaking.Contains(transactionData.Id) && (transactionData.IsCoinStake ?? false))
                     {
@@ -185,6 +179,20 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 return false;
             });
+        }
+
+        /// <summary>
+        /// Returns a snapshot of the current transactions by coin type in the first wallet.
+        /// </summary>
+        /// <returns>A list of TransactionData.</returns>
+        private List<TransactionData> GetTransactionsSnapshot()
+        {
+            // Enumerate to a list otherwise the enumerable can change during enumeration as new transactions are added to the wallet.
+            return this.PremineNodeWithCoins.FullNode.WalletManager().Wallets
+                .First()
+                .GetAllTransactionsByCoinType((CoinType)this.PremineNodeWithCoins.FullNode.Network.Consensus
+                    .CoinType)
+                .ToList();
         }
     }
 }
