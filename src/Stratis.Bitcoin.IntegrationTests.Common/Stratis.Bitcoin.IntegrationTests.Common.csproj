@@ -19,7 +19,6 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.Api\Stratis.Bitcoin.Features.Api.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.BlockStore\Stratis.Bitcoin.Features.BlockStore.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.Consensus\Stratis.Bitcoin.Features.Consensus.csproj" />

@@ -32,7 +32,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.ColdStaking\Stratis.Bitcoin.Features.ColdStaking.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.Wallet.Tests\Stratis.Bitcoin.Features.Wallet.Tests.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.Wallet\Stratis.Bitcoin.Features.Wallet.csproj" />
