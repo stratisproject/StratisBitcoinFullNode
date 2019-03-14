@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             {
                 TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
             });
-            
+
             Assert.NotNull(exception);
             Assert.Equal("No such mempool transaction. Use -txindex to enable blockchain transaction queries.", exception.Message);
             this.blockStore.Verify();
@@ -650,7 +650,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             ValidatedAddress result = this.controller.ValidateAddress(address.ToString());
 
             bool isValid = result.IsValid;
-            Assert.False(isValid);
+            Assert.True(isValid);
         }
 
         private Transaction CreateTransaction()

@@ -20,12 +20,6 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
         }
 
         /// <inheritdoc/>
-        protected override bool IsProtocolTransaction(Transaction transaction)
-        {
-            return transaction.IsCoinBase;
-        }
-
-        /// <inheritdoc/>
         public override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
         {
             Money reward = Money.Zero;

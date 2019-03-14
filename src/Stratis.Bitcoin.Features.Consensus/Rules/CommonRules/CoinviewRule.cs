@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             long sigOpsCost = 0;
             Money fees = Money.Zero;
-            var checkInputs = new List<Func<bool>>();
+            var inputsToCheck = new List<(Transaction tx, int inputIndexCopy, TxOut txOut, PrecomputedTransactionData txData, TxIn input, DeploymentFlags flags)>();
 
             for (int txIndex = 0; txIndex < block.Transactions.Count; txIndex++)
             {
@@ -86,9 +86,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                         for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
                         {
                             TxIn input = tx.Inputs[inputIndex];
-                            int inputIndexCopy = inputIndex;
-                            TxOut txout = view.GetOutputFor(input);
-                            checkInputs.Add(() => this.CheckInput(tx, inputIndexCopy, txout, txData, input, flags));
+
+                            inputsToCheck.Add((
+                                tx: tx,
+                                inputIndexCopy: inputIndex,
+                                txOut: view.GetOutputFor(input),
+                                txData,
+                                input: input,
+                                flags
+                            ));
                         }
                     }
                 }
@@ -103,9 +109,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 // Start the Parallel loop on a thread so its result can be awaited rather than blocking
                 Task<ParallelLoopResult> checkInputsInParallel = Task.Run(() =>
                 {
-                    return Parallel.ForEach(checkInputs, (checkInput, state) =>
+                    return Parallel.ForEach(inputsToCheck, (input, state) =>
                     {
-                        if (!checkInput())
+                        if (state.ShouldExitCurrentIteration)
+                            return;
+
+                        if (!this.CheckInput(input.tx, input.inputIndexCopy, input.txOut, input.txData, input.input, input.flags))
                         {
                             state.Stop();
                         }
@@ -168,12 +177,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             view.Update(transaction, index.Height);
         }
-
-        /// <summary>
-        /// Check whether the transaction is part of the protocol (Coinbase or Coinstake).
-        /// </summary>
-        /// <param name="transaction">The transaction to check.</param>
-        protected abstract bool IsProtocolTransaction(Transaction transaction);
 
         /// <summary>
         /// Network specific updates to the context's UTXO set.
