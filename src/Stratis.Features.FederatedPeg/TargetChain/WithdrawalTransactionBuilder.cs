@@ -9,6 +9,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 {
     public class WithdrawalTransactionBuilder : IWithdrawalTransactionBuilder
     {
+        /// <summary>
+        /// The wallet should always consume UTXOs that have already been seen in a block. This makes it much easier to maintain
+        /// determinism across the wallets on all the nodes.
+        /// </summary>
+        public const int MinConfirmations = 1;
+
         private readonly ILogger logger;
         private readonly Network network;
 
@@ -45,7 +51,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 {
                     OrderCoinsDeterministic = true,
                     TransactionFee = this.federationGatewaySettings.TransactionFee,
-                    MinConfirmations = this.federationGatewaySettings.MinCoinMaturity,
+                    MinConfirmations = MinConfirmations,
                     Shuffle = false,
                     IgnoreVerify = true,
                     WalletPassword = walletPassword,
