@@ -223,6 +223,11 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         private readonly Dictionary<uint256, ChainedHeader> chainedHeadersByHash;
 
+        /// <summary>
+        /// Chained headers mapped by their heights.
+        /// </summary>
+        private readonly Dictionary<int, ChainedHeader> chainedHeaderByHeight;
+
         public ChainedHeaderTree(
             Network network,
             ILoggerFactory loggerFactory,
@@ -245,6 +250,7 @@ namespace Stratis.Bitcoin.Consensus
             this.peerTipsByPeerId = new Dictionary<int, uint256>();
             this.peerIdsByTipHash = new Dictionary<uint256, HashSet<int>>();
             this.chainedHeadersByHash = new Dictionary<uint256, ChainedHeader>();
+            this.chainedHeaderByHeight = new Dictionary<int, ChainedHeader>();
             this.UnconsumedBlocksDataBytes = 0;
             this.UnconsumedBlocksCount = 0;
         }
@@ -258,6 +264,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 current.Previous.Next.Add(current);
                 this.chainedHeadersByHash.Add(current.HashBlock, current);
+                this.chainedHeaderByHeight.Add(current.Height, current);
                 this.ChainedBlocksDataBytes += current.Header.HeaderSize;
 
                 // TODO when pruned node is implemented it should be header only for pruned blocks
@@ -269,6 +276,7 @@ namespace Stratis.Bitcoin.Consensus
 
             // Add the genesis block.
             this.chainedHeadersByHash.Add(current.HashBlock, current);
+            this.chainedHeaderByHeight.Add(current.Height, current);
             this.ChainedBlocksDataBytes += current.Header.HeaderSize;
 
             if (current.HashBlock != this.network.GenesisHash)
@@ -300,11 +308,9 @@ namespace Stratis.Bitcoin.Consensus
         public ChainedHeaderBlock GetChainedHeaderBlock(int blockHeight)
         {
             ChainedHeaderBlock chainedHeaderBlock = null;
-            if (this.chainedHeadersByHash.Count <= blockHeight)
+            if (this.chainedHeaderByHeight.TryGetValue(blockHeight, out ChainedHeader chainedHeader))
             {
-                KeyValuePair<uint256, ChainedHeader> chainedHeaderItem = this.chainedHeadersByHash.ElementAt(blockHeight);
-
-                chainedHeaderBlock = new ChainedHeaderBlock(chainedHeaderItem.Value.Block, chainedHeaderItem.Value);
+                chainedHeaderBlock = new ChainedHeaderBlock(chainedHeader.Block, chainedHeader);
 
                 if (chainedHeaderBlock.Block == null)
                     this.logger.LogTrace("[BLOCK_NULL_1]");
@@ -615,6 +621,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             header.Previous.Next.Remove(header);
             this.chainedHeadersByHash.Remove(header.HashBlock);
+            this.chainedHeaderByHeight.Remove(header.Height);
             this.ChainedBlocksDataBytes -= header.Header.HeaderSize;
 
             if (header.Block != null)
@@ -1113,6 +1120,7 @@ namespace Stratis.Bitcoin.Consensus
 
             previousChainedHeader.Next.Add(newChainedHeader);
             this.chainedHeadersByHash.Add(newChainedHeader.HashBlock, newChainedHeader);
+            this.chainedHeaderByHeight.Add(newChainedHeader.Height, newChainedHeader);
             this.ChainedBlocksDataBytes += newChainedHeader.Header.HeaderSize;
 
             return newChainedHeader;

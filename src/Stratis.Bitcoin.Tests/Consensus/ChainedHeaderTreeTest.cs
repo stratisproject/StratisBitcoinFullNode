@@ -2946,5 +2946,23 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             this.CheckChainedHeaderTreeConsistency(cht, ctx, consensusTip, new HashSet<int>() { });
         }
+
+        [Fact]
+        public void GetChainedHeaderBlockByHeight()
+        {
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            
+            ChainedHeaderBlock genesis = cht.GetChainedHeaderBlock(0);
+            Assert.Equal(ctx.Network.GenesisHash, genesis.ChainedHeader.HashBlock);
+
+            ChainedHeaderBlock tip = cht.GetChainedHeaderBlock(5);
+            Assert.Equal(ctx.InitialChainTip.HashBlock, tip.ChainedHeader.HashBlock);
+
+            ChainedHeaderBlock mid = cht.GetChainedHeaderBlock(3);
+            Assert.Equal(ctx.InitialChainTip.Previous.Previous.HashBlock, mid.ChainedHeader.HashBlock);
+        }
+
     }
 }
