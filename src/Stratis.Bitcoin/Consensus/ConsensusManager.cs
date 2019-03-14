@@ -24,33 +24,14 @@ namespace Stratis.Bitcoin.Consensus
 {
     internal class BlockIndexer
     {
-        private readonly Dictionary<uint256, ChainedHeader> blocksById = new Dictionary<uint256, ChainedHeader>();
+        private readonly IConsensusManager consensusManager;
 
-        private readonly Dictionary<int, ChainedHeader> blocksByHeight = new Dictionary<int, ChainedHeader>();
-
-        private readonly ReaderWriterLock lockObject = new ReaderWriterLock();
-
-        public ChainedHeader Tip { get; private set; } = null;
-
-        public void SetTip(ChainedHeader newTip)
+        public BlockIndexer(IConsensusManager consensusManager)
         {
-            int height = this.Tip == null ? -1 : this.Tip.Height;
-            foreach (ChainedHeader orphaned in this.EnumerateThisToFork(newTip))
-            {
-                this.blocksById.Remove(orphaned.HashBlock);
-                this.blocksByHeight.Remove(orphaned.Height);
-                height--;
-            }
-
-            ChainedHeader fork = this.GetBlockLocked(height);
-            foreach (ChainedHeader newBlock in newTip.EnumerateToGenesis().TakeWhile(c => c != fork))
-            {
-                this.blocksById.AddOrReplace(newBlock.HashBlock, newBlock);
-                this.blocksByHeight.AddOrReplace(newBlock.Height, newBlock);
-            }
-
-            this.Tip = newTip;
+            this.consensusManager = consensusManager;
         }
+
+        public ChainedHeader Tip => this.consensusManager.Tip;
 
         /// <summary>
         /// Gets the chained block header given a block ID (hash).
@@ -59,27 +40,12 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>The chained block header.</returns>
         public ChainedHeader GetBlock(uint256 id)
         {
-            using (this.lockObject.LockRead())
-            {
-                ChainedHeader result;
-                this.blocksById.TryGetValue(id, out result);
-                return result;
-            }
-        }
-
-        private ChainedHeader GetBlockLocked(int height)
-        {
-            ChainedHeader result;
-            this.blocksByHeight.TryGetValue(height, out result);
-            return result;
+            return this.consensusManager.GetBlockDataAsync(id).GetAwaiter().GetResult()?.ChainedHeader;
         }
 
         public ChainedHeader GetBlock(int height)
         {
-            using (this.lockObject.LockRead())
-            {
-                return this.GetBlockLocked(height);
-            }
+            return this.consensusManager.GetBlockDataAsync(height).GetAwaiter().GetResult()?.ChainedHeader;
         }
 
         private IEnumerable<ChainedHeader> EnumerateThisToFork(ChainedHeader block)
@@ -282,6 +248,8 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly BlockIndexer blockIndexer;
 
+        private readonly ConcurrentChain chain;
+
         private bool isIbd;
 
         internal ConsensusManager(
@@ -353,7 +321,8 @@ namespace Stratis.Bitcoin.Consensus
             this.ibdState = ibdState;
 
             this.blockPuller = blockPuller;
-            this.blockIndexer = new BlockIndexer();
+            this.blockIndexer = new BlockIndexer(this);
+            this.chain = chain;
 
             this.maxUnconsumedBlocksDataBytes = consensusSettings.MaxBlockMemoryInMB * 1024 * 1024;
 
@@ -1108,8 +1077,7 @@ namespace Stratis.Bitcoin.Consensus
             this.Tip = newTip;
 
             this.chainState.ConsensusTip = this.Tip;
-
-            this.blockIndexer.SetTip(newTip);
+            this.chain.SetTip(this.Tip);
         }
 
         /// <summary>
@@ -1386,6 +1354,45 @@ namespace Stratis.Bitcoin.Consensus
             }
             else
                 this.logger.LogDebug("Block '{0}' was not found in block store.", blockHash);
+
+            return chainedHeaderBlock;
+        }
+
+        /// <inheritdoc />
+        public async Task<ChainedHeaderBlock> GetBlockDataAsync(int blockHeight)
+        {
+            ChainedHeaderBlock chainedHeaderBlock;
+
+            lock (this.peerLock)
+            {
+                chainedHeaderBlock = this.chainedHeaderTree.GetChainedHeaderBlock(blockHeight);
+            }
+
+            if (chainedHeaderBlock == null)
+            {
+                this.logger.LogTrace("Block at height '{0}' is not part of the tree.", blockHeight);
+                this.logger.LogTrace("(-)[INVALID_HASH]:null");
+                return null;
+            }
+
+            if (chainedHeaderBlock.Block != null)
+            {
+                this.logger.LogTrace("Block pair '{0}' was found in memory.", chainedHeaderBlock);
+
+                this.logger.LogTrace("(-)[FOUND_IN_CHT]:'{0}'", chainedHeaderBlock);
+                return chainedHeaderBlock;
+            }
+
+            Block block = await this.blockStore.GetBlockAsync(chainedHeaderBlock.ChainedHeader.HashBlock).ConfigureAwait(false);
+            if (block != null)
+            {
+                var newBlockPair = new ChainedHeaderBlock(block, chainedHeaderBlock.ChainedHeader);
+                this.logger.LogTrace("Chained header block '{0}' was found in store.", newBlockPair);
+                this.logger.LogTrace("(-)[FOUND_IN_BLOCK_STORE]:'{0}'", newBlockPair);
+                return newBlockPair;
+            }
+            else
+                this.logger.LogDebug("Block '{0}' was not found in block store.", chainedHeaderBlock.ChainedHeader.HashBlock);
 
             return chainedHeaderBlock;
         }

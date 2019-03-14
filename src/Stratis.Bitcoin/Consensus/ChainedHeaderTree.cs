@@ -146,6 +146,16 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>The block and its chained header (the <see cref="ChainedHeaderBlock.Block"/> can be <c>null</c> or the <see cref="ChainedHeaderBlock"/> result can be <c>null</c>).</returns>
         ChainedHeaderBlock GetChainedHeaderBlock(uint256 blockHash);
 
+        /// <summary>
+        /// Get the block and its chained header if it exists by the block height.
+        /// If the header is not in the tree <see cref="ChainedHeaderBlock"/> will be <c>null</c>, the <see cref="ChainedHeaderBlock.Block"/> may also be null.
+        /// </summary>
+        /// <remarks>
+        /// The block can be <c>null</c> when the block data has not yet been downloaded or if the block data has been persisted to the database and removed from the memory.
+        /// </remarks>
+        /// <returns>The block and its chained header (the <see cref="ChainedHeaderBlock.Block"/> can be <c>null</c> or the <see cref="ChainedHeaderBlock"/> result can be <c>null</c>).</returns>
+        ChainedHeaderBlock GetChainedHeaderBlock(int blockHeight);
+
         /// <summary>Get the chained header.</summary>
         /// <returns>Chained header for specified block hash if it exists, <c>null</c> otherwise.</returns>
         ChainedHeader GetChainedHeader(uint256 blockHash);
@@ -281,6 +291,23 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (chainedHeaderBlock.Block == null)
                     this.logger.LogTrace("[BLOCK_NULL]");
+            }
+
+            return chainedHeaderBlock;
+        }
+
+        /// <inheritdoc />
+        public ChainedHeaderBlock GetChainedHeaderBlock(int blockHeight)
+        {
+            ChainedHeaderBlock chainedHeaderBlock = null;
+            if (this.chainedHeadersByHash.Count <= blockHeight)
+            {
+                KeyValuePair<uint256, ChainedHeader> chainedHeaderItem = this.chainedHeadersByHash.ElementAt(blockHeight);
+
+                chainedHeaderBlock = new ChainedHeaderBlock(chainedHeaderItem.Value.Block, chainedHeaderItem.Value);
+
+                if (chainedHeaderBlock.Block == null)
+                    this.logger.LogTrace("[BLOCK_NULL_1]");
             }
 
             return chainedHeaderBlock;
