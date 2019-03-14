@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Controllers.Models
         [JsonProperty("version")]
         public int Version { get; private set; }
 
-        [JsonProperty("versionhex")]
+        [JsonProperty("versionHex")]
         public string VersionHex { get; private set; }
 
         [JsonProperty("merkleroot")]
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Controllers.Models
         [JsonProperty("chainwork")]
         public string ChainWork { get; private set; }
 
-        [JsonProperty("ntx")]
+        [JsonProperty("nTx")]
         public int NumberOfTransactions { get; private set; }
 
         [JsonProperty("previousblockhash")]
