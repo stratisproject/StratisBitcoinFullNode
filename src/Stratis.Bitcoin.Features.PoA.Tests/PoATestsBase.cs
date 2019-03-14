@@ -39,8 +39,8 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
         public PoATestsBase(TestPoANetwork network = null)
         {
-            this.signals = new Signals.Signals();
             this.loggerFactory = new LoggerFactory();
+            this.signals = new Signals.Signals(loggerFactory, null);
             this.network = network == null ? new TestPoANetwork() : network;
             this.consensusOptions = this.network.ConsensusOptions;
             this.dBreezeSerializer = new DBreezeSerializer(this.network);
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
         public static FederationManager CreateFederationManager(object caller)
         {
-            return CreateFederationManager(caller, new TestPoANetwork(), new ExtendedLoggerFactory(), new Signals.Signals());
+            return CreateFederationManager(caller, new TestPoANetwork(), new ExtendedLoggerFactory(), new Signals.Signals(new LoggerFactory(), null));
         }
 
         public void InitRule(ConsensusRuleBase rule)

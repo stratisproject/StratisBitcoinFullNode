@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.EventBus
     /// Basic abstract implementation of <see cref="IEvent"/>.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.EventBus.IEvent" />
-    public abstract class EventBase : IEvent
+    public abstract class EventBase
     {
         /// <inheritdoc />
         public Guid CorrelationId { get; }

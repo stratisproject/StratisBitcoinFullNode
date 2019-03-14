@@ -66,7 +66,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.withdrawalReceiver = Substitute.For<IWithdrawalReceiver>();
 
-            this.signals = new Signals();
+            this.signals = new Signals(this.loggerFactory, null);
 
             this.depositExtractor = new DepositExtractor(
                 this.loggerFactory,

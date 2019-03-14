@@ -54,13 +54,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             // Create consensus manager.
             var consensus = new ConsensusManager(chainedHeaderTree, this.network, this.loggerFactory.Object, this.chainState.Object, integrityValidator,
-                partialValidator, fullValidator, consensusRuleEngine, new Mock<IFinalizedBlockInfoRepository>().Object, new Signals.Signals(),
+                partialValidator, fullValidator, consensusRuleEngine, new Mock<IFinalizedBlockInfoRepository>().Object, new Signals.Signals(this.loggerFactory.Object, null),
                 new Mock<IPeerBanning>().Object, initialBlockDownloadState, this.concurrentChain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object,
                 new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object, new Mock<INodeLifetime>().Object, this.consensusSettings);
 
             // Mock the coinviews "FetchCoinsAsync" method. We will use the "unspentOutputs" dictionary to track spendable outputs.
             this.coinView.Setup(d => d.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .Returns((uint256[] txIds, CancellationToken cancel) => Task.Run(() => {
+                .Returns((uint256[] txIds, CancellationToken cancel) => Task.Run(() =>
+                {
 
                     var result = new UnspentOutputs[txIds.Length];
 
@@ -71,7 +72,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 }));
 
             // Mock the coinviews "GetTipHashAsync" method.
-            this.coinView.Setup(d => d.GetTipHashAsync(It.IsAny<CancellationToken>())).Returns(() => Task.Run(() => {
+            this.coinView.Setup(d => d.GetTipHashAsync(It.IsAny<CancellationToken>())).Returns(() => Task.Run(() =>
+            {
                 return this.concurrentChain.Tip.HashBlock;
             }));
 
@@ -80,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 .Returns(this.network.Consensus.PowLimit);
 
             // Skip validation of signature in the proven header
-            this.stakeValidator.Setup(s => s.VerifySignature(It.IsAny<UnspentOutputs>(), It.IsAny<Transaction>(),0, It.IsAny<ScriptVerify>()))
+            this.stakeValidator.Setup(s => s.VerifySignature(It.IsAny<UnspentOutputs>(), It.IsAny<Transaction>(), 0, It.IsAny<ScriptVerify>()))
                 .Returns(true);
 
             // Skip validation of stake kernel

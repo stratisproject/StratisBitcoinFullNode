@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var loggerFactoryMock = new Mock<ILoggerFactory>();
             loggerFactoryMock.Setup(i => i.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
 
-            Signals.Signals signals = new Signals.Signals();
+            Signals.Signals signals = new Signals.Signals(loggerFactoryMock.Object, null);
             var subject = new BlocksDisconnectedSignaled(mempoolValidatorMock.Object, new MempoolSchedulerLock(), loggerFactoryMock.Object, signals);
             subject.Initialize();
 

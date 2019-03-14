@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.EventBus;
+﻿using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.EventBus;
 
 namespace Stratis.Bitcoin.Signals
 {
@@ -8,5 +9,6 @@ namespace Stratis.Bitcoin.Signals
 
     public class Signals : InMemoryEventBus, ISignals
     {
+        public Signals(ILoggerFactory loggerFactory, ISubscriptionErrorHandler subscriptionErrorHandler) : base(loggerFactory, subscriptionErrorHandler) { }
     }
 }

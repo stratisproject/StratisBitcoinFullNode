@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Primitives;
@@ -13,7 +14,7 @@ namespace Stratis.Bitcoin.Tests.Signals
 
         public SignalsTest()
         {
-            this.signals = new Bitcoin.Signals.Signals();
+            this.signals = new Bitcoin.Signals.Signals(new LoggerFactory(), null);
         }
 
         [Fact]
@@ -80,6 +81,27 @@ namespace Stratis.Bitcoin.Tests.Signals
             //expect signaled be false
             Assert.True(!signaled);
 
+        }
+
+        [Fact]
+        public void SignalSubscrerThrowExceptionDefaultSubscriptionErrorHandlerRethrow()
+        {
+            try
+            {
+                using (SubscriptionToken sub = this.signals.Subscribe<TestEvent>(transaction1 => throw new System.Exception("TestingException")))
+                {
+                    this.signals.Publish(new TestEvent());
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Assert.True(ex.Message == "TestingException");
+            }
+        }
+
+        class TestEvent : EventBase
+        {
+            public TestEvent() { }
         }
     }
 }

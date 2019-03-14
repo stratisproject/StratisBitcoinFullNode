@@ -2,11 +2,21 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.EventBus
 {
     public class InMemoryEventBus : IEventBus
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        /// <summary>
+        /// The subscriber error handler
+        /// </summary>
+        private readonly ISubscriptionErrorHandler subscriptionErrorHandler;
+
         /// <summary>
         /// The subscriptions stored by EventType
         /// </summary>
@@ -15,60 +25,72 @@ namespace Stratis.Bitcoin.EventBus
         /// <summary>
         /// The subscriptions lock to prevent race condition during publishing
         /// </summary>
-        private static readonly object SubscriptionsLock = new object();
+        private readonly object subscriptionsLock = new object();
 
-        public InMemoryEventBus()
+        /// <summary>
+        /// Initializes a new instance of the <see cref="InMemoryEventBus"/> class.
+        /// </summary>
+        /// <param name="loggerFactory">The logger factory.</param>
+        /// <param name="subscriptionErrorHandler">The subscription error handler. If null the default one will be used</param>
+        public InMemoryEventBus(ILoggerFactory loggerFactory, ISubscriptionErrorHandler subscriptionErrorHandler)
         {
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.subscriptionErrorHandler = subscriptionErrorHandler ?? new DefaultSubscriptionErrorHandler(loggerFactory);
             this.subscriptions = new Dictionary<Type, List<ISubscription>>();
         }
 
         /// <inheritdoc />
-        public SubscriptionToken Subscribe<TEventBase>(Action<TEventBase> action) where TEventBase : EventBase
+        public SubscriptionToken Subscribe<TEvent>(Action<TEvent> handler) where TEvent : EventBase
         {
-            if (action == null)
-                throw new ArgumentNullException(nameof(action));
+            if (handler == null)
+                throw new ArgumentNullException(nameof(handler));
 
-            lock (SubscriptionsLock)
+            lock (this.subscriptionsLock)
             {
-                if (!this.subscriptions.ContainsKey(typeof(TEventBase)))
-                    this.subscriptions.Add(typeof(TEventBase), new List<ISubscription>());
+                if (!this.subscriptions.ContainsKey(typeof(TEvent)))
+                {
+                    this.subscriptions.Add(typeof(TEvent), new List<ISubscription>());
+                }
 
-                var token = new SubscriptionToken(this, typeof(TEventBase));
-                this.subscriptions[typeof(TEventBase)].Add(new Subscription<TEventBase>(action, token));
-                return token;
+                var subscriptionToken = new SubscriptionToken(this, typeof(TEvent));
+                this.subscriptions[typeof(TEvent)].Add(new Subscription<TEvent>(handler, subscriptionToken));
+
+                return subscriptionToken;
             }
         }
 
         /// <inheritdoc />
-        public void Unsubscribe(SubscriptionToken token)
+        public void Unsubscribe(SubscriptionToken subscriptionToken)
         {
-            if (token == null)
-                throw new ArgumentNullException(nameof(token));
+            if (subscriptionToken == null)
+                throw new ArgumentNullException(nameof(subscriptionToken));
 
-            lock (SubscriptionsLock)
+            lock (this.subscriptionsLock)
             {
-                if (this.subscriptions.ContainsKey(token.EventType))
+                if (this.subscriptions.ContainsKey(subscriptionToken.EventType))
                 {
-                    var allSubscriptions = this.subscriptions[token.EventType];
+                    var allSubscriptions = this.subscriptions[subscriptionToken.EventType];
 
-                    var subscriptionToRemove = allSubscriptions.FirstOrDefault(sub => sub.SubscriptionToken.Token == token.Token);
+                    var subscriptionToRemove = allSubscriptions.FirstOrDefault(sub => sub.SubscriptionToken.Token == subscriptionToken.Token);
                     if (subscriptionToRemove != null)
-                        this.subscriptions[token.EventType].Remove(subscriptionToRemove);
+                        this.subscriptions[subscriptionToken.EventType].Remove(subscriptionToRemove);
                 }
             }
         }
 
         /// <inheritdoc />
-        public void Publish<TEventBase>(TEventBase eventItem) where TEventBase : EventBase
+        public void Publish<TEvent>(TEvent @event) where TEvent : EventBase
         {
-            if (eventItem == null)
-                throw new ArgumentNullException(nameof(eventItem));
+            if (@event == null)
+                throw new ArgumentNullException(nameof(@event));
 
             List<ISubscription> allSubscriptions = new List<ISubscription>();
-            lock (SubscriptionsLock)
+            lock (this.subscriptionsLock)
             {
-                if (this.subscriptions.ContainsKey(typeof(TEventBase)))
-                    allSubscriptions = this.subscriptions[typeof(TEventBase)].ToList();
+                if (this.subscriptions.ContainsKey(typeof(TEvent)))
+                    allSubscriptions = this.subscriptions[typeof(TEvent)].ToList();
             }
 
             for (var index = 0; index < allSubscriptions.Count; index++)
@@ -76,12 +98,11 @@ namespace Stratis.Bitcoin.EventBus
                 var subscription = allSubscriptions[index];
                 try
                 {
-                    subscription.Publish(eventItem);
+                    subscription.Publish(@event);
                 }
                 catch (Exception ex)
                 {
-                    // TODO: log failed handlers and/or call an internal error handler
-                    // like this.SubscriptionErrorHandler.Handle(message, ex);
+                    this.subscriptionErrorHandler?.Handle(@event, ex, subscription);
                 }
             }
         }

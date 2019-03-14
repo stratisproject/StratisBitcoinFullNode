@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             Key key = tool.GeneratePrivateKey();
             this.network = new TestPoANetwork(new List<PubKey>() { tool.GeneratePrivateKey().PubKey, key.PubKey, tool.GeneratePrivateKey().PubKey });
 
-            FederationManager fedManager = PoATestsBase.CreateFederationManager(this, this.network, new ExtendedLoggerFactory(), new Signals.Signals());
+            FederationManager fedManager = PoATestsBase.CreateFederationManager(this, this.network, new ExtendedLoggerFactory(), new Signals.Signals(new LoggerFactory(), null));
             this.slotsManager = new SlotsManager(this.network, fedManager, new LoggerFactory());
 
             List<PubKey> fedKeys = this.federationManager.GetFederationMembers();

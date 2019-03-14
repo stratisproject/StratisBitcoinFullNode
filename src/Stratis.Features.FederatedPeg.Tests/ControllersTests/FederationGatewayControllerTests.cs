@@ -67,7 +67,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
             this.federationWalletManager = Substitute.For<IFederationWalletManager>();
             this.keyValueRepository = Substitute.For<IKeyValueRepository>();
-            this.signals = new Signals();
+            this.signals = new Signals(this.loggerFactory, null);
             this.federationManager = new FederationManager(NodeSettings.Default(this.network), this.network, this.loggerFactory, this.keyValueRepository, this.signals);
         }
 
