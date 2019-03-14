@@ -64,12 +64,16 @@ namespace Stratis.Bitcoin.Controllers.Models
         [JsonProperty("nextblockhash")]
         public string NextBlockHash { get; private set; }
 
-        public BlockModel(Block block, ChainBase chain, Network network, int verbosity = 1)
-        {
-            var chainedHeader = chain.GetBlock(block.GetHash());
+        /// <summary>
+        /// Creates a block model
+        /// Used for deserializing from Json
+        /// </summary>
+        public BlockModel() { }
 
+        public BlockModel(Block block, ChainedHeader chainedHeader, ChainedHeader tip, Network network, int verbosity = 1)
+        {
             this.Hash = block.GetHash().ToString();
-            this.Confirmations = chain.Tip.Height - chainedHeader.Height + 1;
+            this.Confirmations = tip.Height - chainedHeader.Height + 1;
             this.Size = block.ToBytes().Length;
             this.Weight = block.GetBlockWeight(network.Consensus);
             this.Height = chainedHeader.Height;
@@ -92,14 +96,6 @@ namespace Stratis.Bitcoin.Controllers.Models
             this.NumberOfTransactions = block.Transactions.Count();
             this.PreviousBlockHash = block.Header.HashPrevBlock.ToString();
             this.NextBlockHash = chainedHeader.Next?.FirstOrDefault()?.HashBlock.ToString();
-        }
-
-        /// <summary>
-        /// Creates a block model
-        /// Used for deserializing from Json
-        /// </summary>
-        public BlockModel()
-        {
         }
     }
 }

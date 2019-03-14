@@ -350,7 +350,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (verbosity == 0)
                 return block?.ToHex(this.Network);
 
-            return new BlockModel(block, this.Chain, this.Network, verbosity);
+            return new BlockModel(block, this.Chain.GetBlock(block.GetHash()), this.Chain.Tip, this.Network, verbosity);
         }
 
         [ActionName("getnetworkinfo")]

@@ -3,6 +3,9 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin
 {
+    /// <summary>
+    /// TODO: These will move back to BlockSizeRule once has the rules has been migrated.
+    /// </summary>
     public static class BlockExtensions
     {
         /// <summary>
