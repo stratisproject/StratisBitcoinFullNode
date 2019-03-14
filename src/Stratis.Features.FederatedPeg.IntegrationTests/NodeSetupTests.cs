@@ -1,9 +1,11 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Features.FederatedPeg.IntegrationTests.Utils;
+using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Tests.Utils;
 using Xunit;
 
@@ -51,8 +53,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
             }
         }
 
-        [Fact]
-        public async Task MainChain_To_SideChain_Transfer()
+        [Fact(Skip = "Inherently unreliable, but shows that the multiple UTXO approach allows parallel sending!")]
+        public async Task ParallelWithdrawalsToSidechain()
         {
             using (var context = new SidechainTestContext())
             {
@@ -75,7 +77,6 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
 
                 // Send multiple deposits to sidechain
                 decimal transferValueCoins = 10;
-                var transferValue = new Money(transferValueCoins, MoneyUnit.BTC);
                 string sidechainAddress = context.SideUser.GetUnusedAddress();
 
                 // Lets send 3 deposits all exactly the same
@@ -90,11 +91,22 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 // Mine enough blocks to make the deposits mature on the main chain
                 TestHelper.MineBlocks(context.FedMain1, 6);
 
+                // Wait until our sidechain nodes have all fully signed the transactions.
+                ICrossChainTransferStore fedSideStore = context.FedSide1.FullNode.NodeService<ICrossChainTransferStore>();
+                TestHelper.WaitLoop(() =>
+                {
+                    Dictionary<uint256, Transaction> fullySignedTransactions = fedSideStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).GetAwaiter().GetResult();
+                    return fullySignedTransactions.Count == toSend;
+                });
+
+                // Mine one more block on the main chain to trigger leader selection on sidechain
+                TestHelper.MineBlocks(context.FedMain1, 1);
+
                 // Wait for all the withdrawal transactions to reach the mempool on the sidechain
                 TestHelper.WaitLoop(() =>
                 {
                     int inMempool = context.FedSide1.CreateRPCClient().GetRawMempool().Length;
-                    return context.FedSide1.CreateRPCClient().GetRawMempool().Length == toSend;
+                    return inMempool == toSend;
                 });
 
                 await context.FedSide2.MineBlocksAsync(1);
