@@ -225,7 +225,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public INetworkPeer CreateNetworkPeerClient()
         {
-            var selfEndPointTracker = new SelfEndpointTracker(this.loggerFactory);
+            var selfEndPointTracker = new SelfEndpointTracker(this.loggerFactory, this.runner.FullNode.NodeService<ConnectionManagerSettings>());
 
             // Needs to be initialized beforehand.
             selfEndPointTracker.UpdateAndAssignMyExternalAddress(new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), this.ProtocolPort), false);
