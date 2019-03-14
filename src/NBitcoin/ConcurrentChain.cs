@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     /// <summary>
     /// Thread safe class representing a chain of headers from genesis.

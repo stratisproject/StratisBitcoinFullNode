@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using CSharpFunctionalExtensions;
 using Mono.Cecil;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
@@ -94,7 +94,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(bytes, amount);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -138,7 +138,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -181,7 +181,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -237,7 +237,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("Method", preResponse.NewContractAddress, amount);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -286,7 +286,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -332,7 +332,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("MethodThatDoesntExist", preResponse.NewContractAddress, amount);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -379,7 +379,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("CallMe", preResponse.NewContractAddress, amount);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -427,7 +427,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -491,7 +491,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(emptyModule, amount);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -535,7 +535,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, gasLimit: gasLimit);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -584,7 +584,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(nameof(RecursiveLoopCall.Call), preResponse.NewContractAddress, amount, gasLimit: gasLimit);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -628,7 +628,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("UseTooMuchMemory", preResponse.NewContractAddress, amount, parameters);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -678,7 +678,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(nameof(InfiniteLoop.Loop), preResponse.NewContractAddress, amount, gasLimit: gasLimit, gasPrice: 200);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -730,7 +730,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.mockChain.WaitAllMempoolCount(txCount);
             this.mockChain.MineBlocks(1);
 
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             int expectedTxQty = Convert.ToInt32(txGasPerBlockLimit / gasLimit) + 1; // +1 is Coinbase Tx.
             Assert.Equal(expectedTxQty, lastBlock.Transactions.Count);

@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using NSubstitute;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;

@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 
 namespace Stratis.Bitcoin.Features.RPC.ModelBinders
 {

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
-using NBitcoin.Protocol;
+using Stratis.Bitcoin.NBitcoin.Protocol;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public interface IBitcoinSerializable
     {

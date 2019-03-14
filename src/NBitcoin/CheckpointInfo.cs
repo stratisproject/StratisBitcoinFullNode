@@ -1,4 +1,4 @@
-﻿namespace NBitcoin
+﻿namespace Stratis.Bitcoin.NBitcoin
 {
     /// <summary>
     /// Description of checkpointed block.

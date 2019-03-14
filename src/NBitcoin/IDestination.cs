@@ -1,4 +1,4 @@
-﻿namespace NBitcoin
+﻿namespace Stratis.Bitcoin.NBitcoin
 {
     /// <summary>
     /// Represent any type which represent an underlying ScriptPubKey

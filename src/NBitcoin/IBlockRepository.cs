@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public interface INBitcoinBlockRepository
     {

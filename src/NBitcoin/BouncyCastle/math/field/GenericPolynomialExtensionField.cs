@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace NBitcoin.BouncyCastle.Math.Field
+namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Math.Field
 {
     internal class GenericPolynomialExtensionField
         : IPolynomialExtensionField

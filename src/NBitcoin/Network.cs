@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using NBitcoin.DataEncoders;
-using NBitcoin.Networks;
-using NBitcoin.Protocol;
-using NBitcoin.Stealth;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.Networks;
+using Stratis.Bitcoin.NBitcoin.Protocol;
+using Stratis.Bitcoin.NBitcoin.Stealth;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public enum Base58Type
     {

@@ -1,8 +1,8 @@
 using System;
 using System.IO;
-using NBitcoin.BouncyCastle.Utilities.IO;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Utilities.IO;
 
-namespace NBitcoin.BouncyCastle.Asn1
+namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Asn1
 {
     internal class DerOutputStream
         : FilterStream

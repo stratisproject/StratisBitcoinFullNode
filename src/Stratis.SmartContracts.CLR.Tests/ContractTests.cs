@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Moq;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.SmartContracts.CLR.Exceptions;
 using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;

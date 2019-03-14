@@ -1,5 +1,5 @@
 ﻿using System.Linq;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;

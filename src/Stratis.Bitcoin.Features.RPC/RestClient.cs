@@ -6,8 +6,8 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using NBitcoin;
-using NBitcoin.Protocol.Payloads;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.Protocol.Payloads;
 using Newtonsoft.Json.Linq;
 
 namespace Stratis.Bitcoin.Features.RPC

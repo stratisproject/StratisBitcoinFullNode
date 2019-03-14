@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace NBitcoin.DataEncoders
+namespace Stratis.Bitcoin.NBitcoin.DataEncoders
 {
     public class Bech32FormatException : FormatException
     {

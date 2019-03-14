@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Patricia;
 using Stratis.SmartContracts.CLR.Compilation;

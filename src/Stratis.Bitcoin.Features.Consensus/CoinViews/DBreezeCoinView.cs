@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
-using NBitcoin.BitcoinCore;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.BitcoinCore;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 

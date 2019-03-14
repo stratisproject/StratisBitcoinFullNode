@@ -1,5 +1,5 @@
 ﻿using System.Linq;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;

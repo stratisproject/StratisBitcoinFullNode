@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Utilities;
-using ReaderWriterLock = NBitcoin.ReaderWriterLock;
+using ReaderWriterLock = Stratis.Bitcoin.NBitcoin.ReaderWriterLock;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {

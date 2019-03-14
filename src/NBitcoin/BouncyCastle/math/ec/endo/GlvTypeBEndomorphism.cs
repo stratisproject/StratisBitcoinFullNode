@@ -1,4 +1,4 @@
-﻿namespace NBitcoin.BouncyCastle.Math.EC.Endo
+﻿namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Math.EC.Endo
 {
     internal class GlvTypeBEndomorphism
         : GlvEndomorphism

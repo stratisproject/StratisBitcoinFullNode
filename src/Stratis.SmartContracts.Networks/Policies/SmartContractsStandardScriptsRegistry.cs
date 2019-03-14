@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using NBitcoin;
-using NBitcoin.BitcoinCore;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.BitcoinCore;
 
 namespace Stratis.SmartContracts.Networks.Policies
 {

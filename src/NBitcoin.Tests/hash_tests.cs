@@ -1,10 +1,10 @@
 ﻿using System.Diagnostics;
-using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.Crypto;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
-namespace NBitcoin.Tests
+namespace Stratis.Bitcoin.NBitcoin.Tests
 {
     public class Hash_Tests
     {

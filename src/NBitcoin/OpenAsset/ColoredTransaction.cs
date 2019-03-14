@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 
-namespace NBitcoin.OpenAsset
+namespace Stratis.Bitcoin.NBitcoin.OpenAsset
 {
     public class ColoredEntry : IBitcoinSerializable
     {

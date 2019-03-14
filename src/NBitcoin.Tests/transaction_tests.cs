@@ -4,18 +4,18 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using NBitcoin.BitcoinCore;
-using NBitcoin.BouncyCastle.Math;
-using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
-using NBitcoin.OpenAsset;
-using NBitcoin.Policy;
-using NBitcoin.Stealth;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.NBitcoin.BitcoinCore;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.NBitcoin.Crypto;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.OpenAsset;
+using Stratis.Bitcoin.NBitcoin.Policy;
+using Stratis.Bitcoin.NBitcoin.Stealth;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
-namespace NBitcoin.Tests
+namespace Stratis.Bitcoin.NBitcoin.Tests
 {
     public class Transaction_tests
     {

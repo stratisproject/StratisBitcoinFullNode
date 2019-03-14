@@ -1,4 +1,4 @@
-﻿using NBitcoin;
+﻿using Stratis.Bitcoin.NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
 using Stratis.SmartContracts.CLR.Local;

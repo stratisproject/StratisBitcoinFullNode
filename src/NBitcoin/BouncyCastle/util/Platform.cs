@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using System.Collections;
 
-namespace NBitcoin.BouncyCastle.Utilities
+namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Utilities
 {
     internal abstract class Platform
     {

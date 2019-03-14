@@ -1,4 +1,4 @@
-﻿using NBitcoin;
+﻿using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Primitives;
 
 namespace Stratis.Bitcoin.Interfaces

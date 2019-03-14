@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Security;
-using NBitcoin;
-using NBitcoin.BuilderExtensions;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.BuilderExtensions;
 
 namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 {

@@ -2,10 +2,10 @@
 using System.Collections;
 using System.Linq;
 using System.Text;
-using NBitcoin.BouncyCastle.Crypto.Parameters;
-using NBitcoin.Crypto;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Crypto.Parameters;
+using Stratis.Bitcoin.NBitcoin.Crypto;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     /// <summary>
     /// A .NET implementation of the Bitcoin Improvement Proposal - 39 (BIP39)

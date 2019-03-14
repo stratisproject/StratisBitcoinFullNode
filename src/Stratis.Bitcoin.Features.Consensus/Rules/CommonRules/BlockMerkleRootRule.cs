@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
-using NBitcoin.Crypto;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 

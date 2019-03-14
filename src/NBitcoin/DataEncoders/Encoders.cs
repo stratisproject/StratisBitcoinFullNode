@@ -1,4 +1,4 @@
-﻿namespace NBitcoin.DataEncoders
+﻿namespace Stratis.Bitcoin.NBitcoin.DataEncoders
 {
     public abstract class DataEncoder
     {

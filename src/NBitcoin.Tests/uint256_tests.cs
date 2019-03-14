@@ -5,7 +5,7 @@ using System.Linq;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
-namespace NBitcoin.Tests
+namespace Stratis.Bitcoin.NBitcoin.Tests
 {
     public class uint256_tests
     {

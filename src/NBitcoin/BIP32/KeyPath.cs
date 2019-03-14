@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Linq;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
 
     /// <summary>

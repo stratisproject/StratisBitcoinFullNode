@@ -1,4 +1,4 @@
-﻿using NBitcoin;
+﻿using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;

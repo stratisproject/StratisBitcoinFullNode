@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace NBitcoin.Crypto
+namespace Stratis.Bitcoin.NBitcoin.Crypto
 {
     public class HashStream : Stream
     {

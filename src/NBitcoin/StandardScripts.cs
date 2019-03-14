@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using NBitcoin.BitcoinCore;
-using NBitcoin.Policy;
+using Stratis.Bitcoin.NBitcoin.BitcoinCore;
+using Stratis.Bitcoin.NBitcoin.Policy;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public static class StandardScripts
     {

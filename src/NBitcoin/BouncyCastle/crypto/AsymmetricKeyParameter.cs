@@ -1,4 +1,4 @@
-namespace NBitcoin.BouncyCastle.Crypto
+namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Crypto
 {
     internal abstract class AsymmetricKeyParameter
         : ICipherParameters

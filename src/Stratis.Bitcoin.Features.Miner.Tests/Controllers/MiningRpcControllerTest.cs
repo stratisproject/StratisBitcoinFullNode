@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Security;
 using Moq;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;

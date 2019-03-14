@@ -1,6 +1,6 @@
-﻿using NBitcoin;
-using NBitcoin.Networks;
-using NBitcoin.Protocol;
+﻿using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.Networks;
+using Stratis.Bitcoin.NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Networks;
 

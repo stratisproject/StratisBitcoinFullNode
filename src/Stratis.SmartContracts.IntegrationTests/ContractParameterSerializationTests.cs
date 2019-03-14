@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Text;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.SmartContracts.CLR;
@@ -66,7 +66,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -161,7 +161,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(nameof(CallWithAllParameters.Call), preResponse.NewContractAddress, amount, parameters);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -227,7 +227,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -286,7 +286,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
-            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+            Bitcoin.NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());

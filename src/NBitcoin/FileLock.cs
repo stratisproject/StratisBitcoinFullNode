@@ -2,7 +2,7 @@
 using System.IO;
 using System.Threading;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public enum FileLockType
     {

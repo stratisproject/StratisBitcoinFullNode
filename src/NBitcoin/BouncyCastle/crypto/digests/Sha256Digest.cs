@@ -1,8 +1,8 @@
 using System;
-using NBitcoin.BouncyCastle.Crypto.Utilities;
-using NBitcoin.BouncyCastle.Utilities;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Crypto.Utilities;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Utilities;
 
-namespace NBitcoin.BouncyCastle.Crypto.Digests
+namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Crypto.Digests
 {
     /**
     * Draft FIPS 180-2 implementation of SHA-256. <b>Note:</b> As this is

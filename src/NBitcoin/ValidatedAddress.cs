@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public class ValidatedAddress
     {

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Net;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 
 namespace Stratis.Features.FederatedPeg.Interfaces
 {

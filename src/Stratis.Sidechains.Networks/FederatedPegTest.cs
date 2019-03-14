@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using NBitcoin;
-using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.SmartContracts.Networks.Policies;

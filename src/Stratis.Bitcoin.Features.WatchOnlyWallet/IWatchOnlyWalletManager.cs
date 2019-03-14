@@ -1,5 +1,5 @@
 ﻿using System;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {

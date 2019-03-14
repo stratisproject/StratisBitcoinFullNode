@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-namespace NBitcoin.Protocol.Payloads
+namespace Stratis.Bitcoin.NBitcoin.Protocol.Payloads
 {
     public class UTxOutputs : IBitcoinSerializable
     {

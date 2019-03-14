@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Text;
-using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 using Xunit;
 
-namespace NBitcoin.Tests
+namespace Stratis.Bitcoin.NBitcoin.Tests
 {
     public class ConverterTests
     {

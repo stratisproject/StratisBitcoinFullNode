@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
-using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     /// <summary>
     /// Base58 representaiton of a script hash

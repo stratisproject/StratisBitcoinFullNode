@@ -1,5 +1,5 @@
 ﻿using System.Linq;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;

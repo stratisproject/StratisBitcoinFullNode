@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Utilities;
-using static NBitcoin.OpcodeType;
+using static Stratis.Bitcoin.NBitcoin.OpcodeType;
 
 namespace Stratis.Bitcoin.Features.ColdStaking
 {

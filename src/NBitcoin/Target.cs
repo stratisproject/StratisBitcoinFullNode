@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq;
-using NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     /// <summary>
     /// Represent the challenge that miners must solve for finding a new block

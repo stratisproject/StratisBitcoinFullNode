@@ -1,5 +1,5 @@
 ﻿using Moq;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;

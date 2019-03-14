@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using DBreeze.Utils;
-using NBitcoin;
-using NBitcoin.Crypto;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.Crypto;
 using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.Wallet.Models;

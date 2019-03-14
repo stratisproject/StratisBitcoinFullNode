@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using NSubstitute;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet;

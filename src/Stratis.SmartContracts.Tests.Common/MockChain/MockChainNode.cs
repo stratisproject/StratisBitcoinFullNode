@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Mvc;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
@@ -309,7 +309,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
         /// <summary>
         /// Get the last block mined. AKA the current tip.
         /// </summary
-        public NBitcoin.Block GetLastBlock()
+        public Bitcoin.NBitcoin.Block GetLastBlock()
         {
             return this.blockStore.GetBlockAsync(this.CoreNode.FullNode.Chain.Tip.HashBlock).Result;
         }

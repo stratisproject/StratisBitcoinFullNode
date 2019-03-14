@@ -1,5 +1,5 @@
 ﻿using System;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Xunit;

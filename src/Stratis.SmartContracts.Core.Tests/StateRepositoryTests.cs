@@ -1,6 +1,6 @@
 ﻿using System.Text;
 using DBreeze;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Patricia;
 using Stratis.SmartContracts.Core.State;
 using Xunit;

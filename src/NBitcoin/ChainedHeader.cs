@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     /// <summary>
     /// Represents the availability state of a block.

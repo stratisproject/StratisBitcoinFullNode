@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.SmartContracts.CLR.ResultProcessors;
 using Stratis.SmartContracts.Core;

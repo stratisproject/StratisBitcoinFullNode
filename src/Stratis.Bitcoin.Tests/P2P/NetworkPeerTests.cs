@@ -1,4 +1,4 @@
-﻿using NBitcoin.Protocol;
+﻿using Stratis.Bitcoin.NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Xunit;

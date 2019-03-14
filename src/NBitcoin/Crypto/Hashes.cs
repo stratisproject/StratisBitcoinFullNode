@@ -1,10 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using NBitcoin.BouncyCastle.Crypto.Digests;
 using System.Security.Cryptography;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Crypto.Digests;
 
-namespace NBitcoin.Crypto
+namespace Stratis.Bitcoin.NBitcoin.Crypto
 {
     public static class Hashes
     {

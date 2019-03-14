@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Flurl;
 using Flurl.Http;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;

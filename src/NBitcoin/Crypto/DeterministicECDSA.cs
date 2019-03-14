@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Linq;
-using NBitcoin.BouncyCastle.Crypto;
-using NBitcoin.BouncyCastle.Crypto.Digests;
-using NBitcoin.BouncyCastle.Crypto.Parameters;
-using NBitcoin.BouncyCastle.Crypto.Signers;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Crypto;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Crypto.Digests;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Crypto.Parameters;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Crypto.Signers;
 
-namespace NBitcoin.Crypto
+namespace Stratis.Bitcoin.NBitcoin.Crypto
 {    
     internal class DeterministicECDSA : ECDsaSigner
     {

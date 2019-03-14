@@ -4,9 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using NBitcoin.Protocol;
+using Stratis.Bitcoin.NBitcoin.Protocol;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public enum SerializationType
     {

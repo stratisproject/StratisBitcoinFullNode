@@ -1,7 +1,7 @@
 ﻿using System.IO;
-using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 
-namespace NBitcoin.Tests
+namespace Stratis.Bitcoin.NBitcoin.Tests
 {
     internal class TestUtils
     {

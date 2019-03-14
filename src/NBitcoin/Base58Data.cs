@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
-using NBitcoin.DataEncoders;
-using NBitcoin.Networks;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.Networks;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
 
     public interface IBase58Data : IBitcoinString

@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
-namespace NBitcoin.Protocol
+namespace Stratis.Bitcoin.NBitcoin.Protocol
 {
     /// <summary>
     /// Singleton class which deals with a single instance of <see cref="SocketAsyncEventArgs"/>.

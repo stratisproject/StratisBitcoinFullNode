@@ -1,4 +1,4 @@
-﻿namespace NBitcoin.Rules
+﻿namespace Stratis.Bitcoin.NBitcoin.Rules
 {
     public interface IConsensusRuleBase
     {

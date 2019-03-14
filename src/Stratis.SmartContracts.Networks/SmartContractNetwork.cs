@@ -1,5 +1,5 @@
-﻿using NBitcoin;
-using NBitcoin.DataEncoders;
+﻿using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.SmartContracts;
 
 namespace Stratis.SmartContracts.Networks
@@ -15,12 +15,12 @@ namespace Stratis.SmartContracts.Networks
         /// <summary> Bitcoin default value for the maximum tip age in seconds to consider the node in initial block download (24 hours). </summary>
         public const int BitcoinDefaultMaxTipAgeInSeconds = 24 * 60 * 60;
 
-        public static NBitcoin.Block CreateGenesis(ConsensusFactory consensusFactory, uint genesisTime, uint nonce, uint bits, int version, Money reward)
+        public static Bitcoin.NBitcoin.Block CreateGenesis(ConsensusFactory consensusFactory, uint genesisTime, uint nonce, uint bits, int version, Money reward)
         {
             string timeStamp = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks";
             var genesisOutputScript = new Script(Op.GetPushOp(Encoders.Hex.DecodeData("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f")), OpcodeType.OP_CHECKSIG);
 
-            NBitcoin.Transaction genesisTransaction = consensusFactory.CreateTransaction();
+            Bitcoin.NBitcoin.Transaction genesisTransaction = consensusFactory.CreateTransaction();
             genesisTransaction.Time = genesisTime;
             genesisTransaction.Version = 1;
             genesisTransaction.AddInput(new TxIn()
@@ -38,7 +38,7 @@ namespace Stratis.SmartContracts.Networks
                 ScriptPubKey = genesisOutputScript
             });
 
-            NBitcoin.Block genesis = consensusFactory.CreateBlock();
+            Bitcoin.NBitcoin.Block genesis = consensusFactory.CreateBlock();
             genesis.Header.BlockTime = Utils.UnixTimeToDateTime(genesisTime);
             genesis.Header.Bits = bits;
             genesis.Header.Nonce = nonce;

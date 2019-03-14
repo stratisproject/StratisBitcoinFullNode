@@ -1,5 +1,5 @@
 ﻿using System;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Extensions = Stratis.SmartContracts.Core.Extensions;
 
 namespace Stratis.SmartContracts.CLR

@@ -1,6 +1,6 @@
-﻿using NBitcoin;
-using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
+﻿using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.Protocol;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoS
 {

@@ -1,7 +1,7 @@
 ﻿using System;
-using NBitcoin;
-using NBitcoin.Crypto;
-using NBitcoin.OpenAsset;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.Crypto;
+using Stratis.Bitcoin.NBitcoin.OpenAsset;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.JsonConverters;
 using Xunit;

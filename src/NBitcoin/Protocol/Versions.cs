@@ -1,4 +1,4 @@
-﻿namespace NBitcoin.Protocol
+﻿namespace Stratis.Bitcoin.NBitcoin.Protocol
 {
     /// <summary>
     /// Network protocol versioning.

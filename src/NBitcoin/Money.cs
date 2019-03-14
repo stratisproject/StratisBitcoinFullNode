@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using NBitcoin.OpenAsset;
+using Stratis.Bitcoin.NBitcoin.OpenAsset;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public static class MoneyExtensions
     {

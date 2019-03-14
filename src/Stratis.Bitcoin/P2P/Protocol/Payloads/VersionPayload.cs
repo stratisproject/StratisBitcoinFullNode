@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Net;
 using System.Reflection;
-using NBitcoin;
-using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.Protocol;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {

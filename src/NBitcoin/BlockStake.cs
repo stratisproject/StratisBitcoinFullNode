@@ -1,10 +1,10 @@
 ﻿using System;
 using System.IO;
-using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
+using Stratis.Bitcoin.NBitcoin.Crypto;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.Protocol;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     [Flags]
     public enum BlockFlag //block index flags

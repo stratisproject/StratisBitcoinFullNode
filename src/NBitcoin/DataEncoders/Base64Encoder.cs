@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace NBitcoin.DataEncoders
+namespace Stratis.Bitcoin.NBitcoin.DataEncoders
 {
     public class Base64Encoder : DataEncoder
     {

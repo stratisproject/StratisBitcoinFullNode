@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Features.Miner;

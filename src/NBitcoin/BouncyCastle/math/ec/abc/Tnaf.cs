@@ -1,6 +1,6 @@
 using System;
 
-namespace NBitcoin.BouncyCastle.Math.EC.Abc
+namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Math.EC.Abc
 {
     /**
     * Class holding methods for point multiplication based on the window

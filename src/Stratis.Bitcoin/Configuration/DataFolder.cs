@@ -1,6 +1,6 @@
 ﻿using System.IO;
 using System.Net;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.Utilities;
 

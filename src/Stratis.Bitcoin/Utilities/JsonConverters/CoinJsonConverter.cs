@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
-using NBitcoin;
-using NBitcoin.OpenAsset;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.OpenAsset;
 using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Utilities.JsonConverters

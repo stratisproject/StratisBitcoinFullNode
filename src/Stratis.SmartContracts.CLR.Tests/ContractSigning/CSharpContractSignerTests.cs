@@ -1,4 +1,4 @@
-﻿using NBitcoin;
+﻿using Stratis.Bitcoin.NBitcoin;
 using Stratis.SmartContracts.CLR.ContractSigning;
 using Stratis.SmartContracts.Core.ContractSigning;
 using Xunit;

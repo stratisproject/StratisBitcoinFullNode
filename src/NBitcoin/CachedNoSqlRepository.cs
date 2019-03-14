@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public class CachedNoSqlRepository : NoSqlRepository
     {

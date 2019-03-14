@@ -1,8 +1,8 @@
 ﻿using System;
-using NBitcoin.BouncyCastle.Math;
-using NBitcoin.Crypto;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.NBitcoin.Crypto;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     /// <summary>
     /// Nodes collect new transactions into a block, hash them into a hash tree,

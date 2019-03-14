@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
-using NBitcoin.BouncyCastle.Math.Raw;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math.Raw;
 
-namespace NBitcoin.BouncyCastle.Math.EC.Custom.Sec
+namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Math.EC.Custom.Sec
 {
     internal class SecP256K1Field
     {

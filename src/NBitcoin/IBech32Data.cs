@@ -1,4 +1,4 @@
-﻿namespace NBitcoin
+﻿namespace Stratis.Bitcoin.NBitcoin
 {
     public interface IBech32Data : IBitcoinString
     {

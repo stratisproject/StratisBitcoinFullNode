@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     /// <summary>
     /// Represent a DNS seed.

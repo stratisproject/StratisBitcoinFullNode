@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace NBitcoin.BitcoinCore
+namespace Stratis.Bitcoin.NBitcoin.BitcoinCore
 {
     public class Coins : IBitcoinSerializable
     {

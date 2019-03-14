@@ -1,5 +1,5 @@
 ﻿using System;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Nethereum.RLP;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.Core.ContractSigning;

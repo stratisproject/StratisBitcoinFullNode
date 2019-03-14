@@ -1,4 +1,4 @@
-﻿namespace NBitcoin.Protocol
+﻿namespace Stratis.Bitcoin.NBitcoin.Protocol
 {
     public class CompactVarInt : IBitcoinSerializable
     {

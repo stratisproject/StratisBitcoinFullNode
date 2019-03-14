@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using NBitcoin.Protocol;
+using Stratis.Bitcoin.NBitcoin.Protocol;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;

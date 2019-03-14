@@ -1,5 +1,5 @@
 ﻿using System;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
 
 namespace Stratis.Bitcoin.Features.ColdStaking

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using NBitcoin.BitcoinCore;
+using Stratis.Bitcoin.NBitcoin.BitcoinCore;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public interface IStandardScriptsRegistry
     {

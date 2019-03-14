@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public class TraceCorrelationScope : IDisposable
     {

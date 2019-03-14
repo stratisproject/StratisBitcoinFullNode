@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public class UnsignedList<T> : List<T>
         where T : IBitcoinSerializable, new()

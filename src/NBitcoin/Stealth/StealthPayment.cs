@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace NBitcoin.Stealth
+namespace Stratis.Bitcoin.NBitcoin.Stealth
 {
     public class StealthSpendKey
     {

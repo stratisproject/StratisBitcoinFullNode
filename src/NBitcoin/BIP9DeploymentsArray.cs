@@ -1,4 +1,4 @@
-﻿namespace NBitcoin
+﻿namespace Stratis.Bitcoin.NBitcoin
 {
     /// <summary>
     /// Contains the <see cref="ScriptVerify" /> and <see cref="Transaction.LockTimeFlags" /> flags to set

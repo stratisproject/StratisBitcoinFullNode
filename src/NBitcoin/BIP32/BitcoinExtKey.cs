@@ -1,4 +1,4 @@
-﻿namespace NBitcoin
+﻿namespace Stratis.Bitcoin.NBitcoin
 {
     public abstract class BitcoinExtKeyBase : Base58Data, IDestination
     {

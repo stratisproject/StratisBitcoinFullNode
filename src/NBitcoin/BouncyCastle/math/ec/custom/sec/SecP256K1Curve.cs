@@ -1,6 +1,6 @@
-﻿using NBitcoin.BouncyCastle.Utilities.Encoders;
+﻿using Stratis.Bitcoin.NBitcoin.BouncyCastle.Utilities.Encoders;
 
-namespace NBitcoin.BouncyCastle.Math.EC.Custom.Sec
+namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Math.EC.Custom.Sec
 {
     internal class SecP256K1Curve
         : AbstractFpCurve

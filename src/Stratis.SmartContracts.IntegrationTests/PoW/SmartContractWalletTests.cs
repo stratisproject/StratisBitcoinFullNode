@@ -5,8 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Microsoft.AspNetCore.Mvc;
-using NBitcoin;
-using NBitcoin.Networks;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.Networks;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
@@ -302,7 +302,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 sender.WaitMempoolCount(1);
                 sender.MineBlocks(1);
 
-                NBitcoin.Block block = sender.GetLastBlock();
+                Bitcoin.NBitcoin.Block block = sender.GetLastBlock();
                 Assert.Equal(3, block.Transactions.Count);
             }
         }
@@ -504,7 +504,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 node1.WaitMempoolCount(txsToLink);
                 node1.MineBlocks(1);
 
-                NBitcoin.Block lastBlock = node1.GetLastBlock();
+                Bitcoin.NBitcoin.Block lastBlock = node1.GetLastBlock();
                 Assert.Equal(txsToLink + 1, lastBlock.Transactions.Count);
 
                 // Each transaction is indeed spending the output of the transaction before

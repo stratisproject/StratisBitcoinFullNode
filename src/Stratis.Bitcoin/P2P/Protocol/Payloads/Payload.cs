@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads

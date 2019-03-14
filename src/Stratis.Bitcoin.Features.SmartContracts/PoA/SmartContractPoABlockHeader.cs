@@ -1,7 +1,7 @@
-﻿using NBitcoin;
+﻿using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.SmartContracts.Core;
-using uint256 = NBitcoin.uint256;
+using uint256 = Stratis.Bitcoin.NBitcoin.uint256;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {

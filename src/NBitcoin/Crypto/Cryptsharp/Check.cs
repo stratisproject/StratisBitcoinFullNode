@@ -19,7 +19,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 using System;
 
-namespace NBitcoin.Crypto.Internal
+namespace Stratis.Bitcoin.NBitcoin.Crypto.Internal
 {
     internal static class Check
     {

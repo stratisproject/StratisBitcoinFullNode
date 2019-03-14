@@ -1,6 +1,6 @@
 ﻿using System;
-using NBitcoin;
-using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Utilities.JsonConverters

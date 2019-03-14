@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Nethereum.RLP;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core.Receipts;

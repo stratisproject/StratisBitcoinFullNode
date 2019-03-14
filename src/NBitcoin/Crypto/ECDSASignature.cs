@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
-using NBitcoin.BouncyCastle.Asn1;
-using NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Asn1;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math;
 
-namespace NBitcoin.Crypto
+namespace Stratis.Bitcoin.NBitcoin.Crypto
 {
     public class ECDSASignature
     {

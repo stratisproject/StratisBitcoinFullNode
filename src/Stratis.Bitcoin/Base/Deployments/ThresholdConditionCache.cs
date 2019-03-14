@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Base.Deployments.Models;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;

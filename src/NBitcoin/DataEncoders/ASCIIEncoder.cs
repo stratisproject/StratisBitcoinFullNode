@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace NBitcoin.DataEncoders
+namespace Stratis.Bitcoin.NBitcoin.DataEncoders
 {
     public class ASCIIEncoder : DataEncoder
     {

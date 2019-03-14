@@ -5,7 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Miner;

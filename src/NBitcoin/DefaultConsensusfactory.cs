@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     /// <summary>
     /// A default object factory to create instances that is not block, block header or transaction.

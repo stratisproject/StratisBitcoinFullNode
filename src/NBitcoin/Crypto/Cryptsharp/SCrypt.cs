@@ -21,10 +21,10 @@ using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using NBitcoin.BouncyCastle.Crypto.Parameters;
-using NBitcoin.Crypto.Internal;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Crypto.Parameters;
+using Stratis.Bitcoin.NBitcoin.Crypto.Internal;
 
-namespace NBitcoin.Crypto
+namespace Stratis.Bitcoin.NBitcoin.Crypto
 {
     // See http://www.tarsnap.com/scrypt/scrypt.pdf for algorithm details.
     // TODO: Test on a big-endian machine and make sure it works.

@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NBitcoin.Rules;
+using Stratis.Bitcoin.NBitcoin.Rules;
 
 namespace Stratis.Bitcoin.Consensus.Rules
 {

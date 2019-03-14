@@ -3,9 +3,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using NBitcoin.Protocol;
+using Stratis.Bitcoin.NBitcoin.Protocol;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public partial class BitcoinStream
     {

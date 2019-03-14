@@ -2,10 +2,10 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using NBitcoin;
-using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 
-namespace NBitcoin.Networks
+namespace Stratis.Bitcoin.NBitcoin.Networks
 {
     /// <summary>
     /// A container for storing/retrieving known networks.

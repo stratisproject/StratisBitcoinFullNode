@@ -3,7 +3,7 @@ using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace NBitcoin.Formatters
+namespace Stratis.Bitcoin.NBitcoin.Formatters
 {
     internal abstract class RawFormatter
     {
@@ -43,7 +43,7 @@ namespace NBitcoin.Formatters
             writer.WritePropertyName(name);
             writer.WriteValue(value);
         }
-        
+
         public string ToString(Transaction transaction)
         {
             var strWriter = new StringWriter();
@@ -56,6 +56,6 @@ namespace NBitcoin.Formatters
 
             jsonWriter.Flush();
             return strWriter.ToString();
-        }     
+        }
     }
 }

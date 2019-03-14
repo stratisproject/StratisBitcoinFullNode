@@ -1,9 +1,9 @@
 using System;
-using NBitcoin.BouncyCastle.Math.EC.Endo;
-using NBitcoin.BouncyCastle.Math.EC.Multiplier;
-using NBitcoin.BouncyCastle.Math.Field;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math.EC.Endo;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math.EC.Multiplier;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math.Field;
 
-namespace NBitcoin.BouncyCastle.Math.EC
+namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Math.EC
 {
     internal class ECAlgorithms
     {

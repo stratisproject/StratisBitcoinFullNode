@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace NBitcoin.OpenAsset
+namespace Stratis.Bitcoin.NBitcoin.OpenAsset
 {
     /// <summary>
     /// Base58 representation of an asset id

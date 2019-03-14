@@ -1,7 +1,7 @@
-﻿using NBitcoin.BouncyCastle.Math;
-using NBitcoin.BouncyCastle.Security;
+﻿using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Security;
 
-namespace NBitcoin.BouncyCastle.Crypto.Signers
+namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Crypto.Signers
 {
     /**
      * Interface define calculators of K values for DSA/ECDSA.

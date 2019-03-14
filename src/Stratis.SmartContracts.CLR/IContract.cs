@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 
 namespace Stratis.SmartContracts.CLR
 {

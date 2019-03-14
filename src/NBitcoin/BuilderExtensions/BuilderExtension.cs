@@ -1,6 +1,6 @@
-﻿using NBitcoin.DataEncoders;
+﻿using Stratis.Bitcoin.NBitcoin.DataEncoders;
 
-namespace NBitcoin.BuilderExtensions
+namespace Stratis.Bitcoin.NBitcoin.BuilderExtensions
 {
     public interface ISigner
     {

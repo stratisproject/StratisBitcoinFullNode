@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public class PerformanceSnapshot
     {

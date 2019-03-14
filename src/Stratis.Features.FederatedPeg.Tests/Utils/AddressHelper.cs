@@ -1,5 +1,5 @@
 ﻿using System.Linq;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Features.FederatedPeg.NetworkHelpers;
 
 namespace Stratis.Features.FederatedPeg.Tests.Utils

@@ -1,13 +1,13 @@
 ﻿using System.Linq;
 using System.Security;
 using System.Text;
-using NBitcoin.BouncyCastle.Asn1.X9;
-using NBitcoin.BouncyCastle.Math;
-using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
 using System.Security.Cryptography;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Asn1.X9;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.NBitcoin.Crypto;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public class BitcoinEncryptedSecretNoEC : BitcoinEncryptedSecret
     {

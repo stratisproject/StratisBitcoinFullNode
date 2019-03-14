@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace NBitcoin.Protocol
+namespace Stratis.Bitcoin.NBitcoin.Protocol
 {
     public class ProtocolException : Exception
     {

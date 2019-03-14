@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules

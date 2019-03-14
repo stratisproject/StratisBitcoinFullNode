@@ -1,7 +1,7 @@
 ﻿using System;
-using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public class BitcoinWitPubKeyAddress : BitcoinAddress, IBech32Data
     {

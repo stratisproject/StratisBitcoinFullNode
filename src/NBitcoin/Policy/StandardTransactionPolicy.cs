@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace NBitcoin.Policy
+namespace Stratis.Bitcoin.NBitcoin.Policy
 {
     public class StandardTransactionPolicy : ITransactionPolicy
     {

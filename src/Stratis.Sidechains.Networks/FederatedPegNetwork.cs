@@ -1,5 +1,5 @@
-﻿using NBitcoin;
-using NBitcoin.DataEncoders;
+﻿using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 
 namespace Stratis.Sidechains.Networks

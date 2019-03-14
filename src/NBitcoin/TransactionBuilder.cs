@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using NBitcoin.BuilderExtensions;
-using NBitcoin.Crypto;
-using NBitcoin.OpenAsset;
-using NBitcoin.Policy;
-using NBitcoin.Stealth;
-using Builder = System.Func<NBitcoin.TransactionBuilder.TransactionBuildingContext, NBitcoin.IMoney>;
+using Stratis.Bitcoin.NBitcoin.BuilderExtensions;
+using Stratis.Bitcoin.NBitcoin.Crypto;
+using Stratis.Bitcoin.NBitcoin.OpenAsset;
+using Stratis.Bitcoin.NBitcoin.Policy;
+using Stratis.Bitcoin.NBitcoin.Stealth;
+using Builder = System.Func<Stratis.Bitcoin.NBitcoin.TransactionBuilder.TransactionBuildingContext, Stratis.Bitcoin.NBitcoin.IMoney>;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     [Flags]
     public enum ChangeType : int

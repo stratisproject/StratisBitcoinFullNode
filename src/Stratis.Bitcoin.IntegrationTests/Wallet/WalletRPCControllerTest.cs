@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Flurl;
 using Flurl.Http;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.BlockStore.Models;
 using Stratis.Bitcoin.Features.RPC;

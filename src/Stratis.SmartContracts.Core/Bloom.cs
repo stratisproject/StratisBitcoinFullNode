@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.SmartContracts.Core.Hashing;
 
 namespace Stratis.SmartContracts.Core

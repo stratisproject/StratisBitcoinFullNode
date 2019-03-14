@@ -1,5 +1,5 @@
 ﻿using System;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Nethereum.RLP;
 
 namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer

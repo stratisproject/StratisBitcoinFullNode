@@ -1,11 +1,11 @@
-﻿using NBitcoin.BouncyCastle.Asn1.X9;
-using NBitcoin.BouncyCastle.Math;
-using NBitcoin.BouncyCastle.Math.EC;
-using NBitcoin.BouncyCastle.Math.EC.Custom.Sec;
-using NBitcoin.BouncyCastle.Math.EC.Endo;
-using NBitcoin.BouncyCastle.Utilities.Encoders;
+﻿using Stratis.Bitcoin.NBitcoin.BouncyCastle.Asn1.X9;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math.EC;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math.EC.Custom.Sec;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math.EC.Endo;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Utilities.Encoders;
 
-namespace NBitcoin.BouncyCastle.Crypto.EC
+namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Crypto.EC
 {
     internal sealed class CustomNamedCurves
     {

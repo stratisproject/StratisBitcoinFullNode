@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using NBitcoin.Rules;
+using Stratis.Bitcoin.NBitcoin.Rules;
 using TracerAttributes;
 
 namespace Stratis.Bitcoin.Consensus.PerformanceCounters.Rules

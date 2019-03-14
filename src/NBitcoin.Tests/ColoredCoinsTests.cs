@@ -2,14 +2,14 @@
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using NBitcoin.DataEncoders;
-using NBitcoin.Networks;
-using NBitcoin.OpenAsset;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.Networks;
+using Stratis.Bitcoin.NBitcoin.OpenAsset;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
-namespace NBitcoin.Tests
+namespace Stratis.Bitcoin.NBitcoin.Tests
 {
     //https://github.com/OpenAssets/open-assets-protocol/blob/master/specification.mediawiki
     public class ColoredCoinsTests

@@ -2,10 +2,10 @@
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
-using NBitcoin;
-using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.Crypto;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using TracerAttributes;
 

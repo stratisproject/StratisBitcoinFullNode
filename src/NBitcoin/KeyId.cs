@@ -1,8 +1,8 @@
 ﻿using System;
-using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.Crypto;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public abstract class TxDestination : IDestination
     {

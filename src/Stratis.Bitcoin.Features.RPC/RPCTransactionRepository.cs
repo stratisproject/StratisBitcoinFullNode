@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 
 namespace Stratis.Bitcoin.Features.RPC
 {

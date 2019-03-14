@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using NBitcoin.BouncyCastle.Math;
-using NBitcoin.Rules;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.NBitcoin.Rules;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public interface IConsensus
     {

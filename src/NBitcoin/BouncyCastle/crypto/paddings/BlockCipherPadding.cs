@@ -1,6 +1,6 @@
-using NBitcoin.BouncyCastle.Security;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Security;
 
-namespace NBitcoin.BouncyCastle.Crypto.Paddings
+namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Crypto.Paddings
 {
     /**
      * Block cipher padders are expected to conform to this interface

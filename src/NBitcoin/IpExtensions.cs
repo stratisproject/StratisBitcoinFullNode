@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public static class IpExtensions
     {

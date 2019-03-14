@@ -18,9 +18,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endregion
 
 using System;
-using NBitcoin.Crypto.Internal;
+using Stratis.Bitcoin.NBitcoin.Crypto.Internal;
 
-namespace NBitcoin.Crypto
+namespace Stratis.Bitcoin.NBitcoin.Crypto
 {
     // Source: http://cr.yp.to/salsa20.html
     /// <summary>

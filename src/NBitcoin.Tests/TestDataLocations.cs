@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace NBitcoin.Tests
+namespace Stratis.Bitcoin.NBitcoin.Tests
 {
     public class TestDataLocations
     {

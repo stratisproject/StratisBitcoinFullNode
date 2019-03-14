@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using NBitcoin;
-using NBitcoin.BouncyCastle.Math;
-using NBitcoin.Protocol;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.NBitcoin.Protocol;
 using Stratis.Bitcoin.Networks.Deployments;
 using Stratis.Bitcoin.Networks.Policies;
 

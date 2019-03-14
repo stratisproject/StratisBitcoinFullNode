@@ -2,10 +2,10 @@
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using NBitcoin.DataEncoders;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 
-namespace NBitcoin.OpenAsset
+namespace Stratis.Bitcoin.NBitcoin.OpenAsset
 {
     public class CoinprismException : Exception
     {

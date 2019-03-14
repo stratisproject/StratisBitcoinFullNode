@@ -3,15 +3,15 @@ using System.Linq;
 using System.Threading;
 using FluentAssertions;
 using Moq;
-using NBitcoin;
-using NBitcoin.Crypto;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
-using uint256 = NBitcoin.uint256;
+using uint256 = Stratis.Bitcoin.NBitcoin.uint256;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 {

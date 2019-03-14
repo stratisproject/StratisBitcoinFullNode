@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using DBreeze;
 using DBreeze.DataTypes;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;

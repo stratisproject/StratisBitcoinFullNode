@@ -2,7 +2,7 @@
 using System.Linq;
 using FluentAssertions;
 using FluentAssertions.Common;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;

@@ -1,5 +1,5 @@
 ﻿using System.IO;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Xunit;
 

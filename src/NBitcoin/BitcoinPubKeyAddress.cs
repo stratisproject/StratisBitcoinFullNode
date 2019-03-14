@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
-using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     /// <summary>
     /// Base58 representation of a pubkey hash and base class for the representation of a script hash

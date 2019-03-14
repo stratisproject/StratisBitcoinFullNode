@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using NBitcoin.DataEncoders;
-using NBitcoin.Formatters;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.Formatters;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public partial class Block : IBitcoinSerializable
     {

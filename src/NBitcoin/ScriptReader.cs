@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using NBitcoin.DataEncoders;
-using ooo = NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
+using ooo = Stratis.Bitcoin.NBitcoin.BouncyCastle.Math;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public class Op
     {
@@ -309,7 +310,7 @@ namespace NBitcoin
 
         public static Op GetPushOp(long value)
         {
-            return GetPushOp(Utils.BigIntegerToBytes(ooo.BigInteger.ValueOf(value)));
+            return GetPushOp(Utils.BigIntegerToBytes(BigInteger.ValueOf(value)));
         }
         public static Op GetPushOp(byte[] data)
         {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Nethereum.RLP;
 using Stratis.SmartContracts.CLR.Exceptions;
 

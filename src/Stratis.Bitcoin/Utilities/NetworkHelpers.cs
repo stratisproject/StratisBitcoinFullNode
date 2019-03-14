@@ -1,6 +1,6 @@
 ﻿using System;
-using NBitcoin;
-using NBitcoin.Networks;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.Networks;
 
 namespace Stratis.Bitcoin.Utilities
 {

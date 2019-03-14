@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace NBitcoin.BitcoinCore
+namespace Stratis.Bitcoin.NBitcoin.BitcoinCore
 {
     public class CoinsView
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Security.Cryptography;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public class RandomNumberGeneratorRandom : IRandom
     {

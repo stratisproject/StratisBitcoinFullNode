@@ -9,7 +9,7 @@ using DNS.Protocol.ResourceRecords;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using NSubstitute;
 using NSubstitute.Extensions;
 using Stratis.Bitcoin.Configuration;

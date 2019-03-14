@@ -19,10 +19,10 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 using System;
 using System.IO;
-using NBitcoin.BouncyCastle.Crypto;
-using NBitcoin.Crypto.Internal;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Crypto;
+using Stratis.Bitcoin.NBitcoin.Crypto.Internal;
 
-namespace NBitcoin.Crypto
+namespace Stratis.Bitcoin.NBitcoin.Crypto
 {
     /// <summary>
     /// Implements the PBKDF2 key derivation function.

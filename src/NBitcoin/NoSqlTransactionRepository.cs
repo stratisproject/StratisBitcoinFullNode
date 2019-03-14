@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     public class NoSqlTransactionRepository : ITransactionRepository
     {

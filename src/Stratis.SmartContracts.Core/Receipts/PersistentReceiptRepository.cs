@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using DBreeze;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Configuration;
 
 namespace Stratis.SmartContracts.Core.Receipts

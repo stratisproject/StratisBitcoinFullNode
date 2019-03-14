@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DBreeze;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
@@ -242,14 +242,14 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 this.mempool = new TxMempool(dateTimeProviderSet, new BlockPolicyEstimator(new MempoolSettings(this.NodeSettings), this.loggerFactory, this.NodeSettings), this.loggerFactory, this.NodeSettings);
                 this.mempoolLock = new MempoolSchedulerLock();
 
-                var blocks = new List<NBitcoin.Block>();
+                var blocks = new List<Bitcoin.NBitcoin.Block>();
                 this.txFirst = new List<Transaction>();
 
                 this.Nonce = 0;
 
                 for (int i = 0; i < this.blockinfo.Count; ++i)
                 {
-                    NBitcoin.Block block = this.network.CreateBlock();
+                    Bitcoin.NBitcoin.Block block = this.network.CreateBlock();
                     block.Header.HashPrevBlock = this.consensusManager.Tip.HashBlock;
                     ((SmartContractBlockHeader)block.Header).HashStateRoot = ((SmartContractBlockHeader)genesis.Header).HashStateRoot;
                     block.Header.Version = 1;
@@ -273,7 +273,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                         block.Header.Nonce = ++this.Nonce;
 
                     // Serialization sets the BlockSize property.
-                    block = NBitcoin.Block.Load(block.ToBytes(), this.network);
+                    block = Bitcoin.NBitcoin.Block.Load(block.ToBytes(), this.network);
 
                     var res = await this.consensusManager.BlockMinedAsync(block);
                     if (res == null)

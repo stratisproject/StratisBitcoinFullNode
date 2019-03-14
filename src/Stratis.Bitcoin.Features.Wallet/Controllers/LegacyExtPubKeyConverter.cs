@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
-using NBitcoin;
-using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 
 namespace Stratis.Bitcoin.Features.Wallet.Controllers
 {

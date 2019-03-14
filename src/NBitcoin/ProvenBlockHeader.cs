@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.NBitcoin
 {
     /// <summary>
     /// <para>

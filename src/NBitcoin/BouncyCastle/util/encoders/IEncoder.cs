@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace NBitcoin.BouncyCastle.Utilities.Encoders
+namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Utilities.Encoders
 {
     /**
      * Encode and decode byte arrays (typically from binary to 7-bit ASCII

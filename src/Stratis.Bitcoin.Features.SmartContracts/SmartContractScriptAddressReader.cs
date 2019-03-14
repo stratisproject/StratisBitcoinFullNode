@@ -1,5 +1,5 @@
 ﻿using CSharpFunctionalExtensions;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.SmartContracts.CLR;

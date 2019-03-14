@@ -1,4 +1,4 @@
-﻿using NBitcoin;
+﻿using Stratis.Bitcoin.NBitcoin;
 
 namespace Stratis.Bitcoin.Mining
 {

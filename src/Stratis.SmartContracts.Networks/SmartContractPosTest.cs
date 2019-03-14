@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using NBitcoin;
-using NBitcoin.BouncyCastle.Math;
-using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.SmartContracts.PoS;
 using Stratis.SmartContracts.Networks.Policies;
 
@@ -29,7 +29,7 @@ namespace Stratis.SmartContracts.Networks
 
             var consensusFactory = new SmartContractPosConsensusFactory();
 
-            NBitcoin.Block genesis = SmartContractNetwork.CreateGenesis(consensusFactory, 1296688602, 414098458, 0x1d00ffff, 4, Money.Coins(50m));
+            Bitcoin.NBitcoin.Block genesis = SmartContractNetwork.CreateGenesis(consensusFactory, 1296688602, 414098458, 0x1d00ffff, 4, Money.Coins(50m));
 
             this.Genesis = genesis;
 
@@ -51,7 +51,7 @@ namespace Stratis.SmartContracts.Networks
 
             var bip9Deployments = new NoBIP9Deployments();
 
-            this.Consensus = new NBitcoin.Consensus(
+            this.Consensus = new Bitcoin.NBitcoin.Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
                 coinType: 1,

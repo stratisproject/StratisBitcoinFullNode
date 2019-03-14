@@ -5,7 +5,7 @@ using FluentAssertions;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
-namespace NBitcoin.Tests
+namespace Stratis.Bitcoin.NBitcoin.Tests
 {
     public class ProvenBlockHeaderTests : TestBase
     {

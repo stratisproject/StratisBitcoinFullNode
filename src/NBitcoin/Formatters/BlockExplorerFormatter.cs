@@ -1,8 +1,8 @@
-﻿using NBitcoin.DataEncoders;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 
-namespace NBitcoin.Formatters
+namespace Stratis.Bitcoin.NBitcoin.Formatters
 {
     internal class BlockExplorerFormatter : RawFormatter
     {

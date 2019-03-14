@@ -1,5 +1,5 @@
 ﻿using System.Linq;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Controllers.Models;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Models

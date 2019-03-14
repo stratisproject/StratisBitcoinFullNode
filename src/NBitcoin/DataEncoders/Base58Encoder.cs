@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
-using NBitcoin.BouncyCastle.Math;
-using NBitcoin.Crypto;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.NBitcoin.Crypto;
 
-namespace NBitcoin.DataEncoders
+namespace Stratis.Bitcoin.NBitcoin.DataEncoders
 {
     public class Base58CheckEncoder : Base58Encoder
     {

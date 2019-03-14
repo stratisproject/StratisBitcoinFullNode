@@ -1,6 +1,6 @@
 ﻿using System;
-using NBitcoin;
-using NBitcoin.Crypto;
+using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.Crypto;
 
 namespace Stratis.SmartContracts.Core.ContractSigning
 {

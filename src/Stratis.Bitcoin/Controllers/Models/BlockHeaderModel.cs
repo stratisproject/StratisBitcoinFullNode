@@ -1,5 +1,5 @@
-﻿using NBitcoin;
-using NBitcoin.DataEncoders;
+﻿using Stratis.Bitcoin.NBitcoin;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Utilities;
 

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using NSubstitute;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Primitives;

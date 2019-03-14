@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using TracerAttributes;
 
 namespace Stratis.Bitcoin.Utilities.Extensions

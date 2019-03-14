@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
-using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 using Xunit;
 
-namespace NBitcoin.Tests
+namespace Stratis.Bitcoin.NBitcoin.Tests
 {
     [Trait("UnitTest", "UnitTest")]
     public class Bech32Test

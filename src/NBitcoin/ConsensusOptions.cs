@@ -1,4 +1,4 @@
-﻿namespace NBitcoin
+﻿namespace Stratis.Bitcoin.NBitcoin
 {
     /// <summary>
     /// An extension to <see cref="Consensus"/> to enable additional options to the consensus data.

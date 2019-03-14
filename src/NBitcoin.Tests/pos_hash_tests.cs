@@ -1,12 +1,12 @@
 ﻿using System.Diagnostics;
 using HashLib;
-using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.NBitcoin.Crypto;
+using Stratis.Bitcoin.NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
-using Hashes = NBitcoin.Crypto.Hashes;
+using Hashes = Stratis.Bitcoin.NBitcoin.Crypto.Hashes;
 
-namespace NBitcoin.Tests
+namespace Stratis.Bitcoin.NBitcoin.Tests
 {
     public class Pos_hash_tests
     {
@@ -81,7 +81,7 @@ namespace NBitcoin.Tests
         [Trait("Core", "Core")]
         public void siphash()
         {
-            var hasher = new Hashes.SipHasher(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
+            var hasher = new Crypto.Hashes.SipHasher(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
             Assert.Equal(0x726fdb47dd0e0e31UL, hasher.Finalize());
             var t0 = new byte[] { 0 };
             hasher.Write(t0);
@@ -105,17 +105,17 @@ namespace NBitcoin.Tests
             hasher.Write(0x2F2E2D2C2B2A2928UL);
             Assert.Equal(0xe612a3cb9ecba951UL, hasher.Finalize());
 
-            Assert.Equal(0x7127512f72f27cceUL, Hashes.SipHash(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL, new uint256("1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100")));
+            Assert.Equal(0x7127512f72f27cceUL, Crypto.Hashes.SipHash(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL, new uint256("1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100")));
 
             // Check test vectors from spec, one byte at a time
-            var hasher2 = new Hashes.SipHasher(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
+            var hasher2 = new Crypto.Hashes.SipHasher(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
             for (byte x = 0; x < this.siphash_4_2_testvec.Length; ++x)
             {
                 Assert.Equal(hasher2.Finalize(), this.siphash_4_2_testvec[x]);
                 hasher2.Write(new byte[] { x });
             }
             // Check test vectors from spec, eight bytes at a time
-            var hasher3 = new Hashes.SipHasher(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
+            var hasher3 = new Crypto.Hashes.SipHasher(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
             for (int x = 0; x < this.siphash_4_2_testvec.Length; x += 8)
             {
                 Assert.Equal(hasher3.Finalize(), this.siphash_4_2_testvec[x]);
@@ -141,14 +141,14 @@ namespace NBitcoin.Tests
         public void hash160()
         {
             var data = new byte[] { 1, 2, 3, 4 };
-            uint160 result = Hashes.Hash160(data);
+            uint160 result = Crypto.Hashes.Hash160(data);
             Assert.Equal("706ea1768da7f0c489bf931b362c2d26d8cbd2ec", result.ToString());
         }
 
         [DebuggerHidden]
         private void T(uint expected, uint seed, string data)
         {
-            Assert.Equal(Hashes.MurmurHash3(seed, Encoders.Hex.DecodeData(data)), expected);
+            Assert.Equal(Crypto.Hashes.MurmurHash3(seed, Encoders.Hex.DecodeData(data)), expected);
         }
 
 

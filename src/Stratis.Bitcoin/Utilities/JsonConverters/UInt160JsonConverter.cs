@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Utilities.JsonConverters

@@ -1,4 +1,4 @@
-﻿using NBitcoin;
+﻿using Stratis.Bitcoin.NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 

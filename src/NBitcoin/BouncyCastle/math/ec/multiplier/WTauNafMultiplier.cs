@@ -1,7 +1,7 @@
 using System;
-using NBitcoin.BouncyCastle.Math.EC.Abc;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Math.EC.Abc;
 
-namespace NBitcoin.BouncyCastle.Math.EC.Multiplier
+namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Math.EC.Multiplier
 {
     /**
     * Class implementing the WTNAF (Window

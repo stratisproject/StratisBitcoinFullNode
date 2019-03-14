@@ -6,7 +6,7 @@ using CSharpFunctionalExtensions;
 using Flurl;
 using Flurl.Http;
 using Microsoft.AspNetCore.Mvc;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace NBitcoin.Stealth
+namespace Stratis.Bitcoin.NBitcoin.Stealth
 {
     public class BitField
     {

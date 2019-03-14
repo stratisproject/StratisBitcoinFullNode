@@ -1,4 +1,4 @@
-﻿using NBitcoin;
+﻿using Stratis.Bitcoin.NBitcoin;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Tests

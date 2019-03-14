@@ -1,6 +1,6 @@
-using NBitcoin.BouncyCastle.Asn1.X9;
+using Stratis.Bitcoin.NBitcoin.BouncyCastle.Asn1.X9;
 
-namespace NBitcoin.BouncyCastle.Asn1.Sec
+namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Asn1.Sec
 {
     internal abstract class SecObjectIdentifiers
     {

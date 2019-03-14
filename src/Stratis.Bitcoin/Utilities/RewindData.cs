@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Text;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 
 namespace Stratis.Bitcoin.Utilities
 {

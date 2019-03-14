@@ -1,4 +1,4 @@
-namespace NBitcoin.BouncyCastle.Asn1.X9
+namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Asn1.X9
 {
     internal abstract class X9ECParametersHolder
     {

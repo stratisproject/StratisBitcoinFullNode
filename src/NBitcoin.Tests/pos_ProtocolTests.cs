@@ -1,4 +1,4 @@
-﻿namespace NBitcoin.Tests
+﻿namespace Stratis.Bitcoin.NBitcoin.Tests
 {
     public class pos_ProtocolTests
     {

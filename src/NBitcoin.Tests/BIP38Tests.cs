@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
-namespace NBitcoin.Tests
+namespace Stratis.Bitcoin.NBitcoin.Tests
 {
     //https://github.com/bitcoin/bips/blob/master/bip-0038.mediawiki
     public class BIP38Tests

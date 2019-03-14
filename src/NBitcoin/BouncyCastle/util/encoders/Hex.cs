@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace NBitcoin.BouncyCastle.Utilities.Encoders
+namespace Stratis.Bitcoin.NBitcoin.BouncyCastle.Utilities.Encoders
 {
     /// <summary>
     /// Class to decode and encode Hex.

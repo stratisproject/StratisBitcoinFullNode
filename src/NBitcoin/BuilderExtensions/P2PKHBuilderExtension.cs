@@ -1,4 +1,4 @@
-﻿namespace NBitcoin.BuilderExtensions
+﻿namespace Stratis.Bitcoin.NBitcoin.BuilderExtensions
 {
     public class P2PKHBuilderExtension : BuilderExtension
     {

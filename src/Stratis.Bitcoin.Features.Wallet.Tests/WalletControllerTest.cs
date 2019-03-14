@@ -6,7 +6,7 @@ using System.Net;
 using System.Security;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using NBitcoin;
+using Stratis.Bitcoin.NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
