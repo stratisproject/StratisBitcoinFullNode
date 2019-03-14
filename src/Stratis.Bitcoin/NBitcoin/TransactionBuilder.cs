@@ -7,10 +7,11 @@ using Stratis.Bitcoin.NBitcoin.Crypto;
 using Stratis.Bitcoin.NBitcoin.OpenAsset;
 using Stratis.Bitcoin.NBitcoin.Policy;
 using Stratis.Bitcoin.NBitcoin.Stealth;
-using Builder = System.Func<Stratis.Bitcoin.NBitcoin.TransactionBuilder.TransactionBuildingContext, Stratis.Bitcoin.NBitcoin.IMoney>;
 
 namespace Stratis.Bitcoin.NBitcoin
 {
+    using Builder = System.Func<Stratis.Bitcoin.NBitcoin.TransactionBuilder.TransactionBuildingContext, Stratis.Bitcoin.NBitcoin.IMoney>;
+
     [Flags]
     public enum ChangeType : int
     {
