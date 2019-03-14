@@ -448,6 +448,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="trxList">List of transactions.</param>
         private async Task SendAsTxInventoryAsync(INetworkPeer peer, List<uint256> trxList)
         {
+            //ToDo: Refactor this to match SendAsBlockInventoryAsync if that design is approved
             var queue = new Queue<InventoryVector>(trxList.Select(s => new InventoryVector(peer.AddSupportedOptions(InventoryType.MSG_TX), s)));
             while (queue.Count > 0)
             {

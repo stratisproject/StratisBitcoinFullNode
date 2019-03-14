@@ -331,11 +331,25 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private async Task SendAsBlockInventoryAsync(INetworkPeer peer, List<ChainedHeader> blocks)
         {
-            // TODO please don't use queue here. Refactor it.
-            var queue = new Queue<InventoryVector>(blocks.Select(s => new InventoryVector(InventoryType.MSG_BLOCK, s.HashBlock)));
-            while (queue.Count > 0)
+            int blocksOffset = 0;
+            //Continue the loop until we send all data
+            while (blocksOffset < blocks.Count)
             {
-                InventoryVector[] items = queue.TakeAndRemove(ConnectionManager.MaxInventorySize).ToArray();
+                //Allocate space for an array with up to ConnectionManager.MaxInventorySize elements
+                InventoryVector[] items;
+                if ((blocks.Count - blocksOffset) > ConnectionManager.MaxInventorySize)
+                    items = new InventoryVector[ConnectionManager.MaxInventorySize];
+                else
+                    items = new InventoryVector[(blocks.Count - blocksOffset) % (ConnectionManager.MaxInventorySize + 1)];
+
+                //Create InventoryVectors and put them into the array
+                for (int i = 0; i < items.Length; i++)
+                {
+                    items[i] = new InventoryVector(InventoryType.MSG_BLOCK, blocks[i + blocksOffset].HashBlock);
+                }
+
+                blocksOffset += items.Length;
+
                 if (peer.IsConnected)
                 {
                     this.logger.LogTrace("Sending inventory message to peer '{0}'.", peer.RemoteSocketEndpoint);
