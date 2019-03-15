@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -407,39 +406,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         private bool MoneyRange(long value)
         {
             return ((value >= 0) && (value <= this.Consensus.MaxMoney));
-        }
-
-        /// <summary>
-        /// Gets the block weight.
-        /// </summary>
-        /// <remarks>
-        /// This implements the <c>weight = (stripped_size * 4) + witness_size</c> formula, using only serialization with and without witness data.
-        /// As witness_size is equal to total_size - stripped_size, this formula is identical to: <c>weight = (stripped_size * 3) + total_size</c>.
-        /// </remarks>
-        /// <param name="block">Block that we get weight of.</param>
-        /// <returns>Block weight.</returns>
-        /// TODO: this is a duplicate of the same method in BlockSizeRule <see cref="BlockSizeRule.GetBlockWeight"/>
-        public long GetBlockWeight(Block block)
-        {
-            return this.GetSize(block, TransactionOptions.None)
-                   * (this.ConsensusOptions.WitnessScaleFactor - 1)
-                   + this.GetSize(block, TransactionOptions.Witness);
-        }
-
-        /// <summary>
-        /// Gets serialized size of <paramref name="data"/> in bytes.
-        /// </summary>
-        /// <param name="data">Data that we calculate serialized size of.</param>
-        /// <param name="options">Serialization options.</param>
-        /// <returns>Serialized size of <paramref name="data"/> in bytes.</returns>
-        /// TODO: this is a duplicate of the same method in BlockSizeRule <see cref="BlockSizeRule.GetSize"/>
-        private int GetSize(IBitcoinSerializable data, TransactionOptions options)
-        {
-            var bms = new BitcoinStream(Stream.Null, true);
-            bms.TransactionOptions = options;
-            bms.ConsensusFactory = this.Parent.Network.Consensus.ConsensusFactory;
-            data.ReadWrite(bms);
-            return (int)bms.Counter.WrittenBytes;
         }
 
         /// <summary>

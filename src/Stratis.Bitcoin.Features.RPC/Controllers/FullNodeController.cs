@@ -343,21 +343,23 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
         /// <summary>
         /// RPC method for returning a block.
+        /// <para>
         /// Supports Json format by default, and optionally raw (hex) format by supplying <c>false</c> to <see cref="isJsonFormat"/>.
+        /// </para>
         /// </summary>
         /// <param name="blockHash">Hash of block to find.</param>
-        /// <param name="isJsonFormat">Whether to output in raw format or in Json format.</param>
-        /// <returns>The block according to format specified in <see cref="isJsonFormat"/></returns>
+        /// <param name="verbosity">0 for hex encoded data, 1 for a json object, and 2 for json object with transaction data.</param>
+        /// <returns>The block according to format specified in <see cref="verbosity"/></returns>
         [ActionName("getblock")]
         [ActionDescription("Returns the block in hex, given a block hash.")]
-        public async Task<object> GetBlockAsync(string blockHash, bool isJsonFormat = true)
+        public async Task<object> GetBlockAsync(string blockHash, int verbosity = 0)
         {
             Block block = this.blockStore != null ? await this.blockStore.GetBlockAsync(uint256.Parse(blockHash)).ConfigureAwait(false) : null;
 
-            if (!isJsonFormat)
-                return block;
+            if (verbosity == 0)
+                return block?.ToHex(this.Network);
 
-            return new BlockModel(block, this.Chain);
+            return new BlockModel(block, this.Chain.GetBlock(block.GetHash()), this.Chain.Tip, this.Network, verbosity);
         }
 
         [ActionName("getnetworkinfo")]
