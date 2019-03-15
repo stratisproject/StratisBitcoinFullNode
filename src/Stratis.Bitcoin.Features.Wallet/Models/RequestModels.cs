@@ -51,6 +51,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// <summary>
         /// An optional additional seed, which is joined together with the <see cref="Mnemonic"/>
         /// when the wallet is created.
+        /// Although you will be prompted to enter a passphrase, an empty string is still valid.
         /// </summary>
         /// <remarks>
         /// The passphrase can be an empty string.
@@ -187,8 +188,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
         /// <summary>
         /// An optional string that can be used to match different data in the transaction records.
-        /// It is possible to match on the following: the transaction ID, a Base58 version of the transaction
-        /// ID, and the Base 58 destination address to which a payment was made. (i.e. the address supplied to a UTXO
+        /// It is possible to match on the following: the transaction ID, the address at which funds where received,
+        /// and the address at which funds where sent. (i.e. the address supplied to a UTXO
         /// generated for a transaction out). 
         /// </summary>
         [JsonProperty(PropertyName = "q")]
