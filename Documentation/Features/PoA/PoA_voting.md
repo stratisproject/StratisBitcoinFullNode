@@ -29,3 +29,13 @@ Voting works like that:
 
 
 
+
+
+### Important architectural details
+
+Because federation can be modified we can't validate all the headers we can download since at some point header might be signed by a federation member we don't yet know about and therefore we can't validate the signature. 
+
+To solve this max reorg was introduced to PoA network. Voting result is executed only after max reorg blocks passes. This is needed to make sure that we have enough data to know how federation will look like at any point in the future starting from CT + 1 till CT + max reorg. This gives us guarantee that max reorg headers in from of consensus can always be verified. This logic is in `PoAHeaderSignatureRule`.
+
+Headers that are beyond max reorg from consensus tip and contain a signature that is invalid are marked as insufficient and will be validated again when consensus advances.
+
