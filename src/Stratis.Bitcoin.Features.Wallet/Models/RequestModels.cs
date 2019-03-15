@@ -189,8 +189,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// <summary>
         /// An optional string that can be used to match different data in the transaction records.
         /// It is possible to match on the following: the transaction ID, the address at which funds where received,
-        /// and the address at which funds where sent. (i.e. the address supplied to a UTXO
-        /// generated for a transaction out). 
+        /// and the address to which funds where sent.
         /// </summary>
         [JsonProperty(PropertyName = "q")]
         public string SearchQuery { get; set; }
