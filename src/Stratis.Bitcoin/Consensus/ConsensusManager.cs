@@ -79,6 +79,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public IConsensusRuleEngine ConsensusRules { get; private set; }
 
+        /// <inheritdoc />
+        public BestChainIndexer BestChainIndexer { get; }
+
         /// <summary>
         /// A container of call backs used by the download processes.
         /// </summary>
@@ -190,6 +193,7 @@ namespace Stratis.Bitcoin.Consensus
             this.performanceCounter = new ConsensusManagerPerformanceCounter();
             this.ibdState = ibdState;
 
+            this.BestChainIndexer = new BestChainIndexer(this);
             this.blockPuller = blockPuller;
 
             this.maxUnconsumedBlocksDataBytes = consensusSettings.MaxBlockMemoryInMB * 1024 * 1024;
@@ -236,6 +240,7 @@ namespace Stratis.Bitcoin.Consensus
             this.chainedHeaderTree.Initialize(pendingTip);
 
             this.SetConsensusTip(pendingTip);
+            this.BestChainIndexer.Initialize(pendingTip);
 
             this.blockPuller.Initialize(this.BlockDownloaded);
 
@@ -707,6 +712,8 @@ namespace Stratis.Bitcoin.Consensus
                     this.SetConsensusTipInternalLocked(current.Previous);
                 }
 
+                this.BestChainIndexer.RemoveTip(current);
+
                 var disconnectedBlock = new ChainedHeaderBlock(block, current);
 
                 disconnectedBlocks.Add(disconnectedBlock);
@@ -755,6 +762,8 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         this.SetConsensusTipInternalLocked(lastValidatedBlockHeader);
                     }
+
+                    this.BestChainIndexer.AddTip(lastValidatedBlockHeader);
 
                     if (this.network.Consensus.MaxReorgLength != 0)
                     {
