@@ -64,8 +64,12 @@ namespace Stratis.Bitcoin.EventBus
         /// <inheritdoc />
         public void Unsubscribe(SubscriptionToken subscriptionToken)
         {
+            // Ignore null token
             if (subscriptionToken == null)
-                throw new ArgumentNullException(nameof(subscriptionToken));
+            {
+                this.logger.LogDebug("Unsubscribe called with a null token, ignored.");
+                return;
+            }
 
             lock (this.subscriptionsLock)
             {
