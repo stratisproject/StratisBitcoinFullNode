@@ -264,31 +264,32 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <param name="hash">Hash of the block.</param>
         /// <param name="isJsonFormat">Indicates whether to provide data in Json or binary format.</param>
         /// <returns>The block header rpc format.</returns>
-        /// <exception cref="NotImplementedException">Thrown if isJsonFormat = false</exception>
         /// <remarks>The binary format is not supported with RPC.</remarks>
         [ActionName("getblockheader")]
         [ActionDescription("Gets the block header of the block identified by the hash.")]
-        public BlockHeaderModel GetBlockHeader(string hash, bool isJsonFormat = true)
+        public object GetBlockHeader(string hash, bool isJsonFormat = true)
         {
             Guard.NotNull(hash, nameof(hash));
 
             this.logger.LogDebug("RPC GetBlockHeader {0}", hash);
-
-            if (!isJsonFormat)
-            {
-                this.logger.LogError("Binary serialization is not supported for RPC '{0}'.", nameof(this.GetBlockHeader));
-                throw new NotImplementedException();
-            }
-
-            BlockHeaderModel model = null;
+            
             if (this.Chain != null)
             {
                 BlockHeader blockHeader = this.Chain.GetBlock(uint256.Parse(hash))?.Header;
                 if (blockHeader != null)
-                    model = new BlockHeaderModel(blockHeader);
+                {
+                    if (isJsonFormat)
+                    {
+                        return new BlockHeaderModel(blockHeader);
+                    }
+                    else
+                    {
+                        return blockHeader.ToHex(this.Network);
+                    }
+                }
             }
 
-            return model;
+            return null;
         }
 
         /// <summary>
