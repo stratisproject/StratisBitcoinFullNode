@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
@@ -21,14 +22,16 @@ namespace Stratis.Bitcoin.Features.Wallet
 {
     public class WalletRPCController : FeatureController
     {
-        /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
+        private readonly IBlockStore blockStore;
+
+        /// <summary>Wallet broadcast manager.</summary>
+        private readonly IBroadcasterManager broadcasterManager;
 
         /// <summary>Full node.</summary>
         private readonly IFullNode fullNode;
 
-        /// <summary>Wallet broadcast manager.</summary>
-        private readonly IBroadcasterManager broadcasterManager;
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
 
         /// <summary>Wallet manager.</summary>
         private readonly IWalletManager walletManager;
@@ -38,21 +41,25 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly WalletSettings walletSettings;
 
-        public WalletRPCController(IWalletManager walletManager, 
-            IWalletTransactionHandler walletTransactionHandler, 
-            IFullNode fullNode, 
+        public WalletRPCController(
+            IBlockStore blockStore,
             IBroadcasterManager broadcasterManager,
-            IConsensusManager consensusManager,
             ConcurrentChain chain,
+            IConsensusManager consensusManager,
+            IFullNode fullNode,
             ILoggerFactory loggerFactory,
-            WalletSettings walletSettings) : base(fullNode: fullNode, consensusManager: consensusManager, chain: chain)
+            Network network,
+            IWalletManager walletManager,
+            WalletSettings walletSettings,
+            IWalletTransactionHandler walletTransactionHandler) : base(fullNode: fullNode, consensusManager: consensusManager, chain: chain, network: network)
         {
-            this.walletManager = walletManager;
-            this.walletTransactionHandler = walletTransactionHandler;
-            this.fullNode = fullNode;
+            this.blockStore = blockStore;
             this.broadcasterManager = broadcasterManager;
+            this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.walletManager = walletManager;
             this.walletSettings = walletSettings;
+            this.walletTransactionHandler = walletTransactionHandler;
         }
 
         [ActionName("walletpassphrase")]
@@ -92,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             TransactionBuildContext context = new TransactionBuildContext(this.fullNode.Network)
             {
                 AccountReference = this.GetAccount(),
-                Recipients = new [] {new Recipient { Amount = Money.Coins(amount), ScriptPubKey = address.ScriptPubKey } }.ToList(),
+                Recipients = new[] { new Recipient { Amount = Money.Coins(amount), ScriptPubKey = address.ScriptPubKey } }.ToList(),
                 CacheSecret = false
             };
 
@@ -226,7 +233,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             ChainedHeaderBlock chainedHeaderBlock = null;
             if (blockHash != null)
             {
-                await this.ConsensusManager.GetOrDownloadBlocksAsync(new List<uint256> {blockHash}, b => { chainedHeaderBlock = b; });
+                await this.ConsensusManager.GetOrDownloadBlocksAsync(new List<uint256> { blockHash }, b => { chainedHeaderBlock = b; });
             }
 
             Block block = null;
@@ -247,7 +254,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 hex = transactionFromStore.ToHex();
 
             }
-            else if(transactionFromWallet != null)
+            else if (transactionFromWallet != null)
             {
                 transactionTime = transactionFromWallet.CreationTime;
                 isGenerated = transactionFromWallet.IsCoinBase == true || transactionFromWallet.IsCoinStake == true;
@@ -268,7 +275,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 Amount = totalAmount.ToDecimal(MoneyUnit.BTC),
                 Fee = null,// TODO this still needs to be worked on.
                 Confirmations = blockHeight != null ? this.ConsensusManager.Tip.Height - blockHeight.Value + 1 : 0,
-                Isgenerated = isGenerated ? true : (bool?) null,
+                Isgenerated = isGenerated ? true : (bool?)null,
                 BlockHash = blockHash,
                 BlockIndex = blockIndex ?? block?.Transactions.FindIndex(t => t.GetHash() == trxid),
                 BlockTime = block?.Header.BlockTime.ToUnixTimeSeconds(),
@@ -319,6 +326,206 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return model;
+        }
+
+        [ActionName("listaddressgroupings")]
+        [ActionDescription("Returns a list of grouped addresses which have had their common ownership made public by common use as inputs or as the resulting change in past transactions.")]
+        public async Task<AddressGroupingModel[]> ListAddressGroupings(string walletName, CoinType coinType)
+        {
+            //Get the wallet to check.
+            var wallet = this.walletManager.GetWallet(walletName);
+
+            //Get all the address groupings.
+            var addressGroupings = await GetAddressGroupingsAsync(wallet, coinType);
+
+            var addressGroupingModels = new List<AddressGroupingModel>();
+
+            foreach (var addressGrouping in addressGroupings)
+            {
+                foreach (var address in addressGrouping)
+                {
+                    var balance = this.walletManager.GetAddressBalance(address.ToString());
+                    var addressGroupingModel = new AddressGroupingModel()
+                    {
+                        Address = BitcoinAddress.Create(address.ToString(), this.Network),
+                        Amount = balance.AmountConfirmed
+                    };
+
+                    addressGroupingModels.Add(addressGroupingModel);
+                }
+            }
+
+            return addressGroupingModels.ToArray();
+        }
+
+        /// <summary>
+        /// Please see https://github.com/bitcoin/bitcoin/blob/726d0668ff780acb59ab0200359488ce700f6ae6/src/wallet/wallet.cpp#L3641
+        /// </summary>
+        /// <param name="wallet">The wallet to check.</param>
+        /// <param name="coinType">The cointype for this wallet.</param>
+        /// <returns>A list of base 58 addresses.</returns>
+        private async Task<List<List<BitcoinPubKeyAddress>>> GetAddressGroupingsAsync(Wallet wallet, CoinType coinType)
+        {
+            //Get all the transaction data records for this wallet.
+            var transactions = wallet.GetAllTransactionsByCoinType(coinType);
+
+            var groupings = new List<List<BitcoinPubKeyAddress>>();
+
+            foreach (var transaction in transactions)
+            {
+                var tx = await this.blockStore.GetTransactionByIdAsync(transaction.Id);
+                if (tx.Inputs.Count > 0)
+                {
+                    var addressGroupBase58 = new List<BitcoinPubKeyAddress>();
+
+                    // Group all input addresses with each other.
+                    foreach (var txIn in tx.Inputs)
+                    {
+                        if (!await IsTxInMineAsync(wallet, coinType, transactions, txIn))
+                            continue;
+
+                        // Get the address.
+                        var prevTransactionData = transactions.FirstOrDefault(t => t.Id == txIn.PrevOut.Hash);
+                        var prevTransaction = await this.blockStore.GetTransactionByIdAsync(prevTransactionData.Id);
+                        var prevTransactionScriptPubkey = prevTransaction.Outputs[txIn.PrevOut.N].ScriptPubKey;
+
+                        var addressBase58 = GetBase58AddressFromScript(prevTransactionScriptPubkey);
+                        if (addressBase58 == null)
+                            continue;
+
+                        addressGroupBase58.Add(addressBase58);
+                    }
+
+                    // Group change addresses with input addresses.
+                    if (addressGroupBase58.Any())
+                    {
+                        foreach (var txOut in tx.Outputs)
+                        {
+                            var txOutAddressBase58 = GetBase58AddressFromScript(txOut.ScriptPubKey);
+                            if (txOutAddressBase58 != null)
+                            {
+                                if (IsChange(wallet, coinType, txOutAddressBase58))
+                                    addressGroupBase58.Add(txOutAddressBase58);
+                            }
+                        }
+
+                        groupings.Add(addressGroupBase58);
+                    }
+                }
+
+                // Group lone addresses by themselves.
+                foreach (var txOut in tx.Outputs)
+                {
+                    if (IsAddressMine(wallet, txOut.ScriptPubKey, coinType))
+                    {
+                        var grouping = new List<BitcoinPubKeyAddress>();
+
+                        var addressBase58 = GetBase58AddressFromScript(txOut.ScriptPubKey);
+                        if (addressBase58 == null)
+                            continue;
+
+                        grouping.Add(addressBase58);
+
+                        groupings.Add(grouping);
+                    }
+                }
+            }
+
+            var uniqueGroupings = new List<List<BitcoinPubKeyAddress>>();
+            var setMap = new Dictionary<BitcoinPubKeyAddress, List<BitcoinPubKeyAddress>>();
+            foreach (var group in groupings)
+            {
+                var hits = new List<List<BitcoinPubKeyAddress>>();
+                foreach (var address in group)
+                {
+                    var mappedEntry = setMap.FirstOrDefault(m => m.Key == address);
+                    if (mappedEntry.Value != null)
+                        hits.Add(mappedEntry.Value);
+
+                    var merged = new List<BitcoinPubKeyAddress>(group);
+                    foreach (var hit in hits)
+                    {
+                        merged.AddRange(hit);
+                        uniqueGroupings.Remove(hit);
+                    }
+
+                    uniqueGroupings.Add(merged);
+
+                    foreach (var item in merged)
+                    {
+                        setMap[item] = merged;
+                    }
+                }
+            }
+
+            return uniqueGroupings;
+        }
+
+        private BitcoinPubKeyAddress GetBase58AddressFromScript(Script script)
+        {
+            PubKey payToPubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(script);
+
+            uint160 address = null;
+
+            if (payToPubKey != null)
+                address = new uint160(payToPubKey.Hash.ToBytes());
+
+            if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(script))
+                address = new uint160(PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script).ToBytes());
+
+            if (address != null)
+                return new BitcoinPubKeyAddress(new KeyId(address), this.Network);
+
+            return null;
+        }
+
+        /// <summary>
+        /// This will check the wallet's list of <see cref="HdAccount.InternalAddress"/>es to see if this address is
+        /// an address that received change.
+        /// </summary>
+        /// <param name="wallet">The wallet to use.</param>
+        /// <param name="coinType">The coin type associated with the wallet; Stratis or Bitcoin.</param>
+        /// <param name="txOutAddressBase58">The base58 address to verify from the <see cref="TxOut"/>.</param>
+        /// <returns><c>true</c> if the <paramref name="txOutAddressBase58"/> is a change address.</returns>
+        private bool IsChange(Wallet wallet, CoinType coinType, BitcoinPubKeyAddress txOutAddressBase58)
+        {
+            var internalAddresses = wallet.GetAccountsByCoinType(coinType).SelectMany(a => a.InternalAddresses);
+            var result = internalAddresses.FirstOrDefault(ia => ia.Address == txOutAddressBase58.ToString());
+            return result != null;
+        }
+
+        private async Task<bool> IsTxInMineAsync(Wallet wallet, CoinType coinType, IEnumerable<TransactionData> transactions, TxIn txIn)
+        {
+            var previousTransaction = transactions.FirstOrDefault(t => t.Id == txIn.PrevOut.Hash);
+            if (previousTransaction != null)
+            {
+                var prevTx = await this.blockStore.GetTransactionByIdAsync(previousTransaction.Id);
+                if (txIn.PrevOut.N < prevTx.Outputs.Count)
+                {
+                    // At this point we need to check if the scriptPubkey is in our wallet.
+                    // see: https://github.com/bitcoin/bitcoin/blob/011c39c2969420d7ca8b40fbf6f3364fe72da2d0/src/script/ismine.cpp
+
+                    var txOutScriptPubKey = prevTx.Outputs[txIn.PrevOut.N].ScriptPubKey;
+
+                    return IsAddressMine(wallet, txOutScriptPubKey, coinType);
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Determines whether the script translates to an address that exists in the given wallet.
+        /// </summary>
+        /// <param name="wallet">The wallet to use.</param>
+        /// <param name="scriptPubKey">The script to check.</param>
+        /// <param name="coinType">The coin type associated with the wallet; Stratis or Bitcoin.</param>
+        /// <returns><c>true</c> if the <paramref name="scriptPubKey"/> is an address in the given wallet.</returns>
+        private bool IsAddressMine(Wallet wallet, Script scriptPubKey, CoinType coinType)
+        {
+            var addressBase58 = GetBase58AddressFromScript(scriptPubKey);
+            var result = wallet.GetAllAddressesByCoinType(coinType).FirstOrDefault(a => a.Address == addressBase58.ToString());
+            return result != null;
         }
 
         [ActionName("listunspent")]

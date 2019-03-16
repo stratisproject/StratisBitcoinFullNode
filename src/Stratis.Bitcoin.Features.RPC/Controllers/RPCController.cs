@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Utilities;
@@ -82,7 +81,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             // Find the binding to 127.0.0.1 or the first available. The logic in RPC settings ensures there will be at least 1.
             IPEndPoint nodeEndPoint = this.rpcSettings.Bind.Where(b => b.Address.ToString() == "127.0.0.1").FirstOrDefault() ?? this.rpcSettings.Bind[0];
-            IRPCClient rpcClient = this.rpcClientFactory.Create($"{this.rpcSettings.RpcUser}:{this.rpcSettings.RpcPassword}", new Uri($"http://{nodeEndPoint}"), this.fullNode.Network);            
+            IRPCClient rpcClient = this.rpcClientFactory.Create($"{this.rpcSettings.RpcUser}:{this.rpcSettings.RpcPassword}", new Uri($"http://{nodeEndPoint}"), this.fullNode.Network);
 
             return rpcClient.SendCommand(request);
         }
@@ -111,7 +110,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 ControllerActionDescriptor actionDescriptor = null;
                 if (!this.GetActionDescriptors()?.TryGetValue(methodName, out actionDescriptor) ?? false)
                     throw new Exception($"RPC method '{ methodName }' not found.");
-                
+
                 // Prepare the named parameters that were passed via the query string in the order that they are expected by SendCommand.
                 List<ControllerParameterDescriptor> paramInfos = actionDescriptor.Parameters.OfType<ControllerParameterDescriptor>().ToList();
 
