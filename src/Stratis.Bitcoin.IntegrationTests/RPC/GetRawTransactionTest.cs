@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
                 // Assert.
                 TransactionVerboseModel transaction = response.Result.ToObject<TransactionVerboseModel>();
-                transaction.TxId.Should().Be(tip.Transactions.First());
+                transaction.TxId.Should().Be((string)tip.Transactions.First());
                 transaction.VOut.First().ScriptPubKey.Addresses.Count.Should().Be(1);
             }
         }
@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
                 // Assert.
                 TransactionVerboseModel transaction = response.Result.ToObject<TransactionVerboseModel>();
-                transaction.TxId.Should().Be(tip.Transactions.First());
+                transaction.TxId.Should().Be((string)tip.Transactions.First());
             }
         }
 

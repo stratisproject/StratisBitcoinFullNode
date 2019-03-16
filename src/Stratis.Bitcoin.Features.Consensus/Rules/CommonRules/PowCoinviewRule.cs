@@ -22,12 +22,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc/>
-        protected override bool IsProtocolTransaction(Transaction transaction)
-        {
-            return transaction.IsCoinBase;
-        }
-
-        /// <inheritdoc/>
         public override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
         {
             Money blockReward = fees + this.GetProofOfWorkReward(height);

@@ -132,11 +132,5 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         {
             this.logic.ExecuteContractTransaction(context, transaction);
         }
-
-        /// <inheritdoc/>
-        protected override bool IsProtocolTransaction(Transaction transaction)
-        {
-            return this.logic.IsProtocolTransaction(transaction);
-        }
     }
 }

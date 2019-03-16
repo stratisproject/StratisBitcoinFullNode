@@ -8,7 +8,6 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
@@ -26,6 +25,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
     [Route("api/[controller]")]
     public class WalletController : Controller
     {
+        public const int MaxHistoryItemsPerAccount = 500;
+
         private readonly IWalletManager walletManager;
 
         private readonly IWalletTransactionHandler walletTransactionHandler;
@@ -435,7 +436,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                     // Sorting the history items by descending dates. That includes received and sent dates.
                     List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.SpendingDetails?.CreationTime ?? o.Transaction.CreationTime).ToList();
-                    items = string.IsNullOrEmpty(request.SearchQuery) ? items.Take(200).ToList() : items;
 
                     // Represents a sublist containing only the transactions that have already been spent.
                     List<FlatHistory> spendingDetails = items.Where(t => t.Transaction.SpendingDetails != null).ToList();
@@ -447,22 +447,23 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     // Represents a sublist of 'change' transactions.
                     List<FlatHistory> allchange = items.Where(t => t.Address.IsChangeAddress()).ToList();
 
+                    int itemsCount = 0;
                     foreach (FlatHistory item in history)
                     {
+
+                        if (itemsCount == MaxHistoryItemsPerAccount)
+                        {
+                            break;
+                        }
+
                         TransactionData transaction = item.Transaction;
                         HdAddress address = item.Address;
 
-                        // We don't show in history transactions that are outputs of staking transactions.
-                        if (transaction.IsCoinStake != null && transaction.IsCoinStake.Value && transaction.SpendingDetails == null)
-                        {
-                            continue;
-                        }
-
                         // First we look for staking transaction as they require special attention.
-                        // A staking transaction spends one of our inputs into 2 outputs, paid to the same address.
+                        // A staking transaction spends one of our inputs into 2 outputs or more, paid to the same address.
                         if (transaction.SpendingDetails?.IsCoinStake != null && transaction.SpendingDetails.IsCoinStake.Value)
                         {
-                            // We look for the 2 outputs related to our spending input.
+                            // We look for the output(s) related to our spending input.
                             List<FlatHistory> relatedOutputs = items.Where(h => h.Transaction.Id == transaction.SpendingDetails.TransactionId && h.Transaction.IsCoinStake != null && h.Transaction.IsCoinStake.Value).ToList();
                             if (relatedOutputs.Any())
                             {
@@ -480,6 +481,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                 };
 
                                 transactionItems.Add(stakingItem);
+                                itemsCount++;
                             }
 
                             // No need for further processing if the transaction itself is the output of a staking transaction.
@@ -487,24 +489,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             {
                                 continue;
                             }
-                        }
-
-                        // Create a record for a 'receive' transaction.
-                        if (!address.IsChangeAddress())
-                        {
-                            // Add incoming fund transaction details.
-                            var receivedItem = new TransactionItemModel
-                            {
-                                Type = TransactionItemType.Received,
-                                ToAddress = address.Address,
-                                Amount = transaction.Amount,
-                                Id = transaction.Id,
-                                Timestamp = transaction.CreationTime,
-                                ConfirmedInBlock = transaction.BlockHeight,
-                                BlockIndex = transaction.BlockIndex
-                            };
-
-                            transactionItems.Add(receivedItem);
                         }
 
                         // If this is a normal transaction (not staking) that has been spent, add outgoing fund transaction details.
@@ -553,13 +537,38 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             if (sentItem.Fee < 0)
                                 sentItem.Fee = 0;
 
-                            if (!transactionItems.Contains(sentItem, new SentTransactionItemModelComparer()))
+                            transactionItems.Add(sentItem);
+                            itemsCount++;
+                        }
+
+                        // We don't show in history transactions that are outputs of staking transactions.
+                        if (transaction.IsCoinStake != null && transaction.IsCoinStake.Value && transaction.SpendingDetails == null)
+                        {
+                            continue;
+                        }
+
+                        // Create a record for a 'receive' transaction.
+                        if (transaction.IsCoinStake == null && !address.IsChangeAddress())
+                        {
+                            // Add incoming fund transaction details.
+                            var receivedItem = new TransactionItemModel
                             {
-                                transactionItems.Add(sentItem);
-                            }
+                                Type = TransactionItemType.Received,
+                                ToAddress = address.Address,
+                                Amount = transaction.Amount,
+                                Id = transaction.Id,
+                                Timestamp = transaction.CreationTime,
+                                ConfirmedInBlock = transaction.BlockHeight,
+                                BlockIndex = transaction.BlockIndex
+                            };
+
+                            transactionItems.Add(receivedItem);
+                            itemsCount++;
                         }
                     }
 
+                    transactionItems = transactionItems.Distinct(new SentTransactionItemModelComparer()).Select(e => e).ToList();
+                    
                     // Sort and filter the history items.
                     List<TransactionItemModel> itemsToInclude = transactionItems.OrderByDescending(t => t.Timestamp)
                         .Where(x => string.IsNullOrEmpty(request.SearchQuery) || (x.Id.ToString() == request.SearchQuery || x.ToAddress == request.SearchQuery || x.Payments.Any(p => p.DestinationAddress == request.SearchQuery)))
@@ -747,6 +756,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// and then building the transaction and retrieving the fee from the context.
         /// </summary>
         /// <param name="request">The transaction parameters.</param>
+        /// <remarks>
+        /// The OpenApi specification doesn't support arrays of objects as a query parameter so this method is not usable
+        /// by the Swagger UI.
+        /// Here is an example of how to call this endpoint:
+        /// /api/wallet/estimate-txfee?walletname=wallet1&accountname=account 0&recipients[0].destinationaddress=TMLvkmSsDJnBi8vfszHSaVQ67NxEjgsUw6&recipients[0].amount=1000255&feetype=low 
+        /// </remarks>
         /// <returns>The estimated fee for the transaction.</returns>
         [Route("estimate-txfee")]
         [HttpGet]
