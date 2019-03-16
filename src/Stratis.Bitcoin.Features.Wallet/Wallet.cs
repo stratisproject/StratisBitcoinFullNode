@@ -295,6 +295,34 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return accounts.SelectMany(x => x.GetSpendableTransactions(currentChainHeight, this.Network.Consensus.CoinbaseMaturity, confirmations));
         }
+
+        /// <summary>
+        /// Finds the HD addresses for the public address.
+        /// </summary>
+        /// <remarks>
+        /// Returns an HDAddress.
+        /// </remarks>
+        /// <param name="coinType">Type of the coin to get the HD Address from.</param>
+        /// <param name="externalAddress">An address.</param>
+        /// <param name="accountFilter">An optional filter for filtering the accounts being returned.</param>
+        /// <returns>HD Address</returns>
+        public HdAddress FindHDAddressByExternalAddress(CoinType coinType, string externalAddress, Func<HdAccount, bool> accountFilter = null)
+        {
+            Guard.NotNull(externalAddress, nameof(externalAddress));
+
+            HdAccount account = this.GetAccountsByCoinType(coinType, accountFilter).FirstOrDefault(x => x.ExternalAddresses.Select(a => a.Address).Contains(externalAddress));
+
+            HdAddress hDaddress = account.ExternalAddresses.FirstOrDefault(x => x.Address.Contains(externalAddress));
+
+            // Check if the wallet contains the address.
+            if (hDaddress == null)
+            {
+                throw new WalletException("Address not found on wallet.");
+            }
+
+            return hDaddress;
+        }
+
     }
 
     /// <summary>
@@ -470,7 +498,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                                             accountExtPubKey.ToString(network));
             }
 
-            string accountHdPath = HdOperations.GetAccountHdPath((int) this.CoinType, accountIndex);
+            string accountHdPath = HdOperations.GetAccountHdPath((int)this.CoinType, accountIndex);
 
             var newAccount = new HdAccount
             {
@@ -714,7 +742,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 var newAddress = new HdAddress
                 {
                     Index = i,
-                    HdPath = HdOperations.CreateHdPath((int) this.GetCoinType(), this.Index, isChange, i),
+                    HdPath = HdOperations.CreateHdPath((int)this.GetCoinType(), this.Index, isChange, i),
                     ScriptPubKey = address.ScriptPubKey,
                     Pubkey = pubkey.ScriptPubKey,
                     Address = address.ToString(),
