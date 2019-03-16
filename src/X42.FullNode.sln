@@ -20,7 +20,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.BitcoinD", "Stratis
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Tests", "Stratis.Bitcoin.Tests\Stratis.Bitcoin.Tests.csproj", "{94FEB14E-D123-486D-A24D-D2BE725D96E3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.StratisD", "Stratis.StratisD\Stratis.StratisD.csproj", "{34C17104-704E-4790-B398-D1F73CBEE31E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "x42.x42D", "x42.x42D\x42.x42D.csproj", "{34C17104-704E-4790-B398-D1F73CBEE31E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "External", "External", "{1B9A916F-DDAC-4675-B424-EDEDC1A58231}"
 EndProject

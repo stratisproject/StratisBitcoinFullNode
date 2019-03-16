@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Rules;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.Networks
 {
-    public class Consensus : IConsensus
+    public class X42Consensus : IConsensus
     {
         /// <inheritdoc />
         public long CoinbaseMaturity { get; set; }
@@ -52,10 +53,20 @@ namespace NBitcoin
 
         public bool PowAllowMinDifficultyBlocks { get; }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// If <c>true</c> disables checking the next block's difficulty (work required) target on a Proof-Of-Stake network.
+        /// <para>
+        /// This can be used in tests to enable fast mining of blocks.
+        /// </para>
+        /// </summary>
         public bool PosNoRetargeting { get; }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// If <c>true</c> disables checking the next block's difficulty (work required) target on a Proof-Of-Work network.
+        /// <para>
+        /// This can be used in tests to enable fast mining of blocks.
+        /// </para>
+        /// </summary>
         public bool PowNoRetargeting { get; }
 
         public uint256 HashGenesisBlock { get; }
@@ -105,7 +116,7 @@ namespace NBitcoin
         /// <inheritdoc />
         public Money LastProofOfStakeRewardHeight { get; }
 
-        public Consensus(
+        public X42Consensus(
             ConsensusFactory consensusFactory,
             ConsensusOptions consensusOptions,
             int coinType,
@@ -135,9 +146,12 @@ namespace NBitcoin
             uint256 minimumChainWork,
             bool isProofOfStake,
             int lastPowBlock,
-            BigInteger proofOfStakeLimit,
             BigInteger proofOfStakeLimitV2,
-            Money proofOfStakeReward)
+            Money proofOfStakeReward,
+            Money proofOfStakeRewardAfterSubsidyLimit,
+            long subsidyLimit,
+            Money lastProofOfStakeRewardHeight
+            )
         {
             this.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>();
             this.HeaderValidationRules = new List<IHeaderValidationConsensusRule>();
@@ -169,12 +183,14 @@ namespace NBitcoin
             this.MinerConfirmationWindow = minerConfirmationWindow;
             this.RuleChangeActivationThreshold = ruleChangeActivationThreshold;
             this.CoinType = coinType;
-            this.ProofOfStakeLimit = proofOfStakeLimit;
             this.ProofOfStakeLimitV2 = proofOfStakeLimitV2;
             this.LastPOWBlock = lastPowBlock;
             this.IsProofOfStake = isProofOfStake;
             this.DefaultAssumeValid = defaultAssumeValid;
             this.ConsensusFactory = consensusFactory;
+            this.ProofOfStakeRewardAfterSubsidyLimit = proofOfStakeRewardAfterSubsidyLimit;
+            this.SubsidyLimit = subsidyLimit;
+            this.LastProofOfStakeRewardHeight = lastProofOfStakeRewardHeight;
         }
     }
 }

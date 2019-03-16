@@ -1,25 +1,25 @@
 {
   "profiles": {
-    "Stratis.StratisD": {
+    "x42.x42D": {
       "commandName": "Project"
     },
-    "Stratis.StratisD Test": {
+    "x42.x42D Test": {
       "commandName": "Project",
       "commandLineArgs": "-testnet"
     },
-    "Stratis.StratisD Test with Default wallet": {
+    "x42.x42D Test with Default wallet": {
       "commandName": "Project",
       "commandLineArgs": "-testnet -rpcallowip=127.0.0.1 -defaultwalletname=default -defaultwalletpassword=default -unlockdefaultwallet -server -rpcpassword=rpcpassword -rpcuser=rpcuser"
     },
-    "Stratis.StratisD Test with RPC": {
+    "x42.x42D Test with RPC": {
       "commandName": "Project",
       "commandLineArgs": "-testnet -server -rpcpassword=rpcpassword -rpcuser=rpcuser"
     },
-    "Stratis.StratisD Test Keepalive 60s": {
+    "x42.x42D Test Keepalive 60s": {
       "commandName": "Project",
       "commandLineArgs": "-testnet -keepalive=60"
     },
-    "Stratis.StratisD Test No assumevalid": {
+    "x42.x42D Test No assumevalid": {
       "commandName": "Project",
       "commandLineArgs": "-testnet -assumevalid=0 -checkpoints=false"
     }

@@ -19,6 +19,11 @@
         /// <summary>
         /// Stratis
         /// </summary>
-        Stratis = 105
+        Stratis = 105,
+
+        /// <summary>
+        /// X42
+        /// </summary>
+        X42 = 424242
     }
 }
