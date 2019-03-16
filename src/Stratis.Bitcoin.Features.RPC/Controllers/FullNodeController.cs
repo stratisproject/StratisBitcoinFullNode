@@ -284,7 +284,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                     }
                     else
                     {
-                        return blockHeader.ToHex(this.Network);
+                        return new HexModel(blockHeader.ToHex(this.Network));
                     }
                 }
             }
@@ -358,7 +358,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             Block block = this.blockStore != null ? await this.blockStore.GetBlockAsync(uint256.Parse(blockHash)).ConfigureAwait(false) : null;
 
             if (verbosity == 0)
-                return block?.ToHex(this.Network);
+                return new HexModel(block?.ToHex(this.Network));
 
             return new BlockModel(block, this.Chain.GetBlock(block.GetHash()), this.Chain.Tip, this.Network, verbosity);
         }
