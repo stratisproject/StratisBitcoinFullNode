@@ -4,7 +4,9 @@ using System.Linq;
 using System.Threading;
 using FluentAssertions;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -321,7 +323,31 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         }
 
         [Fact]
-        public void TestRpcGetBlockInfo()
+        public void TestRpcGetBlockHeaderForBestBlockHashSuccessfull()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                Network network = new BitcoinRegTest();
+                var node = builder.CreateStratisPowNode(new BitcoinRegTest()).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest150Miner).Start();
+                RPCClient rpcClient = node.CreateRPCClient();
+                var aliceAddress = new Key().GetBitcoinSecret(network).GetAddress();
+
+                RPCClient rpcClient = node.CreateRPCClient();
+                var hash = rpcClient.GetBestBlockHash();
+
+                // false parameter is what NBitcoin sends, this causes STRAT to throw Unimplemented Exception
+                RPCResponse resp = rpcClient.SendCommand("getblockheader", hash, false); 
+
+                // This code should all be done by RPCClient
+                var header = rpcClient.Network.Consensus.ConsensusFactory.CreateBlockHeader();
+                var hex = Encoders.Hex.DecodeData(resp.Result.Value<string>());
+//                header.ReadWrite(new BitcoinStream(hex));
+//                return header;
+            }
+        }
+
+        [Fact]
+        public void TestRpcGetBlockchainInfo()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
