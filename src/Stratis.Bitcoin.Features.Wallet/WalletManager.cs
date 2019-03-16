@@ -348,8 +348,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             try
             {
-                var stratisAddress = new BitcoinPubKeyAddress(externalAddress, this.network);
-                result = stratisAddress.VerifyMessage(message, signature);
+                BitcoinPubKeyAddress bitcoinPubKeyAddress = new BitcoinPubKeyAddress(externalAddress, this.network);
+                result = bitcoinPubKeyAddress.VerifyMessage(message, signature);
             }
             catch (Exception ex)
             {
