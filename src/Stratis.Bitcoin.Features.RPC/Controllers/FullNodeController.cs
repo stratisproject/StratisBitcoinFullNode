@@ -42,6 +42,9 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>An interface implementation for the blockstore.</summary>
         private readonly IBlockStore blockStore;
 
+        /// <summary>A interface implementation for the initial block download state.</summary>
+        private readonly IInitialBlockDownloadState ibdState;
+
         public FullNodeController(
             ILoggerFactory loggerFactory,
             IPooledTransaction pooledTransaction = null,
@@ -55,7 +58,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             IChainState chainState = null,
             Connection.IConnectionManager connectionManager = null,
             IConsensusManager consensusManager = null,
-            IBlockStore blockStore = null)
+            IBlockStore blockStore = null,
+            IInitialBlockDownloadState ibdState = null)
             : base(
                   fullNode: fullNode,
                   nodeSettings: nodeSettings,
@@ -71,6 +75,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             this.getUnspentTransaction = getUnspentTransaction;
             this.networkDifficulty = networkDifficulty;
             this.blockStore = blockStore;
+            this.ibdState = ibdState;
         }
 
         /// <summary>
@@ -402,7 +407,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 Difficulty = this.GetNetworkDifficulty()?.Difficulty ?? 0.0,
                 MedianTime = this.ChainState?.ConsensusTip?.GetMedianTimePast().ToUnixTimeSeconds() ?? 0,
                 VerificationProgress = 0.0,
-                IsInitialBlockDownload = !this.ChainState?.IsAtBestChainTip ?? true,
+                IsInitialBlockDownload = this.ibdState?.IsInitialBlockDownload() ?? true,
                 Chainwork = this.ChainState?.ConsensusTip?.ChainWork,
                 IsPruned = false
             };
