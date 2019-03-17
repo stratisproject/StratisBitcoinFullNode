@@ -81,7 +81,8 @@ namespace City.Networks
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
                 powAllowMinDifficultyBlocks: false,
-                powNoRetargeting: false,
+				posNoRetargeting: false,
+				powNoRetargeting: false,
                 powLimit: powLimit,
                 minimumChainWork: null,
                 isProofOfStake: true,

@@ -27,7 +27,7 @@ namespace City.Features.BlockExplorer
     {
         private readonly ConcurrentChain chain;
 
-        private readonly Signals signals;
+        //private readonly Signals signals;
 
         private readonly BlockStoreSignaled blockStoreSignaled;
 
@@ -50,7 +50,7 @@ namespace City.Features.BlockExplorer
         public BlockExplorerFeature(
             ConcurrentChain chain,
             IConnectionManager connectionManager,
-            Signals signals,
+            //Signals signals,
             BlockStoreSignaled blockStoreSignaled,
             ILoggerFactory loggerFactory,
             StoreSettings storeSettings,
@@ -61,7 +61,7 @@ namespace City.Features.BlockExplorer
         {
             this.chain = chain;
             this.blockStoreQueue = blockStoreQueue;
-            this.signals = signals;
+            //this.signals = signals;
             this.blockStoreSignaled = blockStoreSignaled;
             this.connectionManager = connectionManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);

@@ -25,7 +25,7 @@ namespace City.Chain
                     this.nodeSettings.DataFolder.BlockPath,
                     this.nodeSettings.DataFolder.ChainPath,
                     this.nodeSettings.DataFolder.CoinViewPath,
-                    this.nodeSettings.DataFolder.FinalizedBlockInfoPath,
+                    //this.nodeSettings.DataFolder.FinalizedBlockInfoPath, TODO: Debug and ensure correct folders are removed.
                     this.nodeSettings.DataFolder.ProvenBlockHeaderPath
                 });
 

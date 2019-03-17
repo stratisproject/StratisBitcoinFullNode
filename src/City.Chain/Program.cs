@@ -64,7 +64,8 @@
                 var apiPort = configReader.GetOrDefault<string>("apiport", networkConfiguration.ApiPort.ToString());
 
                 args = args
-                    .Append("-apiport=" + apiPort)
+					.Append("-datadirroot=CityChain") // DataDirRoot can be supplied to specify where to locate files, make sure it is always set to CityChain.
+					.Append("-apiport=" + apiPort)
                     .Append("-wsport=" + networkConfiguration.WsPort).ToArray();
 
                 var nodeSettings = new NodeSettings(networksSelector: GetNetwork(chain), protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: args, agent: "CityChain")
@@ -101,8 +102,9 @@
                         .UseBlockExplorer()
                         .UsePosConsensus()
                         .UseMempool()
-                        .UseWallet()
-                        .AddPowPosMining()
+						.UseColdStakingWallet()
+						//.UseWallet()
+						.AddPowPosMining()
                         .UseApi()
                         .UseDns()
                         .AddRPC()
@@ -116,8 +118,8 @@
                         .UseBlockExplorer()
                         .UsePosConsensus()
                         .UseMempool()
-                        //.UseColdStakingWallet()
-                        .UseWallet()
+                        .UseColdStakingWallet()
+                        //.UseWallet()
                         .AddPowPosMining()
                         .UseApi()
                         .UseApps()
