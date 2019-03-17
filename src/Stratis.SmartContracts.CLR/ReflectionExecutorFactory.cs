@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.CLR.ResultProcessors;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.SmartContracts.CLR
 {
@@ -46,8 +46,7 @@ namespace Stratis.SmartContracts.CLR
             IStateRepositoryRoot stateRepository,
             IContractTransactionContext transactionContext)
         {
-            return new ContractExecutor(this.loggerFactory, this.serializer, 
-                    stateRepository, this.refundProcessor, this.transferProcessor, this.stateFactory, this.stateProcessor, this.contractPrimitiveSerializer);
+            return new ContractExecutor(this.serializer, stateRepository, this.refundProcessor, this.transferProcessor, this.stateFactory, this.stateProcessor, this.contractPrimitiveSerializer);
         }
     }
 }

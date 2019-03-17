@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
@@ -36,10 +37,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private const int BatchMaxSaveIntervalSeconds = 37;
 
         /// <summary>Maximum number of bytes the batch can hold until the downloaded blocks are stored to the disk.</summary>
-        internal const int BatchThresholdSizeBytes = 5 * 1000 * 1000;
+        internal long BatchThresholdSizeBytes;
 
         /// <summary>The current batch size in bytes.</summary>
         private long currentBatchSizeBytes;
+
+        /// <summary>The current pending blocks size in bytes.</summary>
+        private long blocksQueueSizeBytes;
 
         /// <summary>The highest stored block in the repository.</summary>
         private ChainedHeader storeTip;
@@ -83,6 +87,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc/>
         public ChainedHeader BlockStoreCacheTip { get; private set; }
 
+        private Exception saveAsyncLoopException;
+
         public BlockStoreQueue(
             ConcurrentChain chain,
             IChainState chainState,
@@ -109,6 +115,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.pendingBlocksCache = new Dictionary<uint256, ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.cancellation = new CancellationTokenSource();
+            this.saveAsyncLoopException = null;
+
+            this.BatchThresholdSizeBytes = storeSettings.MaxCacheSize * 1024 * 1024;
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
         }
@@ -175,6 +184,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc/>
         public Task<Transaction> GetTransactionByIdAsync(uint256 trxid)
         {
+            // Only look for transactions if they're indexed.
+            if (!this.storeSettings.TxIndex)
+                return Task.FromResult(default(Transaction));
+
             lock (this.blocksCacheLock)
             {
                 foreach (ChainedHeaderBlock chainedHeaderBlock in this.pendingBlocksCache.Values)
@@ -290,13 +303,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 log.AppendLine();
                 log.AppendLine("======BlockStore======");
-                log.AppendLine($"Batch Size: {this.currentBatchSizeBytes / 1000} kb / {BatchThresholdSizeBytes / 1000} kb  ({this.batch.Count} blocks)");
+                log.AppendLine($"Batch Size: {this.currentBatchSizeBytes.BytesToMegaBytes()} MB / {this.BatchThresholdSizeBytes.BytesToMegaBytes()} MB ({this.batch.Count} batched blocks)");
+                log.AppendLine($"Queue Size: {this.blocksQueueSizeBytes.BytesToMegaBytes()} MB ({this.blocksQueue.Count} queued blocks)");
             }
         }
 
         /// <inheritdoc />
         public void AddToPending(ChainedHeaderBlock chainedHeaderBlock)
         {
+            // Throw any error encountered by the asynchronous loop.
+            if (this.saveAsyncLoopException != null)
+                throw this.saveAsyncLoopException;
+
             lock (this.blocksCacheLock)
             {
                 if (this.pendingBlocksCache.TryAdd(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock))
@@ -315,6 +333,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             this.blocksQueue.Enqueue(chainedHeaderBlock);
+            this.blocksQueueSizeBytes += chainedHeaderBlock.Block.BlockSize.Value;
         }
 
         /// <summary>
@@ -363,9 +382,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         this.batch.Add(item);
                     }
 
+                    this.blocksQueueSizeBytes -= item.Block.BlockSize.Value;
                     this.currentBatchSizeBytes += item.Block.BlockSize.Value;
 
-                    saveBatch = saveBatch || (this.currentBatchSizeBytes >= BatchThresholdSizeBytes) || this.blockStoreQueueFlushCondition.ShouldFlush;
+                    saveBatch = saveBatch || (this.currentBatchSizeBytes >= this.BatchThresholdSizeBytes) || this.blockStoreQueueFlushCondition.ShouldFlush;
                 }
                 else
                 {
@@ -377,19 +397,30 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     if (this.batch.Count != 0)
                     {
-                        await this.SaveBatchAsync().ConfigureAwait(false);
-
-                        lock (this.blocksCacheLock)
+                        try
                         {
-                            foreach (ChainedHeaderBlock chainedHeaderBlock in this.batch)
+                            await this.SaveBatchAsync().ConfigureAwait(false);
+
+                            // If an error occurred during SaveBatchAsync then this code
+                            // which clears the batch will not execute.
+                            lock (this.blocksCacheLock)
                             {
-                                this.pendingBlocksCache.Remove(chainedHeaderBlock.ChainedHeader.HashBlock);
+                                foreach (ChainedHeaderBlock chainedHeaderBlock in this.batch)
+                                {
+                                    this.pendingBlocksCache.Remove(chainedHeaderBlock.ChainedHeader.HashBlock);
+                                }
+
+                                this.batch.Clear();
                             }
 
-                            this.batch.Clear();
+                            this.currentBatchSizeBytes = 0;
                         }
-
-                        this.currentBatchSizeBytes = 0;
+                        catch (Exception err)
+                        {
+                            this.logger.LogError("Could not save blocks to the block repository. Exiting due to '{0}'.", err.Message);
+                            this.saveAsyncLoopException = err;
+                            throw;
+                        }
                     }
 
                     timerTask = null;
@@ -424,6 +455,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// Checks if repository contains reorged blocks and deletes them; saves batch on top.
         /// The last block in the list is considered to be on the current main chain and will be used to determine if a database reorg is required.
         /// </summary>
+        /// <exception cref="DBreeze.Exceptions.DBreezeException">Thrown if an error occurs during database operations.</exception>
         private async Task SaveBatchAsync()
         {
             List<ChainedHeaderBlock> clearedBatch = this.GetBatchWithoutReorgedBlocks();
@@ -478,6 +510,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Removes reorged blocks from the database.</summary>
         /// <param name="expectedStoreTip">Highest block that should be in the store.</param>
+        /// <exception cref="DBreeze.Exceptions.DBreezeException">Thrown if an error occurs during database operations.</exception>
         private async Task RemoveReorgedBlocksFromStoreAsync(ChainedHeader expectedStoreTip)
         {
             var blocksToDelete = new List<uint256>();
@@ -486,6 +519,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             while (currentHeader.HashBlock != expectedStoreTip.HashBlock)
             {
                 blocksToDelete.Add(currentHeader.HashBlock);
+
+                if (currentHeader.Previous == null)
+                    break;
+
                 currentHeader = currentHeader.Previous;
             }
 

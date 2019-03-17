@@ -1,10 +1,9 @@
 ﻿using CSharpFunctionalExtensions;
-using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.CLR.ResultProcessors;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.SmartContracts.CLR
 {
@@ -13,7 +12,6 @@ namespace Stratis.SmartContracts.CLR
     /// </summary>
     public class ContractExecutor : IContractExecutor
     {
-        private readonly ILogger logger;
         private readonly IStateRepository stateRoot;
         private readonly IContractRefundProcessor refundProcessor;
         private readonly IContractTransferProcessor transferProcessor;
@@ -22,7 +20,7 @@ namespace Stratis.SmartContracts.CLR
         private readonly IStateProcessor stateProcessor;
         private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
 
-        public ContractExecutor(ILoggerFactory loggerFactory,
+        public ContractExecutor(
             ICallDataSerializer serializer,
             IStateRepository stateRoot,
             IContractRefundProcessor refundProcessor,
@@ -31,7 +29,6 @@ namespace Stratis.SmartContracts.CLR
             IStateProcessor stateProcessor,
             IContractPrimitiveSerializer contractPrimitiveSerializer)
         {
-            this.logger = loggerFactory.CreateLogger(this.GetType());
             this.stateRoot = stateRoot;
             this.refundProcessor = refundProcessor;
             this.transferProcessor = transferProcessor;

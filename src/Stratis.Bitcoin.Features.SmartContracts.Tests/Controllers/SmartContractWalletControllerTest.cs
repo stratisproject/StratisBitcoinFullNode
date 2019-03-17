@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
@@ -17,6 +16,8 @@ using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Networks;
+using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
@@ -49,8 +50,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
         {
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
             int vmVersion = 1;
-            Gas gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
-            var contractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit,new byte[]{0, 1, 2, 3});
+            var gasLimit = (Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
+            var contractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit, new byte[]{0, 1, 2, 3});
             var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(new SmartContractsRegTest()));
             var contractCreateScript = new Script(callDataSerializer.Serialize(contractTxData));
 

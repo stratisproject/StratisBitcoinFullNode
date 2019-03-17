@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
@@ -250,13 +251,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             account.InternalAddresses.Add(new HdAddress { Index = 6, Transactions = null });
             account.InternalAddresses.Add(new HdAddress { Index = 6, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(19), Index = 12, SpendingDetails = new SpendingDetails() } } });
 
-            IEnumerable<TransactionData> result = account.GetSpendableTransactions();
+            IEnumerable<UnspentOutputReference> result = account.GetSpendableTransactions(100, 10, 0);
 
             Assert.Equal(2, result.Count());
-            Assert.Equal(8, result.ElementAt(0).Index);
-            Assert.Equal(new uint256(18), result.ElementAt(0).Id);
-            Assert.Equal(11, result.ElementAt(1).Index);
-            Assert.Equal(new uint256(18), result.ElementAt(1).Id);
+            Assert.Equal(8, result.ElementAt(0).Transaction.Index);
+            Assert.Equal(new uint256(18), result.ElementAt(0).Transaction.Id);
+            Assert.Equal(11, result.ElementAt(1).Transaction.Index);
+            Assert.Equal(new uint256(18), result.ElementAt(1).Transaction.Id);
         }
 
         [Fact]
@@ -266,7 +267,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             account.ExternalAddresses.Add(new HdAddress { Index = 2, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(15), Index = 7, SpendingDetails = new SpendingDetails() } } });
             account.InternalAddresses.Add(new HdAddress { Index = 4, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(15), Index = 10, SpendingDetails = new SpendingDetails() } } });
 
-            IEnumerable<TransactionData> result = account.GetSpendableTransactions();
+            IEnumerable<UnspentOutputReference> result = account.GetSpendableTransactions(100, 10, 0);
 
             Assert.Empty(result);
         }

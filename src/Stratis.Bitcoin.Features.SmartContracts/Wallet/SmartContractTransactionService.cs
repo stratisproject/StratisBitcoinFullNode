@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using CSharpFunctionalExtensions;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.SmartContracts;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.ContractSigning;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
@@ -43,7 +45,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.callDataSerializer = callDataSerializer;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.addressGenerator = addressGenerator;
-
         }
 
         public BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request)
@@ -62,7 +63,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             {
                 try
                 {
-                    var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
+                    object[] methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
                     txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, addressNumeric, request.MethodName, methodParameters);
                 }
                 catch (MethodParameterStringSerializerException exception)
@@ -80,6 +81,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             {
                 Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
+                if (account == null)
+                    return BuildCallContractTransactionResponse.Failed($"No account with the name '{request.AccountName}' could be found.");
+
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
             }
 
@@ -120,7 +124,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             {
                 try
                 {
-                    var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
+                    object[] methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
                     txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, request.ContractCode.HexToByteArray(), methodParameters);
                 }
                 catch (MethodParameterStringSerializerException exception)
@@ -138,12 +142,39 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             {
                 Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
+                if (account == null)
+                    return BuildCreateContractTransactionResponse.Failed($"No account with the name '{request.AccountName}' could be found.");
+
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
             }
 
             ulong totalFee = (request.GasPrice * request.GasLimit) + Money.Parse(request.FeeAmount);
             var walletAccountReference = new WalletAccountReference(request.WalletName, request.AccountName);
-            var recipient = new Recipient { Amount = request.Amount ?? "0", ScriptPubKey = new Script(this.callDataSerializer.Serialize(txData)) };
+
+            byte[] serializedTxData = this.callDataSerializer.Serialize(txData);
+
+            Result<ContractTxData> deserialized = this.callDataSerializer.Deserialize(serializedTxData);
+
+            // We also want to ensure we're sending valid data: AKA it can be deserialized.
+            if (deserialized.IsFailure)
+            {
+                return BuildCreateContractTransactionResponse.Failed("Invalid data. If network requires code signing, check the code contains a signature.");
+            }
+
+            // HACK
+            // If requiring a signature, also check the signature.
+            if (this.network is ISignedCodePubKeyHolder holder)
+            {
+                var signedTxData = (SignedCodeContractTxData) deserialized.Value;
+                bool validSig =new ContractSigner().Verify(holder.SigningContractPubKey, signedTxData.ContractExecutionCode, signedTxData.CodeSignature);
+
+                if (!validSig)
+                {
+                    return BuildCreateContractTransactionResponse.Failed("Signature in code does not come from required signing key.");
+                }
+            }
+
+            var recipient = new Recipient { Amount = request.Amount ?? "0", ScriptPubKey = new Script(serializedTxData) };
             var context = new TransactionBuildContext(this.network)
             {
                 AccountReference = walletAccountReference,
@@ -175,7 +206,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             {
                 object[] methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
 
-                return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, contractAddress, request.MethodName, methodParameters);                
+                return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, contractAddress, request.MethodName, methodParameters);
             }
 
             return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, contractAddress, request.MethodName);

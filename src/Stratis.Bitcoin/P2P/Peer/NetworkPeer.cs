@@ -67,9 +67,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Checks a version payload from a peer against the requirements.
         /// </summary>
         /// <param name="version">Version payload to check.</param>
+        /// <param name="inbound">Set to <c>true</c> if this is an inbound connection and <c>false</c> otherwise.</param>
         /// <param name="reason">The reason the check failed.</param>
         /// <returns><c>true</c> if the version payload satisfies the protocol requirements, <c>false</c> otherwise.</returns>
-        public virtual bool Check(VersionPayload version, out string reason)
+        public virtual bool Check(VersionPayload version, bool inbound, out string reason)
         {
             reason = string.Empty;
             if (this.MinVersion != null)
@@ -81,7 +82,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
             }
 
-            if ((this.RequiredServices & version.Services) != this.RequiredServices)
+            if (!inbound && ((this.RequiredServices & version.Services) != this.RequiredServices))
             {
                 reason = "network service not supported";
                 return false;
@@ -125,7 +126,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeerState State { get; private set; }
 
         /// <summary>Table of valid transitions between peer states.</summary>
-        private static readonly Dictionary<NetworkPeerState, NetworkPeerState[]> stateTransitionTable = new Dictionary<NetworkPeerState, NetworkPeerState[]>()
+        private static readonly Dictionary<NetworkPeerState, NetworkPeerState[]> StateTransitionTable = new Dictionary<NetworkPeerState, NetworkPeerState[]>()
         {
             { NetworkPeerState.Created, new[] { NetworkPeerState.Connected, NetworkPeerState.Offline, NetworkPeerState.Failed} },
             { NetworkPeerState.Connected, new[] { NetworkPeerState.HandShaked, NetworkPeerState.Disconnecting, NetworkPeerState.Offline, NetworkPeerState.Failed} },
@@ -377,7 +378,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             NetworkPeerState previous = this.State;
 
-            if (stateTransitionTable[previous].Contains(newState))
+            if (StateTransitionTable[previous].Contains(newState))
             {
                 this.State = newState;
 
@@ -588,11 +589,18 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     await this.RespondToHandShakeAsync(cancellationSource.Token).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException ex)
                 {
-                    this.logger.LogTrace("Remote peer haven't responded within 10 seconds of the handshake completion, dropping connection.");
-
-                    this.Disconnect("Handshake timeout");
+                    if (ex.CancellationToken == cancellationSource.Token)
+                    {
+                        this.logger.LogTrace("Remote peer hasn't responded within 10 seconds of the handshake completion, dropping connection.");
+                        this.Disconnect("Handshake timeout");
+                    }
+                    else
+                    {
+                        this.logger.LogTrace("Handshake problem, dropping connection. Problem: '{0}'.", ex.Message);
+                        this.Disconnect($"Handshake problem, reason: '{ex.Message}'.");
+                    }
 
                     this.logger.LogTrace("(-)[HANDSHAKE_TIMEDOUT]");
                     throw;
@@ -729,7 +737,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                                 return;
                             }
 
-                            if (!requirements.Check(versionPayload, out string reason))
+                            if (!requirements.Check(versionPayload, this.Inbound, out string reason))
                             {
                                 this.logger.LogTrace("(-)[UNSUPPORTED_REQUIREMENTS]");
                                 this.Disconnect("The peer does not support the required services requirement, reason: " + reason);

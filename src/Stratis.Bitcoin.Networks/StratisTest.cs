@@ -5,6 +5,7 @@ using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Networks.Deployments;
+using Stratis.Bitcoin.Networks.Policies;
 
 namespace Stratis.Bitcoin.Networks
 {
@@ -69,7 +70,7 @@ namespace Stratis.Bitcoin.Networks
             {
                 [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(2,
                     new DateTime(2018, 11, 1, 0, 0, 0, DateTimeKind.Utc),
-                    new DateTime(2019, 2, 1, 0, 0, 0, DateTimeKind.Utc))
+                    new DateTime(2019, 6, 1, 0, 0, 0, DateTimeKind.Utc))
             };
 
             this.Consensus = new NBitcoin.Consensus(
@@ -87,7 +88,7 @@ namespace Stratis.Bitcoin.Networks
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
                 maxReorgLength: 500,
-                defaultAssumeValid: new uint256("0x98fa6ef0bca5b431f15fd79dc6f879dc45b83ed4b1bbe933a383ef438321958e"), // 372652
+                defaultAssumeValid: new uint256("0xc9a15c9dd87c6219b273f93442b87fdaf9eebb4f3059d8ed8239c41a4ab3e730"), // 780785
                 maxMoney: long.MaxValue,
                 coinbaseMaturity: 10,
                 premineHeight: 2,
@@ -96,6 +97,7 @@ namespace Stratis.Bitcoin.Networks
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
                 powAllowMinDifficultyBlocks: false,
+                posNoRetargeting: false,
                 powNoRetargeting: false,
                 powLimit: powLimit,
                 minimumChainWork: null,
@@ -122,7 +124,8 @@ namespace Stratis.Bitcoin.Networks
                 { 300000, new CheckpointInfo(new uint256("0x2409eb5ae72c80d5b37c77903d75a8e742a33843ab633935ce6e5264db962e23"), new uint256("0xf5ec7af55516b8e264ed280e9a5dba0180a4a9d3713351bfea275b18f3f1514e")) },
                 { 350000, new CheckpointInfo(new uint256("0x36811041e9060f4b4c26dc20e0850dca5efaabb60618e3456992e9c0b1b2120e"), new uint256("0xbfda55ef0756bcee8485e15527a2b8ca27ca877aa09c88e363ef8d3253cdfd1c")) },
                 { 400000, new CheckpointInfo(new uint256("0xb6abcb933d3e3590345ca5d3abb697461093313f8886568ac8ae740d223e56f6"), new uint256("0xfaf5fcebee3ec0df5155393a99da43de18b12e620fef5edb111a791ecbfaa63a")) },
-                { 650000, new CheckpointInfo(new uint256("0x7065de13f14749798ebf70993af4debeb5bb2a968f5862ca232a2436fbac2fd0"), new uint256("0x175eb3708ffd9a1ca5938b0df0bf1f55af39ec8e2e4c396ed97c1406c4a5d701")) }
+                { 650000, new CheckpointInfo(new uint256("0x7065de13f14749798ebf70993af4debeb5bb2a968f5862ca232a2436fbac2fd0"), new uint256("0x175eb3708ffd9a1ca5938b0df0bf1f55af39ec8e2e4c396ed97c1406c4a5d701")) },
+                { 720000, new CheckpointInfo(new uint256("0x041fb27f49f96be3a10034db0148290e9e2551b1c6196823b46521c36c69fbe2"), new uint256("0xba96e9c84c4134a2204d07e41b7738a9ae6e56c4322f443dcfe11421f1643e6e")) } // 14-01-2019
             };
 
             this.DNSSeeds = new List<DNSSeedData>
@@ -135,11 +138,12 @@ namespace Stratis.Bitcoin.Networks
 
             this.SeedNodes = new List<NetworkAddress>
             {
-                new NetworkAddress(IPAddress.Parse("51.140.231.125"), this.DefaultPort), // danger cloud node
-                new NetworkAddress(IPAddress.Parse("13.70.81.5"), 3389), // beard cloud node
-                new NetworkAddress(IPAddress.Parse("191.235.85.131"), 3389), // fassa cloud node
-                new NetworkAddress(IPAddress.Parse("52.232.58.52"), 26178), // neurosploit public node
+                new NetworkAddress(IPAddress.Parse("51.140.231.125"), 26178), // danger cloud node
+                new NetworkAddress(IPAddress.Parse("13.70.81.5"), 26178), // beard cloud node
+                new NetworkAddress(IPAddress.Parse("191.235.85.131"), 26178), // fassa cloud node
             };
+
+            this.StandardScriptsRegistry = new StratisStandardScriptsRegistry();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"));
         }

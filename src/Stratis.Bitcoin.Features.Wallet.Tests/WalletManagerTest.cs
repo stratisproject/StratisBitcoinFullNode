@@ -2611,17 +2611,29 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10 });
             }
 
-            Assert.Equal(0, firstAccount.GetSpendableAmount().ConfirmedAmount);
-            Assert.Equal(40, firstAccount.GetSpendableAmount().UnConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances().ConfirmedAmount);
+            Assert.Equal(40, firstAccount.GetBalances().UnConfirmedAmount);
         }
 
         [Fact]
         public void GetAccountBalancesReturnsCorrectAccountBalances()
         {
+
             // Arrange.
             DataFolder dataFolder = CreateDataFolder(this);
 
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new Mock<ConcurrentChain>().Object, new WalletSettings(NodeSettings.Default(this.Network)),
+            // Initialize chain object.
+            var chain = new ConcurrentChain(KnownNetworks.StratisMain);
+            uint nonce = RandomUtils.GetUInt32();
+            var block = this.Network.CreateBlock();
+            block.AddTransaction(new Transaction());
+            block.UpdateMerkleRoot();
+            block.Header.HashPrevBlock = chain.Genesis.HashBlock;
+            block.Header.Nonce = nonce;
+            block.Header.BlockTime = DateTimeOffset.Now;
+            chain.SetTip(block.Header);
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, new WalletSettings(NodeSettings.Default(this.Network)),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
 
             HdAccount account = WalletTestsHelpers.CreateAccount("account 1");
@@ -2694,8 +2706,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10 });
             }
 
-            Assert.Equal(40, firstAccount.GetSpendableAmount().ConfirmedAmount);
-            Assert.Equal(0, firstAccount.GetSpendableAmount().UnConfirmedAmount);
+            Assert.Equal(40, firstAccount.GetBalances().ConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances().UnConfirmedAmount);
         }
 
         [Fact]
@@ -2719,8 +2731,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10, SpendingDetails = new SpendingDetails() });
             }
 
-            Assert.Equal(0, firstAccount.GetSpendableAmount().ConfirmedAmount);
-            Assert.Equal(0, firstAccount.GetSpendableAmount().UnConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances().ConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances().UnConfirmedAmount);
         }
 
         [Fact]
@@ -2750,8 +2762,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10 });
             }
 
-            Assert.Equal(40, firstAccount.GetSpendableAmount().ConfirmedAmount);
-            Assert.Equal(0, firstAccount.GetSpendableAmount().UnConfirmedAmount);
+            Assert.Equal(40, firstAccount.GetBalances().ConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances().UnConfirmedAmount);
         }
 
         [Fact]
@@ -2781,8 +2793,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10 });
             }
 
-            Assert.Equal(0, firstAccount.GetSpendableAmount().ConfirmedAmount);
-            Assert.Equal(40, firstAccount.GetSpendableAmount().UnConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances().ConfirmedAmount);
+            Assert.Equal(40, firstAccount.GetBalances().UnConfirmedAmount);
         }
 
         [Fact]
@@ -3311,6 +3323,75 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             addNewAccount.Should().Throw<WalletException>()
                 .WithMessage("There is already an account in this wallet with this xpubkey: " + stratisAccount0ExtPubKey);
+        }
+
+        [Fact]
+        public void CreateDefaultWalletAndVerifyTheDefaultPassword()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+            var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain, "-defaultwalletname=default");
+            walletManager.Start();
+            Assert.True(walletManager.ContainsWallets);
+
+            var defaultWallet = walletManager.Wallets.First();
+
+            Assert.Equal("default", defaultWallet.Name);
+
+            // Load the default wallet.
+            var wallet = walletManager.LoadWallet("default", "default");
+
+            Assert.NotNull(wallet);
+        }
+
+        [Fact]
+        public void CreateDefaultWalletAndVerifyWrongPassword()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+            var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain, "-defaultwalletname=default", "-defaultwalletpassword=default2");
+            walletManager.Start();
+            Assert.True(walletManager.ContainsWallets);
+
+            var defaultWallet = walletManager.Wallets.First();
+
+            Assert.Equal("default", defaultWallet.Name);
+
+            Assert.Throws<System.Security.SecurityException>(() =>
+            {
+                // Attempt to load the default wallet with wrong password.
+                var wallet = walletManager.LoadWallet("default", "default");
+            });
+        }
+
+        /// <summary>
+        /// Test that first creates an unlocked default wallet, retrieves the extkey to verify it is actually unlocked. Lock the wallet, verify
+        /// it is not possible to get extkey. Unlock manually, and verify that returned key is same as before.
+        /// </summary>
+        [Fact]
+        public void CreateDefaultWalletAndVerifyUnlockAndLocking()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+            var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain, "-defaultwalletname=default", "-unlockdefaultwallet");
+            walletManager.Start();
+            Assert.True(walletManager.ContainsWallets);
+
+            var wallet = walletManager.GetWalletByName("default");
+
+            HdAccount account = walletManager.GetAccounts("default").Single();
+            var reference = new WalletAccountReference("default", account.Name);
+
+            var extKey1 = walletManager.GetExtKey(reference);
+            walletManager.LockWallet("default");
+
+            Assert.Throws<System.Security.SecurityException>(() =>
+            {
+                walletManager.GetExtKey(reference);
+            });
+
+            walletManager.UnlockWallet("default", "default", 10);
+
+            var extKey2 = walletManager.GetExtKey(reference);
+
+            Assert.Equal(extKey1.ToString(wallet.Network), extKey2.ToString(wallet.Network));
         }
 
         private WalletManager CreateWalletManager(DataFolder dataFolder, Network network, params string[] cmdLineArgs)

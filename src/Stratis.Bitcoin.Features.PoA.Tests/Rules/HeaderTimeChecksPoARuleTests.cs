@@ -6,23 +6,21 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.PoA.ConsensusRules;
+using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 {
-    public class HeaderTimeChecksPoARuleTests : PoARulesTestsBase
+    public class HeaderTimeChecksPoARuleTests : PoATestsBase
     {
         private readonly HeaderTimeChecksPoARule timeChecksRule;
 
         public HeaderTimeChecksPoARuleTests()
         {
             this.timeChecksRule = new HeaderTimeChecksPoARule();
-            this.timeChecksRule.Parent = this.rulesEngine;
-            this.timeChecksRule.Logger = this.loggerFactory.CreateLogger(this.timeChecksRule.GetType().FullName);
-            this.timeChecksRule.Initialize();
+            this.InitRule(this.timeChecksRule);
         }
 
         [Fact]
@@ -66,9 +64,9 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             var provider = new Mock<IDateTimeProvider>();
             provider.Setup(x => x.GetAdjustedTimeAsUnixTimestamp()).Returns(timestamp);
 
-            this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, provider.Object, this.chain,
-                new NodeDeployments(this.network, this.chain), this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object,
-                new ChainState(), new InvalidBlockHashStore(provider.Object), new NodeStats(provider.Object), this.slotsManager, this.poaHeaderValidator);
+            this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, provider.Object, this.chain, new NodeDeployments(this.network, this.chain),
+                this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object, new ChainState(), new InvalidBlockHashStore(provider.Object),
+                new NodeStats(provider.Object), this.slotsManager, this.poaHeaderValidator, this.votingManager, this.federationManager);
 
             this.timeChecksRule.Parent = this.rulesEngine;
             this.timeChecksRule.Initialize();

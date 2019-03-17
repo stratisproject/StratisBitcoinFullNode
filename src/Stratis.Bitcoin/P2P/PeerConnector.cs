@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,7 @@ using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -46,7 +48,7 @@ namespace Stratis.Bitcoin.P2P
         private IAsyncLoop asyncLoop;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncLoopFactory asyncLoopFactory;
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -75,10 +77,10 @@ namespace Stratis.Bitcoin.P2P
         protected INodeLifetime nodeLifetime;
 
         /// <summary>User defined connection settings.</summary>
-        public ConnectionManagerSettings ConnectionSettings;
+        public ConnectionManagerSettings ConnectionSettings { get; private set; }
 
         /// <summary>The network the node is running on.</summary>
-        private Network network;
+        private readonly Network network;
 
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         protected IPeerAddressManager peerAddressManager;
@@ -93,10 +95,7 @@ namespace Stratis.Bitcoin.P2P
         public NetworkPeerRequirement Requirements { get; internal set; }
 
         /// <summary>Default time interval between making a connection attempt.</summary>
-        private readonly TimeSpan defaultConnectionInterval;
-
-        /// <summary>Burst time interval between making a connection attempt.</summary>
-        protected TimeSpan burstConnectionInterval;
+        private readonly TimeSpan connectionInterval;
 
         /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
         private readonly NetworkPeerDisposer networkPeerDisposer;
@@ -128,8 +127,7 @@ namespace Stratis.Bitcoin.P2P
             this.selfEndpointTracker = selfEndpointTracker;
             this.Requirements = new NetworkPeerRequirement { MinVersion = nodeSettings.MinProtocolVersion ?? nodeSettings.ProtocolVersion };
 
-            this.defaultConnectionInterval = TimeSpans.Second;
-            this.burstConnectionInterval = TimeSpan.Zero;
+            this.connectionInterval = this.CalculateConnectionInterval();
         }
 
         /// <inheritdoc/>
@@ -155,8 +153,8 @@ namespace Stratis.Bitcoin.P2P
 
             this.ConnectorPeers.Add(peer);
 
-            if ((this.asyncLoop != null) && (this.ConnectorPeers.Count >= this.ConnectionSettings.BurstModeTargetConnections))
-                this.asyncLoop.RepeatEvery = this.defaultConnectionInterval;
+            if (this.asyncLoop != null)
+                this.asyncLoop.RepeatEvery = this.CalculateConnectionInterval();
         }
 
         /// <summary>
@@ -170,8 +168,8 @@ namespace Stratis.Bitcoin.P2P
         {
             this.ConnectorPeers.Remove(peer);
 
-            if (this.asyncLoop != null && this.ConnectorPeers.Count < this.ConnectionSettings.BurstModeTargetConnections)
-                this.asyncLoop.RepeatEvery = this.burstConnectionInterval;
+            if (this.asyncLoop != null)
+                this.asyncLoop.RepeatEvery = this.CalculateConnectionInterval();
         }
 
         /// <summary>Determines whether or not a connector can be started.</summary>
@@ -206,15 +204,12 @@ namespace Stratis.Bitcoin.P2P
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.GetType().Name}.{nameof(this.ConnectAsync)}", async token =>
             {
                 if (!this.peerAddressManager.Peers.Any() || (this.ConnectorPeers.Count >= this.MaxOutboundConnections))
-                {
-                    await Task.Delay(2000, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
                     return;
-                }
 
                 await this.OnConnectAsync().ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
-            repeatEvery: this.burstConnectionInterval);
+            repeatEvery: this.connectionInterval);
         }
 
         /// <summary>Attempts to connect to a random peer.</summary>
@@ -266,10 +261,19 @@ namespace Stratis.Bitcoin.P2P
             }
             catch (Exception exception)
             {
-                this.logger.LogTrace("Exception occurred while connecting: {0}", exception.ToString());
+                this.logger.LogTrace("Exception occurred while connecting: {0}", exception is SocketException ? exception.Message : exception.ToString());
                 peerAddress.SetHandshakeAttempted(this.dateTimeProvider.GetUtcNow());
                 peer?.Disconnect("Error while connecting", exception);
             }
+        }
+
+        /// <summary>
+        /// Determines how often the connector should try and connect to an address from it's list.
+        /// </summary>
+        [NoTrace]
+        public virtual TimeSpan CalculateConnectionInterval()
+        {
+            return this.ConnectorPeers.Count < this.ConnectionSettings.InitialConnectionTarget ? TimeSpans.Ms100 : TimeSpans.Second;
         }
 
         /// <summary>

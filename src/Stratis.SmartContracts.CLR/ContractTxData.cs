@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR
 {

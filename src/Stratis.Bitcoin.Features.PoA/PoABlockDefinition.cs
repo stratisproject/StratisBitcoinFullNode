@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.Features.PoA.ConsensusRules;
+using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 
@@ -19,8 +19,9 @@ namespace Stratis.Bitcoin.Features.PoA
             ILoggerFactory loggerFactory,
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
-            Network network)
-            : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, new MinerSettings(NodeSettings.Default(network)), network)
+            Network network,
+            MinerSettings minerSettings)
+            : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
         {
         }
 

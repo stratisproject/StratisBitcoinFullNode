@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using CSharpFunctionalExtensions;
@@ -155,19 +156,19 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
         /// </summary>
         public BuildCreateContractTransactionResponse SendCreateContractTransaction(
             byte[] contractCode,
-            double amount,
+            decimal amount,
             string[] parameters = null,
-            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
+            ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
-            double feeAmount = 0.01,
+            decimal feeAmount = 0.01M,
             string sender = null)
         {
             var request = new BuildCreateContractTransactionRequest
             {
-                Amount = amount.ToString(),
+                Amount = amount.ToString(CultureInfo.InvariantCulture),
                 AccountName = this.AccountName,
                 ContractCode = contractCode.ToHexString(),
-                FeeAmount = feeAmount.ToString(),
+                FeeAmount = feeAmount.ToString(CultureInfo.InvariantCulture),
                 GasLimit = gasLimit,
                 GasPrice = gasPrice,
                 Parameters = parameters,
@@ -176,6 +177,36 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 WalletName = this.WalletName
             };
             JsonResult response = (JsonResult)this.smartContractsController.BuildAndSendCreateSmartContractTransaction(request);
+            return (BuildCreateContractTransactionResponse)response.Value;
+        }
+
+        /// <summary>
+        /// Sends a create contract transaction. Note that before this transaction can be mined it will need to reach the mempool.
+        /// You will likely want to call 'WaitMempoolCount' after this.
+        /// </summary>
+        public BuildCreateContractTransactionResponse BuildCreateContractTransaction(
+            byte[] contractCode,
+            double amount,
+            string[] parameters = null,
+            ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2, // half of maximum
+            ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
+            double feeAmount = 0.01,
+            string sender = null)
+        {
+            var request = new BuildCreateContractTransactionRequest
+            {
+                Amount = amount.ToString(CultureInfo.InvariantCulture),
+                AccountName = this.AccountName,
+                ContractCode = contractCode.ToHexString(),
+                FeeAmount = feeAmount.ToString(CultureInfo.InvariantCulture),
+                GasLimit = gasLimit,
+                GasPrice = gasPrice,
+                Parameters = parameters,
+                Password = this.Password,
+                Sender = sender ?? this.MinerAddress.Address,
+                WalletName = this.WalletName
+            };
+            JsonResult response = (JsonResult)this.smartContractsController.BuildCreateSmartContractTransaction(request);
             return (BuildCreateContractTransactionResponse)response.Value;
         }
 
@@ -201,19 +232,19 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
         public BuildCallContractTransactionResponse SendCallContractTransaction(
             string methodName,
             string contractAddress,
-            double amount,
+            decimal amount,
             string[] parameters = null,
-            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
+            ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
-            double feeAmount = 0.01, 
+            decimal feeAmount = 0.01M, 
             string sender = null)
         {
             var request = new BuildCallContractTransactionRequest
             {
                 AccountName = this.AccountName,
-                Amount = amount.ToString(),
+                Amount = amount.ToString(CultureInfo.InvariantCulture),
                 ContractAddress = contractAddress,
-                FeeAmount = feeAmount.ToString(),
+                FeeAmount = feeAmount.ToString(CultureInfo.InvariantCulture),
                 GasLimit = gasLimit,
                 GasPrice = gasPrice,
                 MethodName = methodName,
@@ -222,22 +253,24 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 Sender = sender ?? this.MinerAddress.Address,
                 WalletName = this.WalletName
             };
+
             JsonResult response = (JsonResult)this.smartContractsController.BuildAndSendCallSmartContractTransaction(request);
+
             return (BuildCallContractTransactionResponse)response.Value;
         }
 
         public ILocalExecutionResult CallContractMethodLocally(
             string methodName,
             string contractAddress,
-            double amount,
+            decimal amount,
             string[] parameters = null,
-            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
+            ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             string sender = null)
         {
             var request = new LocalCallContractRequest
             {
-                Amount = amount.ToString(),
+                Amount = amount.ToString(CultureInfo.InvariantCulture),
                 ContractAddress = contractAddress,
                 GasLimit = gasLimit,
                 GasPrice = gasPrice,

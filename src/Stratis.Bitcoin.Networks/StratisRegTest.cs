@@ -4,6 +4,7 @@ using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Networks.Deployments;
+using Stratis.Bitcoin.Networks.Policies;
 
 namespace Stratis.Bitcoin.Networks
 {
@@ -91,6 +92,7 @@ namespace Stratis.Bitcoin.Networks
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
                 powAllowMinDifficultyBlocks: true,
+                posNoRetargeting: true,
                 powNoRetargeting: true,
                 powLimit: powLimit,
                 minimumChainWork: null,
@@ -109,10 +111,12 @@ namespace Stratis.Bitcoin.Networks
             {
                 // Fake checkpoint to prevent PH to be activated.
                 // TODO: Once PH is complete, this should be removed
-               // { 100_000 , new CheckpointInfo(uint256.Zero, uint256.Zero) }
+                // { 100_000 , new CheckpointInfo(uint256.Zero, uint256.Zero) }
             };
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();
+
+            this.StandardScriptsRegistry = new StratisStandardScriptsRegistry();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
         }

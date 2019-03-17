@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
-          
+
             // Act.
             var response = await $"http://localhost:{this.fixture.Node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
             {
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Check the mnemonic returned.
             response.Split(" ").Length.Should().Be(12);
             Wordlist.AutoDetectLanguage(response).Should().Be(Language.English);
-            
+
             // Check a wallet file has been created.
             string walletFolderPath = this.fixture.Node.FullNode.DataFolder.WalletPath;
             string walletPath = Path.Combine(walletFolderPath, $"{walletName}.wallet.json");
@@ -224,12 +224,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CreateWalletWith12WordsChineseMnemonic()
+        public async Task CreateWalletWith12WordsChineseMnemonicAsync()
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
-            string mnemonic = new Mnemonic(Wordlist.ChineseTraditional , WordCount.Twelve).ToString();
-            
+            string mnemonic = new Mnemonic(Wordlist.ChineseTraditional, WordCount.Twelve).ToString();
+
             // Act.
             var response = await $"http://localhost:{this.fixture.Node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
             {
@@ -488,7 +488,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             string secondWalletPath = Path.Combine(walletsFolderPath, $"{secondWalletName}.wallet.json");
             File.Exists(secondWalletPath).Should().BeFalse();
-            
+
             // Check the error message.
             var exception = act.Should().Throw<FlurlHttpException>().Which;
             var response = exception.Call.Response;
@@ -738,7 +738,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Name = walletName,
                 Passphrase = "passphrase",
                 Password = "123456",
-                Mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve).ToString()
+                Mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve).ToString(),
+                CreationDate = DateTime.Parse("2018-1-1")
             });
 
             // Assert.
@@ -782,7 +783,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Name = walletName,
                 Passphrase = "",
                 Password = "123456",
-                Mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve).ToString()
+                Mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve).ToString(),
+                CreationDate = DateTime.Parse("2018-1-1")
             });
 
             // Assert.
@@ -837,7 +839,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Name = secondWalletName,
                 Passphrase = "passphrase",
                 Password = "123456",
-                Mnemonic = mnemonic
+                Mnemonic = mnemonic,
+                CreationDate = DateTime.Parse("2018-1-1")
             }).ReceiveString();
 
 
@@ -868,7 +871,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             var response = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/balance")
-                .SetQueryParams(new { walletName = this.fixture.walletWithFundsName})
+                .SetQueryParams(new { walletName = this.fixture.walletWithFundsName })
                 .GetJsonAsync<WalletBalanceModel>();
 
             response.AccountsBalances.Should().NotBeEmpty();
@@ -1208,7 +1211,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     Password = "123456",
                     ShuffleOutputs = true,
                     AllowUnconfirmed = true,
-                    Recipients = new List<RecipientModel> { new RecipientModel {DestinationAddress = address, Amount = "1000" } }
+                    Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = address, Amount = "1000" } }
                 })
                 .ReceiveJson<WalletBuildTransactionModel>();
 
@@ -1358,6 +1361,60 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             errors.Should().ContainSingle();
             errors.First().Message.Should().Be($"One of parameters '{nameof(BuildTransactionRequest.FeeAmount)}' and '{nameof(BuildTransactionRequest.FeeType)}' is required. " +
                     $"Please use '{nameof(BuildTransactionRequest.FeeAmount)}' if you'd like to set the fee manually, or '{nameof(BuildTransactionRequest.FeeType)}' if you want the wallet to calculate it for you.");
+        }
+
+        [Fact]
+        public async Task EstimateFee()
+        {
+            // Arrange.
+            var address1 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
+            var address2 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
+
+            // Act.
+            string query = $"http://localhost:{this.fixture.Node.ApiPort}/" +
+                           $"api/wallet/estimate-txfee?" +
+                           $"walletname={this.fixture.walletWithFundsName}" +
+                           $"&accountname=account 0" +
+                           $"&recipients[0].destinationaddress={address1}" +
+                           $"&recipients[0].amount=240000" +
+                           $"&recipients[1].destinationaddress={address2}" +
+                           $"&recipients[1].amount=1000" +
+                           $"&feetype=low" +
+                           $"&allowunconfirmed=true" +
+                           $"&shuffleoutputs=true";
+
+            Money estimatedFee = await query.GetJsonAsync<Money>();
+
+            // Assert.
+            estimatedFee.Should().Be(new Money(10000));
+        }
+
+        [Fact]
+        public async Task EstimateFeeWithOpReturn()
+        {
+            // Arrange.
+            var address1 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
+            var address2 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
+
+            // Act.
+            string query = $"http://localhost:{this.fixture.Node.ApiPort}/" +
+                           $"api/wallet/estimate-txfee?" +
+                           $"walletname={this.fixture.walletWithFundsName}" +
+                           $"&accountname=account 0" +
+                           $"&recipients[0].destinationaddress={address1}" +
+                           $"&recipients[0].amount=240000" +
+                           $"&recipients[1].destinationaddress={address2}" +
+                           $"&recipients[1].amount=2000" +
+                           $"&feetype=low" +
+                           $"&opreturndata=always something interesting to say here" +
+                           $"&opreturnamount=1" +
+                           $"&allowunconfirmed=true" +
+                           $"&shuffleoutputs=true";
+
+            Money estimatedFee = await query.GetJsonAsync<Money>();
+
+            // Assert.
+            estimatedFee.Should().Be(new Money(10000));
         }
 
         [Fact]

@@ -1,5 +1,7 @@
 ﻿using NBitcoin;
+using Stratis.SmartContracts.CLR.Metering;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR
 {
@@ -28,7 +30,7 @@ namespace Stratis.SmartContracts.CLR
 
             ISmartContractState smartContractState = state.CreateSmartContractState(state, gasMeter, address, message, state.ContractState);
 
-            VmExecutionResult result = this.Vm.Create(state.ContractState, smartContractState, code, parameters, type);
+            VmExecutionResult result = this.Vm.Create(state.ContractState, smartContractState, gasMeter, code, parameters, type);
 
             bool revert = !result.IsSuccess;
 
@@ -61,7 +63,7 @@ namespace Stratis.SmartContracts.CLR
             // account any funds sent as part of the original contract invocation transaction.
             state.AddInitialTransfer(new TransferInfo(message.From, address, message.Amount));
 
-            return this.ApplyCreate(state, message.Parameters, message.Code, message, address, gasMeter);
+            return ApplyCreate(state, message.Parameters, message.Code, message, address, gasMeter);
         }
 
         /// <summary>
@@ -69,7 +71,7 @@ namespace Stratis.SmartContracts.CLR
         /// </summary>
         public StateTransitionResult Apply(IState state, InternalCreateMessage message)
         {
-            bool enoughBalance = this.EnsureSenderHasEnoughBalance(state, message.From, message.Amount);
+            bool enoughBalance = EnsureSenderHasEnoughBalance(state, message.From, message.Amount);
 
             if (!enoughBalance)
                 return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientBalance); // Trivial - just return and let the MethodCall gas account for it.
@@ -86,7 +88,7 @@ namespace Stratis.SmartContracts.CLR
             // For external creates we do not need to do this.
             state.AddInternalTransfer(new TransferInfo(message.From, address, message.Amount));
 
-            StateTransitionResult result = this.ApplyCreate(state, message.Parameters, contractCode, message, address, gasMeter, message.Type);
+            StateTransitionResult result = ApplyCreate(state, message.Parameters, contractCode, message, address, gasMeter, message.Type);
             
             return result;
         }
@@ -104,7 +106,7 @@ namespace Stratis.SmartContracts.CLR
 
             ISmartContractState smartContractState = state.CreateSmartContractState(state, gasMeter, message.To, message, state.ContractState);
 
-            VmExecutionResult result = this.Vm.ExecuteMethod(smartContractState, message.Method, contractCode, type);
+            VmExecutionResult result = this.Vm.ExecuteMethod(smartContractState, gasMeter, message.Method, contractCode, type);
 
             bool revert = !result.IsSuccess;
 
@@ -127,7 +129,7 @@ namespace Stratis.SmartContracts.CLR
         /// </summary>
         public StateTransitionResult Apply(IState state, InternalCallMessage message)
         {
-            bool enoughBalance = this.EnsureSenderHasEnoughBalance(state, message.From, message.Amount);
+            bool enoughBalance = EnsureSenderHasEnoughBalance(state, message.From, message.Amount);
 
             if (!enoughBalance)
                 return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientBalance); // Trivial - just return and let the MethodCall gas account for it.
@@ -147,7 +149,7 @@ namespace Stratis.SmartContracts.CLR
             // For external calls we do not need to do this.
             state.AddInternalTransfer(new TransferInfo(message.From, message.To, message.Amount));
 
-            StateTransitionResult result = this.ApplyCall(state, message, contractCode, gasMeter);
+            StateTransitionResult result = ApplyCall(state, message, contractCode, gasMeter);
 
             return result;
         }
@@ -171,7 +173,7 @@ namespace Stratis.SmartContracts.CLR
             // account any funds sent as part of the original contract invocation transaction.
             state.AddInitialTransfer(new TransferInfo(message.From, message.To, message.Amount));
 
-            return this.ApplyCall(state, message, contractCode, gasMeter);
+            return ApplyCall(state, message, contractCode, gasMeter);
         }
 
         /// <summary>
@@ -179,7 +181,7 @@ namespace Stratis.SmartContracts.CLR
         /// </summary>
         public StateTransitionResult Apply(IState state, ContractTransferMessage message)
         {
-            bool enoughBalance = this.EnsureSenderHasEnoughBalance(state, message.From, message.Amount);
+            bool enoughBalance = EnsureSenderHasEnoughBalance(state, message.From, message.Amount);
 
             if (!enoughBalance)
                 return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientBalance);
@@ -205,7 +207,7 @@ namespace Stratis.SmartContracts.CLR
             state.AddInternalTransfer(new TransferInfo(message.From, message.To, message.Amount));
 
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
-            StateTransitionResult result = this.ApplyCall(state, message, contractCode, gasMeter);
+            StateTransitionResult result = ApplyCall(state, message, contractCode, gasMeter);
             
             return result;
         }

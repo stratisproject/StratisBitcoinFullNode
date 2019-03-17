@@ -41,15 +41,14 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             this.Connect = new List<IPEndPoint>();
             this.AddNode = new List<IPEndPoint>();
-            this.Listen = new List<NodeServerEndpoint>();
+            this.Bind = new List<NodeServerEndpoint>();
             this.Whitelist = new List<IPEndPoint>();
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             try
             {
-                this.Connect.AddRange(config.GetAll("connect", this.logger)
-                    .Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)));
+                this.Connect.AddRange(config.GetAll("connect", this.logger).Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)));
             }
             catch (FormatException)
             {
@@ -58,8 +57,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             try
             {
-                this.AddNode.AddRange(config.GetAll("addnode", this.logger)
-                        .Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)));
+                this.AddNode.AddRange(config.GetAll("addnode", this.logger).Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)));
             }
             catch (FormatException)
             {
@@ -67,35 +65,58 @@ namespace Stratis.Bitcoin.Configuration.Settings
             }
 
             this.Port = config.GetOrDefault<int>("port", nodeSettings.Network.DefaultPort, this.logger);
-            try
-            {
-                this.Listen.AddRange(config.GetAll("bind")
-                        .Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), false)));
-            }
-            catch (FormatException)
-            {
-                throw new ConfigurationException("Invalid 'bind' parameter");
-            }
 
             try
             {
-                this.Listen.AddRange(config.GetAll("whitebind", this.logger)
-                        .Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), true)));
+                IEnumerable<IPEndPoint> whitebindEndpoints = config.GetAll("whitebind", this.logger).Select(s => s.ToIPEndPoint(this.Port));
+
+                this.Bind = whitebindEndpoints.Where(x => x.Address.AnyIP()).Select(x => new NodeServerEndpoint(x, true)).ToList();
+
+                foreach (IPEndPoint endPoint in whitebindEndpoints.Where(x => !x.Address.AnyIP()))
+                {
+                    if (this.Bind.Select(x => x.Endpoint).Any(x => x.Contains(endPoint)))
+                        continue;
+
+                    this.Bind.Add(new NodeServerEndpoint(endPoint, true));
+                }
             }
             catch (FormatException)
             {
                 throw new ConfigurationException("Invalid 'whitebind' parameter");
             }
 
-            if (this.Listen.Count == 0)
+            try
             {
-                this.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), this.Port), false));
+                foreach (NodeServerEndpoint endPoint in config.GetAll("bind").Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), false)))
+                {
+                    if (this.Bind.Select(x => x.Endpoint).Any(x => x.Contains(endPoint.Endpoint)))
+                        continue;
+
+                    this.Bind.Add(endPoint);
+                }
+            }
+            catch (FormatException)
+            {
+                throw new ConfigurationException("Invalid 'bind' parameter");
+            }
+
+            if (this.Bind.Count == 0)
+            {
+                this.Bind.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), this.Port), false));
+            }
+            else
+            {
+                var ports = this.Bind.Select(l => l.Endpoint.Port).ToList();
+
+                if (ports.Count != ports.Distinct().Count())
+                {
+                    throw new ConfigurationException("Invalid attempt to bind the same port twice");
+                }
             }
 
             try
             {
-                this.Whitelist.AddRange(config.GetAll("whitelist", this.logger)
-                    .Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)));
+                this.Whitelist.AddRange(config.GetAll("whitelist", this.logger).Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)));
             }
             catch (FormatException)
             {
@@ -121,9 +142,20 @@ namespace Stratis.Bitcoin.Configuration.Settings
             }
 
             this.BanTimeSeconds = config.GetOrDefault<int>("bantime", nodeSettings.Network.IsTest() ? DefaultMisbehavingBantimeSecondsTestnet : DefaultMisbehavingBantimeSeconds, this.logger);
+
+            // Listen option will default to true in case there are no connect option specified.
+            // When running the node with connect option listen flag has to be explicitly passed to the node to enable listen flag.
+            this.Listen = config.GetOrDefault<bool>("listen", !this.Connect.Any(), this.logger);
+
             this.MaxOutboundConnections = config.GetOrDefault<int>("maxoutboundconnections", nodeSettings.Network.DefaultMaxOutboundConnections, this.logger);
+            if (this.MaxOutboundConnections <= 0)
+                throw new ConfigurationException("The 'maxoutboundconnections' must be greater than zero.");
+
             this.MaxInboundConnections = config.GetOrDefault<int>("maxinboundconnections", nodeSettings.Network.DefaultMaxInboundConnections, this.logger);
-            this.BurstModeTargetConnections = config.GetOrDefault("burstModeTargetConnections", 1, this.logger);
+            if (this.MaxInboundConnections < 0)
+                throw new ConfigurationException("The 'maxinboundconnections' must be greater or equal to zero.");
+
+            this.InitialConnectionTarget = config.GetOrDefault("initialconnectiontarget", 1, this.logger);
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true, this.logger);
             this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly, this.logger);
             this.IpRangeFiltering = config.GetOrDefault<bool>("IpRangeFiltering", true, this.logger);
@@ -148,6 +180,10 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine("####ConnectionManager Settings####");
             builder.AppendLine($"#The default network port to connect to. Default { network.DefaultPort }.");
             builder.AppendLine($"#port={network.DefaultPort}");
+            builder.AppendLine($"#Accept connections from the outside.");
+            builder.AppendLine($"#listen=<0 or 1>");
+            builder.AppendLine($"#This can be used to accept incoming connections when -connect is specified.");
+            builder.AppendLine($"#forcelisten=<0 or 1>");
             builder.AppendLine($"#Specified node to connect to. Can be specified multiple times.");
             builder.AppendLine($"#connect=<ip:port>");
             builder.AppendLine($"#Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
@@ -187,6 +223,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             var builder = new StringBuilder();
             builder.AppendLine($"-port=<port>              The default network port to connect to. Default { network.DefaultPort }.");
+            builder.AppendLine($"-listen=<0 or 1>          Accept connections from the outside (defaulted to 1 unless -connect args specified).");
             builder.AppendLine($"-connect=<ip:port>        Specified node to connect to. Can be specified multiple times.");
             builder.AppendLine($"-addnode=<ip:port>        Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
             builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
@@ -209,8 +246,23 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <summary>List of end points that the node should try to connect to.</summary>
         public List<IPEndPoint> AddNode { get; set; }
 
+        /// <summary>
+        /// Accepts incoming connections by starting the node server.
+        /// <para>
+        /// Set to true if no -connect args specified or explicility set to -listen=1.
+        /// </para>
+        /// <para>
+        /// E.g.
+        /// -listen=1 -connect=127.0.0.0 -> Listen = true
+        /// -listen -connect=127.0.0.0 -> Listen = true
+        /// -listen=0 -connect=127.0.0.0 -> Listen = false
+        /// -connect=127.0.0.0 -> Listen = false
+        /// </para>
+        /// </summary>
+        public bool Listen { get; set; }
+
         /// <summary>List of network interfaces on which the node should listen on.</summary>
-        public List<NodeServerEndpoint> Listen { get; set; }
+        public List<NodeServerEndpoint> Bind { get; set; }
 
         /// <summary>External (or public) IP address of the node.</summary>
         public IPEndPoint ExternalEndpoint { get; internal set; }
@@ -227,8 +279,14 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <summary>Maximum number of inbound connections.</summary>
         public int MaxInboundConnections { get; internal set; }
 
-        /// <summary>Connections number after which burst connectivity mode (connection attempts with no delay in between) will be disabled.</summary>
-        public int BurstModeTargetConnections { get; internal set; }
+        /// <summary>
+        /// The amount of connections to be reached before a 1 second connection interval in the <see cref="P2P.PeerConnectorDiscovery"/> is set.
+        /// <para>
+        /// When the <see cref="P2P.PeerConnectorDiscovery"/> starts up, a 100ms delay is set as the connection interval in order for
+        /// the node to quickly connect to other peers.
+        /// </para>
+        /// </summary>
+        public int InitialConnectionTarget { get; internal set; }
 
         /// <summary><c>true</c> to sync time with other peers and calculate adjusted time, <c>false</c> to use our system clock only.</summary>
         public bool SyncTimeEnabled { get; private set; }

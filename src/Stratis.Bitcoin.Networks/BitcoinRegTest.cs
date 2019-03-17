@@ -4,6 +4,7 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Networks.Deployments;
+using Stratis.Bitcoin.Networks.Policies;
 
 namespace Stratis.Bitcoin.Networks
 {
@@ -12,7 +13,7 @@ namespace Stratis.Bitcoin.Networks
         public BitcoinRegTest()
         {
             this.Name = "RegTest";
-            this.AdditionalNames = new List<string> {"reg"};
+            this.AdditionalNames = new List<string> { "reg" };
             this.Magic = 0xDAB5BFFA;
             this.DefaultPort = 18444;
             this.DefaultMaxOutboundConnections = 8;
@@ -70,6 +71,7 @@ namespace Stratis.Bitcoin.Networks
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
                 powAllowMinDifficultyBlocks: true,
+                posNoRetargeting: false,
                 powNoRetargeting: true,
                 powLimit: new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
                 minimumChainWork: uint256.Zero,
@@ -96,6 +98,8 @@ namespace Stratis.Bitcoin.Networks
             this.Checkpoints = new Dictionary<int, CheckpointInfo>();
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();
+
+            this.StandardScriptsRegistry = new BitcoinStandardScriptsRegistry();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
         }

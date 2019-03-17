@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// but high enough to compensate for tasks' overhead.</remarks>
         private const int UtxoStakeDescriptionsPerCoinstakeWorker = 25;
 
-        /// <summary>Consumes manager class.</summary>
+        /// <summary>Consensus manager class.</summary>
         private readonly IConsensusManager consensusManager;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
@@ -285,7 +285,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             {
                 try
                 {
-                    await this.GenerateBlocksAsync(walletSecret, this.stakeCancellationTokenSource.Token)
+                    await this.GenerateBlocksAsync(walletSecret, token)
                         .ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
@@ -368,7 +368,16 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     continue;
                 }
 
-                // Prevent staking if not in initial block download.
+                // Don't stake if the wallet is not up-to-date with the current chain.
+                if (this.consensusManager.Tip.HashBlock != this.walletManager.WalletTipHash)
+                {
+                    this.logger.LogTrace("Waiting for wallet to catch up before mining can be started.");
+
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), cancellationToken).ConfigureAwait(false);
+                    continue;
+                }
+
+                // Prevent staking if in initial block download.
                 if (this.initialBlockDownloadState.IsInitialBlockDownload())
                 {
                     this.logger.LogTrace("Waiting for synchronization before mining can be started.");
@@ -428,26 +437,31 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         internal async Task<List<UtxoStakeDescription>> GetUtxoStakeDescriptionsAsync(WalletSecret walletSecret, CancellationToken cancellationToken)
         {
             var utxoStakeDescriptions = new List<UtxoStakeDescription>();
-            List<UnspentOutputReference> spendableTransactions = this.walletManager
-                .GetSpendableTransactionsInWalletForStaking(walletSecret.WalletName, 1).ToList();
+            List<UnspentOutputReference> stakableUtxos = this.walletManager
+                .GetSpendableTransactionsInWalletForStaking(walletSecret.WalletName, 1)
+                .Where(utxo => utxo.Transaction.Amount >= this.MinimumStakingCoinValue) // exclude dust from stake process
+                .ToList();
 
-            FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(spendableTransactions.Select(t => t.Transaction.Id).Distinct().ToArray(), cancellationToken).ConfigureAwait(false);
+            FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(stakableUtxos.Select(t => t.Transaction.Id).Distinct().ToArray(), cancellationToken).ConfigureAwait(false);
+            Dictionary<uint256, UnspentOutputs> utxoByTransaction = fetchedCoinSet.UnspentOutputs.Where(utxo => utxo != null).ToDictionary(utxo => utxo.TransactionId, utxo => utxo);
+            fetchedCoinSet = null; // allow GC to collect as soon as possible.
 
-            foreach (UnspentOutputReference outputReference in spendableTransactions)
+            for (int i = 0; i < stakableUtxos.Count; i++)
             {
+                UnspentOutputReference stakableUtxo = stakableUtxos[i];
+
                 if (cancellationToken.IsCancellationRequested)
                 {
                     this.logger.LogTrace("(-)[CANCELLATION]");
                     throw new OperationCanceledException(cancellationToken);
                 }
 
-                UnspentOutputs coinSet = fetchedCoinSet.UnspentOutputs
-                    .FirstOrDefault(f => f?.TransactionId == outputReference.Transaction.Id);
-                if ((coinSet == null) || (outputReference.Transaction.Index >= coinSet.Outputs.Length))
+                UnspentOutputs coinSet = utxoByTransaction.TryGet(stakableUtxo.Transaction.Id);
+                if ((coinSet == null) || (stakableUtxo.Transaction.Index >= coinSet.Outputs.Length))
                     continue;
 
-                TxOut utxo = coinSet.Outputs[outputReference.Transaction.Index];
-                if ((utxo == null) || (utxo.Value < MinimumStakingCoinValue))
+                TxOut utxo = coinSet.Outputs[stakableUtxo.Transaction.Index];
+                if ((utxo == null) || (utxo.Value < this.MinimumStakingCoinValue))
                     continue;
 
                 uint256 hashBlock = this.chain.GetBlock((int)coinSet.Height)?.HashBlock;
@@ -457,8 +471,8 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 var utxoStakeDescription = new UtxoStakeDescription
                 {
                     TxOut = utxo,
-                    OutPoint = new OutPoint(coinSet.TransactionId, outputReference.Transaction.Index),
-                    Address = outputReference.Address,
+                    OutPoint = new OutPoint(coinSet.TransactionId, stakableUtxo.Transaction.Index),
+                    Address = stakableUtxo.Address,
                     HashBlock = hashBlock,
                     UtxoSet = coinSet,
                     Secret = walletSecret // Temporary.
@@ -473,7 +487,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         }
 
         /// <summary>
-        /// One a new block is staked, this method is used to verify that it
+        /// Once a new block is staked, this method is used to verify that it
         /// is a valid block and if so, it will add it to the chain.
         /// </summary>
         /// <param name="block">The new block.</param>
@@ -654,11 +668,12 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 cwc.utxoStakeDescriptions.AddRange(stakingUtxoDescriptions.GetRange(coinIndex, stakingUtxoCount));
                 coinIndex += stakingUtxoCount;
                 workerContexts[workerIndex] = cwc;
-
-                workers[workerIndex] = Task.Run(() => this.CoinstakeWorker(cwc, chainTip, block, minimalAllowedTime, searchInterval));
             }
 
-            await Task.WhenAll(workers).ConfigureAwait(false);
+            await Task.Run(() => Parallel.ForEach(workerContexts, cwc =>
+            {
+                this.CoinstakeWorker(cwc, chainTip, block, minimalAllowedTime, searchInterval);
+            }));
 
             if (workersResult.KernelFoundIndex == CoinstakeWorkerResult.KernelNotFound)
             {
@@ -812,7 +827,12 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
                         var contextInformation = new PosRuleContext(BlockStake.Load(block));
 
-                        this.stakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
+                        var validKernel = this.stakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
+
+                        if (!validKernel)
+                        {
+                            continue;
+                        }
 
                         if (context.Result.SetKernelFoundIndex(context.Index))
                         {
@@ -855,9 +875,6 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     catch (ConsensusErrorException cex)
                     {
                         context.Logger.LogTrace("Checking kernel failed with exception: {0}.", cex.Message);
-                        if (cex.ConsensusError == ConsensusErrors.StakeHashInvalidTarget)
-                            continue;
-
                         stopWork = true;
                     }
 

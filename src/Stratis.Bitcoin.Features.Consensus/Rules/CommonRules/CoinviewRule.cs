@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -42,7 +42,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             long sigOpsCost = 0;
             Money fees = Money.Zero;
-            var checkInputs = new List<Task<bool>>();
+            var inputsToCheck = new List<(Transaction tx, int inputIndexCopy, TxOut txOut, PrecomputedTransactionData txData, TxIn input, DeploymentFlags flags)>();
+
             for (int txIndex = 0; txIndex < block.Transactions.Count; txIndex++)
             {
                 Transaction tx = block.Transactions[txIndex];
@@ -51,12 +52,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 {
                     if (!tx.IsCoinBase && !view.HaveInputs(tx))
                     {
+                        this.Logger.LogTrace("Transaction '{0}' has not inputs", tx.GetHash());
                         this.Logger.LogTrace("(-)[BAD_TX_NO_INPUT]");
                         ConsensusErrors.BadTransactionMissingInput.Throw();
                     }
 
                     if (!this.IsTxFinal(tx, context))
                     {
+                        this.Logger.LogTrace("Transaction '{0}' is not final", tx.GetHash());
                         this.Logger.LogTrace("(-)[BAD_TX_NON_FINAL]");
                         ConsensusErrors.BadTransactionNonFinal.Throw();
                     }
@@ -83,11 +86,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                         for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
                         {
                             TxIn input = tx.Inputs[inputIndex];
-                            int inputIndexCopy = inputIndex;
-                            TxOut txout = view.GetOutputFor(input);
-                            var checkInput = new Task<bool>(() => this.CheckInput(tx, inputIndexCopy, txout, txData, input, flags));
-                            checkInput.Start();
-                            checkInputs.Add(checkInput);
+
+                            inputsToCheck.Add((
+                                tx: tx,
+                                inputIndexCopy: inputIndex,
+                                txOut: view.GetOutputFor(input),
+                                txData,
+                                input: input,
+                                flags
+                            ));
                         }
                     }
                 }
@@ -99,12 +106,28 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             {
                 this.CheckBlockReward(context, fees, index.Height, block);
 
-                foreach (Task<bool> checkInput in checkInputs)
+                // Start the Parallel loop on a thread so its result can be awaited rather than blocking
+                Task<ParallelLoopResult> checkInputsInParallel = Task.Run(() =>
                 {
-                    if (await checkInput.ConfigureAwait(false))
-                        continue;
+                    return Parallel.ForEach(inputsToCheck, (input, state) =>
+                    {
+                        if (state.ShouldExitCurrentIteration)
+                            return;
 
+                        if (!this.CheckInput(input.tx, input.inputIndexCopy, input.txOut, input.txData, input.input, input.flags))
+                        {
+                            state.Stop();
+                        }
+                    });
+
+                });
+
+                ParallelLoopResult loopResult = await checkInputsInParallel.ConfigureAwait(false);
+
+                if (!loopResult.IsCompleted)
+                {
                     this.Logger.LogTrace("(-)[BAD_TX_SCRIPT]");
+
                     ConsensusErrors.BadTransactionScriptError.Throw();
                 }
             }
@@ -156,12 +179,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <summary>
-        /// Check whether the transaction is part of the protocol (Coinbase or Coinstake).
-        /// </summary>
-        /// <param name="transaction">The transaction to check.</param>
-        protected abstract bool IsProtocolTransaction(Transaction transaction);
-
-        /// <summary>
         /// Network specific updates to the context's UTXO set.
         /// <para>
         /// Refer to <see cref="UpdateUTXOSet(RuleContext, Transaction)"/>.
@@ -208,6 +225,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public abstract void CheckMaturity(UnspentOutputs coins, int spendHeight);
 
         /// <summary>
+        /// Contains checks that need to be performed on each input once UTXO data is available.
+        /// </summary>
+        /// <param name="transaction">The transaction that is having its input examined.</param>
+        /// <param name="coins">The unspent output consumed by the input being examined.</param>
+        protected virtual void CheckInputValidity(Transaction transaction, UnspentOutputs coins)
+        {
+        }
+
+        /// <summary>
         /// Checks that transaction's inputs are valid.
         /// </summary>
         /// <param name="transaction">Transaction to check.</param>
@@ -231,6 +257,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 UnspentOutputs coins = inputs.AccessCoins(prevout.Hash);
 
                 this.CheckMaturity(coins, spendHeight);
+
+                this.CheckInputValidity(transaction, coins);
 
                 // Check for negative or overflow input values.
                 valueIn += coins.TryGetOutput(prevout.N).Value;
@@ -378,39 +406,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         private bool MoneyRange(long value)
         {
             return ((value >= 0) && (value <= this.Consensus.MaxMoney));
-        }
-
-        /// <summary>
-        /// Gets the block weight.
-        /// </summary>
-        /// <remarks>
-        /// This implements the <c>weight = (stripped_size * 4) + witness_size</c> formula, using only serialization with and without witness data.
-        /// As witness_size is equal to total_size - stripped_size, this formula is identical to: <c>weight = (stripped_size * 3) + total_size</c>.
-        /// </remarks>
-        /// <param name="block">Block that we get weight of.</param>
-        /// <returns>Block weight.</returns>
-        /// TODO: this is a duplicate of the same method in BlockSizeRule <see cref="BlockSizeRule.GetBlockWeight"/>
-        public long GetBlockWeight(Block block)
-        {
-            return this.GetSize(block, TransactionOptions.None)
-                   * (this.ConsensusOptions.WitnessScaleFactor - 1)
-                   + this.GetSize(block, TransactionOptions.Witness);
-        }
-
-        /// <summary>
-        /// Gets serialized size of <paramref name="data"/> in bytes.
-        /// </summary>
-        /// <param name="data">Data that we calculate serialized size of.</param>
-        /// <param name="options">Serialization options.</param>
-        /// <returns>Serialized size of <paramref name="data"/> in bytes.</returns>
-        /// TODO: this is a duplicate of the same method in BlockSizeRule <see cref="BlockSizeRule.GetSize"/>
-        private int GetSize(IBitcoinSerializable data, TransactionOptions options)
-        {
-            var bms = new BitcoinStream(Stream.Null, true);
-            bms.TransactionOptions = options;
-            bms.ConsensusFactory = this.Parent.Network.Consensus.ConsensusFactory;
-            data.ReadWrite(bms);
-            return (int)bms.Counter.WrittenBytes;
         }
 
         /// <summary>

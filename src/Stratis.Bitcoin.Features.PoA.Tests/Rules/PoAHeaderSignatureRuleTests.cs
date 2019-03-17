@@ -5,12 +5,12 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.PoA.ConsensusRules;
+using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 {
-    public class PoAHeaderSignatureRuleTests : PoARulesTestsBase
+    public class PoAHeaderSignatureRuleTests : PoATestsBase
     {
         private readonly PoAHeaderSignatureRule signatureRule;
 
@@ -19,9 +19,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
         public PoAHeaderSignatureRuleTests() : base(new TestPoANetwork(new List<PubKey>() { key.PubKey }))
         {
             this.signatureRule = new PoAHeaderSignatureRule();
-            this.signatureRule.Parent = this.rulesEngine;
-            this.signatureRule.Logger = this.loggerFactory.CreateLogger(this.signatureRule.GetType().FullName);
-            this.signatureRule.Initialize();
+            this.InitRule(this.signatureRule);
         }
 
         [Fact]
@@ -32,6 +30,8 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 
             Key randomKey = new KeyTool(new DataFolder(string.Empty)).GeneratePrivateKey();
             this.poaHeaderValidator.Sign(randomKey, this.currentHeader.Header as PoABlockHeader);
+
+            this.chainState.ConsensusTip = new ChainedHeader(this.network.GetGenesis().Header, this.network.GetGenesis().GetHash(), 0);
 
             Assert.Throws<ConsensusErrorException>(() => this.signatureRule.Run(ruleContext));
 

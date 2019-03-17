@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
@@ -74,6 +73,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public virtual void Dispose()
         {
             this.AttachedPeer = null;

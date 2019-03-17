@@ -25,18 +25,9 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </remarks>
     public class WalletTransactionHandler : IWalletTransactionHandler
     {
-        /// <summary>A threshold that if possible will limit the amount of UTXO sent to the <see cref="ICoinSelector"/>.</summary>
-        /// <remarks>
-        /// 500 is a safe number that if reached ensures the coin selector will not take too long to complete,
-        /// most regular wallets will never reach such a high number of UTXO.
-        /// </remarks>
-        private const int SendCountThresholdLimit = 500;
-
         private readonly ILogger logger;
 
         private readonly Network network;
-
-        private readonly MemoryCache privateKeyCache;
 
         protected readonly StandardTransactionPolicy TransactionPolicy;
 
@@ -55,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
+            
             this.TransactionPolicy = transactionPolicy;
             
             foreach (var wallet in this.walletManager.WalletsToUnlock)
@@ -197,38 +188,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             return context.TransactionFee;
         }
 
-        /// <inheritdoc />
-        [NoTrace]
-        public void CacheSecret(WalletAccountReference walletAccount, string walletPassword, TimeSpan duration)
-        {
-            Guard.NotNull(walletAccount, nameof(walletAccount));
-            Guard.NotEmpty(walletPassword, nameof(walletPassword));
-            Guard.NotNull(duration, nameof(duration));
-
-            Wallet wallet = this.walletManager.GetWalletByName(walletAccount.WalletName);
-            string cacheKey = wallet.EncryptedSeed;
-
-            if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
-            {
-                this.privateKeyCache.Set(cacheKey, secretValue, duration);
-            }
-            else
-            {
-                Key privateKey = Key.Parse(wallet.EncryptedSeed, walletPassword, wallet.Network);
-                this.privateKeyCache.Set(cacheKey, privateKey.ToString(wallet.Network).ToSecureString(), duration);
-            }
-        }
-
-        /// <inheritdoc />
-        public void ClearCachedSecret(WalletAccountReference walletAccount)
-        {
-            Guard.NotNull(walletAccount, nameof(walletAccount));
-
-            Wallet wallet = this.walletManager.GetWalletByName(walletAccount.WalletName);
-            string cacheKey = wallet.EncryptedSeed;
-            this.privateKeyCache.Remove(cacheKey);
-        }
-
         /// <summary>
         /// Initializes the context transaction builder from information in <see cref="TransactionBuildContext"/>.
         /// </summary>
@@ -263,7 +222,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Load's all the private keys for each of the <see cref="HdAddress"/> in <see cref="TransactionBuildContext.UnspentOutputs"/>
+        /// Loads all the private keys for each of the <see cref="HdAddress"/> in <see cref="TransactionBuildContext.UnspentOutputs"/>
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
         protected void AddSecrets(TransactionBuildContext context)
@@ -272,31 +231,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return;
 
             Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
-            Key privateKey;
-            // get extended private key
-            string cacheKey = wallet.EncryptedSeed;
-
-            if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
-            {
-                privateKey = wallet.Network.CreateBitcoinSecret(secretValue.FromSecureString()).PrivateKey;
-
-                // Get the existing unlock options if they exists. This ensures that the wallet stays unlocked the time that was specified.
-                var unlockOptions = this.walletManager.WalletsToUnlock.FirstOrDefault(w => w.Account.WalletName == wallet.Name);
-                var duration = unlockOptions != null ? new TimeSpan(0, 0, Math.Min(unlockOptions.Timeout, WalletManager.MaxUnlockDurationInSeconds)) : new TimeSpan(0, 5, 0);
-
-                this.privateKeyCache.Set(cacheKey, secretValue, duration);
-            }
-            else
-            {
-                if (string.IsNullOrEmpty(context.WalletPassword))
-                    throw new SecurityException("Wallet needs to be unlocked before sending, or the unlock period has expired.");
-
-                privateKey = Key.Parse(wallet.EncryptedSeed, context.WalletPassword, wallet.Network);
-                this.privateKeyCache.Set(cacheKey, privateKey.ToString(wallet.Network).ToSecureString(), new TimeSpan(0, 5, 0));
-            }
-
-            var seedExtKey = new ExtKey(privateKey, wallet.ChainCode);
-
+            ExtKey seedExtKey = this.walletManager.GetExtKey(context.AccountReference, context.WalletPassword, context.CacheSecret);
+            
             var signingKeys = new HashSet<ISecret>();
             var added = new HashSet<HdAddress>();
             foreach (UnspentOutputReference unspentOutputsItem in context.UnspentOutputs)
@@ -357,6 +293,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                 throw new NotEnoughFundsException("Not enough funds to cover the target", null, Money.FromUnit(totalToSend - balance, MoneyUnit.Satoshi));
             }
 
+            Money sum = 0;
+            var coins = new List<Coin>();
+
             if (context.SelectedInputs != null && context.SelectedInputs.Any())
             {
                 // 'SelectedInputs' are inputs that must be included in the
@@ -377,23 +316,32 @@ namespace Stratis.Bitcoin.Features.Wallet
                             context.UnspentOutputs.Remove(unspentOutputsItem.Value);
                     }
                 }
+
+                foreach (OutPoint outPoint in context.SelectedInputs)
+                {
+                    UnspentOutputReference item = availableHashList[outPoint];
+
+                    coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
+                    sum += item.Transaction.Amount;
+                }
             }
 
-            Money sum = 0;
-            int index = 0;
-            var coins = new List<Coin>();
-            foreach (UnspentOutputReference item in context.UnspentOutputs.OrderByDescending(a => a.Transaction.Amount))
+            foreach (UnspentOutputReference item in context.UnspentOutputs
+                .OrderByDescending(a => a.Confirmations > 0)
+                .ThenByDescending(a => a.Transaction.Amount))
             {
-                coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
-                sum += item.Transaction.Amount;
-                index++;
+                if (context.SelectedInputs?.Contains(item.ToOutPoint()) ?? false)
+                    continue;
 
-                // If threshold is reached and the total value is above the target
-                // then its safe to stop adding UTXOs to the coin list.
+                // If the total value is above the target
+                // then it's safe to stop adding UTXOs to the coin list.
                 // The primary goal is to reduce the time it takes to build a trx
                 // when the wallet is bloated with UTXOs.
-                if (index > SendCountThresholdLimit && sum > totalToSend)
+                if (sum > totalToSend)
                     break;
+
+                coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
+                sum += item.Transaction.Amount;
             }
 
             // All the UTXOs are added to the builder without filtering.
@@ -465,8 +413,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (string.IsNullOrEmpty(context.OpReturnData)) return;
 
             byte[] bytes = Encoding.UTF8.GetBytes(context.OpReturnData);
+            // TODO: Get the template from the network standard scripts instead
             Script opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
-            context.TransactionBuilder.Send(opReturnScript, Money.Zero);
+            context.TransactionBuilder.Send(opReturnScript, context.OpReturnAmount ?? Money.Zero);
         }
     }
 
@@ -486,6 +435,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.SelectedInputs = new List<OutPoint>();
             this.AllowOtherInputs = false;
             this.Sign = true;
+            this.CacheSecret = true;
         }
 
         /// <summary>
@@ -568,9 +518,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool Shuffle { get; set; }
 
         /// <summary>
-        /// Optional data to be added as an extra OP_RETURN transaction output with Money.Zero value.
+        /// Optional data to be added as an extra OP_RETURN transaction output.
         /// </summary>
         public string OpReturnData { get; set; }
+
+        /// <summary>
+        /// Optional amount to add to the OP_RETURN transaction output.
+        /// </summary>
+        public Money OpReturnAmount { get; set; }
 
         /// <summary>
         /// Whether the transaction should be signed or not.
@@ -580,6 +535,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Specify whether to use new change address on every transaction, or reuse a single address.
         /// </summary>
+        
         public bool SingleChangeAddress { get; set; }
+        /// Whether the secret should be cached for 5 mins after it is used or not.
+        /// </summary>
+        public bool CacheSecret { get; set; }
     }
 }

@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
@@ -72,8 +73,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.loggerFactory = new LoggerFactory();
 
             this.network = new BitcoinRegTest();
-            var serializer = new DBreezeSerializer();
-            serializer.Initialize(this.network);
         }
 
         [Fact]
@@ -81,10 +80,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
                 CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).Start();
-
-                TestHelper.MineBlocks(stratisNodeSync, 10);
 
                 // Change the second node's list of default behaviours include the test behaviour in it.
                 // We leave the other behaviors alone for this test because we want to see what messages the node gets under normal operation.
@@ -128,13 +125,11 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
 
                 CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).Start();
                 CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).Start();
                 CoreNode stratisNode3 = builder.CreateStratisPowNode(this.network).Start();
-
-                TestHelper.MineBlocks(stratisNodeSync, 10);
 
                 // Change the other nodes' lists of default behaviours include the test behaviour in it.
                 // We leave the other behaviors alone for this test because we want to see what messages the node gets under normal operation.
@@ -211,10 +206,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithWallet().Start();
-
-                TestHelper.MineBlocks(stratisNodeSync, 10);
-
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
                 BlockStoreSignaled blockStoreSignaled = stratisNodeSync.FullNode.NodeService<BlockStoreSignaled>();
 
                 AsyncQueue<ChainedHeader> blocksToAnnounce = (AsyncQueue<ChainedHeader>)blockStoreSignaled.GetMemberValue("blocksToAnnounce");
@@ -232,12 +224,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithWallet().Start();
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).WithWallet().Start();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).Start();
-
-                // Start up sync node and mine chain0
-                TestHelper.MineBlocks(stratisNodeSync, 10);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10NoWallet).Start();
 
                 // Store block 1 of chain0 for later usage
                 ChainedHeader firstBlock = null;

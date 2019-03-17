@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_HeaderVersionBelowMinimalHeaderVersion_ThrowsBadVersionConsensusErrorAsync()
+        public void RunAsync_HeaderVersionBelowMinimalHeaderVersion_ThrowsBadVersionConsensusError()
         {
             var rule = this.CreateRule<StratisHeaderVersionRule>();
 
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_BlockTimestampSameAsPrevious_ThrowsBlockTimestampTooEarlyConsensusErrorAsync()
+        public void RunAsync_BlockTimestampSameAsPrevious_ThrowsBlockTimestampTooEarlyConsensusError()
         {
             var rule = this.CreateRule<HeaderTimeChecksPosRule>();
 

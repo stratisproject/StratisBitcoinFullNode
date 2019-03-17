@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using NBitcoin;
+using Stratis.Bitcoin.Base.Deployments.Models;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Base.Deployments
 {
+    /// <summary>
+    /// This class tracks the current activation state of each BIP9 deployment.
+    /// </summary>
     public class ThresholdConditionCache
     {
         // What block version to use for new blocks (pre versionbits).
@@ -56,6 +60,76 @@ namespace Stratis.Bitcoin.Base.Deployments
             }
 
             return array;
+        }
+
+        /// <summary>
+        /// Computes the metrics of all BIP9 deployments for a given block.
+        /// </summary>
+        /// <param name="indexPrev">The block at which to compute the metrics.</param>
+        /// <param name="thresholdStates">The current state of each BIP9 deployment.</param>
+        /// <returns>A <see cref="ThresholdStateModel" /> object containg the metrics.</returns>
+        public List<ThresholdStateModel> GetThresholdStateMetrics(ChainedHeader indexPrev, ThresholdState[] thresholdStates)
+        {
+            var thresholdStateModels = new List<ThresholdStateModel>();
+            ThresholdState[] array = new ThresholdState[this.consensus.BIP9Deployments.Length];
+
+            for (int deploymentIndex = 0; deploymentIndex < array.Length; deploymentIndex++)
+            {
+                if (this.consensus.BIP9Deployments[deploymentIndex] == null) continue;
+
+                DateTime? timeStart = this.consensus.BIP9Deployments[deploymentIndex]?.StartTime.Date;
+                DateTime? timeTimeout = this.consensus.BIP9Deployments[deploymentIndex]?.Timeout.Date;
+                int threshold = this.consensus.RuleChangeActivationThreshold;
+
+                int votes = 0;
+                int currentHeight = indexPrev.Height + 1;
+                int period = this.consensus.MinerConfirmationWindow;
+
+                // First ancestor outside last confirmation window.
+                ChainedHeader periodStartsHeader = indexPrev.GetAncestor(indexPrev.Height - (currentHeight % period));
+                int periodEndsHeight = periodStartsHeader.Height + period;
+
+                var hexVersions = new Dictionary<string, int>();
+                int totalBlocks = 0;
+
+                while (indexPrev != periodStartsHeader)
+                {
+                    if (this.Condition(indexPrev, deploymentIndex))
+                    {
+                        votes++;
+                    }
+
+                    totalBlocks++;
+
+                    string hexVersion = indexPrev.Header.Version.ToString("X8");
+
+                    if (!hexVersions.TryGetValue(hexVersion, out int count))
+                        count = 0;
+
+                    hexVersions[hexVersion] = count + 1;
+
+                    indexPrev = indexPrev.Previous;
+                }
+
+                thresholdStateModels.Add(new ThresholdStateModel()
+                {
+                    DeploymentIndex = deploymentIndex,
+                    ConfirmationPeriod = period,
+                    Blocks = totalBlocks,
+                    Votes = votes,
+                    HexVersions = hexVersions,
+                    TimeStart = timeStart,
+                    TimeTimeOut = timeTimeout,
+                    Threshold = threshold,
+                    Height = currentHeight,
+                    PeriodStartHeight = periodStartsHeader.Height,
+                    PeriodEndHeight = periodEndsHeight,
+                    StateValue = thresholdStates[deploymentIndex],
+                    ThresholdState = ((ThresholdState) thresholdStates[deploymentIndex]).ToString()
+                });
+            }
+
+            return thresholdStateModels;
         }
 
         /// <summary>
@@ -216,11 +290,12 @@ namespace Stratis.Bitcoin.Base.Deployments
         }
 
         /// <summary>
-        /// Deterines if the activation state is available for a given block hash for a specific deployment.
+        /// Determines if the activation state is available for a given block hash for a specific deployment.
         /// </summary>
         /// <param name="hash">The block hash to determine the BIP9 activation state for.</param>
         /// <param name="deployment">The deployment for which to determine the activation state.</param>
         /// <returns>Returns <c>true</c> if the state is available and <c>false</c> otherwise.</returns>
+        [NoTrace]
         private bool ContainsKey(uint256 hash, int deployment)
         {
             if (hash == null)
@@ -234,6 +309,7 @@ namespace Stratis.Bitcoin.Base.Deployments
         /// <summary>
         /// Inspects the chain header to determine whether the version bit of a deployment is active.
         /// </summary>
+        [NoTrace]
         private bool Condition(ChainedHeader pindex, int deployment)
         {
             // This restricts us to at most 30 independent deployments. By restricting the top 3 bits to 001 we get 29 out of those
@@ -247,6 +323,7 @@ namespace Stratis.Bitcoin.Base.Deployments
         /// </summary>
         /// <param name="deployment">The BIP9 deployment to return the bit mask for.</param>
         /// <returns>The bit mask of the bit representing the deployment within the version bits.</returns>
+        [NoTrace]
         public uint Mask(int deployment)
         {
             return ((uint)1) << this.consensus.BIP9Deployments[deployment].Bit;

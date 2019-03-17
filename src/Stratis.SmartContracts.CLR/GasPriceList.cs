@@ -2,6 +2,7 @@
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR
 {
@@ -63,7 +64,7 @@ namespace Stratis.SmartContracts.CLR
             int keyLen = keyBytes != null ? keyBytes.Length : 0;
             int valueLen = valueBytes != null ? valueBytes.Length : 0;
 
-            Gas cost = (Gas)(ulong)(StoragePerByteSavedGasCost * keyLen + StoragePerByteSavedGasCost * valueLen);
+            var cost = (Gas)(ulong)(StoragePerByteSavedGasCost * keyLen + StoragePerByteSavedGasCost * valueLen);
             return cost;
         }
 
@@ -75,14 +76,13 @@ namespace Stratis.SmartContracts.CLR
             int keyLen = keyBytes != null ? keyBytes.Length : 0;
             int valueLen = valueBytes != null ? valueBytes.Length : 0;
 
-            Gas cost = (Gas)(ulong)(StoragePerByteRetrievedGasCost * keyLen + StoragePerByteRetrievedGasCost * valueLen);
+            var cost = (Gas)(ulong)(StoragePerByteRetrievedGasCost * keyLen + StoragePerByteRetrievedGasCost * valueLen);
             return cost;
         }
 
         /// <summary>
         /// TODO - Add actual costs
         /// </summary>
-        /// <param name="methodToCall"></param>
         public static Gas MethodCallCost(MethodReference methodToCall)
         {
             return (Gas)MethodCallGasCost;

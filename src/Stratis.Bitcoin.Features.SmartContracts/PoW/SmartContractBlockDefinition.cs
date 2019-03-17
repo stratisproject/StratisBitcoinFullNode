@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
         private IStateRepositoryRoot stateSnapshot;
         private readonly ISenderRetriever senderRetriever;
         private ulong blockGasConsumed;
-        private const ulong GasPerBlockLimit = SmartContractFormatRule.GasLimitMaximum * 10;
+        private const ulong GasPerBlockLimit = SmartContractFormatLogic.GasLimitMaximum * 10;
 
         public SmartContractBlockDefinition(
             IBlockBufferGenerator blockBufferGenerator,
@@ -149,9 +149,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
 
             scHeader.HashStateRoot = new uint256(this.stateSnapshot.Root);
 
-            UpdateReceiptRoot(scHeader);
+            this.UpdateReceiptRoot(scHeader);
 
-            UpdateLogsBloom(scHeader);
+            this.UpdateLogsBloom(scHeader);
         }
 
         /// <summary>

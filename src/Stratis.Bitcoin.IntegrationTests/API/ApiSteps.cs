@@ -282,7 +282,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             this.send_api_get_request($"{BalanceUri}?walletname={walletName}&AccountName=account {accountIndex}");
 
-            this.responseText.Should().Be("{\"balances\":[{\"accountName\":\"account " + accountIndex + "\",\"accountHdPath\":\"m/44'/105'/" + accountIndex + "'\",\"coinType\":105,\"amountConfirmed\":0,\"amountUnconfirmed\":0}]}");
+            this.responseText.Should().Be("{\"balances\":[{\"accountName\":\"account " + accountIndex + "\",\"accountHdPath\":\"m/44'/105'/" + accountIndex + "'\",\"coinType\":105,\"amountConfirmed\":0,\"amountUnconfirmed\":0,\"spendableAmount\":0}]}");
         }
 
         private void calling_general_info()
@@ -422,9 +422,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             var commands = JsonDataSerializer.Instance.Deserialize<List<RpcCommandModel>>(this.responseText);
 
-            commands.Count.Should().Be(25);
+            commands.Count.Should().Be(29);
             commands.Should().Contain(x => x.Command == "stop");
-            commands.Should().Contain(x => x.Command == "getrawtransaction <txid> [<verbose>]");
+            commands.Should().Contain(x => x.Command == "getrawtransaction <txid> [<verbose>] [<blockhash>]");
             commands.Should().Contain(x => x.Command == "gettxout <txid> <vout> [<includemempool>]");
             commands.Should().Contain(x => x.Command == "getblockcount");
             commands.Should().Contain(x => x.Command == "getinfo");
@@ -442,10 +442,13 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             commands.Should().Contain(x => x.Command == "getnewaddress <account> <addresstype>");
             commands.Should().Contain(x => x.Command == "sendrawtransaction <hex>");
             commands.Should().Contain(x => x.Command == "decoderawtransaction <hex>");
-            commands.Should().Contain(x => x.Command == "getblock <blockhash> [<isjsonformat>]");
+            commands.Should().Contain(x => x.Command == "getblock <blockhash> [<verbosity>]");
             commands.Should().Contain(x => x.Command == "walletlock");
             commands.Should().Contain(x => x.Command == "walletpassphrase <passphrase> <timeout>");
             commands.Should().Contain(x => x.Command == "listunspent [<minconfirmations>] [<maxconfirmations>] [<addressesjson>]");
+            commands.Should().Contain(x => x.Command == "sendmany <fromaccount> <addressesjson> [<minconf>] [<comment>] [<subtractfeefromjson>] [<isreplaceable>] [<conftarget>] [<estimatemode>]");
+            commands.Should().Contain(x => x.Command == "getblockchaininfo");
+            commands.Should().Contain(x => x.Command == "getnetworkinfo");
         }
 
         private void status_information_is_returned()

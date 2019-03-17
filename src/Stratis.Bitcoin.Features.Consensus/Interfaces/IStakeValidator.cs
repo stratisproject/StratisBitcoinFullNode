@@ -20,7 +20,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <param name="headerBits">Chained block's header bits, which define the difficulty target.</param>
         /// <param name="transactionTime">Transaction time.</param>
         /// <param name="prevout">Information about transaction id and index.</param>
-        void CheckKernel(PosRuleContext context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout);
+        /// <returns><c>true</c> if the coin stake satisfies the weighted target, otherwise <c>false</c>.</returns>
+        bool CheckKernel(PosRuleContext context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout);
 
         /// <summary>
         /// Checks that the stake kernel hash satisfies the target difficulty.
@@ -51,8 +52,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// </remarks>
         /// <exception cref="ConsensusErrors.StakeTimeViolation">Thrown in case transaction time is lower than it's own UTXO timestamp.</exception>
         /// <exception cref="ConsensusErrors.StakeHashInvalidTarget">Thrown in case PoS hash doesn't meet target protocol.</exception>
-        void CheckStakeKernelHash(PosRuleContext context, uint headerBits, uint256 prevStakeModifier, UnspentOutputs stakingCoins,
-            OutPoint prevout, uint transactionTime);
+        /// <returns><c>true</c> if the coin stake satisfies the weighted target, otherwise <c>false</c>.</returns>
+        bool CheckStakeKernelHash(PosRuleContext context, uint headerBits, uint256 prevStakeModifier, UnspentOutputs stakingCoins, OutPoint prevout, uint transactionTime);
 
         /// <summary>
         /// Checks if provided transaction is a valid coinstake transaction.
@@ -139,5 +140,21 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <param name="targetDepth">The target depth.</param>
         /// <returns><c>true</c> if the coins were spent within N blocks from <see cref="referenceChainedHeader"/>, <c>false</c> otherwise.</returns>
         bool IsConfirmedInNPrevBlocks(UnspentOutputs coins, ChainedHeader referenceChainedHeader, long targetDepth);
+
+        /// <summary>
+        /// Gets the required target depth according to the previous chained header and the consensus options.
+        /// </summary>
+        /// <param name="prevChainedHeader">Previous chained block.</param>
+        /// <returns>A value indicating the required target depth in number of blocks.</returns>
+        long GetTargetDepthRequired(ChainedHeader prevChainedHeader);
+
+        /// <summary>
+        /// Validates the POS Block Signature.
+        /// </summary>
+        /// <param name="signature">The signature to validate.</param>
+        /// <param name="blockHash">The block hash.</param>
+        /// <param name="coinStake">The coinstake transaction.</param>
+        /// <returns><c>True</c> if passes validation, and <c>false</c> otherwise.</returns>
+        bool CheckStakeSignature(BlockSignature signature, uint256 blockHash, Transaction coinStake);
     }
 }

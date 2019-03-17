@@ -9,7 +9,6 @@ using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
@@ -40,9 +39,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             this.network = KnownNetworks.StratisMain;
             this.repositoryTipHashAndHeight = new HashHeightPair(this.network.GenesisHash, 0);
-
-            var serializer = new DBreezeSerializer();
-            serializer.Initialize(new StratisMain());
 
             this.random = new Random();
 
@@ -164,9 +160,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             int blockSize = block.GetSerializedSize();
             this.chainState.ConsensusTip = null;
 
-            int count = BlockStoreQueue.BatchThresholdSizeBytes / blockSize + 2;
+            int count = 5 * 1024 * 1024 / blockSize + 2;
 
-            ConcurrentChain longChain = CreateChain(count);
+            ConcurrentChain longChain = this.CreateChain(count);
             this.repositoryTipHashAndHeight = new HashHeightPair(longChain.Genesis.HashBlock, 0);
 
             var blockStoreFlushCondition = new BlockStoreQueueFlushCondition(this.chainState, this.initialBlockDownloadState.Object);
@@ -437,7 +433,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         }
 
         [Fact]
-        public async Task RetrieveTransactionByIdFromCacheAsync()
+        public async Task RetrieveTransactionByIdFromCacheReturnsNullWhenNotIndexedAsync()
         {
             List<ChainedHeaderBlock> chainedHeaderBlocks = this.AddBlocksToBlockStoreQueue();
 
@@ -449,7 +445,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 Transaction txToFind = chainedHeaderBlocks[blockIndex].Block.Transactions.First();
 
                 Transaction foundTx = await this.blockStoreQueue.GetTransactionByIdAsync(txToFind.GetHash());
-                Assert.Equal(txToFind, foundTx);
+                Assert.Null(foundTx);
             }
         }
 

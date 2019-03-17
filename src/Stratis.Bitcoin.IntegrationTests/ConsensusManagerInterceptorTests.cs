@@ -1,5 +1,7 @@
-﻿using Stratis.Bitcoin.IntegrationTests.Common;
+﻿using System.Threading.Tasks;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
 using Xunit;
@@ -13,7 +15,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// tries to connect to another chain with longer chain work but containing an invalid block.
         /// </summary>
         [Fact]
-        public void ReorgChain_AfterInitialRewind_ChainA_Extension_MinerC_Disconnects()
+        public async Task ReorgChain_AfterInitialRewind_ChainA_Extension_MinerC_DisconnectsAsync()
         {
             using (var builder = NodeBuilder.Create(this))
             {
@@ -23,29 +25,35 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var minerB = builder.CreateStratisPowNode(network).NoValidation().WithDummyWallet();
                 var syncer = builder.CreateStratisPowNode(network).WithDummyWallet();
 
-                // Configure the interceptor to disconnect a node after a certain block has been disconnected (rewound).
-                bool interceptor(ChainedHeaderBlock chainedHeaderBlock)
-                {
-                    if (chainedHeaderBlock.ChainedHeader.Previous.Height == 5)
-                    {
-                        // Ensure that minerA's tip has rewound to 5.
-                        TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 5));
-                        TestHelper.Disconnect(minerA, syncer);
-                        return true;
-                    }
+                bool minerADisconnectedFromSyncer = false;
 
-                    return false;
+                // Configure the interceptor to disconnect a node after a certain block has been disconnected (rewound).
+                void interceptor(ChainedHeaderBlock chainedHeaderBlock)
+                {
+                    if (minerADisconnectedFromSyncer)
+                        return;
+
+                    if (chainedHeaderBlock.ChainedHeader.Previous.Height == 10)
+                    {
+                        // Ensure that minerA's tip has rewound to 10.
+                        TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 10));
+                        TestHelper.Disconnect(minerA, syncer);
+                        minerADisconnectedFromSyncer = true;
+
+                        return;
+                    }
                 }
 
-                minerA.BlockDisconnectInterceptor(interceptor);
+                // Start minerA and mine 10 blocks. We cannot use a premade chain as it adversely affects the max tip age calculation, causing sporadic sync errors.
+                minerA.Start();
+                TestHelper.MineBlocks(minerA, 10);
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 10);
 
                 // Start the nodes.
-                minerA.Start();
                 minerB.Start();
                 syncer.Start();
 
-                // MinerA mines 5 blocks.
-                TestHelper.MineBlocks(minerA, 5);
+                minerA.SetDisconnectInterceptor(interceptor);
 
                 // minerB and syncer syncs with minerA.
                 TestHelper.ConnectAndSync(minerA, minerB, syncer);
@@ -53,20 +61,20 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Disconnect minerB from miner so that it can mine on its own and create a fork.
                 TestHelper.Disconnect(minerA, minerB);
 
-                // MinerA continues to mine to height 9.
+                // MinerA continues to mine to height 14.
                 TestHelper.MineBlocks(minerA, 4);
-                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 9);
-                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 5);
-                TestHelper.WaitLoop(() => syncer.FullNode.ConsensusManager().Tip.Height == 9);
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 14);
+                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 10);
+                TestHelper.WaitLoop(() => syncer.FullNode.ConsensusManager().Tip.Height == 14);
 
                 // minerB mines 5 more blocks:
                 // Block 6,7,9,10 = valid
                 // Block 8 = invalid
                 Assert.False(TestHelper.IsNodeConnected(minerB));
-                TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(8, (node, block) => BlockBuilder.InvalidCoinbaseReward(node, block)).BuildAsync();
+                await TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(13, (node, block) => BlockBuilder.InvalidCoinbaseReward(node, block)).BuildAsync();
 
                 // Reconnect minerA to minerB.
-                TestHelper.Connect(minerA, minerB);
+                TestHelper.ConnectNoCheck(minerA, minerB);
 
                 // minerB should be disconnected from minerA.
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerB));
@@ -75,9 +83,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, syncer));
 
                 // The reorg will fail at block 8 and roll back any changes.
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 9));
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerB, 10));
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(syncer, 9));
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 14));
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerB, 15));
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(syncer, 14));
             }
         }
 
@@ -96,29 +104,33 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var minerB = builder.CreateStratisPowNode(network).WithDummyWallet();
                 var syncer = builder.CreateStratisPowNode(network).WithDummyWallet();
 
-                // Configure the interceptor to disconnect a node after a certain block has been disconnected (rewound).
-                bool interceptor(ChainedHeaderBlock chainedHeaderBlock)
-                {
-                    if (chainedHeaderBlock.ChainedHeader.Previous.Height == 5)
-                    {
-                        // Ensure that minerA's tips has rewound to 5.
-                        TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 5));
-                        TestHelper.Disconnect(minerA, minerB);
-                        return true;
-                    }
+                bool minerADisconnectedFromMinerB = false;
 
-                    return false;
+                // Configure the interceptor to disconnect a node after a certain block has been disconnected (rewound).
+                void interceptor(ChainedHeaderBlock chainedHeaderBlock)
+                {
+                    if (minerADisconnectedFromMinerB)
+                        return;
+
+                    if (chainedHeaderBlock.ChainedHeader.Previous.Height == 10)
+                    {
+                        // Ensure that minerA's tips has rewound to 10.
+                        TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 10));
+                        TestHelper.Disconnect(minerA, minerB);
+                        minerADisconnectedFromMinerB = true;
+                    }
                 }
 
-                minerA.BlockDisconnectInterceptor(interceptor);
-
-                // Start the nodes.
+                // Start minerA and mine 10 blocks. We cannot use a premade chain as it adversely affects the max tip age calculation, causing sporadic sync errors.
                 minerA.Start();
+                TestHelper.MineBlocks(minerA, 10);
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 10);
+
+                // Start the other nodes.
                 minerB.Start();
                 syncer.Start();
 
-                // MinerA mines 5 blocks.
-                TestHelper.MineBlocks(minerA, 5);
+                minerA.SetDisconnectInterceptor(interceptor);
 
                 // MinerB/Syncer syncs with MinerA.
                 TestHelper.ConnectAndSync(minerA, minerB, syncer);
@@ -126,15 +138,15 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Disable block propagation from MinerA to MinerB so that it can mine on its own and create a fork.
                 TestHelper.DisableBlockPropagation(minerA, minerB);
 
-                // MinerA continues to mine to height 9.
+                // MinerA continues to mine to height 14.
                 TestHelper.MineBlocks(minerA, 4);
-                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 9);
-                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 5);
-                TestHelper.WaitLoop(() => syncer.FullNode.ConsensusManager().Tip.Height == 9);
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 14);
+                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 10);
+                TestHelper.WaitLoop(() => syncer.FullNode.ConsensusManager().Tip.Height == 14);
 
                 // MinerB mines 5 more blocks so that a reorg is triggered.
                 TestHelper.MineBlocks(minerB, 5);
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerB, 10));
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerB, 15));
 
                 // MinerA and Syncer should have reorged to the longer chain.
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(minerA, minerB));

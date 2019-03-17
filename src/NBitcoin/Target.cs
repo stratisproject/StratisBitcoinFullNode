@@ -72,6 +72,8 @@ namespace NBitcoin
             byte[] val = bytes.SafeSubarray(0, Math.Min(bytes.Length, 3));
             Array.Reverse(val);
             byte exp = (byte)(bytes.Length);
+            if (exp == 1 && bytes[0] == 0)
+                exp = 0;
             int missing = 4 - val.Length;
             if(missing > 0)
                 val = val.Concat(new byte[missing]).ToArray();
@@ -111,8 +113,6 @@ namespace NBitcoin
                 return this._Difficulty.Value;
             }
         }
-
-
 
         public override bool Equals(object obj)
         {
@@ -160,12 +160,13 @@ namespace NBitcoin
             byte[] array = input.ToByteArray();
 
             int missingZero = 32 - array.Length;
+
             if(missingZero < 0)
                 throw new InvalidOperationException("Awful bug, this should never happen");
+
             if(missingZero != 0)
-            {
-                array = new byte[missingZero].Concat(array).ToArray();
-            }
+                return new uint256(new byte[missingZero].Concat(array), false);
+
             return new uint256(array, false);
         }
 

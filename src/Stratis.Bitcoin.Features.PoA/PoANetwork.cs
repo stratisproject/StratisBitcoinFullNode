@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Features.PoA.Policies;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -70,9 +71,9 @@ namespace Stratis.Bitcoin.Features.PoA
             // and should be the same for all nodes operating on this network.
             var federationPublicKeys = new List<PubKey>()
             {
-                new PubKey("03e6f19ea3dc6c145d98a0e0838af952755798e5bc3950bbca4f9485aa23873d7f"),
-                new PubKey("02ddebcf18207072bdd172a25f85f2ea12e2de1d9d794f136722634aad08400fcb"),
-                new PubKey("02067b38d777690aaaf23a5b371a819e6ddc6d2aae734b0199fe59df28dc056dd7")
+                new PubKey("03025fcadedd28b12665de0542c8096f4cd5af8e01791a4d057f67e2866ca66ba7"),
+                new PubKey("027724a9ecc54417ff0250c3355d300cee008747b630f43e791cd02c2b35294d2f"),
+                new PubKey("022f8ad1799fd281fc9519814d20a407ed120ba84ec24cca8e869b811e6f6d4590")
             };
 
             var consensusOptions = new PoAConsensusOptions(
@@ -82,7 +83,8 @@ namespace Stratis.Bitcoin.Features.PoA
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
                 federationPublicKeys: federationPublicKeys,
-                targetSpacingSeconds: 16
+                targetSpacingSeconds: 16,
+                votingEnabled: true
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -108,7 +110,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
-                maxReorgLength: 0, // No max reorg limit on PoA networks.
+                maxReorgLength: 500,
                 defaultAssumeValid: null,
                 maxMoney: long.MaxValue,
                 coinbaseMaturity: 2,
@@ -118,6 +120,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(60),
                 powAllowMinDifficultyBlocks: false,
+                posNoRetargeting: true,
                 powNoRetargeting: true,
                 powLimit: null,
                 minimumChainWork: null,
@@ -160,12 +163,14 @@ namespace Stratis.Bitcoin.Features.PoA
             string[] seedNodes = { };
             this.SeedNodes = this.ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
 
+            this.StandardScriptsRegistry = new PoAStandardScriptsRegistry();
+
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0621b88fb7a99c985d695be42e606cb913259bace2babe92970547fa033e4076"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x9928b372fd9e4cf62a31638607344c03c48731ba06d24576342db9c8591e1432"));
 
-            if ((this.ConsensusOptions.FederationPublicKeys == null) || (this.ConsensusOptions.FederationPublicKeys.Count == 0))
+            if ((this.ConsensusOptions.GenesisFederationPublicKeys == null) || (this.ConsensusOptions.GenesisFederationPublicKeys.Count == 0))
             {
-                throw new Exception("No keys for federation members are configured!");
+                throw new Exception("No keys for initial federation are configured!");
             }
         }
 

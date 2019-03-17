@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Controllers.Models
         public int ProcessId { get; set; }
 
         /// <summary>The height of the consensus.</summary>
-        public int ConsensusHeight { get; set; }
+        public int? ConsensusHeight { get; set; }
 
         /// <summary>Height of the most recent block in persistent storage.</summary>
         /// <seealso cref="Stratis.Bitcoin.Features.BlockRepository.HighestPersistedBlock.Height"/>
@@ -69,5 +69,8 @@ namespace Stratis.Bitcoin.Controllers.Models
         /// <summary>The current transaction relay fee.</summary>
         [JsonConverter(typeof(BtcDecimalJsonConverter))]
         public decimal RelayFee { get; set; }
+
+        /// <summary>Returns the status of the node.</summary>
+        public string State { get; set; }
     }
 }

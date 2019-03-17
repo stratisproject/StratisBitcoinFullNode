@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         /// <summary>Peer notifications available to subscribe to.</summary>
-        private readonly Signals.Signals signals;
+        private readonly Signals.ISignals signals;
 
         /// <summary>Instance logger for the memory pool behavior component.</summary>
         private readonly ILogger logger;
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             MempoolOrphans orphans,
             IConnectionManager connectionManager,
             IInitialBlockDownloadState initialBlockDownloadState,
-            Signals.Signals signals,
+            Signals.ISignals signals,
             ILoggerFactory loggerFactory,
             Network network)
         {
@@ -369,7 +369,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // Stop processing the transaction early if we are in blocks only mode.
             if (this.isBlocksOnlyMode)
             {
-                this.logger.LogInformation("Transaction sent in violation of protocol from peer '{0}'.", peer.RemoteSocketEndpoint);
+                this.logger.LogDebug("Transaction sent in violation of protocol from peer '{0}'.", peer.RemoteSocketEndpoint);
                 this.logger.LogTrace("(-)[BLOCKSONLY]");
                 return;
             }
@@ -390,7 +390,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 await this.validator.SanityCheck();
                 this.RelayTransaction(trxHash);
 
-                this.signals.SignalTransaction(trx);
+                this.signals.OnTransactionReceived.Notify(trx);
 
                 long mmsize = state.MempoolSize;
                 long memdyn = state.MempoolDynamicSize;
@@ -425,19 +425,19 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 {
                     if (!state.IsInvalid)
                     {
-                        this.logger.LogInformation("Force relaying transaction ID '{0}' from whitelisted peer '{1}'.", trxHash, peer.RemoteSocketEndpoint);
+                        this.logger.LogDebug("Force relaying transaction ID '{0}' from whitelisted peer '{1}'.", trxHash, peer.RemoteSocketEndpoint);
                         this.RelayTransaction(trxHash);
                     }
                     else
                     {
-                        this.logger.LogInformation("Not relaying invalid transaction ID '{0}' from whitelisted peer '{1}' ({2}).", trxHash, peer.RemoteSocketEndpoint, state);
+                        this.logger.LogDebug("Not relaying invalid transaction ID '{0}' from whitelisted peer '{1}' ({2}).", trxHash, peer.RemoteSocketEndpoint, state);
                     }
                 }
             }
 
             if (state.IsInvalid)
             {
-                this.logger.LogInformation("Transaction ID '{0}' from peer '{1}' was not accepted. Invalid state of '{2}'.", trxHash, peer.RemoteSocketEndpoint, state);
+                this.logger.LogDebug("Transaction ID '{0}' from peer '{1}' was not accepted. Invalid state of '{2}'.", trxHash, peer.RemoteSocketEndpoint, state);
             }
         }
 

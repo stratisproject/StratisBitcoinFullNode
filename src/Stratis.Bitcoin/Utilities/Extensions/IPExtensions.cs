@@ -1,6 +1,6 @@
-﻿using System;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using NBitcoin;
 using TracerAttributes;
 
@@ -61,6 +61,35 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         public static IPEndPoint ToIPEndPoint(this string ipAddress, int port)
         {
             return Utils.ParseIpEndpoint(ipAddress, port);
+        }
+
+        /// <summary>
+        /// Determines if an endpoint includes another endpoint.
+        /// </remarks>
+        public static bool Contains(this IPEndPoint whiteBindEndpoint, IPEndPoint localEndpoint)
+        {
+            if (whiteBindEndpoint.Address.AnyIP())
+                return whiteBindEndpoint.Port == localEndpoint.Port;
+
+            return localEndpoint.Equals(whiteBindEndpoint);
+        }
+
+        public static bool AnyIP(this IPAddress address)
+        {
+            if (address.IsIPv4())
+                return address.Equals(IPAddress.Parse("0.0.0.0"));
+
+            return address.Equals(IPAddress.Parse("[::]"));
+        }
+
+        /// <summary>
+        /// This method determines if any of a list of network end points can be mapped to this whitebind endpoint.
+        /// </summary>
+        public static bool CanBeMappedTo(this IPEndPoint whiteBindEndpoint, List<IPEndPoint> networkEndpoints, out IPEndPoint localEndpoint)
+        {
+            localEndpoint = networkEndpoints.SingleOrDefault(ep => whiteBindEndpoint.Contains(ep));
+
+            return localEndpoint != null;
         }
     }
 }

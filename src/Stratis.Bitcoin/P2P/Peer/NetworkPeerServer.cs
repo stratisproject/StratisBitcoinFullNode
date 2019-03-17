@@ -225,17 +225,17 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return true;
             }
 
-            var clientRemoteEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
+            var clientLocalEndPoint = tcpClient.Client.LocalEndPoint as IPEndPoint;
 
-            NodeServerEndpoint endpoint = this.connectionManagerSettings.Listen.FirstOrDefault(e => e.Endpoint.Match(clientRemoteEndPoint));
+            bool endpointCanBeWhiteListed = this.connectionManagerSettings.Bind.Where(x => x.Whitelisted).Any(x => x.Endpoint.Contains(clientLocalEndPoint));
 
-            if ((endpoint != null) && endpoint.Whitelisted)
+            if (endpointCanBeWhiteListed)
             {
                 this.logger.LogTrace("(-)[ENDPOINT_WHITELISTED_ALLOW_CONNECTION]:true");
                 return true;
             }
 
-            this.logger.LogTrace("Node '{0}' is not white listed during initial block download.", clientRemoteEndPoint);
+            this.logger.LogTrace("Node '{0}' is not white listed during initial block download.", clientLocalEndPoint);
 
             return false;
         }

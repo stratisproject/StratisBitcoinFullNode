@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <param name="accountName">The name of the account to retrieve.</param>
         /// <param name="coinType">The type of the coin this account is for.</param>
-        /// <returns>The requested account.</returns>
+        /// <returns>The requested account or <c>null</c> if the account does not exist.</returns>
         public HdAccount GetAccountByCoinType(string accountName, CoinType coinType)
         {
             AccountRoot accountRoot = this.AccountsRoot.SingleOrDefault(a => a.CoinType == coinType);
@@ -266,6 +266,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="password">The password used to encrypt/decrypt sensitive info.</param>
         /// <param name="address">The address to get the private key for.</param>
         /// <returns>The extended private key.</returns>
+        [NoTrace]
         public ISecret GetExtendedPrivateKeyForAddress(string password, HdAddress address)
         {
             Guard.NotEmpty(password, nameof(password));
@@ -294,7 +295,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             IEnumerable<HdAccount> accounts = this.GetAccountsByCoinType(coinType, accountFilter);
 
-            return accounts.SelectMany(x => x.GetSpendableTransactions(currentChainHeight, this.Network, confirmations));
+            return accounts.SelectMany(x => x.GetSpendableTransactions(currentChainHeight, this.Network.Consensus.CoinbaseMaturity, confirmations));
         }
     }
 
@@ -358,19 +359,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Gets the account matching the name passed as a parameter.
         /// </summary>
         /// <param name="accountName">The name of the account to get.</param>
-        /// <returns>The HD account specified by the parameter.</returns>
-        /// <exception cref="WalletException">An exception thrown if no account could be found.</exception>
+        /// <returns>The HD account specified by the parameter or <c>null</c> if the account does not exist.</returns>
         public HdAccount GetAccountByName(string accountName)
         {
-            if (this.Accounts == null)
-                throw new WalletException($"No account with the name '{accountName}' could be found.");
-
-            // Get the requested account.
-            HdAccount account = this.Accounts.SingleOrDefault(a => a.Name == accountName);
-            if (account == null)
-                throw new WalletException($"No account with the name '{accountName}' could be found.");
-
-            return account;
+            return this.Accounts?.SingleOrDefault(a => a.Name == accountName);
         }
 
         /// <summary>
@@ -669,7 +661,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Get the accounts total spendable value for both confirmed and unconfirmed UTXO.
         /// </summary>
-        public (Money ConfirmedAmount, Money UnConfirmedAmount) GetSpendableAmount()
+        public (Money ConfirmedAmount, Money UnConfirmedAmount) GetBalances()
         {
             List<TransactionData> allTransactions = this.ExternalAddresses.SelectMany(a => a.Transactions)
                 .Concat(this.InternalAddresses.SelectMany(i => i.Transactions)).ToList();
@@ -776,12 +768,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Lists all spendable transactions in the current account.
         /// </summary>
         /// <param name="currentChainHeight">The current height of the chain. Used for calculating the number of confirmations a transaction has.</param>
-        /// <param name="network">The network this account holds transactions for.</param>
+        /// <param name="coinbaseMaturity">The coinbase maturity after which a coinstake transaction is spendable.</param>
         /// <param name="confirmations">The minimum number of confirmations required for transactions to be considered.</param>
         /// <returns>A collection of spendable outputs that belong to the given account.</returns>
         /// <remarks>Note that coinbase and coinstake transaction outputs also have to mature with a sufficient number of confirmations before
         /// they are considered spendable. This is independent of the confirmations parameter.</remarks>
-        public IEnumerable<UnspentOutputReference> GetSpendableTransactions(int currentChainHeight, Network network, int confirmations = 0)
+        public IEnumerable<UnspentOutputReference> GetSpendableTransactions(int currentChainHeight, long coinbaseMaturity, int confirmations = 0)
         {
             // This will take all the spendable coins that belong to the account and keep the reference to the HdAddress and HdAccount.
             // This is useful so later the private key can be calculated just from a given UTXO.
@@ -805,7 +797,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                     // This output can unconditionally be included in the results.
                     // Or this output is a CoinBase or CoinStake and has reached maturity.
-                    if ((!isCoinBase && !isCoinStake) || (confirmationCount > network.Consensus.CoinbaseMaturity))
+                    if ((!isCoinBase && !isCoinStake) || (confirmationCount > coinbaseMaturity))
                     {
                         yield return new UnspentOutputReference
                         {
@@ -874,6 +866,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>
         ///   <c>true</c> if it is a change address; otherwise, <c>false</c>.
         /// </returns>
+        [NoTrace]
         public bool IsChangeAddress()
         {
             return HdOperations.IsChangeAddress(this.HdPath);
@@ -891,13 +884,13 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return new List<TransactionData>();
             }
 
-            return this.Transactions.Where(t => t.IsSpendable());
+            return this.Transactions.Where(t => !t.IsSpent());
         }
 
         /// <summary>
         /// Get the address total spendable value for both confirmed and unconfirmed UTXO.
         /// </summary>
-        public (Money confirmedAmount, Money unConfirmedAmount) GetSpendableAmount()
+        public (Money confirmedAmount, Money unConfirmedAmount) GetBalances()
         {
             List<TransactionData> allTransactions = this.Transactions.ToList();
 
@@ -962,6 +955,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         public uint256 BlockHash { get; set; }
 
         /// <summary>
+        /// The index of this transaction in the block in which it is contained.
+        /// </summary>
+        [JsonProperty(PropertyName = "blockIndex", NullValueHandling = NullValueHandling.Ignore)]
+        public int? BlockIndex { get; set; }
+
+        /// <summary>
         /// Gets or sets the creation time.
         /// </summary>
         [JsonProperty(PropertyName = "creationTime")]
@@ -1011,31 +1010,30 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Indicates an output is spendable.
+        /// Indicates whether an output has been spent.
         /// </summary>
+        /// <returns>A value indicating whether an output has been spent.</returns>
         [NoTrace]
-        public bool IsSpendable()
+        public bool IsSpent()
         {
-            return this.SpendingDetails == null;
+            return this.SpendingDetails != null;
         }
 
+        /// <summary>
+        /// Checks if the output is not spent, with the option to choose whether only confirmed ones are considered. 
+        /// </summary>
+        /// <param name="confirmedOnly">A value indicating whether we only want confirmed amount.</param>
+        /// <returns>The total amount that has not been spent.</returns>
         [NoTrace]
         public Money SpendableAmount(bool confirmedOnly)
         {
-            // This method only returns a UTXO that has no spending output.
-            // If a spending output exists (even if its not confirmed) this will return as zero balance.
-            if (this.IsSpendable())
+            // The spendable balance is 0 if the output is spent or it needs to be confirmed to be considered.
+            if (this.IsSpent() || (confirmedOnly && !this.IsConfirmed()))
             {
-                // If the 'confirmedOnly' flag is set check that the UTXO is confirmed.
-                if (confirmedOnly && !this.IsConfirmed())
-                {
-                    return Money.Zero;
-                }
-
-                return this.Amount;
+                return Money.Zero;
             }
 
-            return Money.Zero;
+            return this.Amount;
         }
     }
 
@@ -1052,10 +1050,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         public Script DestinationScriptPubKey { get; set; }
 
         /// <summary>
-        /// The Base58 representation of the destination  address.
+        /// The Base58 representation of the destination address.
         /// </summary>
         [JsonProperty(PropertyName = "destinationAddress")]
         public string DestinationAddress { get; set; }
+
+        /// <summary>
+        /// The index of the output of the destination address.
+        /// </summary>
+        [JsonProperty(PropertyName = "outputIndex", NullValueHandling = NullValueHandling.Ignore)]
+        public int? OutputIndex { get; set; }
 
         /// <summary>
         /// The transaction amount.
@@ -1090,6 +1094,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         [JsonProperty(PropertyName = "blockHeight", NullValueHandling = NullValueHandling.Ignore)]
         public int? BlockHeight { get; set; }
+
+        /// <summary>
+        /// The index of this transaction in the block in which it is contained.
+        /// </summary>
+        [JsonProperty(PropertyName = "blockIndex", NullValueHandling = NullValueHandling.Ignore)]
+        public int? BlockIndex { get; set; }
 
         /// <summary>
         /// A value indicating whether this is a coin stake transaction or not.

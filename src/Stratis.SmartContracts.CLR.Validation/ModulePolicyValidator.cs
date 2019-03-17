@@ -24,11 +24,12 @@ namespace Stratis.SmartContracts.CLR.Validation
 
             this.ValidateModule(results, module);
 
-            IEnumerable<TypeDefinition> contractTypes = module.GetDevelopedTypes();
+            // Use Types so that we do not return nested types. The TypePolicyValidator will enumerate nested types.
+            IEnumerable<TypeDefinition> types = module.Types;
 
-            foreach (TypeDefinition contractType in contractTypes)
+            foreach (TypeDefinition type in types)
             {
-                results.AddRange(this.typePolicyValidator.Validate(contractType));
+                results.AddRange(this.typePolicyValidator.Validate(type));
             }
             
             return results;
@@ -36,7 +37,7 @@ namespace Stratis.SmartContracts.CLR.Validation
 
         private void ValidateModule(List<ValidationResult> results, ModuleDefinition module)
         {
-            foreach (var validator in this.policy.ModuleDefValidators)
+            foreach (IModuleDefinitionValidator validator in this.policy.ModuleDefValidators)
             {
                 results.AddRange(validator.Validate(module));
             }

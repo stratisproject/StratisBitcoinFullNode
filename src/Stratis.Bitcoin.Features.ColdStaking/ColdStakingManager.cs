@@ -174,13 +174,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(wallet), wallet.Name, nameof(isColdWalletAccount), isColdWalletAccount);
 
             var coinType = (CoinType)wallet.Network.Consensus.CoinType;
-            HdAccount account = null;
-            try
-            {
-                account = wallet.GetAccountByCoinType(isColdWalletAccount ? ColdWalletAccountName : HotWalletAccountName, coinType);
-            }
-            catch (Exception) { }
-
+            HdAccount account = wallet.GetAccountByCoinType(isColdWalletAccount ? ColdWalletAccountName : HotWalletAccountName, coinType);
             if (account == null)
             {
                 this.logger.LogTrace("(-)[ACCOUNT_DOES_NOT_EXIST]:null");
@@ -239,7 +233,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             account = wallet.AddNewAccount(walletPassword, this.coinType, this.dateTimeProvider.GetTimeOffset(), accountIndex, accountName);
 
             // Maintain at least one unused address at all times. This will ensure that wallet recovery will also work.
-            account.CreateAddresses(wallet.Network, 1, false);
+            IEnumerable<HdAddress> newAddresses = account.CreateAddresses(wallet.Network, 1, false);
+            this.UpdateKeysLookupLocked(newAddresses);
 
             // Save the changes to the file.
             this.SaveWallet(wallet);
@@ -272,7 +267,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             if (address == null)
             {
                 this.logger.LogTrace("No unused address exists on account '{0}'. Adding new address.", account.Name);
-                address = account.CreateAddresses(wallet.Network, 1).First();
+                IEnumerable<HdAddress> newAddresses = account.CreateAddresses(wallet.Network, 1);
+                this.UpdateKeysLookupLocked(newAddresses);
+                address = newAddresses.First();
             }
 
             this.logger.LogTrace("(-):'{0}'", address.Address);
@@ -447,6 +444,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 TransactionFee = feeAmount,
                 MinConfirmations = 0,
                 Shuffle = false,
+                Sign = false,
                 Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = destination } }.ToList()
             };
 
@@ -474,11 +472,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 changeOutput.ScriptPubKey = mapOutPointToUnspentOutput[largestInput.PrevOut].Transaction.ScriptPubKey;
             }
 
-            // Add keys for signing inputs.
-            foreach (TxIn input in transaction.Inputs)
+            // Add keys for signing inputs. This takes time so only add keys for distinct addresses.
+            foreach (HdAddress address in transaction.Inputs.Select(i => mapOutPointToUnspentOutput[i.PrevOut].Address).Distinct())
             {
-                UnspentOutputReference unspent = mapOutPointToUnspentOutput[input.PrevOut];
-                context.TransactionBuilder.AddKeys(wallet.GetExtendedPrivateKeyForAddress(walletPassword, unspent.Address));
+                context.TransactionBuilder.AddKeys(wallet.GetExtendedPrivateKeyForAddress(walletPassword, address));
             }
 
             // Sign the transaction.

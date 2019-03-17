@@ -46,12 +46,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             await this.stakeChain.SetAsync(context.ValidationContext.ChainedHeaderToValidate, posRuleContext.BlockStake).ConfigureAwait(false);
         }
 
-        /// <inheritdoc/>
-        protected override bool IsProtocolTransaction(Transaction transaction)
-        {
-            return transaction.IsCoinBase || transaction.IsCoinStake;
-        }
-
         /// <inheritdoc />
         public override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
         {
@@ -110,6 +104,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     ConsensusErrors.BadTransactionPrematureCoinstakeSpending.Throw();
                 }
             }
+        }
+
+        /// <inheritdoc />
+        protected override void CheckInputValidity(Transaction transaction, UnspentOutputs coins)
+        {
+            // Transaction timestamp earlier than input transaction - main.cpp, CTransaction::ConnectInputs
+            if (coins.Time > transaction.Time)
+                ConsensusErrors.BadTransactionEarlyTimestamp.Throw();
         }
 
         /// <summary>

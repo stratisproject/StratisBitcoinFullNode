@@ -2,8 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
-	<Version>0.0.3-beta</Version>
+    <Version>0.0.6-beta</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,7 +15,6 @@
     <ProjectReference Include="..\Stratis.Bitcoin.Features.PoA\Stratis.Bitcoin.Features.PoA.csproj" />
     <ProjectReference Include="..\Stratis.SmartContracts.Core\Stratis.SmartContracts.Core.csproj" />
     <ProjectReference Include="..\Stratis.SmartContracts.CLR\Stratis.SmartContracts.CLR.csproj" />
-    <ProjectReference Include="..\Stratis.SmartContracts\Stratis.SmartContracts.csproj" />
   </ItemGroup>
 
 </Project>

@@ -45,7 +45,10 @@ namespace NBitcoin
 
         public void Load(byte[] chain)
         {
-            Load(new MemoryStream(chain));
+            using (var ms = new MemoryStream(chain))
+            {
+                Load(ms);
+            }
         }
 
         public void Load(Stream stream)
@@ -91,9 +94,11 @@ namespace NBitcoin
 
         public byte[] ToBytes()
         {
-            var ms = new MemoryStream();
-            WriteTo(ms);
-            return ms.ToArray();
+            using (var ms = new MemoryStream())
+            {
+                WriteTo(ms);
+                return ms.ToArray();
+            }
         }
 
         public void WriteTo(Stream stream)

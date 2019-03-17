@@ -2,6 +2,7 @@
 using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.Tests.Consensus
@@ -26,6 +27,36 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public static ChainedHeader GetPeerTipChainedHeaderByPeerId(this ChainedHeaderTree chainedHeaderTree, int peer)
         {
             return chainedHeaderTree.GetChainedHeadersByHash()[chainedHeaderTree.GetPeerTipsByPeerId()[peer]];
+        }
+
+        public static Dictionary<uint256, ConsensusManager.DownloadedCallbacks> GetCallbacksByBlocksRequestedHash(this ConsensusManager consensusManager)
+        {
+            return consensusManager.GetMemberValue("callbacksByBlocksRequestedHash") as Dictionary<uint256, ConsensusManager.DownloadedCallbacks>;
+        }
+
+        public static Dictionary<int, INetworkPeer> GetPeersByPeerId(this ConsensusManager consensusManager)
+        {
+            return consensusManager.GetMemberValue("peersByPeerId") as Dictionary<int, INetworkPeer>;
+        }
+
+        public static long GetExpectedBlockDataBytesValue(this ConsensusManager consensusManager)
+        {
+            return (long)consensusManager.GetMemberValue("expectedBlockDataBytes");
+        }
+
+        public static void SetExpectedBlockDataBytesValue(this ConsensusManager consensusManager, long val)
+        {
+            consensusManager.SetPrivateVariableValue("expectedBlockDataBytes", val);
+        }
+
+        public static void SetMaxUnconsumedBlocksDataBytesValue(this ConsensusManager consensusManager, long val)
+        {
+            consensusManager.SetPrivatePropertyValue("maxUnconsumedBlocksDataBytes", val);
+        }
+
+        public static Dictionary<uint256, long> GetExpectedBlockSizesValue(this ConsensusManager consensusManager)
+        {
+            return consensusManager.GetMemberValue("expectedBlockSizes") as Dictionary<uint256, long>;
         }
 
         public static ChainedHeader[] ToArray(this ChainedHeader chainedHeader, int headersToTake)

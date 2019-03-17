@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -14,6 +15,7 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
@@ -24,6 +26,7 @@ using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
@@ -51,15 +54,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public string Config { get; }
 
-        public NodeConfigParameters ConfigParameters { get; } = new NodeConfigParameters();
+        public NodeConfigParameters ConfigParameters { get; set; }
 
         public bool CookieAuth { get; set; }
 
         public Mnemonic Mnemonic { get; set; }
 
-        private Func<ChainedHeaderBlock, bool> builderDisconnectInterceptor;
-        private Func<ChainedHeaderBlock, bool> builderConnectInterceptor;
-
+        private bool builderAlwaysFlushBlocks;
         private bool builderEnablePeerDiscovery;
         private bool builderNoValidation;
         private bool builderOverrideDateTimeProvider;
@@ -68,6 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private string builderWalletName;
         private string builderWalletPassword;
         private string builderWalletPassphrase;
+        private string builderWalletMnemonic;
 
         public CoreNode(NodeRunner runner, NodeConfigParameters configParameters, string configfile, bool useCookieAuth = false)
         {
@@ -78,7 +80,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.creds = new NetworkCredential(pass, pass);
             this.Config = Path.Combine(this.runner.DataFolder, configfile);
             this.CookieAuth = useCookieAuth;
-            this.ConfigParameters.Import(configParameters);
+
+            this.ConfigParameters = new NodeConfigParameters();
+            if (configParameters != null)
+                this.ConfigParameters.Import(configParameters);
+
             var randomFoundPorts = new int[3];
             IpHelper.FindPorts(randomFoundPorts);
             this.ConfigParameters.SetDefaultValueIfUndefined("port", randomFoundPorts[0].ToString());
@@ -111,24 +117,26 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         }
 
         /// <summary>
-        /// Executes a function when a block has disconnected.
+        /// Executes a function when a block has connected.
         /// </summary>
-        /// <param name="interceptor">A function that is called when a block disconnects, it will return true if it executed.</param>
+        /// <param name="interceptor">A function that is called everytime a block connects.</param>
         /// <returns>This node.</returns>
-        public CoreNode BlockDisconnectInterceptor(Func<ChainedHeaderBlock, bool> interceptor)
+        public CoreNode SetConnectInterceptor(Action<ChainedHeaderBlock> interceptor)
         {
-            this.builderDisconnectInterceptor = interceptor;
+            this.FullNode.NodeService<ISignals>().OnBlockConnected.Attach(interceptor);
+
             return this;
         }
 
         /// <summary>
-        /// Executes a function when a block has connected.
+        /// Executes a function when a block has disconnected.
         /// </summary>
-        /// <param name="interceptor">A function that is called when a block connects, it will return true if it executed.</param>
+        /// <param name="interceptor">A function that is called when a block disconnects.</param>
         /// <returns>This node.</returns>
-        public CoreNode BlockConnectInterceptor(Func<ChainedHeaderBlock, bool> interceptor)
+        public CoreNode SetDisconnectInterceptor(Action<ChainedHeaderBlock> interceptor)
         {
-            this.builderConnectInterceptor = interceptor;
+            this.FullNode.NodeService<ISignals>().OnBlockDisconnected.Attach(interceptor);
+
             return this;
         }
 
@@ -139,6 +147,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public CoreNode EnablePeerDiscovery()
         {
             this.builderEnablePeerDiscovery = true;
+            return this;
+        }
+
+        public CoreNode AlwaysFlushBlocks()
+        {
+            this.builderAlwaysFlushBlocks = true;
             return this;
         }
 
@@ -183,14 +197,24 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <param name="walletPassword">Wallet password defaulted to "password".</param>
         /// <param name="walletName">Wallet name defaulted to "mywallet".</param>
         /// <param name="walletPassphrase">Wallet passphrase defaulted to "passphrase".</param>
+        /// <param name="walletMnemonic">Optional wallet mnemonic.</param>
         /// <returns>This node.</returns>
-        public CoreNode WithWallet(string walletPassword = "password", string walletName = "mywallet", string walletPassphrase = "passphrase")
+        public CoreNode WithWallet(string walletPassword = "password", string walletName = "mywallet", string walletPassphrase = "passphrase", string walletMnemonic = null)
         {
             this.builderWithDummyWallet = false;
             this.builderWithWallet = true;
             this.builderWalletName = walletName;
             this.builderWalletPassphrase = walletPassphrase;
             this.builderWalletPassword = walletPassword;
+            this.builderWalletMnemonic = walletMnemonic;
+            return this;
+        }
+
+        public CoreNode WithReadyBlockchainData(string readyDataName)
+        {
+            // Extract the zipped blockchain data to the node's DataFolder.
+            ZipFile.ExtractToDirectory(Path.GetFullPath(readyDataName), this.DataFolder, true);
+
             return this;
         }
 
@@ -236,14 +260,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             lock (this.lockObject)
             {
+                this.runner.AlwaysFlushBlocks = this.builderAlwaysFlushBlocks;
                 this.runner.EnablePeerDiscovery = this.builderEnablePeerDiscovery;
                 this.runner.OverrideDateTimeProvider = this.builderOverrideDateTimeProvider;
-
-                if (this.builderDisconnectInterceptor != null)
-                    this.runner.InterceptorDisconnect = this.builderDisconnectInterceptor;
-
-                if (this.builderConnectInterceptor != null)
-                    this.runner.InterceptorConnect = this.builderConnectInterceptor;
 
                 this.runner.BuildNode();
                 this.runner.Start();
@@ -340,7 +359,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 this.SetMinerSecret(new BitcoinSecret(new Key(), this.FullNode.Network));
 
             if (this.builderWithWallet)
-                this.Mnemonic = this.FullNode.WalletManager().CreateWallet(this.builderWalletPassword, this.builderWalletName, this.builderWalletPassphrase);
+            {
+                this.Mnemonic = this.FullNode.WalletManager().CreateWallet(
+                    this.builderWalletPassword,
+                    this.builderWalletName,
+                    this.builderWalletPassphrase,
+                    string.IsNullOrEmpty(this.builderWalletMnemonic) ? null : new Mnemonic(this.builderWalletMnemonic));
+            }
 
             if (this.builderNoValidation)
                 DisableValidation();
@@ -439,7 +464,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
             using (INetworkPeer peer = this.CreateNetworkPeerClient())
             {
-                peer.VersionHandshakeAsync().GetAwaiter().GetResult();
+                await peer.VersionHandshakeAsync().ConfigureAwait(false);
 
                 var chain = bestBlock == this.runner.Network.GenesisHash ? new ConcurrentChain(this.runner.Network) : this.GetChain(peer);
 

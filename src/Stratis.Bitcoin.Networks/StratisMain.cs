@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Networks.Deployments;
+using Stratis.Bitcoin.Networks.Policies;
 
 namespace Stratis.Bitcoin.Networks
 {
@@ -100,7 +103,7 @@ namespace Stratis.Bitcoin.Networks
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
                 maxReorgLength: 500,
-                defaultAssumeValid: new uint256("0x55a8205ae4bbf18f4d238c43f43005bd66e0b1f679b39e2c5c62cf6903693a5e"), // 795970
+                defaultAssumeValid: new uint256("0x50497017e7bb256df205fcbc2caccbe5b516cb33491e1a11737a3bfe83959b9f"), // 1213518
                 maxMoney: long.MaxValue,
                 coinbaseMaturity: 50,
                 premineHeight: 2,
@@ -109,6 +112,7 @@ namespace Stratis.Bitcoin.Networks
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
                 powAllowMinDifficultyBlocks: false,
+                posNoRetargeting: false,
                 powNoRetargeting: false,
                 powLimit: new Target(new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
                 minimumChainWork: null,
@@ -163,7 +167,8 @@ namespace Stratis.Bitcoin.Networks
                 { 750000, new CheckpointInfo(new uint256("0x4db98bd41a2f9ee845cc89ac03109686f615f4d0dcd81e0488005c1616fa692c"), new uint256("0x9f620af75bc27a0e4b503deaf7f052ba112a49bb74fb6446350642bc2ac9d93b")) },
                 { 800000, new CheckpointInfo(new uint256("0x161da1d97d35d6897dbdae110617bb839805f8b02d33ac23d227a87cacbfac78"), new uint256("0xe95049a313345f26bfa90094ceb6400f43359fc43fc5f1471918d98bc4ab3bac")) },
                 { 850000, new CheckpointInfo(new uint256("0xc3a249b01795b22858aa00fd0973471fcd769a14f4f9cf0abe6651ac3e6ade19"), new uint256("0x5de8766ed4cfcc3ce9d74f38196596c6f91b9ff62cbd20abbfa991dca54d2bd4")) },
-                { 1000000, new CheckpointInfo(new uint256("0x3cdd812d9a7e249e7ad825cb372fbb0889f5b515a4a924a4aa3281d8e334d559"), new uint256("0x36a51839ceb5866b3251c9e5e0049a0209fe0b1861b2ada118fe00a8cacf62df")) }
+                { 1000000, new CheckpointInfo(new uint256("0x3cdd812d9a7e249e7ad825cb372fbb0889f5b515a4a924a4aa3281d8e334d559"), new uint256("0x36a51839ceb5866b3251c9e5e0049a0209fe0b1861b2ada118fe00a8cacf62df")) },
+                { 1150000, new CheckpointInfo(new uint256("0x2bdb553600592655dd50f0d2e1632e5ac3bad99a5e1864f8b8ac02f768721e17"), new uint256("0x0ae7676da03bee9c8005680058a06b8a5009fb584d84811fc29ae1aeb7665426")) } // 13-01-2019
             };
 
             var encoder = new Bech32Encoder("bc");
@@ -179,8 +184,21 @@ namespace Stratis.Bitcoin.Networks
                 new DNSSeedData("mainnet4.stratisnetwork.com", "mainnet4.stratisnetwork.com")
             };
 
-            string[] seedNodes = { "101.200.198.155", "103.24.76.21", "104.172.24.79", "13.78.39.87", "23.102.35.247" };
-            this.SeedNodes = ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
+            this.SeedNodes = new List<NetworkAddress>
+            {
+                new NetworkAddress(IPAddress.Parse("51.140.231.125"), 16178), // danger cloud node
+                new NetworkAddress(IPAddress.Parse("13.70.81.5"), 16178), // beard cloud node
+                new NetworkAddress(IPAddress.Parse("191.235.85.131"), 16178), // fassa cloud node
+                new NetworkAddress(IPAddress.Parse("46.22.163.55"), 16178), // majic public node
+                new NetworkAddress(IPAddress.Parse("86.173.103.49"), 16178 ), // lukasz public node
+
+                new NetworkAddress(IPAddress.Parse("137.116.46.151"), 16178), // public node
+                new NetworkAddress(IPAddress.Parse("40.78.80.159"), 16178), // public node
+                new NetworkAddress(IPAddress.Parse("52.151.86.242"), 16178), // public node
+                new NetworkAddress(IPAddress.Parse("40.74.67.242"), 16178), // public node
+            };
+
+            this.StandardScriptsRegistry = new StratisStandardScriptsRegistry();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x65a26bc20b0351aebf05829daefa8f7db2f800623439f3c114257c91447f1518"));

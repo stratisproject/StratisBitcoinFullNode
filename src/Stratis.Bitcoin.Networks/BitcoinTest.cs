@@ -4,6 +4,7 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Networks.Deployments;
+using Stratis.Bitcoin.Networks.Policies;
 
 namespace Stratis.Bitcoin.Networks
 {
@@ -62,7 +63,7 @@ namespace Stratis.Bitcoin.Networks
                 ruleChangeActivationThreshold: 1512,
                 minerConfirmationWindow: 2016,
                 maxReorgLength: 0,
-                defaultAssumeValid: new uint256("0x000000000000015682a21fc3b1e5420435678cba99cace2b07fe69b668467651"), // 1292762
+                defaultAssumeValid: new uint256("0x0000000000000037a8cd3e06cd5edbfe9dd1dbcc5dacab279376ef7cfc2b4c75"), // 1354312
                 maxMoney: 21000000 * Money.COIN,
                 coinbaseMaturity: 100,
                 premineHeight: 0,
@@ -71,6 +72,7 @@ namespace Stratis.Bitcoin.Networks
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
                 powAllowMinDifficultyBlocks: true,
+                posNoRetargeting: false,
                 powNoRetargeting: false,
                 powLimit: new Target(new uint256("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
                 minimumChainWork: new uint256("0x0000000000000000000000000000000000000000000000198b4def2baa9338d6"),
@@ -108,7 +110,8 @@ namespace Stratis.Bitcoin.Networks
                 { 500_000, new CheckpointInfo(new uint256("000000000001a7c0aaa2630fbb2c0e476aafffc60f82177375b2aaa22209f606")) },
                 { 800_000, new CheckpointInfo(new uint256("0000000000209b091d6519187be7c2ee205293f25f9f503f90027e25abf8b503")) },
                 { 1_000_000, new CheckpointInfo(new uint256("0000000000478e259a3eda2fafbeeb0106626f946347955e99278fe6cc848414")) },
-                { 1_210_000, new CheckpointInfo(new uint256("00000000461201277cf8c635fc10d042d6f0a7eaa57f6c9e8c099b9e0dbc46dc")) }
+                { 1_210_000, new CheckpointInfo(new uint256("00000000461201277cf8c635fc10d042d6f0a7eaa57f6c9e8c099b9e0dbc46dc")) },
+                { 1_400_000, new CheckpointInfo(new uint256("000000000000fce208da3e3b8afcc369835926caa44044e9c2f0caa48c8eba0f")) } // 22-08-2018
             };
 
             this.DNSSeeds = new List<DNSSeedData>
@@ -119,6 +122,8 @@ namespace Stratis.Bitcoin.Networks
             };
 
             this.SeedNodes = new List<NetworkAddress>();
+
+            this.StandardScriptsRegistry = new BitcoinStandardScriptsRegistry();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
         }
