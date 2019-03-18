@@ -24,31 +24,60 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// The current federated leader equal the <see cref="IFederationGatewaySettings.PublicKey"/> before it can broadcast the transactions.
         /// </remarks>
         Task BroadcastTransactionsAsync();
+
+        /// <summary>
+        /// Starts the broadcasting of fully signed transactions every N seconds.
+        /// </summary>
+        void Start();
+
+        /// <summary>
+        /// Stops the broadcasting of fully signed transactions.
+        /// </summary>
+        void Stop();
     }
 
     public class SignedMultisigTransactionBroadcaster : ISignedMultisigTransactionBroadcaster, IDisposable
     {
         private readonly ILogger logger;
-        private readonly IDisposable leaderReceiverSubscription;
         private readonly ICrossChainTransferStore store;
-        private readonly string publicKey;
         private readonly MempoolManager mempoolManager;
         private readonly IBroadcasterManager broadcasterManager;
+        private readonly INodeLifetime nodeLifetime;
+        private readonly IAsyncLoopFactory asyncLoopFactory;
 
-        public SignedMultisigTransactionBroadcaster(ILoggerFactory loggerFactory, ICrossChainTransferStore store, IFederationGatewaySettings settings,
+        private IAsyncLoop asyncLoop;
+
+        public SignedMultisigTransactionBroadcaster(
+            IAsyncLoopFactory asyncLoopFactory,
+            ILoggerFactory loggerFactory,
+            ICrossChainTransferStore store,
+            INodeLifetime nodeLifetime,
             MempoolManager mempoolManager, IBroadcasterManager broadcasterManager)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(store, nameof(store));
-            Guard.NotNull(settings, nameof(settings));
             Guard.NotNull(mempoolManager, nameof(mempoolManager));
             Guard.NotNull(broadcasterManager, nameof(broadcasterManager));
 
+
+            this.asyncLoopFactory = asyncLoopFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.store = store;
-            this.publicKey = settings.PublicKey;
+            this.nodeLifetime = nodeLifetime;
             this.mempoolManager = mempoolManager;
             this.broadcasterManager = broadcasterManager;
+        }
+
+        /// <inheritdoc />
+        public void Start()
+        {
+            this.asyncLoop = this.asyncLoopFactory.Run(nameof(PartialTransactionRequester), token =>
+                {
+                    this.BroadcastTransactionsAsync().GetAwaiter().GetResult();
+                    return Task.CompletedTask;
+                },
+                this.nodeLifetime.ApplicationStopping,
+                TimeSpans.TenSeconds);
         }
 
         /// <inheritdoc />
@@ -80,8 +109,18 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         public void Dispose()
         {
+            this.Stop();
             this.store?.Dispose();
-            this.leaderReceiverSubscription?.Dispose();
+        }
+
+        /// <inheritdoc />
+        public void Stop()
+        {
+            if (this.asyncLoop != null)
+            {
+                this.asyncLoop.Dispose();
+                this.asyncLoop = null;
+            }
         }
     }
 }

@@ -38,7 +38,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
     /// <inheritdoc />
     public class PartialTransactionRequester : IPartialTransactionRequester
     {
-        private readonly ILoggerFactory loggerFactory;
         private readonly ILogger logger;
         private readonly ICrossChainTransferStore crossChainTransferStore;
         private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -62,7 +61,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(federationGatewaySettings, nameof(federationGatewaySettings));
 
-            this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.crossChainTransferStore = crossChainTransferStore;
             this.asyncLoopFactory = asyncLoopFactory;

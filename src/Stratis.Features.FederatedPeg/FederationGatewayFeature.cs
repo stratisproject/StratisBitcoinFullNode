@@ -69,6 +69,8 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly IPartialTransactionRequester partialTransactionRequester;
 
+        private readonly ISignedMultisigTransactionBroadcaster signedBroadcaster;
+
         private readonly IMaturedBlocksSyncManager maturedBlocksSyncManager;
 
         private readonly IWithdrawalHistoryProvider withdrawalHistoryProvider;
@@ -87,6 +89,7 @@ namespace Stratis.Features.FederatedPeg
             INodeStats nodeStats,
             ICrossChainTransferStore crossChainTransferStore,
             IPartialTransactionRequester partialTransactionRequester,
+            ISignedMultisigTransactionBroadcaster signedBroadcaster,
             IMaturedBlocksSyncManager maturedBlocksSyncManager,
             IWithdrawalHistoryProvider withdrawalHistoryProvider)
         {
@@ -102,6 +105,7 @@ namespace Stratis.Features.FederatedPeg
             this.partialTransactionRequester = partialTransactionRequester;
             this.maturedBlocksSyncManager = maturedBlocksSyncManager;
             this.withdrawalHistoryProvider = withdrawalHistoryProvider;
+            this.signedBroadcaster = signedBroadcaster;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -132,6 +136,9 @@ namespace Stratis.Features.FederatedPeg
 
             // Query our database for partially-signed transactions and send them around to be signed every N seconds.
             this.partialTransactionRequester.Start();
+
+            // Query our database for fully-signed transactions and broadcast them every N seconds.
+            this.signedBroadcaster.Start();
 
             // Connect the node to the other federation members.
             foreach (IPEndPoint federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)

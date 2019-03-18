@@ -29,6 +29,8 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly IBroadcasterManager broadcasterManager;
         private ISignedMultisigTransactionBroadcaster signedMultisigTransactionBroadcaster;
 
+        private readonly IAsyncLoopFactory loopFactory;
+        private readonly INodeLifetime nodeLifetime;
         private readonly MempoolManager mempoolManager;
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly MempoolSettings mempoolSettings;
@@ -50,6 +52,8 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.leaderReceiverSubscription = Substitute.For<IDisposable>();
             this.store = Substitute.For<ICrossChainTransferStore>();
             this.broadcasterManager = Substitute.For<IBroadcasterManager>();
+            this.loopFactory = Substitute.For<IAsyncLoopFactory>();
+            this.nodeLifetime = Substitute.For<INodeLifetime>();
 
             // Setup MempoolManager.
             this.dateTimeProvider = Substitute.For<IDateTimeProvider>();
@@ -93,9 +97,10 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationGatewaySettings.PublicKey.Returns("dummykey");
 
             this.signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+                this.loopFactory,
                 this.loggerFactory,
                 this.store,
-                this.federationGatewaySettings,
+                this.nodeLifetime,
                 this.mempoolManager,
                 this.broadcasterManager);
 
@@ -114,9 +119,10 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).Returns(emptyTransactionPair);
 
             this.signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+                this.loopFactory,
                 this.loggerFactory,
                 this.store,
-                this.federationGatewaySettings,
+                this.nodeLifetime,
                 this.mempoolManager,
                 this.broadcasterManager);
 
@@ -144,9 +150,10 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).Returns(transactionPair);
 
             this.signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+                this.loopFactory,
                 this.loggerFactory,
                 this.store,
-                this.federationGatewaySettings,
+                this.nodeLifetime,
                 this.mempoolManager,
                 this.broadcasterManager);
 
