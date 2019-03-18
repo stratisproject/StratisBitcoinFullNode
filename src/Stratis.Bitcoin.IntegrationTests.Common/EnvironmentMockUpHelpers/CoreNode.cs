@@ -225,14 +225,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public INetworkPeer CreateNetworkPeerClient()
         {
-            var selfEndPointTracker = new SelfEndpointTracker(this.loggerFactory, this.runner.FullNode.NodeService<ConnectionManagerSettings>());
-
-            // Needs to be initialized beforehand.
-            selfEndPointTracker.UpdateAndAssignMyExternalAddress(new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), this.ProtocolPort), false);
-
-            var ibdState = new Mock<IInitialBlockDownloadState>();
-            ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => true);
-
             ConnectionManagerSettings connectionManagerSettings = null;
 
             if (this.runner is BitcoinCoreRunner)
@@ -244,6 +236,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             {
                 connectionManagerSettings = this.runner.FullNode.ConnectionManager.ConnectionSettings;
             }
+
+            var selfEndPointTracker = new SelfEndpointTracker(this.loggerFactory, connectionManagerSettings);
+
+            // Needs to be initialized beforehand.
+            selfEndPointTracker.UpdateAndAssignMyExternalAddress(new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), this.ProtocolPort), false);
+
+            var ibdState = new Mock<IInitialBlockDownloadState>();
+            ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => true);
 
             var networkPeerFactory = new NetworkPeerFactory(this.runner.Network,
                 DateTimeProvider.Default,
