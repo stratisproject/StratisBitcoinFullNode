@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
@@ -27,6 +28,8 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly Script payToMemberScript;
 
+        private readonly ICoinbaseSplitter premineSplitter;
+
         /// <inheritdoc />
         public FederatedPegBlockDefinition(
             IBlockBufferGenerator blockBufferGenerator,
@@ -40,6 +43,7 @@ namespace Stratis.Features.FederatedPeg
             Network network,
             ISenderRetriever senderRetriever,
             IStateRepositoryRoot stateRoot,
+            ICoinbaseSplitter premineSplitter,
             NodeSettings nodeSettings,
             MinerSettings minerSettings)
             : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool, mempoolLock, network, senderRetriever, stateRoot, minerSettings)
@@ -47,12 +51,12 @@ namespace Stratis.Features.FederatedPeg
             var federationGatewaySettings = new FederationGatewaySettings(nodeSettings);
             this.payToMultisigScript = federationGatewaySettings.MultiSigAddress.ScriptPubKey;
             this.payToMemberScript = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(new PubKey(federationGatewaySettings.PublicKey));
+
+            this.premineSplitter = premineSplitter;
         }
 
         public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
-            // TODO: Shouldn't this be mining to a local wallet. Use this variable ^^
-
             bool miningPremine = (chainTip.Height + 1) == this.Network.Consensus.PremineHeight;
 
             Script rewardScript = miningPremine ? this.payToMultisigScript : this.payToMemberScript;
@@ -61,25 +65,10 @@ namespace Stratis.Features.FederatedPeg
 
             if (miningPremine)
             {
-                this.BreakUpPremineCoinbase();
+                this.premineSplitter.SplitReward(this.coinbase);
             }
 
             return built;
-        }
-
-        private void BreakUpPremineCoinbase()
-        {
-            TxOut premineOutput = this.coinbase.Outputs[0];
-
-            Money newTxOutValues = premineOutput.Value / FederationWalletOutputs;
-            Script newTxOutScript = premineOutput.ScriptPubKey;
-
-            this.coinbase.Outputs.Clear();
-
-            for (int i = 0; i < FederationWalletOutputs; i++)
-            {
-                this.coinbase.AddOutput(newTxOutValues, newTxOutScript);
-            }
         }
 
     }
