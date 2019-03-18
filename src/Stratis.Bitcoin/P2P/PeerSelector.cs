@@ -84,7 +84,6 @@ namespace Stratis.Bitcoin.P2P
         void ResetConnectionAttemptsOnNotBannedPeers();
     }
 
-    [NoTrace]
     public sealed class PeerSelector : IPeerSelector
     {
         /// <summary>Provider of time functions.</summary>
@@ -128,6 +127,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
+        [NoTrace]
         public PeerAddress SelectPeer()
         {
             PeerAddress peerAddress = null;
@@ -137,11 +137,7 @@ namespace Stratis.Bitcoin.P2P
                 .ToList();
 
             if (peers.Any())
-            {
                 peerAddress = this.Random(peers);
-            }
-            else
-                this.logger.LogTrace("There is no peer.");
 
             return peerAddress;
         }
@@ -221,6 +217,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
+        [NoTrace]
         public bool HasAllPeersReachedConnectionThreshold()
         {
             IEnumerable<PeerAddress> notBanned = this.NotBanned();
@@ -243,6 +240,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
+        [NoTrace]
         public IEnumerable<PeerAddress> SelectPeersForDiscovery(int peerCount)
         {
             if (this.peerAddresses.Count == 0)
@@ -261,6 +259,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
+        [NoTrace]
         public IEnumerable<PeerAddress> SelectPeersForGetAddrPayload(int peerCount)
         {
             // If there are no peers return an empty list.

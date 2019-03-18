@@ -30,16 +30,21 @@ namespace Stratis.SmartContracts.Tests.Common
         {
             var settings = new NodeSettings(this.Network, args: new string[] { "-conf=poa.conf", "-datadir=" + this.DataFolder });
 
+            var networkWithPubKey = (ISignedCodePubKeyHolder)this.Network;
+
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)
                 .UseBlockStore()
                 .UseMempool()
                 .AddRPC()
-                .AddSmartContracts()
-                .UseSignedContractPoAConsensus()
+                .AddSmartContracts(options =>
+                {
+                    options.UseReflectionExecutor();
+                    options.UseSignedContracts(networkWithPubKey.SigningContractPubKey);
+                })
+                .UseSmartContractPoAConsensus()
                 .UseSmartContractPoAMining()
                 .UseSmartContractWallet()
-                .UseReflectionExecutor()
                 .ReplaceTimeProvider(this.dateTimeProvider)
                 .MockIBD()
                 .AddFastMiningCapability()

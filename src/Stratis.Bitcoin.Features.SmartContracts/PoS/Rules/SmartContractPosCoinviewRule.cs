@@ -6,10 +6,15 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
+using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
 {
@@ -18,20 +23,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
     /// </summary>
     public sealed class SmartContractPosCoinviewRule : SmartContractCoinviewRule
     {
-        private IConsensus consensus;
-        private SmartContractPosConsensusRuleEngine smartContractPosParent;
-        private IStakeChain stakeChain;
-        private IStakeValidator stakeValidator;
-
-        /// <inheritdoc />
-        public override void Initialize()
+        private readonly IConsensus consensus;
+        private readonly IStakeChain stakeChain;
+        private readonly IStakeValidator stakeValidator;
+        
+        public SmartContractPosCoinviewRule(Network network, IStateRepositoryRoot stateRepositoryRoot,
+            IContractExecutorFactory executorFactory, ICallDataSerializer callDataSerializer,
+            ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView,
+            IStakeChain stakeChain, IStakeValidator stakeValidator) 
+            : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView)
         {
-            base.Initialize();
-
-            this.consensus = this.Parent.Network.Consensus;
-            this.smartContractPosParent = (SmartContractPosConsensusRuleEngine)this.Parent;
-            this.stakeChain = this.smartContractPosParent.StakeChain;
-            this.stakeValidator = this.smartContractPosParent.StakeValidator;
+            this.consensus = network.Consensus;
+            this.stakeChain = stakeChain;
+            this.stakeValidator = stakeValidator;
         }
 
         /// <inheritdoc />
@@ -46,12 +50,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
             await base.RunAsync(context);
 
             await this.stakeChain.SetAsync(context.ValidationContext.ChainedHeaderToValidate, (context as PosRuleContext).BlockStake).ConfigureAwait(false);
-        }
-
-        /// <inheritdoc/>
-        protected override bool IsProtocolTransaction(Transaction transaction)
-        {
-            return transaction.IsCoinBase || transaction.IsCoinStake;
         }
 
         /// <inheritdoc />

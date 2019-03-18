@@ -771,5 +771,47 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 node2Balance.SpendableAmount.Should().Be(new Money(98000396 - 40, MoneyUnit.BTC)); // Maturity for StratisregTest is 10, so at block 100, the coins in the last 10 blocks (10*4) are not spendable.
             }
         }
+
+        [Fact]
+        public async Task GetHistoryFromMiningNode()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                // Create a mining node.
+                CoreNode miningNode = builder.CreateStratisPosNode(this.network).WithWallet().Start();
+
+                TestHelper.MineBlocks(miningNode, 5);
+
+                // Check balances.
+                WalletBalanceModel sendingNodeBalances = await $"http://localhost:{miningNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                AccountBalanceModel sendingAccountBalance = sendingNodeBalances.AccountsBalances.Single();
+                (sendingAccountBalance.AmountConfirmed + sendingAccountBalance.AmountUnconfirmed).Should().Be(new Money(98000000 + (4 * 4), MoneyUnit.BTC));
+
+                // Act.
+                WalletHistoryModel firstAccountHistory = await $"http://localhost:{miningNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/history")
+                    .SetQueryParams(new { walletName = "mywallet", accountName = "account 0" })
+                    .GetJsonAsync<WalletHistoryModel>();
+
+                // Assert.
+                firstAccountHistory.AccountsHistoryModel.Should().NotBeEmpty();
+
+                ICollection<TransactionItemModel> history = firstAccountHistory.AccountsHistoryModel.First().TransactionsHistory;
+                history.Should().NotBeEmpty();
+                history.Count.Should().Be(5);
+
+                TransactionItemModel firstItem = history.First(); // First item in the list but last item to have occurred.
+                firstItem.Amount.Should().Be(new Money(4, MoneyUnit.BTC));
+                firstItem.BlockIndex.Should().Be(0);
+                firstItem.ConfirmedInBlock.Should().Be(5);
+                firstItem.ToAddress.Should().NotBeNullOrEmpty();
+                firstItem.Fee.Should().BeNull();
+            }
+        }
     }
 }

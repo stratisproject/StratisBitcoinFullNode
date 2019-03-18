@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         public async Task SmartContractFormatRule_SuccessAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
-            ContractTransactionValidationRule rule = testContext.CreateContractValidationRule();
+            ContractTransactionPartialValidationRule rule = testContext.CreateContractValidationRule();
 
             var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
             context.UnspentOutputSet = GetMockOutputSet();
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         public async Task SmartContractFormatRule_MultipleOutputs_SuccessAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
-            ContractTransactionValidationRule rule = testContext.CreateContractValidationRule();
+            ContractTransactionPartialValidationRule rule = testContext.CreateContractValidationRule();
 
             var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset())
             {
@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         public async Task SmartContractFormatRule_FailureAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
-            ContractTransactionValidationRule rule = testContext.CreateContractValidationRule();
+            ContractTransactionPartialValidationRule rule = testContext.CreateContractValidationRule();
 
             var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
 

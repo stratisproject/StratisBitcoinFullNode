@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                     throw new RPCServerException(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY, "No such transaction found in the provided block.");
                 }
             }
-            
+
             if (verbose != 0)
             {
                 ChainedHeader block = chainedHeaderBlock != null ? chainedHeaderBlock.ChainedHeader : await this.GetTransactionBlockAsync(trxid);
@@ -292,63 +292,126 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         /// <summary>
-        /// Returns information about a bitcoin address
+        /// Returns information about a bitcoin address and it's validity.
         /// </summary>
-        /// <param name="address">bech32 or base58 BitcoinAddress to validate.</param>
-        /// <returns>ValidatedAddress containing a boolean indicating address validity</returns>
-        /// <exception cref="ArgumentNullException">Thrown if address provided is null/empty.</exception>
+        /// <param name="address">The bech32 or base58 <see cref="BitcoinAddress"/> to validate.</param>
+        /// <returns><see cref="ValidatedAddress"/> instance containing information about the bitcoin address and it's validity.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if address provided is null or empty.</exception>
         [ActionName("validateaddress")]
         [ActionDescription("Returns information about a bech32 or base58 bitcoin address")]
         public ValidatedAddress ValidateAddress(string address)
         {
-            if (string.IsNullOrEmpty(address))
-                throw new ArgumentNullException("address");
+            Guard.NotEmpty(address, nameof(address));
 
-            var res = new ValidatedAddress();
-            res.IsValid = false;
+            var result = new ValidatedAddress
+            {
+                IsValid = false,
+                Address = address,
+            };
 
             // P2WPKH
             if (BitcoinWitPubKeyAddress.IsValid(address, this.Network, out Exception _))
             {
-                res.IsValid = true;
+                result.IsValid = true;
             }
-            // P2WSH
+            // P2WSH (unsupported)
             else if (BitcoinWitScriptAddress.IsValid(address, this.Network, out Exception _))
             {
-                // We don't support P2WSH addresses yet
-                res.IsValid = false;
+                result.IsValid = true;
             }
             // P2PKH
             else if (BitcoinPubKeyAddress.IsValid(address, this.Network))
             {
-                res.IsValid = true;
+                result.IsValid = true;
             }
             // P2SH
             else if (BitcoinScriptAddress.IsValid(address, this.Network))
             {
-                res.IsValid = true;
+                result.IsValid = true;
+                result.IsScript = true;
             }
 
-            return res;
+            if (result.IsValid)
+            {
+                var scriptPubKey = BitcoinAddress.Create(address, this.Network).ScriptPubKey;
+                result.ScriptPubKey = scriptPubKey.ToHex();
+                result.IsWitness = scriptPubKey.IsWitness(this.Network);
+            }
+
+            return result;
         }
 
         /// <summary>
         /// RPC method for returning a block.
+        /// <para>
         /// Supports Json format by default, and optionally raw (hex) format by supplying <c>false</c> to <see cref="isJsonFormat"/>.
+        /// </para>
         /// </summary>
         /// <param name="blockHash">Hash of block to find.</param>
-        /// <param name="isJsonFormat">Whether to output in raw format or in Json format.</param>
-        /// <returns>The block according to format specified in <see cref="isJsonFormat"/></returns>
+        /// <param name="verbosity">0 for hex encoded data, 1 for a json object, and 2 for json object with transaction data.</param>
+        /// <returns>The block according to format specified in <see cref="verbosity"/></returns>
         [ActionName("getblock")]
         [ActionDescription("Returns the block in hex, given a block hash.")]
-        public async Task<object> GetBlockAsync(string blockHash, bool isJsonFormat = true)
+        public async Task<object> GetBlockAsync(string blockHash, int verbosity = 0)
         {
             Block block = this.blockStore != null ? await this.blockStore.GetBlockAsync(uint256.Parse(blockHash)).ConfigureAwait(false) : null;
 
-            if (!isJsonFormat)
-                return block;
+            if (verbosity == 0)
+                return block?.ToHex(this.Network);
 
-            return new BlockModel(block, this.Chain);
+            return new BlockModel(block, this.Chain.GetBlock(block.GetHash()), this.Chain.Tip, this.Network, verbosity);
+        }
+
+        [ActionName("getnetworkinfo")]
+        [ActionDescription("Returns an object containing various state info regarding P2P networking.")]
+        public NetworkInfoModel GetNetworkInfo()
+        {
+            var networkInfoModel = new NetworkInfoModel
+            {
+                Version = this.FullNode?.Version?.ToUint() ?? 0,
+                SubVersion = this.Settings?.Agent,
+                ProtocolVersion = (uint)(this.Settings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
+                IsLocalRelay = this.ConnectionManager?.Parameters?.IsRelay ?? false,
+                TimeOffset = this.ConnectionManager?.ConnectedPeers?.GetMedianTimeOffset() ?? 0,
+                Connections = this.ConnectionManager?.ConnectedPeers?.Count(),
+                IsNetworkActive = true,
+                RelayFee = this.Settings?.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0,
+                IncrementalFee = this.Settings?.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0 // set to same as min relay fee
+            };
+
+            var services = this.ConnectionManager?.Parameters?.Services;
+            if (services != null)
+            {
+                networkInfoModel.LocalServices = Encoders.Hex.EncodeData(BitConverter.GetBytes((ulong)services));
+            }
+
+            return networkInfoModel;
+        }
+
+        [ActionName("getblockchaininfo")]
+        [ActionDescription("Returns an object containing various state info regarding blockchain processing.")]
+        public BlockchainInfoModel GetBlockchainInfo()
+        {
+            var blockchainInfo = new BlockchainInfoModel
+            {
+                Chain = this.Network?.Name,
+                Blocks = (uint)(this.ChainState?.ConsensusTip?.Height ?? 0),
+                Headers = (uint)(this.Chain?.Height ?? 0),
+                BestBlockHash = this.ChainState?.ConsensusTip?.HashBlock,
+                Difficulty = this.GetNetworkDifficulty()?.Difficulty ?? 0.0,
+                MedianTime = this.ChainState?.ConsensusTip?.GetMedianTimePast().ToUnixTimeSeconds() ?? 0,
+                VerificationProgress = 0.0,
+                IsInitialBlockDownload = !this.ChainState?.IsAtBestChainTip ?? true,
+                Chainwork = this.ChainState?.ConsensusTip?.ChainWork,
+                IsPruned = false
+            };
+
+            if (blockchainInfo.Headers > 0)
+            {
+                blockchainInfo.VerificationProgress = (double)blockchainInfo.Blocks / blockchainInfo.Headers;
+            }
+
+            return blockchainInfo;
         }
 
         private async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid)

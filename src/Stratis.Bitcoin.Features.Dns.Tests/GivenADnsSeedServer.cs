@@ -638,11 +638,13 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 source.Cancel();
             }).ReturnsAsync(1);
 
-            var masterFile = new DnsSeedMasterFile();
-            masterFile.Add(new IPAddressResourceRecord(new Domain("google.com"), IPAddress.Parse("192.168.0.1")));
-            masterFile.Add(new IPAddressResourceRecord(new Domain("google.com"), IPAddress.Parse("192.168.0.2")));
-            masterFile.Add(new IPAddressResourceRecord(new Domain("google.com"), IPAddress.Parse("192.168.0.3")));
-            masterFile.Add(new IPAddressResourceRecord(new Domain("google.com"), IPAddress.Parse("192.168.0.4")));
+            var masterFile = new DnsSeedMasterFile(new List<IResourceRecord>
+            {
+                new IPAddressResourceRecord(new Domain("google.com"), IPAddress.Parse("192.168.0.1")),
+                new IPAddressResourceRecord(new Domain("google.com"), IPAddress.Parse("192.168.0.2")),
+                new IPAddressResourceRecord(new Domain("google.com"), IPAddress.Parse("192.168.0.3")),
+                new IPAddressResourceRecord(new Domain("google.com"), IPAddress.Parse("192.168.0.4"))
+            });
 
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;

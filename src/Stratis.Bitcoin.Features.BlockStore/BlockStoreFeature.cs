@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public override async Task InitializeAsync()
         {
-            this.prunedBlockRepository.InitializeAsync().GetAwaiter().GetResult();
+            await this.prunedBlockRepository.InitializeAsync().ConfigureAwait(false);
 
             if (!this.storeSettings.PruningEnabled && this.prunedBlockRepository.PrunedTip != null)
                 throw new BlockStoreException("The node cannot start as it has been previously pruned, please clear the data folders and resync.");

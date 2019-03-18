@@ -156,7 +156,7 @@ info: Stratis.Bitcoin.Features.PoA.PoAMiner[0]
       <<==============================================================>>
 ```
 
-to make sure that you are mining.
+To make sure that you are mining. If you are setting the network up from a single node with no connections you need to run the node with `-bootstrap` flag. This flag allows mining when node is in IBD or is not connected to any other node.
 
 
 
