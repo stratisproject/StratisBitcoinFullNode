@@ -1,4 +1,5 @@
 ﻿using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 
 namespace Stratis.Features.FederatedPeg
@@ -13,6 +14,10 @@ namespace Stratis.Features.FederatedPeg
         public void SplitReward(Transaction coinbase)
         {
             TxOut premineOutput = coinbase.Outputs[0];
+
+            // This class is basic at the moment. These protect from incorrect use
+            Guard.Assert(premineOutput.Value > FederationWalletOutputs); // Prevents burning all funds
+            Guard.Assert(premineOutput.Value % FederationWalletOutputs == 0); // Prevents losing funds to rounding
 
             Money newTxOutValues = premineOutput.Value / FederationWalletOutputs;
             Script newTxOutScript = premineOutput.ScriptPubKey;
