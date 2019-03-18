@@ -1,6 +1,5 @@
-﻿using System.IO;
-using System.Text;
-using Newtonsoft.Json;
+﻿using System;
+using System.IO;
 using Newtonsoft.Json.Linq;
 
 namespace Stratis.Bitcoin.Features.RPC
@@ -13,6 +12,7 @@ namespace Stratis.Bitcoin.Features.RPC
             this.Code = (RPCErrorCode)((int)error.GetValue("code"));
             this.Message = (string)error.GetValue("message");
         }
+
         public RPCErrorCode Code
         {
             get;
@@ -25,36 +25,31 @@ namespace Stratis.Bitcoin.Features.RPC
             set;
         }
     }
+
     //{"result":null,"error":{"code":-32601,"message":"Method not found"},"id":1}
     public class RPCResponse
     {
+        public RPCResponse() { }
+
         public RPCResponse(JObject json)
         {
-            var error = json.GetValue("error") as JObject;
-            if(error != null)
+            if (json.GetValue("error") is JObject error)
             {
                 this.Error = new RPCError(error);
             }
 
             this.Result = json.GetValue("result") as JToken;
         }
-        public RPCError Error
-        {
-            get;
-            set;
-        }
 
-        public JToken Result
-        {
-            get;
-            set;
-        }
+        public RPCError Error { get; set; }
+
+        public JToken Result { get; set; }
 
         public string ResultString
         {
             get
             {
-                if(this.Result == null)
+                if (this.Result == null)
                     return null;
                 return this.Result.ToString();
             }
@@ -62,13 +57,24 @@ namespace Stratis.Bitcoin.Features.RPC
 
         public static RPCResponse Load(Stream stream)
         {
-            var reader = new JsonTextReader(new StreamReader(stream, Encoding.UTF8));
-            return new RPCResponse(JObject.Load(reader));
+            using (var sr = new StreamReader(stream))
+            {
+                var result = sr.ReadToEnd();
+
+                try
+                {
+                    var jObject = JObject.Parse(result);
+                    return new RPCResponse(jObject);
+                }
+                catch (Exception) { }
+
+                return new RPCResponse() { Result = result };
+            }
         }
 
         public void ThrowIfError()
         {
-            if(this.Error != null)
+            if (this.Error != null)
             {
                 throw new RPCException(this.Error.Code, this.Error.Message, this);
             }

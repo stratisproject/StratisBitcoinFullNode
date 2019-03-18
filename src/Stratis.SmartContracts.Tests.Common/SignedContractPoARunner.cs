@@ -30,6 +30,8 @@ namespace Stratis.SmartContracts.Tests.Common
         {
             var settings = new NodeSettings(this.Network, args: new string[] { "-conf=poa.conf", "-datadir=" + this.DataFolder });
 
+            var networkWithPubKey = (ISignedCodePubKeyHolder)this.Network;
+
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)
                 .UseBlockStore()
@@ -38,7 +40,7 @@ namespace Stratis.SmartContracts.Tests.Common
                 .AddSmartContracts(options =>
                 {
                     options.UseReflectionExecutor();
-                    options.UseSignedContracts();
+                    options.UseSignedContracts(networkWithPubKey.SigningContractPubKey);
                 })
                 .UseSmartContractPoAConsensus()
                 .UseSmartContractPoAMining()

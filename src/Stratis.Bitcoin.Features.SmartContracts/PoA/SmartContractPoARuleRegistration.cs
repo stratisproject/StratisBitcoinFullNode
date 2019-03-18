@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -26,7 +28,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
         private readonly IReceiptRepository receiptRepository;
         private readonly ICoinView coinView;
         private readonly PoAConsensusRulesRegistration baseRuleRegistration;
-        private readonly IEnumerable<IContractTransactionValidationLogic> validationRules;
+        private readonly IEnumerable<IContractTransactionPartialValidationRule> partialTxValidationRules;
+        private readonly IEnumerable<IContractTransactionFullValidationRule> fullTxValidationRules;
 
         public SmartContractPoARuleRegistration(Network network,
             IStateRepositoryRoot stateRepositoryRoot,
@@ -35,7 +38,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             ISenderRetriever senderRetriever,
             IReceiptRepository receiptRepository,
             ICoinView coinView,
-            IEnumerable<IContractTransactionValidationLogic> validationRules)
+            IEnumerable<IContractTransactionPartialValidationRule> partialTxValidationRules,
+            IEnumerable<IContractTransactionFullValidationRule> fullTxValidationRules)
         {
             this.baseRuleRegistration = new PoAConsensusRulesRegistration();
             this.network = network;
@@ -45,7 +49,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             this.senderRetriever = senderRetriever;
             this.receiptRepository = receiptRepository;
             this.coinView = coinView;
-            this.validationRules = validationRules;
+            this.partialTxValidationRules = partialTxValidationRules;
+            this.fullTxValidationRules = fullTxValidationRules;
         }
 
         public void RegisterRules(IConsensus consensus)
@@ -53,12 +58,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             this.baseRuleRegistration.RegisterRules(consensus);
 
             // Add SC-Specific partial rules
-            var txValidationRules = new List<IContractTransactionValidationLogic>(this.validationRules)
+            var txValidationRules = new List<IContractTransactionPartialValidationRule>(this.partialTxValidationRules)
             {
                 new SmartContractFormatLogic()                
             };
             consensus.PartialValidationRules.Add(new AllowedScriptTypeRule(this.network));
-            consensus.PartialValidationRules.Add(new ContractTransactionValidationRule(this.callDataSerializer, txValidationRules));
+            consensus.PartialValidationRules.Add(new ContractTransactionPartialValidationRule(this.callDataSerializer, txValidationRules));
+
+            consensus.FullValidationRules.Add(new ContractTransactionFullValidationRule(this.callDataSerializer, this.fullTxValidationRules));
 
             int existingCoinViewRule = consensus.FullValidationRules
                 .FindIndex(c => c is CoinViewRule);

@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     .SetQueryParams(new { hash = "b1209de1c0347be83bb02a3bf9b70e33b06c82b91e68bc6392e6fb813cd5e4bd", outputJson = true })
                     .GetJsonAsync<BlockModel>();
 
-                block.Transactions.Should().ContainSingle(t => t == txId);
+                block.Transactions.Should().ContainSingle(t => (string)t == txId);
 
                 RPCClient rpc = node.CreateRPCClient();
 
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     .SetQueryParams(new { hash = "b1209de1c0347be83bb02a3bf9b70e33b06c82b91e68bc6392e6fb813cd5e4bd", outputJson = true })
                     .GetJsonAsync<BlockModel>();
 
-                block.Transactions.Should().ContainSingle(t => t == txId);
+                block.Transactions.Should().ContainSingle(t => (string)t == txId);
 
                 // Act.
                 RPCClient rpc = sendingNode.CreateRPCClient();
@@ -512,7 +512,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 firstDetailsReceivingWallet.Fee.Should().BeNull();
                 firstDetailsReceivingWallet.Category.Should().Be(GetTransactionDetailsCategoryModel.Receive);
                 firstDetailsReceivingWallet.OutputIndex.Should().Be(1); // Output at index 0 contains the change.
-                
+
                 GetTransactionDetailsModel secondDetailsReceivingWallet = resultReceivingWallet.Details.Single(d => d.Address == unusedaddresses.Last());
                 secondDetailsReceivingWallet.Address.Should().Be(unusedaddresses.Last());
                 secondDetailsReceivingWallet.Amount.Should().Be((decimal)1.00000000);

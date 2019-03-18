@@ -442,7 +442,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             commands.Should().Contain(x => x.Command == "getnewaddress <account> <addresstype>");
             commands.Should().Contain(x => x.Command == "sendrawtransaction <hex>");
             commands.Should().Contain(x => x.Command == "decoderawtransaction <hex>");
-            commands.Should().Contain(x => x.Command == "getblock <blockhash> [<isjsonformat>]");
+            commands.Should().Contain(x => x.Command == "getblock <blockhash> [<verbosity>]");
             commands.Should().Contain(x => x.Command == "walletlock");
             commands.Should().Contain(x => x.Command == "walletpassphrase <passphrase> <timeout>");
             commands.Should().Contain(x => x.Command == "listunspent [<minconfirmations>] [<maxconfirmations>] [<addressesjson>]");

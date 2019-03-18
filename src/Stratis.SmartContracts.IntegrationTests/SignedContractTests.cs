@@ -1,10 +1,15 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
+using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.ContractSigning;
@@ -12,27 +17,37 @@ using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core.ContractSigning;
 using Stratis.SmartContracts.Networks;
 using Stratis.SmartContracts.RuntimeObserver;
+using Stratis.SmartContracts.Tests.Common;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
 
 namespace Stratis.SmartContracts.IntegrationTests
 {
-    public class SignedContractTests
+    public class SignedContractTests : IDisposable
     {
         // TODO: Fixture to save time running tests.
 
         private readonly SignedContractsPoARegTest network;
+        private readonly Func<int, CoreNode> nodeFactory;
+        private readonly SmartContractNodeBuilder builder;
 
         public SignedContractTests()
         {
             this.network = new SignedContractsPoARegTest();
+
+            this.builder = SmartContractNodeBuilder.Create(this);
+            this.nodeFactory = (nodeIndex) => this.builder.CreateSignedContractPoANode(this.network, nodeIndex).Start();
         }
 
-
+        public void Dispose()
+        {
+            this.builder.Dispose();
+        }
+        
         [Retry]
         public void Create_Signed_Contract()
         {
-            using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
+            using (var chain = new PoAMockChain(2, this.nodeFactory).Build())
             {
                 MockChainNode node1 = chain.Nodes[0];
                 MockChainNode node2 = chain.Nodes[1];
@@ -54,7 +69,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Retry]
         public void Create_NoSignature_Fails()
         {
-            using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
+            using (var chain = new PoAMockChain(2, this.nodeFactory).Build())
             {
                 MockChainNode node1 = chain.Nodes[0];
                 MockChainNode node2 = chain.Nodes[1];
@@ -72,7 +87,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Retry]
         public void Create_InvalidSignature_Fails()
         {
-            using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
+            using (var chain = new PoAMockChain(2, this.nodeFactory).Build())
             {
                 MockChainNode node1 = chain.Nodes[0];
                 MockChainNode node2 = chain.Nodes[1];
@@ -90,7 +105,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Retry]
         public async Task Create_NoSignature_Mempool_Rejects()
         {
-            using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
+            using (var chain = new PoAMockChain(2, this.nodeFactory).Build())
             {
                 MockChainNode node1 = chain.Nodes[0];
                 MockChainNode node2 = chain.Nodes[1];
@@ -129,7 +144,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Retry]
         public async Task Create_InvalidSignature_Mempool_Rejects()
         {
-            using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
+            using (var chain = new PoAMockChain(2, this.nodeFactory).Build())
             {
                 MockChainNode node1 = chain.Nodes[0];
                 MockChainNode node2 = chain.Nodes[1];
