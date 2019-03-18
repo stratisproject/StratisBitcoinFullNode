@@ -38,7 +38,8 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             var chain = new Mock<ConcurrentChain>();
             ConsensusManager consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network);
 
-            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
+            var loggerFactory = new Mock<LoggerFactory>();
+            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(loggerFactory.Object, null), new AsyncLoopFactory(loggerFactory.Object), new NodeLifetime());
 
             var notificationController = new NotificationsController(blockNotification.Object, chain.Object);
             IActionResult result = notificationController.SyncFrom(from);
@@ -64,7 +65,8 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             chain.Setup(c => c.GetBlock(heightLocation)).Returns(chainedHeader);
 
             ConsensusManager consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network);
-            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
+            var loggerFactory = new Mock<LoggerFactory>();
+            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(loggerFactory.Object, null), new AsyncLoopFactory(loggerFactory.Object), new NodeLifetime());
 
             // Act
             var notificationController = new NotificationsController(blockNotification.Object, chain.Object);
@@ -88,7 +90,8 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             chain.Setup(c => c.GetBlock(uint256.Parse(hashLocation))).Returns(chainedHeader);
             ConsensusManager consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network);
 
-            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
+            var loggerFactory = new Mock<LoggerFactory>();
+            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(loggerFactory.Object, null), new AsyncLoopFactory(loggerFactory.Object), new NodeLifetime());
 
             // Act
             var notificationController = new NotificationsController(blockNotification.Object, chain.Object);
@@ -109,7 +112,8 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             chain.Setup(c => c.GetBlock(uint256.Parse(hashLocation))).Returns((ChainedHeader)null);
             ConsensusManager consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network);
 
-            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
+            var loggerFactory = new Mock<LoggerFactory>();
+            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(loggerFactory.Object, null), new AsyncLoopFactory(loggerFactory.Object), new NodeLifetime());
 
             // Act
             var notificationController = new NotificationsController(blockNotification.Object, chain.Object);
@@ -133,7 +137,8 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             var chain = new Mock<ConcurrentChain>();
             ConsensusManager consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network);
 
-            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
+            var loggerFactory = new Mock<LoggerFactory>();
+            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(loggerFactory.Object, null), new AsyncLoopFactory(loggerFactory.Object), new NodeLifetime());
 
             // Act
             var notificationController = new NotificationsController(blockNotification.Object, chain.Object);
@@ -150,7 +155,8 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             chain.Setup(c => c.GetBlock(15)).Returns((ChainedHeader)null);
             ConsensusManager consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network);
 
-            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
+            var loggerFactory = new Mock<LoggerFactory>();
+            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(loggerFactory.Object, null), new AsyncLoopFactory(loggerFactory.Object), new NodeLifetime());
 
             // Act
             var notificationController = new NotificationsController(blockNotification.Object, chain.Object);
