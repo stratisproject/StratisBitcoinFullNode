@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -34,11 +33,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        private readonly Network network;
-
-
         private readonly IMaturedBlocksProvider maturedBlocksProvider;
-
 
         private readonly IFederationGatewaySettings federationGatewaySettings;
 
@@ -48,14 +43,12 @@ namespace Stratis.Features.FederatedPeg.Controllers
 
         public FederationGatewayController(
             ILoggerFactory loggerFactory,
-            Network network,
             IMaturedBlocksProvider maturedBlocksProvider,
             IFederationGatewaySettings federationGatewaySettings,
             IFederationWalletManager federationWalletManager,
             FederationManager federationManager = null)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.network = network;
             this.maturedBlocksProvider = maturedBlocksProvider;
             this.federationGatewaySettings = federationGatewaySettings;
             this.federationWalletManager = federationWalletManager;

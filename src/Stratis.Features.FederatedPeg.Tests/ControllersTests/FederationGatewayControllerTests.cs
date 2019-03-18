@@ -64,7 +64,6 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         {
             var controller = new FederationGatewayController(
                 this.loggerFactory,
-                this.network,
                 this.GetMaturedBlocksProvider(),
                 this.federationGatewaySettings,
                 this.federationWalletManager,
@@ -207,7 +206,6 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
             var controller = new FederationGatewayController(
                 this.loggerFactory,
-                this.network,
                 this.GetMaturedBlocksProvider(),
                 settings,
                 this.federationWalletManager,
@@ -243,7 +241,6 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
             var controller = new FederationGatewayController(
                 this.loggerFactory,
-                this.network,
                 this.GetMaturedBlocksProvider(),
                 settings,
                 this.federationWalletManager,
