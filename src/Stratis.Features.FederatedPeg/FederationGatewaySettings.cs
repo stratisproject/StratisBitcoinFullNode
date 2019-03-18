@@ -23,7 +23,17 @@ namespace Stratis.Features.FederatedPeg
 
         private const string MinimumDepositConfirmationsParam = "mindepositconfirmations";
 
-        private const string TransactionFeeParam = "transactionfee";
+        /// <summary>
+        /// The transaction fee used by the federation to build withdrawal transactions.
+        /// </summary>
+        /// <remarks>
+        /// Changing <see cref="TransactionFee"/> affects both the deposit threshold on this chain and the withdrawal transaction fee on this chain.
+        /// This value shouldn't be different for the 2 pegged chain nodes or deposits could be extracted that don't have the amount required to
+        /// cover the withdrawal fee on the other chain.
+        /// 
+        /// TODO: This should be configurable on the Network level in the future, but individual nodes shouldn't be tweaking it.
+        /// </remarks>
+        public static readonly Money DefaultTransactionFee = Money.Coins(0.01m);
 
         /// <summary>
         /// Sidechains to STRAT don't need to check for deposits for the whole main chain. Only from when they begun.
@@ -55,7 +65,7 @@ namespace Stratis.Features.FederatedPeg
 
             this.PublicKey = configReader.GetOrDefault<string>(PublicKeyParam, null);
 
-            this.TransactionFee = new Money(configReader.GetOrDefault<decimal>(TransactionFeeParam, 0.01m), MoneyUnit.BTC);
+            this.TransactionFee = DefaultTransactionFee;
 
             if (this.FederationPublicKeys.All(p => p != new PubKey(this.PublicKey)))
             {
