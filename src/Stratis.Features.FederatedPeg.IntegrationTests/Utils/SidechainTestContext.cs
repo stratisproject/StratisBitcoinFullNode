@@ -305,14 +305,6 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             this.FedMain2.AppendToConfig($"mindepositconfirmations=5");
             this.FedMain3.AppendToConfig($"mindepositconfirmations=5");
 
-            this.FedSide1.AppendToConfig($"mincoinmaturity=5");
-            this.FedSide2.AppendToConfig($"mincoinmaturity=5");
-            this.FedSide3.AppendToConfig($"mincoinmaturity=5");
-
-            this.FedMain1.AppendToConfig($"mincoinmaturity=5");
-            this.FedMain2.AppendToConfig($"mincoinmaturity=5");
-            this.FedMain3.AppendToConfig($"mincoinmaturity=5");
-
             this.FedSide1.AppendToConfig($"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
             this.FedSide2.AppendToConfig($"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
             this.FedSide3.AppendToConfig($"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");

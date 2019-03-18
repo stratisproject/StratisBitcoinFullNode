@@ -37,7 +37,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                 {
                     options.UseReflectionExecutor();
                 })
-                .UseSmartContractWallet()
+                .UseSmartContractWallet()                
                 .AddFederationGateway()
                 .UseFederatedPegPoAMining()
                 .UseMempool()

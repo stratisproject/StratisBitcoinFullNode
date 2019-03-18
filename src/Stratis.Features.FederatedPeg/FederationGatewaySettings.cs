@@ -21,11 +21,16 @@ namespace Stratis.Features.FederatedPeg
 
         public const string FederationIpsParam = "federationips";
 
-        private const string MinCoinMaturityParam = "mincoinmaturity";
-
         private const string MinimumDepositConfirmationsParam = "mindepositconfirmations";
 
         private const string TransactionFeeParam = "transactionfee";
+
+        /// <summary>
+        /// Sidechains to STRAT don't need to check for deposits for the whole main chain. Only from when they begun.
+        ///
+        /// This block was mined on 5th Dec 2018. Further optimisations could be more specific per network.
+        /// </summary>
+        public const int StratisMainDepositStartBlock = 1_100_000;
 
         public FederationGatewaySettings(NodeSettings nodeSettings)
         {
@@ -49,11 +54,6 @@ namespace Stratis.Features.FederatedPeg
             this.FederationPublicKeys = payToMultisigScriptParams.PubKeys;
 
             this.PublicKey = configReader.GetOrDefault<string>(PublicKeyParam, null);
-            this.MinCoinMaturity = configReader.GetOrDefault<int>(MinCoinMaturityParam, (int)nodeSettings.Network.Consensus.MaxReorgLength + 1);
-            if (this.MinCoinMaturity <= 0)
-            {
-                throw new ConfigurationException("The minimum coin maturity can't be set to zero or less.");
-            }
 
             this.TransactionFee = new Money(configReader.GetOrDefault<decimal>(TransactionFeeParam, 0.01m), MoneyUnit.BTC);
 
@@ -63,6 +63,9 @@ namespace Stratis.Features.FederatedPeg
             }
 
             this.CounterChainApiPort = configReader.GetOrDefault(CounterChainApiPortParam, 0);
+
+            this.CounterChainDepositStartBlock = this.IsMainChain ? 1 : StratisMainDepositStartBlock;
+
             this.FederationNodeIpEndPoints = configReader.GetOrDefault<string>(FederationIpsParam, null)?.Split(',')
                 .Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort)) ?? new List<IPEndPoint>();
 
@@ -93,10 +96,10 @@ namespace Stratis.Features.FederatedPeg
         public int MultiSigN { get; }
 
         /// <inheritdoc/>
-        public int MinCoinMaturity { get; }
+        public Money TransactionFee { get; }
 
         /// <inheritdoc/>
-        public Money TransactionFee { get; }
+        public int CounterChainDepositStartBlock { get; }
 
         /// <inheritdoc/>
         public BitcoinAddress MultiSigAddress { get; }
