@@ -19,12 +19,12 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private readonly VotingManager votingManager;
 
-        private readonly WhitelistedHashesRepository whitelistedHashesRepository;
+        private readonly IWhitelistedHashesRepository whitelistedHashesRepository;
 
         private readonly ILogger logger;
 
         public VotingController(FederationManager fedManager, ILoggerFactory loggerFactory, VotingManager votingManager,
-            WhitelistedHashesRepository whitelistedHashesRepository)
+            IWhitelistedHashesRepository whitelistedHashesRepository)
         {
             this.fedManager = fedManager;
             this.votingManager = votingManager;

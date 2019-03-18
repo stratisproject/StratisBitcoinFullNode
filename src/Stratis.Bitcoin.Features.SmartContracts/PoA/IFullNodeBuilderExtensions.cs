@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -36,7 +38,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         services.AddSingleton<ICoinView, CachedCoinView>();
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<VotingManager>();
-                        services.AddSingleton<WhitelistedHashesRepository>();
+                        services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
 
                         services.AddSingleton<PoAConsensusRuleEngine>();
@@ -52,19 +54,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             });
 
             return fullNodeBuilder;
-        }
-
-        public static SmartContractOptions UseSignedContracts(this SmartContractOptions options)
-        {           
-            IServiceCollection services = options.Services;
-            var networkWithPubKey = (ISignedCodePubKeyHolder) options.Network;
-
-            // Replace serializer
-            services.RemoveAll<ICallDataSerializer>();
-            services.AddSingleton<ICallDataSerializer, SignedCodeCallDataSerializer>();
-            services.AddSingleton<IContractTransactionValidationLogic>(f => new ContractSignedCodeLogic(new ContractSigner(), networkWithPubKey.SigningContractPubKey));
-
-            return options;
         }
 
         /// <summary>

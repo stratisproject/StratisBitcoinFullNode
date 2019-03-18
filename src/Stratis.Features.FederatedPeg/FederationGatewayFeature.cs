@@ -341,7 +341,7 @@ namespace Stratis.Features.FederatedPeg
 
                     services.AddSingleton<VotingManager>();
                     services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
-                    services.AddSingleton<WhitelistedHashesRepository>();
+                    services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
                     services.AddSingleton<PoAMinerSettings>();
                     services.AddSingleton<MinerSettings>();
 
