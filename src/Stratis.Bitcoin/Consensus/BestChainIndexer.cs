@@ -59,6 +59,40 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
+        /// Returns the first chained block header that exists in the chain from the list of block hashes.
+        /// </summary>
+        /// <param name="hashes">Hash to search for.</param>
+        /// <returns>First found chained block header or <c>null</c> if not found.</returns>
+        public ChainedHeader FindFork(IEnumerable<uint256> hashes)
+        {
+            if (hashes == null)
+                throw new ArgumentNullException("hashes");
+
+            // Find the first block the caller has in the main chain.
+            foreach (uint256 hash in hashes)
+            {
+                ChainedHeader mi = this.GetBlock(hash);
+                if (mi != null)
+                    return mi;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Finds the first chained block header that exists in the chain from the block locator.
+        /// </summary>
+        /// <param name="locator">The block locator.</param>
+        /// <returns>The first chained block header that exists in the chain from the block locator.</returns>
+        public ChainedHeader FindFork(BlockLocator locator)
+        {
+            if (locator == null)
+                throw new ArgumentNullException("locator");
+
+            return this.FindFork(locator.Blocks);
+        }
+
+        /// <summary>
         /// Gets the chained block header given a block ID (hash).
         /// </summary>
         /// <param name="blockHash">Block hash to retrieve.</param>

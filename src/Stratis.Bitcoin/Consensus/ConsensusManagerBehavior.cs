@@ -24,10 +24,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         /// <inheritdoc cref="ConsensusManager"/>
-        private readonly IConsensusManager consensusManager;
-
-        /// <inheritdoc cref="ConcurrentChain"/>
-        protected ConcurrentChain chain;
+        protected readonly IConsensusManager consensusManager;
 
         /// <inheritdoc cref="IPeerBanning"/>
         private readonly IPeerBanning peerBanning;
@@ -73,12 +70,11 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Protects write access to the <see cref="BestSentHeader"/>.</summary>
         private readonly object bestSentHeaderLock;
 
-        public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
+        public ConsensusManagerBehavior(IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.consensusManager = consensusManager;
-            this.chain = chain;
             this.peerBanning = peerBanning;
 
             this.cachedHeaders = new List<BlockHeader>();
@@ -241,7 +237,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>Payload with headers from locator towards consensus tip or <c>null</c> in case locator was invalid.</returns>
         protected virtual Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
         {
-            ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
+            ChainedHeader fork = this.consensusManager.BestChainIndexer.FindFork(getHeadersPayload.BlockLocator);
 
             lastHeader = null;
 
@@ -501,7 +497,7 @@ namespace Stratis.Bitcoin.Consensus
                 // Distance of header from the peer expected tip.
                 double distanceSeconds = (headers[0].BlockTime - this.BestReceivedTip.Header.BlockTime).TotalSeconds;
 
-                if (this.chain.Network.MaxTipAge < distanceSeconds)
+                if (this.consensusManager.Network.MaxTipAge < distanceSeconds)
                 {
                     // A single header that is not connected to last header is likely an
                     // unsolicited header that is a result of the peer tip being extended.
@@ -639,7 +635,7 @@ namespace Stratis.Bitcoin.Consensus
             bool blockHashAnnounced = false;
             foreach (InventoryVector inventoryVector in inventory)
             {
-                if ((inventoryVector.Type == InventoryType.MSG_BLOCK) && (this.chain.GetBlock(inventoryVector.Hash) == null))
+                if ((inventoryVector.Type == InventoryType.MSG_BLOCK) && (this.consensusManager.BestChainIndexer.GetBlock(inventoryVector.Hash) == null))
                 {
                     blockHashAnnounced = true;
                     break;
@@ -688,7 +684,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public override object Clone()
         {
-            return new ConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory);
+            return new ConsensusManagerBehavior(this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory);
         }
 
         internal int GetCachedItemsCount()

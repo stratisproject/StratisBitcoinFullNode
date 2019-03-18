@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // Replace default ConsensusManagerBehavior with ProvenHeadersConsensusManagerBehavior
             connectionParameters.TemplateBehaviors.Remove(defaultConsensusManagerBehavior);
-            connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.network, this.chainState, this.checkpoints, this.provenBlockHeaderStore, this.connectionManagerSettings));
+            connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConsensusManagerBehavior(this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.network, this.chainState, this.checkpoints, this.provenBlockHeaderStore, this.connectionManagerSettings));
 
             connectionParameters.TemplateBehaviors.Add(new ProvenHeadersReservedSlotsBehavior(this.connectionManager, this.loggerFactory));
 

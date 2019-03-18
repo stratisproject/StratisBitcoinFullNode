@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>The amount of blocks from consensus the node is considered to be synced.</summary>
         private const int ConsensusIsConsideredToBeSyncedMargin = 5;
 
-        private readonly Network network;
+        public Network Network { get; private set; }
 
         private readonly ILogger logger;
 
@@ -164,7 +164,7 @@ namespace Stratis.Bitcoin.Consensus
             Guard.NotNull(nodeStats, nameof(nodeStats));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 
-            this.network = network;
+            this.Network = network;
             this.chainState = chainState;
             this.integrityValidator = integrityValidator;
             this.partialValidator = partialValidator;
@@ -765,9 +765,9 @@ namespace Stratis.Bitcoin.Consensus
 
                     this.BestChainIndexer.AddTip(lastValidatedBlockHeader);
 
-                    if (this.network.Consensus.MaxReorgLength != 0)
+                    if (this.Network.Consensus.MaxReorgLength != 0)
                     {
-                        int newFinalizedHeight = blockToConnect.ChainedHeader.Height - (int)this.network.Consensus.MaxReorgLength;
+                        int newFinalizedHeight = blockToConnect.ChainedHeader.Height - (int)this.Network.Consensus.MaxReorgLength;
 
                         if (newFinalizedHeight > 0)
                         {
@@ -1271,7 +1271,7 @@ namespace Stratis.Bitcoin.Consensus
                 long avgSize = (long)this.blockPuller.GetAverageBlockSizeBytes();
                 if (avgSize == 0)
                 {
-                    avgSize = this.network.Consensus.Options.MaxBlockBaseSize;
+                    avgSize = this.Network.Consensus.Options.MaxBlockBaseSize;
                 }
 
                 int maxBlocksToAsk = Math.Min((int)(freeBytes / avgSize), freeSlots);

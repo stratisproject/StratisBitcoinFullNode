@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             var consensusManager = new Mock<IConsensusManager>();
             consensusManager.Setup(c => c.Tip).Returns(provenHeaderChain);
 
-            var behavior = new ProvenHeadersConsensusManagerBehavior(chain, this.initialBlockDownloadState, consensusManager.Object, this.peerBanning, this.extendedLoggerFactory, this.Network, this.chainState, this.checkpoints, this.provenBlockHeaderStore, this.connectionManagerSettings);
+            var behavior = new ProvenHeadersConsensusManagerBehavior(this.initialBlockDownloadState, consensusManager.Object, this.peerBanning, this.extendedLoggerFactory, this.Network, this.chainState, this.checkpoints, this.provenBlockHeaderStore, this.connectionManagerSettings);
 
             var hashes = new List<uint256>();
             for (int i = 1; i < 5; i++)
