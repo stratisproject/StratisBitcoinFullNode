@@ -20,13 +20,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <summary>
         /// Broadcast signed transactions that are not in the mempool.
         /// </summary>
-        /// <param name="leaderProvider">
-        /// The current federated leader.
-        /// </param>
         /// <remarks>
         /// The current federated leader equal the <see cref="IFederationGatewaySettings.PublicKey"/> before it can broadcast the transactions.
         /// </remarks>
-        Task BroadcastTransactionsAsync(ILeaderProvider leaderProvider);
+        Task BroadcastTransactionsAsync();
     }
 
     public class SignedMultisigTransactionBroadcaster : ISignedMultisigTransactionBroadcaster, IDisposable
@@ -38,12 +35,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly MempoolManager mempoolManager;
         private readonly IBroadcasterManager broadcasterManager;
 
-        public SignedMultisigTransactionBroadcaster(ILoggerFactory loggerFactory, ICrossChainTransferStore store, ILeaderReceiver leaderReceiver, IFederationGatewaySettings settings,
+        public SignedMultisigTransactionBroadcaster(ILoggerFactory loggerFactory, ICrossChainTransferStore store, IFederationGatewaySettings settings,
             MempoolManager mempoolManager, IBroadcasterManager broadcasterManager)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(store, nameof(store));
-            Guard.NotNull(leaderReceiver, nameof(leaderReceiver));
             Guard.NotNull(settings, nameof(settings));
             Guard.NotNull(mempoolManager, nameof(mempoolManager));
             Guard.NotNull(broadcasterManager, nameof(broadcasterManager));
@@ -53,16 +49,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.publicKey = settings.PublicKey;
             this.mempoolManager = mempoolManager;
             this.broadcasterManager = broadcasterManager;
-
-            this.leaderReceiverSubscription = leaderReceiver.LeaderProvidersStream.Subscribe(async m => await this.BroadcastTransactionsAsync(m).ConfigureAwait(false));
-            this.logger.LogDebug("Subscribed to {0}", nameof(leaderReceiver), nameof(leaderReceiver.LeaderProvidersStream));
         }
 
         /// <inheritdoc />
-        public async Task BroadcastTransactionsAsync(ILeaderProvider leaderProvider)
+        public async Task BroadcastTransactionsAsync()
         {
-            if (this.publicKey != leaderProvider.CurrentLeaderKey.ToString()) return;
-
             Dictionary<uint256, Transaction> transactions = await this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).ConfigureAwait(false);
 
             if (!transactions.Any())
