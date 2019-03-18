@@ -1,4 +1,6 @@
 ﻿using NBitcoin;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Signals;
 using Stratis.Features.FederatedPeg.Interfaces;
 
@@ -12,11 +14,13 @@ namespace Stratis.Features.FederatedPeg.Notifications
         private readonly IFederationWalletSyncManager walletSyncManager;
         private readonly ISignals signals;
 
+        private readonly SubscriptionToken transactionReceivedSubscription;
+
         public TransactionObserver(IFederationWalletSyncManager walletSyncManager, ISignals signals)
         {
             this.walletSyncManager = walletSyncManager;
             this.signals = signals;
-            this.signals.OnTransactionReceived.Attach(this.OnReceivingTransaction);
+            this.transactionReceivedSubscription = this.signals.Subscribe<TransactionReceived>(ev => this.OnReceivingTransaction(ev.ReceivedTransaction));
 
             // TODO: Dispose with Detach ??
         }

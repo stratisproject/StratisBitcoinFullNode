@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -50,6 +51,8 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
         private readonly IKeyValueRepository keyValueRepository;
 
+        private readonly ISignals signals;
+
         public FederationGatewayControllerTests()
         {
             this.network = FederatedPegNetwork.NetworksSelector.Regtest();
@@ -64,7 +67,8 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
             this.federationWalletManager = Substitute.For<IFederationWalletManager>();
             this.keyValueRepository = Substitute.For<IKeyValueRepository>();
-            this.federationManager = new FederationManager(NodeSettings.Default(this.network), this.network, this.loggerFactory, this.keyValueRepository);
+            this.signals = new Signals(this.loggerFactory, null);
+            this.federationManager = new FederationManager(NodeSettings.Default(this.network), this.network, this.loggerFactory, this.keyValueRepository, this.signals);
         }
 
         private FederationGatewayController CreateController()
