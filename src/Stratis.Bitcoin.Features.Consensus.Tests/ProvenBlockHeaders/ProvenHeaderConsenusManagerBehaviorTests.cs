@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -83,6 +84,20 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             var consensusManager = new Mock<IConsensusManager>();
             consensusManager.Setup(c => c.Tip).Returns(provenHeaderChain);
+            consensusManager.Setup(x => x.GetBlockDataAsync(It.IsAny<uint256>())).Returns(async (uint256 blockHash) =>
+            {
+                ChainedHeader chainedHeader = chain.GetBlock(blockHash);
+                if (chainedHeader == null)
+                    return null;
+
+                var res = new ChainedHeaderBlock(chainedHeader.Block, chainedHeader);
+                return res;
+            });
+
+            var bestChainIndexer = new BestChainIndexer(consensusManager.Object);
+            consensusManager.Setup(x => x.BestChainIndexer).Returns(() => {
+                return bestChainIndexer;
+            });
 
             var behavior = new ProvenHeadersConsensusManagerBehavior(this.initialBlockDownloadState, consensusManager.Object, this.peerBanning, this.extendedLoggerFactory, this.Network, this.chainState, this.checkpoints, this.provenBlockHeaderStore, this.connectionManagerSettings);
 

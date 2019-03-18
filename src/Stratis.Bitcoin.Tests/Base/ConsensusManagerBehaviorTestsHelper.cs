@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
@@ -86,6 +87,20 @@ namespace Stratis.Bitcoin.Tests.Base
                 });
 
             cmMock.Setup(x => x.Tip).Returns(consensusTip);
+            cmMock.Setup(x => x.GetBlockDataAsync(It.IsAny<uint256>())).Returns(async (uint256 blockHash) =>
+            {
+                ChainedHeader chainedHeader = chain.GetBlock(blockHash);
+                if (chainedHeader == null)
+                    return null;
+
+                var res = new ChainedHeaderBlock(chainedHeader.Block, chainedHeader);
+                return res;
+            });
+
+            var bestChainIndexer = new BestChainIndexer(cmMock.Object);
+            cmMock.Setup(x => x.BestChainIndexer).Returns(() => {
+                return bestChainIndexer;
+            });
 
             this.testPeerBanning = new TestPeerBanning();
 
