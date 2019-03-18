@@ -15,7 +15,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly Network network;
         private readonly Mock<ILoggerFactory> loggerFactory;
         private readonly Mock<IFederationWalletManager> federationWalletManager;
-        private readonly Mock<IFederationWalletTransactionHandler> federationWalletTransactionHandler;
+        private readonly Mock<IFederationWalletTransactionBuilder> federationWalletTransactionHandler;
         private readonly Mock<IFederationGatewaySettings> federationGatewaySettings;
 
         public WithdrawalTransactionBuilderTests()
@@ -23,7 +23,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.loggerFactory = new Mock<ILoggerFactory>();
             this.network = FederatedPegNetwork.NetworksSelector.Regtest();
             this.federationWalletManager = new Mock<IFederationWalletManager>();
-            this.federationWalletTransactionHandler = new Mock<IFederationWalletTransactionHandler>();
+            this.federationWalletTransactionHandler = new Mock<IFederationWalletTransactionBuilder>();
             this.federationGatewaySettings = new Mock<IFederationGatewaySettings>();
 
             this.loggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>()))
