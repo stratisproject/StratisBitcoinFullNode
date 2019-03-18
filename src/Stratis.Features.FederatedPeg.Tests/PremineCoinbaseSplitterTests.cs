@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System;
+using NBitcoin;
 using Stratis.Sidechains.Networks;
 using Xunit;
 
@@ -39,6 +40,24 @@ namespace Stratis.Features.FederatedPeg.Tests
             // Doesn't touch inputs
             Assert.Single(tx.Inputs);
             Assert.Equal(coinbaseInput, tx.Inputs[0]);
+        }
+
+        [Fact]
+        public void OnlySplitValidAmounts()
+        {
+            // Can't split small amount
+            Script receiver = PayToScriptHashTemplate.Instance.GenerateScriptPubKey(new ScriptId());
+            TxIn coinbaseInput = TxIn.CreateCoinbase((int)this.network.Consensus.PremineHeight);
+            Transaction tx = this.network.CreateTransaction();
+            tx.Inputs.Add(coinbaseInput);
+            tx.Outputs.Add(new TxOut(PremineCoinbaseSplitter.FederationWalletOutputs - 1, receiver));
+            Assert.Throws<Exception>(() => this.premineSplitter.SplitReward(tx));
+
+            // Can't split non-divisible amount
+            tx = this.network.CreateTransaction();
+            tx.Inputs.Add(coinbaseInput);
+            tx.Outputs.Add(new TxOut(PremineCoinbaseSplitter.FederationWalletOutputs * 100 + 6, receiver));
+            Assert.Throws<Exception>(() => this.premineSplitter.SplitReward(tx));
         }
     }
 }
