@@ -1,8 +1,18 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 using NBitcoin;
+using Stratis.Bitcoin;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
+using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.PoA;
+using Stratis.Bitcoin.Features.SmartContracts.Wallet;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.SmartContracts.Networks;
@@ -43,6 +53,18 @@ namespace Stratis.SmartContracts.Tests.Common
             var tool = new KeyTool(settings.DataFolder);
             tool.SavePrivateKey(network.FederationKeys[nodeIndex]);
 
+            return node;
+        }
+
+        public CoreNode CreateWhitelistedContractPoANode(SmartContractsPoARegTest network, int nodeIndex)
+        {
+            string dataFolder = this.GetNextDataFolderName();
+
+            CoreNode node = this.CreateNode(new WhitelistedContractPoARunner(dataFolder, network, this.TimeProvider), "poa.conf");
+            var settings = new NodeSettings(network, args: new string[] { "-conf=poa.conf", "-datadir=" + dataFolder });
+
+            var tool = new KeyTool(settings.DataFolder);
+            tool.SavePrivateKey(network.FederationKeys[nodeIndex]);
             return node;
         }
 
