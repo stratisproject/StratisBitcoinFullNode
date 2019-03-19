@@ -150,7 +150,7 @@
                             <tr>
                                 <td class="text-center"><i class="material-icons text-green md-18">check_circle</i></td>
                                 <td class="text-center text-truncate"><code>@(transaction.withdrawal.targetAddress)</code></td>
-                                <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.id).htm" target="_blank">@transaction.withdrawal.id</a></td>
+                                <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.withdrawal.id).htm" target="_blank">@transaction.withdrawal.id</a></td>
                                 <td class="text-center">@transaction.withdrawal.blockNumber</td>
                                 <td class="text-right">@(((double)transaction.withdrawal.amount/100000000).ToString("N8")) @ViewBag.StratisTicker</td>
                             </tr>
@@ -195,7 +195,7 @@
                             <tr>
                             <td class="text-center"><i class="material-icons text-green md-18">check_circle</i></td>
                             <td class="text-center text-truncate"><code>@(transaction.withdrawal.targetAddress)</code></td>
-                            <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.id).htm" target="_blank">@transaction.withdrawal.id</a></td>
+                            <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.withdrawal.id).htm" target="_blank">@transaction.withdrawal.id</a></td>
                             <td class="text-center">@transaction.withdrawal.blockNumber</td>
                             <td class="text-right">@(((double)transaction.withdrawal.amount/100000000).ToString("N8")) @ViewBag.SidechainTicker</td>
                             </tr>
