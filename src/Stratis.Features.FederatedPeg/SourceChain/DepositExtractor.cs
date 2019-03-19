@@ -14,6 +14,8 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
         private readonly ILogger logger;
 
+        private readonly IFederationGatewaySettings settings;
+
         private readonly Script depositScript;
 
         public uint MinimumDepositConfirmations { get; private set; }
@@ -29,6 +31,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                 federationGatewaySettings?.MultiSigRedeemScript?.PaymentScript ??
                 federationGatewaySettings?.MultiSigAddress?.ScriptPubKey;
             this.opReturnDataReader = opReturnDataReader;
+            this.settings = federationGatewaySettings;
             this.MinimumDepositConfirmations = federationGatewaySettings.MinimumDepositConfirmations;
         }
 
@@ -55,7 +58,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         {
             List<TxOut> depositsToMultisig = transaction.Outputs.Where(output =>
                 output.ScriptPubKey == this.depositScript
-                && !output.IsDust(FeeRate.Zero)).ToList();
+                && output.Value > this.settings.TransactionFee).ToList();
 
             if (!depositsToMultisig.Any())
                 return null;

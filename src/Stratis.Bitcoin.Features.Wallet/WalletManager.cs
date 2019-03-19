@@ -681,7 +681,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                     // Get the total balances.
                     (Money amountConfirmed, Money amountUnconfirmed) result = account.GetBalances();
-                    
+
                     balances.Add(new AccountBalance
                     {
                         Account = account,

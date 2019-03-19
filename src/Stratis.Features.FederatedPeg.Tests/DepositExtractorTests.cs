@@ -42,6 +42,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.addressHelper = new MultisigAddressHelper(this.network);
 
             this.settings.MultiSigRedeemScript.Returns(this.addressHelper.PayToMultiSig);
+            this.settings.TransactionFee.Returns(FederationGatewaySettings.DefaultTransactionFee);
             this.opReturnDataReader.TryGetTargetAddress(null, out string address).Returns(callInfo => { callInfo[1] = null; return false; });
 
             this.transactionBuilder = new TestTransactionBuilder();
@@ -52,7 +53,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.opReturnDataReader);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void ExtractDepositsFromBlock_Should_Only_Find_Deposits_To_Multisig()
         {
             Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
@@ -94,7 +95,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             extractedTransaction.BlockHash.Should().Be(block.GetHash());
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void ExtractDepositsFromBlock_Should_Create_One_Deposit_Per_Transaction_To_Multisig()
         {
             Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
@@ -148,6 +149,42 @@ namespace Stratis.Features.FederatedPeg.Tests
             extractedTransaction.Amount.Satoshi.Should().Be(thirdDepositAmount);
             extractedTransaction.Id.Should().Be(thirdDepositTransaction.GetHash());
             extractedTransaction.TargetAddress.Should().Be(newTargetAddress);
+        }
+
+        [Fact]
+        public void ExtractDepositsFromBlockShouldOnlyGetAmountsGreaterThanWithdrawalFee()
+        {
+            Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
+
+            BitcoinPubKeyAddress targetAddress = this.addressHelper.GetNewTargetChainPubKeyAddress();
+            byte[] opReturnBytes = Encoding.UTF8.GetBytes(targetAddress.ToString());
+
+            // Set amount to be less than withdrawal fee
+            long depositAmount = FederationGatewaySettings.DefaultTransactionFee - 1;
+            Transaction depositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
+                this.addressHelper.SourceChainMultisigAddress, opReturnBytes, depositAmount);
+            block.AddTransaction(depositTransaction);
+            this.opReturnDataReader.TryGetTargetAddress(depositTransaction, out string unused1).Returns(callInfo => { callInfo[1] = targetAddress.ToString(); return true; });
+
+            // Set amount to be exactly withdrawal fee
+            long secondDepositAmount = FederationGatewaySettings.DefaultTransactionFee;
+            Transaction secondDepositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
+                this.addressHelper.SourceChainMultisigAddress, opReturnBytes, secondDepositAmount);
+            block.AddTransaction(secondDepositTransaction);
+            this.opReturnDataReader.TryGetTargetAddress(secondDepositTransaction, out string unused2).Returns(callInfo => { callInfo[1] = targetAddress.ToString(); return true; });
+
+            // Set amount to be greater than withdrawal fee (just)
+            long thirdDepositAmount = FederationGatewaySettings.DefaultTransactionFee + 1;
+            Transaction thirdDepositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
+                this.addressHelper.SourceChainMultisigAddress, opReturnBytes, thirdDepositAmount);
+            block.AddTransaction(thirdDepositTransaction);
+            this.opReturnDataReader.TryGetTargetAddress(thirdDepositTransaction, out string unused3).Returns(callInfo => { callInfo[1] = targetAddress.ToString(); return true; });// Extract deposits
+            int blockHeight = 12345;
+            IReadOnlyList<IDeposit> extractedDeposits = this.depositExtractor.ExtractDepositsFromBlock(block, blockHeight);
+
+            // Should only be one, with the value just over the withdrawal fee.
+            extractedDeposits.Count.Should().Be(1);
+            extractedDeposits.First().Amount.Should().Be(FederationGatewaySettings.DefaultTransactionFee + 1);
         }
     }
 }

@@ -2,7 +2,6 @@
   "profiles": {
     "Stratis.StratisD": {
       "commandName": "Project",
-      "commandLineArgs": "-addnode=3.8.125.6"
     },
     "Stratis.StratisD Test": {
       "commandName": "Project",
