@@ -37,8 +37,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         // Maximum number of headers to announce when relaying blocks with headers message.
         private const int MaxBlocksToAnnounce = 8;
 
-        protected readonly ConcurrentChain chain;
-
         protected readonly IConsensusManager consensusManager;
         protected readonly IBlockStoreQueue blockStoreQueue;
 
@@ -77,14 +75,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         protected readonly IChainState chainState;
 
-        public BlockStoreBehavior(ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager, IBlockStoreQueue blockStoreQueue)
+        public BlockStoreBehavior(IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager, IBlockStoreQueue blockStoreQueue)
         {
-            Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(consensusManager, nameof(consensusManager));
             Guard.NotNull(blockStoreQueue, nameof(blockStoreQueue));
 
-            this.chain = chain;
             this.chainState = chainState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
@@ -192,13 +188,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             // Now we want to find the last common block between our chain and the block locator the peer sent us.
-            ChainedHeader chainTip = this.chain.Tip;
+            var bestChainIndexer = this.consensusManager.BestChainIndexer;
+
+            ChainedHeader chainTip = bestChainIndexer.Tip;
             ChainedHeader forkPoint = null;
 
             // Find last common block between our chain and the block locator the peer sent us.
             while (forkPoint == null)
             {
-                forkPoint = this.chain.FindFork(getBlocksPayload.BlockLocators.Blocks);
+                forkPoint = bestChainIndexer.FindFork(getBlocksPayload.BlockLocators.Blocks);
                 if (forkPoint == null)
                 {
                     this.logger.LogTrace("(-)[NO_FORK_POINT]");
@@ -208,7 +206,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 // In case of reorg, we just try again, eventually we succeed.
                 if (chainTip.FindAncestorOrSelf(forkPoint) == null)
                 {
-                    chainTip = this.chain.Tip;
+                    chainTip = bestChainIndexer.Tip;
                     forkPoint = null;
                 }
             }
@@ -297,7 +295,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.logger.LogTrace("Sending block '{0}' to peer '{1}'.", chainedHeaderBlock.ChainedHeader, peer.RemoteSocketEndpoint);
 
                     //TODO strip block of witness if node does not support
-                    await peer.SendMessageAsync(new BlockPayload(chainedHeaderBlock.Block.WithOptions(this.chain.Network.Consensus.ConsensusFactory, peer.SupportedTransactionOptions))).ConfigureAwait(false);
+                    await peer.SendMessageAsync(new BlockPayload(chainedHeaderBlock.Block.WithOptions(this.consensusManager.Network.Consensus.ConsensusFactory, peer.SupportedTransactionOptions))).ConfigureAwait(false);
                 }
                 else
                 {
@@ -497,7 +495,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         [NoTrace]
         public override object Clone()
         {
-            var res = new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.blockStoreQueue)
+            var res = new BlockStoreBehavior(this.chainState, this.loggerFactory, this.consensusManager, this.blockStoreQueue)
             {
                 CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
                 CanRespondToGetDataPayload = this.CanRespondToGetDataPayload
