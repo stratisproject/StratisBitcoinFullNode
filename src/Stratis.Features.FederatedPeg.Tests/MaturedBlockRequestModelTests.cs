@@ -11,7 +11,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact(Skip = TestingValues.SkipTests)]
         public void ShouldSerialiseAsJson()
         {
-            MaturedBlockRequestModel maturedBlockDeposits = new MaturedBlockRequestModel(TestingValues.GetPositiveInt(), TestingValues.GetPositiveInt());
+            var maturedBlockDeposits = new MaturedBlockRequestModel(TestingValues.GetPositiveInt(), TestingValues.GetPositiveInt());
             string asJson = maturedBlockDeposits.ToString();
 
             MaturedBlockRequestModel reconverted = JsonConvert.DeserializeObject<MaturedBlockRequestModel>(asJson);

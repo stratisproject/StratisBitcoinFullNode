@@ -40,7 +40,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact(Skip = TestingValues.SkipTests)]
         public void StartSynchronizesWithWallet()
         {
-            DataFolder dataFolder = new DataFolder(CreateTestDir(this));
+            var dataFolder = new DataFolder(CreateTestDir(this));
 
             this.Init(dataFolder);
             this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
@@ -61,7 +61,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact(Skip = TestingValues.SkipTests)]
         public void StartSynchronizesWithWalletAndSurvivesRestart()
         {
-            DataFolder dataFolder = new DataFolder(CreateTestDir(this));
+            var dataFolder = new DataFolder(CreateTestDir(this));
 
             this.Init(dataFolder);
             this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
@@ -78,7 +78,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             }
 
             // Create a new instance of this test that loads from the persistence that we created in the step before.
-            CrossChainTransferStoreTests newTest = new CrossChainTransferStoreTests(this.network);
+            var newTest = new CrossChainTransferStoreTests(this.network);
 
             // Force a reorg by creating a new chain that only has genesis in common.
             newTest.Init(dataFolder);
@@ -101,7 +101,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact(Skip = TestingValues.SkipTests)]
         public void StoringDepositsWhenWalletBalanceSufficientSucceedsWithDeterministicTransactions()
         {
-            DataFolder dataFolder = new DataFolder(CreateTestDir(this));
+            var dataFolder = new DataFolder(CreateTestDir(this));
 
             this.Init(dataFolder);
             this.AddFunding();
@@ -120,8 +120,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
                 BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
 
-                Deposit deposit1 = new Deposit(0, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
-                Deposit deposit2 = new Deposit(1, new Money(60m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                var deposit1 = new Deposit(0, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                var deposit2 = new Deposit(1, new Money(60m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
 
                 MaturedBlockDepositsModel[] blockDeposits = new[] { new MaturedBlockDepositsModel(
                     new MaturedBlockInfoModel() {
@@ -198,7 +198,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact(Skip = TestingValues.SkipTests)]
         public void StoringDepositsWhenWalletBalanceInSufficientSucceedsWithSuspendStatus()
         {
-            DataFolder dataFolder = new DataFolder(CreateTestDir(this));
+            var dataFolder = new DataFolder(CreateTestDir(this));
 
             this.Init(dataFolder);
             this.AddFunding();
@@ -217,8 +217,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
                 BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
 
-                Deposit deposit1 = new Deposit(0, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
-                Deposit deposit2 = new Deposit(1, new Money(100m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                var deposit1 = new Deposit(0, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                var deposit2 = new Deposit(1, new Money(100m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
 
                 MaturedBlockDepositsModel[] blockDeposits = new[] { new MaturedBlockDepositsModel(
                     new MaturedBlockInfoModel() {
@@ -310,7 +310,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact(Skip = TestingValues.SkipTests)]
         public void StoreMergesSignaturesAsExpected()
         {
-            DataFolder dataFolder = new DataFolder(CreateTestDir(this));
+            var dataFolder = new DataFolder(CreateTestDir(this));
 
             this.Init(dataFolder);
             this.AddFunding();
@@ -326,7 +326,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 BitcoinAddress address = (new Key()).PubKey.Hash.GetAddress(this.network);
 
-                Deposit deposit = new Deposit(0, new Money(160m, MoneyUnit.BTC), address.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                var deposit = new Deposit(0, new Money(160m, MoneyUnit.BTC), address.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
 
                 MaturedBlockDepositsModel[] blockDeposits = new[] { new MaturedBlockDepositsModel(
                     new MaturedBlockInfoModel() {
@@ -347,8 +347,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Create a separate instance to generate another transaction.
                 Transaction transaction2;
-                CrossChainTransferStoreTests newTest = new CrossChainTransferStoreTests(this.network);
-                DataFolder dataFolder2 = new DataFolder(CreateTestDir(this));
+                var newTest = new CrossChainTransferStoreTests(this.network);
+                var dataFolder2 = new DataFolder(CreateTestDir(this));
 
                 newTest.federationKeys = this.federationKeys;
                 newTest.SetExtendedKey(1);
@@ -406,7 +406,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact(Skip = TestingValues.SkipTests)]
         public void StoredPartialTransactionsTriggerSignatureRequest()
         {
-            DataFolder dataFolder = new DataFolder(CreateTestDir(this));
+            var dataFolder = new DataFolder(CreateTestDir(this));
 
             this.Init(dataFolder);
             this.AddFunding();
@@ -425,8 +425,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
                 BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
 
-                Deposit deposit1 = new Deposit(0, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
-                Deposit deposit2 = new Deposit(1, new Money(60m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                var deposit1 = new Deposit(0, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                var deposit2 = new Deposit(1, new Money(60m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
 
                 MaturedBlockDepositsModel[] blockDeposits = new[] { new MaturedBlockDepositsModel(
                     new MaturedBlockInfoModel() {
@@ -440,17 +440,17 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Dictionary<uint256, Transaction> transactions = crossChainTransferStore.GetTransactionsByStatusAsync(
                     CrossChainTransferStatus.Partial).GetAwaiter().GetResult();
 
-                PartialTransactionRequester requester = new PartialTransactionRequester(this.loggerFactory, crossChainTransferStore, this.asyncLoopFactory,
+                var requester = new PartialTransactionRequester(this.loggerFactory, crossChainTransferStore, this.asyncLoopFactory,
                     this.nodeLifetime, this.connectionManager, this.federationGatewaySettings);
 
-                IPEndPoint peerEndPoint = new System.Net.IPEndPoint(System.Net.IPAddress.Parse("1.2.3.4"), 5);
-                INetworkPeer peer = Substitute.For<INetworkPeer>();
+                var peerEndPoint = new System.Net.IPEndPoint(System.Net.IPAddress.Parse("1.2.3.4"), 5);
+                var peer = Substitute.For<INetworkPeer>();
                 peer.RemoteSocketAddress.Returns(peerEndPoint.Address);
                 peer.RemoteSocketPort.Returns(peerEndPoint.Port);
                 peer.PeerEndPoint.Returns(peerEndPoint);
                 peer.IsConnected.Returns(true);
 
-                NetworkPeerCollection peers = new NetworkPeerCollection();
+                var peers = new NetworkPeerCollection();
                 peers.Add(peer);
 
                 this.federationGatewaySettings.FederationNodeIpEndPoints.Returns(new[] { peerEndPoint });
@@ -481,7 +481,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.federationGatewaySettings.CounterChainDepositStartBlock.Returns(depositHeight);
 
-            DataFolder dataFolder = new DataFolder(CreateTestDir(this));
+            var dataFolder = new DataFolder(CreateTestDir(this));
 
             this.Init(dataFolder);
 
@@ -496,7 +496,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact(Skip = "Requires main chain user to be running.")]
         public void DoTest()
         {
-            BuildTransactionRequest transactionRequest = new BuildTransactionRequest()
+            var transactionRequest = new BuildTransactionRequest()
             {
                 FeeAmount = "0.01",
                 // Change this to the address that should receive the funds.
@@ -513,10 +513,10 @@ namespace Stratis.Features.FederatedPeg.Tests
             WalletBuildTransactionModel model = Post<BuildTransactionRequest, WalletBuildTransactionModel>(
                 "http://127.0.0.1:38221/api/wallet/build-transaction", transactionRequest);
 
-            PosTransaction transaction = new PosTransaction(model.Hex);
+            var transaction = new PosTransaction(model.Hex);
 
-            OpReturnDataReader reader = new OpReturnDataReader(this.loggerFactory, Networks.Stratis.Testnet());
-            DepositExtractor extractor = new DepositExtractor(this.loggerFactory, this.federationGatewaySettings, reader);
+            var reader = new OpReturnDataReader(this.loggerFactory, Networks.Stratis.Testnet());
+            var extractor = new DepositExtractor(this.loggerFactory, this.federationGatewaySettings, reader);
             IDeposit deposit = extractor.ExtractDepositFromTransaction(transaction, 2, 1);
 
             Assert.NotNull(deposit);
@@ -527,7 +527,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             Assert.Equal(2, deposit.BlockNumber);
 
             // Post the transaction
-            SendTransactionRequest sendRequest = new SendTransactionRequest()
+            var sendRequest = new SendTransactionRequest()
             {
                 Hex = model.Hex
             };
@@ -540,21 +540,21 @@ namespace Stratis.Features.FederatedPeg.Tests
         private Q Post<T,Q>(string url, T body)
         {
             // Request is sent to mainchain user.
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            var request = (HttpWebRequest)WebRequest.Create(url);
             request.ContentType = "application/json";
             request.Method = "POST";
 
-            JsonContent content = new JsonContent(body);
+            var content = new JsonContent(body);
 
             string strContent = content.ReadAsStringAsync().GetAwaiter().GetResult();
 
-            using (StreamWriter streamWriter = new StreamWriter(request.GetRequestStream()))
+            using (var streamWriter = new StreamWriter(request.GetRequestStream()))
             {
                 streamWriter.Write(strContent);
             }
 
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-            using (StreamReader streamReader = new StreamReader(response.GetResponseStream()))
+            var response = (HttpWebResponse)request.GetResponse();
+            using (var streamReader = new StreamReader(response.GetResponseStream()))
             {
                 string result = streamReader.ReadToEnd();
                 return JsonConvert.DeserializeObject<Q>(result);

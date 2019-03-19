@@ -14,17 +14,17 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact(Skip = TestingValues.SkipTests)]
         public void correctly_identify_mainchain()
         {
-            StratisRegTest stratisRegTest = new StratisRegTest();
+            var stratisRegTest = new StratisRegTest();
             Chain chain = stratisRegTest.ToChain();
             chain.Should().Be(Chain.Mainchain);
             chain.Should().NotBe(Chain.Sidechain);
 
-            StratisTest stratisTest = new StratisTest();
+            var stratisTest = new StratisTest();
             chain = stratisTest.ToChain();
             chain.Should().Be(Chain.Mainchain);
             chain.Should().NotBe(Chain.Sidechain);
 
-            StratisMain stratisMain = new StratisMain();
+            var stratisMain = new StratisMain();
             chain = stratisMain.ToChain();
             chain.Should().Be(Chain.Mainchain);
             chain.Should().NotBe(Chain.Sidechain);

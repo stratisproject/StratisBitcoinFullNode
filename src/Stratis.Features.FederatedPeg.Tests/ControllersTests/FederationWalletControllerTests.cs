@@ -93,7 +93,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         [Fact(Skip = TestingValues.SkipTests)]
         public void GetHistory()
         {
-            List<WithdrawalModel> withdrawals = new List<WithdrawalModel>() {new WithdrawalModel(), new WithdrawalModel()};
+            var withdrawals = new List<WithdrawalModel>() {new WithdrawalModel(), new WithdrawalModel()};
 
             this.withdrawalHistoryProvider.GetHistory(0).ReturnsForAnyArgs(withdrawals);
 
@@ -130,7 +130,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         [Fact(Skip = TestingValues.SkipTests)]
         public void RemoveTransactions()
         {
-            HashSet<(uint256, DateTimeOffset)> hashSet = new HashSet<(uint256, DateTimeOffset)>();
+            var hashSet = new HashSet<(uint256, DateTimeOffset)>();
             hashSet.Add((uint256.One, DateTimeOffset.MinValue));
 
             this.walletManager.RemoveAllTransactions().Returns(info => hashSet);

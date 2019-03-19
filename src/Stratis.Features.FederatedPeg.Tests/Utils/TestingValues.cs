@@ -22,7 +22,7 @@ namespace Stratis.Features.FederatedPeg.Tests.Utils
 
         public static uint256 GetUint256()
         {
-            byte[] buffer = new byte[256 / 8];
+            var buffer = new byte[256 / 8];
             Random.NextBytes(buffer);
             return new uint256(buffer);
         }
@@ -50,7 +50,7 @@ namespace Stratis.Features.FederatedPeg.Tests.Utils
         {
             blockHash = blockHash ?? GetUint256();
             if (blockHeight == -1) blockHeight = GetPositiveInt();
-            HashHeightPair hashHeightPair = new HashHeightPair(blockHash, blockHeight);
+            var hashHeightPair = new HashHeightPair(blockHash, blockHeight);
             return hashHeightPair;
         }
 
@@ -69,7 +69,7 @@ namespace Stratis.Features.FederatedPeg.Tests.Utils
             HashHeightPair hashHeightPair = fixedHashHeight ?? GetHashHeightPair();
             IEnumerable<IDeposit> deposits = Enumerable.Range(0, depositCount).Select(_ => GetDeposit(hashHeightPair));
 
-            MaturedBlockDepositsModel maturedBlockDeposits = new MaturedBlockDepositsModel(
+            var maturedBlockDeposits = new MaturedBlockDepositsModel(
                 new MaturedBlockInfoModel() { BlockHash = hashHeightPair.Hash, BlockHeight = hashHeightPair.Height },
                 deposits.ToList());
             return maturedBlockDeposits;
