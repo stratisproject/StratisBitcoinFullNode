@@ -15,7 +15,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             int blockHeight = TestingValues.GetPositiveInt();
             int matureConfirmation = TestingValues.GetPositiveInt();
 
-            var blockTip = new BlockTipModel(blockHash, blockHeight, matureConfirmation);
+            BlockTipModel blockTip = new BlockTipModel(blockHash, blockHeight, matureConfirmation);
             return blockTip;
         }
 
@@ -25,7 +25,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             IBlockTip blockTip = PrepareBlockTip();
             string asJson = blockTip.ToString();
 
-            var reconverted = JsonConvert.DeserializeObject<BlockTipModel>(asJson);
+            BlockTipModel reconverted = JsonConvert.DeserializeObject<BlockTipModel>(asJson);
 
             reconverted.Hash.Should().Be(blockTip.Hash);
             reconverted.Height.Should().Be(blockTip.Height);

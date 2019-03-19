@@ -33,7 +33,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.crossChainTransferStore.NextMatureDepositHeight.Returns(5);
             this.crossChainTransferStore.RecordLatestMatureDepositsAsync(null).ReturnsForAnyArgs(true);
 
-            var models = new List<MaturedBlockDepositsModel>() { new MaturedBlockDepositsModel(new MaturedBlockInfoModel(), new List<IDeposit>())};
+            List<MaturedBlockDepositsModel> models = new List<MaturedBlockDepositsModel>() { new MaturedBlockDepositsModel(new MaturedBlockInfoModel(), new List<IDeposit>())};
             this.federationGatewayClient.GetMaturedBlockDepositsAsync(null).ReturnsForAnyArgs(Task.FromResult(models));
 
             bool delayRequired = await this.syncManager.ExposedSyncBatchOfBlocksAsync();

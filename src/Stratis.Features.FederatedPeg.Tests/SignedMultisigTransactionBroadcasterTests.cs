@@ -114,7 +114,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.federationGatewaySettings.PublicKey.Returns(PublicKey);
 
-            var emptyTransactionPair = new Dictionary<uint256, Transaction>();
+            Dictionary<uint256, Transaction> emptyTransactionPair = new Dictionary<uint256, Transaction>();
 
             this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).Returns(emptyTransactionPair);
 
@@ -142,7 +142,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.federationGatewaySettings.PublicKey.Returns(PublicKey);
 
-            var transactionPair = new Dictionary<uint256, Transaction>
+            Dictionary<uint256, Transaction> transactionPair = new Dictionary<uint256, Transaction>
             {
                 { new uint256(), new Transaction() }
             };

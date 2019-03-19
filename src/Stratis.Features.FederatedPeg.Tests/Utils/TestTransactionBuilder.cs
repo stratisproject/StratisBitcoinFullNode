@@ -25,7 +25,7 @@ namespace Stratis.Features.FederatedPeg.Tests.Utils
 
         public Transaction BuildTransaction(IDestination receiverAddress, Money amount = null)
         {
-            var transaction = new Transaction();
+            Transaction transaction = new Transaction();
             transaction.AddOutput(new TxOut(amount ?? TestingValues.GetMoney(), receiverAddress));
             return transaction;
         }
@@ -46,10 +46,10 @@ namespace Stratis.Features.FederatedPeg.Tests.Utils
             Money amount = null,
             bool withChange = true)
         {
-            var txBuilder = new TransactionBuilder(network);
+            TransactionBuilder txBuilder = new TransactionBuilder(network);
             amount = amount ?? TestingValues.GetMoney();
             Money change = withChange ? TestingValues.GetMoney() : Money.Zero;
-            var multisigCoins = new ICoin[] { RandomCoin(amount + change, senderScript, true) };
+            ICoin[] multisigCoins = new ICoin[] { RandomCoin(amount + change, senderScript, true) };
 
             txBuilder
                 .AddCoins(multisigCoins)

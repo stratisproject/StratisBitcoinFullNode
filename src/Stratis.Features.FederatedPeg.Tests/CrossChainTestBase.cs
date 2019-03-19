@@ -108,8 +108,8 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.blockDict[this.network.GenesisHash] = this.network.GetGenesis();
 
             this.blockRepository.GetBlocksAsync(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) => {
-                var hashes = x.ArgAt<List<uint256>>(0);
-                var blocks = new List<Block>();
+                List<uint256> hashes = x.ArgAt<List<uint256>>(0);
+                List<Block> blocks = new List<Block>();
                 for (int i = 0; i < hashes.Count; i++)
                 {
                     blocks.Add(this.blockDict.TryGetValue(hashes[i], out Block block) ? block : null);
@@ -186,7 +186,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.FederationWalletTransactionBuilder = new FederationWalletTransactionBuilder(this.loggerFactory, this.federationWalletManager, this.walletFeePolicy, this.network);
             this.withdrawalTransactionBuilder = new WithdrawalTransactionBuilder(this.loggerFactory, this.network, this.federationWalletManager, this.FederationWalletTransactionBuilder, this.federationGatewaySettings);
 
-            var storeSettings = (StoreSettings)FormatterServices.GetUninitializedObject(typeof(StoreSettings));
+            StoreSettings storeSettings = (StoreSettings)FormatterServices.GetUninitializedObject(typeof(StoreSettings));
 
             this.federationWalletSyncManager = new FederationWalletSyncManager(this.loggerFactory, this.federationWalletManager, this.chain, this.network,
                 this.blockRepository, storeSettings, Substitute.For<INodeLifetime>());

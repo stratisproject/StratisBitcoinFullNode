@@ -66,7 +66,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
         private FederationGatewayController CreateController()
         {
-            var controller = new FederationGatewayController(
+            FederationGatewayController controller = new FederationGatewayController(
                 this.loggerFactory,
                 this.GetMaturedBlocksProvider(),
                 this.federationGatewaySettings,
@@ -78,12 +78,12 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
         private MaturedBlocksProvider GetMaturedBlocksProvider()
         {
-            var blockRepository = Substitute.For<IBlockRepository>();
+            IBlockRepository blockRepository = Substitute.For<IBlockRepository>();
 
             blockRepository.GetBlocksAsync(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) =>
             {
-                var hashes = x.ArgAt<List<uint256>>(0);
-                var blocks = new List<Block>();
+                List<uint256> hashes = x.ArgAt<List<uint256>>(0);
+                List<Block> blocks = new List<Block>();
 
                 foreach (uint256 hash in hashes)
                 {
@@ -112,10 +112,10 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
             result.Should().BeOfType<ErrorResult>();
 
-            var error = result as ErrorResult;
+            ErrorResult error = result as ErrorResult;
             error.Should().NotBeNull();
 
-            var errorResponse = error.Value as ErrorResponse;
+            ErrorResponse errorResponse = error.Value as ErrorResponse;
             errorResponse.Should().NotBeNull();
             errorResponse.Errors.Should().HaveCount(1);
 
@@ -149,10 +149,10 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             // Block height (3) > Mature height (2) - returns error message
             result.Should().BeOfType<ErrorResult>();
 
-            var error = result as ErrorResult;
+            ErrorResult error = result as ErrorResult;
             error.Should().NotBeNull();
 
-            var errorResponse = error.Value as ErrorResponse;
+            ErrorResponse errorResponse = error.Value as ErrorResponse;
             errorResponse.Should().NotBeNull();
             errorResponse.Errors.Should().HaveCount(1);
 
@@ -208,7 +208,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
             FederationGatewaySettings settings = new FederationGatewaySettings(nodeSettings);
 
-            var controller = new FederationGatewayController(
+            FederationGatewayController controller = new FederationGatewayController(
                 this.loggerFactory,
                 this.GetMaturedBlocksProvider(),
                 settings,
@@ -243,7 +243,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
             FederationGatewaySettings settings = new FederationGatewaySettings(nodeSettings);
 
-            var controller = new FederationGatewayController(
+            FederationGatewayController controller = new FederationGatewayController(
                 this.loggerFactory,
                 this.GetMaturedBlocksProvider(),
                 settings,

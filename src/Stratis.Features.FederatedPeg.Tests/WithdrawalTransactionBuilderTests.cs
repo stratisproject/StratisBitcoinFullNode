@@ -42,7 +42,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact]
         public void FeeIsTakenFromRecipient()
         {
-            var txBuilder = new WithdrawalTransactionBuilder(
+            WithdrawalTransactionBuilder txBuilder = new WithdrawalTransactionBuilder(
                 this.loggerFactory.Object,
                 this.network,
                 this.federationWalletManager.Object,
@@ -50,7 +50,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.federationGatewaySettings.Object
                 );
 
-            var recipient = new Recipient
+            Recipient recipient = new Recipient
             {
                 Amount = Money.Coins(101),
                 ScriptPubKey = new Script()

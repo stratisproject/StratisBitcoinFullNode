@@ -33,7 +33,7 @@ namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
         {
             IFederationGatewaySettings federationSettings = Substitute.For<IFederationGatewaySettings>();
 
-            var testClient = new TestRestApiClient(this.loggerFactory, federationSettings, this.httpClientFactory);
+            TestRestApiClient testClient = new TestRestApiClient(this.loggerFactory, federationSettings, this.httpClientFactory);
 
             HttpResponseMessage result = await testClient.CallThatWillAlwaysFail().ConfigureAwait(false);
 
