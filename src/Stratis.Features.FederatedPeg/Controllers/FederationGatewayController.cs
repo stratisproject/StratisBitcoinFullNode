@@ -17,9 +17,6 @@ namespace Stratis.Features.FederatedPeg.Controllers
 {
     public static class FederationGatewayRouteEndPoint
     {
-        // TODO do we have push mechanism for the block tip? Remove it. We only need pull mechanism. And I hope we don't have push and pull implemented at the same time
-        public const string PushCurrentBlockTip = "push_current_block_tip";
-
         public const string GetMaturedBlockDeposits = "get_matured_block_deposits";
         public const string GetInfo = "info";
     }
