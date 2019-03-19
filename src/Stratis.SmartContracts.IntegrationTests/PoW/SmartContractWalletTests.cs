@@ -21,7 +21,6 @@ using Stratis.SmartContracts.CLR.Local;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Networks;
-using Stratis.SmartContracts.RuntimeObserver;
 using Stratis.SmartContracts.Tests.Common;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
@@ -90,7 +89,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 // Create a token contract.
                 ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
-                var gasLimit = (Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
+                var gasLimit = (RuntimeObserver.Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
 
                 // Create a transfer token contract.
                 var compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
