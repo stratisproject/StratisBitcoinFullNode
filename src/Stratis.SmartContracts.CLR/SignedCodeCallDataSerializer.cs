@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using CSharpFunctionalExtensions;
 using Stratis.SmartContracts.CLR.Serialization;
-using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR
 {
@@ -12,7 +11,7 @@ namespace Stratis.SmartContracts.CLR
         {
         }
 
-        protected override Result<ContractTxData> SerializeCreateContract(byte[] smartContractBytes, int vmVersion, ulong gasPrice, Gas gasLimit)
+        protected override Result<ContractTxData> SerializeCreateContract(byte[] smartContractBytes, int vmVersion, ulong gasPrice, RuntimeObserver.Gas gasLimit)
         {
             byte[] remaining = smartContractBytes.Slice(PrefixSize, (uint)(smartContractBytes.Length - PrefixSize));
 

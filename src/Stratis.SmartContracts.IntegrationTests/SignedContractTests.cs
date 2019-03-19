@@ -4,11 +4,8 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
-using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Features.Wallet.Models;
-using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
@@ -16,7 +13,6 @@ using Stratis.SmartContracts.CLR.ContractSigning;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core.ContractSigning;
 using Stratis.SmartContracts.Networks;
-using Stratis.SmartContracts.RuntimeObserver;
 using Stratis.SmartContracts.Tests.Common;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
@@ -120,7 +116,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 TxOut txOut = tx.TryGetSmartContractTxOut();
                 byte[] contractBytes = ContractCompiler.CompileFile("SmartContracts/Auction.cs").Compilation;
                 var serializer = new CallDataSerializer(new ContractPrimitiveSerializer(this.network));
-                byte[] newScript = serializer.Serialize(new ContractTxData(1, SmartContractFormatLogic.GasLimitMaximum, (Gas) SmartContractMempoolValidator.MinGasPrice, contractBytes));
+                byte[] newScript = serializer.Serialize(new ContractTxData(1, SmartContractFormatLogic.GasLimitMaximum, (RuntimeObserver.Gas) SmartContractMempoolValidator.MinGasPrice, contractBytes));
                 txOut.ScriptPubKey = new Script(newScript);
 
                 var broadcasterManager = node1.CoreNode.FullNode.NodeService<IBroadcasterManager>();
@@ -159,7 +155,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 TxOut txOut = tx.TryGetSmartContractTxOut();
                 byte[] incorrectlySignedBytes = new CSharpContractSigner(new ContractSigner()).PackageSignedCSharpFile(new Key(), "SmartContracts/StorageDemo.cs");
                 var serializer = new CallDataSerializer(new ContractPrimitiveSerializer(this.network));
-                byte[] newScript = serializer.Serialize(new ContractTxData(1, SmartContractFormatLogic.GasLimitMaximum, (Gas)SmartContractMempoolValidator.MinGasPrice, incorrectlySignedBytes));
+                byte[] newScript = serializer.Serialize(new ContractTxData(1, SmartContractFormatLogic.GasLimitMaximum, (RuntimeObserver.Gas)SmartContractMempoolValidator.MinGasPrice, incorrectlySignedBytes));
                 txOut.ScriptPubKey = new Script(newScript);
 
                 var broadcasterManager = node1.CoreNode.FullNode.NodeService<IBroadcasterManager>();
