@@ -1,6 +1,8 @@
 # Smart Contract Whitelisting
 
-The PoA voting feature provides the federation members the ability to vote on a list of whitelisted hashes. The smart contracts project integrates with this feature by adding a new consensus rule. The rule hashes the bytecode of any contract creation transactions using Keccak256. This hash is checked agaist the whitelist. If the hash is not whitelisted, contract deployment fails.
+The PoA voting feature provides the federation members the ability to vote on a list of whitelisted hashes. The smart contracts project integrates with this feature by adding a new consensus rule. The rule hashes the bytecode contained in any contract creation transactions. This hash is checked against the whitelist. If the hash is not whitelisted, contract deployment fails.
+
+Practically, this means that it will only be possible to deploy contracts whose code hash is present on the federation whitelist.
 
 ## Usage
 
@@ -15,11 +17,10 @@ Enable contract whitelisting by providing an option to the smart contracts featu
 
 Whitelisted contracts should only be enabled on a node using `.UseSmartContractPoAConsensus()`. The node will fail to run correctly if this is not true.
 
-
 ## Important architectural details
 
 ### Hashing algorithm
-The hashing algorithm used is Keccak256. This can be changed by defining a different implementation of `IContractCodeHashingStrategy`. Hashes must be 32 bytes wide.
+Keccak256 is used to hash contract bytecode. This can be changed by defining a different implementation of `IContractCodeHashingStrategy`. Hashes must be 32 bytes wide.
 
 ### Use of full validation rule
 Enabling contract whitelisting adds a new full-validation consensus rule `AllowedCodeHashLogic`. This rule must be full-validation due to the whitelisted hashes repository also being updated in a FV rule. Consider the following scenario if it were a partial validation rule: a node permitted a contract deployment in block 10. The consensus tip is at 2 and at 5 the hash is removed. After block 5 + max reorg (1 for this example) it will no longer be a valid contract deployment tx due to the code hash being removed from the whitelist.
