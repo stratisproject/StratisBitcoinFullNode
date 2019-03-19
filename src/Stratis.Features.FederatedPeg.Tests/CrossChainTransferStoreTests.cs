@@ -43,7 +43,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             var dataFolder = new DataFolder(CreateTestDir(this));
 
             this.Init(dataFolder);
-            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
 
             using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
@@ -64,7 +64,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             var dataFolder = new DataFolder(CreateTestDir(this));
 
             this.Init(dataFolder);
-            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
 
             using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
@@ -105,7 +105,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.Init(dataFolder);
             this.AddFunding();
-            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
 
             MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
 
@@ -202,7 +202,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.Init(dataFolder);
             this.AddFunding();
-            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
 
             MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
 
@@ -314,7 +314,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.Init(dataFolder);
             this.AddFunding();
-            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
 
             using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
@@ -410,7 +410,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.Init(dataFolder);
             this.AddFunding();
-            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
 
             MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
 
@@ -466,6 +466,30 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 peer.DidNotReceive().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
                     o.DepositId == 1 && o.PartialTransaction.GetHash() == transactions[1].GetHash())).GetAwaiter().GetResult();
+            }
+        }
+
+        [Fact]
+        public void NextMatureDepositStartsHigherOnMain()
+        {
+            // This should really be 2 tests in separate classes but we'll fit in with what is already happening for now.
+
+            // Start querying counter-chain for deposits from first non-genesis block on main chain and a higher number on side chain.
+            int depositHeight = (this.network.Name == new StratisRegTest().Name)
+                ? 1
+                : FederationGatewaySettings.StratisMainDepositStartBlock;
+
+            this.federationGatewaySettings.CounterChainDepositStartBlock.Returns(depositHeight);
+
+            var dataFolder = new DataFolder(CreateTestDir(this));
+
+            this.Init(dataFolder);
+
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
+            {
+                crossChainTransferStore.Initialize();
+
+                Assert.Equal(depositHeight, crossChainTransferStore.NextMatureDepositHeight);
             }
         }
 

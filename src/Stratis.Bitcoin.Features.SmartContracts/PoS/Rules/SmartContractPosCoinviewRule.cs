@@ -52,12 +52,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
             this.stakeChain.Set(context.ValidationContext.ChainedHeaderToValidate, (context as PosRuleContext).BlockStake);
         }
 
-        /// <inheritdoc/>
-        protected override bool IsProtocolTransaction(Transaction transaction)
-        {
-            return transaction.IsCoinBase || transaction.IsCoinStake;
-        }
-
         /// <inheritdoc />
         public override void CheckBlockReward(RuleContext context, Money fees, int height, NBitcoin.Block block)
         {

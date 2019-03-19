@@ -219,6 +219,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                     password =  WalletPassword,
                     opReturnData = sidechainDepositAddress,
                     feeAmount = "0.01",
+                    allowUnconfirmed = true,
                     recipients = new[]
                     {
                         new
@@ -305,13 +306,10 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             this.FedMain2.AppendToConfig($"mindepositconfirmations=5");
             this.FedMain3.AppendToConfig($"mindepositconfirmations=5");
 
-            this.FedSide1.AppendToConfig($"mincoinmaturity=5");
-            this.FedSide2.AppendToConfig($"mincoinmaturity=5");
-            this.FedSide3.AppendToConfig($"mincoinmaturity=5");
-
-            this.FedMain1.AppendToConfig($"mincoinmaturity=5");
-            this.FedMain2.AppendToConfig($"mincoinmaturity=5");
-            this.FedMain3.AppendToConfig($"mincoinmaturity=5");
+            // To look for deposits from the beginning on our sidechain.
+            this.FedSide1.AppendToConfig($"{FederationGatewaySettings.CounterChainDepositBlock}=1");
+            this.FedSide2.AppendToConfig($"{FederationGatewaySettings.CounterChainDepositBlock}=1");
+            this.FedSide3.AppendToConfig($"{FederationGatewaySettings.CounterChainDepositBlock}=1");
 
             this.FedSide1.AppendToConfig($"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
             this.FedSide2.AppendToConfig($"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");

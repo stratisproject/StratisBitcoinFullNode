@@ -90,7 +90,6 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
             this.chain = new ConcurrentChain(this.network);
 
-            this.federationGatewaySettings.MinCoinMaturity.Returns(1);
             this.federationGatewaySettings.TransactionFee.Returns(new Money(0.01m, MoneyUnit.BTC));
 
             // Generate the keys used by the federation members for our tests.

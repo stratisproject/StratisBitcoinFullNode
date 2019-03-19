@@ -280,8 +280,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             var domain = new Domain("stratis.test.com");
 
             var testResourceRecord = new IPAddressResourceRecord(domain, IPAddress.Parse("192.168.0.1"));
-            var masterFile = new DnsSeedMasterFile();
-            masterFile.Add(testResourceRecord);
+            var masterFile = new DnsSeedMasterFile(new List<IResourceRecord> { testResourceRecord });
 
             using (var stream = new MemoryStream())
             {
@@ -310,8 +309,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             var domain = new Domain("stratis.test.com");
 
             var testResourceRecord = new IPAddressResourceRecord(domain, IPAddress.Parse("2001:db8:85a3:0:0:8a2e:370:7334"));
-            var masterFile = new DnsSeedMasterFile();
-            masterFile.Add(testResourceRecord);
+            var masterFile = new DnsSeedMasterFile(new List<IResourceRecord> { testResourceRecord });
 
             using (var stream = new MemoryStream())
             {
@@ -341,8 +339,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             var cNameDomain = new Domain("www.stratis.test.com");
 
             var testResourceRecord = new CanonicalNameResourceRecord(domain, cNameDomain);
-            var masterFile = new DnsSeedMasterFile();
-            masterFile.Add(testResourceRecord);
+            var masterFile = new DnsSeedMasterFile(new List<IResourceRecord> { testResourceRecord });
 
             using (var stream = new MemoryStream())
             {
@@ -373,8 +370,8 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             int preference = 10;
 
             var testResourceRecord = new MailExchangeResourceRecord(domain, preference, exchangeDomain);
-            var masterFile = new DnsSeedMasterFile();
-            masterFile.Add(testResourceRecord);
+            var masterFile = new DnsSeedMasterFile(new List<IResourceRecord> { testResourceRecord });
+
             using (var stream = new MemoryStream())
             {
                 // Act.
@@ -404,8 +401,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             var nsDomain = new Domain("ns");
 
             var testResourceRecord = new NameServerResourceRecord(domain, nsDomain);
-            var masterFile = new DnsSeedMasterFile();
-            masterFile.Add(testResourceRecord);
+            var masterFile = new DnsSeedMasterFile(new List<IResourceRecord> { testResourceRecord });
 
             using (var stream = new MemoryStream())
             {
@@ -435,8 +431,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             var nsDomain = new Domain("pointer.stratis.test.com");
 
             var testResourceRecord = new PointerResourceRecord(domain, nsDomain);
-            var masterFile = new DnsSeedMasterFile();
-            masterFile.Add(testResourceRecord);
+            var masterFile = new DnsSeedMasterFile(new List<IResourceRecord> { testResourceRecord });
 
             using (var stream = new MemoryStream())
             {
@@ -482,8 +477,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                     expireInterval,
                     minimumTimeToLive);
 
-            var masterFile = new DnsSeedMasterFile();
-            masterFile.Add(testResourceRecord);
+            var masterFile = new DnsSeedMasterFile(new List<IResourceRecord> { testResourceRecord });
 
             using (var stream = new MemoryStream())
             {
@@ -524,11 +518,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                     new IPAddressResourceRecord(new Domain(domainName), IPAddress.Parse("192.168.100.4"))
                 };
 
-            var masterFile = new DnsSeedMasterFile();
-            foreach (IResourceRecord testResourceRecord in testResourceRecords)
-            {
-                masterFile.Add(testResourceRecord);
-            }
+            var masterFile = new DnsSeedMasterFile(testResourceRecords);
 
             using (var stream = new MemoryStream())
             {
