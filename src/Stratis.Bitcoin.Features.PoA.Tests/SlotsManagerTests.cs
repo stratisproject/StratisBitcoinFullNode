@@ -61,9 +61,9 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         {
             var tool = new KeyTool(new DataFolder(string.Empty));
             Key key = tool.GeneratePrivateKey();
-            this.network = new TestPoANetwork(new List<PubKey>() { tool.GeneratePrivateKey().PubKey, key.PubKey, tool.GeneratePrivateKey().PubKey});
+            this.network = new TestPoANetwork(new List<PubKey>() { tool.GeneratePrivateKey().PubKey, key.PubKey, tool.GeneratePrivateKey().PubKey });
 
-            FederationManager fedManager = PoATestsBase.CreateFederationManager(this, this.network, new ExtendedLoggerFactory());
+            FederationManager fedManager = PoATestsBase.CreateFederationManager(this, this.network, new ExtendedLoggerFactory(), new Signals.Signals(new LoggerFactory(), null));
             this.slotsManager = new SlotsManager(this.network, fedManager, new LoggerFactory());
 
             List<PubKey> fedKeys = this.federationManager.GetFederationMembers();
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             Assert.Equal(roundStart + this.consensusOptions.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart));
             Assert.Equal(roundStart + this.consensusOptions.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart + 4));
 
-            roundStart += this.consensusOptions.TargetSpacingSeconds * (uint) fedKeys.Count;
+            roundStart += this.consensusOptions.TargetSpacingSeconds * (uint)fedKeys.Count;
             Assert.Equal(roundStart + this.consensusOptions.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart - 5));
             Assert.Equal(roundStart + this.consensusOptions.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart - this.consensusOptions.TargetSpacingSeconds + 1));
 

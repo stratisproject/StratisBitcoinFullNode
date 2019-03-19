@@ -5,6 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
@@ -41,6 +43,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         /// <summary>Flag to determine when the <see cref="MaxQueueSize"/> is reached.</summary>
         private bool maxQueueSizeReached;
+
+        private SubscriptionToken blockConnectedSubscription;
+        private SubscriptionToken transactionReceivedSubscription;
 
         /// <summary>Limit <see cref="blocksQueue"/> size to 100MB.</summary>
         private const int MaxQueueSize = 100 * 1024 * 1024;
@@ -90,7 +95,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // that in the wallet. The block locator will help finding
                 // a common fork and bringing the wallet back to a good
                 // state (behind the best chain).
-                ICollection<uint256> locators = this.walletManager.GetFirstWalletBlockLocator();
+                ICollection<uint256> locators = this.walletManager.ContainsWallets ? this.walletManager.GetFirstWalletBlockLocator() : new[] { this.chain.Tip.HashBlock };
                 var blockLocator = new BlockLocator { Blocks = locators.ToList() };
                 ChainedHeader fork = this.chain.FindFork(blockLocator);
                 this.walletManager.RemoveBlocks(fork);
@@ -98,25 +103,25 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.walletTip = fork;
             }
 
-            this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
-            this.signals.OnTransactionReceived.Attach(this.OnTransactionAvailable);
+            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
+            this.transactionReceivedSubscription = this.signals.Subscribe<TransactionReceived>(this.OnTransactionAvailable);
         }
 
-        private void OnTransactionAvailable(Transaction transaction)
+        private void OnTransactionAvailable(TransactionReceived transactionReceived)
         {
-            this.ProcessTransaction(transaction);
+            this.ProcessTransaction(transactionReceived.ReceivedTransaction);
         }
 
-        private void OnBlockConnected(ChainedHeaderBlock chainedheaderblock)
+        private void OnBlockConnected(BlockConnected blockConnected)
         {
-            this.ProcessBlock(chainedheaderblock.Block);
+            this.ProcessBlock(blockConnected.ConnectedBlock.Block);
         }
 
         /// <inheritdoc />
         public void Stop()
         {
-            this.signals.OnBlockConnected.Detach(this.OnBlockConnected);
-            this.signals.OnTransactionReceived.Detach(this.OnTransactionAvailable);
+            this.signals.Unsubscribe(this.blockConnectedSubscription);
+            this.signals.Unsubscribe(this.transactionReceivedSubscription);
         }
 
         /// <summary>Called when a <see cref="Block"/> is added to the <see cref="blocksQueue"/>.

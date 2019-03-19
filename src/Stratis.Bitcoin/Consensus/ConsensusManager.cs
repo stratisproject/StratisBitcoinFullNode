@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus.PerformanceCounters.ConsensusManager;
 using Stratis.Bitcoin.Consensus.ValidationResults;
 using Stratis.Bitcoin.Consensus.Validators;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Primitives;
@@ -713,7 +714,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 using (this.performanceCounter.MeasureBlockDisconnectedSignal())
                 {
-                    this.signals.OnBlockDisconnected.Notify(disconnectedBlock);
+                    this.signals.Publish(new BlockDisconnected(disconnectedBlock));
                 }
 
                 current = current.Previous;
@@ -771,7 +772,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 using (this.performanceCounter.MeasureBlockConnectedSignal())
                 {
-                    this.signals.OnBlockConnected.Notify(blockToConnect);
+                    this.signals.Publish(new BlockConnected(blockToConnect));
                 }
             }
 

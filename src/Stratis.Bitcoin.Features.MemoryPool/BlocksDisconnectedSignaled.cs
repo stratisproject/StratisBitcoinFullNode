@@ -2,6 +2,8 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 
@@ -17,6 +19,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly ISignals signals;
         private readonly ILogger logger;
 
+        private SubscriptionToken blockDisconnectedSubscription;
+
         public BlocksDisconnectedSignaled(IMempoolValidator mempoolValidator, MempoolSchedulerLock mempoolLock, ILoggerFactory loggerFactory, ISignals signals)
         {
             this.mempoolValidator = mempoolValidator;
@@ -27,12 +31,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         public void Initialize()
         {
-            this.signals.OnBlockDisconnected.Attach(this.OnBlockDisconnected);
+            this.blockDisconnectedSubscription = this.signals.Subscribe<BlockDisconnected>(this.OnBlockDisconnected);
         }
 
-        private void OnBlockDisconnected(ChainedHeaderBlock chainedHeaderBlock)
+        private void OnBlockDisconnected(BlockDisconnected blockDisconnected)
         {
-            this.AddBackToMempoolAsync(chainedHeaderBlock.Block).ConfigureAwait(false).GetAwaiter().GetResult();
+            this.AddBackToMempoolAsync(blockDisconnected.DisconnectedBlock.Block).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -64,7 +68,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         public void Dispose()
         {
-            this.signals.OnBlockDisconnected.Detach(this.OnBlockDisconnected);
+            this.signals.Unsubscribe(this.blockDisconnectedSubscription);
         }
     }
 }

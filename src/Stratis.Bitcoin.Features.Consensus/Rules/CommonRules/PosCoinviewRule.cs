@@ -46,12 +46,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             await this.stakeChain.SetAsync(context.ValidationContext.ChainedHeaderToValidate, posRuleContext.BlockStake).ConfigureAwait(false);
         }
 
-        /// <inheritdoc/>
-        protected override bool IsProtocolTransaction(Transaction transaction)
-        {
-            return transaction.IsCoinBase || transaction.IsCoinStake;
-        }
-
         /// <inheritdoc />
         public override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
         {

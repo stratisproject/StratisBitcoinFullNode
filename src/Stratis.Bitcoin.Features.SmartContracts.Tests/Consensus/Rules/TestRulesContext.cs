@@ -55,15 +55,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             return rule;
         }
 
-        public ContractTransactionValidationRule CreateContractValidationRule()
+        public ContractTransactionPartialValidationRule CreateContractValidationRule()
         {
-            var rule = new ContractTransactionValidationRule(this.CallDataSerializer, new List<IContractTransactionValidationLogic>
+            var rule = new ContractTransactionPartialValidationRule(this.CallDataSerializer, new List<IContractTransactionPartialValidationRule>
             {
                 new SmartContractFormatLogic()
             });
-            rule.Parent = this.Consensus;
-            rule.Logger = this.LoggerFactory.CreateLogger(rule.GetType().FullName);
-            rule.Initialize();
+
             return rule;
         }
     }

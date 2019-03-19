@@ -39,8 +39,8 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
         public PoATestsBase(TestPoANetwork network = null)
         {
-            this.signals = new Signals.Signals();
             this.loggerFactory = new LoggerFactory();
+            this.signals = new Signals.Signals(loggerFactory, null);
             this.network = network == null ? new TestPoANetwork() : network;
             this.consensusOptions = this.network.ConsensusOptions;
             this.dBreezeSerializer = new DBreezeSerializer(this.network);
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             IDateTimeProvider timeProvider = new DateTimeProvider();
             this.consensusSettings = new ConsensusSettings(NodeSettings.Default(this.network));
 
-            this.federationManager = CreateFederationManager(this, this.network, this.loggerFactory);
+            this.federationManager = CreateFederationManager(this, this.network, this.loggerFactory, this.signals);
             this.slotsManager = new SlotsManager(this.network, this.federationManager, this.loggerFactory);
 
             this.poaHeaderValidator = new PoABlockHeaderValidator(this.loggerFactory);
@@ -76,13 +76,13 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             this.currentHeader = headers.Last();
         }
 
-        public static FederationManager CreateFederationManager(object caller, Network network, LoggerFactory loggerFactory)
+        public static FederationManager CreateFederationManager(object caller, Network network, LoggerFactory loggerFactory, ISignals signals)
         {
             string dir = TestBase.CreateTestDir(caller);
             var keyValueRepo = new KeyValueRepository(dir, new DBreezeSerializer(network));
 
             var settings = new NodeSettings(network, args: new string[] { $"-datadir={dir}" });
-            var federationManager = new FederationManager(settings, network, loggerFactory, keyValueRepo);
+            var federationManager = new FederationManager(settings, network, loggerFactory, keyValueRepo, signals);
             federationManager.Initialize();
 
             return federationManager;
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
         public static FederationManager CreateFederationManager(object caller)
         {
-            return CreateFederationManager(caller, new TestPoANetwork(), new ExtendedLoggerFactory());
+            return CreateFederationManager(caller, new TestPoANetwork(), new ExtendedLoggerFactory(), new Signals.Signals(new LoggerFactory(), null));
         }
 
         public void InitRule(ConsensusRuleBase rule)
