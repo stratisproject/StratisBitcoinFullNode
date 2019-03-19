@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public async Task InitializeAsync(int tipHeight, ICoinView coinView)
+        public void Initialize(int tipHeight, ICoinView coinView)
         {
             this.items.Clear();
 
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             for (int rewindHeight = tipHeight; rewindHeight >= heightToSyncTo; rewindHeight--)
             {
-                RewindData rewindData = await coinView.GetRewindData(rewindHeight).ConfigureAwait(false);
+                RewindData rewindData = coinView.GetRewindData(rewindHeight);
 
                 this.AddRewindData(rewindHeight, rewindData);
             }
@@ -88,13 +88,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public async Task Remove(int tipHeight, ICoinView coinView)
+        public async void Remove(int tipHeight, ICoinView coinView)
         {
             this.Flush(tipHeight);
 
             int bottomHeight = tipHeight > this.numberOfBlocksToKeep ? tipHeight - this.numberOfBlocksToKeep : 1;
 
-            RewindData rewindData = await coinView.GetRewindData(bottomHeight).ConfigureAwait(false);
+            RewindData rewindData = coinView.GetRewindData(bottomHeight);
             this.AddRewindData(bottomHeight, rewindData);
         }
 

@@ -18,14 +18,14 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </summary>
         /// <param name="tipHeight">The chain tip height.</param>
         /// <param name="coinView">The coin view to be used for getting rewind data.</param>
-        Task InitializeAsync(int tipHeight, ICoinView coinView);
+        void Initialize(int tipHeight, ICoinView coinView);
 
         /// <summary>
         /// Removes the last rewind data index and add one instead.
         /// </summary>
         /// <param name="tipHeight">The chain tip height.</param>
         /// <param name="coinView">The coin view to be used for getting rewind data.</param>
-        Task Remove(int tipHeight, ICoinView coinView);
+        void Remove(int tipHeight, ICoinView coinView);
 
         /// <summary>
         /// Stores all rewind data index from the cache to a disk and clears cache.

@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (idsToFetch.Length != 0)
             {
-                await this.coinview.FetchCoinsAsync(idsToFetch, cancellation).ConfigureAwait(false);
+                this.coinview.FetchCoins(idsToFetch, cancellation);
 
                 this.logger.LogTrace("{0} ids were pre-fetched.", idsToFetch.Length);
             }
