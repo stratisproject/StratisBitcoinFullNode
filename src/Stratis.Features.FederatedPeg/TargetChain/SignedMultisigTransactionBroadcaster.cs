@@ -38,6 +38,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
     public class SignedMultisigTransactionBroadcaster : ISignedMultisigTransactionBroadcaster, IDisposable
     {
+        /// <summary>
+        /// How often to trigger the query for and broadcasting of new transactions.
+        /// </summary>
+        private static readonly TimeSpan TimeBetweenQueries = TimeSpans.TenSeconds;
+
         private readonly ILogger logger;
         private readonly ICrossChainTransferStore store;
         private readonly MempoolManager mempoolManager;
@@ -77,7 +82,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     return Task.CompletedTask;
                 },
                 this.nodeLifetime.ApplicationStopping,
-                TimeSpans.TenSeconds);
+                TimeBetweenQueries);
         }
 
         /// <inheritdoc />
