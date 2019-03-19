@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
@@ -18,9 +19,16 @@ namespace Stratis.Features.FederatedPeg
 {
     public class FederatedPegBlockDefinition : SmartContractPoABlockDefinition
     {
+        /// <summary>
+        /// The number of outputs we break the premine reward up into, so that the federation can build more than one transaction at once.
+        /// </summary>
+        public const int FederationWalletOutputs = 10;
+
         private readonly Script payToMultisigScript;
 
         private readonly Script payToMemberScript;
+
+        private readonly ICoinbaseSplitter premineSplitter;
 
         /// <inheritdoc />
         public FederatedPegBlockDefinition(
@@ -35,6 +43,7 @@ namespace Stratis.Features.FederatedPeg
             Network network,
             ISenderRetriever senderRetriever,
             IStateRepositoryRoot stateRoot,
+            ICoinbaseSplitter premineSplitter,
             NodeSettings nodeSettings,
             MinerSettings minerSettings)
             : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool, mempoolLock, network, senderRetriever, stateRoot, minerSettings)
@@ -42,15 +51,25 @@ namespace Stratis.Features.FederatedPeg
             var federationGatewaySettings = new FederationGatewaySettings(nodeSettings);
             this.payToMultisigScript = federationGatewaySettings.MultiSigAddress.ScriptPubKey;
             this.payToMemberScript = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(new PubKey(federationGatewaySettings.PublicKey));
+
+            this.premineSplitter = premineSplitter;
         }
 
         public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
-            Script rewardScript = (chainTip.Height + 1) == this.Network.Consensus.PremineHeight
-                                   ? this.payToMultisigScript
-                                   : this.payToMemberScript;
+            bool miningPremine = (chainTip.Height + 1) == this.Network.Consensus.PremineHeight;
 
-            return base.Build(chainTip, rewardScript);
+            Script rewardScript = miningPremine ? this.payToMultisigScript : this.payToMemberScript;
+
+            BlockTemplate built = base.Build(chainTip, rewardScript);
+
+            if (miningPremine)
+            {
+                this.premineSplitter.SplitReward(this.coinbase);
+            }
+
+            return built;
         }
+
     }
 }
