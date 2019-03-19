@@ -58,17 +58,19 @@ namespace Stratis.Bitcoin.Tests.Common
             if (inMemoryCoinView == null)
                 inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
 
+            var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
+
             var networkPeerFactory = new NetworkPeerFactory(network,
                 dateTimeProvider,
                 loggerFactory, new PayloadProvider().DiscoverPayloads(),
-                new SelfEndpointTracker(loggerFactory),
+                new SelfEndpointTracker(loggerFactory, connectionManagerSettings),
                 new Mock<IInitialBlockDownloadState>().Object,
-                new ConnectionManagerSettings(nodeSettings));
+                connectionManagerSettings);
 
-            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker(loggerFactory));
-            var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
             var connectionSettings = new ConnectionManagerSettings(nodeSettings);
-            var selfEndpointTracker = new SelfEndpointTracker(loggerFactory);
+            var selfEndpointTracker = new SelfEndpointTracker(loggerFactory, connectionSettings);
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, selfEndpointTracker);
+            var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
             var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeSettings,
                 new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { },
                 peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider(), new Mock<INodeStats>().Object);

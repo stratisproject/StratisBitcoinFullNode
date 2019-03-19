@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
+﻿using System.Net;
 using ConcurrentCollections;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Configuration.Settings;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -33,10 +32,11 @@ namespace Stratis.Bitcoin.P2P
         /// Initializes an instance of the self endpoint tracker.
         /// </summary>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public SelfEndpointTracker(ILoggerFactory loggerFactory)
+        public SelfEndpointTracker(ILoggerFactory loggerFactory, ConnectionManagerSettings connectionManagerSettings)
         {
             this.lockObject = new object();
             this.IsMyExternalAddressFinal = false;
+            this.MyExternalAddress = connectionManagerSettings.ExternalEndpoint;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
