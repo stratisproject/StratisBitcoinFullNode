@@ -21,11 +21,11 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
         [Route("enable-federation")]
         public async Task<IActionResult> EnableFederationAsync(string mnemonic, string password)
         {
-            ApiResponse importWalletRequest = await ApiRequester.PostRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/FederationWallet/import-key", new {mnemonic, password});
-            if(importWalletRequest.IsSuccess)
+            ApiResponse importWalletRequest = await ApiRequester.PostRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/FederationWallet/import-key", new { mnemonic, password });
+            if (importWalletRequest.IsSuccess)
             {
-                ApiResponse enableFederationRequest = await ApiRequester.PostRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/FederationWallet/enable-federation", new {password});
-                return enableFederationRequest.IsSuccess ? (IActionResult) Ok() : BadRequest();
+                ApiResponse enableFederationRequest = await ApiRequester.PostRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/FederationWallet/enable-federation", new { password });
+                return enableFederationRequest.IsSuccess ? (IActionResult)Ok() : BadRequest();
             }
             return BadRequest();
         }
@@ -36,16 +36,16 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
         public async Task<IActionResult> ResyncAsync(string value)
         {
             bool isHeight = int.TryParse(value, out int height);
-            if(isHeight)
+            if (isHeight)
             {
                 ApiResponse getblockhashRequest = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, $"/api/Consensus/getblockhash?height={value}");
-                ApiResponse syncRequest = await ApiRequester.PostRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Wallet/sync", new {hash=((string)getblockhashRequest.Content)});
-                return syncRequest.IsSuccess ? (IActionResult) Ok() : BadRequest();
+                ApiResponse syncRequest = await ApiRequester.PostRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Wallet/sync", new { hash = ((string)getblockhashRequest.Content) });
+                return syncRequest.IsSuccess ? (IActionResult)Ok() : BadRequest();
             }
             else
             {
-                ApiResponse syncRequest = await ApiRequester.PostRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Wallet/sync", new {hash=value});
-                return syncRequest.IsSuccess ? (IActionResult) Ok() : BadRequest();
+                ApiResponse syncRequest = await ApiRequester.PostRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Wallet/sync", new { hash = value });
+                return syncRequest.IsSuccess ? (IActionResult)Ok() : BadRequest();
             }
         }
 
@@ -55,7 +55,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
         {
             //TODO: implement this method
             ApiResponse stopNodeRequest = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Node/status");
-            return stopNodeRequest.IsSuccess ? (IActionResult) Ok() : BadRequest();
+            return stopNodeRequest.IsSuccess ? (IActionResult)Ok() : BadRequest();
         }
 
         [Ajax]
