@@ -20,7 +20,6 @@ using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.SourceChain;
-using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
 using Xunit;
@@ -35,11 +34,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
         private readonly ILogger logger;
 
-        private readonly ILeaderProvider leaderProvider;
-
         private readonly IDepositExtractor depositExtractor;
-
-        private readonly ILeaderReceiver leaderReceiver;
 
         private readonly IConsensusManager consensusManager;
 
@@ -60,9 +55,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.logger = Substitute.For<ILogger>();
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
-            this.leaderProvider = Substitute.For<ILeaderProvider>();
             this.depositExtractor = Substitute.For<IDepositExtractor>();
-            this.leaderReceiver = Substitute.For<ILeaderReceiver>();
             this.consensusManager = Substitute.For<IConsensusManager>();
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
             this.federationWalletManager = Substitute.For<IFederationWalletManager>();
@@ -75,10 +68,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         {
             var controller = new FederationGatewayController(
                 this.loggerFactory,
-                this.network,
-                this.leaderProvider,
                 this.GetMaturedBlocksProvider(),
-                this.leaderReceiver,
                 this.federationGatewaySettings,
                 this.federationWalletManager,
                 this.federationManager);
@@ -204,25 +194,6 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         }
 
         [Fact(Skip = TestingValues.SkipTests)]
-        public void ReceiveCurrentBlockTip_Should_Call_LeaderProdvider_Update()
-        {
-            FederationGatewayController controller = this.CreateController();
-
-            var model = new BlockTipModel(TestingValues.GetUint256(), TestingValues.GetPositiveInt(), TestingValues.GetPositiveInt());
-
-            int leaderProviderCallCount = 0;
-            this.leaderProvider.When(x => x.Update(Arg.Any<BlockTipModel>())).Do(info =>
-            {
-                leaderProviderCallCount++;
-            });
-
-            IActionResult result = controller.PushCurrentBlockTip(model);
-
-            result.Should().BeOfType<OkResult>();
-            leaderProviderCallCount.Should().Be(1);
-        }
-
-        [Fact(Skip = TestingValues.SkipTests)]
         public void Call_Sidechain_Gateway_Get_Info()
         {
             string redeemScript = "2 02fad5f3c4fdf4c22e8be4cfda47882fff89aaa0a48c1ccad7fa80dc5fee9ccec3 02503f03243d41c141172465caca2f5cef7524f149e965483be7ce4e44107d7d35 03be943c3a31359cd8e67bedb7122a0898d2c204cf2d0119e923ded58c429ef97c 3 OP_CHECKMULTISIG";
@@ -239,10 +210,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
             var controller = new FederationGatewayController(
                 this.loggerFactory,
-                this.network,
-                this.leaderProvider,
                 this.GetMaturedBlocksProvider(),
-                this.leaderReceiver,
                 settings,
                 this.federationWalletManager,
                 this.federationManager);
@@ -277,10 +245,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
             var controller = new FederationGatewayController(
                 this.loggerFactory,
-                this.network,
-                this.leaderProvider,
                 this.GetMaturedBlocksProvider(),
-                this.leaderReceiver,
                 settings,
                 this.federationWalletManager,
                 this.federationManager);
