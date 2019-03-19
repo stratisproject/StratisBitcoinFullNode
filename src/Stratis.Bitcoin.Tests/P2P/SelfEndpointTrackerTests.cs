@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Net;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P;
 using Xunit;
 
@@ -15,8 +17,9 @@ namespace Stratis.Bitcoin.Tests.P2P
         public SelfEndpointTrackerTests()
         {
             this.extendedLoggerFactory = new ExtendedLoggerFactory();
-            this.selfEndpointTracker = new SelfEndpointTracker(this.extendedLoggerFactory);
-        } 
+            this.selfEndpointTracker = new SelfEndpointTracker(this.extendedLoggerFactory,
+                new Configuration.Settings.ConnectionManagerSettings(NodeSettings.Default(new StratisRegTest())));
+        }
 
         [Fact]
         public void Add_OneIpEndpoint_GetsAdded()
@@ -80,7 +83,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         {
             var oldIpEndpoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), 1234);
             var newIpEndpoint = new IPEndPoint(IPAddress.Parse("5.6.7.8"), 5678);
-            
+
             const int initialPeerScore = 2;
             this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(oldIpEndpoint, false);
             this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(oldIpEndpoint, false);
@@ -98,7 +101,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var newIpEndpoint1 = new IPEndPoint(IPAddress.Parse("0.0.0.1"), 1);
             var newIpEndpoint2 = new IPEndPoint(IPAddress.Parse("0.0.0.2"), 2);
             var newIpEndpoint3 = new IPEndPoint(IPAddress.Parse("0.0.0.3"), 3);
-            
+
             this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(oldIpEndpoint, false);
 
             // When count reaches zero external address updates and score reset to 1.
