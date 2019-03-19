@@ -9,7 +9,6 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
-using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR.Tests
 {
@@ -59,7 +58,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                     It.IsAny<ContractTxData>(),
                     It.IsAny<ulong>(),
                     It.IsAny<uint160>(),
-                    It.IsAny<Gas>(),
+                    It.IsAny<RuntimeObserver.Gas>(),
                     It.IsAny<bool>()))
                 .Returns((this.Fee, this.Refund));            
             this.RefundProcessor = refundProcessor;
