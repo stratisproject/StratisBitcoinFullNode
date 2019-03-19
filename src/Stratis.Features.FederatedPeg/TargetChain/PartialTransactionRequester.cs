@@ -38,6 +38,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
     /// <inheritdoc />
     public class PartialTransactionRequester : IPartialTransactionRequester
     {
+        /// <summary>
+        /// How often to trigger the query for and broadcasting of partial transactions.
+        /// </summary>
+        private static readonly TimeSpan TimeBetweenQueries = TimeSpans.TenSeconds;
+
         private readonly ILogger logger;
         private readonly ICrossChainTransferStore crossChainTransferStore;
         private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -114,7 +119,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 return Task.CompletedTask;
             },
             this.nodeLifetime.ApplicationStopping,
-            TimeSpans.TenSeconds);
+            TimeBetweenQueries);
         }
 
         /// <inheritdoc />
