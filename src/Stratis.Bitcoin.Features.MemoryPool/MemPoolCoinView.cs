@@ -54,31 +54,31 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public ICoinView Inner { get; }
 
         /// <inheritdoc />
-        public Task SaveChangesAsync(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash,
+        public void SaveChanges(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash,
             uint256 nextBlockHash, int height, List<RewindData> rewindDataList = null)
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public uint256 GetTipHash(CancellationToken cancellationToken = default(CancellationToken))
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
+        public FetchCoinsResponse FetchCoins(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public Task<uint256> RewindAsync()
+        public uint256 Rewind()
         {
             throw new NotImplementedException();
         }
 
-        public Task<RewindData> GetRewindData(int height)
+        public RewindData GetRewindData(int height)
         {
             throw new NotImplementedException();
         }
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             // lookup all ids (duplicate ids are ignored in case a trx spends outputs from the same parent).
             List<uint256> ids = trx.Inputs.Select(n => n.PrevOut.Hash).Distinct().Concat(new[] { trx.GetHash() }).ToList();
-            FetchCoinsResponse coins = await this.Inner.FetchCoinsAsync(ids.ToArray());
+            FetchCoinsResponse coins = this.Inner.FetchCoins(ids.ToArray());
             // find coins currently in the mempool
             List<Transaction> mempoolcoins = await this.mempoolLock.ReadAsync(() =>
             {

@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             Guard.NotNull(prevout, nameof(prevout));
             Guard.NotNull(prevChainedHeader, nameof(prevChainedHeader));
 
-            FetchCoinsResponse coins = this.coinView.FetchCoinsAsync(new[] { prevout.Hash }).GetAwaiter().GetResult();
+            FetchCoinsResponse coins = this.coinView.FetchCoins(new[] { prevout.Hash });
             if ((coins == null) || (coins.UnspentOutputs.Length != 1))
             {
                 this.logger.LogTrace("(-)[READ_PREV_TX_FAILED]");
