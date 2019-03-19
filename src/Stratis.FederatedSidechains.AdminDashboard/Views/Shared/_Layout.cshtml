@@ -12,7 +12,7 @@
     </environment>
     <link rel="stylesheet" type="text/css" href="~/lib/node-snackbar/dist/snackbar.min.css" />
     <link rel="stylesheet" type="text/css" href="~/lib/nprogress/nprogress.css" />
-    <link rel="stylesheet" type="text/css" href="~/lib/@@fortawesome/fontawesome-free/css/all.css" />
+    <link rel="stylesheet" type="text/css" href="~/lib/font-awesome/css/all.min.css" />
     <link rel="icon" type="image/svg" href="~/images/logo.svg" />
 </head>
 <body>
@@ -50,7 +50,7 @@
     <a class="navbar-brand mr-4" href="https://stratisplatform.com/" target="_blank">
       <img src="~/images/logo_white.svg" width="30" height="30" class="d-inline-block align-top" alt="Stratis" />
     </a>
-    <div class="navbar-text text-white">Federation members dashboard for Apex</div>
+    <div class="navbar-text text-white">Stratis Federation Members Dashboard</div>
     <span class="badge badge-purple ml-auto">Status: <span class="status">@(ViewBag.Status ?? "Warning")</span></span>
   </nav>
   <nav class="navbar navbar-light bg-white py-1 fixed-top d-flex align-items-center" style="margin-top:56px;">
@@ -62,12 +62,31 @@
     </div>
     <div class="navbar-text d-inline">
       <ul class="list-inline mb-0 ml-5 ml-md-2 d-flex align-items-center">
-        <li class="list-inline-item text-dark">Apex wallet address</li>
+        <li class="list-inline-item text-dark">Sidechain wallet address</li>
         <li class="list-inline-item text-truncate">@(ViewBag.SidechainMultisigAddress ?? "Not Running")</li>
       </ul>
     </div>
-    <div class="navbar-text ml-auto">
-      <a data-toggle="modal" data-target="#miningPublicKeys" class="d-flex align-items-center"> Mining Public keys <i class="material-icons md-18 ml-2">open_in_new</i></a>
+    <div class="navbar-text p-0 mr-3 d-inline ml-auto">
+      <ul class="list-inline mb-0 d-flex align-items-center">
+        <li class="list-inline-item">
+          <a href="#"><i class="fas fa-vote-yea"></i>&nbsp; Federation Votes</a>
+        </li>
+        <li class="list-inline-item ml-3 dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fas fa-book"></i>&nbsp; Log Level
+          </a>
+          <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+            <a class="dropdown-item" data-ajax="true" data-ajax-success="LogLevelDone" asp-action="SetLogLevel" asp-route-level="trace">Trace</a>
+            <a class="dropdown-item active" data-ajax="true" data-ajax-success="LogLevelDone" asp-action="SetLogLevel" asp-route-level="information">Information</a>
+            <a class="dropdown-item" data-ajax="true" data-ajax-success="LogLevelDone" asp-action="SetLogLevel" asp-route-level="warning">Warning</a>
+            <a class="dropdown-item" data-ajax="true" data-ajax-success="LogLevelDone" asp-action="SetLogLevel" asp-route-level="error">Error</a>
+            <a class="dropdown-item" data-ajax="true" data-ajax-success="LogLevelDone" asp-action="SetLogLevel" asp-route-level="critical">Critical</a>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div class="navbar-text">
+      <a data-toggle="modal" data-target="#miningPublicKeys" class="d-flex align-items-center"><i class="fas fa-key"></i>&nbsp; Mining Public keys <!--<i class="material-icons md-18 ml-2">open_in_new</i>--></a>
     </div>
   </nav>
   <section class="container-fluid marginTop" id="container">
