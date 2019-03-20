@@ -58,14 +58,22 @@ namespace Stratis.Features.FederatedPeg
 
         protected override void AttachCore()
         {
-            if (this.federationGatewaySettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
+            if (this.federationGatewaySettings.FederationNodeIpEndPoints.Any(e =>
+                this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
+            {
                 this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
+                this.logger.LogTrace("Attached to  {0}", this.AttachedPeer.PeerEndPoint.Address);
+            }
         }
 
         protected override void DetachCore()
         {
-            if (this.federationGatewaySettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
+            if (this.federationGatewaySettings.FederationNodeIpEndPoints.Any(e =>
+                this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
+            {
                 this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
+                this.logger.LogTrace("Detached from {0}", this.AttachedPeer.PeerEndPoint.Address);
+            }
         }
 
         /// <summary>
@@ -95,6 +103,8 @@ namespace Stratis.Features.FederatedPeg
             if (payload == null)
                 return;
 
+            this.logger.LogTrace("Received partial request from {0}", peer.PeerEndPoint.Address);
+
             // Get the template from the payload.
             Transaction template = this.GetTemplateTransaction(payload.PartialTransaction);
 
@@ -123,6 +133,8 @@ namespace Stratis.Features.FederatedPeg
                 // Respond back to the peer that requested a signature.
                 await this.BroadcastAsync(payload.AddPartial(signedTransaction));
             }
+
+            this.logger.LogTrace("Hash didn't change!", peer.PeerEndPoint.Address);
         }
     }
 }

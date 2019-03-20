@@ -81,6 +81,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
             var ipAddressComparer = new IPAddressComparer();
 
+            this.logger.LogTrace("Broadcasting partial transactions.");
+
             foreach (INetworkPeer peer in peers)
             {
                 // Broadcast to peers.
@@ -91,10 +93,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 {
                     try
                     {
+                        this.logger.LogTrace("Sending partial transaction to {0}", peer.PeerEndPoint.Address);
                         await peer.SendMessageAsync(payload).ConfigureAwait(false);
                     }
                     catch (OperationCanceledException)
                     {
+                        this.logger.LogTrace("Partial transaction broadcasting to {0} timed out.", peer.PeerEndPoint.Address);
                     }
                 }
             }
