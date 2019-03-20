@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.EventBus.CoreEvents;
+using Stratis.Bitcoin.Features.PoA.Events;
 using Stratis.Bitcoin.Signals;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA.Voting
 {
@@ -16,71 +20,83 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private readonly Network network;
 
-        private SubscriptionToken blockConnectedSubscription, blockDisconnectedSubscription;
+        private readonly IKeyValueRepository keyValueRepository;
 
-        public IdleFederationMembersKicker(ISignals signals, Network network)
+        private readonly IConsensusManager consensusManager;
+
+        private SubscriptionToken blockConnectedToken, fedMemberAddedToken, fedMemberKickedToken;
+
+        /// <remarks>Active time is updated when member is added or produced a new block.</remarks>
+        private Dictionary<PubKey, uint> fedMembersByLastActiveTime;
+
+        private const string fedMembersByLastActiveTimeKey = "fedMembersByLastActiveTime";
+
+        public IdleFederationMembersKicker(ISignals signals, Network network, IKeyValueRepository keyValueRepository, IConsensusManager consensusManager)
         {
             this.signals = signals;
             this.network = network;
+            this.keyValueRepository = keyValueRepository;
+            this.consensusManager = consensusManager;
         }
 
-        public void Initialize()
+        public void Initialize(FederationManager federationManager)
         {
-            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
-            this.blockDisconnectedSubscription = this.signals.Subscribe<BlockDisconnected>(this.OnBlockDisconnected);
+            this.blockConnectedToken = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
+            this.fedMemberAddedToken = this.signals.Subscribe<FedMemberAdded>(this.OnFedMemberAdded);
+            this.fedMemberKickedToken = this.signals.Subscribe<FedMemberKicked>(this.OnFedMemberKicked);
+
+            this.fedMembersByLastActiveTime = this.keyValueRepository.LoadValueJson<Dictionary<PubKey, uint>>(fedMembersByLastActiveTimeKey);
+
+            if (this.fedMembersByLastActiveTime == null)
+            {
+                this.fedMembersByLastActiveTime = new Dictionary<PubKey, uint>();
+
+                // Initialize federation members with genesis time.
+                foreach (PubKey federationMember in federationManager.GetFederationMembers())
+                    this.fedMembersByLastActiveTime.Add(federationMember, this.network.GenesisTime);
+
+                this.SaveMembersByLastActiveTime();
+            }
+        }
+
+        private void OnFedMemberKicked(FedMemberKicked fedMemberKickedData)
+        {
+            this.fedMembersByLastActiveTime.Remove(fedMemberKickedData.KickedMember);
+
+            this.SaveMembersByLastActiveTime();
+        }
+
+        private void OnFedMemberAdded(FedMemberAdded fedMemberAddedData)
+        {
+            this.fedMembersByLastActiveTime.Add(fedMemberAddedData.AddedMember, this.consensusManager.Tip.Header.Time);
+
+            this.SaveMembersByLastActiveTime();
         }
 
         private void OnBlockConnected(BlockConnected obj)
         {
+            // TODO Should check if kicking is needed.
+            // kicking is needed when tip.Time - last active time > max allowed time
+
+
+            // TODO tests
+
             throw new NotImplementedException();
         }
 
-        private void OnBlockDisconnected(BlockDisconnected obj)
+        private void SaveMembersByLastActiveTime()
         {
-            throw new NotImplementedException();
+            this.keyValueRepository.SaveValueJson(fedMembersByLastActiveTimeKey, this.fedMembersByLastActiveTime);
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
-            if (this.blockConnectedSubscription != null)
+            if (this.blockConnectedToken != null)
             {
-                this.signals.Unsubscribe(this.blockConnectedSubscription);
-                this.signals.Unsubscribe(this.blockDisconnectedSubscription);
-            }
-        }
-
-        /// <summary>Data structure that contains information about federation member's mining slot.</summary>
-        private class SlotInfo : IBitcoinSerializable
-        {
-            public SlotInfo(uint timestamp, PubKey fedMemberKey, bool used)
-            {
-                this.Timestamp = timestamp;
-                this.FedMemberKey = fedMemberKey;
-                this.Used = used;
-            }
-
-            /// <summary>Slot's timestamp.</summary>
-            public uint Timestamp;
-
-            /// <summary>Key of the federation member that owns this slot.</summary>
-            public PubKey FedMemberKey;
-
-            /// <summary><c>true</c> if the slot was taken; <c>false</c> otherwise.</summary>
-            public bool Used;
-
-            /// <inheritdoc />
-            public void ReadWrite(BitcoinStream stream)
-            {
-                stream.ReadWrite(ref this.Timestamp);
-                stream.ReadWrite(ref this.FedMemberKey);
-                stream.ReadWrite(ref this.Used);
-            }
-
-            /// <inheritdoc />
-            public override string ToString()
-            {
-                return $"{nameof(this.Timestamp)}:{this.Timestamp}, {nameof(this.FedMemberKey)}:{this.FedMemberKey}, {nameof(this.Used)}:{this.Used}";
+                this.signals.Unsubscribe(this.blockConnectedToken);
+                this.signals.Unsubscribe(this.fedMemberAddedToken);
+                this.signals.Unsubscribe(this.fedMemberKickedToken);
             }
         }
     }
