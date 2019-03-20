@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             string dataDir = configParameters["datadir"];
 
             configParameters.ToList().ForEach(p => this.ConfigParameters[p.Key] = p.Value);
-            return CreateNode(new CustomNodeRunner(dataDir, callback, network, protocolVersion, configParameters, agent, minProtocolVersion), configFileName);
+            return CreateNode(new CustomNodeRunner(dataDir, callback, network, protocolVersion, configParameters, agent, minProtocolVersion), configFileName, configParameters: configParameters);
         }
 
         protected string GetNextDataFolderName(string folderName = null)

@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.network = new BitcoinRegTest();
         }
 
-        [Fact(Skip = "Investigate PeerConnector shutdown timeout issue")]
+        [Fact]
         public void CanOverrideOnlyApiPort()
         {
             var extraParams = new NodeConfigParameters { { "apiport", "12345" } };
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Fact(Skip = "Investigate PeerConnector shutdown timeout issue")]
+        [Fact]
         public void CanUseCustomConfigFileFromParams()
         {
             var specialConf = "special.conf";
