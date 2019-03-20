@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 this.votingManager.Initialize();
 
                 if (options.AutoKickIdleMembers)
-                    this.idleFederationMembersKicker.Initialize(this.federationManager);
+                    this.idleFederationMembersKicker.Initialize();
             }
 
             this.miner.InitializeMining();

@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.PoA
         public bool AutoKickIdleMembers { get; protected set; }
 
         /// <summary>Time that federation member has to be idle to be kicked by others in case <see cref="AutoKickIdleMembers"/> is enabled.</summary>
-        public int FederationMemberMaxIdleTimeMinutes { get; protected set; }
+        public uint FederationMemberMaxIdleTimeSeconds { get; protected set; }
 
         /// <summary>Initializes values for networks that use block size rules.</summary>
         public PoAConsensusOptions(
@@ -38,14 +38,14 @@ namespace Stratis.Bitcoin.Features.PoA
             uint targetSpacingSeconds,
             bool votingEnabled,
             bool autoKickIdleMembers,
-            int federationMemberMaxIdleTimeMinutes = 60 * 24 * 7)
+            uint federationMemberMaxIdleTimeSeconds = 60 * 60 * 24 * 7)
                 : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
             this.GenesisFederationPublicKeys = federationPublicKeys;
             this.TargetSpacingSeconds = targetSpacingSeconds;
             this.VotingEnabled = votingEnabled;
             this.AutoKickIdleMembers = autoKickIdleMembers;
-            this.FederationMemberMaxIdleTimeMinutes = federationMemberMaxIdleTimeMinutes;
+            this.FederationMemberMaxIdleTimeSeconds = federationMemberMaxIdleTimeSeconds;
 
             if (this.AutoKickIdleMembers && !this.VotingEnabled)
                 throw new ArgumentException("Voting should be enabled for automatic kicking to work.");

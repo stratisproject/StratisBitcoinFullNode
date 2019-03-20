@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.EventBus;
@@ -12,17 +13,27 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 {
     /// <summary>
     /// Automatically schedules addition of voting data that votes for kicking federation member that
-    /// didn't produce a block in <see cref="PoAConsensusOptions.FederationMemberMaxIdleTimeMinutes"/>.
+    /// didn't produce a block in <see cref="PoAConsensusOptions.FederationMemberMaxIdleTimeSeconds"/>.
     /// </summary>
     public class IdleFederationMembersKicker : IDisposable
     {
         private readonly ISignals signals;
 
-        private readonly Network network;
-
         private readonly IKeyValueRepository keyValueRepository;
 
         private readonly IConsensusManager consensusManager;
+
+        private readonly Network network;
+
+        private readonly FederationManager federationManager;
+
+        private readonly SlotsManager slotsManager;
+
+        private readonly VotingManager votingManager;
+
+        private readonly ILogger logger;
+
+        private readonly uint federationMemberMaxIdleTimeSeconds;
 
         private SubscriptionToken blockConnectedToken, fedMemberAddedToken, fedMemberKickedToken;
 
@@ -31,15 +42,22 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private const string fedMembersByLastActiveTimeKey = "fedMembersByLastActiveTime";
 
-        public IdleFederationMembersKicker(ISignals signals, Network network, IKeyValueRepository keyValueRepository, IConsensusManager consensusManager)
+        public IdleFederationMembersKicker(ISignals signals, Network network, IKeyValueRepository keyValueRepository, IConsensusManager consensusManager,
+            FederationManager federationManager, SlotsManager slotsManager, VotingManager votingManager, ILoggerFactory loggerFactory)
         {
             this.signals = signals;
             this.network = network;
             this.keyValueRepository = keyValueRepository;
             this.consensusManager = consensusManager;
+            this.federationManager = federationManager;
+            this.slotsManager = slotsManager;
+            this.votingManager = votingManager;
+
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.federationMemberMaxIdleTimeSeconds = ((PoAConsensusOptions)network.Consensus.Options).FederationMemberMaxIdleTimeSeconds;
         }
 
-        public void Initialize(FederationManager federationManager)
+        public void Initialize()
         {
             this.blockConnectedToken = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
             this.fedMemberAddedToken = this.signals.Subscribe<FedMemberAdded>(this.OnFedMemberAdded);
@@ -49,10 +67,12 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             if (this.fedMembersByLastActiveTime == null)
             {
+                this.logger.LogDebug("No saved data found. Initializing federation data with genesis timestamps.");
+
                 this.fedMembersByLastActiveTime = new Dictionary<PubKey, uint>();
 
                 // Initialize federation members with genesis time.
-                foreach (PubKey federationMember in federationManager.GetFederationMembers())
+                foreach (PubKey federationMember in this.federationManager.GetFederationMembers())
                     this.fedMembersByLastActiveTime.Add(federationMember, this.network.GenesisTime);
 
                 this.SaveMembersByLastActiveTime();
@@ -73,15 +93,30 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.SaveMembersByLastActiveTime();
         }
 
-        private void OnBlockConnected(BlockConnected obj)
+        private void OnBlockConnected(BlockConnected blockConnectedData)
         {
-            // TODO Should check if kicking is needed.
-            // kicking is needed when tip.Time - last active time > max allowed time
+            // Update last active time.
+            uint timestamp = blockConnectedData.ConnectedBlock.ChainedHeader.Header.Time;
+            PubKey key = this.slotsManager.GetPubKeyForTimestamp(timestamp);
+            this.fedMembersByLastActiveTime[key] = timestamp;
 
+            ChainedHeader tip = this.consensusManager.Tip;
 
-            // TODO tests
+            foreach (KeyValuePair<PubKey, uint> fedMemberToActiveTime in this.fedMembersByLastActiveTime)
+            {
+                uint inactiveForSeconds = tip.Header.Time - fedMemberToActiveTime.Value;
 
-            throw new NotImplementedException();
+                if (inactiveForSeconds > this.federationMemberMaxIdleTimeSeconds)
+                {
+                    this.logger.LogDebug("Federation member '{0}' was inactive for {1} seconds and will be scheduled to be kicked.", fedMemberToActiveTime.Key, inactiveForSeconds);
+
+                    this.votingManager.ScheduleVote(new VotingData()
+                    {
+                        Key = VoteKey.KickFederationMember,
+                        Data = fedMemberToActiveTime.Key.ToBytes()
+                    });
+                }
+            }
         }
 
         private void SaveMembersByLastActiveTime()
