@@ -28,7 +28,7 @@ namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
             this.httpClientFactory = new HttpClientFactory();
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public async Task TestRetriesCountAsync()
         {
             IFederationGatewaySettings federationSettings = Substitute.For<IFederationGatewaySettings>();
@@ -37,8 +37,8 @@ namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
 
             HttpResponseMessage result = await testClient.CallThatWillAlwaysFail().ConfigureAwait(false);
 
-            Assert.Equal(testClient.RetriesCount, RestApiClientBase.RetryCount);
-            Assert.Equal(result.StatusCode, HttpStatusCode.InternalServerError);
+            Assert.Equal(RestApiClientBase.RetryCount, testClient.RetriesCount);
+            Assert.Equal(HttpStatusCode.InternalServerError, result.StatusCode);
         }
     }
 
