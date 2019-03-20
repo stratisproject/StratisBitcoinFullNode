@@ -49,5 +49,39 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                 this.signals.Unsubscribe(this.blockDisconnectedSubscription);
             }
         }
+
+        /// <summary>Data structure that contains information about federation member's mining slot.</summary>
+        private class SlotInfo : IBitcoinSerializable
+        {
+            public SlotInfo(uint timestamp, PubKey fedMemberKey, bool used)
+            {
+                this.Timestamp = timestamp;
+                this.FedMemberKey = fedMemberKey;
+                this.Used = used;
+            }
+
+            /// <summary>Slot's timestamp.</summary>
+            public uint Timestamp;
+
+            /// <summary>Key of the federation member that owns this slot.</summary>
+            public PubKey FedMemberKey;
+
+            /// <summary><c>true</c> if the slot was taken; <c>false</c> otherwise.</summary>
+            public bool Used;
+
+            /// <inheritdoc />
+            public void ReadWrite(BitcoinStream stream)
+            {
+                stream.ReadWrite(ref this.Timestamp);
+                stream.ReadWrite(ref this.FedMemberKey);
+                stream.ReadWrite(ref this.Used);
+            }
+
+            /// <inheritdoc />
+            public override string ToString()
+            {
+                return $"{nameof(this.Timestamp)}:{this.Timestamp}, {nameof(this.FedMemberKey)}:{this.FedMemberKey}, {nameof(this.Used)}:{this.Used}";
+            }
+        }
     }
 }
