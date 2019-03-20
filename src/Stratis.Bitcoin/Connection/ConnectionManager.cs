@@ -83,6 +83,20 @@ namespace Stratis.Bitcoin.Connection
 
         private AsyncQueue<INetworkPeer> connectedPeersQueue;
 
+        /// <summary>Traffic statistics from peers that have been disconnected.</summary>
+        private PerformanceCounter counter;
+
+        public PerformanceCounter Counter
+        {
+            get
+            {
+                if (this.counter == null)
+                    this.counter = new PerformanceCounter();
+
+                return this.counter;
+            }
+        }
+
         public ConnectionManager(IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
@@ -227,8 +241,9 @@ namespace Stratis.Bitcoin.Connection
 
         private void AddComponentStats(StringBuilder builder)
         {
-            long totalRead = 0;
-            long totalWritten = 0;
+            // The total traffic will be the sum of the disconnected peers' traffic and the currently connected peers' traffic.
+            long totalRead = this.Counter.ReadBytes;
+            long totalWritten = this.Counter.WrittenBytes;
             var peerBuilder = new StringBuilder();
             foreach (INetworkPeer peer in this.ConnectedPeers)
             {
@@ -239,7 +254,6 @@ namespace Stratis.Bitcoin.Connection
                                      $"/{(chainHeadersBehavior.BestSentHeader != null ? chainHeadersBehavior.BestSentHeader.Height.ToString() : peer.PeerVersion != null ? peer.PeerVersion.StartHeight + "*" : "-")}" +
                                      $"/{chainHeadersBehavior.GetCachedItemsCount()}";
 
-                // TODO: Need a snapshot cache so that not only currently connected peers are summed
                 string peerTraffic = $"R/S MB: {peer.Counter.ReadBytes.BytesToMegaBytes()}/{peer.Counter.WrittenBytes.BytesToMegaBytes()}";
                 totalRead += peer.Counter.ReadBytes;
                 totalWritten += peer.Counter.WrittenBytes;

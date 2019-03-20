@@ -282,6 +282,7 @@ namespace Stratis.Bitcoin.P2P
         /// <param name="peer">Peer that is being disposed.</param>
         private void OnPeerDisposed(INetworkPeer peer)
         {
+            this.connectionManager.Counter.Add(peer.Counter);
             this.RemovePeer(peer);
         }
 

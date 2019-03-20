@@ -76,5 +76,7 @@ namespace Stratis.Bitcoin.Connection
         void RemoveNodeAddress(IPEndPoint ipEndpoint);
 
         List<NetworkPeerServer> Servers { get; }
+
+        PerformanceCounter Counter { get; }
     }
 }
