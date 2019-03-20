@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.walletManager = new Mock<IWalletManager>();
             this.blockStore = new Mock<IBlockStore>();
             this.nodeLifetime = new Mock<INodeLifetime>();
-            this.signals = new Signals.Signals();
+            this.signals = new Signals.Signals(new LoggerFactory(), null);
 
             this.walletManager.Setup(w => w.ContainsWallets).Returns(true);
         }

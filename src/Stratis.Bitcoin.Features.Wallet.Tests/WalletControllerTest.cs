@@ -941,17 +941,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(2, historyModel.TransactionsHistory.Count);
             TransactionItemModel resultingTransactionModel = historyModel.TransactionsHistory.ElementAt(0);
 
-            Assert.Equal(TransactionItemType.Received, resultingTransactionModel.Type);
-            Assert.Equal(address.Address, resultingTransactionModel.ToAddress);
-            Assert.Equal(transaction.Id, resultingTransactionModel.Id);
-            Assert.Equal(transaction.Amount, resultingTransactionModel.Amount);
-            Assert.Equal(transaction.CreationTime, resultingTransactionModel.Timestamp);
-            Assert.Equal(transaction.BlockHeight, resultingTransactionModel.ConfirmedInBlock);
-            Assert.Null(resultingTransactionModel.Fee);
-            Assert.Equal(0, resultingTransactionModel.Payments.Count);
-
-            resultingTransactionModel = historyModel.TransactionsHistory.ElementAt(1);
-
             Assert.Equal(TransactionItemType.Send, resultingTransactionModel.Type);
             Assert.Null(resultingTransactionModel.ToAddress);
             Assert.Equal(spendingDetails.TransactionId, resultingTransactionModel.Id);
@@ -964,6 +953,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             PaymentDetailModel resultingPayment = resultingTransactionModel.Payments.ElementAt(0);
             Assert.Equal(paymentDetails.DestinationAddress, resultingPayment.DestinationAddress);
             Assert.Equal(paymentDetails.Amount, resultingPayment.Amount);
+
+            resultingTransactionModel = historyModel.TransactionsHistory.ElementAt(1);
+
+            Assert.Equal(TransactionItemType.Received, resultingTransactionModel.Type);
+            Assert.Equal(address.Address, resultingTransactionModel.ToAddress);
+            Assert.Equal(transaction.Id, resultingTransactionModel.Id);
+            Assert.Equal(transaction.Amount, resultingTransactionModel.Amount);
+            Assert.Equal(transaction.CreationTime, resultingTransactionModel.Timestamp);
+            Assert.Equal(transaction.BlockHeight, resultingTransactionModel.ConfirmedInBlock);
+            Assert.Null(resultingTransactionModel.Fee);
+            Assert.Equal(0, resultingTransactionModel.Payments.Count);
         }
 
         [Fact]
@@ -1015,7 +1015,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             AccountHistoryModel historyModel = model.AccountsHistoryModel.ElementAt(0);
             Assert.Equal(2, historyModel.TransactionsHistory.Count);
 
-            TransactionItemModel resultingTransactionModel = historyModel.TransactionsHistory.ElementAt(1);
+            TransactionItemModel resultingTransactionModel = historyModel.TransactionsHistory.ElementAt(0);
             Assert.Equal(0, resultingTransactionModel.Fee);
         }
 
@@ -1212,17 +1212,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             TransactionItemModel resultingTransactionModel = historyModel.TransactionsHistory.ElementAt(0);
 
-            Assert.Equal(TransactionItemType.Received, resultingTransactionModel.Type);
-            Assert.Equal(address.Address, resultingTransactionModel.ToAddress);
-            Assert.Equal(transaction.Id, resultingTransactionModel.Id);
-            Assert.Equal(transaction.Amount, resultingTransactionModel.Amount);
-            Assert.Equal(transaction.CreationTime, resultingTransactionModel.Timestamp);
-            Assert.Equal(transaction.BlockHeight, resultingTransactionModel.ConfirmedInBlock);
-            Assert.Null(resultingTransactionModel.Fee);
-            Assert.Equal(0, resultingTransactionModel.Payments.Count);
-
-            resultingTransactionModel = historyModel.TransactionsHistory.ElementAt(1);
-
             Assert.Equal(TransactionItemType.Send, resultingTransactionModel.Type);
             Assert.Null(resultingTransactionModel.ToAddress);
             Assert.Equal(spendingDetails.TransactionId, resultingTransactionModel.Id);
@@ -1236,6 +1225,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(paymentDetails.DestinationAddress, resultingPayment.DestinationAddress);
             Assert.Equal(paymentDetails.Amount, resultingPayment.Amount);
 
+            resultingTransactionModel = historyModel.TransactionsHistory.ElementAt(1);
+
+            Assert.Equal(TransactionItemType.Received, resultingTransactionModel.Type);
+            Assert.Equal(address.Address, resultingTransactionModel.ToAddress);
+            Assert.Equal(transaction.Id, resultingTransactionModel.Id);
+            Assert.Equal(transaction.Amount, resultingTransactionModel.Amount);
+            Assert.Equal(transaction.CreationTime, resultingTransactionModel.Timestamp);
+            Assert.Equal(transaction.BlockHeight, resultingTransactionModel.ConfirmedInBlock);
+            Assert.Null(resultingTransactionModel.Fee);
+            Assert.Equal(0, resultingTransactionModel.Payments.Count);
+            
             resultingTransactionModel = historyModel.TransactionsHistory.ElementAt(2);
 
             Assert.Equal(TransactionItemType.Send, resultingTransactionModel.Type);

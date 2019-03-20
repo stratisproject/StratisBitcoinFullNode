@@ -17,6 +17,8 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
@@ -71,6 +73,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private string builderWalletPassphrase;
         private string builderWalletMnemonic;
 
+        private SubscriptionToken blockConnectedSubscription;
+        private SubscriptionToken blockDisconnectedSubscription;
+
         public CoreNode(NodeRunner runner, NodeConfigParameters configParameters, string configfile, bool useCookieAuth = false)
         {
             this.runner = runner;
@@ -123,7 +128,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <returns>This node.</returns>
         public CoreNode SetConnectInterceptor(Action<ChainedHeaderBlock> interceptor)
         {
-            this.FullNode.NodeService<ISignals>().OnBlockConnected.Attach(interceptor);
+            this.blockConnectedSubscription = this.FullNode.NodeService<ISignals>().Subscribe<BlockConnected>(ev => interceptor(ev.ConnectedBlock));
 
             return this;
         }
@@ -135,7 +140,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <returns>This node.</returns>
         public CoreNode SetDisconnectInterceptor(Action<ChainedHeaderBlock> interceptor)
         {
-            this.FullNode.NodeService<ISignals>().OnBlockDisconnected.Attach(interceptor);
+            this.blockDisconnectedSubscription = this.FullNode.NodeService<ISignals>().Subscribe<BlockDisconnected>(ev => interceptor(ev.DisconnectedBlock));
 
             return this;
         }
@@ -225,14 +230,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public INetworkPeer CreateNetworkPeerClient()
         {
-            var selfEndPointTracker = new SelfEndpointTracker(this.loggerFactory);
-
-            // Needs to be initialized beforehand.
-            selfEndPointTracker.UpdateAndAssignMyExternalAddress(new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), this.ProtocolPort), false);
-
-            var ibdState = new Mock<IInitialBlockDownloadState>();
-            ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => true);
-
             ConnectionManagerSettings connectionManagerSettings = null;
 
             if (this.runner is BitcoinCoreRunner)
@@ -244,6 +241,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             {
                 connectionManagerSettings = this.runner.FullNode.ConnectionManager.ConnectionSettings;
             }
+
+            var selfEndPointTracker = new SelfEndpointTracker(this.loggerFactory, connectionManagerSettings);
+
+            // Needs to be initialized beforehand.
+            selfEndPointTracker.UpdateAndAssignMyExternalAddress(new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), this.ProtocolPort), false);
+
+            var ibdState = new Mock<IInitialBlockDownloadState>();
+            ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => true);
 
             var networkPeerFactory = new NetworkPeerFactory(this.runner.Network,
                 DateTimeProvider.Default,

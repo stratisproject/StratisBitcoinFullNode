@@ -101,7 +101,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             this.loggerFactory = this.nodeSettings.LoggerFactory;
 
-            this.selfEndpointTracker = new SelfEndpointTracker(this.loggerFactory);
+            var connectionSettings = new ConnectionManagerSettings(this.nodeSettings);
+            this.selfEndpointTracker = new SelfEndpointTracker(this.loggerFactory, connectionSettings);
             this.Network.Consensus.Options = new ConsensusOptions();
 
             this.ruleRegistration = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration();
@@ -129,7 +130,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             this.peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, this.nodeSettings.DataFolder, this.loggerFactory, this.selfEndpointTracker);
             var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(this.loggerFactory), this.loggerFactory, this.Network, this.networkPeerFactory, this.nodeLifetime, this.nodeSettings, this.peerAddressManager);
-            var connectionSettings = new ConnectionManagerSettings(this.nodeSettings);
 
             this.connectionManager = new ConnectionManager(this.dateTimeProvider, this.loggerFactory, this.Network, this.networkPeerFactory, this.nodeSettings,
                 this.nodeLifetime, new NetworkPeerConnectionParameters(), this.peerAddressManager, new IPeerConnector[] { },
@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             ConsensusManager consensusManager = new ConsensusManager(tree, this.Network, this.loggerFactory, this.ChainState.Object, this.IntegrityValidator.Object,
                 this.PartialValidator.Object, this.FullValidator.Object, this.consensusRules,
-                this.FinalizedBlockMock.Object, new Stratis.Bitcoin.Signals.Signals(), this.peerBanning, this.ibd.Object, this.chain,
+                this.FinalizedBlockMock.Object, new Stratis.Bitcoin.Signals.Signals(this.loggerFactory, null), this.peerBanning, this.ibd.Object, this.chain,
                 this.BlockPuller.Object, this.BlockStore.Object, this.connectionManager, this.nodeStats, this.nodeLifetime, this.ConsensusSettings);
 
             this.TestConsensusManager = new TestConsensusManager(consensusManager);

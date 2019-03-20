@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Configuration
     {
         public string GetVersion()
         {
-            Match match = Regex.Match(this.GetType().AssemblyQualifiedName, "Version=([0-9]+\\.[0-9]+\\.[0-9]+)\\.");
+            Match match = Regex.Match(this.GetType().AssemblyQualifiedName, "Version=([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9])");
             return match.Groups[1].Value;
         }
     }

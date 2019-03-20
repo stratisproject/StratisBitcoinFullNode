@@ -241,8 +241,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 .Where(u => u.Outputs.Any(o => o.Value >= this.posMinting.MinimumStakingCoinValue)).Should()
                 .NotBeEmpty("otherwise we are not sure the code actually includes them");
 
-            this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(fetchCoinsResponse));
+            this.coinView.Setup(c => c.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .Returns(fetchCoinsResponse);
 
             this.consensusManager.Setup(c => c.Tip).Returns(this.chain.Tip);
             this.dateTimeProvider.Setup(c => c.GetAdjustedTimeAsUnixTimestamp())

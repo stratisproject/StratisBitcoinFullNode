@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
     /// Validates that a smart contract transaction can be deserialized correctly, and that it conforms to gas
     /// price and gas limit rules.
     /// </summary>
-    public class SmartContractFormatLogic : IContractTransactionValidationLogic
+    public class SmartContractFormatLogic : IContractTransactionPartialValidationRule
     {
         public const ulong GasLimitMaximum = 100_000;
 

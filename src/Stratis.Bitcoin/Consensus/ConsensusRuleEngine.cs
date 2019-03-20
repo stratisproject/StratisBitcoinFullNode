@@ -113,9 +113,8 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public virtual Task InitializeAsync(ChainedHeader chainTip)
+        public virtual void Initialize(ChainedHeader chainTip)
         {
-            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -296,7 +295,7 @@ namespace Stratis.Bitcoin.Consensus
         public abstract RuleContext CreateRuleContext(ValidationContext validationContext);
 
         /// <inheritdoc />
-        public abstract Task<uint256> GetBlockHashAsync();
+        public abstract uint256 GetBlockHash();
 
         /// <inheritdoc />
         public abstract Task<RewindState> RewindAsync();

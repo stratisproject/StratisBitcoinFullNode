@@ -101,14 +101,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             return this.RuleContext ?? new PowRuleContext();
         }
 
-        public override Task<uint256> GetBlockHashAsync()
+        public override uint256 GetBlockHash()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public override Task<RewindState> RewindAsync()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
     }
 

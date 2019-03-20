@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var dataFolder = new DataFolder(TestBase.AssureEmptyDir(dataDir));
             testChainContext.PeerAddressManager =
                 mockPeerAddressManager == null ?
-                    new PeerAddressManager(DateTimeProvider.Default, dataFolder, testChainContext.LoggerFactory, new SelfEndpointTracker(testChainContext.LoggerFactory))
+                    new PeerAddressManager(DateTimeProvider.Default, dataFolder, testChainContext.LoggerFactory, new SelfEndpointTracker(testChainContext.LoggerFactory, testChainContext.ConnectionSettings))
                     : mockPeerAddressManager.Object;
 
             testChainContext.MockConnectionManager = new Mock<IConnectionManager>();

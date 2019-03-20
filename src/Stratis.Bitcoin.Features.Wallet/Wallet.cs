@@ -295,6 +295,37 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return accounts.SelectMany(x => x.GetSpendableTransactions(currentChainHeight, this.Network.Consensus.CoinbaseMaturity, confirmations));
         }
+
+        /// <summary>
+        /// Calculates the fee paid by the user on a transaction sent.
+        /// </summary>
+        /// <param name="coinType">Type of the coin to get transactions from.</param>
+        /// <param name="transactionId">The transaction id to look for.</param>
+        /// <returns>The fee paid.</returns>
+        public Money GetSentTransactionFee(CoinType coinType, uint256 transactionId)
+        {
+            List<TransactionData> allTransactions = this.GetAllTransactionsByCoinType(coinType).ToList();
+
+            // Get a list of all the inputs spent in this transaction.
+            List<TransactionData> inputsSpentInTransaction = allTransactions.Where(t => t.SpendingDetails?.TransactionId == transactionId).ToList();
+            
+            if (!inputsSpentInTransaction.Any())
+            {
+                throw new WalletException("Not a sent transaction");
+            }
+
+            // Get the details of the spending transaction, which can be found on any input spent.
+            SpendingDetails spendingTransaction = inputsSpentInTransaction.Select(s => s.SpendingDetails).First();
+
+            // The change is the output paid into one of our addresses. We make sure to exclude the output received to one of
+            // our addresses if this transaction is self-sent.
+            IEnumerable<TransactionData> changeOutput = allTransactions.Where(t => t.Id == transactionId && spendingTransaction.Payments.All(p => p.OutputIndex != t.Index)).ToList(); 
+
+            Money inputsAmount = new Money(inputsSpentInTransaction.Sum(i => i.Amount));
+            Money outputsAmount = new Money(spendingTransaction.Payments.Sum(p => p.Amount) + changeOutput.Sum(c => c.Amount));
+
+            return inputsAmount - outputsAmount;
+        }
     }
 
     /// <summary>

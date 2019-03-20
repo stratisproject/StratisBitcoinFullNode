@@ -260,13 +260,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 hex = null; // TODO get from mempool
             }
 
-            Money amountSent = sendTransactions.Select(s => s.SpendingDetails).SelectMany(sds => sds.Payments).GroupBy(p => p.DestinationAddress).Select(g => g.First()).Sum(p => p.Amount);
-            Money totalAmount = receivedTransactions.Sum(t => t.Amount) - amountSent;
-
             var model = new GetTransactionModel
             {
-                Amount = totalAmount.ToDecimal(MoneyUnit.BTC),
-                Fee = null,// TODO this still needs to be worked on.
                 Confirmations = blockHeight != null ? this.ConsensusManager.Tip.Height - blockHeight.Value + 1 : 0,
                 Isgenerated = isGenerated ? true : (bool?) null,
                 BlockHash = blockHash,
@@ -279,6 +274,13 @@ namespace Stratis.Bitcoin.Features.Wallet
                 Hex = hex
             };
 
+            Money feeSent = Money.Zero;
+            if (sendTransactions.Any())
+            {
+                Wallet wallet = this.walletManager.GetWallet(accountReference.WalletName);
+                feeSent = wallet.GetSentTransactionFee(wallet.AccountsRoot.First().CoinType, trxid);
+            }
+
             // Send transactions details.
             foreach (PaymentDetails paymentDetail in sendTransactions.Select(s => s.SpendingDetails).SelectMany(sd => sd.Payments))
             {
@@ -290,7 +292,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         Address = paymentDetail.DestinationAddress,
                         Category = GetTransactionDetailsCategoryModel.Send,
                         Amount = -paymentDetail.Amount.ToDecimal(MoneyUnit.BTC),
-                        Fee = null, // TODO this still needs to be worked on.
+                        Fee = -feeSent.ToDecimal(MoneyUnit.BTC),
                         OutputIndex = paymentDetail.OutputIndex
                     });
                 }
@@ -317,6 +319,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                     OutputIndex = trxInWallet.Index
                 });
             }
+
+            model.Amount = model.Details.Sum(d => d.Amount);
+            model.Fee = model.Details.FirstOrDefault(d => d.Category == GetTransactionDetailsCategoryModel.Send)?.Fee;
 
             return model;
         }

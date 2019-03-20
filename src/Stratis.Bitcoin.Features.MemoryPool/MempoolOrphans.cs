@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
@@ -241,7 +242,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                         behavior.RelayTransaction(orphanTx.GetHash());
 
-                        this.signals.OnTransactionReceived.Notify(orphanTx);
+                        this.signals.Publish(new TransactionReceived(orphanTx));
 
                         for (int index = 0; index < orphanTx.Outputs.Count; index++)
                             workQueue.Enqueue(new OutPoint(orphanHash, index));
