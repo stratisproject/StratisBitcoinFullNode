@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -99,7 +100,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         }
 
         [Fact]
-        public async void GetMaturedBlockDeposits_Fails_When_Block_Not_In_Chain_Async()
+        public async Task GetMaturedBlockDeposits_Fails_When_Block_Not_In_Chain_Async()
         {
             FederationGatewayController controller = this.CreateController();
 
@@ -126,7 +127,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         }
 
         [Fact]
-        public async void GetMaturedBlockDeposits_Fails_When_Block_Height_Greater_Than_Minimum_Deposit_Confirmations_Async()
+        public async Task GetMaturedBlockDeposits_Fails_When_Block_Height_Greater_Than_Minimum_Deposit_Confirmations_Async()
         {
             ChainedHeader tip = ChainedHeadersHelper.CreateConsecutiveHeaders(5, null, true).Last();
             this.consensusManager.Tip.Returns(tip);
@@ -163,7 +164,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         }
 
         [Fact]
-        public async void GetMaturedBlockDeposits_Gets_All_Matured_Block_Deposits_Async()
+        public async Task GetMaturedBlockDeposits_Gets_All_Matured_Block_Deposits_Async()
         {
             ChainedHeader tip = ChainedHeadersHelper.CreateConsecutiveHeaders(10, null, true).Last();
             this.consensusManager.Tip.Returns(tip);
