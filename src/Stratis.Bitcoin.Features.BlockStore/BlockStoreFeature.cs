@@ -90,6 +90,25 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
         }
 
+        /// <summary>
+        /// Prints command-line help. Invoked via reflection.
+        /// </summary>
+        /// <param name="network">The network to extract values from.</param>
+        public static void PrintHelp(Network network)
+        {
+            StoreSettings.PrintHelp(network);
+        }
+
+        /// <summary>
+        /// Get the default configuration. Invoked via reflection.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            StoreSettings.BuildDefaultConfigurationFile(builder, network);
+        }
+
         public override async Task InitializeAsync()
         {
             await this.prunedBlockRepository.InitializeAsync().ConfigureAwait(false);
