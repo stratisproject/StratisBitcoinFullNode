@@ -34,7 +34,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.consensusManager = Substitute.For<IConsensusManager>();
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void GetMaturedBlocksAsyncReturnsDeposits()
         {
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(10, null, true);
@@ -60,10 +60,12 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.depositExtractor.ExtractBlockDeposits(null).ReturnsForAnyArgs(new MaturedBlockDepositsModel(new MaturedBlockInfoModel(), new List<IDeposit>()));
             this.consensusManager.Tip.Returns(tip);
 
+            // Makes every block a matured block.
             var maturedBlocksProvider = new MaturedBlocksProvider(this.loggerFactory, this.depositExtractor, this.consensusManager);
 
             List<MaturedBlockDepositsModel> deposits = maturedBlocksProvider.GetMaturedDepositsAsync(0, 10).GetAwaiter().GetResult();
 
+            // Expect the number of matured deposits to equal the number of blocks.
             Assert.Equal(10, deposits.Count);
         }
     }
