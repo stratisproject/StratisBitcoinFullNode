@@ -64,7 +64,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             this.walletManager.GetWallet().Returns(this.fedWallet);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void GetGeneralInfo()
         {
             this.connectionManager.ConnectedPeers.Returns(info => new NetworkPeerCollection());
@@ -77,7 +77,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             Assert.Equal(this.fedWallet.Network, model.Network);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void GetBalance()
         {
             this.fedWallet.MultiSigAddress = new MultiSigAddress();
@@ -90,7 +90,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             Assert.Equal(0, model.AccountsBalances.First().AmountConfirmed.Satoshi);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void GetHistory()
         {
             var withdrawals = new List<WithdrawalModel>() {new WithdrawalModel(), new WithdrawalModel()};
@@ -103,7 +103,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             Assert.Equal(withdrawals.Count, model.Count);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void Sync()
         {
             ChainedHeader header = this.chain.Tip;
@@ -116,7 +116,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             Assert.True(called);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void EnableFederation()
         {
             bool called = false;
@@ -127,7 +127,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             Assert.True(called);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void RemoveTransactions()
         {
             var hashSet = new HashSet<(uint256, DateTimeOffset)>();
