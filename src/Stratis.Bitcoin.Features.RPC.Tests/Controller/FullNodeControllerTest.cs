@@ -538,15 +538,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         }
 
         [Fact]
-        public void GetBlockHeader_NotUsingJsonFormat_ThrowsNotImplementedException()
-        {
-            Assert.Throws<NotImplementedException>(() =>
-            {
-                this.controller.GetBlockHeader("", false);
-            });
-        }
-
-        [Fact]
         public void GetBlockHeader_ChainNull_ReturnsNull()
         {
             this.chain = null;
