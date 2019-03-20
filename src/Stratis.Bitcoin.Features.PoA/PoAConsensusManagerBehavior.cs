@@ -19,9 +19,9 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        public PoAConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState,
+        public PoAConsensusManagerBehavior(Network network, IInitialBlockDownloadState initialBlockDownloadState,
             IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
-        : base(initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
+        : base(network, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }

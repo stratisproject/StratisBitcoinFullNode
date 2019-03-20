@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             IChainState chainState,
             ICheckpoints checkpoints,
             IProvenBlockHeaderStore provenBlockHeaderStore,
-            ConnectionManagerSettings connectionManagerSettings) : base(initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
+            ConnectionManagerSettings connectionManagerSettings) : base(network, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
         {
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.consensusManager = consensusManager;
@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 {
                     if (headersPayload.Headers[i] is ProvenBlockHeader phHeader)
                     {
-                        BlockHeader newHeader = this.consensusManager.Network.Consensus.ConsensusFactory.CreateBlockHeader();
+                        BlockHeader newHeader = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
                         newHeader.Bits = phHeader.Bits;
                         newHeader.Time = phHeader.Time;
                         newHeader.Nonce = phHeader.Nonce;

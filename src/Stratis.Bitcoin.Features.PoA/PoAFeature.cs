@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
             // Replace default ConsensusManagerBehavior with ProvenHeadersConsensusManagerBehavior
             connectionParameters.TemplateBehaviors.Remove(defaultConsensusManagerBehavior);
-            connectionParameters.TemplateBehaviors.Add(new PoAConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
+            connectionParameters.TemplateBehaviors.Add(new PoAConsensusManagerBehavior(this.network, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
 
             this.federationManager.Initialize();
             this.whitelistedHashesRepository.Initialize();

@@ -29,6 +29,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc cref="IPeerBanning"/>
         private readonly IPeerBanning peerBanning;
 
+        private readonly Network network;
+
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
@@ -70,8 +72,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Protects write access to the <see cref="BestSentHeader"/>.</summary>
         private readonly object bestSentHeaderLock;
 
-        public ConsensusManagerBehavior(IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
+        public ConsensusManagerBehavior(Network network, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
         {
+            this.network = network;
             this.loggerFactory = loggerFactory;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.consensusManager = consensusManager;
@@ -497,7 +500,7 @@ namespace Stratis.Bitcoin.Consensus
                 // Distance of header from the peer expected tip.
                 double distanceSeconds = (headers[0].BlockTime - this.BestReceivedTip.Header.BlockTime).TotalSeconds;
 
-                if (this.consensusManager.Network.MaxTipAge < distanceSeconds)
+                if (this.network.MaxTipAge < distanceSeconds)
                 {
                     // A single header that is not connected to last header is likely an
                     // unsolicited header that is a result of the peer tip being extended.
@@ -684,7 +687,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public override object Clone()
         {
-            return new ConsensusManagerBehavior(this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory);
+            return new ConsensusManagerBehavior(this.network, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory);
         }
 
         internal int GetCachedItemsCount()

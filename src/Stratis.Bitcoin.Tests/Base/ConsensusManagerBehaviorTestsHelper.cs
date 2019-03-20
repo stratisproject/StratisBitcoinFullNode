@@ -97,17 +97,12 @@ namespace Stratis.Bitcoin.Tests.Base
                 return res;
             });
 
-            //var bestChainIndexer = new BestChainIndexer(cmMock.Object);
-            //cmMock.Setup(x => x.BestChainIndexer).Returns(() => {
-            //    return bestChainIndexer;
-            //});
-
             this.testPeerBanning = new TestPeerBanning();
 
             var connectionManagerMock = new Mock<IConnectionManager>();
             connectionManagerMock.SetupGet(x => x.ConnectionSettings).Returns(new ConnectionManagerSettings(new NodeSettings(KnownNetworks.StratisMain)));
 
-            var cmBehavior = new ConsensusManagerBehavior(ibdState.Object, cmMock.Object, this.testPeerBanning, this.loggerFactory);
+            var cmBehavior = new ConsensusManagerBehavior(chain.Network, ibdState.Object, cmMock.Object, this.testPeerBanning, this.loggerFactory);
 
             // Peer and behavior
             this.PeerMock = this.CreatePeerMock();

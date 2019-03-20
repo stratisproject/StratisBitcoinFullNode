@@ -193,7 +193,7 @@ namespace Stratis.Bitcoin.Base
             connectionParameters.IsRelay = this.connectionManager.ConnectionSettings.RelayTxes;
 
             connectionParameters.TemplateBehaviors.Add(new PingPongBehavior());
-            connectionParameters.TemplateBehaviors.Add(new ConsensusManagerBehavior(this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
+            connectionParameters.TemplateBehaviors.Add(new ConsensusManagerBehavior(this.network, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
 
             // TODO: Once a proper rate limiting strategy has been implemented, this check will be removed.
             if (!this.network.IsRegTest())
