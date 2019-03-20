@@ -277,11 +277,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             return baseCheckInput(tx, inputIndexCopy, txout, txData, input, flags);
         }
 
-        public bool IsProtocolTransaction(Transaction transaction)
-        {
-            return transaction.IsCoinBase || transaction.IsCoinStake;
-        }
-
         public void Reset()
         {
             this.ResetRefundCounter();
