@@ -158,6 +158,8 @@ info: Stratis.Bitcoin.Features.PoA.PoAMiner[0]
 
 To make sure that you are mining. If you are setting the network up from a single node with no connections you need to run the node with `-bootstrap` flag. This flag allows mining when node is in IBD or is not connected to any other node.
 
+Using this flag usually makes sense only when creating a new network, otherwise it can lead to solo mining, presenting the block to the network and being banned for maxReorg rule violation. 
+
 
 
 ### Step 3: wallet creation and premine

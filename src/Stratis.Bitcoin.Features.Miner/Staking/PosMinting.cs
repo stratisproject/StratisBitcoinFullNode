@@ -442,7 +442,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 .Where(utxo => utxo.Transaction.Amount >= this.MinimumStakingCoinValue) // exclude dust from stake process
                 .ToList();
 
-            FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(stakableUtxos.Select(t => t.Transaction.Id).Distinct().ToArray(), cancellationToken).ConfigureAwait(false);
+            FetchCoinsResponse fetchedCoinSet = this.coinView.FetchCoins(stakableUtxos.Select(t => t.Transaction.Id).Distinct().ToArray(), cancellationToken);
             Dictionary<uint256, UnspentOutputs> utxoByTransaction = fetchedCoinSet.UnspentOutputs.Where(utxo => utxo != null).ToDictionary(utxo => utxo.TransactionId, utxo => utxo);
             fetchedCoinSet = null; // allow GC to collect as soon as possible.
 

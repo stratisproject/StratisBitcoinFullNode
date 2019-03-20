@@ -158,6 +158,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Features.FederatedP
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Features.FederatedPeg.Tests", "Stratis.Features.FederatedPeg.Tests\Stratis.Features.FederatedPeg.Tests.csproj", "{DE629FE5-BC8A-4597-B19C-DDAB5EC1528D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.CirrusD", "Stratis.CirrusD\Stratis.CirrusD.csproj", "{D1A3A36B-4F50-4C10-9DAE-DACFAF617A6D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.CirrusPegD", "Stratis.CirrusPegD\Stratis.CirrusPegD.csproj", "{3E6D4D9E-CAF5-4A23-9C96-07B1B1FE76B7}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Features.FederatedPeg.IntegrationTests", "Stratis.Features.FederatedPeg.IntegrationTests\Stratis.Features.FederatedPeg.IntegrationTests.csproj", "{D71A7BBE-E64A-4F2E-B2A9-6D742FE94ED9}"
 EndProject
 Global
@@ -410,6 +414,14 @@ Global
 		{DE629FE5-BC8A-4597-B19C-DDAB5EC1528D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DE629FE5-BC8A-4597-B19C-DDAB5EC1528D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DE629FE5-BC8A-4597-B19C-DDAB5EC1528D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1A3A36B-4F50-4C10-9DAE-DACFAF617A6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1A3A36B-4F50-4C10-9DAE-DACFAF617A6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1A3A36B-4F50-4C10-9DAE-DACFAF617A6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1A3A36B-4F50-4C10-9DAE-DACFAF617A6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E6D4D9E-CAF5-4A23-9C96-07B1B1FE76B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E6D4D9E-CAF5-4A23-9C96-07B1B1FE76B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E6D4D9E-CAF5-4A23-9C96-07B1B1FE76B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E6D4D9E-CAF5-4A23-9C96-07B1B1FE76B7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D71A7BBE-E64A-4F2E-B2A9-6D742FE94ED9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D71A7BBE-E64A-4F2E-B2A9-6D742FE94ED9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D71A7BBE-E64A-4F2E-B2A9-6D742FE94ED9}.Release|Any CPU.ActiveCfg = Release|Any CPU

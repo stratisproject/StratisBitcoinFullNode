@@ -29,6 +29,8 @@ Voting works like that:
 
 
 
+It's important to note that endpoints that start with `schedulevote_` used both for voting in favor of existing poll and also to create a new poll. Voting in favor is done by voting for the same objective as was voted for by another fed member. 
+
 
 
 ### Important architectural details

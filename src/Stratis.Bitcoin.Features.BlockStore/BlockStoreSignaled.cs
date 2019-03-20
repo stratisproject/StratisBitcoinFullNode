@@ -6,6 +6,8 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Primitives;
@@ -44,6 +46,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly ISignals signals;
 
+        private SubscriptionToken blockConnectedSubscription;
+
         public BlockStoreSignaled(
             IBlockStoreQueue blockStoreQueue,
             StoreSettings storeSettings,
@@ -69,11 +73,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public void Initialize()
         {
-            this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
+            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
         }
 
-        private void OnBlockConnected(ChainedHeaderBlock blockPair)
+        private void OnBlockConnected(BlockConnected blockConnected)
         {
+            ChainedHeaderBlock blockPair = blockConnected.ConnectedBlock;
+
             ChainedHeader chainedHeader = blockPair.ChainedHeader;
             if (chainedHeader == null)
             {
@@ -246,7 +252,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blocksToAnnounce.Dispose();
             this.dequeueLoopTask.GetAwaiter().GetResult();
 
-            this.signals.OnBlockConnected.Detach(this.OnBlockConnected);
+            this.signals.Unsubscribe(this.blockConnectedSubscription);
         }
     }
 }

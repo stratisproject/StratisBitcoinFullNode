@@ -201,11 +201,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             UnspentOutputs unspentOutputs = null;
             if (includeMemPool)
             {
-                unspentOutputs = this.pooledGetUnspentTransaction != null ? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
+                unspentOutputs = this.pooledGetUnspentTransaction != null ? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid).ConfigureAwait(false) : null;
             }
             else
             {
-                unspentOutputs = this.getUnspentTransaction != null ? await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
+                unspentOutputs = this.getUnspentTransaction != null ? await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid).ConfigureAwait(false) : null;
             }
 
             if (unspentOutputs == null)

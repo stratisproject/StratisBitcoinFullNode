@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             var dateTimeProvider = new DateTimeProvider();
             var serializer = new DBreezeSerializer(this.Network);
             this.PersistentCoinView = new DBreezeCoinView(network, this.FolderName, dateTimeProvider, this.loggerFactory, new NodeStats(dateTimeProvider), serializer);
-            this.PersistentCoinView.InitializeAsync().GetAwaiter().GetResult();
+            this.PersistentCoinView.Initialize();
             this.cleanList = new List<IDisposable> {this.PersistentCoinView};
         }
 
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             var dateTimeProvider = new DateTimeProvider();
             var serializer = new DBreezeSerializer(this.Network);
             this.PersistentCoinView = new DBreezeCoinView(this.Network, this.FolderName, dateTimeProvider, this.loggerFactory, new NodeStats(dateTimeProvider), serializer);
-            this.PersistentCoinView.InitializeAsync().GetAwaiter().GetResult();
+            this.PersistentCoinView.Initialize();
             this.cleanList.Add(this.PersistentCoinView);
         }
     }

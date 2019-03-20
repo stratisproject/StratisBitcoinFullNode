@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.PoA.Events;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
@@ -17,12 +18,6 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Key of current federation member. <c>null</c> if <see cref="IsFederationMember"/> is <c>false</c>.</summary>
         public Key FederationMemberKey { get; private set; }
 
-        /// <summary>Event that is executed when a new federation member is added.</summary>
-        public EventNotifier<PubKey> OnFedMemberAdded { get; }
-
-        /// <summary>Event that is executed when federation member is kicked.</summary>
-        public EventNotifier<PubKey> OnFedMemberKicked { get; }
-
         private readonly NodeSettings settings;
 
         private readonly PoANetwork network;
@@ -30,6 +25,8 @@ namespace Stratis.Bitcoin.Features.PoA
         private readonly ILogger logger;
 
         private readonly IKeyValueRepository keyValueRepo;
+
+        private readonly ISignals signals;
 
         /// <summary>Key for accessing list of public keys that represent federation members from <see cref="IKeyValueRepository"/>.</summary>
         private const string federationMembersDbKey = "fedmemberskeys";
@@ -40,17 +37,15 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Protects access to <see cref="federationMembers"/>.</summary>
         private readonly object locker;
 
-        public FederationManager(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo)
+        public FederationManager(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo, ISignals signals)
         {
             this.settings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
             this.network = Guard.NotNull(network as PoANetwork, nameof(network));
             this.keyValueRepo = Guard.NotNull(keyValueRepo, nameof(keyValueRepo));
+            this.signals = Guard.NotNull(signals, nameof(signals));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.locker = new object();
-
-            this.OnFedMemberAdded = new EventNotifier<PubKey>();
-            this.OnFedMemberKicked = new EventNotifier<PubKey>();
         }
 
         public void Initialize()
@@ -130,7 +125,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 this.logger.LogInformation("Federation member '{0}' was added!", pubKey.ToHex());
             }
 
-            this.OnFedMemberAdded.Notify(pubKey);
+            this.signals.Publish(new FedMemberAdded(pubKey));
         }
 
         public void RemoveFederationMember(PubKey pubKey)
@@ -145,7 +140,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 this.logger.LogInformation("Federation member '{0}' was removed!", pubKey.ToHex());
             }
 
-            this.OnFedMemberKicked.Notify(pubKey);
+            this.signals.Publish(new FedMemberKicked(pubKey));
         }
 
         private void SaveFederationKeys(List<PubKey> pubKeys)
