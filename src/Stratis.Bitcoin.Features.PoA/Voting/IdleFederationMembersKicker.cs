@@ -88,9 +88,12 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private void OnFedMemberAdded(FedMemberAdded fedMemberAddedData)
         {
-            this.fedMembersByLastActiveTime.Add(fedMemberAddedData.AddedMember, this.consensusManager.Tip.Header.Time);
+            if (!this.fedMembersByLastActiveTime.ContainsKey(fedMemberAddedData.AddedMember))
+            {
+                this.fedMembersByLastActiveTime.Add(fedMemberAddedData.AddedMember, this.consensusManager.Tip.Header.Time);
 
-            this.SaveMembersByLastActiveTime();
+                this.SaveMembersByLastActiveTime();
+            }
         }
 
         private void OnBlockConnected(BlockConnected blockConnectedData)
@@ -98,8 +101,11 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             // Update last active time.
             uint timestamp = blockConnectedData.ConnectedBlock.ChainedHeader.Header.Time;
             PubKey key = this.slotsManager.GetPubKeyForTimestamp(timestamp);
-            this.fedMembersByLastActiveTime[key] = timestamp;
+            this.fedMembersByLastActiveTime.AddOrReplace(key, timestamp);
 
+            this.SaveMembersByLastActiveTime();
+
+            // Check if any fed member was idle for too long.
             ChainedHeader tip = this.consensusManager.Tip;
 
             foreach (KeyValuePair<PubKey, uint> fedMemberToActiveTime in this.fedMembersByLastActiveTime)
