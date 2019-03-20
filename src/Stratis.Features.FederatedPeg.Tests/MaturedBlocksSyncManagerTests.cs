@@ -27,7 +27,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.syncManager = new TestOnlyMaturedBlocksSyncManager(this.crossChainTransferStore, this.federationGatewayClient, loggerFactory);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public async Task BlocksAreRequestedIfThereIsSomethingToRequestAsync()
         {
             this.crossChainTransferStore.NextMatureDepositHeight.Returns(5);
