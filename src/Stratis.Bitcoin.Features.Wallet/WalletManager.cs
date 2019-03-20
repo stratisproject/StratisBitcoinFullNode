@@ -304,8 +304,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             string signature = string.Empty;
 
-            // Load the file from the local system.
-            Wallet wallet = this.fileStorage.LoadByFileName($"{walletName}.{WalletFileExtension}");
+            // Get wallet
+            Wallet wallet = this.GetWalletByName(walletName);
 
             // Check the password.
             try

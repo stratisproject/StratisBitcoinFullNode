@@ -9,6 +9,7 @@ using FluentAssertions;
 using Flurl;
 using Flurl.Http;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Models;
@@ -28,6 +29,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         public CoreNode Node { get; }
 
         internal readonly string walletWithFundsName = "wallet-with-funds";
+
+        internal readonly string walletWithFundsPassword = "123456";
+
+        internal readonly string addressWithFunds = "TRCT9QP3ipb6zCvW15yKoEtaU418UaKVE2";
+
+        internal readonly string addressWihtoutFunds = "TDQAiMyvWZeQxuL9U1BJXt8XrTRMgwjCBe";
+
+        internal readonly string signatureMessage = "This is a test";
+
+        internal readonly string validSignature = "IFpsneU79ikNfeqljDgSwrvdgOyEmrydaib1Xdc/npr7O1s+9GrAzaVOMfvz5x9mq4395JZQfNhSNiUqK0qTW4M=";
 
         public string WalletWithFundsFilePath { get; }
 
@@ -1453,6 +1464,116 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             walletFileModel.WalletsPath.Should().Be(Path.GetDirectoryName(this.fixture.WalletWithFundsFilePath));
             walletFileModel.WalletsFiles.Count().Should().BeGreaterThan(0);
             walletFileModel.WalletsFiles.Should().Contain(Path.GetFileName(this.fixture.WalletWithFundsFilePath));
+        }
+
+        [Fact]
+        public async Task SignMessage()
+        {
+            // Act.
+            string signatureResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/signmessage")
+                .PostJsonAsync(new SignMessageRequest
+                {
+                    WalletName = this.fixture.walletWithFundsName,
+                    ExternalAddress = this.fixture.addressWithFunds,
+                    Password = this.fixture.walletWithFundsPassword,
+                    Message = this.fixture.signatureMessage
+                })
+                .ReceiveJson<string>();
+
+            // Assert.
+            signatureResult.Should().Be(this.fixture.validSignature, $"Signature is invalid.");
+            Encoders.Base64.DecodeData(signatureResult).Should().BeOfType<byte[]>($"Signature was not a {typeof(byte[])} type.");
+        }
+
+        [Fact]
+        public async Task VerifyValidSignature()
+        {
+            // Act.
+            bool verifySignatureResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/verifysignature")
+                .PostJsonAsync(new VerifyRequest
+                {
+                    Signature = this.fixture.validSignature,
+                    ExternalAddress = this.fixture.addressWithFunds,
+                    Message = this.fixture.signatureMessage
+                })
+                .ReceiveJson<bool>();
+
+            // Assert.
+            verifySignatureResult.Should().Be(true, "Invalid signature detected.");
+        }
+
+        [Fact]
+        public async Task VerifyInvalidSignature()
+        {
+            // Act.
+            bool verifySignatureResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/verifysignature")
+                .PostJsonAsync(new VerifyRequest
+                {
+                    Signature = "invalid signature",
+                    ExternalAddress = this.fixture.addressWithFunds,
+                    Message = this.fixture.signatureMessage
+                })
+                .ReceiveJson<bool>();
+
+            // Assert.
+            verifySignatureResult.Should().Be(false, "Signature Verification failed");
+        }
+
+        [Fact]
+        public async Task VerifySignatureWithInvalidAddress()
+        {
+            // Act.
+            bool verifySignatureResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/verifysignature")
+                .PostJsonAsync(new VerifyRequest
+                {
+                    Signature = this.fixture.validSignature,
+                    ExternalAddress = this.fixture.addressWihtoutFunds,
+                    Message = this.fixture.signatureMessage
+                })
+                .ReceiveJson<bool>();
+
+            // Assert.
+            verifySignatureResult.Should().Be(false, "Signature Verification failed");
+        }
+
+        [Fact]
+        public async Task VerifySignatureWithInvalidMessage()
+        {
+            // Act.
+            bool verifySignatureResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/verifysignature")
+                .PostJsonAsync(new VerifyRequest
+                {
+                    Signature = this.fixture.validSignature,
+                    ExternalAddress = this.fixture.addressWithFunds,
+                    Message = "Test test..."
+                })
+                .ReceiveJson<bool>();
+
+            // Assert.
+            verifySignatureResult.Should().Be(false, "Signature Verification failed");
+        }
+
+        [Fact]
+        public async Task VerifySignatureWithAllInvalid()
+        {
+            // Act.
+            bool verifySignatureResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/verifysignature")
+                .PostJsonAsync(new VerifyRequest
+                {
+                    Signature = "invalid signature",
+                    ExternalAddress = this.fixture.addressWihtoutFunds,
+                    Message = "Test test..."
+                })
+                .ReceiveJson<bool>();
+
+            // Assert.
+            verifySignatureResult.Should().Be(false, "Signature Verification failed");
         }
     }
 }
