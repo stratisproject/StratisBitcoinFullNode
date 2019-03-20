@@ -20,7 +20,6 @@ using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.SourceChain;
-using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
 using Xunit;
 
@@ -99,7 +98,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
                 this.consensusManager);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public async void GetMaturedBlockDeposits_Fails_When_Block_Not_In_Chain_Async()
         {
             FederationGatewayController controller = this.CreateController();
@@ -126,7 +125,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
                 e => e.Message.Contains("Unable to get deposits for block at height"));
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public async void GetMaturedBlockDeposits_Fails_When_Block_Height_Greater_Than_Minimum_Deposit_Confirmations_Async()
         {
             ChainedHeader tip = ChainedHeadersHelper.CreateConsecutiveHeaders(5, null, true).Last();
@@ -163,7 +162,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
                 e => e.Message.Contains($"Block height {earlierBlock.Height} submitted is not mature enough. Blocks less than a height of {maturedHeight} can be processed."));
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public async void GetMaturedBlockDeposits_Gets_All_Matured_Block_Deposits_Async()
         {
             ChainedHeader tip = ChainedHeadersHelper.CreateConsecutiveHeaders(10, null, true).Last();
@@ -193,7 +192,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             depositExtractorCallCount.Should().Be(expectedCallCount);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void Call_Sidechain_Gateway_Get_Info()
         {
             string redeemScript = "2 02fad5f3c4fdf4c22e8be4cfda47882fff89aaa0a48c1ccad7fa80dc5fee9ccec3 02503f03243d41c141172465caca2f5cef7524f149e965483be7ce4e44107d7d35 03be943c3a31359cd8e67bedb7122a0898d2c204cf2d0119e923ded58c429ef97c 3 OP_CHECKMULTISIG";
@@ -230,7 +229,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             model.MultisigPublicKey.Should().Be(multisigPubKey);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void Call_Mainchain_Gateway_Get_Info()
         {
             string redeemScript = "2 02fad5f3c4fdf4c22e8be4cfda47882fff89aaa0a48c1ccad7fa80dc5fee9ccec3 02503f03243d41c141172465caca2f5cef7524f149e965483be7ce4e44107d7d35 03be943c3a31359cd8e67bedb7122a0898d2c204cf2d0119e923ded58c429ef97c 3 OP_CHECKMULTISIG";
