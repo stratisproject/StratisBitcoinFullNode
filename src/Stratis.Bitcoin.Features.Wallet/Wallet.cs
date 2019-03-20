@@ -351,7 +351,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return hdAddress;
         }
-        
+
         /// <summary>
         /// Calculates the fee paid by the user on a transaction sent.
         /// </summary>
