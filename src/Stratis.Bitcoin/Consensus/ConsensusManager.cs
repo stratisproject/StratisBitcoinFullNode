@@ -80,9 +80,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public IConsensusRuleEngine ConsensusRules { get; private set; }
 
-        /// <inheritdoc />
-        public BestChainIndexer BestChainIndexer { get; }
-
         /// <summary>
         /// A container of call backs used by the download processes.
         /// </summary>
@@ -97,6 +94,10 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <remarks>All access should be protected by <see cref="blockRequestedLock"/>.</remarks>
         private readonly Dictionary<uint256, DownloadedCallbacks> callbacksByBlocksRequestedHash;
+
+        /// <summary>An index that maps headers by their height.</summary>
+        /// <remarks>This object has to be protected by <see cref="peerLock"/>.</remarks>
+        private readonly Dictionary<int, ChainedHeader> blocksByHeight;
 
         /// <summary>Peers mapped by their ID.</summary>
         /// <remarks>This object has to be protected by <see cref="peerLock"/>.</remarks>
@@ -187,14 +188,13 @@ namespace Stratis.Bitcoin.Consensus
             this.blockRequestedLock = new object();
             this.expectedBlockDataBytes = 0;
             this.expectedBlockSizes = new Dictionary<uint256, long>();
-
+            this.blocksByHeight = new Dictionary<int, ChainedHeader>();
             this.callbacksByBlocksRequestedHash = new Dictionary<uint256, DownloadedCallbacks>();
             this.peersByPeerId = new Dictionary<int, INetworkPeer>();
             this.toDownloadQueue = new Queue<BlockDownloadRequest>();
             this.performanceCounter = new ConsensusManagerPerformanceCounter();
             this.ibdState = ibdState;
 
-            this.BestChainIndexer = new BestChainIndexer(this);
             this.blockPuller = blockPuller;
 
             this.maxUnconsumedBlocksDataBytes = consensusSettings.MaxBlockMemoryInMB * 1024 * 1024;
@@ -241,7 +241,13 @@ namespace Stratis.Bitcoin.Consensus
             this.chainedHeaderTree.Initialize(pendingTip);
 
             this.SetConsensusTip(pendingTip);
-            this.BestChainIndexer.Initialize(pendingTip);
+
+            ChainedHeader iterator = pendingTip;
+            while (iterator != null)
+            {
+                this.blocksByHeight.Add(iterator.Height, iterator);
+                iterator = iterator.Previous;
+            }
 
             this.blockPuller.Initialize(this.BlockDownloaded);
 
@@ -711,9 +717,8 @@ namespace Stratis.Bitcoin.Consensus
                 lock (this.peerLock)
                 {
                     this.SetConsensusTipInternalLocked(current.Previous);
+                    this.blocksByHeight.Remove(current.Height);
                 }
-
-                this.BestChainIndexer.RemoveTip(current);
 
                 var disconnectedBlock = new ChainedHeaderBlock(block, current);
 
@@ -762,9 +767,8 @@ namespace Stratis.Bitcoin.Consensus
                     lock (this.peerLock)
                     {
                         this.SetConsensusTipInternalLocked(lastValidatedBlockHeader);
+                        this.blocksByHeight.Add(lastValidatedBlockHeader.Height, lastValidatedBlockHeader);
                     }
-
-                    this.BestChainIndexer.AddTip(lastValidatedBlockHeader);
 
                     if (this.Network.Consensus.MaxReorgLength != 0)
                     {
@@ -1191,6 +1195,19 @@ namespace Stratis.Bitcoin.Consensus
                 this.logger.LogTrace("Asking block puller for {0} blocks.", blocksToDownload.Count);
                 this.DownloadBlocks(blocksToDownload.ToArray(), onBlockDownloadedCallback);
             }
+        }
+
+        /// <inheritdoc />
+        public ChainedHeader GetBlock(int height)
+        {
+            ChainedHeader result;
+
+            lock (this.peerLock)
+            {
+                this.blocksByHeight.TryGetValue(height, out result);
+            }
+
+            return result;
         }
 
         /// <inheritdoc />

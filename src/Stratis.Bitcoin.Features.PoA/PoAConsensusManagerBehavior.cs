@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <remarks>Creates <see cref="PoAHeadersPayload"/> instead of <see cref="HeadersPayload"/> like base implementation does.</remarks>
         protected override Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
         {
-            ChainedHeader fork = this.consensusManager.BestChainIndexer.FindFork(getHeadersPayload.BlockLocator);
+            ChainedHeader fork = this.consensusManager.FindFork(getHeadersPayload.BlockLocator);
             lastHeader = null;
 
             if (fork == null)
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
             var headersPayload = new PoAHeadersPayload();
 
-            foreach (ChainedHeader chainedHeader in this.consensusManager.BestChainIndexer.EnumerateToTip(fork).Skip(1))
+            foreach (ChainedHeader chainedHeader in this.consensusManager.EnumerateToTip(fork).Skip(1))
             {
                 lastHeader = chainedHeader;
 

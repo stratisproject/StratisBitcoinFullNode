@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 return headersPayload;
             }
 
-            ChainedHeader fork = this.consensusManager.BestChainIndexer.FindFork(getHeadersPayload.BlockLocator);
+            ChainedHeader fork = this.consensusManager.FindFork(getHeadersPayload.BlockLocator);
             lastHeader = null;
 
             if (fork == null)

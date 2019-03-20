@@ -237,7 +237,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>Payload with headers from locator towards consensus tip or <c>null</c> in case locator was invalid.</returns>
         protected virtual Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
         {
-            ChainedHeader fork = this.consensusManager.BestChainIndexer.FindFork(getHeadersPayload.BlockLocator);
+            ChainedHeader fork = this.consensusManager.FindFork(getHeadersPayload.BlockLocator);
 
             lastHeader = null;
 
@@ -635,7 +635,7 @@ namespace Stratis.Bitcoin.Consensus
             bool blockHashAnnounced = false;
             foreach (InventoryVector inventoryVector in inventory)
             {
-                if ((inventoryVector.Type == InventoryType.MSG_BLOCK) && (this.consensusManager.BestChainIndexer.GetBlock(inventoryVector.Hash) == null))
+                if ((inventoryVector.Type == InventoryType.MSG_BLOCK) && (this.consensusManager.GetBlock(inventoryVector.Hash) == null))
                 {
                     blockHashAnnounced = true;
                     break;

@@ -94,10 +94,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 return res;
             });
 
-            var bestChainIndexer = new BestChainIndexer(consensusManager.Object);
-            consensusManager.Setup(x => x.BestChainIndexer).Returns(() => {
-                return bestChainIndexer;
-            });
+            //var bestChainIndexer = new BestChainIndexer(consensusManager.Object);
+            //consensusManager.Setup(x => x.BestChainIndexer).Returns(() => {
+            //    return bestChainIndexer;
+            //});
 
             var behavior = new ProvenHeadersConsensusManagerBehavior(this.initialBlockDownloadState, consensusManager.Object, this.peerBanning, this.extendedLoggerFactory, this.Network, this.chainState, this.checkpoints, this.provenBlockHeaderStore, this.connectionManagerSettings);
 

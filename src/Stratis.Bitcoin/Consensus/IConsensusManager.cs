@@ -63,6 +63,10 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="blockHash">The block hash.</param>
         Task<ChainedHeaderBlock> GetBlockDataAsync(uint256 blockHash);
 
+        /// <summary>Get a blocks header based on its height.</summary>
+        /// <param name="height">The block height.</param>
+        ChainedHeader GetBlock(int height);
+
         /// <summary>
         /// A new block was mined by the node and is attempted to connect to tip.
         /// </summary>
@@ -71,8 +75,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <exception cref="ConsensusException">Thrown if partial or full validation failed or if full validation wasn't required.</exception>
         /// <returns><see cref="ChainedHeader"/> of a block that was mined.</returns>
         Task<ChainedHeader> BlockMinedAsync(Block block);
-
-        BestChainIndexer BestChainIndexer { get; }
 
         Network Network { get; }
     }

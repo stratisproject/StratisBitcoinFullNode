@@ -97,10 +97,10 @@ namespace Stratis.Bitcoin.Tests.Base
                 return res;
             });
 
-            var bestChainIndexer = new BestChainIndexer(cmMock.Object);
-            cmMock.Setup(x => x.BestChainIndexer).Returns(() => {
-                return bestChainIndexer;
-            });
+            //var bestChainIndexer = new BestChainIndexer(cmMock.Object);
+            //cmMock.Setup(x => x.BestChainIndexer).Returns(() => {
+            //    return bestChainIndexer;
+            //});
 
             this.testPeerBanning = new TestPeerBanning();
 
