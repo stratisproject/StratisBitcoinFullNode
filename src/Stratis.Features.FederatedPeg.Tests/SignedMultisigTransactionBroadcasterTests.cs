@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -13,7 +12,6 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
-using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
 using Xunit;
 
@@ -27,7 +25,6 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly ICrossChainTransferStore store;
         private readonly IFederationGatewaySettings federationGatewaySettings;
         private readonly IBroadcasterManager broadcasterManager;
-        private ISignedMultisigTransactionBroadcaster signedMultisigTransactionBroadcaster;
 
         private readonly IAsyncLoopFactory loopFactory;
         private readonly INodeLifetime nodeLifetime;
@@ -100,7 +97,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).Returns(emptyTransactionPair);
 
-            this.signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+            var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
                 this.loopFactory,
                 this.loggerFactory,
                 this.store,
@@ -108,7 +105,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.mempoolManager,
                 this.broadcasterManager);
 
-            await this.signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
+            await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
 
             await this.store.Received().GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).ConfigureAwait(false);
 
@@ -133,7 +130,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).Returns(transactionPair);
 
-            this.signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+            var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
                 this.loopFactory,
                 this.loggerFactory,
                 this.store,
@@ -141,7 +138,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.mempoolManager,
                 this.broadcasterManager);
 
-            await this.signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
+            await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
             await this.store.Received().GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).ConfigureAwait(false);
             await this.broadcasterManager.Received(1).BroadcastTransactionAsync(Arg.Any<Transaction>());
         }

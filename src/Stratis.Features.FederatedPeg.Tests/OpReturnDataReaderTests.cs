@@ -34,7 +34,6 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact]
         public void TryGetTargetAddressFromOpReturn_CanReadAddress()
         {
-
             BitcoinPubKeyAddress opReturnAddress = this.addressHelper.GetNewTargetChainPubKeyAddress();
             byte[] opReturnBytes = Encoding.UTF8.GetBytes(opReturnAddress.ToString());
             Transaction transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes);
@@ -62,16 +61,19 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             BitcoinPubKeyAddress opReturnAddress1 = this.addressHelper.GetNewTargetChainPubKeyAddress();
             byte[] opReturnBytes1 = Encoding.UTF8.GetBytes(opReturnAddress1.ToString());
-
             Transaction transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes1);
 
             BitcoinPubKeyAddress opReturnAddress2 = this.addressHelper.GetNewTargetChainPubKeyAddress();
+
             opReturnAddress1.ToString().Should().NotBe(
                 opReturnAddress2.ToString(), "otherwise the transaction is not ambiguous");
+
             byte[] opReturnBytes2 = Encoding.UTF8.GetBytes(opReturnAddress2.ToString());
+
             transaction.AddOutput(Money.Zero, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(opReturnBytes2)));
 
             this.opReturnDataReader.TryGetTargetAddress(transaction, out string addressFromOpReturn);
+
             addressFromOpReturn.Should().BeNull();
         }
 

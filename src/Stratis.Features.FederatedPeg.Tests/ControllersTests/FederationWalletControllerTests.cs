@@ -16,7 +16,6 @@ using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.TargetChain;
-using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Features.FederatedPeg.Wallet;
 using Xunit;
 
@@ -70,7 +69,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             this.connectionManager.ConnectedPeers.Returns(info => new NetworkPeerCollection());
 
             IActionResult result = this.controller.GetGeneralInfo();
-            WalletGeneralInfoModel model = ActionResultToModel<WalletGeneralInfoModel>(result);
+            WalletGeneralInfoModel model = this.ActionResultToModel<WalletGeneralInfoModel>(result);
 
             Assert.Equal(this.fedWallet.CreationTime, model.CreationTime);
             Assert.Equal(this.fedWallet.LastBlockSyncedHeight, model.LastBlockSyncedHeight);
@@ -83,7 +82,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             this.fedWallet.MultiSigAddress = new MultiSigAddress();
 
             IActionResult result = this.controller.GetBalance();
-            WalletBalanceModel model = ActionResultToModel<WalletBalanceModel>(result);
+            WalletBalanceModel model = this.ActionResultToModel<WalletBalanceModel>(result);
 
             Assert.Single(model.AccountsBalances);
             Assert.Equal(CoinType.Stratis, model.AccountsBalances.First().CoinType);
@@ -98,7 +97,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             this.withdrawalHistoryProvider.GetHistory(0).ReturnsForAnyArgs(withdrawals);
 
             IActionResult result = this.controller.GetHistory(5);
-            List<WithdrawalModel> model = ActionResultToModel<List<WithdrawalModel>>(result);
+            List<WithdrawalModel> model = this.ActionResultToModel<List<WithdrawalModel>>(result);
 
             Assert.Equal(withdrawals.Count, model.Count);
         }
@@ -137,7 +136,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
             IActionResult result = this.controller.RemoveTransactions(new RemoveFederationTransactionsModel());
 
-            IEnumerable<RemovedTransactionModel> model = ActionResultToModel<IEnumerable<RemovedTransactionModel>>(result);
+            IEnumerable<RemovedTransactionModel> model = this.ActionResultToModel<IEnumerable<RemovedTransactionModel>>(result);
 
             Assert.Single(model);
         }

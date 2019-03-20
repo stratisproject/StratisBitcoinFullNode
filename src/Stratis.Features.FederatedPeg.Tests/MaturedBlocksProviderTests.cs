@@ -10,7 +10,6 @@ using Stratis.Bitcoin.Tests.Common;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.SourceChain;
-using Stratis.Features.FederatedPeg.Tests.Utils;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests
@@ -42,7 +41,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             foreach (ChainedHeader chainedHeader in headers)
                 chainedHeader.Block = new Block(chainedHeader.Header);
 
-            List<ChainedHeaderBlock> blocks = new List<ChainedHeaderBlock>(headers.Count);
+            var blocks = new List<ChainedHeaderBlock>(headers.Count);
             foreach (ChainedHeader chainedHeader in headers)
                 blocks.Add(new ChainedHeaderBlock(chainedHeader.Block, chainedHeader));
 
