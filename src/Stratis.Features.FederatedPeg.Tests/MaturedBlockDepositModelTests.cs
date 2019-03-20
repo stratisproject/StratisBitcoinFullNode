@@ -9,7 +9,7 @@ namespace Stratis.Features.FederatedPeg.Tests
     
     public class MaturedBlockDepositModelTests
     {
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void ShouldSerialiseAsJson()
         {
             MaturedBlockDepositsModel maturedBlockDeposits = TestingValues.GetMaturedBlockDeposits(3);
