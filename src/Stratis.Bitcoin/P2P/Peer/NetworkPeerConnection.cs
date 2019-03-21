@@ -115,37 +115,21 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// Starts waiting for incoming messages.
         /// </summary>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        public void StartReceiveMessages(CancellationToken cancellationToken = default(CancellationToken))
+        public void StartReceiveMessages()
         {
-            this.receiveMessageTask = this.ReceiveMessagesAsync(cancellationToken);
+            this.receiveMessageTask = this.ReceiveMessagesAsync();
         }
 
         /// <summary>
         /// Reads messages from the connection stream.
         /// </summary>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        private async Task ReceiveMessagesAsync(CancellationToken cancellationToken = default(CancellationToken))
+        private async Task ReceiveMessagesAsync()
         {
-            CancellationTokenSource cts = null;
-
             try
             {
-                // Check if valid cancellation was passed in and link it to the existing cancellation token source
-                if (cancellationToken != default(CancellationToken))
+                while (!this.CancellationSource.Token.IsCancellationRequested)
                 {
-                    cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.CancellationSource.Token);
-                    cancellationToken = cts.Token;
-                }
-                else
-                {
-                    cancellationToken = this.CancellationSource.Token;
-                }
-
-                while (!cancellationToken.IsCancellationRequested)
-                {
-                    Message message = await this.ReadAndParseMessageAsync(this.peer.Version, cancellationToken)
-                        .ConfigureAwait(false);
+                    Message message = await this.ReadAndParseMessageAsync(this.peer.Version, this.CancellationSource.Token).ConfigureAwait(false);
 
                     this.logger.LogTrace("Received message: '{0}'", message);
 
@@ -154,7 +138,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     var incomingMessage = new IncomingMessage()
                     {
                         Message = message,
-                        Length = message.MessageSize
+                        Length = message.MessageSize,
                     };
 
                     this.MessageProducer.PushMessage(incomingMessage);
@@ -169,10 +153,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
                 this.peer.Disconnect("Unexpected failure while waiting for a message", ex);
-            }
-            finally
-            {
-                cts?.Dispose();
             }
         }
 
