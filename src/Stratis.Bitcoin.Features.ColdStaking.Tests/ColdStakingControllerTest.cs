@@ -192,7 +192,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         /// <returns>The spendable transaction that was added to the wallet.</returns>
         private Transaction AddSpendableTransactionToWallet(Wallet.Wallet wallet)
         {
-            HdAddress address = wallet.GetAllAddressesByCoinType(CoinType.Stratis).FirstOrDefault();
+            HdAddress address = wallet.GetAllAddresses().FirstOrDefault();
 
             Transaction transaction = this.Network.CreateTransaction();
 
