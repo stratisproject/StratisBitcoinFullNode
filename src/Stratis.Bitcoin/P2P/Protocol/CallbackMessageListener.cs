@@ -6,7 +6,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.P2P.Protocol
 {
     /// <summary>
-    /// Represents a callback rountine to be called when a new message arrives to the listener.
+    /// Represents a callback routine to be called when a new message arrives to the listener.
     /// <para>
     /// It is guaranteed that only execution of the callback routine is executed at the time.
     /// </para>

@@ -40,6 +40,16 @@ namespace Stratis.Bitcoin.Utilities
         /// <remarks>It is allowed to call <see cref="Dispose"/> from the callback method.</remarks>
         public delegate Task OnEnqueueAsync(T item, CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Represents a callback method to be executed when a dequeued item throws an unhandled exception.
+        /// </summary>
+        /// <param name="item">The item that caused the exception.</param>
+        /// <param name="cancellationToken">Cancellation token that the callback method should use for its async operations to avoid blocking the queue during shutdown.</param>
+        /// <param name="ex">The exception that has been thrown.</param>
+        /// <returns><c>true</c> if the exception has been handled, <c>false</c> if the exception has not been handled (it will be re-thrown).</returns>
+        /// <remarks>It is allowed to call <see cref="Dispose" /> from the callback method.</remarks>
+        public delegate Task<bool> OnEnqueueAsyncFails(T item, CancellationToken cancellationToken, Exception ex);
+
         /// <summary>Lock object to protect access to <see cref="items"/>.</summary>
         private readonly object lockObject;
 
@@ -52,6 +62,9 @@ namespace Stratis.Bitcoin.Utilities
 
         /// <summary>Callback routine to be called when a new item is added to the queue.</summary>
         private readonly OnEnqueueAsync onEnqueueAsync;
+
+        /// <summary>Callback routine to be called when a dequeued item throws an unhandled exception.</summary>
+        private readonly OnEnqueueAsyncFails onEnqueueAsyncFails;
 
         /// <summary>Consumer of the items in the queue which responsibility is to execute the user defined callback.</summary>
         /// <remarks>Internal for test purposes.</remarks>
@@ -82,13 +95,14 @@ namespace Stratis.Bitcoin.Utilities
         /// Initializes the queue either in blocking dequeue mode or in callback mode.
         /// </summary>
         /// <param name="onEnqueueAsync">Callback routine to be called when a new item is added to the queue, or <c>null</c> to operate in blocking dequeue mode.</param>
-        public AsyncQueue(OnEnqueueAsync onEnqueueAsync = null)
+        public AsyncQueue(OnEnqueueAsync onEnqueueAsync = null, OnEnqueueAsyncFails onEnqueueAsyncFails = null)
         {
             this.callbackMode = onEnqueueAsync != null;
             this.lockObject = new object();
             this.items = new Queue<T>();
             this.signal = new AsyncManualResetEvent();
             this.onEnqueueAsync = onEnqueueAsync;
+            this.onEnqueueAsyncFails = onEnqueueAsyncFails;
             this.cancellationTokenSource = new CancellationTokenSource();
             this.asyncContext = new AsyncLocal<AsyncContext>();
             this.ConsumerTask = this.callbackMode ? this.ConsumerAsync() : null;
@@ -147,7 +161,23 @@ namespace Stratis.Bitcoin.Utilities
                     T item;
                     while (this.TryDequeue(out item) && !cancellationToken.IsCancellationRequested)
                     {
-                        await this.onEnqueueAsync(item, cancellationToken).ConfigureAwait(false);
+                        try
+                        {
+                            await this.onEnqueueAsync(item, cancellationToken).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            bool exceptionHandled = false;
+                            if (this.onEnqueueAsyncFails != null)
+                            {
+                                exceptionHandled = await this.onEnqueueAsyncFails(item, cancellationToken, ex);
+                            }
+
+                            if (!exceptionHandled)
+                            {
+                                throw;
+                            }
+                        }
 
                         if (this.asyncContext.Value.DisposeRequested)
                         {
