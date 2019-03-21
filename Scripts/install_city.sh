@@ -17,7 +17,7 @@ declare -r COINRPCPORT=4334
 declare -r COINDAEMON=cityd
 declare -r COINCORE=/home/${NODE_USER}/.citychain/city/CityMain
 declare -r COINCONFIG=city.conf
-declare -r COINRUNCMD='sudo dotnet ./City.Chain.dll -datadir=/home/${NODE_USER}/.citychain' ## additional commands can be used here e.g. -testnet or -stake=1
+declare -r COINRUNCMD="sudo dotnet ./City.Chain.dll -datadir=/home/${NODE_USER}/.citychain" ## additional commands can be used here e.g. -testnet or -stake=1
 declare -r COINSTARTUP=/home/${NODE_USER}/cityd
 declare -r COINSRCLOC=/home/${NODE_USER}/city-chain
 declare -r COINDLOC=/home/${NODE_USER}/citynode   

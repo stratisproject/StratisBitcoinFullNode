@@ -19,7 +19,7 @@ You should modify the settings according to your needs, especially the walletnot
 
 ## Scripts
 
-Installation scripts is available in the [Scripts](Scripts) folder. The one that exchanges should normally rely on, it the "install_city_binaries.sh".
+Installation scripts is available in the [Scripts](../Scripts) folder. The one that exchanges should normally rely on, it the "install_city_binaries.sh".
 
 ## Configuration
 
