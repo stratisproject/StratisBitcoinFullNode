@@ -346,7 +346,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="networkPeerFactory">Factory for creating P2P network peers.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="selfEndpointTracker">Tracker for endpoints known to be self.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
         /// <param name="onDisconnected">Callback that is invoked when peer has finished disconnecting, or <c>null</c> when no notification after the disconnection is required.</param>
         public NetworkPeer(IPEndPoint peerEndPoint,
             Network network,
@@ -414,7 +413,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.State = NetworkPeerState.Connected;
 
                 this.InitDefaultBehaviors(this.ConnectionParameters);
-                this.Connection.StartReceiveMessages(cancellation);
+                this.Connection.StartReceiveMessages();
 
                 this.logger.LogTrace("Outbound connection to '{0}' established.", this.PeerEndPoint);
             }
