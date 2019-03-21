@@ -12,29 +12,41 @@ namespace NBitcoin
     {
         private readonly Dictionary<uint256, ChainedHeader> blocksById = new Dictionary<uint256, ChainedHeader>();
         private readonly Dictionary<int, ChainedHeader> blocksByHeight = new Dictionary<int, ChainedHeader>();
-        private readonly ReaderWriterLock lockObject = new ReaderWriterLock();
+        private readonly object lockObject = new object();
 
-        private volatile ChainedHeader tip;
-        public ChainedHeader Tip { get { return this.tip; } }
+        public ChainedHeader Tip { get; private set; }
 
-        public  int Height { get { return this.Tip.Height; } }
+        public  int Height => this.Tip.Height;
 
-        private readonly Network network;
-        public Network Network { get { return this.network; } }
-
-        [Obsolete("Do not use this constructor, it will eventually be replaced with ChainHeaderTree.")]
-        public ConsensusChainIndexer() { }
+        public Network Network { get; private set; }
 
         public ConsensusChainIndexer(Network network)
         {
-            this.network = network;
-            SetTip(new ChainedHeader(network.GetGenesis().Header, network.GetGenesis().GetHash(), 0));
+            this.Network = network;
+
+            lock (this.lockObject)
+            {
+                ChainedHeader genesis = new ChainedHeader(network.GetGenesis().Header, network.GetGenesis().GetHash(), 0);
+
+                this.blocksById.Add(genesis.HashBlock, genesis);
+                this.blocksByHeight.Add(genesis.Height, genesis);
+
+                this.Tip = genesis;
+            }
         }
 
-        public ConsensusChainIndexer(Network network, ChainedHeader chainedHeader)
+        public ConsensusChainIndexer(Network network, ChainedHeader chainedHeader) : this(network)
         {
-            this.network = network;
-            SetTip(chainedHeader);
+            this.Initialize(chainedHeader);
+        }
+
+        public void Initialize(ChainedHeader chainedHeader)
+        {
+            if (this.blocksById.Count != 1)
+                throw new InvalidOperationException("Component already initialized.");
+
+
+
         }
 
         public ConsensusChainIndexer(Network network, byte[] bytes)
@@ -44,7 +56,7 @@ namespace NBitcoin
         }
 
         /// <summary>Gets the genesis block for the chain.</summary>
-        public virtual ChainedHeader Genesis { get { return GetBlock(0); } }
+        public virtual ChainedHeader Genesis => this.GetBlock(0);
 
         /// <summary>
         /// Returns the first chained block header that exists in the chain from the list of block hashes.
@@ -77,7 +89,7 @@ namespace NBitcoin
             if (locator == null)
                 throw new ArgumentNullException("locator");
 
-            return FindFork(locator.Blocks);
+            return this.FindFork(locator.Blocks);
         }
 
         /// <summary>
@@ -147,197 +159,31 @@ namespace NBitcoin
             }
         }
 
-        public void Load(byte[] chain)
+        public void Add(ChainedHeader addTip)
         {
-            using (var ms = new MemoryStream(chain))
+            lock (this.lockObject)
             {
-                Load(ms);
+                if(this.Tip.HashBlock != addTip.Previous.HashBlock)
+                    throw new InvalidOperationException("New tip must be consecutive");
+
+                this.blocksById.Add(addTip.HashBlock, addTip);
+                this.blocksByHeight.Add(addTip.Height, addTip);
+
+                this.Tip = addTip;
             }
         }
 
-        public void Load(Stream stream)
+        public void Remove(ChainedHeader removeTip)
         {
-            Load(new BitcoinStream(stream, false));
-        }
-
-        public void Load(BitcoinStream stream)
-        {
-            stream.ConsensusFactory = this.network.Consensus.ConsensusFactory;
-
-            using (this.lockObject.LockWrite())
+            lock (this.lockObject)
             {
-                try
-                {
-                    int height = 0;
-                    while (true)
-                    {
-                        uint256.MutableUint256 id = null;
-                        stream.ReadWrite<uint256.MutableUint256>(ref id);
-                        BlockHeader header = null;
-                        stream.ReadWrite(ref header);
-                        if (height == 0)
-                        {
-                            this.blocksByHeight.Clear();
-                            this.blocksById.Clear();
-                            this.tip = null;
-                            SetTipLocked(new ChainedHeader(header, header.GetHash(), 0));
-                        }
-                        else if (this.tip.HashBlock == header.HashPrevBlock && !(header.IsNull && header.Nonce == 0))
-                            SetTipLocked(new ChainedHeader(header, id.Value, this.Tip));
-                        else
-                            break;
+                if (this.Tip.HashBlock != removeTip.HashBlock)
+                    throw new InvalidOperationException("Trying to remove item that is not the tip.");
 
-                        height++;
-                    }
-                }
-                catch (EndOfStreamException)
-                {
-                }
-            }
-        }
+                this.blocksById.Remove(removeTip.HashBlock);
+                this.blocksByHeight.Remove(removeTip.Height);
 
-        public byte[] ToBytes()
-        {
-            using (var ms = new MemoryStream())
-            {
-                WriteTo(ms);
-                return ms.ToArray();
-            }
-        }
-
-        public void WriteTo(Stream stream)
-        {
-            WriteTo(new BitcoinStream(stream, true));
-        }
-
-        public void WriteTo(BitcoinStream stream)
-        {
-            stream.ConsensusFactory = this.network.Consensus.ConsensusFactory;
-
-            using (this.lockObject.LockRead())
-            {
-                for (int i = 0; i < this.Tip.Height + 1; i++)
-                {
-                    ChainedHeader block = GetBlockLocked(i);
-                    stream.ReadWrite(block.HashBlock.AsBitcoinSerializable());
-                    stream.ReadWrite(block.Header);
-                }
-            }
-        }
-
-        /// <inheritdoc />
-        public ChainedHeader SetTip(ChainedHeader block)
-        {
-            using (this.lockObject.LockWrite())
-            {
-                return SetTipLocked(block);
-            }
-        }
-
-        /// <summary>
-        /// Sets the tip of this chain to the tip of another chain if it's chainwork is greater.
-        /// </summary>
-        /// <param name="block">Tip to set.</param>
-        /// <returns><c>true</c> if the tip was set; <c>false</c> otherwise.</returns>
-        public bool SetTipIfChainworkIsGreater(ChainedHeader block)
-        {
-            using (this.lockObject.LockWrite())
-            {
-                if ((this.tip == null) || (block.ChainWork > this.tip.ChainWork))
-                {
-                    SetTipLocked(block);
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private ChainedHeader SetTipLocked(ChainedHeader block)
-        {
-            int height = this.Tip == null ? -1 : this.Tip.Height;
-            foreach (ChainedHeader orphaned in EnumerateThisToFork(block))
-            {
-                this.blocksById.Remove(orphaned.HashBlock);
-                this.blocksByHeight.Remove(orphaned.Height);
-                height--;
-            }
-
-            ChainedHeader fork = GetBlockLocked(height);
-            foreach (ChainedHeader newBlock in block.EnumerateToGenesis().TakeWhile(c => c != fork))
-            {
-                this.blocksById.AddOrReplace(newBlock.HashBlock, newBlock);
-                this.blocksByHeight.AddOrReplace(newBlock.Height, newBlock);
-            }
-
-            this.tip = block;
-            return fork;
-        }
-
-        /// <summary>
-        /// Sets the tip of this chain based upon another block header.
-        /// </summary>
-        /// <param name="header">The block header to set to tip.</param>
-        /// <returns>Whether the tip was set successfully.</returns>
-        public bool SetTip(BlockHeader header)
-        {
-            ChainedHeader chainedHeader;
-            return TrySetTip(header, out chainedHeader);
-        }
-
-        /// <summary>
-        /// Attempts to set the tip of this chain based upon another block header.
-        /// </summary>
-        /// <param name="header">The block header to set to tip.</param>
-        /// <param name="chainedHeader">The newly chained block header for the tip.</param>
-        /// <returns>Whether the tip was set successfully. The method fails (and returns <c>false</c>)
-        /// if the <paramref name="header"/>'s link to a previous header does not point to any block
-        /// in the current chain.</returns>
-        public bool TrySetTip(BlockHeader header, out ChainedHeader chainedHeader)
-        {
-            if (header == null)
-                throw new ArgumentNullException("header");
-
-            chainedHeader = null;
-            ChainedHeader prev = GetBlock(header.HashPrevBlock);
-            if (prev == null)
-                return false;
-
-            chainedHeader = new ChainedHeader(header, header.GetHash(), GetBlock(header.HashPrevBlock));
-            SetTip(chainedHeader);
-            return true;
-        }
-
-        private IEnumerable<ChainedHeader> EnumerateThisToFork(ChainedHeader block)
-        {
-            if (this.tip == null)
-                yield break;
-
-            ChainedHeader tip = this.tip;
-            while (true)
-            {
-                if (ReferenceEquals(null, block) || ReferenceEquals(null, tip))
-                    throw new InvalidOperationException("No fork found between the two chains");
-
-                if (tip.Height > block.Height)
-                {
-                    yield return tip;
-                    tip = tip.Previous;
-                }
-                else if (tip.Height < block.Height)
-                {
-                    block = block.Previous;
-                }
-                else if (tip.Height == block.Height)
-                {
-                    if (tip.HashBlock == block.HashBlock)
-                        break;
-
-                    yield return tip;
-
-                    block = block.Previous;
-                    tip = tip.Previous;
-                }
+                this.Tip = this.blocksById.Last().Value;
             }
         }
 
@@ -345,7 +191,7 @@ namespace NBitcoin
 
         public ChainedHeader GetBlock(uint256 id)
         {
-            using (this.lockObject.LockRead())
+            lock (this.lockObject)
             {
                 ChainedHeader result;
                 this.blocksById.TryGetValue(id, out result);
@@ -362,31 +208,13 @@ namespace NBitcoin
 
         public ChainedHeader GetBlock(int height)
         {
-            using (this.lockObject.LockRead())
+            lock (this.lockObject)
             {
-                return GetBlockLocked(height);
+                return this.GetBlockLocked(height);
             }
         }
 
         #endregion
-
-        protected IEnumerable<ChainedHeader> EnumerateFromStart()
-        {
-            int i = 0;
-            ChainedHeader block = null;
-            while (true)
-            {
-                using (this.lockObject.LockRead())
-                {
-                    block = GetBlockLocked(i);
-                    if (block == null)
-                        yield break;
-                }
-
-                yield return block;
-                i++;
-            }
-        }
 
         public override string ToString()
         {

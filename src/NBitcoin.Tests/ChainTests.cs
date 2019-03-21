@@ -82,10 +82,9 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanBuildConcurrentChain()
         {
-            var cchain = new ConsensusChainIndexer();
+            var cchain = new ConsensusChainIndexer(this.network);
             var chain = new ConsensusChainIndexer(this.network);
 
-            Assert.Null(cchain.SetTip(chain.Tip));
             ChainedHeader b0 = cchain.Tip;
             Assert.Equal(cchain.Tip, chain.Tip);
 

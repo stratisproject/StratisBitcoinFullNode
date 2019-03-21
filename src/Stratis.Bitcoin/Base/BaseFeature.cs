@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.Base
                 // This problem should go away once we implement a component to keep all tips up to date
                 // https://github.com/stratisproject/StratisBitcoinFullNode/issues/2503
                 ChainedHeader initializedAt = await this.provenBlockHeaderStore.InitializeAsync(this.chainIndexer.Tip);
-                this.chainIndexer.SetTip(initializedAt);
+                this.chainIndexer.Initialize(initializedAt);
             }
 
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
@@ -250,7 +250,7 @@ namespace Stratis.Bitcoin.Base
 
             this.logger.LogInformation("Loading chain.");
             ChainedHeader chainTip = await this.chainRepository.LoadAsync(this.chainIndexer.Genesis).ConfigureAwait(false);
-            this.chainIndexer.SetTip(chainTip);
+            this.chainIndexer.Initialize(chainTip);
 
             this.logger.LogInformation("Chain loaded at height {0}.", this.chainIndexer.Height);
 
