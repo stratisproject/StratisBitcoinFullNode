@@ -475,8 +475,7 @@ namespace Stratis.Bitcoin.Controllers
         /// <param name="chain">The full node's chain. Used to get <see cref="ChainedHeader"/> block.</param>
         /// <returns>A <see cref="ChainedHeader"/> for the given transaction hash. Returns <c>null</c> if fails.</returns>
         /// <exception cref="ArgumentNullException">Thrown if fullnode is not provided.</exception>
-        internal static async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid,
-            IFullNode fullNode, ChainBase chain)
+        internal static async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid, IFullNode fullNode, ConsensusChainIndexer chain)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
 

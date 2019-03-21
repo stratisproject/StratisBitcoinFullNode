@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         /// <summary>
         /// The chain.
         /// </summary>
-        private readonly ChainBase chainIndexer;
+        private readonly ConsensusChainIndexer chainIndexer;
 
         /// <summary>
         /// Current network for the active controller instance.

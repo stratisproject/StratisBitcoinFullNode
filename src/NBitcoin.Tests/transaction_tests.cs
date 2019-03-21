@@ -70,7 +70,7 @@ namespace NBitcoin.Tests
             Assert.Equal(CreateBlock(now, 5).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1 2 3 4 5 6 7 8 9 10
         }
 
-        private ChainedHeader CreateBlock(DateTimeOffset now, int offset, ChainBase chain = null)
+        private ChainedHeader CreateBlock(DateTimeOffset now, int offset, ConsensusChainIndexer chain = null)
         {
             Block block = this.networkMain.Consensus.ConsensusFactory.CreateBlock();
             block.Header.BlockTime = now + TimeSpan.FromMinutes(offset);

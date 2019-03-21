@@ -532,7 +532,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <param name="hashStop">The location until which it synchronize.</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private IEnumerable<ChainedHeader> SynchronizeChain(INetworkPeer peer, ChainBase chain, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
+        private IEnumerable<ChainedHeader> SynchronizeChain(INetworkPeer peer, ConsensusChainIndexer chain, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             ChainedHeader oldTip = chain.Tip;
             List<ChainedHeader> headers = this.GetHeadersFromFork(peer, oldTip, hashStop, cancellationToken).ToList();

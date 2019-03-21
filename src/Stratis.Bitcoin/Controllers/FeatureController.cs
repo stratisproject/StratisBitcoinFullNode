@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Controllers
 
         protected Network Network { get; set; }
 
-        protected ChainBase ChainIndexer { get; set; }
+        protected ConsensusChainIndexer ChainIndexer { get; set; }
 
         protected IChainState ChainState { get; set; }
 

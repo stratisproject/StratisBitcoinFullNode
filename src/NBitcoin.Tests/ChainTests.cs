@@ -32,7 +32,7 @@ namespace NBitcoin.Tests
             this.AppendBlock(chain);
 
             var chain2 = new ConsensusChainIndexer(this.network, chain.ToBytes());
-            Assert.True(chain.SameTip(chain2));
+            Assert.True(chain.Tip.HashBlock == chain2.Tip.HashBlock);
         }
 
         [Fact]
@@ -64,7 +64,7 @@ namespace NBitcoin.Tests
             this.AddBlock(chain);
             this.AddBlock(chain);
 
-            cchain.SetTip(chain);
+            cchain.SetTip(chain.Tip);
 
             byte[] bytes = cchain.ToBytes();
             cchain = new ConsensusChainIndexer(this.network);
@@ -129,26 +129,6 @@ namespace NBitcoin.Tests
             header.HashPrevBlock = chainIndexer.Tip.HashBlock;
             chainIndexer.SetTip(header);
             return chainIndexer.GetBlock(header.GetHash());
-        }
-
-        [Fact]
-        [Trait("UnitTest", "UnitTest")]
-        public void CanIterateConcurrentChain()
-        {
-            var chain = new ConsensusChainIndexer(this.network);
-
-            this.AppendBlock(chain);
-            this.AppendBlock(chain);
-            this.AppendBlock(chain);
-            foreach (ChainedHeader b in chain.EnumerateAfter(chain.Genesis))
-            {
-                chain.GetBlock(0);
-            }
-
-            foreach (ChainedHeader b in chain.ToEnumerable(false))
-            {
-                chain.GetBlock(0);
-            }
         }
 
         [Fact]
@@ -264,7 +244,7 @@ namespace NBitcoin.Tests
                 BlockHeader block = main.GetBlock(height).Header;
 
                 Assert.Equal(expectedTarget, block.Bits);
-                Target target = main.GetWorkRequired(this.network, height);
+                Target target = main.GetBlock(height).GetWorkRequired(network);
                 Assert.Equal(expectedTarget, target);
             }
         }
@@ -274,7 +254,7 @@ namespace NBitcoin.Tests
         public void CanValidateChain()
         {
             var main = new ConsensusChainIndexer(this.network, this.LoadMainChain());
-            foreach (ChainedHeader h in main.ToEnumerable(false))
+            foreach (ChainedHeader h in main.EnumerateToTip(main.Genesis))
             {
                 Assert.True(h.Validate(this.network));
             }
@@ -621,7 +601,7 @@ namespace NBitcoin.Tests
         /// <param name="chainSrc">The source chain.</param>
         /// <param name="otherChain">The other chain.</param>
         /// <returns>First common chained block header or <c>null</c>.</returns>
-        private ChainedHeader FindFork(ChainBase chainSrc, ChainBase otherChain)
+        private ChainedHeader FindFork(ConsensusChainIndexer chainSrc, ConsensusChainIndexer otherChain)
         {
             if (otherChain == null)
                 throw new ArgumentNullException("otherChain");
