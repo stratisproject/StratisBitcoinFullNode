@@ -471,7 +471,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             {
                 await peer.VersionHandshakeAsync().ConfigureAwait(false);
 
-                var chain = bestBlock == this.runner.Network.GenesisHash ? new ConcurrentChain(this.runner.Network) : this.GetChain(peer);
+                var chain = bestBlock == this.runner.Network.GenesisHash ? new ConsensusChainIndexer(this.runner.Network) : this.GetChain(peer);
 
                 for (int i = 0; i < blockCount; i++)
                 {
@@ -517,9 +517,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <param name="hashStop">The highest block wanted.</param>
         /// <param name="cancellationToken"></param>
         /// <returns>The chain of headers.</returns>
-        private ConcurrentChain GetChain(INetworkPeer peer, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
+        private ConsensusChainIndexer GetChain(INetworkPeer peer, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var chain = new ConcurrentChain(peer.Network);
+            var chain = new ConsensusChainIndexer(peer.Network);
             this.SynchronizeChain(peer, chain, hashStop, cancellationToken);
             return chain;
         }

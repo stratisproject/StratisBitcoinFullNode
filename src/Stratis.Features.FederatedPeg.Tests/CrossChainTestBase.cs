@@ -28,7 +28,7 @@ namespace Stratis.Features.FederatedPeg.Tests
     {
         protected const string walletPassword = "password";
         protected Network network;
-        protected ConcurrentChain chain;
+        protected ConsensusChainIndexer ChainIndexer;
         protected ILoggerFactory loggerFactory;
         protected ILogger logger;
         protected IDateTimeProvider dateTimeProvider;
@@ -88,7 +88,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.wallet = null;
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
-            this.chain = new ConcurrentChain(this.network);
+            this.ChainIndexer = new ConsensusChainIndexer(this.network);
 
             this.federationGatewaySettings.TransactionFee.Returns(new Money(0.01m, MoneyUnit.BTC));
 
@@ -169,7 +169,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationWalletManager = new FederationWalletManager(
                 this.loggerFactory,
                 this.network,
-                this.chain,
+                this.ChainIndexer,
                 dataFolder,
                 this.walletFeePolicy,
                 this.asyncLoopFactory,
@@ -188,7 +188,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             var storeSettings = (StoreSettings)FormatterServices.GetUninitializedObject(typeof(StoreSettings));
 
-            this.federationWalletSyncManager = new FederationWalletSyncManager(this.loggerFactory, this.federationWalletManager, this.chain, this.network,
+            this.federationWalletSyncManager = new FederationWalletSyncManager(this.loggerFactory, this.federationWalletManager, this.ChainIndexer, this.network,
                 this.blockRepository, storeSettings, Substitute.For<INodeLifetime>());
 
             this.federationWalletSyncManager.Initialize();
@@ -207,7 +207,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
         protected ICrossChainTransferStore CreateStore()
         {
-            return new CrossChainTransferStore(this.network, this.dataFolder, this.chain, this.federationGatewaySettings, this.dateTimeProvider,
+            return new CrossChainTransferStore(this.network, this.dataFolder, this.ChainIndexer, this.federationGatewaySettings, this.dateTimeProvider,
                 this.loggerFactory, this.withdrawalExtractor, this.fullNode, this.blockRepository, this.federationWalletManager, this.withdrawalTransactionBuilder, this.dBreezeSerializer);
         }
 
@@ -242,7 +242,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             }
 
             block.UpdateMerkleRoot();
-            block.Header.HashPrevBlock = this.chain.Tip.HashBlock;
+            block.Header.HashPrevBlock = this.ChainIndexer.Tip.HashBlock;
             block.Header.Nonce = RandomUtils.GetUInt32();
 
             return AppendBlock(block);
@@ -255,7 +255,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <returns>The last chained header.</returns>
         protected ChainedHeader AppendBlock(Block block)
         {
-            if (!this.chain.TrySetTip(block.Header, out ChainedHeader last))
+            if (!this.ChainIndexer.TrySetTip(block.Header, out ChainedHeader last))
                 throw new InvalidOperationException("Previous not existing");
 
             this.blockDict[block.GetHash()] = block;

@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly IConnectionManager connectionManager;
         private readonly IConsensusManager consensusManager;
         private readonly NodeDeployments nodeDeployments;
-        private readonly ConcurrentChain chain;
+        private readonly ConsensusChainIndexer chainIndexer;
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
         private readonly IPeerBanning peerBanning;
         private readonly ILoggerFactory loggerFactory;
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             IConnectionManager connectionManager,
             IConsensusManager consensusManager,
             NodeDeployments nodeDeployments,
-            ConcurrentChain chain,
+            ConsensusChainIndexer chainIndexer,
             IInitialBlockDownloadState initialBlockDownloadState,
             IPeerBanning peerBanning,
             Signals.ISignals signals,
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.connectionManager = connectionManager;
             this.consensusManager = consensusManager;
             this.nodeDeployments = nodeDeployments;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.peerBanning = peerBanning;
             this.loggerFactory = loggerFactory;

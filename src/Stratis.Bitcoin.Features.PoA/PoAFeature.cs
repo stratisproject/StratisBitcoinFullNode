@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.PoA
         private readonly IConnectionManager connectionManager;
 
         /// <summary>Thread safe chain of block headers from genesis.</summary>
-        private readonly ConcurrentChain chain;
+        private readonly ConsensusChainIndexer chainIndexer;
 
         private readonly FederationManager federationManager;
 
@@ -55,13 +55,13 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly IWhitelistedHashesRepository whitelistedHashesRepository;
 
-        public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ConcurrentChain chain,
+        public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ConsensusChainIndexer chainIndexer,
             IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory,
             IPoAMiner miner, VotingManager votingManager, Network network, IWhitelistedHashesRepository whitelistedHashesRepository)
         {
             this.federationManager = federationManager;
             this.connectionManager = connectionManager;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.consensusManager = consensusManager;
             this.peerBanning = peerBanning;
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
             // Replace default ConsensusManagerBehavior with ProvenHeadersConsensusManagerBehavior
             connectionParameters.TemplateBehaviors.Remove(defaultConsensusManagerBehavior);
-            connectionParameters.TemplateBehaviors.Add(new PoAConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
+            connectionParameters.TemplateBehaviors.Add(new PoAConsensusManagerBehavior(this.chainIndexer, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
 
             this.federationManager.Initialize();
             this.whitelistedHashesRepository.Initialize();

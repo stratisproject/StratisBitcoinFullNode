@@ -8,7 +8,7 @@ namespace NBitcoin
     /// <summary>
     /// Thread safe class representing a chain of headers from genesis.
     /// </summary>
-    public class ConcurrentChain : ChainBase
+    public class ConsensusChainIndexer : ChainBase
     {
         private readonly Dictionary<uint256, ChainedHeader> blocksById = new Dictionary<uint256, ChainedHeader>();
         private readonly Dictionary<int, ChainedHeader> blocksByHeight = new Dictionary<int, ChainedHeader>();
@@ -23,21 +23,21 @@ namespace NBitcoin
         public override Network Network { get { return this.network; } }
 
         [Obsolete("Do not use this constructor, it will eventually be replaced with ChainHeaderTree.")]
-        public ConcurrentChain() { }
+        public ConsensusChainIndexer() { }
 
-        public ConcurrentChain(Network network)
+        public ConsensusChainIndexer(Network network)
         {
             this.network = network;
             SetTip(new ChainedHeader(network.GetGenesis().Header, network.GetGenesis().GetHash(), 0));
         }
 
-        public ConcurrentChain(Network network, ChainedHeader chainedHeader)
+        public ConsensusChainIndexer(Network network, ChainedHeader chainedHeader)
         {
             this.network = network;
             SetTip(chainedHeader);
         }
 
-        public ConcurrentChain(Network network, byte[] bytes)
+        public ConsensusChainIndexer(Network network, byte[] bytes)
             : this(network)
         {
             Load(bytes);
