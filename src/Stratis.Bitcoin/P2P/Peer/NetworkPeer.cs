@@ -274,8 +274,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             Action<INetworkPeer> onDisconnected = null,
             Action<IPEndPoint, Payload> onSendingMessage = null)
         {
-            Guard.NotNull(parameters, nameof(parameters));
-
             this.dateTimeProvider = dateTimeProvider;
 
             this.preferredTransactionOptions = parameters.PreferredTransactionOptions;
@@ -294,7 +292,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.onDisconnectedAsyncContext = new AsyncLocal<DisconnectedExecutionAsyncContext>();
 
-            this.ConnectionParameters = parameters;
+            this.ConnectionParameters = parameters ?? new NetworkPeerConnectionParameters();
             this.MyVersion = this.ConnectionParameters.CreateVersion(this.selfEndpointTracker.MyExternalAddress, this.PeerEndPoint, network, this.dateTimeProvider.GetTimeOffset());
 
             this.MessageReceived = new AsyncExecutionEvent<INetworkPeer, IncomingMessage>();
@@ -362,14 +360,14 @@ namespace Stratis.Bitcoin.P2P.Peer
             Action<IPEndPoint, Payload> onSendingMessage = null)
             : this(true, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, selfEndpointTracker, onDisconnected, onSendingMessage)
         {
-            this.Connection = networkPeerFactory.CreateNetworkPeerConnection(this, client, (message, ct) => this.ProcessMessageAsync(message, parameters.ConnectCancellation));
+            this.Connection = networkPeerFactory.CreateNetworkPeerConnection(this, client, this.ProcessMessageAsync);
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.Connection.Id}-{peerEndPoint}] ");
 
             this.logger.LogTrace("Connected to peer '{0}'.", this.PeerEndPoint);
 
             this.InitDefaultBehaviors(this.ConnectionParameters);
-            this.Connection.StartReceiveMessages(parameters.ConnectCancellation);
+            this.Connection.StartReceiveMessages();
         }
 
         /// <summary>
