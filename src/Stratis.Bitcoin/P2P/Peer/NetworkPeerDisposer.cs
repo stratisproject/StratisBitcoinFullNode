@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.onPeerDisposed = onPeerDisposed;
             this.connectedPeers = new ConcurrentDictionary<int, INetworkPeer>();
 
-            this.peersToDispose = new AsyncQueue<INetworkPeer>(this.OnEnqueueAsync);
+            this.peersToDispose = new AsyncQueue<INetworkPeer>(this.OnEnqueueAsync, this.OnEnqueueAsyncFails);
         }
 
         /// <summary>
@@ -80,6 +80,15 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.connectedPeers.TryRemove(peer.Connection.Id, out INetworkPeer unused);
 
             return Task.CompletedTask;
+        }
+
+        private Task<bool> OnEnqueueAsyncFails(INetworkPeer item, CancellationToken cancellationToken, Exception ex)
+        {
+            this.logger.LogError(ex, "OnEnqueueAsync failed");
+
+            // false will cause the AsyncLoop to throw.
+            // return true if this error is handled properly and execution can continue.
+            return Task.FromResult(false);
         }
 
         /// <summary>Handles peer's disconnection.</summary>
