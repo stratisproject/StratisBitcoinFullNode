@@ -50,6 +50,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 
                             return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
                         });
+
+                        // Voting.
+                        services.AddSingleton<VotingManager>();
+                        services.AddSingleton<VotingController>();
+                        services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
+                        services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
+                        services.AddSingleton<IdleFederationMembersKicker>();
                     });
             });
 
