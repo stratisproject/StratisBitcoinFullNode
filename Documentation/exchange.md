@@ -93,4 +93,6 @@ Instead the REST API must be used, example that generates 1000 addresses:
 
 http://localhost:4335/api/Wallet/unusedaddresses?WalletName=default&AccountName=account%200&Count=1000&api-version=1.0
 
+The result is a simple JSON array with all the requested addresses.
+
 These addresses can then be stored in a database and be given to new users/customers.

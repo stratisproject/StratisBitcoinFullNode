@@ -8,7 +8,7 @@ bash <( curl -L https://bit.ly/citychain-install )
 
 ## Exchange
 
-Make sure you read the [exchange documentation](Documentation/exchange.md) to install a wallet node for
+Make sure you read the [exchange documentation](../Documentation/exchange.md) to install a wallet node for
 use on exchanges.
 
 ## Linux (Precompiled Binary)
