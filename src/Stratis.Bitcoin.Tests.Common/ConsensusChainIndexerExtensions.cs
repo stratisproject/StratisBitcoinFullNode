@@ -6,7 +6,7 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin.Tests.Common
 {
-    public static class ConsensusChainIndexerExtentions
+    public static class ConsensusChainIndexerExtensions
     {
         /// <summary>
         /// Sets the tip of this chain based upon another block header.

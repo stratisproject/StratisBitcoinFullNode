@@ -37,6 +37,9 @@ namespace NBitcoin
 
             lock (this.lockObject)
             {
+                this.blocksById.Clear();
+                this.blocksByHeight.Clear();
+
                 ChainedHeader iterator = chainedHeader;
 
                 while (iterator != null)
@@ -71,9 +74,9 @@ namespace NBitcoin
             // Find the first block the caller has in the main chain.
             foreach (uint256 hash in hashes)
             {
-                ChainedHeader mi = this.GetBlock(hash);
-                if (mi != null)
-                    return mi;
+                ChainedHeader chainedHeader = this.GetBlock(hash);
+                if (chainedHeader != null)
+                    return chainedHeader;
             }
 
             return null;
