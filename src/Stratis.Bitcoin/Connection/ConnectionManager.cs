@@ -82,9 +82,10 @@ namespace Stratis.Bitcoin.Connection
 
         private IConsensusManager consensusManager;
 
-        private AsyncQueue<INetworkPeer> connectedPeersQueue;
+        private readonly AsyncQueue<INetworkPeer> connectedPeersQueue;
 
-        private PerformanceCounter disconnectedPerfCounter;
+        /// <summary>Traffic statistics from peers that have been disconnected.</summary> 
+        private readonly PerformanceCounter disconnectedPerfCounter;
 
         public ConnectionManager(IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
