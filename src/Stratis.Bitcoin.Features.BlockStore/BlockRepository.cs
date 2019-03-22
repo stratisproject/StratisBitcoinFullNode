@@ -7,6 +7,7 @@ using DBreeze.DataTypes;
 using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -16,7 +17,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// <summary>
     /// <see cref="IBlockRepository"/> is the interface to all the logics interacting with the blocks stored in the database.
     /// </summary>
-    public interface IBlockRepository : IBlockStore
+    public interface IBlockRepository : IBlockStore, ITipProvider
     {
         /// <summary> The dbreeze database engine.</summary>
         DBreezeEngine DBreeze { get; }
@@ -106,13 +107,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly DBreezeSerializer dBreezeSerializer;
 
+        private readonly ITipsManager tipsManager;
+
         public BlockRepository(Network network, DataFolder dataFolder,
-            ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer)
-            : this(network, dataFolder.BlockPath, loggerFactory, dBreezeSerializer)
+            ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer, ITipsManager tipsManager)
+            : this(network, dataFolder.BlockPath, loggerFactory, dBreezeSerializer, tipsManager)
         {
         }
 
-        public BlockRepository(Network network, string folder, ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer)
+        public BlockRepository(Network network, string folder, ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer, ITipsManager tipsManager)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotEmpty(folder, nameof(folder));
@@ -123,6 +126,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.dBreezeSerializer = dBreezeSerializer;
+
+            this.tipsManager = Guard.NotNull(tipsManager, nameof(tipsManager));
         }
 
         /// <inheritdoc />
@@ -387,6 +392,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.TipHashAndHeight = newTip;
             dbreezeTransaction.Insert(CommonTableName, RepositoryTipKey, this.dBreezeSerializer.Serialize(newTip));
+
+            this.tipsManager.CommitTipPersisted(this, newTip);
         }
 
         /// <inheritdoc />

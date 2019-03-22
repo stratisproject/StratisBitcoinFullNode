@@ -189,6 +189,9 @@ namespace Stratis.Bitcoin.Base
                 this.chain.SetTip(initializedAt);
             }
 
+            this.tipsManager.Initialize(this.chain.Tip);
+            ChainedHeader commonTip = this.tipsManager.GetLastCommonTip();
+
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = this.connectionManager.ConnectionSettings.RelayTxes;
 
@@ -216,13 +219,13 @@ namespace Stratis.Bitcoin.Base
 
             // Block store must be initialized before consensus manager.
             // This may be a temporary solution until a better way is found to solve this dependency.
-            await this.blockStore.InitializeAsync().ConfigureAwait(false);
+            await this.blockStore.InitializeAsync(commonTip).ConfigureAwait(false);
 
-            this.consensusRules.Initialize(this.chain.Tip);
+            this.consensusRules.Initialize(commonTip);
 
             this.consensusRules.Register();
 
-            await this.consensusManager.InitializeAsync(this.chain.Tip).ConfigureAwait(false);
+            await this.consensusManager.InitializeAsync(commonTip).ConfigureAwait(false);
 
             this.chainState.ConsensusTip = this.consensusManager.Tip;
         }

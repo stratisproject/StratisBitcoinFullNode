@@ -7,6 +7,7 @@ using DBreeze.DataTypes;
 using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -16,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     /// <summary>
     /// Persistent implementation of the <see cref="ProvenBlockHeader"/> DBreeze repository.
     /// </summary>
-    public class ProvenBlockHeaderRepository : IProvenBlockHeaderRepository
+    public class ProvenBlockHeaderRepository : IProvenBlockHeaderRepository, ITipProvider
     {
         /// <summary>
         /// Instance logger.
@@ -51,6 +52,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
         private readonly DBreezeSerializer dBreezeSerializer;
 
+        private readonly ITipsManager tipsManager;
+
         /// <inheritdoc />
         public HashHeightPair TipHashHeight { get; private set; }
 
@@ -62,8 +65,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="loggerFactory">Factory to create a logger for this type.</param>
         /// <param name="dBreezeSerializer">The serializer to use for <see cref="IBitcoinSerializable"/> objects.</param>
         public ProvenBlockHeaderRepository(Network network, DataFolder folder, ILoggerFactory loggerFactory,
-            DBreezeSerializer dBreezeSerializer)
-        : this(network, folder.ProvenBlockHeaderPath, loggerFactory, dBreezeSerializer)
+            DBreezeSerializer dBreezeSerializer, ITipsManager tipsManager)
+        : this(network, folder.ProvenBlockHeaderPath, loggerFactory, dBreezeSerializer, tipsManager)
         {
         }
 
@@ -75,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="loggerFactory">Factory to create a logger for this type.</param>
         /// <param name="dBreezeSerializer">The serializer to use for <see cref="IBitcoinSerializable"/> objects.</param>
         public ProvenBlockHeaderRepository(Network network, string folder, ILoggerFactory loggerFactory,
-            DBreezeSerializer dBreezeSerializer)
+            DBreezeSerializer dBreezeSerializer, ITipsManager tipsManager)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(folder, nameof(folder));
@@ -87,6 +90,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             this.dbreeze = new DBreezeEngine(folder);
             this.network = network;
+
+            this.tipsManager = Guard.NotNull(tipsManager, nameof(tipsManager));
+            this.tipsManager.RegisterTipProvider(this);
         }
 
         /// <inheritdoc />
@@ -176,6 +182,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             Guard.NotNull(newTip, nameof(newTip));
 
             transaction.Insert(BlockHashHeightTable, blockHashHeightKey, this.dBreezeSerializer.Serialize(newTip));
+            this.tipsManager.CommitTipPersisted(this, newTip);
         }
 
         /// <summary>

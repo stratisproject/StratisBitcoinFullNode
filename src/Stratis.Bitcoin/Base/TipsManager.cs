@@ -36,6 +36,15 @@ namespace Stratis.Bitcoin.Base
         /// commited such a tip would be able to recover on startup to it or any tip that is ancestor to tip commited.
         /// </remarks>
         void CommitTipPersisted(ITipProvider provider, ChainedHeader tip);
+
+        /// <summary>
+        /// Commits persisted tip of a component.
+        /// </summary>
+        /// <remarks>
+        /// Commiting a particular tip would mean that in case node is killed immediately component that
+        /// commited such a tip would be able to recover on startup to it or any tip that is ancestor to tip commited.
+        /// </remarks>
+        void CommitTipPersisted(ITipProvider provider, HashHeightPair tip);
     }
 
     public class TipsManager : ITipsManager
@@ -60,16 +69,19 @@ namespace Stratis.Bitcoin.Base
 
         private readonly CancellationTokenSource cancellation;
 
+        private readonly ConcurrentChain concurrentChain;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        public TipsManager(IKeyValueRepository keyValueRepo, ILoggerFactory loggerFactory)
+        public TipsManager(IKeyValueRepository keyValueRepo, ILoggerFactory loggerFactory, ConcurrentChain concurrentChain)
         {
             this.keyValueRepo = keyValueRepo;
             this.tipsByProvider = new Dictionary<ITipProvider, ChainedHeader>();
             this.lockObject = new object();
             this.newCommonTipSetEvent = new AsyncManualResetEvent(false);
             this.cancellation = new CancellationTokenSource();
+            this.concurrentChain = Guard.NotNull(concurrentChain, nameof(concurrentChain));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -130,6 +142,16 @@ namespace Stratis.Bitcoin.Base
         public ChainedHeader GetLastCommonTip()
         {
             return this.lastCommonTip;
+        }
+
+        /// <inheritdoc />
+        public void CommitTipPersisted(ITipProvider provider, HashHeightPair tip)
+        {
+            ChainedHeader header = this.concurrentChain.GetBlock(tip.Hash);
+            if (tip == null)
+            {
+                throw new ArgumentException(string.Format("Invalid Hash: {0} not found in current chain", tip.Hash));
+            }
         }
 
         /// <inheritdoc />
