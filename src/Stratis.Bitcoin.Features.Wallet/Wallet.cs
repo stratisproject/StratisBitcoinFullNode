@@ -289,12 +289,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Calculates the fee paid by the user on a transaction sent.
         /// </summary>
-        /// <param name="coinType">Type of the coin to get transactions from.</param>
         /// <param name="transactionId">The transaction id to look for.</param>
         /// <returns>The fee paid.</returns>
-        public Money GetSentTransactionFee(CoinType coinType, uint256 transactionId)
+        public Money GetSentTransactionFee(uint256 transactionId)
         {
-            List<TransactionData> allTransactions = this.GetAllTransactionsByCoinType(coinType).ToList();
+            List<TransactionData> allTransactions = this.GetAllTransactions().ToList();
 
             // Get a list of all the inputs spent in this transaction.
             List<TransactionData> inputsSpentInTransaction = allTransactions.Where(t => t.SpendingDetails?.TransactionId == transactionId).ToList();
