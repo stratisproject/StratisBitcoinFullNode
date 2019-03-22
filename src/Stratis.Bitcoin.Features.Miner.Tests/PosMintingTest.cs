@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     {
         protected PosMinting posMinting;
         private readonly Mock<IConsensusManager> consensusManager;
-        private ConsensusChainIndexer chainIndexer;
+        private ChainIndexer chainIndexer;
         protected Network network;
         private readonly Mock<IDateTimeProvider> dateTimeProvider;
         private readonly Mock<IInitialBlockDownloadState> initialBlockDownloadState;
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.consensusManager = new Mock<IConsensusManager>();
             this.network = KnownNetworks.StratisTest;
             this.network.Consensus.Options = new ConsensusOptions();
-            this.chainIndexer = new ConsensusChainIndexer(this.network);
+            this.chainIndexer = new ChainIndexer(this.network);
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
             this.initialBlockDownloadState = new Mock<IInitialBlockDownloadState>();
             this.nodeLifetime = new Mock<INodeLifetime>();
@@ -529,7 +529,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             return suitableCoins.Count == 1;
         }
 
-        private static void AddBlockToChainWithBlockTimeAndDifficulty(ConsensusChainIndexer chainIndexer, int blockAmount, int incrementSeconds, uint nbits, Network network)
+        private static void AddBlockToChainWithBlockTimeAndDifficulty(ChainIndexer chainIndexer, int blockAmount, int incrementSeconds, uint nbits, Network network)
         {
             uint256 prevBlockHash = chainIndexer.Tip.HashBlock;
             uint nonce = RandomUtils.GetUInt32();
@@ -549,9 +549,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             }
         }
 
-        public static ConsensusChainIndexer GenerateChainWithBlockTimeAndHeight(int blockAmount, Network network, int incrementSeconds, uint nbits)
+        public static ChainIndexer GenerateChainWithBlockTimeAndHeight(int blockAmount, Network network, int incrementSeconds, uint nbits)
         {
-            var chain = new ConsensusChainIndexer(network);
+            var chain = new ChainIndexer(network);
             uint nonce = RandomUtils.GetUInt32();
             uint256 prevBlockHash = chain.Genesis.HashBlock;
             DateTime blockTime = Utils.UnixTimeToDateTime(chain.Genesis.Header.Time).UtcDateTime;

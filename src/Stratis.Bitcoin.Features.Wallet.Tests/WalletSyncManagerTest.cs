@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
     public class WalletSyncManagerTest : LogsTestBase
     {
-        private ConsensusChainIndexer chainIndexer;
+        private ChainIndexer chainIndexer;
         private readonly Mock<IWalletManager> walletManager;
         private readonly Mock<IBlockStore> blockStore;
         private readonly Mock<INodeLifetime> nodeLifetime;
@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public WalletSyncManagerTest()
         {
             this.storeSettings = new StoreSettings(new NodeSettings(KnownNetworks.StratisMain));
-            this.chainIndexer = new ConsensusChainIndexer(KnownNetworks.StratisMain);
+            this.chainIndexer = new ChainIndexer(KnownNetworks.StratisMain);
             this.walletManager = new Mock<IWalletManager>();
             this.blockStore = new Mock<IBlockStore>();
             this.nodeLifetime = new Mock<INodeLifetime>();
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void ProcessBlock_NewBlock_PreviousHashSameAsWalletTip_PassesBlockToManagerWithoutReorg()
         {
-            (ConsensusChainIndexer Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, KnownNetworks.StratisMain);
+            (ChainIndexer Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, KnownNetworks.StratisMain);
             this.chainIndexer = result.Chain;
             List<Block> blocks = result.Blocks;
             var walletSyncManager = new WalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chainIndexer, KnownNetworks.StratisMain,
@@ -132,9 +132,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void ProcessBlock_NewBlock_BlockNotOnBestChain_ReOrgWalletManagerUsingBlockStoreCache()
         {
-            (ConsensusChainIndexer LeftChain, ConsensusChainIndexer RightChain, List<Block> LeftForkBlocks, List<Block> RightForkBlocks) result = WalletTestsHelpers.GenerateForkedChainAndBlocksWithHeight(5, KnownNetworks.StratisMain, 2);
+            (ChainIndexer LeftChain, ChainIndexer RightChain, List<Block> LeftForkBlocks, List<Block> RightForkBlocks) result = WalletTestsHelpers.GenerateForkedChainAndBlocksWithHeight(5, KnownNetworks.StratisMain, 2);
             // left side chain containing the 'old' fork.
-            ConsensusChainIndexer leftChainIndexer = result.LeftChain;
+            ChainIndexer leftChainIndexer = result.LeftChain;
             // right side chain containing the 'new' fork. Work on this.
             this.chainIndexer = result.RightChain;
             var walletSyncManager = new WalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chainIndexer, KnownNetworks.StratisMain,
@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void ProcessBlock_NewBlock__BlockOnBestChain_ReOrgWalletManagerUsingBlockStoreCache()
         {
-            (ConsensusChainIndexer Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, KnownNetworks.StratisMain);
+            (ChainIndexer Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, KnownNetworks.StratisMain);
             this.chainIndexer = result.Chain;
             List<Block> blocks = result.Blocks;
             var walletSyncManager = new WalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chainIndexer, KnownNetworks.StratisMain,
@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void ProcessBlock_NewBlock_BlockArrivesLateInBlockStoreCache_ReOrgWalletManagerUsingBlockStoreCache()
         {
-            (ConsensusChainIndexer Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, KnownNetworks.StratisMain);
+            (ChainIndexer Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, KnownNetworks.StratisMain);
             this.chainIndexer = result.Chain;
             List<Block> blocks = result.Blocks;
             var walletSyncManager = new WalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chainIndexer, KnownNetworks.StratisMain,
@@ -313,7 +313,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void SyncFromDate_EmptyChain_UpdateUsingGenesisBlock()
         {
-            this.chainIndexer = new ConsensusChainIndexer(KnownNetworks.StratisMain);
+            this.chainIndexer = new ChainIndexer(KnownNetworks.StratisMain);
 
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chainIndexer, KnownNetworks.StratisMain,
              this.blockStore.Object, this.storeSettings, this.signals);
@@ -360,7 +360,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void ProcessBlock_With_No_Wallet_Processing_Is_Ignored()
         {
-            (ConsensusChainIndexer Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(1, KnownNetworks.StratisMain);
+            (ChainIndexer Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(1, KnownNetworks.StratisMain);
 
             this.chainIndexer = result.Chain;
 
@@ -388,7 +388,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         private class WalletSyncManagerOverride : WalletSyncManager
         {
-            public WalletSyncManagerOverride(ILoggerFactory loggerFactory, IWalletManager walletManager, ConsensusChainIndexer chainIndexer,
+            public WalletSyncManagerOverride(ILoggerFactory loggerFactory, IWalletManager walletManager, ChainIndexer chainIndexer,
                 Network network, IBlockStore blockStore, StoreSettings storeSettings, ISignals signals)
                 : base(loggerFactory, walletManager, chainIndexer, network, blockStore, storeSettings, signals)
             {

@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Tests.Base
             Func<List<BlockHeader>, bool, ConnectNewHeadersResult> connectNewHeadersMethod = null)
         {
             // Chain
-            var chain = new ConsensusChainIndexer(KnownNetworks.StratisMain);
+            var chain = new ChainIndexer(KnownNetworks.StratisMain);
             chain.SetTip(consensusTip);
 
             // Ibd

@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
             Network network = null,
-            ConsensusChainIndexer chainIndexer = null,
+            ChainIndexer chainIndexer = null,
             IChainState chainState = null,
             Connection.IConnectionManager connectionManager = null,
             IConsensusManager consensusManager = null,

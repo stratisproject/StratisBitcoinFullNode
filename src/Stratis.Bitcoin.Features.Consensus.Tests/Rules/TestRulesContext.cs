@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         public NodeSettings NodeSettings { get; set; }
 
-        public ConsensusChainIndexer ChainIndexer { get; set; }
+        public ChainIndexer ChainIndexer { get; set; }
 
         public Network Network { get; set; }
 
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         private RuleRegistrationHelper ruleRegistrationHelper;
 
-        public TestConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConsensusChainIndexer chainIndexer, NodeDeployments nodeDeployments,
+        public TestConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ChainIndexer chainIndexer, NodeDeployments nodeDeployments,
             ConsensusSettings consensusSettings, ICheckpoints checkpoints, IChainState chainState, IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats)
             : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, chainState, invalidBlockHashStore, nodeStats)
         {
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     {
         private RuleRegistrationHelper ruleRegistrationHelper;
 
-        public TestPosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConsensusChainIndexer chainIndexer,
+        public TestPosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ChainIndexer chainIndexer,
             NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView uxtoSet, IStakeChain stakeChain,
             IStakeValidator stakeValidator, IChainState chainState, IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IRewindDataIndexCache rewindDataIndexCache)
             : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, uxtoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore, nodeStats, rewindDataIndexCache)
@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             var consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
-            testRulesContext.ChainIndexer = new ConsensusChainIndexer(network);
+            testRulesContext.ChainIndexer = new ChainIndexer(network);
             testRulesContext.ChainState = new ChainState();
 
             var deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.ChainIndexer);
@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             return testRulesContext;
         }
 
-        public static Block MineBlock(Network network, ConsensusChainIndexer chainIndexer)
+        public static Block MineBlock(Network network, ChainIndexer chainIndexer)
         {
             var block = network.Consensus.ConsensusFactory.CreateBlock();
             var coinbase = new Transaction();

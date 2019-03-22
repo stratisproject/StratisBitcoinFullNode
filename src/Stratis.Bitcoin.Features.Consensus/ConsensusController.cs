@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             ILoggerFactory loggerFactory,
             IChainState chainState,
             IConsensusManager consensusManager,
-            ConsensusChainIndexer chainIndexer)
+            ChainIndexer chainIndexer)
             : base(chainState: chainState, consensusManager: consensusManager, chainIndexer: chainIndexer)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));

@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly Network network;
         private readonly ICheckpoints checkpoints;
 
-        public ProvenHeadersBlockStoreBehavior(Network network, ConsensusChainIndexer chainIndexer, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager, ICheckpoints checkpoints, IBlockStoreQueue blockStoreQueue)
+        public ProvenHeadersBlockStoreBehavior(Network network, ChainIndexer chainIndexer, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager, ICheckpoints checkpoints, IBlockStoreQueue blockStoreQueue)
             : base(chainIndexer, chainState, loggerFactory, consensusManager, blockStoreQueue)
         {
             this.network = Guard.NotNull(network, nameof(network));

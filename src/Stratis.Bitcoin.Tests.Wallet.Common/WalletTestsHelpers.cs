@@ -80,11 +80,11 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return address;
         }
 
-        public static ChainedHeader AppendBlock(Network network, ChainedHeader previous = null, params ConsensusChainIndexer[] chainsIndexer)
+        public static ChainedHeader AppendBlock(Network network, ChainedHeader previous = null, params ChainIndexer[] chainsIndexer)
         {
             ChainedHeader last = null;
             uint nonce = RandomUtils.GetUInt32();
-            foreach (ConsensusChainIndexer chain in chainsIndexer)
+            foreach (ChainIndexer chain in chainsIndexer)
             {
                 Block block = network.CreateBlock();
                 block.AddTransaction(network.CreateTransaction());
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return last;
         }
 
-        public static (ChainedHeader ChainedHeader, Block Block) AppendBlock(Network network, ChainedHeader previous, ConsensusChainIndexer chainIndexer)
+        public static (ChainedHeader ChainedHeader, Block Block) AppendBlock(Network network, ChainedHeader previous, ChainIndexer chainIndexer)
         {
             ChainedHeader last = null;
             uint nonce = RandomUtils.GetUInt32();
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return (walletFile, extendedKey);
         }
 
-        public static Block AppendTransactionInNewBlockToChain(ConsensusChainIndexer chainIndexer, Transaction transaction)
+        public static Block AppendTransactionInNewBlockToChain(ChainIndexer chainIndexer, Transaction transaction)
         {
             ChainedHeader last = null;
             uint nonce = RandomUtils.GetUInt32();
@@ -277,9 +277,9 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return (addressPubKey, address);
         }
 
-        public static ConsensusChainIndexer GenerateChainWithHeight(int blockAmount, Network network)
+        public static ChainIndexer GenerateChainWithHeight(int blockAmount, Network network)
         {
-            var chain = new ConsensusChainIndexer(network);
+            var chain = new ChainIndexer(network);
             uint nonce = RandomUtils.GetUInt32();
             uint256 prevBlockHash = chain.Genesis.HashBlock;
             for (int i = 0; i < blockAmount; i++)
@@ -304,11 +304,11 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
         /// <param name="network">The network to use</param>
         /// <param name="forkBlock">The height at which to put the fork.</param>
         /// <returns></returns>
-        public static (ConsensusChainIndexer LeftChain, ConsensusChainIndexer RightChain, List<Block> LeftForkBlocks, List<Block> RightForkBlocks)
+        public static (ChainIndexer LeftChain, ChainIndexer RightChain, List<Block> LeftForkBlocks, List<Block> RightForkBlocks)
             GenerateForkedChainAndBlocksWithHeight(int blockAmount, Network network, int forkBlock)
         {
-            var rightchain = new ConsensusChainIndexer(network);
-            var leftchain = new ConsensusChainIndexer(network);
+            var rightchain = new ChainIndexer(network);
+            var leftchain = new ChainIndexer(network);
             uint256 prevBlockHash = rightchain.Genesis.HashBlock;
             var leftForkBlocks = new List<Block>();
             var rightForkBlocks = new List<Block>();
@@ -360,9 +360,9 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return (leftchain, rightchain, leftForkBlocks, rightForkBlocks);
         }
 
-        public static (ConsensusChainIndexer Chain, List<Block> Blocks) GenerateChainAndBlocksWithHeight(int blockAmount, Network network)
+        public static (ChainIndexer Chain, List<Block> Blocks) GenerateChainAndBlocksWithHeight(int blockAmount, Network network)
         {
-            var chain = new ConsensusChainIndexer(network);
+            var chain = new ChainIndexer(network);
             uint nonce = RandomUtils.GetUInt32();
             uint256 prevBlockHash = chain.Genesis.HashBlock;
             var blocks = new List<Block>();
@@ -381,9 +381,9 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return (chain, blocks);
         }
 
-        public static ConsensusChainIndexer PrepareChainWithBlock()
+        public static ChainIndexer PrepareChainWithBlock()
         {
-            var chain = new ConsensusChainIndexer(KnownNetworks.StratisMain);
+            var chain = new ChainIndexer(KnownNetworks.StratisMain);
             uint nonce = RandomUtils.GetUInt32();
             Block block = KnownNetworks.StratisMain.CreateBlock();
             block.AddTransaction(KnownNetworks.StratisMain.CreateTransaction());
@@ -449,7 +449,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return addresses;
         }
 
-        public static TransactionData CreateTransactionDataFromFirstBlock((ConsensusChainIndexer chain, uint256 blockHash, Block block) chainInfo)
+        public static TransactionData CreateTransactionDataFromFirstBlock((ChainIndexer chain, uint256 blockHash, Block block) chainInfo)
         {
             Transaction transaction = chainInfo.block.Transactions[0];
 
@@ -467,9 +467,9 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return addressTransaction;
         }
 
-        public static (ConsensusChainIndexer chain, uint256 blockhash, Block block) CreateChainAndCreateFirstBlockWithPaymentToAddress(Network network, HdAddress address)
+        public static (ChainIndexer chain, uint256 blockhash, Block block) CreateChainAndCreateFirstBlockWithPaymentToAddress(Network network, HdAddress address)
         {
-            var chain = new ConsensusChainIndexer(network);
+            var chain = new ChainIndexer(network);
 
             Block block = network.Consensus.ConsensusFactory.CreateBlock();
             block.Header.HashPrevBlock = chain.Tip.HashBlock;
@@ -490,7 +490,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return (chain, block.GetHash(), block);
         }
 
-        public static List<Block> AddBlocksWithCoinbaseToChain(Network network, ConsensusChainIndexer chainIndexer, HdAddress address, int blocks = 1)
+        public static List<Block> AddBlocksWithCoinbaseToChain(Network network, ChainIndexer chainIndexer, HdAddress address, int blocks = 1)
         {
             var blockList = new List<Block>();
 

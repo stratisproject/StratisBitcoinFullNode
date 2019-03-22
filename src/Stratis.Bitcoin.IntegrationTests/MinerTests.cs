@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             public Script script;
             public uint256 hash;
             public TestMemPoolEntryHelper entry;
-            public ConsensusChainIndexer ChainIndexer;
+            public ChainIndexer ChainIndexer;
             public ConsensusManager consensus;
             public ConsensusRuleEngine ConsensusRules;
             public DateTimeProvider DateTimeProvider;
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.scriptPubKey = new Script(new[] { Op.GetPushOp(hex), OpcodeType.OP_CHECKSIG });
 
                 this.entry = new TestMemPoolEntryHelper();
-                this.ChainIndexer = new ConsensusChainIndexer(this.network);
+                this.ChainIndexer = new ChainIndexer(this.network);
                 this.network.Consensus.Options = new ConsensusOptions();
 
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;

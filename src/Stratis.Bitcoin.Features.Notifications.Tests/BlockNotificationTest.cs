@@ -23,14 +23,14 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         private readonly NodeLifetime lifetime;
         private readonly Mock<ISignals> signals;
         private readonly Mock<IConsensusManager> consensusManager;
-        private ConsensusChainIndexer chainIndexer;
+        private ChainIndexer chainIndexer;
 
         public BlockNotificationTest()
         {
             this.lifetime = new NodeLifetime();
             this.signals = new Mock<ISignals>();
             this.consensusManager = new Mock<IConsensusManager>();
-            this.chainIndexer = new ConsensusChainIndexer(this.Network);
+            this.chainIndexer = new ChainIndexer(this.Network);
         }
 
         /// <summary>
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         {
             List<Block> blocks = this.CreateBlocks(2);
 
-            this.chainIndexer = new ConsensusChainIndexer(this.Network, new ChainedHeader(blocks[0].Header, blocks[0].GetHash(), 0));
+            this.chainIndexer = new ChainIndexer(this.Network, new ChainedHeader(blocks[0].Header, blocks[0].GetHash(), 0));
             this.AppendBlocksToChain(this.chainIndexer, blocks.Skip(1).Take(1));
 
             var notification = new Mock<BlockNotification>(this.LoggerFactory.Object, this.chainIndexer, this.signals.Object, new AsyncLoopFactory(new LoggerFactory()), this.lifetime);
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         {
             List<Block> blocks = this.CreateBlocks(3);
 
-            this.chainIndexer = new ConsensusChainIndexer(this.Network, new ChainedHeader(blocks[0].Header, blocks[0].GetHash(), 0));
+            this.chainIndexer = new ChainIndexer(this.Network, new ChainedHeader(blocks[0].Header, blocks[0].GetHash(), 0));
             this.AppendBlocksToChain(this.chainIndexer, blocks.Skip(1));
 
             var source = new CancellationTokenSource();
@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         {
             List<Block> blocks = this.CreateBlocks(3);
 
-            this.chainIndexer = new ConsensusChainIndexer(this.Network, new ChainedHeader(blocks[0].Header, blocks[0].GetHash(), 0));
+            this.chainIndexer = new ChainIndexer(this.Network, new ChainedHeader(blocks[0].Header, blocks[0].GetHash(), 0));
             this.AppendBlocksToChain(this.chainIndexer, blocks.Skip(1));
 
             var notification = new BlockNotification(this.LoggerFactory.Object, this.chainIndexer, this.consensusManager.Object, this.signals.Object, new AsyncLoopFactory(new LoggerFactory()), this.lifetime);

@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         private readonly IChainState chainState;
         private readonly Mock<IInitialBlockDownloadState> initialBlockDownloadState;
         private readonly NodeLifetime nodeLifetime;
-        private ConsensusChainIndexer chainIndexer;
+        private ChainIndexer chainIndexer;
         private readonly Network network;
         private HashHeightPair repositoryTipHashAndHeight;
         private readonly Mock<IBlockRepository> blockRepositoryMock;
@@ -91,9 +91,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
         }
 
-        private ConsensusChainIndexer CreateChain(int blocksCount)
+        private ChainIndexer CreateChain(int blocksCount)
         {
-            var chain = new ConsensusChainIndexer(this.network);
+            var chain = new ChainIndexer(this.network);
             for (int i = 0; i < blocksCount; i++)
             {
                 BlockHeader header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             int count = 5 * 1024 * 1024 / blockSize + 2;
 
-            ConsensusChainIndexer longChainIndexer = this.CreateChain(count);
+            ChainIndexer longChainIndexer = this.CreateChain(count);
             this.repositoryTipHashAndHeight = new HashHeightPair(longChainIndexer.Genesis.HashBlock, 0);
 
             var blockStoreFlushCondition = new BlockStoreQueueFlushCondition(this.chainState, this.initialBlockDownloadState.Object);
@@ -277,7 +277,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             int realChainLenght = 6;
 
             // First present a short chain.
-            ConsensusChainIndexer alternativeChainIndexer = CreateChain(reorgedChainLenght);
+            ChainIndexer alternativeChainIndexer = CreateChain(reorgedChainLenght);
             for (int i = 1; i < alternativeChainIndexer.Height; i++)
             {
                 Block block = this.network.Consensus.ConsensusFactory.CreateBlock();

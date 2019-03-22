@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly IStakeChain stakeChain;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Consensus' view of UTXO set.</summary>
         private readonly ICoinView coinView;
@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="chainIndexer">Chain of headers.</param>
         /// <param name="coinView">Used for getting UTXOs.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public StakeValidator(Network network, IStakeChain stakeChain, ConsensusChainIndexer chainIndexer, ICoinView coinView, ILoggerFactory loggerFactory)
+        public StakeValidator(Network network, IStakeChain stakeChain, ChainIndexer chainIndexer, ICoinView coinView, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeChain = stakeChain;

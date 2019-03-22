@@ -21,14 +21,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
     {
         private StakeValidator stakeValidator;
         private readonly Mock<IStakeChain> stakeChain;
-        private readonly ConsensusChainIndexer consensusChainIndexer;
+        private readonly ChainIndexer chainIndexer;
         private readonly Mock<ICoinView> coinView;
         private readonly Mock<IConsensus> consensus;
 
         public StakeValidatorTests() : base(new StratisRegTest())
         {
             this.stakeChain = new Mock<IStakeChain>();
-            this.consensusChainIndexer = new ConsensusChainIndexer(this.Network);
+            this.chainIndexer = new ChainIndexer(this.Network);
             this.coinView = new Mock<ICoinView>();
             this.consensus = new Mock<IConsensus>();
             this.stakeValidator = CreateStakeValidator();
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         private StakeValidator CreateStakeValidator()
         {
-            return new StakeValidator(this.Network, this.stakeChain.Object, this.consensusChainIndexer, this.coinView.Object, this.LoggerFactory.Object);
+            return new StakeValidator(this.Network, this.stakeChain.Object, this.chainIndexer, this.coinView.Object, this.LoggerFactory.Object);
         }
 
         [Fact]
@@ -923,7 +923,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void CheckKernel_SingleNullValueCoinInCoinView_ThrowsConsensusError()
         {
-            var header = this.AppendBlock(null, this.consensusChainIndexer);
+            var header = this.AppendBlock(null, this.chainIndexer);
 
             var unspentoutputs = new UnspentOutputs[]
             {
@@ -955,7 +955,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void CheckKernel_TargetDepthNotMet_ThrowsConsensusError()
         {
-            var header = this.AppendBlock(null, this.consensusChainIndexer);
+            var header = this.AppendBlock(null, this.chainIndexer);
             var transaction = CreateStubCoinStakeTransaction();
             header.Block.Transactions.Add(transaction);
 
@@ -974,7 +974,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void CheckKernel_InvalidStakeBlock_ThrowsConsensusError()
         {
-            var header = this.CreateChainWithStubCoinStakeTransactions(this.consensusChainIndexer, 30);
+            var header = this.CreateChainWithStubCoinStakeTransactions(this.chainIndexer, 30);
             ChainedHeader stakableHeader = null;
             for (int i = 0; i < 15; i++)
             {
@@ -1000,7 +1000,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void CheckKernel_ValidKernelCheck_DoesNotThrowConsensusError()
         {
             var satoshis = 5000 * Money.COIN;
-            var header = this.CreateChainWithStubCoinStakeTransactions(this.consensusChainIndexer, 30, satoshis);
+            var header = this.CreateChainWithStubCoinStakeTransactions(this.chainIndexer, 30, satoshis);
             ChainedHeader stakableHeader = null;
             for (int i = 0; i < 15; i++)
             {
@@ -1285,7 +1285,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.Equal(499, depth);
         }
 
-        private ChainedHeader CreateChainWithStubCoinStakeTransactions(ConsensusChainIndexer chainIndexer, int height, Money money = null)
+        private ChainedHeader CreateChainWithStubCoinStakeTransactions(ChainIndexer chainIndexer, int height, Money money = null)
         {
             ChainedHeader previous = null;
             uint nonce = RandomUtils.GetUInt32();
@@ -1307,11 +1307,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
             return previous;
         }
 
-        private ChainedHeader AppendBlock(ChainedHeader previous, params ConsensusChainIndexer[] chainsIndexer)
+        private ChainedHeader AppendBlock(ChainedHeader previous, params ChainIndexer[] chainsIndexer)
         {
             ChainedHeader last = null;
             uint nonce = RandomUtils.GetUInt32();
-            foreach (ConsensusChainIndexer chain in chainsIndexer)
+            foreach (ChainIndexer chain in chainsIndexer)
             {
                 Block block = this.Network.CreateBlock();
                 block.AddTransaction(this.Network.CreateTransaction());

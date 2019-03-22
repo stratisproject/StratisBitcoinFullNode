@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
         private readonly IBroadcasterManager broadcasterManager;
         private readonly IBlockStore blockStore;
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
         private readonly CSharpContractDecompiler contractDecompiler;
         private readonly ILogger logger;
         private readonly Network network;
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
         public SmartContractsController(IBroadcasterManager broadcasterManager,
             IBlockStore blockStore,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             CSharpContractDecompiler contractDecompiler,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,

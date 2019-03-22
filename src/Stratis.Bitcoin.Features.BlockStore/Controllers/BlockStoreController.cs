@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         /// <summary>
         /// The chain.
         /// </summary>
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>
         /// Current network for the active controller instance.
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             ILoggerFactory loggerFactory,
             IBlockStore blockStore,
             IChainState chainState,
-            ConsensusChainIndexer chainIndexer)
+            ChainIndexer chainIndexer)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));

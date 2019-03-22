@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         private readonly IChainState chainState;
 
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly ILoggerFactory loggerFactory;
 
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             IConnectionManager connectionManager,
             IConsensusManager consensusManager,
             IChainState chainState,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             ILoggerFactory loggerFactory)
         {
             this.blockNotification = blockNotification;

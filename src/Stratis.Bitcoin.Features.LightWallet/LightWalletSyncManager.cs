@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         private readonly IWalletManager walletManager;
 
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly IBlockNotification blockNotification;
 
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public LightWalletSyncManager(
             ILoggerFactory loggerFactory,
             IWalletManager walletManager,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             Network network,
             IBlockNotification blockNotification,
             ISignals signals,

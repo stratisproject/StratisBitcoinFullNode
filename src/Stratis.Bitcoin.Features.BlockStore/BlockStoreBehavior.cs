@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         // Maximum number of headers to announce when relaying blocks with headers message.
         private const int MaxBlocksToAnnounce = 8;
 
-        protected readonly ConsensusChainIndexer ChainIndexer;
+        protected readonly ChainIndexer ChainIndexer;
 
         protected readonly IConsensusManager consensusManager;
         protected readonly IBlockStoreQueue blockStoreQueue;
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         protected readonly IChainState chainState;
 
-        public BlockStoreBehavior(ConsensusChainIndexer chainIndexer, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager, IBlockStoreQueue blockStoreQueue)
+        public BlockStoreBehavior(ChainIndexer chainIndexer, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager, IBlockStoreQueue blockStoreQueue)
         {
             Guard.NotNull(chainIndexer, nameof(chainIndexer));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));

@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         private IPeerBanning peerBanning;
         private IConnectionManager connectionManager;
         private static int nonceValue;
-        private ConsensusChainIndexer chainIndexer;
+        private ChainIndexer chainIndexer;
         private DateTimeProvider dateTimeProvider;
         private InvalidBlockHashStore hashStore;
         private NodeSettings nodeSettings;
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             this.Network = KnownNetworks.RegTest;
 
-            this.chainIndexer = new ConsensusChainIndexer(this.Network);
+            this.chainIndexer = new ChainIndexer(this.Network);
             this.dateTimeProvider = new DateTimeProvider();
             this.hashStore = new InvalidBlockHashStore(this.dateTimeProvider);
 

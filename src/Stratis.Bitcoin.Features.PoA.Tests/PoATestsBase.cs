@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         protected readonly PoABlockHeaderValidator poaHeaderValidator;
         protected readonly SlotsManager slotsManager;
         protected readonly ConsensusSettings consensusSettings;
-        protected readonly ConsensusChainIndexer ChainIndexer;
+        protected readonly ChainIndexer ChainIndexer;
         protected readonly FederationManager federationManager;
         protected readonly VotingManager votingManager;
         protected readonly Mock<IPollResultExecutor> resultExecutorMock;
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             this.consensusOptions = this.network.ConsensusOptions;
             this.dBreezeSerializer = new DBreezeSerializer(this.network);
 
-            this.ChainIndexer = new ConsensusChainIndexer(this.network);
+            this.ChainIndexer = new ChainIndexer(this.network);
             IDateTimeProvider timeProvider = new DateTimeProvider();
             this.consensusSettings = new ConsensusSettings(NodeSettings.Default(this.network));
 

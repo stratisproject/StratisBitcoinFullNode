@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly IBlockProvider blockProvider;
 
         /// <summary>Thread safe chain of block headers from genesis.</summary>
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly IConsensusManager consensusManager;
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Miner
             IAsyncLoopFactory asyncLoopFactory,
             IBlockProvider blockProvider,
             IConsensusManager consensusManager,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             IDateTimeProvider dateTimeProvider,
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,

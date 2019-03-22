@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Base
         private readonly DataFolder dataFolder;
 
         /// <summary>Thread safe chain of block headers from genesis.</summary>
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Manager of node's network connections.</summary>
         private readonly IConnectionManager connectionManager;
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Base
         public BaseFeature(NodeSettings nodeSettings,
             DataFolder dataFolder,
             INodeLifetime nodeLifetime,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             IChainState chainState,
             IConnectionManager connectionManager,
             IChainRepository chainRepository,
@@ -370,7 +370,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<ISignals, Signals.Signals>();
                     services.AddSingleton<ISubscriptionErrorHandler, DefaultSubscriptionErrorHandler>();
                     services.AddSingleton<FullNode>().AddSingleton((provider) => { return provider.GetService<FullNode>() as IFullNode; });
-                    services.AddSingleton<ConsensusChainIndexer>(new ConsensusChainIndexer(fullNodeBuilder.Network));
+                    services.AddSingleton<ChainIndexer>(new ChainIndexer(fullNodeBuilder.Network));
                     services.AddSingleton<IDateTimeProvider>(DateTimeProvider.Default);
                     services.AddSingleton<IInvalidBlockHashStore, InvalidBlockHashStore>();
                     services.AddSingleton<IChainState, ChainState>();
@@ -421,7 +421,7 @@ namespace Stratis.Bitcoin.Base
                         signals: provider.GetService<ISignals>(),
                         peerBanning: provider.GetService<IPeerBanning>(),
                         ibdState: provider.GetService<IInitialBlockDownloadState>(),
-                        chainIndexer: provider.GetService<ConsensusChainIndexer>(),
+                        chainIndexer: provider.GetService<ChainIndexer>(),
                         blockPuller: provider.GetService<IBlockPuller>(),
                         blockStore: provider.GetService<IBlockStore>(),
                         connectionManager: provider.GetService<IConnectionManager>(),

@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
         public NodeSettings NodeSettings { get; set; }
 
-        public ConsensusChainIndexer ChainIndexer { get; set; }
+        public ChainIndexer ChainIndexer { get; set; }
 
         public Network Network { get; set; }
 
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             ConsensusSettings consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
-            testRulesContext.ChainIndexer = new ConsensusChainIndexer(network);
+            testRulesContext.ChainIndexer = new ChainIndexer(network);
             testRulesContext.ChainState = new ChainState();
 
             NodeDeployments deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.ChainIndexer);
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             return testRulesContext;
         }
 
-        public static Block MineBlock(Network network, ConsensusChainIndexer chainIndexer)
+        public static Block MineBlock(Network network, ChainIndexer chainIndexer)
         {
             Block block = network.Consensus.ConsensusFactory.CreateBlock();
 

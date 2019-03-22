@@ -14,14 +14,14 @@ namespace Stratis.Bitcoin.Features.Notifications.Controllers
     {
         private readonly IBlockNotification blockNotification;
 
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NotificationsController"/> class.
         /// </summary>
         /// <param name="blockNotification">The block notification.</param>
         /// <param name="chainIndexer">The chain.</param>
-        public NotificationsController(IBlockNotification blockNotification, ConsensusChainIndexer chainIndexer)
+        public NotificationsController(IBlockNotification blockNotification, ChainIndexer chainIndexer)
         {
             this.blockNotification = blockNotification;
             this.chainIndexer = chainIndexer;

@@ -29,7 +29,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         private readonly IFederationWalletSyncManager walletSyncManager;
         private readonly IConnectionManager connectionManager;
         private readonly Network network;
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly IWithdrawalHistoryProvider withdrawalHistoryProvider;
 
@@ -44,7 +44,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             this.connectionManager = Substitute.For<IConnectionManager>();
             this.network = new StratisTest();
 
-            this.chainIndexer = new ConsensusChainIndexer(this.network);
+            this.chainIndexer = new ChainIndexer(this.network);
 
             ChainedHeader tip = ChainedHeadersHelper.CreateConsecutiveHeaders(100, ChainedHeadersHelper.CreateGenesisChainedHeader(this.network), true, null, this.network).Last();
             this.chainIndexer.SetTip(tip);

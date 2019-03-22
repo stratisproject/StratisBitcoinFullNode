@@ -283,29 +283,29 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var repo = new ChainRepository(TestBase.CreateTestDir(this), this.loggerFactory, this.dBreezeSerializer))
             {
-                var chain = new ConsensusChainIndexer(this.regTest);
+                var chain = new ChainIndexer(this.regTest);
 
                 chain.SetTip(repo.LoadAsync(chain.Genesis).GetAwaiter().GetResult());
                 Assert.True(chain.Tip == chain.Genesis);
-                chain = new ConsensusChainIndexer(this.regTest);
+                chain = new ChainIndexer(this.regTest);
                 ChainedHeader tip = this.AppendBlock(chain);
                 repo.SaveAsync(chain).GetAwaiter().GetResult();
-                var newChain = new ConsensusChainIndexer(this.regTest);
+                var newChain = new ChainIndexer(this.regTest);
                 newChain.SetTip(repo.LoadAsync(chain.Genesis).GetAwaiter().GetResult());
                 Assert.Equal(tip, newChain.Tip);
                 tip = this.AppendBlock(chain);
                 repo.SaveAsync(chain).GetAwaiter().GetResult();
-                newChain = new ConsensusChainIndexer(this.regTest);
+                newChain = new ChainIndexer(this.regTest);
                 newChain.SetTip(repo.LoadAsync(chain.Genesis).GetAwaiter().GetResult());
                 Assert.Equal(tip, newChain.Tip);
             }
         }
 
-        public ChainedHeader AppendBlock(ChainedHeader previous, params ConsensusChainIndexer[] chainsIndexer)
+        public ChainedHeader AppendBlock(ChainedHeader previous, params ChainIndexer[] chainsIndexer)
         {
             ChainedHeader last = null;
             uint nonce = RandomUtils.GetUInt32();
-            foreach (ConsensusChainIndexer chain in chainsIndexer)
+            foreach (ChainIndexer chain in chainsIndexer)
             {
                 Block block = this.network.CreateBlock();
                 block.AddTransaction(this.network.CreateTransaction());
@@ -318,7 +318,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             return last;
         }
 
-        private ChainedHeader AppendBlock(params ConsensusChainIndexer[] chainsIndexer)
+        private ChainedHeader AppendBlock(params ChainIndexer[] chainsIndexer)
         {
             ChainedHeader index = null;
             return this.AppendBlock(index, chainsIndexer);

@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Tests.Common
             string dataDir = null,
             ChainState chainState = null,
             InMemoryCoinView inMemoryCoinView = null,
-            ConsensusChainIndexer chainIndexer = null,
+            ChainIndexer chainIndexer = null,
             IRuleRegistration ruleRegistration = null,
             ConsensusRuleEngine consensusRules = null)
         {
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Tests.Common
             var consensusSettings = new ConsensusSettings(nodeSettings);
 
             if (chainIndexer == null)
-                chainIndexer = new ConsensusChainIndexer(network);
+                chainIndexer = new ChainIndexer(network);
 
             if (inMemoryCoinView == null)
                 inMemoryCoinView = new InMemoryCoinView(chainIndexer.Tip.HashBlock);

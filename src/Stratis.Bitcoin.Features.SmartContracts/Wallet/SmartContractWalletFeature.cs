@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
     public sealed class SmartContractWalletFeature : FullNodeFeature
     {
         private readonly BroadcasterBehavior broadcasterBehavior;
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
         private readonly IConnectionManager connectionManager;
         private readonly ILogger logger;
         private readonly IWalletManager walletManager;
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// <param name="walletSyncManager">The synchronization manager for the wallet, tasked with keeping the wallet synced with the network.</param>
         public SmartContractWalletFeature(
             BroadcasterBehavior broadcasterBehavior,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             IConnectionManager connectionManager,
             ILoggerFactory loggerFactory,
             IWalletManager walletManager,

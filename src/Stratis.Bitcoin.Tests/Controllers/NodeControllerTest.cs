@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
 {
     public class NodeControllerTest : LogsTestBase
     {
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
         private readonly Mock<IChainState> chainState;
         private readonly Mock<IConnectionManager> connectionManager;
         private readonly Mock<IDateTimeProvider> dateTimeProvider;

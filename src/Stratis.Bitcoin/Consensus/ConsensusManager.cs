@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <remarks>All access should be protected by <see cref="peerLock"/>.</remarks>
         private readonly Dictionary<uint256, long> expectedBlockSizes;
 
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly ConsensusManagerPerformanceCounter performanceCounter;
 
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Consensus
             ISignals signals,
             IPeerBanning peerBanning,
             IInitialBlockDownloadState ibdState,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             IBlockPuller blockPuller,
             IBlockStore blockStore,
             IConnectionManager connectionManager,

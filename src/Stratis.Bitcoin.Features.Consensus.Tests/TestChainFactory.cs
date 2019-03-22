@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         public ConnectionManagerSettings ConnectionSettings { get; set; }
 
-        public ConsensusChainIndexer ChainIndexer { get; set; }
+        public ChainIndexer ChainIndexer { get; set; }
 
         public Network Network { get; set; }
 
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             var consensusSettings = new ConsensusSettings(testChainContext.NodeSettings);
             testChainContext.Checkpoints = new Checkpoints();
-            testChainContext.ChainIndexer = new ConsensusChainIndexer(network);
+            testChainContext.ChainIndexer = new ChainIndexer(network);
             testChainContext.ChainState = new ChainState();
             testChainContext.InitialBlockDownloadState = new InitialBlockDownloadState(testChainContext.ChainState, testChainContext.Network, consensusSettings, new Checkpoints());
 

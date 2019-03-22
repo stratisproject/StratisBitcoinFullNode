@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public const int OrphanTxExpireInterval = 5 * 60;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Node notifications available to subscribe to.</summary>
         private readonly Signals.ISignals signals;
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly object lockObject;
 
         public MempoolOrphans(
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             Signals.ISignals signals,
             IMempoolValidator validator,
             ICoinView coinView,

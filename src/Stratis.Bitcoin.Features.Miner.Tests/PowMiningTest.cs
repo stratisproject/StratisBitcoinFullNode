@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     public class PowMiningTest : LogsTestBase, IClassFixture<PowMiningTestFixture>
     {
         private readonly Mock<IAsyncLoopFactory> asyncLoopFactory;
-        private ConsensusChainIndexer chainIndexer;
+        private ChainIndexer chainIndexer;
         private readonly Mock<IConsensusManager> consensusManager;
         private readonly Mock<IConsensusRuleEngine> consensusRules;
         private readonly Mock<IInitialBlockDownloadState> initialBlockDownloadState;
@@ -370,9 +370,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             return new PowMining(this.asyncLoopFactory.Object, blockBuilder, this.consensusManager.Object, this.chainIndexer, DateTimeProvider.Default, this.mempool.Object, this.mempoolLock, this.network, this.nodeLifetime.Object, this.LoggerFactory.Object, this.initialBlockDownloadState.Object);
         }
 
-        private static ConsensusChainIndexer GenerateChainWithHeight(int blockAmount, Network network)
+        private static ChainIndexer GenerateChainWithHeight(int blockAmount, Network network)
         {
-            var chain = new ConsensusChainIndexer(network);
+            var chain = new ChainIndexer(network);
             uint nonce = RandomUtils.GetUInt32();
             uint256 prevBlockHash = chain.Genesis.HashBlock;
             for (int i = 0; i < blockAmount; i++)
@@ -432,7 +432,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     /// </summary>
     public class PowMiningTestFixture
     {
-        public readonly ConsensusChainIndexer ChainIndexer;
+        public readonly ChainIndexer ChainIndexer;
         public readonly Key Key;
         public readonly Network Network;
 
@@ -447,7 +447,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public PowMiningTestFixture()
         {
             this.Network = KnownNetworks.RegTest; // fast mining so use regtest
-            this.ChainIndexer = new ConsensusChainIndexer(this.Network);
+            this.ChainIndexer = new ChainIndexer(this.Network);
             this.Key = new Key();
             this.ReserveScript = new ReserveScript(this.Key.ScriptPubKey);
 

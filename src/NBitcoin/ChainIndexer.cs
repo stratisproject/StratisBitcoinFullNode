@@ -5,11 +5,11 @@ using System.Linq;
 
 namespace NBitcoin
 {
-    public class ConsensusChainIndexer
+    public class ChainIndexer
     {
         private readonly object lockObject = new object();
-        private readonly Dictionary<int, ChainedHeader> blocksByHeight = new Dictionary<int, ChainedHeader>();
-        private readonly Dictionary<uint256, ChainedHeader> blocksById = new Dictionary<uint256, ChainedHeader>();
+        private readonly Dictionary<int, ChainedHeader> blocksByHeight;
+        private readonly Dictionary<uint256, ChainedHeader> blocksById;
 
         public Network Network { get; }
         public ChainedHeader Tip { get; private set; }
@@ -17,14 +17,20 @@ namespace NBitcoin
         public int Height => this.Tip.Height;
         public ChainedHeader Genesis => this.GetBlock(0);
 
-        public ConsensusChainIndexer(Network network)
+        public ChainIndexer()
+        {
+            this.blocksByHeight = new Dictionary<int, ChainedHeader>();
+            this.blocksById = new Dictionary<uint256, ChainedHeader>();
+        }
+
+        public ChainIndexer(Network network) : this()
         {
             this.Network = network;
 
             this.Initialize(new ChainedHeader(network.GetGenesis().Header, network.GetGenesis().GetHash(), 0));
         }
 
-        public ConsensusChainIndexer(Network network, ChainedHeader chainedHeader) 
+        public ChainIndexer(Network network, ChainedHeader chainedHeader) : this()
         {
             this.Network = network;
 

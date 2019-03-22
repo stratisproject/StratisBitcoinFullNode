@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly MempoolSettings mempoolSettings;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Coin view of the memory pool.</summary>
         private readonly ICoinView coinView;
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             MempoolSchedulerLock mempoolLock,
             IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             ICoinView coinView,
             ILoggerFactory loggerFactory,
             NodeSettings nodeSettings,
@@ -241,7 +241,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="flags">Flags for time-locking the transaction.</param>
         /// <returns>Whether the final transaction was valid.</returns>
         /// <seealso cref="Transaction.IsFinal(DateTimeOffset, int)"/>
-        public static bool CheckFinalTransaction(ConsensusChainIndexer chainIndexer, IDateTimeProvider dateTimeProvider, Transaction tx, Transaction.LockTimeFlags flags)
+        public static bool CheckFinalTransaction(ChainIndexer chainIndexer, IDateTimeProvider dateTimeProvider, Transaction tx, Transaction.LockTimeFlags flags)
         {
             // By convention a negative value for flags indicates that the
             // current network-enforced consensus rules should be used. In

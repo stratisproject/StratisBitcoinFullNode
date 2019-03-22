@@ -24,11 +24,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
     public class WalletControllerTest : LogsTestBase
     {
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         public WalletControllerTest()
         {
-            this.chainIndexer = new ConsensusChainIndexer(this.Network);
+            this.chainIndexer = new ChainIndexer(this.Network);
         }
 
         [Fact]
@@ -358,8 +358,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             };
 
             // The chain is at height 100.
-            ConsensusChainIndexer consensusChainIndexer = WalletTestsHelpers.GenerateChainWithHeight(100, this.Network);
-            DateTime lastBlockDateTime = consensusChainIndexer.Tip.Header.BlockTime.DateTime;
+            ChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(100, this.Network);
+            DateTime lastBlockDateTime = chainIndexer.Tip.Header.BlockTime.DateTime;
 
             var mockWalletManager = new Mock<IWalletManager>();
             mockWalletManager.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), null)).Returns(wallet);
@@ -559,8 +559,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             };
 
             // The chain is at height 100.
-            ConsensusChainIndexer consensusChainIndexer = WalletTestsHelpers.GenerateChainWithHeight(100, this.Network);
-            DateTime lastBlockDateTime = consensusChainIndexer.Tip.Header.BlockTime.DateTime;
+            ChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(100, this.Network);
+            DateTime lastBlockDateTime = chainIndexer.Tip.Header.BlockTime.DateTime;
 
             var walletManager = new Mock<IWalletManager>();
             walletManager.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<ExtPubKey>(), 1, It.IsAny<DateTime>())).Returns(wallet);
@@ -571,7 +571,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object,
                 new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object,
-                It.IsAny<ConnectionManager>(), KnownNetworks.StratisMain, consensusChainIndexer,
+                It.IsAny<ConnectionManager>(), KnownNetworks.StratisMain, chainIndexer,
                 new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.RecoverViaExtPubKey(new WalletExtPubRecoveryRequest
@@ -726,7 +726,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 }
             };
 
-            var concurrentChain = new ConsensusChainIndexer(this.Network);
+            var concurrentChain = new ChainIndexer(this.Network);
             ChainedHeader tip = WalletTestsHelpers.AppendBlock(this.Network, null, new[] { concurrentChain });
 
             var connectionManagerMock = new Mock<IConnectionManager>();
@@ -2149,7 +2149,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Setup(manager => manager.RemoveAllTransactions(walletName)).Returns(resultModel);
             walletManager.Setup(manager => manager.GetWallet(walletName)).Returns(wallet);
             walletSyncManager.Setup(manager => manager.SyncFromHeight(It.IsAny<int>()));
-            ConsensusChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(3, this.Network);
+            ChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(3, this.Network);
 
             var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object, It.IsAny<ConnectionManager>(), this.Network, chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             var requestModel = new RemoveTransactionsModel
@@ -2188,7 +2188,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new Mock<IWalletManager>();
             var walletSyncManager = new Mock<IWalletSyncManager>();
             walletManager.Setup(manager => manager.RemoveAllTransactions(walletName)).Returns(resultModel);
-            ConsensusChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(3, this.Network);
+            ChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(3, this.Network);
 
             var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object, It.IsAny<ConnectionManager>(), this.Network, chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             var requestModel = new RemoveTransactionsModel
@@ -2229,7 +2229,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Setup(manager => manager.RemoveTransactionsByIdsLocked(walletName, new[] { trxId1 })).Returns(resultModel);
             walletManager.Setup(manager => manager.GetWallet(walletName)).Returns(wallet);
             walletSyncManager.Setup(manager => manager.SyncFromHeight(It.IsAny<int>()));
-            ConsensusChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(3, this.Network);
+            ChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(3, this.Network);
 
             var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object, It.IsAny<ConnectionManager>(), this.Network, chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             var requestModel = new RemoveTransactionsModel

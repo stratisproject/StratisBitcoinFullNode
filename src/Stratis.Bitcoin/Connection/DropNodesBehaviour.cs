@@ -27,13 +27,13 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly IConnectionManager connection;
 
         private readonly decimal dropThreshold;
 
-        public DropNodesBehaviour(ConsensusChainIndexer chainIndexer, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
+        public DropNodesBehaviour(ChainIndexer chainIndexer, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
             this.loggerFactory = loggerFactory;

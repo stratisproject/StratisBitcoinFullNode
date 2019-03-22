@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     {
         private readonly IWalletManager walletManager;
 
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Limit <see cref="blocksQueue"/> size to 100MB.</summary>
         private const int MaxQueueSize = 100 * 1024 * 1024;
 
-        public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConsensusChainIndexer chainIndexer,
+        public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ChainIndexer chainIndexer,
             Network network, IBlockStore blockStore, StoreSettings storeSettings, ISignals signals)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));

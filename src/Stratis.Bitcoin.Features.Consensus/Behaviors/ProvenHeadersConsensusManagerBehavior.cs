@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         private readonly bool isGateway;
 
         public ProvenHeadersConsensusManagerBehavior(
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             IInitialBlockDownloadState initialBlockDownloadState,
             IConsensusManager consensusManager,
             IPeerBanning peerBanning,

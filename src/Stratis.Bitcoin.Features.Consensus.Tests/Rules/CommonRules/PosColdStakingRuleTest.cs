@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Transactions.Add(coinstakeTransaction);
 
             // Finalize the block and add it to the chain.
-            block.Header.HashPrevBlock = this.ConsensusChainIndexer.Tip.HashBlock;
+            block.Header.HashPrevBlock = this.ChainIndexer.Tip.HashBlock;
             block.Header.Time = (uint)1483747200;
             block.Transactions[0].Time = (uint)1483747200;
             block.Transactions[1].Time = (uint)1483747200;
@@ -89,13 +89,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             Assert.True(BlockStake.IsProofOfStake(block));
 
-            this.ConsensusChainIndexer.SetTip(block.Header);
+            this.ChainIndexer.SetTip(block.Header);
 
             // Execute the rule and check the outcome against what is expected.
             var rule = this.CreateRule<PosColdStakingRule>();
 
             // Initialize the rule context.
-            posRuleContext.ValidationContext.ChainedHeaderToValidate = this.ConsensusChainIndexer.Tip;
+            posRuleContext.ValidationContext.ChainedHeaderToValidate = this.ChainIndexer.Tip;
             posRuleContext.CoinStakePrevOutputs = coinstakeTransaction.Inputs.ToDictionary(txin => txin, txin => posRuleContext.UnspentOutputSet.GetOutputFor(txin));
             posRuleContext.TotalCoinStakeValueIn = posRuleContext.CoinStakePrevOutputs.Sum(a => a.Value?.Value ?? 0);
 

@@ -16,12 +16,12 @@ namespace Stratis.Bitcoin.IntegrationTests
             Guard.NotNull(network, nameof(network));
 
             this.network = network;
-            this.ChainIndexer = new ConsensusChainIndexer(this.network);
+            this.ChainIndexer = new ChainIndexer(this.network);
             this.MinerKey = new Key();
             this.MinerScriptPubKey = this.MinerKey.PubKey.Hash.ScriptPubKey;
         }
 
-        public ConsensusChainIndexer ChainIndexer { get; private set; }
+        public ChainIndexer ChainIndexer { get; private set; }
 
         public Key MinerKey
         {

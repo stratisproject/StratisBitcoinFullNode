@@ -26,8 +26,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc cref="ConsensusManager"/>
         private readonly IConsensusManager consensusManager;
 
-        /// <inheritdoc cref="ConsensusChainIndexer"/>
-        protected ConsensusChainIndexer ChainIndexer;
+        /// <inheritdoc cref="NBitcoin.ChainIndexer"/>
+        protected ChainIndexer ChainIndexer;
 
         /// <inheritdoc cref="IPeerBanning"/>
         private readonly IPeerBanning peerBanning;
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Protects write access to the <see cref="BestSentHeader"/>.</summary>
         private readonly object bestSentHeaderLock;
 
-        public ConsensusManagerBehavior(ConsensusChainIndexer chainIndexer, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
+        public ConsensusManagerBehavior(ChainIndexer chainIndexer, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
             this.initialBlockDownloadState = initialBlockDownloadState;

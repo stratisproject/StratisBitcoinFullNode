@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         private readonly IConnectionManager connectionManager;
 
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly NodeDeployments nodeDeployments;
 
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             IWalletSyncManager walletSyncManager,
             IWalletManager walletManager,
             IConnectionManager connectionManager,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             NodeDeployments nodeDeployments,
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,

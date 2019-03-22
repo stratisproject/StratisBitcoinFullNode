@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Base.Deployments
         {
         }
 
-        public DeploymentFlags(ChainedHeader nextBlock, ThresholdState[] prevBlockStates, IConsensus chainparams, ConsensusChainIndexer chainIndexer)
+        public DeploymentFlags(ChainedHeader nextBlock, ThresholdState[] prevBlockStates, IConsensus chainparams, ChainIndexer chainIndexer)
         {
             this.EnforceBIP30 = EnforceBIP30ForBlock(nextBlock);
 

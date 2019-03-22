@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.ExecuteWithConsensusOptions(new ConsensusOptions(), () =>
             {
-                ConsensusChainIndexer chainIndexer = GenerateChainWithHeight(5, this.testNet, this.key);
+                ChainIndexer chainIndexer = GenerateChainWithHeight(5, this.testNet, this.key);
                 this.SetupRulesEngine(chainIndexer);
                 this.consensusManager.Setup(s => s.Tip).Returns(chainIndexer.Tip);
                 this.dateTimeProvider.Setup(d => d.GetAdjustedTimeAsUnixTimestamp())
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.ExecuteWithConsensusOptions(new ConsensusOptions(), () =>
             {
-                ConsensusChainIndexer chainIndexer = GenerateChainWithHeight(5, this.testNet, new Key());
+                ChainIndexer chainIndexer = GenerateChainWithHeight(5, this.testNet, new Key());
                 this.SetupRulesEngine(chainIndexer);
 
                 var blockDefinition = new PowTestBlockDefinition(this.consensusManager.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object, new MempoolSchedulerLock(), this.minerSettings, this.testNet, this.consensusRules.Object);
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.testNet.Consensus.MinerConfirmationWindow = 2;
                 this.testNet.Consensus.RuleChangeActivationThreshold = 2;
 
-                ConsensusChainIndexer chainIndexer = GenerateChainWithHeightAndActivatedBip9(5, this.testNet, new Key(), this.testNet.Consensus.BIP9Deployments[0]);
+                ChainIndexer chainIndexer = GenerateChainWithHeightAndActivatedBip9(5, this.testNet, new Key(), this.testNet.Consensus.BIP9Deployments[0]);
                 this.SetupRulesEngine(chainIndexer);
 
                 var blockDefinition = new PowTestBlockDefinition(this.consensusManager.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object, new MempoolSchedulerLock(), this.minerSettings, this.testNet, this.consensusRules.Object);
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.ExecuteWithConsensusOptions(new ConsensusOptions(), () =>
             {
-                ConsensusChainIndexer chainIndexer = GenerateChainWithHeight(5, this.testNet, this.key);
+                ChainIndexer chainIndexer = GenerateChainWithHeight(5, this.testNet, this.key);
                 this.dateTimeProvider.Setup(d => d.GetAdjustedTimeAsUnixTimestamp())
                     .Returns(new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc).ToUnixTimestamp());
 
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             {
                 this.dateTimeProvider.Setup(d => d.GetTimeOffset()).Returns(new DateTimeOffset(new DateTime(2017, 1, 7, 0, 0, 0, DateTimeKind.Utc)));
 
-                ConsensusChainIndexer chainIndexer = GenerateChainWithHeight(5, this.testNet, new Key(), new Target(235325239));
+                ChainIndexer chainIndexer = GenerateChainWithHeight(5, this.testNet, new Key(), new Target(235325239));
 
                 var blockDefinition = new PowTestBlockDefinition(this.consensusManager.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object, new MempoolSchedulerLock(), this.minerSettings, this.testNet, this.consensusRules.Object);
                 Block block = blockDefinition.UpdateHeaders(chainIndexer.Tip);
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
-                ConsensusChainIndexer chainIndexer = GenerateChainWithHeight(5, this.testNet, new Key());
+                ChainIndexer chainIndexer = GenerateChainWithHeight(5, this.testNet, new Key());
                 this.consensusManager.Setup(c => c.Tip)
                     .Returns(chainIndexer.GetBlock(5));
                 var indexedTransactionSet = new TxMempool.IndexedTransactionSet();
@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
-                ConsensusChainIndexer chainIndexer = GenerateChainWithHeight(5, this.testNet, this.key);
+                ChainIndexer chainIndexer = GenerateChainWithHeight(5, this.testNet, this.key);
                 this.consensusManager.Setup(c => c.Tip).Returns(chainIndexer.GetBlock(5));
                 Transaction transaction = CreateTransaction(this.testNet, this.key, 5, new Money(400 * 1000 * 1000), new Key(), new uint256(124124));
                 var txFee = new Money(1000);
@@ -273,7 +273,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
-                ConsensusChainIndexer chainIndexer = GenerateChainWithHeight(5, this.testNet, this.key);
+                ChainIndexer chainIndexer = GenerateChainWithHeight(5, this.testNet, this.key);
                 this.consensusManager.Setup(c => c.Tip)
                     .Returns(chainIndexer.GetBlock(5));
                 Transaction transaction = CreateTransaction(this.testNet, this.key, 5, new Money(400 * 1000 * 1000), new Key(), new uint256(124124));
@@ -308,9 +308,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             }
         }
 
-        private static ConsensusChainIndexer GenerateChainWithHeightAndActivatedBip9(int blockAmount, Network network, Key key, BIP9DeploymentsParameters parameter, Target bits = null)
+        private static ChainIndexer GenerateChainWithHeightAndActivatedBip9(int blockAmount, Network network, Key key, BIP9DeploymentsParameters parameter, Target bits = null)
         {
-            var chain = new ConsensusChainIndexer(network);
+            var chain = new ChainIndexer(network);
             uint nonce = RandomUtils.GetUInt32();
             uint256 prevBlockHash = chain.Genesis.HashBlock;
             for (int i = 0; i < blockAmount; i++)
@@ -343,7 +343,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             return chain;
         }
 
-        private static ConsensusChainIndexer GenerateChainWithHeight(int blockAmount, Network network, Key key, Target bits = null)
+        private static ChainIndexer GenerateChainWithHeight(int blockAmount, Network network, Key key, Target bits = null)
         {
             return GenerateChainWithHeightAndActivatedBip9(blockAmount, network, key, null, bits);
         }
@@ -375,7 +375,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 });
         }
 
-        private void SetupRulesEngine(ConsensusChainIndexer chainIndexer)
+        private void SetupRulesEngine(ChainIndexer chainIndexer)
         {
             var dateTimeProvider = new DateTimeProvider();
 
@@ -388,7 +388,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.consensusManager.SetupGet(x => x.ConsensusRules).Returns(powConsensusRules);
         }
 
-        private TxMempoolEntry[] SetupTxMempool(ConsensusChainIndexer chainIndexer, ConsensusOptions newOptions, Money txFee, params Transaction[] transactions)
+        private TxMempoolEntry[] SetupTxMempool(ChainIndexer chainIndexer, ConsensusOptions newOptions, Money txFee, params Transaction[] transactions)
         {
             uint txTime = Utils.DateTimeToUnixTime(chainIndexer.Tip.Header.BlockTime.AddSeconds(25));
             var lockPoints = new LockPoints()

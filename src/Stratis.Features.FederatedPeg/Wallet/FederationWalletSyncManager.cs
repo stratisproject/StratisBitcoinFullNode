@@ -16,7 +16,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
     {
         protected readonly IFederationWalletManager walletManager;
 
-        protected readonly ConsensusChainIndexer ChainIndexer;
+        protected readonly ChainIndexer ChainIndexer;
 
         protected readonly CoinType coinType;
 
@@ -33,7 +33,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         public ChainedHeader WalletTip => this.walletTip;
 
-        public FederationWalletSyncManager(ILoggerFactory loggerFactory, IFederationWalletManager walletManager, ConsensusChainIndexer chainIndexer,
+        public FederationWalletSyncManager(ILoggerFactory loggerFactory, IFederationWalletManager walletManager, ChainIndexer chainIndexer,
             Network network, IBlockStore blockStore, StoreSettings storeSettings, INodeLifetime nodeLifetime)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));

@@ -29,7 +29,7 @@ namespace Stratis.Features.FederatedPeg.Tests
     {
         protected const string walletPassword = "password";
         protected Network network;
-        protected ConsensusChainIndexer ChainIndexer;
+        protected ChainIndexer ChainIndexer;
         protected ILoggerFactory loggerFactory;
         protected ILogger logger;
         protected IDateTimeProvider dateTimeProvider;
@@ -89,7 +89,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.wallet = null;
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
-            this.ChainIndexer = new ConsensusChainIndexer(this.network);
+            this.ChainIndexer = new ChainIndexer(this.network);
 
             this.federationGatewaySettings.TransactionFee.Returns(new Money(0.01m, MoneyUnit.BTC));
 

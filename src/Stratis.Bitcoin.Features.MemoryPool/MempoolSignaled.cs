@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Concurrent chain injected dependency.
         /// </summary>
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>
         /// Connection manager injected dependency.
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="mempoolOrphans">The mempool orphan list.</param>
         public MempoolSignaled(
             MempoolManager manager,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             IConnectionManager connection,
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory,

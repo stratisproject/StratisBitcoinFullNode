@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         protected readonly Network network;
 
         /// <summary>The chain of headers.</summary>
-        protected readonly ConsensusChainIndexer ChainIndexer;
+        protected readonly ChainIndexer ChainIndexer;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public WalletManager(
             ILoggerFactory loggerFactory,
             Network network,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             WalletSettings walletSettings,
             DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,

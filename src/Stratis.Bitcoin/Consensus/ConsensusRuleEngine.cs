@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Consensus
         public IDateTimeProvider DateTimeProvider { get; }
 
         /// <summary>A chain of the longest block headers all the way to genesis.</summary>
-        public ConsensusChainIndexer ChainIndexer { get; }
+        public ChainIndexer ChainIndexer { get; }
 
         /// <summary>A deployment construction that tracks activation of features on the chain.</summary>
         public NodeDeployments NodeDeployments { get; }
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Consensus
             Network network,
             ILoggerFactory loggerFactory,
             IDateTimeProvider dateTimeProvider,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             NodeDeployments nodeDeployments,
             ConsensusSettings consensusSettings,
             ICheckpoints checkpoints,

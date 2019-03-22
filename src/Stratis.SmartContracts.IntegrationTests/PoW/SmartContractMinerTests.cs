@@ -128,7 +128,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             public Script script;
             public uint256 hash;
             public TestMemPoolEntryHelper entry;
-            public ConsensusChainIndexer ChainIndexer;
+            public ChainIndexer ChainIndexer;
             public ConsensusManager consensusManager;
             public ConsensusRuleEngine consensusRules;
             public TxMempool mempool;
@@ -181,7 +181,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 this.scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(this.PrivateKey.PubKey);
 
                 this.entry = new TestMemPoolEntryHelper();
-                this.ChainIndexer = new ConsensusChainIndexer(this.network);
+                this.ChainIndexer = new ChainIndexer(this.network);
                 this.network.Consensus.Options = new ConsensusOptions();
 
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;

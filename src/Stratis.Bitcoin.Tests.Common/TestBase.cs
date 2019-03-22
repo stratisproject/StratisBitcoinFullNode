@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Tests.Common
             return Path.Combine("..", "..", "..", "..", "TestCase", testDirectory);
         }
 
-        public void AppendBlocksToChain(ConsensusChainIndexer chainIndexer, IEnumerable<Block> blocks)
+        public void AppendBlocksToChain(ChainIndexer chainIndexer, IEnumerable<Block> blocks)
         {
             foreach (Block block in blocks)
             {

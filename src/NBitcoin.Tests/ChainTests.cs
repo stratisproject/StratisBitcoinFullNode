@@ -23,7 +23,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanSaveChain()
         {
-            var chain = new ConsensusChainIndexer(this.network);
+            var chain = new ChainIndexer(this.network);
 
             this.AppendBlock(chain);
             this.AppendBlock(chain);
@@ -31,7 +31,7 @@ namespace NBitcoin.Tests
             ChainedHeader fork = this.AppendBlock(chain);
             this.AppendBlock(chain);
 
-            var chain2 = new ConsensusChainIndexer(this.network).Load(chain.ToBytes());
+            var chain2 = new ChainIndexer(this.network).Load(chain.ToBytes());
             Assert.True(chain.Tip.HashBlock == chain2.Tip.HashBlock);
         }
 
@@ -57,8 +57,8 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanLoadAndSaveConcurrentChain()
         {
-            var cchain = new ConsensusChainIndexer(this.network);
-            var chain = new ConsensusChainIndexer(this.network);
+            var cchain = new ChainIndexer(this.network);
+            var chain = new ChainIndexer(this.network);
 
             this.AddBlock(chain);
             this.AddBlock(chain);
@@ -67,13 +67,13 @@ namespace NBitcoin.Tests
             cchain.SetTip(chain.Tip);
 
             byte[] bytes = cchain.ToBytes();
-            cchain = new ConsensusChainIndexer(this.network);
+            cchain = new ChainIndexer(this.network);
             cchain.Load(bytes);
 
             Assert.Equal(cchain.Tip, chain.Tip);
             Assert.NotNull(cchain.GetBlock(0));
 
-            cchain = new ConsensusChainIndexer(this.networkTest);
+            cchain = new ChainIndexer(this.networkTest);
             cchain.Load(cchain.ToBytes());
             Assert.NotNull(cchain.GetBlock(0));
         }
@@ -82,8 +82,8 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanBuildConcurrentChain()
         {
-            var cchain = new ConsensusChainIndexer(this.network);
-            var chain = new ConsensusChainIndexer(this.network);
+            var cchain = new ChainIndexer(this.network);
+            var chain = new ChainIndexer(this.network);
 
             ChainedHeader b0 = cchain.Tip;
             Assert.Equal(cchain.Tip, chain.Tip);
@@ -121,7 +121,7 @@ namespace NBitcoin.Tests
             Assert.Equal(cchain.GetBlock(5), b5b);
         }
 
-        private ChainedHeader AddBlock(ConsensusChainIndexer chainIndexer)
+        private ChainedHeader AddBlock(ChainIndexer chainIndexer)
         {
             BlockHeader header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
             header.Nonce = RandomUtils.GetUInt32();
@@ -134,7 +134,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanBuildChain()
         {
-            var chain = new ConsensusChainIndexer(this.network);
+            var chain = new ChainIndexer(this.network);
 
             this.AppendBlock(chain);
             this.AppendBlock(chain);
@@ -149,7 +149,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanCalculateDifficulty()
         {
-            var main = new ConsensusChainIndexer(this.network).Load(this.LoadMainChain());
+            var main = new ChainIndexer(this.network).Load(this.LoadMainChain());
             // The state of the line separators may be affected by copy operations - so do an environment independent line split...
             string[] histories = File.ReadAllText(TestDataLocations.GetFileFromDataFolder("targethistory.csv")).Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -170,7 +170,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanValidateChain()
         {
-            var main = new ConsensusChainIndexer(this.network).Load(this.LoadMainChain());
+            var main = new ChainIndexer(this.network).Load(this.LoadMainChain());
             foreach (ChainedHeader h in main.EnumerateToTip(main.Genesis))
             {
                 Assert.True(h.Validate(this.network));
@@ -192,7 +192,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanEnumerateAfterChainedBlock()
         {
-            var chain = new ConsensusChainIndexer(this.network);
+            var chain = new ChainIndexer(this.network);
 
             this.AppendBlock(chain);
             ChainedHeader a = this.AppendBlock(chain);
@@ -218,7 +218,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanBuildChain2()
         {
-            ConsensusChainIndexer chainIndexer = this.CreateChain(10);
+            ChainIndexer chainIndexer = this.CreateChain(10);
             this.AppendBlock(chainIndexer);
             this.AppendBlock(chainIndexer);
             this.AppendBlock(chainIndexer);
@@ -239,7 +239,7 @@ namespace NBitcoin.Tests
             int skipListLength = 300000;
 
             // Want a chain of exact length so subtract the genesis block.
-            ConsensusChainIndexer chainIndexer = this.CreateChain(skipListLength - 1);
+            ChainIndexer chainIndexer = this.CreateChain(skipListLength - 1);
 
             // Also want a copy in array form so can quickly verify indexing.
             var chainArray = new ChainedHeader[skipListLength];
@@ -280,7 +280,7 @@ namespace NBitcoin.Tests
             int branchLength = 50000;
 
             // Make a main chain 100000 blocks long.
-            ConsensusChainIndexer chainIndexer = this.CreateChain(mainLength - 1);
+            ChainIndexer chainIndexer = this.CreateChain(mainLength - 1);
 
             // Make a branch that splits off at block 49999, 50000 blocks long.
             ChainedHeader mainTip = chainIndexer.Tip;
@@ -331,14 +331,14 @@ namespace NBitcoin.Tests
             }
         }
 
-        private ConsensusChainIndexer CreateChain(int height)
+        private ChainIndexer CreateChain(int height)
         {
             return this.CreateChain(TestUtils.CreateFakeBlock(this.network).Header, height);
         }
 
-        private ConsensusChainIndexer CreateChain(BlockHeader genesis, int height)
+        private ChainIndexer CreateChain(BlockHeader genesis, int height)
         {
-            var chain = new ConsensusChainIndexer(this.network, new ChainedHeader(genesis, genesis.GetHash(), 0));
+            var chain = new ChainIndexer(this.network, new ChainedHeader(genesis, genesis.GetHash(), 0));
 
             var chainedHeaderPrev = chain.Tip;
 
@@ -355,11 +355,11 @@ namespace NBitcoin.Tests
             return chain;
         }
 
-        public ChainedHeader AppendBlock(ChainedHeader previous, params ConsensusChainIndexer[] chainsIndexer)
+        public ChainedHeader AppendBlock(ChainedHeader previous, params ChainIndexer[] chainsIndexer)
         {
             ChainedHeader last = null;
             uint nonce = RandomUtils.GetUInt32();
-            foreach (ConsensusChainIndexer chain in chainsIndexer)
+            foreach (ChainIndexer chain in chainsIndexer)
             {
                 Block block = TestUtils.CreateFakeBlock(this.network);
                 block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
@@ -370,7 +370,7 @@ namespace NBitcoin.Tests
             return last;
         }
 
-        private ChainedHeader AppendBlock(params ConsensusChainIndexer[] chainsIndexer)
+        private ChainedHeader AppendBlock(params ChainIndexer[] chainsIndexer)
         {
             ChainedHeader index = null;
             return this.AppendBlock(index, chainsIndexer);
@@ -382,7 +382,7 @@ namespace NBitcoin.Tests
         /// <param name="chainSrc">The source chain.</param>
         /// <param name="otherChain">The other chain.</param>
         /// <returns>First common chained block header or <c>null</c>.</returns>
-        private ChainedHeader FindFork(ConsensusChainIndexer chainSrc, ConsensusChainIndexer otherChain)
+        private ChainedHeader FindFork(ChainIndexer chainSrc, ChainIndexer otherChain)
         {
             if (otherChain == null)
                 throw new ArgumentNullException("otherChain");

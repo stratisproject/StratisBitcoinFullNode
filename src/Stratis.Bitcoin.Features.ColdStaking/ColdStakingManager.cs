@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="broadcasterManager">The broadcaster manager.</param>
         public ColdStakingManager(
             Network network,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             WalletSettings walletSettings,
             DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,

@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public BitcoinActivationRuleTest()
         {
             this.network = KnownNetworks.TestNet; //important for bips
-            this.ConsensusChainIndexer = GenerateChainWithHeight(5, this.network);
+            this.ChainIndexer = GenerateChainWithHeight(5, this.network);
             this.consensusRules = this.InitializeConsensusRules();
         }
 

@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.PoA
         private readonly IConnectionManager connectionManager;
 
         /// <summary>Thread safe chain of block headers from genesis.</summary>
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly FederationManager federationManager;
 
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly IWhitelistedHashesRepository whitelistedHashesRepository;
 
-        public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ConsensusChainIndexer chainIndexer,
+        public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ChainIndexer chainIndexer,
             IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory,
             IPoAMiner miner, VotingManager votingManager, Network network, IWhitelistedHashesRepository whitelistedHashesRepository)
         {

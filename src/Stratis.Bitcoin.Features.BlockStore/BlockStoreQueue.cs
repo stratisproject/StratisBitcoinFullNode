@@ -59,8 +59,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc cref="StoreSettings"/>
         private readonly StoreSettings storeSettings;
 
-        /// <inheritdoc cref="ConsensusChainIndexer"/>
-        private readonly ConsensusChainIndexer chainIndexer;
+        /// <inheritdoc cref="ChainIndexer"/>
+        private readonly ChainIndexer chainIndexer;
 
         /// <inheritdoc cref="IBlockRepository"/>
         private readonly IBlockRepository blockRepository;
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private Exception saveAsyncLoopException;
 
         public BlockStoreQueue(
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             IChainState chainState,
             IBlockStoreQueueFlushCondition blockStoreQueueFlushCondition,
             StoreSettings storeSettings,
@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// Sets block store tip to the last block that exists both in the repository and in the <see cref="ConsensusChainIndexer"/>.
+        /// Sets block store tip to the last block that exists both in the repository and in the <see cref="ChainIndexer"/>.
         /// </summary>
         private async Task RecoverStoreTipAsync()
         {

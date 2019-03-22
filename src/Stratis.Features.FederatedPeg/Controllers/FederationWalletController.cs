@@ -43,7 +43,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
 
         private readonly IConnectionManager connectionManager;
 
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly IWithdrawalHistoryProvider withdrawalHistoryProvider;
 
@@ -56,7 +56,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
             IFederationWalletSyncManager walletSyncManager,
             IConnectionManager connectionManager,
             Network network,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             IDateTimeProvider dateTimeProvider,
             IWithdrawalHistoryProvider withdrawalHistoryProvider)
         {

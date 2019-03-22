@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
         private readonly IConnectionManager connectionManager;
 
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             IWalletSyncManager walletSyncManager,
             IConnectionManager connectionManager,
             Network network,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             IBroadcasterManager broadcasterManager,
             IDateTimeProvider dateTimeProvider)
         {

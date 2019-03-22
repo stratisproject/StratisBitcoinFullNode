@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         private readonly IConsensusManager consensusManager;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         public PosMinting(
             IBlockProvider blockProvider,
             IConsensusManager consensusManager,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             Network network,
             IDateTimeProvider dateTimeProvider,
             IInitialBlockDownloadState initialBlockDownloadState,

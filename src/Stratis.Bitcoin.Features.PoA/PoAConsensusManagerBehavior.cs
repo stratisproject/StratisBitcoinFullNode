@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        public PoAConsensusManagerBehavior(ConsensusChainIndexer chainIndexer, IInitialBlockDownloadState initialBlockDownloadState,
+        public PoAConsensusManagerBehavior(ChainIndexer chainIndexer, IInitialBlockDownloadState initialBlockDownloadState,
             IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
         : base(chainIndexer, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
         {

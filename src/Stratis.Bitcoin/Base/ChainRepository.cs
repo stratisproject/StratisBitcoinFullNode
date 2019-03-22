@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Base
         Task<ChainedHeader> LoadAsync(ChainedHeader genesisHeader);
 
         /// <summary>Persists chain of headers to the database.</summary>
-        Task SaveAsync(ConsensusChainIndexer chainIndexer);
+        Task SaveAsync(ChainIndexer chainIndexer);
     }
 
     public class ChainRepository : IChainRepository
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <inheritdoc />
-        public Task SaveAsync(ConsensusChainIndexer chainIndexer)
+        public Task SaveAsync(ChainIndexer chainIndexer)
         {
             Guard.NotNull(chainIndexer, nameof(chainIndexer));
 

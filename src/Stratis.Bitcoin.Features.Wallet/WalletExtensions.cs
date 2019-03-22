@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Determines whether the chain is downloaded and up to date.
         /// </summary>
         /// <param name="chainIndexer">The chain.</param>
-        public static bool IsDownloaded(this ConsensusChainIndexer chainIndexer)
+        public static bool IsDownloaded(this ChainIndexer chainIndexer)
         {
             return chainIndexer.Tip.Header.BlockTime.ToUnixTimeSeconds() > (DateTimeOffset.UtcNow.ToUnixTimeSeconds() - TimeSpan.FromHours(1).TotalSeconds);
         }
@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="chainIndexer">The chain of blocks.</param>
         /// <param name="date">The date.</param>
         /// <returns>The height of the first block created after the date.</returns>
-        public static int GetHeightAtTime(this ConsensusChainIndexer chainIndexer, DateTime date)
+        public static int GetHeightAtTime(this ChainIndexer chainIndexer, DateTime date)
         {
             int blockSyncStart = 0;
             int upperLimit = chainIndexer.Tip.Height;

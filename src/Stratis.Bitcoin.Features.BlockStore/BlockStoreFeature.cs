@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public class BlockStoreFeature : FullNodeFeature
     {
         private readonly Network network;
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly BlockStoreSignaled blockStoreSignaled;
 
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public BlockStoreFeature(
             Network network,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             IConnectionManager connectionManager,
             BlockStoreSignaled blockStoreSignaled,
             ILoggerFactory loggerFactory,

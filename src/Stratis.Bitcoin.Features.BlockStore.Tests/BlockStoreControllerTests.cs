@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var logger = new Mock<ILoggerFactory>();
             var store = new Mock<IBlockStore>();
             var chainState = new Mock<IChainState>();
-            ConsensusChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(3, KnownNetworks.StratisTest);
+            ChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(3, KnownNetworks.StratisTest);
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
-            var chain = new Mock<ConsensusChainIndexer>();
+            var chain = new Mock<ChainIndexer>();
             Block block = Block.Parse(BlockAsHex, KnownNetworks.StratisTest);
             chain.Setup(c => c.GetBlock(It.IsAny<uint256>())).Returns(new ChainedHeader(block.Header, block.Header.GetHash(), 1));
             chain.Setup(x => x.Tip).Returns(new ChainedHeader(block.Header, block.Header.GetHash(), 1));

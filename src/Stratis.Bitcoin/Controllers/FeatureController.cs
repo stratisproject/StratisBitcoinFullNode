@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Controllers
 
         protected Network Network { get; set; }
 
-        protected ConsensusChainIndexer ChainIndexer { get; set; }
+        protected ChainIndexer ChainIndexer { get; set; }
 
         protected IChainState ChainState { get; set; }
 
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Controllers
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
             Network network = null,
-            ConsensusChainIndexer chainIndexer = null,
+            ChainIndexer chainIndexer = null,
             IChainState chainState = null,
             IConnectionManager connectionManager = null,
             IConsensusManager consensusManager = null)

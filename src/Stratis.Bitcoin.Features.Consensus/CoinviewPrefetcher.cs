@@ -31,11 +31,11 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly CoinviewHelper coinviewHelper;
 
-        private readonly ConsensusChainIndexer chainIndexer;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly ILogger logger;
 
-        public CoinviewPrefetcher(ICoinView coinview, ConsensusChainIndexer chainIndexer, ILoggerFactory loggerFactory)
+        public CoinviewPrefetcher(ICoinView coinview, ChainIndexer chainIndexer, ILoggerFactory loggerFactory)
         {
             this.coinview = coinview;
             this.chainIndexer = chainIndexer;

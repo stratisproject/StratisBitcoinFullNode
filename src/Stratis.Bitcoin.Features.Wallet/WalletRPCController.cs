@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             IFullNode fullNode, 
             IBroadcasterManager broadcasterManager,
             IConsensusManager consensusManager,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             ILoggerFactory loggerFactory,
             WalletSettings walletSettings) : base(fullNode: fullNode, consensusManager: consensusManager, chainIndexer: chainIndexer)
         {

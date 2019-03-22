@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly IStateRepositoryRoot stateRepositoryRoot;
 
         public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock,
-            IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConsensusChainIndexer chainIndexer,
+            IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ChainIndexer chainIndexer,
             ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings,
             IConsensusRuleEngine consensusRules, ICallDataSerializer callDataSerializer, Network network,
             IStateRepositoryRoot stateRepositoryRoot,

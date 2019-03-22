@@ -14,13 +14,13 @@ namespace Stratis.Bitcoin.Tests.Common
         /// </summary>
         /// <param name="header">The block header to set to tip.</param>
         /// <returns>Whether the tip was set successfully.</returns>
-        public static bool SetTip(this ConsensusChainIndexer chainIndexer, BlockHeader header)
+        public static bool SetTip(this ChainIndexer chainIndexer, BlockHeader header)
         {
             ChainedHeader chainedHeader;
             return chainIndexer.TrySetTip(header, out chainedHeader);
         }
 
-        public static bool TrySetTip(this ConsensusChainIndexer chainIndexer, BlockHeader header, out ChainedHeader chainedHeader)
+        public static bool TrySetTip(this ChainIndexer chainIndexer, BlockHeader header, out ChainedHeader chainedHeader)
         {
             if (header == null)
                 throw new ArgumentNullException("header");
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Tests.Common
             return true;
         }
 
-        public static ChainedHeader SetTip(this ConsensusChainIndexer chainIndexer, ChainedHeader block)
+        public static ChainedHeader SetTip(this ChainIndexer chainIndexer, ChainedHeader block)
         {
             ChainedHeader fork = chainIndexer.Tip.FindFork(block);
 
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Tests.Common
             return fork;
         }
 
-        private static IEnumerable<ChainedHeader> EnumerateThisToFork(this ConsensusChainIndexer chainIndexer, ChainedHeader block)
+        private static IEnumerable<ChainedHeader> EnumerateThisToFork(this ChainIndexer chainIndexer, ChainedHeader block)
         {
             if (chainIndexer.Tip == null)
                 yield break;
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Tests.Common
             }
         }
 
-        public static ConsensusChainIndexer Load(this ConsensusChainIndexer chainIndexer, byte[] chain)
+        public static ChainIndexer Load(this ChainIndexer chainIndexer, byte[] chain)
         {
             using (var ms = new MemoryStream(chain))
             {
@@ -85,12 +85,12 @@ namespace Stratis.Bitcoin.Tests.Common
             }
         }
 
-        public static ConsensusChainIndexer Load(this ConsensusChainIndexer chainIndexer, Stream stream)
+        public static ChainIndexer Load(this ChainIndexer chainIndexer, Stream stream)
         {
             return chainIndexer.Load(new BitcoinStream(stream, false));
         }
 
-        public static ConsensusChainIndexer Load(this ConsensusChainIndexer chainIndexer, BitcoinStream stream)
+        public static ChainIndexer Load(this ChainIndexer chainIndexer, BitcoinStream stream)
         {
             stream.ConsensusFactory = chainIndexer.Network.Consensus.ConsensusFactory;
 
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Tests.Common
             return chainIndexer;
         }
 
-        public static byte[] ToBytes(this ConsensusChainIndexer chainIndexer)
+        public static byte[] ToBytes(this ChainIndexer chainIndexer)
         {
             using (var ms = new MemoryStream())
             {
@@ -133,12 +133,12 @@ namespace Stratis.Bitcoin.Tests.Common
             }
         }
 
-        public static void WriteTo(this ConsensusChainIndexer chainIndexer, Stream stream)
+        public static void WriteTo(this ChainIndexer chainIndexer, Stream stream)
         {
             chainIndexer.WriteTo(new BitcoinStream(stream, true));
         }
 
-        public static void WriteTo(this ConsensusChainIndexer chainIndexer, BitcoinStream stream)
+        public static void WriteTo(this ChainIndexer chainIndexer, BitcoinStream stream)
         {
             stream.ConsensusFactory = chainIndexer.Network.Consensus.ConsensusFactory;
 

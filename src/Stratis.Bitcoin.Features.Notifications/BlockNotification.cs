@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         public BlockNotification(
             ILoggerFactory loggerFactory,
-            ConsensusChainIndexer chainIndexer,
+            ChainIndexer chainIndexer,
             IConsensusManager consensusManager,
             ISignals signals,
             IAsyncLoopFactory asyncLoopFactory,
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public ConsensusChainIndexer ChainIndexer { get; }
+        public ChainIndexer ChainIndexer { get; }
 
         public virtual bool ReSync { get; private set; }
 
