@@ -31,7 +31,7 @@ namespace NBitcoin.Tests
             ChainedHeader fork = this.AppendBlock(chain);
             this.AppendBlock(chain);
 
-            var chain2 = new ConsensusChainIndexer(this.network, chain.ToBytes());
+            var chain2 = new ConsensusChainIndexer(this.network).Load(chain.ToBytes());
             Assert.True(chain.Tip.HashBlock == chain2.Tip.HashBlock);
         }
 
@@ -231,7 +231,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanCalculateDifficulty()
         {
-            var main = new ConsensusChainIndexer(this.network, this.LoadMainChain());
+            var main = new ConsensusChainIndexer(this.network).Load(this.LoadMainChain());
             // The state of the line separators may be affected by copy operations - so do an environment independent line split...
             string[] histories = File.ReadAllText(TestDataLocations.GetFileFromDataFolder("targethistory.csv")).Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -252,7 +252,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanValidateChain()
         {
-            var main = new ConsensusChainIndexer(this.network, this.LoadMainChain());
+            var main = new ConsensusChainIndexer(this.network).Load(this.LoadMainChain());
             foreach (ChainedHeader h in main.EnumerateToTip(main.Genesis))
             {
                 Assert.True(h.Validate(this.network));
@@ -289,7 +289,7 @@ namespace NBitcoin.Tests
             enumerator.MoveNext();
             Assert.True(enumerator.Current == c);
 
-            chain.SetTip(b);
+            chain.Initialize(b);
             ChainedHeader cc = this.AppendBlock(chain);
             ChainedHeader dd = this.AppendBlock(chain);
 
@@ -308,149 +308,6 @@ namespace NBitcoin.Tests
             Assert.Equal(14, chainIndexer.Height);
             Assert.Equal(14, b.Height);
             Assert.Equal(b.HashBlock, chainIndexer.Tip.HashBlock);
-        }
-
-        [Fact]
-        [Trait("UnitTest", "UnitTest")]
-        public void CanForkBackward()
-        {
-            var chain = new ConsensusChainIndexer(this.network);
-
-            this.AppendBlock(chain);
-            this.AppendBlock(chain);
-            ChainedHeader fork = this.AppendBlock(chain);
-
-            //Test single block back fork
-            ChainedHeader last = this.AppendBlock(chain);
-            Assert.Equal(4, chain.Height);
-            Assert.Equal(4, last.Height);
-            Assert.Equal(last.HashBlock, chain.Tip.HashBlock);
-            Assert.Equal(fork.HashBlock, chain.SetTip(fork).HashBlock);
-            Assert.Equal(3, chain.Height);
-            Assert.Equal(3, fork.Height);
-            Assert.Equal(fork.HashBlock, chain.Tip.HashBlock);
-            Assert.Null(chain.GetBlock(last.HashBlock));
-            Assert.NotNull(chain.GetBlock(fork.HashBlock));
-
-            //Test 3 blocks back fork
-            ChainedHeader b1 = this.AppendBlock(chain);
-            ChainedHeader b2 = this.AppendBlock(chain);
-            last = this.AppendBlock(chain);
-            Assert.Equal(6, chain.Height);
-            Assert.Equal(6, last.Height);
-            Assert.Equal(last.HashBlock, chain.Tip.HashBlock);
-
-            Assert.Equal(fork.HashBlock, chain.SetTip(fork).HashBlock);
-            Assert.Equal(3, chain.Height);
-            Assert.Equal(3, fork.Height);
-            Assert.Equal(fork.HashBlock, chain.Tip.HashBlock);
-            Assert.Null(chain.GetBlock(last.HashBlock));
-            Assert.Null(chain.GetBlock(b1.HashBlock));
-            Assert.Null(chain.GetBlock(b2.HashBlock));
-
-            chain.SetTip(last);
-            Assert.Equal(6, chain.Height);
-            Assert.Equal(6, last.Height);
-            Assert.Equal(last.HashBlock, chain.Tip.HashBlock);
-        }
-
-        [Fact]
-        [Trait("UnitTest", "UnitTest")]
-        public void CanForkBackwardPartialChain()
-        {
-            ConsensusChainIndexer chainIndexer = this.CreateChain(10);
-            this.AppendBlock(chainIndexer);
-            this.AppendBlock(chainIndexer);
-            ChainedHeader fork = this.AppendBlock(chainIndexer);
-
-            //Test single block back fork
-            ChainedHeader last = this.AppendBlock(chainIndexer);
-            Assert.Equal(14, chainIndexer.Height);
-            Assert.Equal(14, last.Height);
-            Assert.Equal(last.HashBlock, chainIndexer.Tip.HashBlock);
-            Assert.Equal(fork.HashBlock, chainIndexer.SetTip(fork).HashBlock);
-            Assert.Equal(13, chainIndexer.Height);
-            Assert.Equal(13, fork.Height);
-            Assert.Equal(fork.HashBlock, chainIndexer.Tip.HashBlock);
-            Assert.Null(chainIndexer.GetBlock(last.HashBlock));
-            Assert.NotNull(chainIndexer.GetBlock(fork.HashBlock));
-
-            //Test 3 blocks back fork
-            ChainedHeader b1 = this.AppendBlock(chainIndexer);
-            ChainedHeader b2 = this.AppendBlock(chainIndexer);
-            last = this.AppendBlock(chainIndexer);
-            Assert.Equal(16, chainIndexer.Height);
-            Assert.Equal(16, last.Height);
-            Assert.Equal(last.HashBlock, chainIndexer.Tip.HashBlock);
-
-            Assert.Equal(fork.HashBlock, chainIndexer.SetTip(fork).HashBlock);
-            Assert.Equal(13, chainIndexer.Height);
-            Assert.Equal(13, fork.Height);
-            Assert.Equal(fork.HashBlock, chainIndexer.Tip.HashBlock);
-            Assert.Null(chainIndexer.GetBlock(last.HashBlock));
-            Assert.Null(chainIndexer.GetBlock(b1.HashBlock));
-            Assert.Null(chainIndexer.GetBlock(b2.HashBlock));
-
-            chainIndexer.SetTip(last);
-            Assert.Equal(16, chainIndexer.Height);
-            Assert.Equal(16, last.Height);
-            Assert.Equal(last.HashBlock, chainIndexer.Tip.HashBlock);
-        }
-
-        [Fact]
-        [Trait("UnitTest", "UnitTest")]
-        public void CanForkSide()
-        {
-            var side = new ConsensusChainIndexer(this.network);
-            var main = new ConsensusChainIndexer(this.network);
-
-            this.AppendBlock(side, main);
-            this.AppendBlock(side, main);
-            ChainedHeader common = this.AppendBlock(side, main);
-            ChainedHeader sideb = this.AppendBlock(side);
-            ChainedHeader mainb1 = this.AppendBlock(main);
-            ChainedHeader mainb2 = this.AppendBlock(main);
-            ChainedHeader mainb3 = this.AppendBlock(main);
-            Assert.Equal(common.HashBlock, side.SetTip(main.Tip).HashBlock);
-            Assert.NotNull(side.GetBlock(mainb1.HashBlock));
-            Assert.NotNull(side.GetBlock(mainb2.HashBlock));
-            Assert.NotNull(side.GetBlock(mainb3.HashBlock));
-            Assert.NotNull(side.GetBlock(common.HashBlock));
-            Assert.Null(side.GetBlock(sideb.HashBlock));
-
-            Assert.Equal(common.HashBlock, side.SetTip(sideb).HashBlock);
-            Assert.Null(side.GetBlock(mainb1.HashBlock));
-            Assert.Null(side.GetBlock(mainb2.HashBlock));
-            Assert.Null(side.GetBlock(mainb3.HashBlock));
-            Assert.NotNull(side.GetBlock(sideb.HashBlock));
-        }
-
-        [Fact]
-        [Trait("UnitTest", "UnitTest")]
-        public void CanForkSidePartialChain()
-        {
-            Block genesis = TestUtils.CreateFakeBlock(this.network);
-            var side = new ConsensusChainIndexer(this.network, new ChainedHeader(genesis.Header, genesis.GetHash(), 0));
-            var main = new ConsensusChainIndexer(this.network, new ChainedHeader(genesis.Header, genesis.GetHash(), 0));
-            this.AppendBlock(side, main);
-            this.AppendBlock(side, main);
-            ChainedHeader common = this.AppendBlock(side, main);
-            ChainedHeader sideb = this.AppendBlock(side);
-            ChainedHeader mainb1 = this.AppendBlock(main);
-            ChainedHeader mainb2 = this.AppendBlock(main);
-            ChainedHeader mainb3 = this.AppendBlock(main);
-            Assert.Equal(common.HashBlock, side.SetTip(main.Tip).HashBlock);
-            Assert.NotNull(side.GetBlock(mainb1.HashBlock));
-            Assert.NotNull(side.GetBlock(mainb2.HashBlock));
-            Assert.NotNull(side.GetBlock(mainb3.HashBlock));
-            Assert.NotNull(side.GetBlock(common.HashBlock));
-            Assert.Null(side.GetBlock(sideb.HashBlock));
-
-            Assert.Equal(common.HashBlock, side.SetTip(sideb).HashBlock);
-            Assert.Null(side.GetBlock(mainb1.HashBlock));
-            Assert.Null(side.GetBlock(mainb2.HashBlock));
-            Assert.Null(side.GetBlock(mainb3.HashBlock));
-            Assert.NotNull(side.GetBlock(sideb.HashBlock));
         }
 
         /// <summary>

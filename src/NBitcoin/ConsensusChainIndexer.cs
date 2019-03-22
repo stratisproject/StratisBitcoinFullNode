@@ -5,58 +5,58 @@ using System.Linq;
 
 namespace NBitcoin
 {
-    /// <summary>
-    /// Thread safe class representing a chain of headers from genesis.
-    /// </summary>
     public class ConsensusChainIndexer
     {
-        private readonly Dictionary<uint256, ChainedHeader> blocksById = new Dictionary<uint256, ChainedHeader>();
-        private readonly Dictionary<int, ChainedHeader> blocksByHeight = new Dictionary<int, ChainedHeader>();
         private readonly object lockObject = new object();
+        private readonly Dictionary<int, ChainedHeader> blocksByHeight = new Dictionary<int, ChainedHeader>();
+        private readonly Dictionary<uint256, ChainedHeader> blocksById = new Dictionary<uint256, ChainedHeader>();
 
+        public Network Network { get; }
         public ChainedHeader Tip { get; private set; }
 
-        public  int Height => this.Tip.Height;
-
-        public Network Network { get; private set; }
+        public int Height => this.Tip.Height;
+        public ChainedHeader Genesis => this.GetBlock(0);
 
         public ConsensusChainIndexer(Network network)
         {
             this.Network = network;
 
-            lock (this.lockObject)
-            {
-                ChainedHeader genesis = new ChainedHeader(network.GetGenesis().Header, network.GetGenesis().GetHash(), 0);
-
-                this.blocksById.Add(genesis.HashBlock, genesis);
-                this.blocksByHeight.Add(genesis.Height, genesis);
-
-                this.Tip = genesis;
-            }
+            this.Initialize(new ChainedHeader(network.GetGenesis().Header, network.GetGenesis().GetHash(), 0));
         }
 
-        public ConsensusChainIndexer(Network network, ChainedHeader chainedHeader) : this(network)
+        public ConsensusChainIndexer(Network network, ChainedHeader chainedHeader) 
         {
+            this.Network = network;
+
             this.Initialize(chainedHeader);
         }
 
         public void Initialize(ChainedHeader chainedHeader)
         {
-            if (this.blocksById.Count != 1)
-                throw new InvalidOperationException("Component already initialized.");
+            this.blocksById.Clear();
 
+            lock (this.lockObject)
+            {
+                ChainedHeader iterator = chainedHeader;
 
+                while (iterator != null)
+                {
+                    this.blocksById.Add(chainedHeader.HashBlock, chainedHeader);
+                    this.blocksByHeight.Add(chainedHeader.Height, chainedHeader);
 
+                    if (chainedHeader.Height == 0)
+                    {
+                        if (chainedHeader.HashBlock != iterator.HashBlock)
+                            throw new InvalidOperationException("Wrong network");
+                    }
+
+                    iterator = iterator.Previous;
+                }
+
+                this.Tip = chainedHeader;
+            }
         }
 
-        public ConsensusChainIndexer(Network network, byte[] bytes)
-            : this(network)
-        {
-            Load(bytes);
-        }
-
-        /// <summary>Gets the genesis block for the chain.</summary>
-        public virtual ChainedHeader Genesis => this.GetBlock(0);
 
         /// <summary>
         /// Returns the first chained block header that exists in the chain from the list of block hashes.
@@ -71,7 +71,7 @@ namespace NBitcoin
             // Find the first block the caller has in the main chain.
             foreach (uint256 hash in hashes)
             {
-                ChainedHeader mi = GetBlock(hash);
+                ChainedHeader mi = this.GetBlock(hash);
                 if (mi != null)
                     return mi;
             }
@@ -99,12 +99,12 @@ namespace NBitcoin
         /// <returns>Enumeration of chained block headers after given block hash.</returns>
         public IEnumerable<ChainedHeader> EnumerateAfter(uint256 blockHash)
         {
-            ChainedHeader block = GetBlock(blockHash);
+            ChainedHeader block = this.GetBlock(blockHash);
 
             if (block == null)
                 return new ChainedHeader[0];
 
-            return EnumerateAfter(block);
+            return this.EnumerateAfter(block);
         }
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace NBitcoin
             if (block == null)
                 throw new ArgumentNullException("block");
 
-            return EnumerateToTip(block.HashBlock);
+            return this.EnumerateToTip(block.HashBlock);
         }
 
         /// <summary>
@@ -127,13 +127,13 @@ namespace NBitcoin
         /// <returns>Enumeration of chained block headers from the given block hash to tip.</returns>
         public IEnumerable<ChainedHeader> EnumerateToTip(uint256 blockHash)
         {
-            ChainedHeader block = GetBlock(blockHash);
+            ChainedHeader block = this.GetBlock(blockHash);
             if (block == null)
                 yield break;
 
             yield return block;
 
-            foreach (ChainedHeader chainedBlock in EnumerateAfter(blockHash))
+            foreach (ChainedHeader chainedBlock in this.EnumerateAfter(blockHash))
                 yield return chainedBlock;
         }
 
@@ -149,7 +149,7 @@ namespace NBitcoin
 
             while (true)
             {
-                ChainedHeader b = GetBlock(i);
+                ChainedHeader b = this.GetBlock(i);
                 if ((b == null) || (b.Previous != prev))
                     yield break;
 
@@ -187,8 +187,6 @@ namespace NBitcoin
             }
         }
 
-        #region IChain Members
-
         public ChainedHeader GetBlock(uint256 id)
         {
             lock (this.lockObject)
@@ -199,26 +197,19 @@ namespace NBitcoin
             }
         }
 
-        private ChainedHeader GetBlockLocked(int height)
-        {
-            ChainedHeader result;
-            this.blocksByHeight.TryGetValue(height, out result);
-            return result;
-        }
-
         public ChainedHeader GetBlock(int height)
         {
             lock (this.lockObject)
             {
-                return this.GetBlockLocked(height);
+                ChainedHeader result;
+                this.blocksByHeight.TryGetValue(height, out result);
+                return result;
             }
         }
 
-        #endregion
-
         public override string ToString()
         {
-            return this.Tip == null ? "no tip" : this.Tip.Height.ToString();
+            return this.Tip == null ? "no tip" : this.Tip.ToString();
         }
     }
 }

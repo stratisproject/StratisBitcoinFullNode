@@ -291,8 +291,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.SetStoreTip(newTip);
 
-            //TODO this thing should remove stuff from chain database. Otherwise we are leaving redundant data.
-            this.chainIndexer.SetTip(newTip); // we have to set chain store to be same as the store tip.
+            // TODO: this will be replaced with tips manager
+            // TODO this thing should remove stuff from chain database. Otherwise we are leaving redundant data.
+            this.chainIndexer.Initialize(newTip); // we have to set chain store to be same as the store tip.
 
             this.logger.LogWarning("Block store tip recovered to block '{0}'.", newTip);
         }

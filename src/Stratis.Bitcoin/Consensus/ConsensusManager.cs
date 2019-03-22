@@ -706,6 +706,7 @@ namespace Stratis.Bitcoin.Consensus
                 lock (this.peerLock)
                 {
                     this.SetConsensusTipInternalLocked(current.Previous);
+                    this.chainIndexer.Remove(current);
                 }
 
                 var disconnectedBlock = new ChainedHeaderBlock(block, current);
@@ -755,6 +756,7 @@ namespace Stratis.Bitcoin.Consensus
                     lock (this.peerLock)
                     {
                         this.SetConsensusTipInternalLocked(lastValidatedBlockHeader);
+                        this.chainIndexer.Add(lastValidatedBlockHeader);
                     }
 
                     if (this.network.Consensus.MaxReorgLength != 0)
@@ -946,7 +948,6 @@ namespace Stratis.Bitcoin.Consensus
             this.Tip = newTip;
 
             this.chainState.ConsensusTip = this.Tip;
-            this.chainIndexer.SetTip(this.Tip);
         }
 
         /// <summary>
