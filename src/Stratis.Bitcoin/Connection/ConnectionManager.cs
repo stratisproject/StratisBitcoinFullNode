@@ -72,6 +72,7 @@ namespace Stratis.Bitcoin.Connection
             get { return this.connectedPeers; }
         }
 
+        /// <inheritdoc/>
         public List<NetworkPeerServer> Servers { get; }
 
         /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
@@ -83,19 +84,7 @@ namespace Stratis.Bitcoin.Connection
 
         private AsyncQueue<INetworkPeer> connectedPeersQueue;
 
-        /// <summary>Traffic statistics from peers that have been disconnected.</summary>
-        private PerformanceCounter counter;
-
-        public PerformanceCounter Counter
-        {
-            get
-            {
-                if (this.counter == null)
-                    this.counter = new PerformanceCounter();
-
-                return this.counter;
-            }
-        }
+        private PerformanceCounter disconnectedPerfCounter;
 
         public ConnectionManager(IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
@@ -132,6 +121,7 @@ namespace Stratis.Bitcoin.Connection
             this.selfEndpointTracker = selfEndpointTracker;
             this.versionProvider = versionProvider;
             this.connectedPeersQueue = new AsyncQueue<INetworkPeer>(this.OnPeerAdded);
+            this.disconnectedPerfCounter = new PerformanceCounter();
 
             this.Parameters.UserAgent = $"{this.ConnectionSettings.Agent}:{versionProvider.GetVersion()} ({(int)this.NodeSettings.ProtocolVersion})";
 
@@ -242,8 +232,8 @@ namespace Stratis.Bitcoin.Connection
         private void AddComponentStats(StringBuilder builder)
         {
             // The total traffic will be the sum of the disconnected peers' traffic and the currently connected peers' traffic.
-            long totalRead = this.Counter.ReadBytes;
-            long totalWritten = this.Counter.WrittenBytes;
+            long totalRead = this.disconnectedPerfCounter.ReadBytes;
+            long totalWritten = this.disconnectedPerfCounter.WrittenBytes;
             var peerBuilder = new StringBuilder();
             foreach (INetworkPeer peer in this.ConnectedPeers)
             {
@@ -373,6 +363,7 @@ namespace Stratis.Bitcoin.Connection
         public void RemoveConnectedPeer(INetworkPeer peer, string reason)
         {
             this.connectedPeers.Remove(peer);
+            this.disconnectedPerfCounter.Add(peer.Counter);
         }
 
         /// <inheritdoc />
