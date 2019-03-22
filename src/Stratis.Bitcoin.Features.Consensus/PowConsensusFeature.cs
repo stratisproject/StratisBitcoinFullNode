@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -49,6 +50,25 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.chainState.MaxReorgLength = network.Consensus.MaxReorgLength;
         }
 
+        /// <summary>
+        /// Prints command-line help. Invoked via reflection.
+        /// </summary>
+        /// <param name="network">The network to extract values from.</param>
+        public static new void PrintHelp(Network network)
+        {
+            ConsensusFeature.PrintHelp(network);
+        }
+
+        /// <summary>
+        /// Get the default configuration. Invoked via reflection.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static new void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            ConsensusFeature.BuildDefaultConfigurationFile(builder, network);
+        }
+
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
@@ -65,5 +85,5 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
     }
 
-   
+
 }
