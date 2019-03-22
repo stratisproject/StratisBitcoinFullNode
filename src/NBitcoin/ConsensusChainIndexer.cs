@@ -33,8 +33,6 @@ namespace NBitcoin
 
         public void Initialize(ChainedHeader chainedHeader)
         {
-            this.blocksById.Clear();
-
             lock (this.lockObject)
             {
                 this.blocksById.Clear();
@@ -44,8 +42,8 @@ namespace NBitcoin
 
                 while (iterator != null)
                 {
-                    this.blocksById.Add(chainedHeader.HashBlock, chainedHeader);
-                    this.blocksByHeight.Add(chainedHeader.Height, chainedHeader);
+                    this.blocksById.Add(iterator.HashBlock, iterator);
+                    this.blocksByHeight.Add(iterator.Height, iterator);
 
                     if (chainedHeader.Height == 0)
                     {

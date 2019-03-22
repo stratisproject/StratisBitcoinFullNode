@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NBitcoin;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Common
 {
@@ -36,18 +37,9 @@ namespace Stratis.Bitcoin.Tests.Common
 
         public static ChainedHeader SetTip(this ConsensusChainIndexer chainIndexer, ChainedHeader block)
         {
-            int height = chainIndexer.Tip == null ? -1 : chainIndexer.Tip.Height;
-            foreach (ChainedHeader orphaned in chainIndexer.EnumerateThisToFork(block))
-            {
-                chainIndexer.Remove(orphaned);
-                height--;
-            }
+            ChainedHeader fork = chainIndexer.Tip.FindFork(block);
 
-            ChainedHeader fork = chainIndexer.GetBlock(height);
-            foreach (ChainedHeader newBlock in block.EnumerateToGenesis().TakeWhile(c => c != fork))
-            {
-                chainIndexer.Add(newBlock);
-            }
+            chainIndexer.Initialize(block);
 
             return fork;
         }
@@ -113,7 +105,7 @@ namespace Stratis.Bitcoin.Tests.Common
                     stream.ReadWrite(ref header);
                     if (height == 0)
                     {
-                        chainIndexer.Add(new ChainedHeader(header, header.GetHash(), 0));
+                        Assert.True(header.GetHash() == chainIndexer.Tip.HashBlock);
                     }
                     else if (chainIndexer.Tip.HashBlock == header.HashPrevBlock && !(header.IsNull && header.Nonce == 0))
                     {

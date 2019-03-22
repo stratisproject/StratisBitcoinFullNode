@@ -147,88 +147,6 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
-        public void CanFindFork()
-        {
-            var chain1 = new ConsensusChainIndexer(this.network);
-
-            // Create the main chain with a commonChainSize blocks before the fork.
-            int commonChainSize = 150000;
-            for (int i = 0; i < commonChainSize; i++)
-                this.AppendBlock(chain1);
-
-            ChainedHeader fork = this.AppendBlock(chain1);
-
-            // Add some blocks from the fork point to the tip.
-            int chain1AppendixSize = 100;
-            for (int i = 0; i < chain1AppendixSize; i++)
-                this.AppendBlock(chain1);
-
-            // Tip of the chain1.
-            ChainedHeader chain1Tip = chain1.Tip;
-
-            {
-	            // Test scenario 1:
-	            // chain2 is empty, so the fork point is supposed to be the Genesis.
-	            var chain2 = new ConsensusChainIndexer(this.network);
-	            this.AssertFork(chain1, chain2, chain1.Genesis);
-            }
-
-            {
-	            // Test scenario 2:
-	            // chain2 is a chain on another network, null expected.
-	            var chain2 = new ConsensusChainIndexer(this.networkTest);
-	            this.AssertFork(chain1, chain2, null);
-            }
-
-            {
-	            // Test scenario 3:
-	            // chain2 is a subset of chain1 and stops at the fork point "c", fork point expected.
-	            var chain2 = new ConsensusChainIndexer(this.network);
-	            chain2.SetTip(fork);
-	            this.AssertFork(chain1, chain2, fork);
-            }
-
-            {
-	            // Test scenario 4:
-	            // chain2 is a forked chain (at the fork point "c") that has other blocks on top of it, fork point expected.
-	            var chain2 = new ConsensusChainIndexer(this.network);
-	            chain2.SetTip(fork);
-
-	            var chain2ForkDepth = 200;
-	            for (int i = 0; i < chain2ForkDepth; i++)
-                    this.AppendBlock(chain2);
-
-	            this.AssertFork(chain1, chain2, fork);
-            }
-
-            {
-	            // Test scenario 5:
-	            // chain2 is at the same tip of chain1, no fork happened, tip point expected.
-	            var chain2 = new ConsensusChainIndexer(this.network);
-	            chain2.SetTip(chain1Tip);
-	            this.AssertFork(chain1, chain2, chain1Tip);
-            }
-        }
-
-        private void AssertFork(ConsensusChainIndexer chainIndexer, ConsensusChainIndexer chain2, ChainedHeader expectedFork)
-        {
-            ChainedHeader fork = this.FindFork(chainIndexer, chain2);
-            Assert.Equal(expectedFork, fork);
-            fork = chainIndexer.Tip.FindFork(chain2.Tip);
-            Assert.Equal(expectedFork, fork);
-
-            ConsensusChainIndexer temp = chainIndexer;
-            chainIndexer = chain2;
-            chain2 = temp;
-
-            fork = this.FindFork(chainIndexer, chain2);
-            Assert.Equal(expectedFork, fork);
-            fork = chainIndexer.Tip.FindFork(chain2.Tip);
-            Assert.Equal(expectedFork, fork);
-        }
-
-        [Fact]
-        [Trait("UnitTest", "UnitTest")]
         public void CanCalculateDifficulty()
         {
             var main = new ConsensusChainIndexer(this.network).Load(this.LoadMainChain());
@@ -421,12 +339,19 @@ namespace NBitcoin.Tests
         private ConsensusChainIndexer CreateChain(BlockHeader genesis, int height)
         {
             var chain = new ConsensusChainIndexer(this.network, new ChainedHeader(genesis, genesis.GetHash(), 0));
+
+            var chainedHeaderPrev = chain.Tip;
+
             for (int i = 0; i < height; i++)
             {
                 Block b = TestUtils.CreateFakeBlock(this.network);
-                b.Header.HashPrevBlock = chain.Tip.HashBlock;
-                chain.SetTip(b.Header);
+                b.Header.HashPrevBlock = chainedHeaderPrev.HashBlock;
+
+                chainedHeaderPrev = new ChainedHeader(b.Header, b.Header.GetHash(), chainedHeaderPrev);
             }
+
+            chain.SetTip(chainedHeaderPrev);
+
             return chain;
         }
 
