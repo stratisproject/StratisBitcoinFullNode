@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     /// <summary>
     /// Cache layer for coinview prevents too frequent updates of the data in the underlying storage.
     /// </summary>
-    public class CachedCoinView : ICoinView, IBackedCoinView, IDisposable
+    public class CachedCoinView : ICoinView, IBackedCoinView
     {
         /// <summary>
         /// Item of the coinview cache that holds information about the unspent outputs
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         private CachePerformanceCounter performanceCounter { get; set; }
 
         /// <summary>Lock object to protect access to <see cref="cachedUtxoItems"/>, <see cref="blockHash"/>, <see cref="cachedRewindDataIndex"/>, and <see cref="innerBlockHash"/>.</summary>
-        private readonly AsyncLock lockobj;
+        private readonly object lockobj;
 
         /// <summary>Hash of the block headers of the tip of the coinview.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockobj"/>.</remarks>
@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.stakeChainStore = stakeChainStore;
             this.rewindDataIndexCache = rewindDataIndexCache;
             this.MaxItems = CacheMaxItemsDefault;
-            this.lockobj = new AsyncLock();
+            this.lockobj = new object();
             this.cachedUtxoItems = new Dictionary<uint256, CacheItem>();
             this.performanceCounter = new CachePerformanceCounter(this.dateTimeProvider);
             this.lastCacheFlushTime = this.dateTimeProvider.GetUtcNow();
@@ -184,11 +184,11 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public async Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public uint256 GetTipHash(CancellationToken cancellationToken = default(CancellationToken))
         {
             if (this.blockHash == null)
             {
-                FetchCoinsResponse response = await this.FetchCoinsAsync(new uint256[0], cancellationToken).ConfigureAwait(false);
+                FetchCoinsResponse response = this.FetchCoins(new uint256[0], cancellationToken);
 
                 this.innerBlockHash = response.BlockHash;
                 this.blockHash = this.innerBlockHash;
@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public async Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
+        public FetchCoinsResponse FetchCoins(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
         {
             Guard.NotNull(txIds, nameof(txIds));
 
@@ -206,7 +206,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             var outputs = new UnspentOutputs[txIds.Length];
             var miss = new List<int>();
             var missedTxIds = new List<uint256>();
-            using (await this.lockobj.LockAsync(cancellationToken).ConfigureAwait(false))
+
+            lock (this.lockobj)
             {
                 for (int i = 0; i < txIds.Length; i++)
                 {
@@ -228,13 +229,13 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 this.performanceCounter.AddMissCount(miss.Count);
                 this.performanceCounter.AddHitCount(txIds.Length - miss.Count);
-            
+
                 FetchCoinsResponse fetchedCoins = null;
 
                 if (missedTxIds.Count > 0 || this.blockHash == null)
                 {
                     this.logger.LogTrace("{0} cache missed transaction needs to be loaded from underlying CoinView.", missedTxIds.Count);
-                    fetchedCoins = await this.Inner.FetchCoinsAsync(missedTxIds.ToArray(), cancellationToken).ConfigureAwait(false);
+                    fetchedCoins = this.Inner.FetchCoins(missedTxIds.ToArray(), cancellationToken);
                 }
 
                 if (this.blockHash == null)
@@ -281,7 +282,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// WARNING: This method can only be run from <see cref="ConsensusLoop.Execute(System.Threading.CancellationToken)"/> thread context
         /// or when consensus loop is stopped. Otherwise, there is a risk of race condition when the consensus loop accepts new block.
         /// </remarks>
-        public async Task FlushAsync(bool force = true)
+        public void Flush(bool force = true)
         {
             DateTime now = this.dateTimeProvider.GetUtcNow();
             if (!force && ((now - this.lastCacheFlushTime).TotalSeconds < CacheFlushTimeIntervalSeconds))
@@ -294,16 +295,16 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             // the stake store depends on the last block hash
             // to be stored after the stake store is persisted.
             if (this.stakeChainStore != null)
-                await this.stakeChainStore.FlushAsync(true);
+                this.stakeChainStore.Flush(true);
 
             // Before flushing the coinview persist the rewind data index store as well.
             if (this.rewindDataIndexCache != null)
                 this.rewindDataIndexCache.Flush(this.blockHeight);
 
             if (this.innerBlockHash == null)
-                this.innerBlockHash = await this.inner.GetTipHashAsync().ConfigureAwait(false);
+                this.innerBlockHash = this.inner.GetTipHash();
 
-            using (await this.lockobj.LockAsync().ConfigureAwait(false))
+            lock (this.lockobj)
             {
                 if (this.innerBlockHash == null)
                 {
@@ -319,7 +320,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     u.Value.ExistInInner = true;
                 }
 
-                await this.Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), null, this.innerBlockHash, this.blockHash, 0, this.cachedRewindDataIndex.Select(c => c.Value).ToList()).ConfigureAwait(false);
+                this.Inner.SaveChanges(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), null, this.innerBlockHash, this.blockHash, 0, this.cachedRewindDataIndex.Select(c => c.Value).ToList());
 
                 // Remove prunable entries from cache as they were flushed down.
                 IEnumerable<KeyValuePair<uint256, CacheItem>> prunableEntries = unspent.Where(c => (c.Value.UnspentOutputs != null) && c.Value.UnspentOutputs.IsPrunable);
@@ -357,13 +358,13 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public async Task SaveChangesAsync(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, int height, List<RewindData> rewindDataList = null)
+        public void SaveChanges(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, int height, List<RewindData> rewindDataList = null)
         {
             Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
             Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
 
-            using (await this.lockobj.LockAsync().ConfigureAwait(false))
+            lock (this.lockobj)
             {
                 if ((this.blockHash != null) && (oldBlockHash != this.blockHash))
                 {
@@ -386,7 +387,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                         this.logger.LogTrace("Outputs of transaction ID '{0}' are not found in cache, creating them.", unspent.TransactionId);
 
-                        FetchCoinsResponse result = await this.inner.FetchCoinsAsync(new[] { unspent.TransactionId }).ConfigureAwait(false);
+                        FetchCoinsResponse result = this.inner.FetchCoins(new[] { unspent.TransactionId });
 
                         UnspentOutputs unspentOutput = result.UnspentOutputs[0];
 
@@ -463,19 +464,19 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public async Task<uint256> RewindAsync()
+        public uint256 Rewind()
         {
             if (this.innerBlockHash == null)
             {
-                this.innerBlockHash = await this.inner.GetTipHashAsync().ConfigureAwait(false);
+                this.innerBlockHash = this.inner.GetTipHash();
             }
 
             // Flush the entire cache before rewinding
-            await this.FlushAsync(true).ConfigureAwait(false);
+            this.Flush(true);
 
-            using (await this.lockobj.LockAsync().ConfigureAwait(false))
+            lock (this.lockobj)
             {
-                uint256 hash = await this.inner.RewindAsync().ConfigureAwait(false);
+                uint256 hash = this.inner.Rewind();
 
                 foreach (KeyValuePair<uint256, CacheItem> cachedUtxoItem in this.cachedUtxoItems)
                 {
@@ -494,19 +495,19 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 this.blockHeight -= 1;
 
                 if (this.rewindDataIndexCache != null)
-                    await this.rewindDataIndexCache.InitializeAsync(this.blockHeight, this);
+                    this.rewindDataIndexCache.Initialize(this.blockHeight, this);
 
                 return hash;
             }
         }
 
         /// <inheritdoc />
-        public async Task<RewindData> GetRewindData(int height)
+        public RewindData GetRewindData(int height)
         {
             if (this.cachedRewindDataIndex.TryGetValue(height, out RewindData existingRewindData))
                 return existingRewindData;
 
-            return await this.Inner.GetRewindData(height);
+            return this.Inner.GetRewindData(height);
         }
 
         [NoTrace]
@@ -524,12 +525,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 log.AppendLine((snapShot - this.latestPerformanceSnapShot).ToString());
 
             this.latestPerformanceSnapShot = snapShot;
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            this.lockobj.Dispose();
         }
     }
 }

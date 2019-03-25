@@ -24,9 +24,9 @@ namespace Stratis.Bitcoin.Consensus
             this.implementation.Dispose();
         }
 
-        public Task InitializeAsync(ChainedHeader chainTip)
+        public void Initialize(ChainedHeader chainTip)
         {
-            return this.implementation.InitializeAsync(chainTip);
+            this.implementation.Initialize(chainTip);
         }
 
         public ConsensusRuleEngine Register()
@@ -50,9 +50,9 @@ namespace Stratis.Bitcoin.Consensus
             return this.implementation.CreateRuleContext(validationContext);
         }
 
-        public Task<uint256> GetBlockHashAsync()
+        public uint256 GetBlockHash()
         {
-            return this.implementation.GetBlockHashAsync();
+            return this.implementation.GetBlockHash();
         }
 
         public Task<RewindState> RewindAsync()

@@ -87,6 +87,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             builder.AppendLine("-defaultwalletname=<string>     Loads the specified wallet on startup. If it doesn't exist, it will be created automatically.");
             builder.AppendLine("-defaultwalletpassword=<string> Overrides the default wallet password. Default: default.");
             builder.AppendLine("-unlockdefaultwallet=<0 or 1>   Unlocks the specified default wallet. Default: 0.");
+            builder.AppendLine("-walletaddressbuffer=<number>   Size of the buffer of unused addresses maintained in an account. Default: 20.");
             defaults.Logger.LogInformation(builder.ToString());
         }
 
@@ -101,9 +102,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             builder.AppendLine("#Save the hex of transactions in the wallet file. Default: 0.");
             builder.AppendLine("#savetrxhex=0");
             builder.AppendLine("#Creates a wallet with the specified name and the specified password. It will be created if it doesn't exist and can be unlocked on startup when unlockdefaultwallet is set to 1.");
-            builder.AppendLine("#defaultwalletname=<string>");
-            builder.AppendLine("#defaultwalletpassword=<string>");
+            builder.AppendLine("#defaultwalletname=");
+            builder.AppendLine("#Overrides the default wallet password. Default: default.");
+            builder.AppendLine("#defaultwalletpassword=default");
+            builder.AppendLine("#A value indicating whether to unlock the supplied default wallet on startup. Default 0.");
             builder.AppendLine("#unlockdefaultwallet=0");
+            builder.AppendLine("#Size of the buffer of unused addresses maintained in an account. Default: 20.");
+            builder.AppendLine("#walletaddressbuffer=20");
         }
     }
 }

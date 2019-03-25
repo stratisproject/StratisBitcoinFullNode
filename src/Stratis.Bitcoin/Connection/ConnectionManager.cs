@@ -72,6 +72,7 @@ namespace Stratis.Bitcoin.Connection
             get { return this.connectedPeers; }
         }
 
+        /// <inheritdoc/>
         public List<NetworkPeerServer> Servers { get; }
 
         /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
@@ -81,7 +82,10 @@ namespace Stratis.Bitcoin.Connection
 
         private IConsensusManager consensusManager;
 
-        private AsyncQueue<INetworkPeer> connectedPeersQueue;
+        private readonly AsyncQueue<INetworkPeer> connectedPeersQueue;
+
+        /// <summary>Traffic statistics from peers that have been disconnected.</summary> 
+        private readonly PerformanceCounter disconnectedPerfCounter;
 
         public ConnectionManager(IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
@@ -118,6 +122,7 @@ namespace Stratis.Bitcoin.Connection
             this.selfEndpointTracker = selfEndpointTracker;
             this.versionProvider = versionProvider;
             this.connectedPeersQueue = new AsyncQueue<INetworkPeer>(this.OnPeerAdded);
+            this.disconnectedPerfCounter = new PerformanceCounter();
 
             this.Parameters.UserAgent = $"{this.ConnectionSettings.Agent}:{versionProvider.GetVersion()} ({(int)this.NodeSettings.ProtocolVersion})";
 
@@ -227,8 +232,9 @@ namespace Stratis.Bitcoin.Connection
 
         private void AddComponentStats(StringBuilder builder)
         {
-            long totalRead = 0;
-            long totalWritten = 0;
+            // The total traffic will be the sum of the disconnected peers' traffic and the currently connected peers' traffic.
+            long totalRead = this.disconnectedPerfCounter.ReadBytes;
+            long totalWritten = this.disconnectedPerfCounter.WrittenBytes;
             var peerBuilder = new StringBuilder();
             foreach (INetworkPeer peer in this.ConnectedPeers)
             {
@@ -239,7 +245,6 @@ namespace Stratis.Bitcoin.Connection
                                      $"/{(chainHeadersBehavior.BestSentHeader != null ? chainHeadersBehavior.BestSentHeader.Height.ToString() : peer.PeerVersion != null ? peer.PeerVersion.StartHeight + "*" : "-")}" +
                                      $"/{chainHeadersBehavior.GetCachedItemsCount()}";
 
-                // TODO: Need a snapshot cache so that not only currently connected peers are summed
                 string peerTraffic = $"R/S MB: {peer.Counter.ReadBytes.BytesToMegaBytes()}/{peer.Counter.WrittenBytes.BytesToMegaBytes()}";
                 totalRead += peer.Counter.ReadBytes;
                 totalWritten += peer.Counter.WrittenBytes;
@@ -359,6 +364,7 @@ namespace Stratis.Bitcoin.Connection
         public void RemoveConnectedPeer(INetworkPeer peer, string reason)
         {
             this.connectedPeers.Remove(peer);
+            this.disconnectedPerfCounter.Add(peer.Counter);
         }
 
         /// <inheritdoc />

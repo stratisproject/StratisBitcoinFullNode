@@ -48,19 +48,19 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Block genesis = ctx.Network.GetGenesis();
                 var genesisChainedHeader = new ChainedHeader(genesis.Header, ctx.Network.GenesisHash, 0);
                 ChainedHeader chained = this.MakeNext(genesisChainedHeader, ctx.Network);
-                ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedHeader.HashBlock, chained.HashBlock, chained.Height).Wait();
-                Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
-                Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
+                ctx.PersistentCoinView.SaveChanges(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedHeader.HashBlock, chained.HashBlock, chained.Height);
+                Assert.NotNull(ctx.PersistentCoinView.FetchCoins(new[] { genesis.Transactions[0].GetHash() }).UnspentOutputs[0]);
+                Assert.Null(ctx.PersistentCoinView.FetchCoins(new[] { new uint256() }).UnspentOutputs[0]);
 
                 ChainedHeader previous = chained;
                 chained = this.MakeNext(this.MakeNext(genesisChainedHeader, ctx.Network), ctx.Network);
                 chained = this.MakeNext(this.MakeNext(genesisChainedHeader, ctx.Network), ctx.Network);
-                ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[0], null, previous.HashBlock, chained.HashBlock, chained.Height).Wait();
-                Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetTipHashAsync().GetAwaiter().GetResult());
+                ctx.PersistentCoinView.SaveChanges(new UnspentOutputs[0], null, previous.HashBlock, chained.HashBlock, chained.Height);
+                Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetTipHash());
                 ctx.ReloadPersistentCoinView();
-                Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetTipHashAsync().GetAwaiter().GetResult());
-                Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
-                Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
+                Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetTipHash());
+                Assert.NotNull(ctx.PersistentCoinView.FetchCoins(new[] { genesis.Transactions[0].GetHash() }).UnspentOutputs[0]);
+                Assert.Null(ctx.PersistentCoinView.FetchCoins(new[] { new uint256() }).UnspentOutputs[0]);
             }
         }
 
@@ -76,16 +76,16 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, dateTimeProvider, this.loggerFactory, new NodeStats(dateTimeProvider));
 
-                cacheCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedHeader.HashBlock, chained.HashBlock, chained.Height).Wait();
-                Assert.NotNull(cacheCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
-                Assert.Null(cacheCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
-                Assert.Equal(chained.HashBlock, cacheCoinView.GetTipHashAsync().Result);
+                cacheCoinView.SaveChanges(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedHeader.HashBlock, chained.HashBlock, chained.Height);
+                Assert.NotNull(cacheCoinView.FetchCoins(new[] { genesis.Transactions[0].GetHash() }).UnspentOutputs[0]);
+                Assert.Null(cacheCoinView.FetchCoins(new[] { new uint256() }).UnspentOutputs[0]);
+                Assert.Equal(chained.HashBlock, cacheCoinView.GetTipHash());
 
-                Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
-                Assert.Equal(chained.Previous.HashBlock, ctx.PersistentCoinView.GetTipHashAsync().Result);
-                cacheCoinView.FlushAsync().GetAwaiter().GetResult();
-                Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
-                Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetTipHashAsync().Result);
+                Assert.Null(ctx.PersistentCoinView.FetchCoins(new[] { genesis.Transactions[0].GetHash() }).UnspentOutputs[0]);
+                Assert.Equal(chained.Previous.HashBlock, ctx.PersistentCoinView.GetTipHash());
+                cacheCoinView.Flush();
+                Assert.NotNull(ctx.PersistentCoinView.FetchCoins(new[] { genesis.Transactions[0].GetHash() }).UnspentOutputs[0]);
+                Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetTipHash());
                 //Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
 
                 //var previous = chained;
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Coin[] coinsA = tester.CreateCoins(5);
                 Coin[] coinsB = tester.CreateCoins(1);
                 tester.NewBlock();
-                cacheCoinView.FlushAsync().Wait();
+                cacheCoinView.Flush();
                 Assert.True(tester.Exists(coinsA[2]));
                 Assert.True(tester.Exists(coinsB[0]));
 
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 tester.Spend(coinsA[2]);
                 tester.Spend(coinsB[0]);
                 tester.NewBlock();
-                cacheCoinView.FlushAsync().Wait();
+                cacheCoinView.Flush();
                 Assert.False(tester.Exists(coinsA[2]));
                 Assert.False(tester.Exists(coinsB[0]));
 
@@ -164,7 +164,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 Assert.True(tester.Exists(coinsD[1]));
                 Assert.False(tester.Exists(coinsD[0]));
-                cacheCoinView.FlushAsync().Wait();
+                cacheCoinView.Flush();
 
                 // Creates another empty RewindData instance.
                 tester.NewBlock();
@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 coreNode2.FindBlock(20).Last();
                 TestHelper.ConnectAndSync(stratisNode, coreNode2);
                 TestHelper.Disconnect(stratisNode, coreNode2);
-                ((CachedCoinView)stratisNode.FullNode.CoinView()).FlushAsync().Wait();
+                ((CachedCoinView)stratisNode.FullNode.CoinView()).Flush();
 
                 //Core1 discovers 30 blocks, sends to stratis
                 coreNode1.FindBlock(30).Last();
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 coreNode2.FindBlock(50).Last();
                 TestHelper.ConnectAndSync(stratisNode, coreNode2);
                 TestHelper.Disconnect(stratisNode, coreNode2);
-                ((CachedCoinView)stratisNode.FullNode.CoinView()).FlushAsync().Wait();
+                ((CachedCoinView)stratisNode.FullNode.CoinView()).Flush();
 
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode, coreNode2));
             }

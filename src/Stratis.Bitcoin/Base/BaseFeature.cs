@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Base
             // This may be a temporary solution until a better way is found to solve this dependency.
             await this.blockStore.InitializeAsync().ConfigureAwait(false);
 
-            await this.consensusRules.InitializeAsync(this.chain.Tip).ConfigureAwait(false);
+            this.consensusRules.Initialize(this.chain.Tip);
 
             this.consensusRules.Register();
 

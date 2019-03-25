@@ -6,7 +6,6 @@ using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.RestClients;
 using Stratis.Features.FederatedPeg.TargetChain;
-using Stratis.Features.FederatedPeg.Tests.Utils;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests
@@ -27,7 +26,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.syncManager = new TestOnlyMaturedBlocksSyncManager(this.crossChainTransferStore, this.federationGatewayClient, loggerFactory);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public async Task BlocksAreRequestedIfThereIsSomethingToRequestAsync()
         {
             this.crossChainTransferStore.NextMatureDepositHeight.Returns(5);
