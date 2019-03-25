@@ -62,7 +62,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             Money expectedAmountAfterFee = recipient.Amount - this.federationGatewaySettings.Object.TransactionFee;
 
-            this.federationWalletTransactionHandler.Verify(x=>x.BuildTransaction(It.Is<TransactionBuildContext>(y => y.Recipients.First().Amount == expectedAmountAfterFee)));
+            this.federationWalletTransactionHandler.Verify(x => x.BuildTransaction(It.Is<TransactionBuildContext>(y => y.Recipients.First().Amount == expectedAmountAfterFee)));
         }
     }
 }
