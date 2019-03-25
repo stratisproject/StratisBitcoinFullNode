@@ -1567,7 +1567,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .PostJsonAsync(new VerifyRequest
                 {
                     Signature = "invalid signature",
-                    ExternalAddress = this.fixture.addressWihtoutFunds,
+                    ExternalAddress = this.fixture.addressWithoutFunds,
                     Message = "Test test..."
                 })
                 .ReceiveJson<bool>();
