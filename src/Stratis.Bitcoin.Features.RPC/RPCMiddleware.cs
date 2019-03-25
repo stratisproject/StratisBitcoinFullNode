@@ -153,6 +153,7 @@ namespace Stratis.Bitcoin.Features.RPC
         private async Task InvokeAsyncBatchAsync(HttpContext httpContext, JArray requests)
         {
             JArray responses = new JArray();
+            int i = 1;
             foreach (JObject requestObj in requests)
             {
                 var contextFeatures = new FeatureCollection(httpContext.Features);
@@ -200,6 +201,7 @@ namespace Stratis.Bitcoin.Features.RPC
                     response.Remove("id");
 
                 responses.Add(response);
+                i++;
             }
 
             httpContext.Response.ContentType = "application/json; charset=utf-8";

@@ -501,6 +501,7 @@ namespace Stratis.Bitcoin.Features.RPC
                     first = false;
 
                 item.request.WriteJSON(writer);
+                i++;
             }
 
             writer.Write("]");
