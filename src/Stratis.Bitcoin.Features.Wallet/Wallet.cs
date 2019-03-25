@@ -322,15 +322,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <remarks>
         /// Returns an HDAddress.
         /// </remarks>
-        /// <param name="coinType">Type of the coin to get the HD Address from.</param>
         /// <param name="externalAddress">An address.</param>
         /// <param name="accountFilter">An optional filter for filtering the accounts being returned.</param>
         /// <returns>HD Address</returns>
-        public HdAddress FindHDAddressByExternalAddress(CoinType coinType, string externalAddress, Func<HdAccount, bool> accountFilter = null)
+        public HdAddress FindHDAddressByExternalAddress(string externalAddress, Func<HdAccount, bool> accountFilter = null)
         {
             Guard.NotNull(externalAddress, nameof(externalAddress));
             
-            HdAddress hdAddress = this.GetAllAddressesByCoinType(coinType, accountFilter).FirstOrDefault(a => a.Address == externalAddress);
+            HdAddress hdAddress = this.GetAllAddresses(accountFilter).FirstOrDefault(a => a.Address == externalAddress);
             
             // Check if the wallet contains the address.
             if (hdAddress == null)
@@ -339,37 +338,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return hdAddress;
-        }
-
-        /// <summary>
-        /// Calculates the fee paid by the user on a transaction sent.
-        /// </summary>
-        /// <param name="coinType">Type of the coin to get transactions from.</param>
-        /// <param name="transactionId">The transaction id to look for.</param>
-        /// <returns>The fee paid.</returns>
-        public Money GetSentTransactionFee(CoinType coinType, uint256 transactionId)
-        {
-            List<TransactionData> allTransactions = this.GetAllTransactionsByCoinType(coinType).ToList();
-
-            // Get a list of all the inputs spent in this transaction.
-            List<TransactionData> inputsSpentInTransaction = allTransactions.Where(t => t.SpendingDetails?.TransactionId == transactionId).ToList();
-            
-            if (!inputsSpentInTransaction.Any())
-            {
-                throw new WalletException("Not a sent transaction");
-            }
-
-            // Get the details of the spending transaction, which can be found on any input spent.
-            SpendingDetails spendingTransaction = inputsSpentInTransaction.Select(s => s.SpendingDetails).First();
-
-            // The change is the output paid into one of our addresses. We make sure to exclude the output received to one of
-            // our addresses if this transaction is self-sent.
-            IEnumerable<TransactionData> changeOutput = allTransactions.Where(t => t.Id == transactionId && spendingTransaction.Payments.All(p => p.OutputIndex != t.Index)).ToList(); 
-
-            Money inputsAmount = new Money(inputsSpentInTransaction.Sum(i => i.Amount));
-            Money outputsAmount = new Money(spendingTransaction.Payments.Sum(p => p.Amount) + changeOutput.Sum(c => c.Amount));
-
-            return inputsAmount - outputsAmount;
         }
     }
 

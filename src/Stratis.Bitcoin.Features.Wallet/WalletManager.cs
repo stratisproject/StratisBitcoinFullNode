@@ -323,7 +323,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Sign the message.
             try
             {
-                HdAddress hdAddress = wallet.FindHDAddressByExternalAddress(this.coinType, externalAddress);
+                HdAddress hdAddress = wallet.FindHDAddressByExternalAddress(externalAddress);
                 Key privateKey = wallet.GetExtendedPrivateKeyForAddress(password, hdAddress).PrivateKey;
                 BitcoinSecret secret = this.network.CreateBitcoinSecret(privateKey);
                 signature = secret.PrivateKey.SignMessage(message);
