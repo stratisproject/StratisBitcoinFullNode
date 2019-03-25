@@ -12,7 +12,7 @@ namespace NBitcoin
         private readonly Dictionary<uint256, ChainedHeader> blocksById;
 
         public Network Network { get; }
-        public ChainedHeader Tip { get; private set; }
+        public virtual ChainedHeader Tip { get; private set; }
 
         public int Height => this.Tip.Height;
         public ChainedHeader Genesis => this.GetBlock(0);
@@ -24,7 +24,7 @@ namespace NBitcoin
         }
 
         public ChainIndexer(Network network) : this()
-        {
+        {   
             this.Network = network;
 
             this.Initialize(new ChainedHeader(network.GetGenesis().Header, network.GetGenesis().GetHash(), 0));
@@ -190,11 +190,11 @@ namespace NBitcoin
                 this.blocksById.Remove(removeTip.HashBlock);
                 this.blocksByHeight.Remove(removeTip.Height);
 
-                this.Tip = this.blocksById.Last().Value;
+                this.Tip = this.blocksById[removeTip.Previous.HashBlock];
             }
         }
 
-        public ChainedHeader GetBlock(uint256 id)
+        public virtual ChainedHeader GetBlock(uint256 id)
         {
             lock (this.lockObject)
             {
@@ -204,7 +204,7 @@ namespace NBitcoin
             }
         }
 
-        public ChainedHeader GetBlock(int height)
+        public virtual ChainedHeader GetBlock(int height)
         {
             lock (this.lockObject)
             {
