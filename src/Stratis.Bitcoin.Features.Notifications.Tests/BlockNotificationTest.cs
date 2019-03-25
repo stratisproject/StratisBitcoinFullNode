@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         /// Tests that <see cref="BlockNotification.Notify(System.Threading.CancellationToken)"/> exits due
         /// to <see cref="BlockNotification.StartHash"/> being null and no blocks were signaled.
         /// </summary>
-        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
+        [Fact]
         public void Notify_Completes_StartHashNotSet()
         {
             var notification = new BlockNotification(this.LoggerFactory.Object, this.chain, this.consensusManager.Object, this.signals.Object, new AsyncLoopFactory(new LoggerFactory()), this.lifetime);
