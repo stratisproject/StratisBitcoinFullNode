@@ -445,7 +445,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
             (RPCRequest request, TaskCompletionSource<RPCResponse> task) req;
             while (batches.TryDequeue(out req))
-                req.Item2.TrySetCanceled();
+                req.task.TrySetCanceled();
         }
 
         /// <summary>Send all commands in one batch.</summary>
@@ -493,7 +493,6 @@ namespace Stratis.Bitcoin.Features.RPC
             writer.Write("[");
 
             bool first = true;
-            var i = 1;
             foreach ((RPCRequest request, TaskCompletionSource<RPCResponse> task) item in requests)
             {
                 if (!first)
@@ -501,9 +500,7 @@ namespace Stratis.Bitcoin.Features.RPC
                 else
                     first = false;
 
-                item.Item1.Id = i;
-                item.Item1.WriteJSON(writer);
-                i++;
+                item.request.WriteJSON(writer);
             }
 
             writer.Write("]");

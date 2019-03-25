@@ -195,8 +195,10 @@ namespace Stratis.Bitcoin.Features.RPC
 
                 var response = (responseMemoryStream.Length == 0) ? CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, "Method not found") : await JObject.LoadAsync(new JsonTextReader(new StreamReader(responseMemoryStream)));
 
-                if (response.ContainsKey("id"))
-                    response["id"] = i;
+                if (requestObj.ContainsKey("id"))
+                    response["id"] = requestObj["id"];
+                else
+                    response.Remove("id");
 
                 responses.Add(response);
                 i++;
