@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         internal readonly string addressWithFunds = "TRCT9QP3ipb6zCvW15yKoEtaU418UaKVE2";
 
-        internal readonly string addressWihtoutFunds = "TDQAiMyvWZeQxuL9U1BJXt8XrTRMgwjCBe";
+        internal readonly string addressWithoutFunds = "TDQAiMyvWZeQxuL9U1BJXt8XrTRMgwjCBe";
 
         internal readonly string signatureMessage = "This is a test";
 
@@ -1531,7 +1531,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .PostJsonAsync(new VerifyRequest
                 {
                     Signature = this.fixture.validSignature,
-                    ExternalAddress = this.fixture.addressWihtoutFunds,
+                    ExternalAddress = this.fixture.addressWithoutFunds,
                     Message = this.fixture.signatureMessage
                 })
                 .ReceiveJson<bool>();
@@ -1567,7 +1567,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .PostJsonAsync(new VerifyRequest
                 {
                     Signature = "invalid signature",
-                    ExternalAddress = this.fixture.addressWihtoutFunds,
+                    ExternalAddress = this.fixture.addressWithoutFunds,
                     Message = "Test test..."
                 })
                 .ReceiveJson<bool>();

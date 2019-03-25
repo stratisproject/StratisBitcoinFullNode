@@ -334,7 +334,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Check if the wallet contains the address.
             if (hdAddress == null)
             {
-                throw new WalletException("Address not found on wallet.");
+                throw new WalletException("Address not found in wallet.");
             }
 
             return hdAddress;
