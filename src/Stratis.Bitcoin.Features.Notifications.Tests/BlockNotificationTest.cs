@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         /// Ensures that <see cref="BlockNotification.StartHash" /> gets updated
         /// every time <see cref="BlockNotification.SyncFrom(uint256)"/> gets called.
         /// </summary>
-        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
+        [Fact]
         public void CallingSyncFromUpdatesStartHashAccordingly()
         {
             var notification = new BlockNotification(this.LoggerFactory.Object, this.chain, this.consensusManager.Object,
