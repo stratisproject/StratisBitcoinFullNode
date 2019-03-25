@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -463,14 +464,18 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             statusResponse.ProtocolVersion.Should().Be((uint)(statusNode.Settings.ProtocolVersion));
             statusResponse.RelayFee.Should().Be(statusNode.Settings.MinRelayTxFeeRate.FeePerK.ToUnit(MoneyUnit.BTC));
             statusResponse.DataDirectoryPath.Should().Be(statusNode.Settings.DataDir);
-            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Base.BaseFeature");
-            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.Api.ApiFeature");
-            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.BlockStore.BlockStoreFeature");
-            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.Consensus.PowConsensusFeature");
-            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.MemoryPool.MempoolFeature");
-            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.Miner.MiningFeature");
-            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.RPC.RPCFeature");
-            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.Wallet.WalletFeature");
+
+            List<string> featuresNamespaces = statusResponse.FeaturesData.Select(f => f.Namespace).ToList();
+            featuresNamespaces.Should().Contain("Stratis.Bitcoin.Base.BaseFeature");
+            featuresNamespaces.Should().Contain("Stratis.Bitcoin.Features.Api.ApiFeature");
+            featuresNamespaces.Should().Contain("Stratis.Bitcoin.Features.BlockStore.BlockStoreFeature");
+            featuresNamespaces.Should().Contain("Stratis.Bitcoin.Features.Consensus.PowConsensusFeature");
+            featuresNamespaces.Should().Contain("Stratis.Bitcoin.Features.MemoryPool.MempoolFeature");
+            featuresNamespaces.Should().Contain("Stratis.Bitcoin.Features.Miner.MiningFeature");
+            featuresNamespaces.Should().Contain("Stratis.Bitcoin.Features.RPC.RPCFeature");
+            featuresNamespaces.Should().Contain("Stratis.Bitcoin.Features.Wallet.WalletFeature");
+
+            statusResponse.FeaturesData.All(f => f.State == "Initialized").Should().BeTrue();
         }
 
         private void general_information_about_the_wallet_and_node_is_returned()
