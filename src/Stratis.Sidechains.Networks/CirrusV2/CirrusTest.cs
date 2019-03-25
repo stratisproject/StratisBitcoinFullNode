@@ -74,7 +74,8 @@ namespace Stratis.Sidechains.Networks.CirrusV2
                 maxStandardTxSigopsCost: 20_000 / 5,
                 federationPublicKeys: federationPubKeys,
                 targetSpacingSeconds: 16,
-                votingEnabled: false
+                votingEnabled: false,
+                autoKickIdleMembers: false
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
