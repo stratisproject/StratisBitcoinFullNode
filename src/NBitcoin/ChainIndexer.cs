@@ -5,15 +5,30 @@ using System.Linq;
 
 namespace NBitcoin
 {
+    /// <summary>
+    /// An indexer that provides methods to query the best chain (the chain that is validated by the full consensus rules)
+    /// </summary>
     public class ChainIndexer
     {
+        /// <summary>Locks access to <see cref="blocksByHeight"/>, <see cref="blocksById"/>.</summary>
         private readonly object lockObject = new object();
+
+        /// <remarks>This object has to be protected by <see cref="lockObject"/>.</remarks>
         private readonly Dictionary<int, ChainedHeader> blocksByHeight;
+
+        /// <remarks>This object has to be protected by <see cref="lockObject"/>.</remarks>
         private readonly Dictionary<uint256, ChainedHeader> blocksById;
 
         public Network Network { get; }
+
+        /// <summary>
+        /// The tip of the best known validated chain.
+        /// </summary>
         public virtual ChainedHeader Tip { get; private set; }
 
+        /// <summary>
+        /// The tip height of the best known validated chain.
+        /// </summary>
         public int Height => this.Tip.Height;
         public ChainedHeader Genesis => this.GetBlock(0);
 
@@ -63,8 +78,7 @@ namespace NBitcoin
                 this.Tip = chainedHeader;
             }
         }
-
-
+        
         /// <summary>
         /// Returns the first chained block header that exists in the chain from the list of block hashes.
         /// </summary>
@@ -166,6 +180,9 @@ namespace NBitcoin
             }
         }
 
+        /// <summary>
+        /// TODO: Make this internal when the component moves to Stratis.Bitcoin
+        /// </summary>
         public void Add(ChainedHeader addTip)
         {
             lock (this.lockObject)
@@ -180,6 +197,9 @@ namespace NBitcoin
             }
         }
 
+        /// <summary>
+        /// TODO: Make this internal when the component moves to Stratis.Bitcoin
+        /// </summary>
         public void Remove(ChainedHeader removeTip)
         {
             lock (this.lockObject)
@@ -194,6 +214,9 @@ namespace NBitcoin
             }
         }
 
+        /// <summary>
+        /// Get a <see cref="ChainedHeader"/> based on it's hash.
+        /// </summary>
         public virtual ChainedHeader GetBlock(uint256 id)
         {
             lock (this.lockObject)
@@ -204,6 +227,9 @@ namespace NBitcoin
             }
         }
 
+        /// <summary>
+        /// Get a <see cref="ChainedHeader"/> based on it's height.
+        /// </summary>
         public virtual ChainedHeader GetBlock(int height)
         {
             lock (this.lockObject)

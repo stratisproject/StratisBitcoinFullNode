@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         private IPeerBanning peerBanning;
         private IConnectionManager connectionManager;
         private static int nonceValue;
-        private ChainIndexer chainIndexer;
+        internal ChainIndexer chainIndexer;
         private DateTimeProvider dateTimeProvider;
         private InvalidBlockHashStore hashStore;
         private NodeSettings nodeSettings;

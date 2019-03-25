@@ -278,12 +278,6 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             this.logger.LogDebug("RPC GetBlockHeader {0}", hash);
 
-            if (!isJsonFormat)
-            {
-                this.logger.LogError("Binary serialization is not supported for RPC '{0}'.", nameof(this.GetBlockHeader));
-                throw new NotImplementedException();
-            }
-
             BlockHeaderModel model = null;
             if (this.ChainIndexer != null)
             {
