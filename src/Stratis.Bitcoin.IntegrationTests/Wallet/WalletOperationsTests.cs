@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         internal readonly string addressWithFunds = "TRCT9QP3ipb6zCvW15yKoEtaU418UaKVE2";
 
-        internal readonly string addressWihtoutFunds = "TDQAiMyvWZeQxuL9U1BJXt8XrTRMgwjCBe";
+        internal readonly string addressWithoutFunds = "TDQAiMyvWZeQxuL9U1BJXt8XrTRMgwjCBe";
 
         internal readonly string signatureMessage = "This is a test";
 
