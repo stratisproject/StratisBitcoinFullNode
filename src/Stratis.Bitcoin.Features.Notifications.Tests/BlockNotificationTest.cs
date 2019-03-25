@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         /// Tests that <see cref="BlockNotification.Notify(System.Threading.CancellationToken)"/> exits due
         /// to <see cref="BlockNotification.StartHash"/> being null and no blocks were signaled.
         /// </summary>
-        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
+        [Fact]
         public void Notify_Completes_StartHashNotSet()
         {
             var notification = new BlockNotification(this.LoggerFactory.Object, this.chain, this.consensusManager.Object, this.signals.Object, new AsyncLoopFactory(new LoggerFactory()), this.lifetime);
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             Assert.Equal(blockId2, notification.StartHash);
         }
 
-        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
+        [Fact]
         public void SyncFrom_StartHashIsNull_SetsStartHashToBlockNotification()
         {
             var notification = new BlockNotification(this.LoggerFactory.Object, this.chain, this.consensusManager.Object,
@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             Assert.Null(notification.StartHash);
         }
 
-        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
+        [Fact]
         public void SyncFrom_StartHashIsNotNull_GetsBlockBasedOnStartHash_SetsPullerAndTipToPreviousBlock()
         {
             List<Block> blocks = this.CreateBlocks(3);
@@ -167,7 +167,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             Assert.Equal(notification.StartHash, blocks[2].GetHash());
         }
 
-        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
+        [Fact]
         public void Start_RunsAsyncLoop()
         {
             var asyncLoopFactory = new Mock<IAsyncLoopFactory>();
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             asyncLoopFactory.Verify(a => a.Run("Notify", It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(), null, null));
         }
 
-        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
+        [Fact]
         public void Stop_DisposesAsyncLoop()
         {
             var asyncLoop = new Mock<IAsyncLoop>();
