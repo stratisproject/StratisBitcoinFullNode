@@ -493,7 +493,6 @@ namespace Stratis.Bitcoin.Features.RPC
             writer.Write("[");
 
             bool first = true;
-            var i = 1;
             foreach ((RPCRequest request, TaskCompletionSource<RPCResponse> task) item in requests)
             {
                 if (!first)
@@ -501,9 +500,7 @@ namespace Stratis.Bitcoin.Features.RPC
                 else
                     first = false;
 
-                item.request.Id = i.ToString();
                 item.request.WriteJSON(writer);
-                i++;
             }
 
             writer.Write("]");
