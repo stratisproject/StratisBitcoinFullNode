@@ -445,7 +445,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
             (RPCRequest request, TaskCompletionSource<RPCResponse> task) req;
             while (batches.TryDequeue(out req))
-                req.Item2.TrySetCanceled();
+                req.task.TrySetCanceled();
         }
 
         /// <summary>Send all commands in one batch.</summary>
@@ -501,8 +501,8 @@ namespace Stratis.Bitcoin.Features.RPC
                 else
                     first = false;
 
-                item.Item1.Id = i;
-                item.Item1.WriteJSON(writer);
+                item.request.Id = i.ToString();
+                item.request.WriteJSON(writer);
                 i++;
             }
 
