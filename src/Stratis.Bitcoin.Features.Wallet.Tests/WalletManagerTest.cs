@@ -662,7 +662,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Wallet wallet = this.walletFixture.GenerateBlankWallet("testWallet", "password");
             wallet.AccountsRoot.ElementAt(0).Accounts.Clear();
 
-            HdAccount result = wallet.AddNewAccount("password", (CoinType)this.Network.Consensus.CoinType, DateTimeOffset.UtcNow);
+            HdAccount result = wallet.AddNewAccount("password", DateTimeOffset.UtcNow);
 
             Assert.Equal(1, wallet.AccountsRoot.ElementAt(0).Accounts.Count);
             var extKey = new ExtKey(Key.Parse(wallet.EncryptedSeed, "password", wallet.Network), wallet.ChainCode);
@@ -686,7 +686,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Wallet wallet = this.walletFixture.GenerateBlankWallet("testWallet", "password");
             wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount { Name = "unused" });
 
-            HdAccount result = wallet.AddNewAccount("password", (CoinType)this.Network.Consensus.CoinType, DateTimeOffset.UtcNow);
+            HdAccount result = wallet.AddNewAccount("password", DateTimeOffset.UtcNow);
 
             Assert.Equal(2, wallet.AccountsRoot.ElementAt(0).Accounts.Count);
             var extKey = new ExtKey(Key.Parse(wallet.EncryptedSeed, "password", wallet.Network), wallet.ChainCode);
@@ -797,7 +797,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             });
             walletManager.Wallets.Add(wallet);
 
-            HdAddress result = walletManager.GetUnusedChangeAddress(new WalletAccountReference(wallet.Name, wallet.AccountsRoot.First().Accounts.First().Name));
+            HdAddress result = walletManager.GetUnusedChangeAddress(new WalletAccountReference(wallet.Name, wallet.AccountsRoot.Single().Accounts.First().Name));
 
             Assert.Equal(alice.GetAddress().ToString(), result.Address);
         }
@@ -825,7 +825,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             });
             walletManager.Wallets.Add(wallet);
 
-            HdAddress result = walletManager.GetUnusedChangeAddress(new WalletAccountReference(wallet.Name, wallet.AccountsRoot.First().Accounts.First().Name));
+            HdAddress result = walletManager.GetUnusedChangeAddress(new WalletAccountReference(wallet.Name, wallet.AccountsRoot.Single().Accounts.First().Name));
 
             Assert.NotNull(result.Address);
         }
@@ -1028,24 +1028,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet", "password");
             wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount { Name = "Account 0" });
             wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount { Name = "Account 1" });
-            wallet.AccountsRoot.Add(new AccountRoot()
-            {
-                CoinType = CoinType.Stratis,
-                Accounts = new List<HdAccount> { new HdAccount { Name = "Account 2" } }
-            });
-            wallet.AccountsRoot.Add(new AccountRoot()
-            {
-                CoinType = CoinType.Bitcoin,
-                Accounts = new List<HdAccount> { new HdAccount { Name = "Account 3" } }
-            });
+            
             walletManager.Wallets.Add(wallet);
 
             IEnumerable<HdAccount> result = walletManager.GetAccounts("myWallet");
 
-            Assert.Equal(3, result.Count());
+            Assert.Equal(2, result.Count());
             Assert.Equal("Account 0", result.ElementAt(0).Name);
             Assert.Equal("Account 1", result.ElementAt(1).Name);
-            Assert.Equal("Account 3", result.ElementAt(2).Name);
         }
 
         [Fact]
@@ -1095,58 +1085,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void LastBlockHeightWithWalletsReturnsLowestLastBlockSyncedHeightForAccountRootsOfManagerCoinType()
-        {
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new Mock<ConcurrentChain>().Object, new WalletSettings(NodeSettings.Default(this.Network)),
-                CreateDataFolder(this), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
-            Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet", "password");
-            wallet.AccountsRoot.ElementAt(0).CoinType = CoinType.Stratis;
-            wallet.AccountsRoot.ElementAt(0).LastBlockSyncedHeight = 15;
-            Wallet wallet2 = this.walletFixture.GenerateBlankWallet("myWallet", "password");
-            wallet2.AccountsRoot.ElementAt(0).CoinType = CoinType.Bitcoin;
-            wallet2.AccountsRoot.ElementAt(0).LastBlockSyncedHeight = 20;
-            Wallet wallet3 = this.walletFixture.GenerateBlankWallet("myWallet", "password");
-            wallet3.AccountsRoot.ElementAt(0).CoinType = CoinType.Bitcoin;
-            wallet3.AccountsRoot.ElementAt(0).LastBlockSyncedHeight = 56;
-            walletManager.Wallets.Add(wallet);
-            walletManager.Wallets.Add(wallet2);
-            walletManager.Wallets.Add(wallet3);
-
-            int result = walletManager.LastBlockHeight();
-
-            Assert.Equal(20, result);
-        }
-
-        [Fact]
-        public void LastBlockHeightWithWalletsReturnsLowestLastBlockSyncedHeightForAccountRootsOfManagerCoinType2()
-        {
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new Mock<ConcurrentChain>().Object, new WalletSettings(NodeSettings.Default(this.Network)),
-                CreateDataFolder(this), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
-            Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet", "password");
-            wallet.AccountsRoot.ElementAt(0).CoinType = CoinType.Stratis;
-            wallet.AccountsRoot.ElementAt(0).LastBlockSyncedHeight = 15;
-            wallet.AccountsRoot.Add(new AccountRoot()
-            {
-                CoinType = CoinType.Bitcoin,
-                LastBlockSyncedHeight = 12
-            });
-
-            Wallet wallet2 = this.walletFixture.GenerateBlankWallet("myWallet", "password");
-            wallet2.AccountsRoot.ElementAt(0).CoinType = CoinType.Bitcoin;
-            wallet2.AccountsRoot.ElementAt(0).LastBlockSyncedHeight = 20;
-            Wallet wallet3 = this.walletFixture.GenerateBlankWallet("myWallet", "password");
-            wallet3.AccountsRoot.ElementAt(0).CoinType = CoinType.Bitcoin;
-            wallet3.AccountsRoot.ElementAt(0).LastBlockSyncedHeight = 56;
-            walletManager.Wallets.Add(wallet);
-            walletManager.Wallets.Add(wallet2);
-            walletManager.Wallets.Add(wallet3);
-
-            int result = walletManager.LastBlockHeight();
-
-            Assert.Equal(12, result);
-        }
-
-        [Fact]
         public void LastBlockHeightWithoutWalletsOfCoinTypeReturnsZero()
         {
             var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new Mock<ConcurrentChain>().Object, new WalletSettings(NodeSettings.Default(this.Network)),
@@ -1178,65 +1116,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             uint256 result = walletManager.LastReceivedBlockHash();
 
             Assert.Equal(chain.Tip.HashBlock, result);
-        }
-
-        [Fact]
-        public void LastReceivedBlockHashWithWalletsReturnsLowestLastBlockSyncedHashForAccountRootsOfManagerCoinType()
-        {
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new Mock<ConcurrentChain>().Object, new WalletSettings(NodeSettings.Default(this.Network)),
-                CreateDataFolder(this), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
-            Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet", "password");
-            wallet.AccountsRoot.ElementAt(0).CoinType = CoinType.Stratis;
-            wallet.AccountsRoot.ElementAt(0).LastBlockSyncedHeight = 15;
-            wallet.AccountsRoot.ElementAt(0).LastBlockSyncedHash = new uint256(15);
-            Wallet wallet2 = this.walletFixture.GenerateBlankWallet("myWallet", "password");
-            wallet2.AccountsRoot.ElementAt(0).CoinType = CoinType.Bitcoin;
-            wallet2.AccountsRoot.ElementAt(0).LastBlockSyncedHeight = 20;
-            wallet2.AccountsRoot.ElementAt(0).LastBlockSyncedHash = new uint256(20);
-            Wallet wallet3 = this.walletFixture.GenerateBlankWallet("myWallet", "password");
-            wallet3.AccountsRoot.ElementAt(0).CoinType = CoinType.Bitcoin;
-            wallet3.AccountsRoot.ElementAt(0).LastBlockSyncedHeight = 56;
-            wallet3.AccountsRoot.ElementAt(0).LastBlockSyncedHash = new uint256(56);
-            walletManager.Wallets.Add(wallet);
-            walletManager.Wallets.Add(wallet2);
-            walletManager.Wallets.Add(wallet3);
-
-            uint256 result = walletManager.LastReceivedBlockHash();
-
-            Assert.Equal(new uint256(20), result);
-        }
-
-        [Fact]
-        public void LastReceivedBlockHashWithWalletsReturnsLowestLastReceivedBlockHashForAccountRootsOfManagerCoinType2()
-        {
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new Mock<ConcurrentChain>().Object, new WalletSettings(NodeSettings.Default(this.Network)),
-                CreateDataFolder(this), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
-            Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet", "password");
-            wallet.AccountsRoot.ElementAt(0).CoinType = CoinType.Stratis;
-            wallet.AccountsRoot.ElementAt(0).LastBlockSyncedHeight = 15;
-            wallet.AccountsRoot.ElementAt(0).LastBlockSyncedHash = new uint256(15);
-            wallet.AccountsRoot.Add(new AccountRoot()
-            {
-                CoinType = CoinType.Bitcoin,
-                LastBlockSyncedHeight = 12,
-                LastBlockSyncedHash = new uint256(12)
-            });
-
-            Wallet wallet2 = this.walletFixture.GenerateBlankWallet("myWallet", "password");
-            wallet2.AccountsRoot.ElementAt(0).CoinType = CoinType.Bitcoin;
-            wallet2.AccountsRoot.ElementAt(0).LastBlockSyncedHeight = 20;
-            wallet2.AccountsRoot.ElementAt(0).LastBlockSyncedHash = new uint256(20);
-            Wallet wallet3 = this.walletFixture.GenerateBlankWallet("myWallet", "password");
-            wallet3.AccountsRoot.ElementAt(0).CoinType = CoinType.Bitcoin;
-            wallet3.AccountsRoot.ElementAt(0).LastBlockSyncedHeight = 56;
-            wallet3.AccountsRoot.ElementAt(0).LastBlockSyncedHash = new uint256(56);
-            walletManager.Wallets.Add(wallet);
-            walletManager.Wallets.Add(wallet2);
-            walletManager.Wallets.Add(wallet3);
-
-            uint256 result = walletManager.LastReceivedBlockHash();
-
-            Assert.Equal(new uint256(12), result);
         }
 
         [Fact]
@@ -1395,27 +1274,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                 walletManager.GetSpendableTransactionsInWallet("myWallet", confirmations: 1);
             });
-        }
-
-        [Fact]
-        public void GetSpendableTransactionsWithoutWalletsOfWalletManagerCoinTypeReturnsEmptyList()
-        {
-            ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(10, this.Network);
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, new WalletSettings(NodeSettings.Default(this.Network)),
-                CreateDataFolder(this), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
-
-            Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet2", "password");
-            wallet.AccountsRoot.ElementAt(0).CoinType = CoinType.Stratis;
-            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount
-            {
-                ExternalAddresses = WalletTestsHelpers.CreateUnspentTransactionsOfBlockHeights(KnownNetworks.StratisMain, 1, 3, 5, 7, 9, 10),
-                InternalAddresses = WalletTestsHelpers.CreateUnspentTransactionsOfBlockHeights(KnownNetworks.StratisMain, 2, 4, 6, 8, 9, 10)
-            });
-            walletManager.Wallets.Add(wallet);
-
-            IEnumerable<UnspentOutputReference> result = walletManager.GetSpendableTransactionsInWallet("myWallet2", confirmations: 1);
-
-            Assert.Empty(result);
         }
 
         [Fact]
@@ -2602,7 +2460,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Wallets.Add(WalletTestsHelpers.CreateWallet("wallet1"));
             WalletTestsHelpers.AddAddressesToWallet(walletManager, 20);
 
-            HdAccount firstAccount = walletManager.Wallets.First().AccountsRoot.First().Accounts.First();
+            HdAccount firstAccount = walletManager.Wallets.First().AccountsRoot.Single().Accounts.First();
 
             // add two unconfirmed transactions
             for (int i = 1; i < 3; i++)
@@ -2664,7 +2522,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Wallet wallet = WalletTestsHelpers.CreateWallet("myWallet");
             wallet.AccountsRoot.Add(new AccountRoot());
-            wallet.AccountsRoot.First().Accounts = accounts;
+            wallet.AccountsRoot.Single().Accounts = accounts;
 
             walletManager.Wallets.Add(wallet);
 
@@ -2697,7 +2555,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Wallets.Add(WalletTestsHelpers.CreateWallet("wallet1"));
             WalletTestsHelpers.AddAddressesToWallet(walletManager, 20);
 
-            HdAccount firstAccount = walletManager.Wallets.First().AccountsRoot.First().Accounts.First();
+            HdAccount firstAccount = walletManager.Wallets.First().AccountsRoot.Single().Accounts.First();
 
             // add two confirmed transactions
             for (int i = 1; i < 3; i++)
@@ -2722,7 +2580,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Wallets.Add(WalletTestsHelpers.CreateWallet("wallet1"));
             WalletTestsHelpers.AddAddressesToWallet(walletManager, 20);
 
-            HdAccount firstAccount = walletManager.Wallets.First().AccountsRoot.First().Accounts.First();
+            HdAccount firstAccount = walletManager.Wallets.First().AccountsRoot.Single().Accounts.First();
 
             // add two spent transactions
             for (int i = 1; i < 3; i++)
@@ -2747,7 +2605,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Wallets.Add(WalletTestsHelpers.CreateWallet("wallet1"));
             WalletTestsHelpers.AddAddressesToWallet(walletManager, 20);
 
-            HdAccount firstAccount = walletManager.Wallets.First().AccountsRoot.First().Accounts.First();
+            HdAccount firstAccount = walletManager.Wallets.First().AccountsRoot.Single().Accounts.First();
 
             // add two spent transactions
             for (int i = 1; i < 3; i++)
@@ -2778,7 +2636,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Wallets.Add(WalletTestsHelpers.CreateWallet("wallet1"));
             WalletTestsHelpers.AddAddressesToWallet(walletManager, 20);
 
-            HdAccount firstAccount = walletManager.Wallets.First().AccountsRoot.First().Accounts.First();
+            HdAccount firstAccount = walletManager.Wallets.First().AccountsRoot.Single().Accounts.First();
 
             // add two spent transactions
             for (int i = 1; i < 3; i++)
@@ -3051,28 +2909,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void UpdateLastBlockSyncedHeightWithWalletAccountRootOfDifferentCoinTypeDoesNotUpdateLastSyncedInformation()
-        {
-            Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password");
-            wallet.AccountsRoot.ElementAt(0).CoinType = CoinType.Stratis;
-
-            var chain = new ConcurrentChain(wallet.Network);
-            ChainedHeader chainedBlock = WalletTestsHelpers.AppendBlock(this.Network, chain.Genesis, chain).ChainedHeader;
-
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, new WalletSettings(NodeSettings.Default(this.Network)),
-                CreateDataFolder(this), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
-            walletManager.Wallets.Add(wallet);
-            walletManager.WalletTipHash = new uint256(125125125);
-
-            walletManager.UpdateLastBlockSyncedHeight(wallet, chainedBlock);
-
-            Assert.Equal(chainedBlock.GetLocator().Blocks, wallet.BlockLocator);
-            Assert.NotEqual(chainedBlock.Height, wallet.AccountsRoot.ElementAt(0).LastBlockSyncedHeight);
-            Assert.NotEqual(chainedBlock.HashBlock, wallet.AccountsRoot.ElementAt(0).LastBlockSyncedHash);
-            Assert.NotEqual(chainedBlock.HashBlock, walletManager.WalletTipHash);
-        }
-
-        [Fact]
         public void RemoveAllTransactionsInWalletReturnsRemovedTransactionsList()
         {
             // Arrange.
@@ -3086,7 +2922,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Wallets.Add(wallet);
             WalletTestsHelpers.AddAddressesToWallet(walletManager, 20);
 
-            HdAccount firstAccount = wallet.AccountsRoot.First().Accounts.First();
+            HdAccount firstAccount = wallet.AccountsRoot.Single().Accounts.First();
 
             // Add two unconfirmed transactions.
             uint256 trxId = uint256.Parse("d6043add63ec364fcb591cf209285d8e60f1cc06186d4dcbce496cdbb4303400");
@@ -3130,7 +2966,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Wallets.Add(wallet);
             WalletTestsHelpers.AddAddressesToWallet(walletManager, 20);
 
-            HdAccount firstAccount = wallet.AccountsRoot.First().Accounts.First();
+            HdAccount firstAccount = wallet.AccountsRoot.Single().Accounts.First();
 
             int transactionCount = firstAccount.GetCombinedAddresses().SelectMany(a => a.Transactions).Count();
             Assert.Equal(0, transactionCount);
@@ -3157,7 +2993,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Wallets.Add(wallet);
             WalletTestsHelpers.AddAddressesToWallet(walletManager, 20);
 
-            HdAccount firstAccount = wallet.AccountsRoot.First().Accounts.First();
+            HdAccount firstAccount = wallet.AccountsRoot.Single().Accounts.First();
 
             // Add two unconfirmed transactions.
             uint256 trxId = uint256.Parse("d6043add63ec364fcb591cf209285d8e60f1cc06186d4dcbce496cdbb4303400");
@@ -3203,7 +3039,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Wallets.Add(wallet);
             WalletTestsHelpers.AddAddressesToWallet(walletManager, 20);
 
-            HdAccount firstAccount = wallet.AccountsRoot.First().Accounts.First();
+            HdAccount firstAccount = wallet.AccountsRoot.Single().Accounts.First();
 
             // Add two unconfirmed transactions.
             uint256 trxId = uint256.Parse("d6043add63ec364fcb591cf209285d8e60f1cc06186d4dcbce496cdbb4303400");
@@ -3300,7 +3136,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             try
             {
-                wallet.AddNewAccount(CoinType.Stratis, ExtPubKey.Parse(stratisAccount1ExtPubKey), 0, DateTime.Now.AddHours(-2));
+                wallet.AddNewAccount(ExtPubKey.Parse(stratisAccount1ExtPubKey), 0, DateTime.Now.AddHours(-2));
 
                 Assert.True(false, "should have thrown exception but didn't.");
             }
@@ -3319,7 +3155,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain);
             var wallet = walletManager.RecoverWallet("wallet1", ExtPubKey.Parse(stratisAccount0ExtPubKey), 0, DateTime.Now.AddHours(-2));
 
-            var addNewAccount = new Action(() => wallet.AddNewAccount(CoinType.Stratis, ExtPubKey.Parse(stratisAccount0ExtPubKey), 1, DateTime.Now.AddHours(-2)));
+            var addNewAccount = new Action(() => wallet.AddNewAccount(ExtPubKey.Parse(stratisAccount0ExtPubKey), 1, DateTime.Now.AddHours(-2)));
 
             addNewAccount.Should().Throw<WalletException>()
                 .WithMessage("There is already an account in this wallet with this xpubkey: " + stratisAccount0ExtPubKey);

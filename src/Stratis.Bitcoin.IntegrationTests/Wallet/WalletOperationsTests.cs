@@ -159,10 +159,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             wallet.Network.Should().Be(this.fixture.Node.FullNode.Network);
 
             // Check only one account is created.
-            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+            wallet.GetAccounts().Should().ContainSingle();
 
             // Check the created account.
-            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            HdAccount account = wallet.GetAccounts().Single();
             account.Name.Should().Be("account 0");
             account.ExternalAddresses.Count().Should().Be(20);
             account.InternalAddresses.Count().Should().Be(20);
@@ -210,10 +210,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             wallet.Network.Should().Be(this.fixture.Node.FullNode.Network);
 
             // Check only one account is created.
-            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+            wallet.GetAccounts().Should().ContainSingle();
 
             // Check the created account.
-            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            HdAccount account = wallet.GetAccounts().Single();
             account.Name.Should().Be("account 0");
             account.ExternalAddresses.Count().Should().Be(20);
             account.InternalAddresses.Count().Should().Be(20);
@@ -261,10 +261,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             wallet.Network.Should().Be(this.fixture.Node.FullNode.Network);
 
             // Check only one account is created.
-            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+            wallet.GetAccounts().Should().ContainSingle();
 
             // Check the created account.
-            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            HdAccount account = wallet.GetAccounts().Single();
             account.Name.Should().Be("account 0");
             account.ExternalAddresses.Count().Should().Be(20);
             account.InternalAddresses.Count().Should().Be(20);
@@ -312,10 +312,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             wallet.Network.Should().Be(this.fixture.Node.FullNode.Network);
 
             // Check only one account is created.
-            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+            wallet.GetAccounts().Should().ContainSingle();
 
             // Check the created account.
-            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            HdAccount account = wallet.GetAccounts().Single();
             account.Name.Should().Be("account 0");
             account.ExternalAddresses.Count().Should().Be(20);
             account.InternalAddresses.Count().Should().Be(20);
@@ -360,10 +360,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             wallet.Network.Should().Be(this.fixture.Node.FullNode.Network);
 
             // Check only one account is created.
-            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+            wallet.GetAccounts().Should().ContainSingle();
 
             // Check the created account.
-            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            HdAccount account = wallet.GetAccounts().Single();
             account.Name.Should().Be("account 0");
             account.ExternalAddresses.Count().Should().Be(20);
             account.InternalAddresses.Count().Should().Be(20);
@@ -758,10 +758,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             wallet.Network.Should().Be(this.fixture.Node.FullNode.Network);
 
             // Check only one account is created.
-            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+            wallet.GetAccounts().Should().ContainSingle();
 
             // Check the created account.
-            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            HdAccount account = wallet.GetAccounts().Single();
             account.Name.Should().Be("account 0");
             account.ExternalAddresses.Count().Should().Be(20);
             account.InternalAddresses.Count().Should().Be(20);
@@ -803,10 +803,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             wallet.Network.Should().Be(this.fixture.Node.FullNode.Network);
 
             // Check only one account is created.
-            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+            wallet.GetAccounts().Should().ContainSingle();
 
             // Check the created account.
-            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            HdAccount account = wallet.GetAccounts().Single();
             account.Name.Should().Be("account 0");
             account.ExternalAddresses.Count().Should().Be(20);
             account.InternalAddresses.Count().Should().Be(20);
