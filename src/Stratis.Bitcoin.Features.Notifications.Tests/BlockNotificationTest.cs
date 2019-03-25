@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         /// Tests that <see cref="BlockNotification.Notify(System.Threading.CancellationToken)"/> exits due
         /// to <see cref="BlockNotification.StartHash"/> not being on the chain and no blocks were signaled.
         /// </summary>
-        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
+        [Fact]
         public void Notify_Completes_StartHashNotOnChain()
         {
             var startBlockId = new uint256(156);
