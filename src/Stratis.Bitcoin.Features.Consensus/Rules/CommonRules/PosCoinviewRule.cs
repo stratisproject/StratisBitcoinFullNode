@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             await base.RunAsync(context).ConfigureAwait(false);
             var posRuleContext = context as PosRuleContext;
-            await this.stakeChain.SetAsync(context.ValidationContext.ChainedHeaderToValidate, posRuleContext.BlockStake).ConfigureAwait(false);
+            this.stakeChain.Set(context.ValidationContext.ChainedHeaderToValidate, posRuleContext.BlockStake);
         }
 
         /// <inheritdoc />

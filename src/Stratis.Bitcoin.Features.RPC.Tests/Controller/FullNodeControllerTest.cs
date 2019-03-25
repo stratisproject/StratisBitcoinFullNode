@@ -538,22 +538,13 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         }
 
         [Fact]
-        public void GetBlockHeader_NotUsingJsonFormat_ThrowsNotImplementedException()
-        {
-            Assert.Throws<NotImplementedException>(() =>
-            {
-                this.controller.GetBlockHeader("", false);
-            });
-        }
-
-        [Fact]
         public void GetBlockHeader_ChainNull_ReturnsNull()
         {
             this.chain = null;
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
-            BlockHeaderModel result = this.controller.GetBlockHeader("", true);
+            BlockHeaderModel result = (BlockHeaderModel)this.controller.GetBlockHeader("", true);
 
             Assert.Null(result);
         }
@@ -565,7 +556,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             ChainedHeader block = this.chain.GetBlock(2);
             string bits = GetBlockHeaderBits(block.Header);
 
-            BlockHeaderModel result = this.controller.GetBlockHeader(block.HashBlock.ToString(), true);
+            BlockHeaderModel result = (BlockHeaderModel)this.controller.GetBlockHeader(block.HashBlock.ToString(), true);
 
             Assert.NotNull(result);
             Assert.Equal((uint)block.Header.Version, result.Version);
@@ -579,7 +570,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void GetBlockHeader_BlockHeaderNotFound_ReturnsNull()
         {
-            BlockHeaderModel result = this.controller.GetBlockHeader(new uint256(2562).ToString(), true);
+            BlockHeaderModel result = (BlockHeaderModel)this.controller.GetBlockHeader(new uint256(2562).ToString(), true);
 
             Assert.Null(result);
         }

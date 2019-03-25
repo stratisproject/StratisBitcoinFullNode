@@ -250,6 +250,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         }
     }
 
+    /// <summary>
+    /// A class containing the necessary parameters to perform a send transaction request.
+    /// </summary>
     public class SendTransactionRequest : RequestModel
     {
         public SendTransactionRequest()
@@ -262,6 +265,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         }
 
         [Required(ErrorMessage = "A transaction in hexadecimal format is required.")]
+
+        /// <summary>
+        /// The transaction as a hexadecimal string.
+        /// </summary>
         public string Hex { get; set; }
     }
 

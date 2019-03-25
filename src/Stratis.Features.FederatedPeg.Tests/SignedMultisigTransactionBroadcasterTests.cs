@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -13,7 +12,6 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
-using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
 using Xunit;
 
@@ -25,12 +23,11 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly ILoggerFactory loggerFactory;
         private readonly IDisposable leaderReceiverSubscription;
         private readonly ICrossChainTransferStore store;
-        private readonly ILeaderReceiver leaderReceiver;
         private readonly IFederationGatewaySettings federationGatewaySettings;
         private readonly IBroadcasterManager broadcasterManager;
-        private ISignedMultisigTransactionBroadcaster signedMultisigTransactionBroadcaster;
-        private readonly ILeaderProvider leaderProvider;
 
+        private readonly IAsyncLoopFactory loopFactory;
+        private readonly INodeLifetime nodeLifetime;
         private readonly MempoolManager mempoolManager;
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly MempoolSettings mempoolSettings;
@@ -47,13 +44,13 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.logger = Substitute.For<ILogger>();
-            this.leaderReceiver = Substitute.For<ILeaderReceiver>();
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.leaderReceiverSubscription = Substitute.For<IDisposable>();
             this.store = Substitute.For<ICrossChainTransferStore>();
             this.broadcasterManager = Substitute.For<IBroadcasterManager>();
-            this.leaderProvider = Substitute.For<ILeaderProvider>();
+            this.loopFactory = Substitute.For<IAsyncLoopFactory>();
+            this.nodeLifetime = Substitute.For<INodeLifetime>();
 
             // Setup MempoolManager.
             this.dateTimeProvider = Substitute.For<IDateTimeProvider>();
@@ -91,52 +88,28 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.nodeSettings.Network);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
-        public async Task When_Not_The_CurrentLeader_Dont_Call_GetSignedTransactionsAsync()
-        {
-            this.federationGatewaySettings.PublicKey.Returns("dummykey");
-            this.leaderProvider.CurrentLeaderKey.Returns(new PubKey(PublicKey));
-
-            IObservable<ILeaderProvider> leaderStream = new[] { this.leaderProvider }.ToObservable();
-            this.leaderReceiver.LeaderProvidersStream.Returns(leaderStream);
-
-            this.signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
-                this.loggerFactory,
-                this.store,
-                this.leaderReceiver,
-                this.federationGatewaySettings,
-                this.mempoolManager,
-                this.broadcasterManager);
-
-            await this.signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync(this.leaderProvider).ConfigureAwait(false);
-
-            this.store.DidNotReceive();
-        }
-
-        [Fact(Skip = TestingValues.SkipTests)]
-        public async Task When_CurrentLeader_Call_GetSignedTransactionsAsync()
+        [Fact]
+        public async Task Call_GetSignedTransactionsAsync_No_Signed_Transactions_Doesnt_Broadcast()
         {
             this.federationGatewaySettings.PublicKey.Returns(PublicKey);
-            this.leaderProvider.CurrentLeaderKey.Returns(new PubKey(PublicKey));
-
-            IObservable<ILeaderProvider> leaderStream = new[] { this.leaderProvider }.ToObservable();
-            this.leaderReceiver.LeaderProvidersStream.Returns(leaderStream);
 
             var emptyTransactionPair = new Dictionary<uint256, Transaction>();
 
             this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).Returns(emptyTransactionPair);
 
-            this.signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+            var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+                this.loopFactory,
                 this.loggerFactory,
                 this.store,
-                this.leaderReceiver,
-                this.federationGatewaySettings,
+                this.nodeLifetime,
                 this.mempoolManager,
                 this.broadcasterManager);
 
-            await this.signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync(this.leaderProvider).ConfigureAwait(false);
+            await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
 
             await this.store.Received().GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).ConfigureAwait(false);
+
+            await this.broadcasterManager.DidNotReceive().BroadcastTransactionAsync(Arg.Any<Transaction>());
 
             this.logger.Received().Log(LogLevel.Trace,
                 Arg.Any<EventId>(),
@@ -145,11 +118,10 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Arg.Any<Func<object, Exception, string>>());
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
-        public async Task When_CurrentLeader_BroadcastsTransactionAsync()
+        [Fact]
+        public async Task Call_GetSignedTransactionsAsync_Signed_Transactions_Broadcasts()
         {
             this.federationGatewaySettings.PublicKey.Returns(PublicKey);
-            this.leaderProvider.CurrentLeaderKey.Returns(new PubKey(PublicKey));
 
             var transactionPair = new Dictionary<uint256, Transaction>
             {
@@ -158,26 +130,22 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).Returns(transactionPair);
 
-            IObservable<ILeaderProvider> leaderStream = new[] { this.leaderProvider }.ToObservable();
-            this.leaderReceiver.LeaderProvidersStream.Returns(leaderStream);
-
-            this.signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+            var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+                this.loopFactory,
                 this.loggerFactory,
                 this.store,
-                this.leaderReceiver,
-                this.federationGatewaySettings,
+                this.nodeLifetime,
                 this.mempoolManager,
                 this.broadcasterManager);
 
-            await this.signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync(this.leaderProvider).ConfigureAwait(false);
+            await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
             await this.store.Received().GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).ConfigureAwait(false);
-            await this.broadcasterManager.Received().BroadcastTransactionAsync(Arg.Any<Transaction>());
+            await this.broadcasterManager.Received(1).BroadcastTransactionAsync(Arg.Any<Transaction>());
         }
 
         public void Dispose()
         {
             this.leaderReceiverSubscription?.Dispose();
-            this.leaderReceiver?.Dispose();
         }
     }
 }

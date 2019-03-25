@@ -9,13 +9,13 @@ namespace Stratis.Features.FederatedPeg.Tests
 {
     public class WithdrawalTests
     {
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void ShouldSerialiseAsJson()
         {
             IWithdrawal withdrawal = TestingValues.GetWithdrawal();
 
             string asJson = withdrawal.ToString();
-            var reconverted = JsonConvert.DeserializeObject<Withdrawal>(asJson);
+            Withdrawal reconverted = JsonConvert.DeserializeObject<Withdrawal>(asJson);
 
             reconverted.BlockHash.Should().Be(withdrawal.BlockHash);
             reconverted.Amount.Satoshi.Should().Be(withdrawal.Amount.Satoshi);

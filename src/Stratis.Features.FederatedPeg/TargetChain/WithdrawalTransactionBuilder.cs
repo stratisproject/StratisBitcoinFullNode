@@ -47,7 +47,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 uint256 opReturnData = depositId;
                 string walletPassword = this.federationWalletManager.Secret.WalletPassword;
                 bool sign = (walletPassword ?? "") != "";
-                var multiSigContext = new TransactionBuildContext(new[] { recipient }.ToList(), opReturnData: opReturnData.ToBytes())
+                var multiSigContext = new TransactionBuildContext(new[]
+                {
+                    recipient.WithPaymentReducedByFee(this.federationGatewaySettings.TransactionFee)
+                }.ToList(), opReturnData: opReturnData.ToBytes())
                 {
                     OrderCoinsDeterministic = true,
                     TransactionFee = this.federationGatewaySettings.TransactionFee,

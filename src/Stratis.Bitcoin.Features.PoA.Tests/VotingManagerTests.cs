@@ -2,6 +2,7 @@
 using System.Linq;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
@@ -87,12 +88,12 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
         private void TriggerOnBlockConnected(ChainedHeaderBlock block)
         {
-            this.signals.OnBlockConnected.Notify(block);
+            this.signals.Publish(new BlockConnected(block));
         }
 
         private void TriggerOnBlockDisconnected(ChainedHeaderBlock block)
         {
-            this.signals.OnBlockDisconnected.Notify(block);
+            this.signals.Publish(new BlockDisconnected(block));
         }
     }
 }

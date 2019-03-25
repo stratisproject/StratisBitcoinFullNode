@@ -75,6 +75,9 @@ namespace Stratis.Bitcoin.Connection
         /// </summary>
         void RemoveNodeAddress(IPEndPoint ipEndpoint);
 
+        /// <summary>
+        /// The endpoints the node is listening on for inbound connections.
+        /// </summary>
         List<NetworkPeerServer> Servers { get; }
     }
 }

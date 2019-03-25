@@ -255,7 +255,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         }
 
         [Fact]
-        public async void TestRpcBatchAsync()
+        public async Task TestRpcBatchAsync()
         {
             var rpcBatch = this.rpcTestFixture.RpcClient.PrepareBatch();
             var rpc1 = rpcBatch.SendCommandAsync("getpeerinfo");
@@ -270,7 +270,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         }
 
         [Fact]
-        public async void TestRpcBatchWithUnknownMethodsReturnsArrayAsync()
+        public async Task TestRpcBatchWithUnknownMethodsReturnsArrayAsync()
         {
             var rpcBatch = this.rpcTestFixture.RpcClient.PrepareBatch();
             var unknownRpc = rpcBatch.SendCommandAsync("unknownmethod", "random");

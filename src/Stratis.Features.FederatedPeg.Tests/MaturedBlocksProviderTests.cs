@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
@@ -10,7 +11,6 @@ using Stratis.Bitcoin.Tests.Common;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.SourceChain;
-using Stratis.Features.FederatedPeg.Tests.Utils;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests
@@ -34,15 +34,15 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.consensusManager = Substitute.For<IConsensusManager>();
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
-        public void GetMaturedBlocksAsyncReturnsDeposits()
+        [Fact]
+        public async Task GetMaturedBlocksAsyncReturnsDeposits()
         {
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(10, null, true);
 
             foreach (ChainedHeader chainedHeader in headers)
                 chainedHeader.Block = new Block(chainedHeader.Header);
 
-            List<ChainedHeaderBlock> blocks = new List<ChainedHeaderBlock>(headers.Count);
+            var blocks = new List<ChainedHeaderBlock>(headers.Count);
             foreach (ChainedHeader chainedHeader in headers)
                 blocks.Add(new ChainedHeaderBlock(chainedHeader.Block, chainedHeader));
 
@@ -60,10 +60,12 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.depositExtractor.ExtractBlockDeposits(null).ReturnsForAnyArgs(new MaturedBlockDepositsModel(new MaturedBlockInfoModel(), new List<IDeposit>()));
             this.consensusManager.Tip.Returns(tip);
 
+            // Makes every block a matured block.
             var maturedBlocksProvider = new MaturedBlocksProvider(this.loggerFactory, this.depositExtractor, this.consensusManager);
 
-            List<MaturedBlockDepositsModel> deposits = maturedBlocksProvider.GetMaturedDepositsAsync(0, 10).GetAwaiter().GetResult();
+            List<MaturedBlockDepositsModel> deposits = await maturedBlocksProvider.GetMaturedDepositsAsync(0, 10);
 
+            // Expect the number of matured deposits to equal the number of blocks.
             Assert.Equal(10, deposits.Count);
         }
     }

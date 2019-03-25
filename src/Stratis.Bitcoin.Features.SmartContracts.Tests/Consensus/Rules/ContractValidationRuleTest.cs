@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Networks;
-using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
@@ -60,7 +59,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         public async Task SmartContractFormatRule_SuccessAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
-            ContractTransactionValidationRule rule = testContext.CreateContractValidationRule();
+            ContractTransactionPartialValidationRule rule = testContext.CreateContractValidationRule();
 
             var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
             context.UnspentOutputSet = GetMockOutputSet();
@@ -73,7 +72,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             var totalSuppliedSatoshis = gasBudgetSatoshis + relayFeeSatoshis;
 
-            var contractTxData = new ContractTxData(1, (ulong)gasPriceSatoshis, (Gas)gasLimit, 0, "TestMethod");
+            var contractTxData = new ContractTxData(1, (ulong)gasPriceSatoshis, (Stratis.SmartContracts.RuntimeObserver.Gas)gasLimit, 0, "TestMethod");
             var serialized = this.callDataSerializer.Serialize(contractTxData);
 
             Transaction funding = new Transaction
@@ -103,7 +102,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         public async Task SmartContractFormatRule_MultipleOutputs_SuccessAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
-            ContractTransactionValidationRule rule = testContext.CreateContractValidationRule();
+            ContractTransactionPartialValidationRule rule = testContext.CreateContractValidationRule();
 
             var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset())
             {
@@ -120,7 +119,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             var totalSuppliedSatoshis = gasBudgetSatoshis + relayFeeSatoshis;
 
-            var contractTxData = new ContractTxData(1, (ulong)gasPriceSatoshis, (Gas)gasLimit, 0, "TestMethod");
+            var contractTxData = new ContractTxData(1, (ulong)gasPriceSatoshis, (Stratis.SmartContracts.RuntimeObserver.Gas)gasLimit, 0, "TestMethod");
             var serialized = this.callDataSerializer.Serialize(contractTxData);
 
             Transaction funding = new Transaction
@@ -156,7 +155,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         public async Task SmartContractFormatRule_FailureAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
-            ContractTransactionValidationRule rule = testContext.CreateContractValidationRule();
+            ContractTransactionPartialValidationRule rule = testContext.CreateContractValidationRule();
 
             var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
 
@@ -171,7 +170,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             var higherGasLimit = gasLimit + 10000;
 
-            var contractTxData = new ContractTxData(1, (ulong)gasPriceSatoshis, (Gas)higherGasLimit, 0, "TestMethod");
+            var contractTxData = new ContractTxData(1, (ulong)gasPriceSatoshis, (Stratis.SmartContracts.RuntimeObserver.Gas)higherGasLimit, 0, "TestMethod");
             var serialized = this.callDataSerializer.Serialize(contractTxData);
 
             Transaction funding = new Transaction

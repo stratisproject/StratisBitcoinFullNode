@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using NBitcoin;
@@ -10,38 +11,38 @@ using Stratis.SmartContracts.CLR;
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
     /// <summary>
-    /// Checks that smart contract transactions are in a valid format and the data is serialized correctly.
+    /// Shared logic for checking a contract transaction against a set of rules.
     /// </summary>
-    public class ContractTransactionValidationRule : PartialValidationConsensusRule, ISmartContractMempoolRule
+    public class ContractTransactionChecker
     {
         private readonly ICallDataSerializer callDataSerializer;
 
-        private readonly IList<IContractTransactionValidationLogic> internalRules;
-
-        public ContractTransactionValidationRule(ICallDataSerializer callDataSerializer, IList<IContractTransactionValidationLogic> internalRules)
+        public ContractTransactionChecker(ICallDataSerializer callDataSerializer)
         {
             this.callDataSerializer = callDataSerializer;
-            this.internalRules = internalRules;
         }
 
-        public override Task RunAsync(RuleContext context)
+        public Task RunAsync(RuleContext context, IEnumerable<IContractTransactionValidationRule> rules)
         {
             Block block = context.ValidationContext.BlockToValidate;
 
+            List<IContractTransactionValidationRule> contractTransactionValidationRules = rules.ToList();
+
             foreach (Transaction transaction in block.Transactions)
             {
-                this.CheckTransaction(transaction, null);
+                this.CheckTransaction(transaction, contractTransactionValidationRules, null);
             }
 
             return Task.CompletedTask;
         }
 
-        public void CheckTransaction(MempoolValidationContext context)
+        public void CheckTransaction(MempoolValidationContext context, IEnumerable<IContractTransactionValidationRule> rules)
         {
-            this.CheckTransaction(context.Transaction, context.Fees);
+            this.CheckTransaction(context.Transaction, rules, context.Fees);
         }
 
-        private void CheckTransaction(Transaction transaction, Money suppliedBudget)
+        private void CheckTransaction(Transaction transaction, IEnumerable<IContractTransactionValidationRule> rules,
+            Money suppliedBudget)
         {
             TxOut scTxOut = transaction.TryGetSmartContractTxOut();
 
@@ -60,9 +61,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             ContractTxData txData = callDataDeserializationResult.Value;
 
-            foreach (IContractTransactionValidationLogic internalRule in this.internalRules)
+            foreach (IContractTransactionValidationRule rule in rules)
             {
-                internalRule.CheckContractTransaction(txData, suppliedBudget);
+                rule.CheckContractTransaction(txData, suppliedBudget);
             }
         }
     }
