@@ -104,15 +104,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
             {
                 this.Bind.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), this.Port), false));
             }
-            else
-            {
-                var ports = this.Bind.Select(l => l.Endpoint.Port).ToList();
-
-                if (ports.Count != ports.Distinct().Count())
-                {
-                    throw new ConfigurationException("Invalid attempt to bind the same port twice");
-                }
-            }
 
             try
             {
