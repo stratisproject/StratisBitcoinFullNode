@@ -28,7 +28,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
             }
         }
 
-        [Fact]
+        [Fact(Skip = "Unstable")]
         public async Task SideChainFedNodesBuildAndSync()
         {
             using (var context = new SidechainTestContext())

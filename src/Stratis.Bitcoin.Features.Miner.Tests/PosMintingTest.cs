@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             };
             var milliseconds550MinutesAgo = (uint)Math.Max(this.chainIndexer.Tip.Header.Time - TimeSpan.FromMinutes(550).Milliseconds, 0);
             this.AddAccountWithSpendableOutputs(wallet);
-            var spendableTransactions = wallet.GetAllSpendableTransactions(CoinType.Stratis, this.chainIndexer.Tip.Height, 0).ToList();
+            var spendableTransactions = wallet.GetAllSpendableTransactions(this.chainIndexer.Tip.Height, 0).ToList();
 
             this.walletManager.Setup(w => w.GetSpendableTransactionsInWalletForStaking(It.IsAny<string>(), It.IsAny<int>()))
                 .Returns(spendableTransactions);

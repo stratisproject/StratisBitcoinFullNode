@@ -556,6 +556,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                     if (transfer.PartialTransaction.GetHash() == oldTransaction.GetHash())
                     {
+                        // We will finish dealing with the request here if an invalid signature is sent.
+                        // The incoming partial transaction will not have the same inputs / outputs as what our node has generated
+                        // so would have failed CrossChainTransfer.TemplatesMatch() and leave through here.
                         this.logger.LogInformation("FAILED to combineSignatures : {0}", transfer.DepositTransactionId);
 
                         this.logger.LogTrace("(-)[MERGE_UNCHANGED]");

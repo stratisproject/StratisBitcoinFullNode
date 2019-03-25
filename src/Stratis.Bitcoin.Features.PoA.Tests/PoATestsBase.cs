@@ -128,7 +128,9 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
                 maxStandardTxSigopsCost: baseOptions.MaxStandardTxSigopsCost,
                 federationPublicKeys: federationPublicKeys,
                 targetSpacingSeconds: 60,
-                votingEnabled: baseOptions.VotingEnabled
+                votingEnabled: baseOptions.VotingEnabled,
+                autoKickIdleMembers: baseOptions.AutoKickIdleMembers,
+                federationMemberMaxIdleTimeSeconds: baseOptions.FederationMemberMaxIdleTimeSeconds
             );
 
             this.Consensus.SetPrivatePropertyValue(nameof(this.Consensus.MaxReorgLength), (uint)5);
