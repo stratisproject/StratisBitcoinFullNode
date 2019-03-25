@@ -317,7 +317,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                 if (this.isBlocksOnlyMode)
                 {
-                    this.logger.LogInformation("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, peer.RemoteSocketEndpoint);
+                    this.logger.LogDebug("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, peer.RemoteSocketEndpoint);
                     continue;
                 }
 
