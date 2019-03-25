@@ -84,7 +84,7 @@ namespace Stratis.Features.FederatedPeg
                 throw new ConfigurationException("Federation IPs must be specified.");
             }
 
-            this.FederationNodeIpEndPoints = federationIpsRaw.Split(',').Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort)) ?? new List<IPEndPoint>();
+            this.FederationNodeIpEndPoints = federationIpsRaw.Split(',').Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort));
 
             // These values are only configurable for tests at the moment. Fed members on live networks shouldn't play with them.
             this.CounterChainDepositStartBlock = configReader.GetOrDefault<int>(CounterChainDepositBlock, this.IsMainChain ? 1 : StratisMainDepositStartBlock);
