@@ -2,7 +2,6 @@
 using NBitcoin;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
-using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Tests
@@ -37,12 +36,12 @@ namespace Stratis.SmartContracts.CLR.Tests
             var externalCreateMessage = new ExternalCreateMessage(
                 uint160.Zero,
                 10,
-                (Gas)(GasPriceList.BaseCost + 100000),
+                (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000),
                 new byte[0],
                 null
             );
 
-            this.vm.Setup(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), It.IsAny<IGasMeter>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null))
+            this.vm.Setup(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null))
                 .Returns(vmExecutionResult);
 
             var state = new Mock<IState>();
@@ -59,9 +58,9 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             this.contractStateRoot.Verify(s => s.CreateAccount(newContractAddress), Times.Once);
 
-            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<IGasMeter>(), newContractAddress, externalCreateMessage, this.contractStateRoot.Object));
+            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<RuntimeObserver.IGasMeter>(), newContractAddress, externalCreateMessage, this.contractStateRoot.Object));
 
-            this.vm.Verify(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), It.IsAny<IGasMeter>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null), Times.Once);
+            this.vm.Verify(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null), Times.Once);
 
             Assert.True(result.IsSuccess);
             Assert.NotNull(result.Success);
@@ -79,12 +78,12 @@ namespace Stratis.SmartContracts.CLR.Tests
             var externalCreateMessage = new ExternalCreateMessage(
                 uint160.Zero,
                 10,
-                (Gas)(GasPriceList.BaseCost + 100000),
+                (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000),
                 new byte[0],
                 null
             );
 
-            this.vm.Setup(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), It.IsAny<IGasMeter>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null))
+            this.vm.Setup(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null))
                 .Returns(vmExecutionResult);
 
             var state = new Mock<IState>();
@@ -99,7 +98,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             this.contractStateRoot.Verify(ts => ts.CreateAccount(newContractAddress), Times.Once);
 
-            this.vm.Verify(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), It.IsAny<IGasMeter>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null), Times.Once);
+            this.vm.Verify(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null), Times.Once);
 
             Assert.False(result.IsSuccess);
             Assert.True(result.IsFailure);
@@ -112,7 +111,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         [Fact]
         public void ExternalCall_Success()
         {
-            var gasLimit = (Gas)(GasPriceList.BaseCost + 100000);
+            var gasLimit = (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000);
             var vmExecutionResult = VmExecutionResult.Ok(true, "Test");
 
             // Code must have a length to pass precondition checks.
@@ -136,7 +135,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 .Returns(typeName);
 
             this.vm.Setup(v =>
-                    v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<IGasMeter>(), externalCallMessage.Method, code, typeName))
+                    v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), externalCallMessage.Method, code, typeName))
                 .Returns(vmExecutionResult);
 
             var state = new Mock<IState>();
@@ -152,10 +151,10 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             this.contractStateRoot.Verify(sr => sr.GetContractType(externalCallMessage.To), Times.Once);
 
-            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<IGasMeter>(), externalCallMessage.To, externalCallMessage, this.contractStateRoot.Object));
+            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<RuntimeObserver.IGasMeter>(), externalCallMessage.To, externalCallMessage, this.contractStateRoot.Object));
 
             this.vm.Verify(
-                v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<IGasMeter>(), externalCallMessage.Method, code, typeName),
+                v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), externalCallMessage.Method, code, typeName),
                 Times.Once);
 
             Assert.True(result.IsSuccess);
@@ -168,7 +167,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         [Fact]
         public void ExternalCall_Vm_Error()
         {
-            var gasLimit = (Gas)(GasPriceList.BaseCost + 100000);
+            var gasLimit = (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000);
             var vmExecutionResult = VmExecutionResult.Fail(VmExecutionErrorKind.InvocationFailed, "Error");
 
             // Code must have a length to pass precondition checks.
@@ -192,7 +191,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 .Returns(typeName);
 
             this.vm.Setup(v =>
-                    v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<IGasMeter>(), externalCallMessage.Method, code, typeName))
+                    v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), externalCallMessage.Method, code, typeName))
                 .Returns(vmExecutionResult);
 
             var state = new Mock<IState>();
@@ -206,10 +205,10 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             this.contractStateRoot.Verify(sr => sr.GetContractType(externalCallMessage.To), Times.Once);
 
-            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<IGasMeter>(), externalCallMessage.To, externalCallMessage, this.contractStateRoot.Object));
+            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<RuntimeObserver.IGasMeter>(), externalCallMessage.To, externalCallMessage, this.contractStateRoot.Object));
 
             this.vm.Verify(
-                v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<IGasMeter>(), externalCallMessage.Method, code, typeName),
+                v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), externalCallMessage.Method, code, typeName),
                 Times.Once);
 
             Assert.True(result.IsFailure);
@@ -222,7 +221,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         [Fact]
         public void ExternalCall_Code_Null()
         {
-            var gasLimit = (Gas)(GasPriceList.BaseCost + 100000);
+            var gasLimit = (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000);
 
             var externalCallMessage = new ExternalCallMessage(
                 uint160.Zero,
@@ -249,7 +248,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             Assert.NotNull(result.Error);
             Assert.Null(result.Error.VmError);
             Assert.Equal(StateTransitionErrorKind.NoCode, result.Error.Kind);
-            Assert.Equal((Gas) GasPriceList.BaseCost, result.GasConsumed);
+            Assert.Equal((RuntimeObserver.Gas) GasPriceList.BaseCost, result.GasConsumed);
         }
 
         [Fact]
@@ -266,7 +265,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             var internalCreateMessage = new InternalCreateMessage(
                 uint160.Zero,
                 10,
-                (Gas)(GasPriceList.BaseCost + 100000),
+                (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000),
                 new object[] {},
                 typeName
             );
@@ -275,7 +274,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 .Setup(sr => sr.GetCode(internalCreateMessage.From))
                 .Returns(code);
 
-            this.vm.Setup(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), It.IsAny<IGasMeter>(), code, internalCreateMessage.Parameters, internalCreateMessage.Type))
+            this.vm.Setup(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), code, internalCreateMessage.Parameters, internalCreateMessage.Type))
                 .Returns(vmExecutionResult);
 
             var state = new Mock<IState>();
@@ -301,10 +300,10 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.contractStateRoot.Verify(s => s.CreateAccount(newContractAddress), Times.Once);
 
             // Verify we set up the smart contract state
-            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<IGasMeter>(), newContractAddress, internalCreateMessage, this.contractStateRoot.Object));
+            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<RuntimeObserver.IGasMeter>(), newContractAddress, internalCreateMessage, this.contractStateRoot.Object));
 
             // Verify the VM was invoked
-            this.vm.Verify(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), It.IsAny<IGasMeter>(), code, internalCreateMessage.Parameters, internalCreateMessage.Type), Times.Once);
+            this.vm.Verify(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), code, internalCreateMessage.Parameters, internalCreateMessage.Type), Times.Once);
 
             // Verify the value was added to the internal transfer list
             state.Verify(s => s.AddInternalTransfer(It.Is<TransferInfo>(t => t.From == internalCreateMessage.From 
@@ -332,7 +331,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             var internalCreateMessage = new InternalCreateMessage(
                 uint160.Zero,
                 10,
-                (Gas)(GasPriceList.BaseCost + 100000),
+                (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000),
                 new object[] { },
                 typeName
             );
@@ -340,7 +339,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.vm.Setup(v =>
                     v.Create(It.IsAny<IStateRepository>(),
                         It.IsAny<ISmartContractState>(),
-                        It.IsAny<IGasMeter>(),
+                        It.IsAny<RuntimeObserver.IGasMeter>(),
                         It.IsAny<byte[]>(),
                         It.IsAny<object[]>(),
                         It.IsAny<string>()))
@@ -360,13 +359,13 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             StateTransitionResult result = stateProcessor.Apply(state.Object, internalCreateMessage);
         
-            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<IGasMeter>(), newContractAddress, internalCreateMessage, this.contractStateRoot.Object));
+            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<RuntimeObserver.IGasMeter>(), newContractAddress, internalCreateMessage, this.contractStateRoot.Object));
 
             this.vm.Verify(
                 v => v.Create(
                     this.contractStateRoot.Object,
                     It.IsAny<ISmartContractState>(),
-                    It.IsAny<IGasMeter>(),
+                    It.IsAny<RuntimeObserver.IGasMeter>(),
                     code,
                     internalCreateMessage.Parameters,
                     internalCreateMessage.Type),
@@ -387,7 +386,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             var internalCreateMessage = new InternalCreateMessage(
                 uint160.Zero,
                 10,
-                (Gas)(GasPriceList.BaseCost + 100000),
+                (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000),
                 new object[] { },
                 typeName
             );
@@ -408,7 +407,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             Assert.NotNull(result.Error);
             Assert.Null(result.Error.VmError);
             Assert.Equal(StateTransitionErrorKind.InsufficientBalance, result.Error.Kind);
-            Assert.Equal((Gas)0, result.GasConsumed);
+            Assert.Equal((RuntimeObserver.Gas)0, result.GasConsumed);
         }
 
         [Fact]
@@ -420,12 +419,12 @@ namespace Stratis.SmartContracts.CLR.Tests
             var createMessage = new ExternalCreateMessage(
                 uint160.Zero,
                 10,
-                (Gas)(GasPriceList.BaseCost + 100000),
+                (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000),
                 new byte[0],
                 null
             );
 
-            this.vm.Setup(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), It.IsAny<IGasMeter>(), createMessage.Code, createMessage.Parameters, null))
+            this.vm.Setup(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), createMessage.Code, createMessage.Parameters, null))
                 .Returns(vmExecutionResult);
 
             var state = new Mock<IState>();
@@ -440,7 +439,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             this.contractStateRoot.Verify(ts => ts.CreateAccount(newContractAddress), Times.Once);
 
-            this.vm.Verify(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), It.IsAny<IGasMeter>(), createMessage.Code, createMessage.Parameters, null), Times.Once);
+            this.vm.Verify(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), createMessage.Code, createMessage.Parameters, null), Times.Once);
 
             Assert.False(result.IsSuccess);
             Assert.True(result.IsFailure);
@@ -464,7 +463,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 uint160.One,
                 uint160.Zero,
                 10,
-                (Gas)(GasPriceList.BaseCost + 100000),
+                (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000),
                 new MethodCall("Test", new object[] {})
             );
 
@@ -476,7 +475,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 .Setup(sr => sr.GetContractType(internalCallMessage.To))
                 .Returns(typeName);
 
-            this.vm.Setup(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<IGasMeter>(), internalCallMessage.Method, code, typeName))
+            this.vm.Setup(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), internalCallMessage.Method, code, typeName))
                 .Returns(vmExecutionResult);
 
             var state = new Mock<IState>();
@@ -497,10 +496,10 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.contractStateRoot.Verify(s => s.GetCode(internalCallMessage.To), Times.Once);
 
             // Verify we set up the smart contract state
-            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<IGasMeter>(), internalCallMessage.To, internalCallMessage, this.contractStateRoot.Object));
+            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<RuntimeObserver.IGasMeter>(), internalCallMessage.To, internalCallMessage, this.contractStateRoot.Object));
 
             // Verify the VM was invoked
-            this.vm.Verify(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<IGasMeter>(), internalCallMessage.Method, code, typeName), Times.Once);
+            this.vm.Verify(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), internalCallMessage.Method, code, typeName), Times.Once);
 
             // Verify the value was added to the internal transfer list
             state.Verify(s => s.AddInternalTransfer(It.Is<TransferInfo>(t => t.From == internalCallMessage.From
@@ -527,13 +526,13 @@ namespace Stratis.SmartContracts.CLR.Tests
                 uint160.One,
                 uint160.Zero,
                 10,
-                (Gas)(GasPriceList.BaseCost + 100000),
+                (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000),
                 new MethodCall("Test", new object[] { })
             );
 
             this.vm.Setup(v => v.ExecuteMethod(
                     It.IsAny<ISmartContractState>(),
-                    It.IsAny<IGasMeter>(),
+                    It.IsAny<RuntimeObserver.IGasMeter>(),
                     internalCallMessage.Method,
                     code,
                     typeName))
@@ -556,12 +555,12 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             StateTransitionResult result = stateProcessor.Apply(state.Object, internalCallMessage);
 
-            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<IGasMeter>(), internalCallMessage.To, internalCallMessage, this.contractStateRoot.Object));
+            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<RuntimeObserver.IGasMeter>(), internalCallMessage.To, internalCallMessage, this.contractStateRoot.Object));
 
             this.vm.Verify(
                 v => v.ExecuteMethod(
                     It.IsAny<ISmartContractState>(),
-                    It.IsAny<IGasMeter>(),
+                    It.IsAny<RuntimeObserver.IGasMeter>(),
                     internalCallMessage.Method,
                     code,
                     typeName),
@@ -581,7 +580,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 uint160.One,
                 uint160.Zero,
                 10,
-                (Gas)(GasPriceList.BaseCost + 100000),
+                (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000),
                 new MethodCall("Test", new object[] { })
             );
 
@@ -601,7 +600,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             Assert.NotNull(result.Error);
             Assert.Null(result.Error.VmError);
             Assert.Equal(StateTransitionErrorKind.InsufficientBalance, result.Error.Kind);
-            Assert.Equal((Gas) 0, result.GasConsumed);
+            Assert.Equal((RuntimeObserver.Gas) 0, result.GasConsumed);
         }
 
         [Fact]
@@ -611,7 +610,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 uint160.One,
                 uint160.Zero,
                 10,
-                (Gas)(GasPriceList.BaseCost + 100000),
+                (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000),
                 new MethodCall("Test", new object[] { })
             );
 
@@ -634,7 +633,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             Assert.NotNull(result.Error);
             Assert.Null(result.Error.VmError);
             Assert.Equal(StateTransitionErrorKind.NoCode, result.Error.Kind);
-            Assert.Equal((Gas) GasPriceList.BaseCost, result.GasConsumed);
+            Assert.Equal((RuntimeObserver.Gas) GasPriceList.BaseCost, result.GasConsumed);
         }
 
         [Fact]
@@ -649,13 +648,13 @@ namespace Stratis.SmartContracts.CLR.Tests
                 uint160.One,
                 uint160.Zero,
                 10,
-                (Gas)(GasPriceList.BaseCost + 100000),
+                (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000),
                 new MethodCall("Test", new object[] { })
             );
 
             this.vm.Setup(v => v.ExecuteMethod(
                     It.IsAny<ISmartContractState>(),
-                    It.IsAny<IGasMeter>(),
+                    It.IsAny<RuntimeObserver.IGasMeter>(),
                     callMessage.Method,
                     code,
                     null))
@@ -674,12 +673,12 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             StateTransitionResult result = stateProcessor.Apply(state.Object, callMessage);
 
-            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<IGasMeter>(), callMessage.To, callMessage, this.contractStateRoot.Object));
+            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<RuntimeObserver.IGasMeter>(), callMessage.To, callMessage, this.contractStateRoot.Object));
 
             this.vm.Verify(
                 v => v.ExecuteMethod(
                     It.IsAny<ISmartContractState>(),
-                    It.IsAny<IGasMeter>(),
+                    It.IsAny<RuntimeObserver.IGasMeter>(),
                     callMessage.Method,
                     code,
                     null),
@@ -703,7 +702,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 uint160.One,
                 uint160.Zero,
                 10,
-                (Gas)(GasPriceList.BaseCost + 100000)
+                (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000)
             );
 
             // Code must be returned for this test to ensure we apply the call.
@@ -715,7 +714,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 .Setup(sr => sr.GetContractType(contractTransferMessage.To))
                 .Returns(typeName);
 
-            this.vm.Setup(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<IGasMeter>(),contractTransferMessage.Method, code, typeName))
+            this.vm.Setup(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(),contractTransferMessage.Method, code, typeName))
                 .Returns(vmExecutionResult);
 
             var state = new Mock<IState>();
@@ -736,10 +735,10 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.contractStateRoot.Verify(s => s.GetCode(contractTransferMessage.To), Times.Once);
 
             // Verify we set up the smart contract state
-            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<IGasMeter>(), contractTransferMessage.To, contractTransferMessage, this.contractStateRoot.Object));
+            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<RuntimeObserver.IGasMeter>(), contractTransferMessage.To, contractTransferMessage, this.contractStateRoot.Object));
 
             // Verify the VM was invoked
-            this.vm.Verify(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<IGasMeter>(), contractTransferMessage.Method, code, typeName), Times.Once);
+            this.vm.Verify(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), contractTransferMessage.Method, code, typeName), Times.Once);
 
             // Verify the value was added to the internal transfer list
             state.Verify(s => s.AddInternalTransfer(It.Is<TransferInfo>(t => t.From == contractTransferMessage.From
@@ -766,12 +765,12 @@ namespace Stratis.SmartContracts.CLR.Tests
                 uint160.One,
                 uint160.Zero,
                 10,
-                (Gas)(GasPriceList.BaseCost + 100000)
+                (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000)
             );
 
             this.vm.Setup(v => v.ExecuteMethod(
                     It.IsAny<ISmartContractState>(),
-                    It.IsAny<IGasMeter>(),
+                    It.IsAny<RuntimeObserver.IGasMeter>(),
                     contractTransferMessage.Method,
                     code,
                     typeName))
@@ -794,12 +793,12 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             StateTransitionResult result = stateProcessor.Apply(state.Object, contractTransferMessage);
 
-            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<IGasMeter>(), contractTransferMessage.To, contractTransferMessage, this.contractStateRoot.Object));
+            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<RuntimeObserver.IGasMeter>(), contractTransferMessage.To, contractTransferMessage, this.contractStateRoot.Object));
 
             this.vm.Verify(
                 v => v.ExecuteMethod(
                     It.IsAny<ISmartContractState>(),
-                    It.IsAny<IGasMeter>(),
+                    It.IsAny<RuntimeObserver.IGasMeter>(),
                     contractTransferMessage.Method,
                     code,
                     typeName),
@@ -819,7 +818,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 uint160.One,
                 uint160.Zero,
                 10,
-                (Gas)(GasPriceList.BaseCost + 100000)
+                (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000)
             );
 
             var state = new Mock<IState>();
@@ -838,7 +837,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             Assert.NotNull(result.Error);
             Assert.Null(result.Error.VmError);
             Assert.Equal(StateTransitionErrorKind.InsufficientBalance, result.Error.Kind);
-            Assert.Equal((Gas)0, result.GasConsumed);
+            Assert.Equal((RuntimeObserver.Gas)0, result.GasConsumed);
         }
 
         [Fact]
@@ -851,7 +850,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 uint160.One,
                 uint160.Zero,
                 10,
-                (Gas)(GasPriceList.BaseCost + 100000)
+                (RuntimeObserver.Gas)(GasPriceList.BaseCost + 100000)
             );
 
             // No code should be returned
@@ -877,7 +876,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.contractStateRoot.Verify(s => s.GetCode(contractTransferMessage.To), Times.Once);
 
             // Verify the VM was NOT invoked
-            this.vm.Verify(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<IGasMeter>(), It.IsAny<MethodCall>(), It.IsAny<byte[]>(), It.IsAny<string>()), Times.Never);
+            this.vm.Verify(v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), It.IsAny<RuntimeObserver.IGasMeter>(), It.IsAny<MethodCall>(), It.IsAny<byte[]>(), It.IsAny<string>()), Times.Never);
 
             // Verify the value was added to the internal transfer list
             state.Verify(s => s.AddInternalTransfer(It.Is<TransferInfo>(t => t.From == contractTransferMessage.From
@@ -890,7 +889,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             Assert.Null(result.Success.ExecutionResult);
 
             // No gas is consumed
-            Assert.Equal((Gas) GasPriceList.TransferCost, result.GasConsumed);
+            Assert.Equal((RuntimeObserver.Gas) GasPriceList.TransferCost, result.GasConsumed);
         }
     }
 }

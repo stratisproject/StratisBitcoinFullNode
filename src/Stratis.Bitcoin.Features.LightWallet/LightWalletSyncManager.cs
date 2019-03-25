@@ -5,6 +5,8 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -33,6 +35,9 @@ namespace Stratis.Bitcoin.Features.LightWallet
         private readonly ISignals signals;
 
         protected ChainedHeader walletTip;
+
+        private SubscriptionToken transactionReceivedSubscription;
+        private SubscriptionToken blockConnectedSubscription;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -75,8 +80,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public void Start()
         {
-            this.signals.OnTransactionReceived.Attach(this.ProcessTransaction);
-            this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
+            this.transactionReceivedSubscription = this.signals.Subscribe<TransactionReceived>(ev => this.ProcessTransaction(ev.ReceivedTransaction));
+            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
 
             // if there is no wallet created yet, the wallet tip is the chain tip.
             if (!this.walletManager.ContainsWallets)
@@ -96,7 +101,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                     // that in the wallet. the block locator will help finding
                     // a common fork and bringing the wallet back to a good
                     // state (behind the best chain)
-                    ICollection<uint256> locators = this.walletManager.GetFirstWalletBlockLocator();
+                    ICollection<uint256> locators = this.walletManager.ContainsWallets ? this.walletManager.GetFirstWalletBlockLocator() : new[] { this.chain.Tip.HashBlock };
                     var blockLocator = new BlockLocator { Blocks = locators.ToList() };
                     ChainedHeader fork = this.chain.FindFork(blockLocator);
                     this.walletManager.RemoveBlocks(fork);
@@ -136,9 +141,9 @@ namespace Stratis.Bitcoin.Features.LightWallet
             }
         }
 
-        private void OnBlockConnected(ChainedHeaderBlock chainedheaderblock)
+        private void OnBlockConnected(BlockConnected blockConnected)
         {
-            this.ProcessBlock(chainedheaderblock.Block);
+            this.ProcessBlock(blockConnected.ConnectedBlock.Block);
         }
 
         /// <inheritdoc />
@@ -150,8 +155,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 this.asyncLoop = null;
             }
 
-            this.signals.OnTransactionReceived.Detach(this.ProcessTransaction);
-            this.signals.OnBlockConnected.Detach(this.OnBlockConnected);
+            this.signals.Unsubscribe(this.transactionReceivedSubscription);
+            this.signals.Unsubscribe(this.blockConnectedSubscription);
         }
 
         /// <inheritdoc />

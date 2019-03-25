@@ -3,6 +3,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Primitives;
@@ -44,6 +46,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly INodeLifetime nodeLifetime;
 
         private readonly ISignals signals;
+
+        private SubscriptionToken blockConnectedSubscription;
 
         /// <summary>
         /// Constructs an instance of a MempoolSignaled object.
@@ -108,7 +112,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         public void Start()
         {
-            this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
+            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
 
             this.asyncLoop = this.asyncLoopFactory.Run("MemoryPool.RelayWorker", async token =>
             {
@@ -126,8 +130,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             startAfter: TimeSpans.TenSeconds);
         }
 
-        private void OnBlockConnected(ChainedHeaderBlock chainedHeaderBlock)
+        private void OnBlockConnected(BlockConnected blockConnected)
         {
+            ChainedHeaderBlock chainedHeaderBlock = blockConnected.ConnectedBlock;
             ChainedHeader blockHeader = chainedHeaderBlock.ChainedHeader;
 
             Task task = this.RemoveForBlock(chainedHeaderBlock.Block, blockHeader?.Height ?? -1);
@@ -139,7 +144,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         public void Stop()
         {
-            this.signals.OnBlockConnected.Detach(this.OnBlockConnected);
+            this.signals.Unsubscribe(this.blockConnectedSubscription);
             this.asyncLoop?.Dispose();
         }
     }
