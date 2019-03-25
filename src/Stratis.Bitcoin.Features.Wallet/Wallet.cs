@@ -297,7 +297,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // Get a list of all the inputs spent in this transaction.
             List<TransactionData> inputsSpentInTransaction = allTransactions.Where(t => t.SpendingDetails?.TransactionId == transactionId).ToList();
-            
+
             if (!inputsSpentInTransaction.Any())
             {
                 throw new WalletException("Not a sent transaction");
@@ -308,7 +308,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // The change is the output paid into one of our addresses. We make sure to exclude the output received to one of
             // our addresses if this transaction is self-sent.
-            IEnumerable<TransactionData> changeOutput = allTransactions.Where(t => t.Id == transactionId && spendingTransaction.Payments.All(p => p.OutputIndex != t.Index)).ToList(); 
+            IEnumerable<TransactionData> changeOutput = allTransactions.Where(t => t.Id == transactionId && spendingTransaction.Payments.All(p => p.OutputIndex != t.Index)).ToList();
 
             Money inputsAmount = new Money(inputsSpentInTransaction.Sum(i => i.Amount));
             Money outputsAmount = new Money(spendingTransaction.Payments.Sum(p => p.Amount) + changeOutput.Sum(c => c.Amount));
@@ -659,8 +659,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             List<TransactionData> allTransactions = this.ExternalAddresses.SelectMany(a => a.Transactions)
                 .Concat(this.InternalAddresses.SelectMany(i => i.Transactions)).ToList();
 
-            long confirmed = allTransactions.Sum(t => t.SpendableAmount(true));
-            long total = allTransactions.Sum(t => t.SpendableAmount(false));
+            long confirmed = allTransactions.Sum(t => t.GetUnspentAmount(true));
+            long total = allTransactions.Sum(t => t.GetUnspentAmount(false));
 
             return (confirmed, total - confirmed);
         }
@@ -887,8 +887,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             List<TransactionData> allTransactions = this.Transactions.ToList();
 
-            long confirmed = allTransactions.Sum(t => t.SpendableAmount(true));
-            long total = allTransactions.Sum(t => t.SpendableAmount(false));
+            long confirmed = allTransactions.Sum(t => t.GetUnspentAmount(true));
+            long total = allTransactions.Sum(t => t.GetUnspentAmount(false));
 
             return (confirmed, total - confirmed);
         }
@@ -1018,7 +1018,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="confirmedOnly">A value indicating whether we only want confirmed amount.</param>
         /// <returns>The total amount that has not been spent.</returns>
         [NoTrace]
-        public Money SpendableAmount(bool confirmedOnly)
+        public Money GetUnspentAmount(bool confirmedOnly)
         {
             // The spendable balance is 0 if the output is spent or it needs to be confirmed to be considered.
             if (this.IsSpent() || (confirmedOnly && !this.IsConfirmed()))
