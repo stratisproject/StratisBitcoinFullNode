@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="externalAddress">Address used to sign.</param>
         /// <param name="message">Message to verify.</param>
         /// <param name="signature">Message signature.</param>
-        /// <returns>True if signature is value, false if signatre is invalid</returns>
+        /// <returns>True if the signature is valid, false if it is invalid.</returns>
         bool VerifySignedMessage(string externalAddress, string message, string signature);
 
         /// <summary>
