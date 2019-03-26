@@ -409,7 +409,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (this.ChainIndexer.IsDownloaded())
             {
                 int blockSyncStart = this.ChainIndexer.GetHeightAtTime(creationTime);
-                this.UpdateLastBlockSyncedHeight(wallet, this.ChainIndexer.GetBlock(blockSyncStart));
+                this.UpdateLastBlockSyncedHeight(wallet, this.ChainIndexer.Get(blockSyncStart));
             }
             else
             {
@@ -449,7 +449,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (this.ChainIndexer.IsDownloaded())
             {
                 int blockSyncStart = this.ChainIndexer.GetHeightAtTime(creationTime);
-                this.UpdateLastBlockSyncedHeight(wallet, this.ChainIndexer.GetBlock(blockSyncStart));
+                this.UpdateLastBlockSyncedHeight(wallet, this.ChainIndexer.Get(blockSyncStart));
             }
             else
             {
@@ -913,7 +913,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.logger.LogTrace("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
 
                 // Are we still on the main chain.
-                ChainedHeader current = this.ChainIndexer.GetBlock(this.WalletTipHash);
+                ChainedHeader current = this.ChainIndexer.Get(this.WalletTipHash);
                 if (current == null)
                 {
                     this.logger.LogTrace("(-)[REORG]");
@@ -1658,7 +1658,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     foreach (Wallet wallet in wallets)
                     {
                         this.logger.LogTrace("The chain of headers has finished downloading, updating wallet '{0}' with height {1}", wallet.Name, heightAtDate);
-                        this.UpdateLastBlockSyncedHeight(wallet, this.ChainIndexer.GetBlock(heightAtDate));
+                        this.UpdateLastBlockSyncedHeight(wallet, this.ChainIndexer.Get(heightAtDate));
                         this.SaveWallet(wallet);
                     }
                 },

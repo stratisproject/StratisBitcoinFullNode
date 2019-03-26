@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 await this.blockRepository.ReIndexAsync().ConfigureAwait(false);
             }
 
-            ChainedHeader initializationTip = this.chainIndexer.GetBlock(this.blockRepository.TipHashAndHeight.Hash);
+            ChainedHeader initializationTip = this.chainIndexer.Get(this.blockRepository.TipHashAndHeight.Hash);
             this.SetStoreTip(initializationTip);
 
             if (this.storeTip == null)
@@ -263,7 +263,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             uint256 resetBlockHash = this.blockRepository.TipHashAndHeight.Hash;
             Block resetBlock = await this.blockRepository.GetBlockAsync(resetBlockHash).ConfigureAwait(false);
 
-            while (this.chainIndexer.GetBlock(resetBlockHash) == null)
+            while (this.chainIndexer.Get(resetBlockHash) == null)
             {
                 blockStoreResetList.Add(resetBlockHash);
 
@@ -284,7 +284,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 resetBlockHash = resetBlock.GetHash();
             }
 
-            ChainedHeader newTip = this.chainIndexer.GetBlock(resetBlockHash);
+            ChainedHeader newTip = this.chainIndexer.Get(resetBlockHash);
 
             if (blockStoreResetList.Count != 0)
                 await this.blockRepository.DeleteAsync(new HashHeightPair(newTip), blockStoreResetList).ConfigureAwait(false);

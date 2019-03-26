@@ -71,11 +71,11 @@ namespace NBitcoin.Tests
             cchain.Load(bytes);
 
             Assert.Equal(cchain.Tip, chain.Tip);
-            Assert.NotNull(cchain.GetBlock(0));
+            Assert.NotNull(cchain.Get(0));
 
             cchain = new ChainIndexer(this.networkTest);
             cchain.Load(cchain.ToBytes());
-            Assert.NotNull(cchain.GetBlock(0));
+            Assert.NotNull(cchain.Get(0));
         }
 
         [Fact]
@@ -97,15 +97,15 @@ namespace NBitcoin.Tests
             Assert.Equal(cchain.SetTip(chain.Tip), b0);
             Assert.Equal(cchain.Tip, chain.Tip);
 
-            Assert.Equal(cchain.GetBlock(5), chain.Tip);
-            Assert.Equal(cchain.GetBlock(b5.HashBlock), chain.Tip);
+            Assert.Equal(cchain.Get(5), chain.Tip);
+            Assert.Equal(cchain.Get(b5.HashBlock), chain.Tip);
 
             Assert.Equal(cchain.SetTip(b1), b1);
-            Assert.Null(cchain.GetBlock(b5.HashBlock));
-            Assert.Null(cchain.GetBlock(b2.HashBlock));
+            Assert.Null(cchain.Get(b5.HashBlock));
+            Assert.Null(cchain.Get(b2.HashBlock));
 
             Assert.Equal(cchain.SetTip(b5), b1);
-            Assert.Equal(cchain.GetBlock(b5.HashBlock), chain.Tip);
+            Assert.Equal(cchain.Get(b5.HashBlock), chain.Tip);
 
             chain.SetTip(b2);
             this.AddBlock(chain);
@@ -115,10 +115,10 @@ namespace NBitcoin.Tests
 
             Assert.Equal(cchain.SetTip(b6b), b2);
 
-            Assert.Null(cchain.GetBlock(b5.HashBlock));
-            Assert.Equal(cchain.GetBlock(b2.HashBlock), b2);
-            Assert.Equal(cchain.GetBlock(6), b6b);
-            Assert.Equal(cchain.GetBlock(5), b5b);
+            Assert.Null(cchain.Get(b5.HashBlock));
+            Assert.Equal(cchain.Get(b2.HashBlock), b2);
+            Assert.Equal(cchain.Get(6), b6b);
+            Assert.Equal(cchain.Get(5), b5b);
         }
 
         private ChainedHeader AddBlock(ChainIndexer chainIndexer)
@@ -127,7 +127,7 @@ namespace NBitcoin.Tests
             header.Nonce = RandomUtils.GetUInt32();
             header.HashPrevBlock = chainIndexer.Tip.HashBlock;
             chainIndexer.SetTip(header);
-            return chainIndexer.GetBlock(header.GetHash());
+            return chainIndexer.Get(header.GetHash());
         }
 
         [Fact]
@@ -158,10 +158,10 @@ namespace NBitcoin.Tests
                 int height = int.Parse(history.Split(',')[0]);
                 var expectedTarget = new Target(new BouncyCastle.Math.BigInteger(history.Split(',')[1], 10));
 
-                BlockHeader block = main.GetBlock(height).Header;
+                BlockHeader block = main.Get(height).Header;
 
                 Assert.Equal(expectedTarget, block.Bits);
-                Target target = main.GetBlock(height).GetWorkRequired(network);
+                Target target = main.Get(height).GetWorkRequired(network);
                 Assert.Equal(expectedTarget, target);
             }
         }
