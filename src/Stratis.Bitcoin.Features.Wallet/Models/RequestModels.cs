@@ -468,10 +468,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
 
-        [Required(ErrorMessage = "ExternalAddress is required.")]
+        [Required(ErrorMessage = "An address is required.")]
         public string ExternalAddress { get; set; }
 
-        [Required(ErrorMessage = "Message is required.")]
+        [Required(ErrorMessage = "A message is required.")]
         public string Message { get; set; }
     }
 
@@ -480,10 +480,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     /// </summary>
     public class VerifyRequest : RequestModel
     {
-        [Required(ErrorMessage = "Signature is required.")]
+        [Required(ErrorMessage = "A signature is required.")]
         public string Signature { get; set; }
 
-        [Required(ErrorMessage = "ExternalAddress is required.")]
+        [Required(ErrorMessage = "An address is required.")]
         public string ExternalAddress { get; set; }
 
         [Required(ErrorMessage = "Message is required.")]
