@@ -1490,8 +1490,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         public async Task VerifyValidSignature()
         {
             // Act.
-            bool verifySignatureResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/verifysignature")
+            bool verifyMessageResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/verifymessage")
                 .PostJsonAsync(new VerifyRequest
                 {
                     Signature = this.fixture.validSignature,
@@ -1501,15 +1501,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .ReceiveJson<bool>();
 
             // Assert.
-            verifySignatureResult.Should().Be(true, "Invalid signature detected.");
+            verifyMessageResult.Should().Be(true, "Invalid signature detected.");
         }
 
         [Fact]
         public async Task VerifyInvalidSignature()
         {
             // Act.
-            bool verifySignatureResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/verifysignature")
+            bool verifyMessageResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/verifymessage")
                 .PostJsonAsync(new VerifyRequest
                 {
                     Signature = "invalid signature",
@@ -1519,15 +1519,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .ReceiveJson<bool>();
 
             // Assert.
-            verifySignatureResult.Should().Be(false, "Signature Verification failed");
+            verifyMessageResult.Should().Be(false, "Signature Verification failed");
         }
 
         [Fact]
-        public async Task VerifySignatureWithInvalidAddress()
+        public async Task VerifyMessageWithInvalidAddress()
         {
             // Act.
-            bool verifySignatureResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/verifysignature")
+            bool verifyMessageResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/verifymessage")
                 .PostJsonAsync(new VerifyRequest
                 {
                     Signature = this.fixture.validSignature,
@@ -1537,15 +1537,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .ReceiveJson<bool>();
 
             // Assert.
-            verifySignatureResult.Should().Be(false, "Signature Verification failed");
+            verifyMessageResult.Should().Be(false, "Signature Verification failed");
         }
 
         [Fact]
-        public async Task VerifySignatureWithInvalidMessage()
+        public async Task VerifyMessageWithInvalidMessage()
         {
             // Act.
-            bool verifySignatureResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/verifysignature")
+            bool verifyMessageResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/verifymessage")
                 .PostJsonAsync(new VerifyRequest
                 {
                     Signature = this.fixture.validSignature,
@@ -1555,15 +1555,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .ReceiveJson<bool>();
 
             // Assert.
-            verifySignatureResult.Should().Be(false, "Signature Verification failed");
+            verifyMessageResult.Should().Be(false, "Signature Verification failed");
         }
 
         [Fact]
-        public async Task VerifySignatureWithAllInvalid()
+        public async Task VerifyMessageWithAllInvalid()
         {
             // Act.
-            bool verifySignatureResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/verifysignature")
+            bool verifyMessageResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/verifymessage")
                 .PostJsonAsync(new VerifyRequest
                 {
                     Signature = "invalid signature",
@@ -1573,7 +1573,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .ReceiveJson<bool>();
 
             // Assert.
-            verifySignatureResult.Should().Be(false, "Signature Verification failed");
+            verifyMessageResult.Should().Be(false, "Signature Verification failed");
         }
     }
 }

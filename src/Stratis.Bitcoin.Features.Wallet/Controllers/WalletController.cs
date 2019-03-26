@@ -204,9 +204,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// </summary>
         /// <param name="request">The object containing the parameters verify a signature.</param>
         /// <returns>A JSON object containing the result of the verification.</returns>
-        [Route("verifysignature")]
+        [Route("verifymessage")]
         [HttpPost]
-        public IActionResult VerifySignature([FromBody]VerifyRequest request)
+        public IActionResult VerifyMessage([FromBody]VerifyRequest request)
         {
             Guard.NotNull(request, nameof(request));
 

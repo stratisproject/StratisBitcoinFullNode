@@ -297,7 +297,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // Get a list of all the inputs spent in this transaction.
             List<TransactionData> inputsSpentInTransaction = allTransactions.Where(t => t.SpendingDetails?.TransactionId == transactionId).ToList();
-            
+
             if (!inputsSpentInTransaction.Any())
             {
                 throw new WalletException("Not a sent transaction");
@@ -308,7 +308,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // The change is the output paid into one of our addresses. We make sure to exclude the output received to one of
             // our addresses if this transaction is self-sent.
-            IEnumerable<TransactionData> changeOutput = allTransactions.Where(t => t.Id == transactionId && spendingTransaction.Payments.All(p => p.OutputIndex != t.Index)).ToList(); 
+            IEnumerable<TransactionData> changeOutput = allTransactions.Where(t => t.Id == transactionId && spendingTransaction.Payments.All(p => p.OutputIndex != t.Index)).ToList();
 
             Money inputsAmount = new Money(inputsSpentInTransaction.Sum(i => i.Amount));
             Money outputsAmount = new Money(spendingTransaction.Payments.Sum(p => p.Amount) + changeOutput.Sum(c => c.Amount));
@@ -317,27 +317,18 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Finds the HD addresses for the public address.
+        /// Finds the HD addresses for the address.
         /// </summary>
         /// <remarks>
         /// Returns an HDAddress.
         /// </remarks>
-        /// <param name="externalAddress">An address.</param>
+        /// <param name="address">An address.</param>
         /// <param name="accountFilter">An optional filter for filtering the accounts being returned.</param>
         /// <returns>HD Address</returns>
-        public HdAddress FindHDAddressByExternalAddress(string externalAddress, Func<HdAccount, bool> accountFilter = null)
+        public HdAddress GetAddress(string address, Func<HdAccount, bool> accountFilter = null)
         {
-            Guard.NotNull(externalAddress, nameof(externalAddress));
-            
-            HdAddress hdAddress = this.GetAllAddresses(accountFilter).FirstOrDefault(a => a.Address == externalAddress);
-            
-            // Check if the wallet contains the address.
-            if (hdAddress == null)
-            {
-                throw new WalletException("Address not found in wallet.");
-            }
-
-            return hdAddress;
+            Guard.NotNull(address, nameof(address));
+            return this.GetAllAddresses(accountFilter).SingleOrDefault(a => a.Address == address);
         }
     }
 

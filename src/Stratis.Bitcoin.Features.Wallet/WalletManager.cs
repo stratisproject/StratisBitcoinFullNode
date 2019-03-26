@@ -302,39 +302,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(message, nameof(message));
             Guard.NotEmpty(externalAddress, nameof(externalAddress));
 
-            string signature = string.Empty;
-
             // Get wallet
             Wallet wallet = this.GetWalletByName(walletName);
 
-            // Check the password.
-            try
-            {
-                if (!wallet.IsExtPubKeyWallet)
-                    Key.Parse(wallet.EncryptedSeed, password, wallet.Network);
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
-                this.logger.LogTrace("(-)[EXCEPTION]");
-                throw new SecurityException(ex.Message);
-            }
-
             // Sign the message.
-            try
-            {
-                HdAddress hdAddress = wallet.FindHDAddressByExternalAddress(externalAddress);
-                Key privateKey = wallet.GetExtendedPrivateKeyForAddress(password, hdAddress).PrivateKey;
-                BitcoinSecret secret = this.network.CreateBitcoinSecret(privateKey);
-                signature = secret.PrivateKey.SignMessage(message);
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogTrace("Failed to sign message: {0}", ex.ToString());
-                this.logger.LogTrace("(-)[EXCEPTION]");
-            }
-
-            return signature;
+            HdAddress hdAddress = wallet.GetAddress(externalAddress);
+            Key privateKey = wallet.GetExtendedPrivateKeyForAddress(password, hdAddress).PrivateKey;
+            return privateKey.SignMessage(message);
         }
 
         /// <inheritdoc />
