@@ -12,7 +12,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanCalculatePowCorrectly()
         {
-            var chain = new ConcurrentChain(KnownNetworks.Main);
+            var chain = new ChainIndexer(KnownNetworks.Main);
             EnsureDownloaded("MainChain.dat", "https://aois.blob.core.windows.net/public/MainChain.dat");
             chain.Load(File.ReadAllBytes("MainChain.dat"));
             foreach(ChainedHeader block in chain.EnumerateAfter(chain.Genesis))

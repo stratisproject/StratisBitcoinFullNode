@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                             advertised.Add(header.GetHash());
                 }
 
-                foreach (ChainedHeader chainedHeader in stratisNodeSync.FullNode.Chain.EnumerateToTip(this.network.GenesisHash))
+                foreach (ChainedHeader chainedHeader in stratisNodeSync.FullNode.ChainIndexer.EnumerateToTip(this.network.GenesisHash))
                     if ((!advertised.Contains(chainedHeader.HashBlock)) && (!(chainedHeader.HashBlock == this.network.GenesisHash)))
                         throw new Exception($"An expected block was not advertised to peer: {chainedHeader.HashBlock}");
 
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                             advertised.Add(header.GetHash());
                 }
 
-                foreach (ChainedHeader chainedHeader in stratisNodeSync.FullNode.Chain.EnumerateToTip(this.network.GenesisHash))
+                foreach (ChainedHeader chainedHeader in stratisNodeSync.FullNode.ChainIndexer.EnumerateToTip(this.network.GenesisHash))
                     if ((!advertised.Contains(chainedHeader.HashBlock)) && (!(chainedHeader.HashBlock == this.network.GenesisHash)))
                         throw new Exception($"An expected block was not advertised to peer 1: {chainedHeader.HashBlock}");
 
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                             advertised.Add(header.GetHash());
                 }
 
-                foreach (ChainedHeader chainedHeader in stratisNodeSync.FullNode.Chain.EnumerateToTip(this.network.GenesisHash))
+                foreach (ChainedHeader chainedHeader in stratisNodeSync.FullNode.ChainIndexer.EnumerateToTip(this.network.GenesisHash))
                     if ((!advertised.Contains(chainedHeader.HashBlock)) && (!(chainedHeader.HashBlock == this.network.GenesisHash)))
                         throw new Exception($"An expected block was not advertised to peer 2: {chainedHeader.HashBlock}");
 
@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
                 // Store block 1 of chain0 for later usage
                 ChainedHeader firstBlock = null;
-                foreach (ChainedHeader chainedHeader in stratisNodeSync.FullNode.Chain.EnumerateToTip(this.network.GenesisHash))
+                foreach (ChainedHeader chainedHeader in stratisNodeSync.FullNode.ChainIndexer.EnumerateToTip(this.network.GenesisHash))
                 {
                     if (chainedHeader.Height == 1)
                     {

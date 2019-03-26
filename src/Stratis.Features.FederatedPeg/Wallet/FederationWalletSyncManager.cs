@@ -17,7 +17,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
     {
         protected readonly IFederationWalletManager walletManager;
 
-        protected readonly ConcurrentChain chain;
+        protected readonly ChainIndexer chain;
 
         protected readonly CoinType coinType;
 
@@ -47,7 +47,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         private const int MaxQueueSize = 100 * 1024 * 1024;
 
 
-        public FederationWalletSyncManager(ILoggerFactory loggerFactory, IFederationWalletManager walletManager, ConcurrentChain chain,
+        public FederationWalletSyncManager(ILoggerFactory loggerFactory, IFederationWalletManager walletManager, ChainIndexer chain,
             Network network, IBlockStore blockStore, StoreSettings storeSettings, INodeLifetime nodeLifetime)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));

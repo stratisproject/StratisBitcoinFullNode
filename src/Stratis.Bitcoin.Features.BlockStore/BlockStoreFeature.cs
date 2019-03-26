@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public class BlockStoreFeature : FullNodeFeature
     {
         private readonly Network network;
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly BlockStoreSignaled blockStoreSignaled;
 
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public BlockStoreFeature(
             Network network,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             IConnectionManager connectionManager,
             BlockStoreSignaled blockStoreSignaled,
             ILoggerFactory loggerFactory,
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IPrunedBlockRepository prunedBlockRepository)
         {
             this.network = network;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.blockStoreQueue = blockStoreQueue;
             this.blockStoreSignaled = blockStoreSignaled;
             this.connectionManager = connectionManager;
@@ -128,11 +128,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // Use ProvenHeadersBlockStoreBehavior for PoS Networks
             if (this.network.Consensus.IsProofOfStake)
             {
-                this.connectionManager.Parameters.TemplateBehaviors.Add(new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.checkpoints, this.blockStoreQueue));
+                this.connectionManager.Parameters.TemplateBehaviors.Add(new ProvenHeadersBlockStoreBehavior(this.network, this.chainIndexer, this.chainState, this.loggerFactory, this.consensusManager, this.checkpoints, this.blockStoreQueue));
             }
             else
             {
-                this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.blockStoreQueue));
+                this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chainIndexer, this.chainState, this.loggerFactory, this.consensusManager, this.blockStoreQueue));
             }
 
             // Signal to peers that this node can serve blocks.

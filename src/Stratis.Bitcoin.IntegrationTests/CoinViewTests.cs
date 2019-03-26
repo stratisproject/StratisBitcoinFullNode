@@ -283,29 +283,29 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var repo = new ChainRepository(TestBase.CreateTestDir(this), this.loggerFactory, this.dBreezeSerializer))
             {
-                var chain = new ConcurrentChain(this.regTest);
+                var chain = new ChainIndexer(this.regTest);
 
                 chain.SetTip(repo.LoadAsync(chain.Genesis).GetAwaiter().GetResult());
                 Assert.True(chain.Tip == chain.Genesis);
-                chain = new ConcurrentChain(this.regTest);
+                chain = new ChainIndexer(this.regTest);
                 ChainedHeader tip = this.AppendBlock(chain);
                 repo.SaveAsync(chain).GetAwaiter().GetResult();
-                var newChain = new ConcurrentChain(this.regTest);
+                var newChain = new ChainIndexer(this.regTest);
                 newChain.SetTip(repo.LoadAsync(chain.Genesis).GetAwaiter().GetResult());
                 Assert.Equal(tip, newChain.Tip);
                 tip = this.AppendBlock(chain);
                 repo.SaveAsync(chain).GetAwaiter().GetResult();
-                newChain = new ConcurrentChain(this.regTest);
+                newChain = new ChainIndexer(this.regTest);
                 newChain.SetTip(repo.LoadAsync(chain.Genesis).GetAwaiter().GetResult());
                 Assert.Equal(tip, newChain.Tip);
             }
         }
 
-        public ChainedHeader AppendBlock(ChainedHeader previous, params ConcurrentChain[] chains)
+        public ChainedHeader AppendBlock(ChainedHeader previous, params ChainIndexer[] chainsIndexer)
         {
             ChainedHeader last = null;
             uint nonce = RandomUtils.GetUInt32();
-            foreach (ConcurrentChain chain in chains)
+            foreach (ChainIndexer chain in chainsIndexer)
             {
                 Block block = this.network.CreateBlock();
                 block.AddTransaction(this.network.CreateTransaction());
@@ -318,10 +318,10 @@ namespace Stratis.Bitcoin.IntegrationTests
             return last;
         }
 
-        private ChainedHeader AppendBlock(params ConcurrentChain[] chains)
+        private ChainedHeader AppendBlock(params ChainIndexer[] chainsIndexer)
         {
             ChainedHeader index = null;
-            return this.AppendBlock(index, chains);
+            return this.AppendBlock(index, chainsIndexer);
         }
 
         [Fact]

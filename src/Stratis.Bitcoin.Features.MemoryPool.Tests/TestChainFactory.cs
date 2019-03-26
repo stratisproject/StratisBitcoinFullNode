@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             network.Consensus.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));
 
             var consensusSettings = new ConsensusSettings(nodeSettings);
-            var chain = new ConcurrentChain(network);
+            var chain = new ChainIndexer(network);
             var inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
 
             var chainState = new ChainState();

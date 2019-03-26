@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin
         public IConnectionManager ConnectionManager { get; set; }
 
         /// <summary>Best chain of block headers from genesis.</summary>
-        public ConcurrentChain Chain { get; set; }
+        public ChainIndexer ChainIndexer { get; set; }
 
         /// <summary>Factory for creating and execution of asynchronous loops.</summary>
         public IAsyncLoopFactory AsyncLoopFactory { get; set; }
@@ -167,7 +167,7 @@ namespace Stratis.Bitcoin
             this.Network = this.Services.ServiceProvider.GetService<Network>();
             this.Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
             this.ChainBehaviorState = this.Services.ServiceProvider.GetService<IChainState>();
-            this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
+            this.ChainIndexer = this.Services.ServiceProvider.GetService<ChainIndexer>();
             this.Signals = this.Services.ServiceProvider.GetService<Signals.ISignals>();
             this.InitialBlockDownloadState = this.Services.ServiceProvider.GetService<IInitialBlockDownloadState>();
             this.NodeStats = this.Services.ServiceProvider.GetService<INodeStats>();
