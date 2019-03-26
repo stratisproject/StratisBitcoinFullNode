@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -138,7 +139,11 @@ namespace Stratis.Bitcoin.Controllers
             // Add the list of features that are enabled.
             foreach (IFullNodeFeature feature in this.fullNode.Services.Features)
             {
-                model.EnabledFeatures.Add(feature.GetType().ToString());
+                model.FeaturesData.Add(new FeatureData
+                {
+                    Namespace = feature.GetType().ToString(),
+                    State = feature.State
+                });
             }
 
             // Include BlockStore Height if enabled
