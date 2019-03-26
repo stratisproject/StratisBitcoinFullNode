@@ -126,12 +126,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Set up cold staking account on cold wallet.
                 coldWalletManager.GetOrCreateColdStakingAccount(WalletName, true, Password);
                 HdAddress coldWalletAddress = coldWalletManager.GetFirstUnusedColdStakingAddress(WalletName, true);
-                coldWalletManager.UpdateKeysLookupLocked(new[] { coldWalletAddress });
 
                 // Set up cold staking account on hot wallet.
                 hotWalletManager.GetOrCreateColdStakingAccount(WalletName, false, Password);
                 HdAddress hotWalletAddress = hotWalletManager.GetFirstUnusedColdStakingAddress(WalletName, false);
-                hotWalletManager.UpdateKeysLookupLocked(new[] { hotWalletAddress });
 
                 int maturity = (int)stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 TestHelper.MineBlocks(stratisSender, maturity + 16, true);

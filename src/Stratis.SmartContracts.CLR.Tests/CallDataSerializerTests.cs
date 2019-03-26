@@ -3,6 +3,7 @@ using System.Text;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Networks;
+using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Tests
@@ -29,7 +30,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 }"
             );
 
-            var contractTxData = new ContractTxData(1, 1, (RuntimeObserver.Gas)5000, contractExecutionCode);
+            var contractTxData = new ContractTxData(1, 1, (Gas)5000, contractExecutionCode);
             var callDataResult = this.Serializer.Deserialize(this.Serializer.Serialize(contractTxData));
             var callData = callDataResult.Value;
 
@@ -37,8 +38,8 @@ namespace Stratis.SmartContracts.CLR.Tests
             Assert.Equal(1, callData.VmVersion);
             Assert.Equal((byte)ScOpcodeType.OP_CREATECONTRACT, callData.OpCodeType);
             Assert.Equal<byte[]>(contractExecutionCode, callData.ContractExecutionCode);
-            Assert.Equal((RuntimeObserver.Gas)1, callData.GasPrice);
-            Assert.Equal((RuntimeObserver.Gas)5000, callData.GasLimit);
+            Assert.Equal((Gas)1, callData.GasPrice);
+            Assert.Equal((Gas)5000, callData.GasLimit);
         }
 
         [Fact]
@@ -68,7 +69,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 '#'
             };
 
-            var contractTxData = new ContractTxData(1, 1, (RuntimeObserver.Gas)5000, contractExecutionCode, methodParameters);
+            var contractTxData = new ContractTxData(1, 1, (Gas)5000, contractExecutionCode, methodParameters);
 
             var callDataResult = this.Serializer.Deserialize(this.Serializer.Serialize(contractTxData));
             var callData = callDataResult.Value;
@@ -101,7 +102,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         [Fact]
         public void SmartContract_CanSerialize_OP_CALLCONTRACT_WithoutMethodParameters()
         {          
-            var contractTxData = new ContractTxData(1, 1, (RuntimeObserver.Gas)5000, 100, "Execute");
+            var contractTxData = new ContractTxData(1, 1, (Gas)5000, 100, "Execute");
 
             var callDataResult = this.Serializer.Deserialize(this.Serializer.Serialize(contractTxData));
             var callData = callDataResult.Value;
@@ -131,7 +132,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 "0x95D34980095380851902ccd9A1Fb4C813C2cb639".HexToAddress()
             };
 
-            var contractTxData = new ContractTxData(1, 1, (RuntimeObserver.Gas)5000, 100, "Execute", methodParameters);
+            var contractTxData = new ContractTxData(1, 1, (Gas)5000, 100, "Execute", methodParameters);
             var callDataResult = this.Serializer.Deserialize(this.Serializer.Serialize(contractTxData));
             var callData = callDataResult.Value;
 

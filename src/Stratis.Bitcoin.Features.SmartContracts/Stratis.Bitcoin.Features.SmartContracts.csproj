@@ -7,7 +7,6 @@
 
   <ItemGroup>
     <PackageReference Include="CSharpFunctionalExtensions" Version="1.10.0" />
-    <PackageReference Include="Stratis.SmartContracts" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>

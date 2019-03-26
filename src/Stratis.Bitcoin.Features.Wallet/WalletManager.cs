@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             foreach (Wallet wallet in wallets)
             {
-                this.Wallets.Add(wallet);
+                this.Load(wallet);
                 foreach (HdAccount account in wallet.GetAccountsByCoinType(this.coinType))
                 {
                     this.AddAddressesToMaintainBuffer(account, false);
@@ -671,13 +671,23 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 foreach (HdAccount account in accounts)
                 {
-                    (Money amountConfirmed, Money amountUnconfirmed) result = account.GetSpendableAmount();
+                    // Calculates the amount of spendable coins.
+                    UnspentOutputReference[] spendableBalance = account.GetSpendableTransactions(this.chain.Tip.Height, this.network.Consensus.CoinbaseMaturity).ToArray();
+                    Money spendableAmount = Money.Zero;
+                    foreach (UnspentOutputReference bal in spendableBalance)
+                    {
+                        spendableAmount += bal.Transaction.Amount;
+                    }
 
+                    // Get the total balances.
+                    (Money amountConfirmed, Money amountUnconfirmed) result = account.GetBalances();
+                    
                     balances.Add(new AccountBalance
                     {
                         Account = account,
                         AmountConfirmed = result.amountConfirmed,
-                        AmountUnconfirmed = result.amountUnconfirmed
+                        AmountUnconfirmed = result.amountUnconfirmed,
+                        SpendableAmount = spendableAmount
                     });
                 }
             }
@@ -705,7 +715,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     hdAddress = wallet.GetAllAddressesByCoinType(this.coinType).FirstOrDefault(a => a.Address == address);
                     if (hdAddress == null) continue;
 
-                    (Money amountConfirmed, Money amountUnconfirmed) result = hdAddress.GetSpendableAmount();
+                    (Money amountConfirmed, Money amountUnconfirmed) result = hdAddress.GetBalances();
 
                     balance.AmountConfirmed = result.amountConfirmed;
                     balance.AmountUnconfirmed = result.amountUnconfirmed;
@@ -849,7 +859,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         $"Account '{walletAccountReference.AccountName}' in wallet '{walletAccountReference.WalletName}' not found.");
                 }
 
-                res = account.GetSpendableTransactions(this.chain.Tip.Height, this.network, confirmations).ToArray();
+                res = account.GetSpendableTransactions(this.chain.Tip.Height, this.network.Consensus.CoinbaseMaturity, confirmations).ToArray();
             }
 
             return res;
@@ -1038,6 +1048,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true,
                     BlockHeight = blockHeight,
                     BlockHash = block?.GetHash(),
+                    BlockIndex = block?.Transactions.FindIndex(t => t.GetHash() == transactionHash),
                     Id = transactionHash,
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? transaction.Time),
                     Index = index,
@@ -1064,6 +1075,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     foundTransaction.BlockHeight = blockHeight;
                     foundTransaction.BlockHash = block?.GetHash();
+                    foundTransaction.BlockIndex = block?.Transactions.FindIndex(t => t.GetHash() == transactionHash);
                 }
 
                 // Update the block time.
@@ -1101,6 +1113,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(transaction, nameof(transaction));
             Guard.NotNull(paidToOutputs, nameof(paidToOutputs));
 
+            uint256 transactionHash = transaction.GetHash();
+
             // Get the transaction being spent.
             TransactionData spentTransaction = this.scriptToAddressLookup.Values.Distinct().SelectMany(v => v.Transactions)
                 .SingleOrDefault(t => (t.Id == spendingTransactionId) && (t.Index == spendingTransactionIndex));
@@ -1136,10 +1150,11 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 var spendingDetails = new SpendingDetails
                 {
-                    TransactionId = transaction.GetHash(),
+                    TransactionId = transactionHash,
                     Payments = payments,
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? transaction.Time),
                     BlockHeight = blockHeight,
+                    BlockIndex = block?.Transactions.FindIndex(t => t.GetHash() == transactionHash),
                     Hex = this.walletSettings.SaveTransactionHex ? transaction.ToHex() : null,
                     IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true
                 };
@@ -1161,6 +1176,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 if (block != null)
                 {
                     spentTransaction.SpendingDetails.CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time);
+                    spentTransaction.BlockIndex = block?.Transactions.FindIndex(t => t.GetHash() == transactionHash);
                 }
             }
 
@@ -1353,7 +1369,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Loads the wallet to be used by the manager.
+        /// Loads the wallet to be used by the manager if a wallet with this name has not already been loaded.
         /// </summary>
         /// <param name="wallet">The wallet to load.</param>
         private void Load(Wallet wallet)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -47,7 +48,7 @@ namespace Stratis.Bitcoin.P2P
         private IAsyncLoop asyncLoop;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncLoopFactory asyncLoopFactory;
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -76,10 +77,10 @@ namespace Stratis.Bitcoin.P2P
         protected INodeLifetime nodeLifetime;
 
         /// <summary>User defined connection settings.</summary>
-        public ConnectionManagerSettings ConnectionSettings;
+        public ConnectionManagerSettings ConnectionSettings { get; private set; }
 
         /// <summary>The network the node is running on.</summary>
-        private Network network;
+        private readonly Network network;
 
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         protected IPeerAddressManager peerAddressManager;
@@ -260,7 +261,7 @@ namespace Stratis.Bitcoin.P2P
             }
             catch (Exception exception)
             {
-                this.logger.LogTrace("Exception occurred while connecting: {0}", exception.ToString());
+                this.logger.LogTrace("Exception occurred while connecting: {0}", exception is SocketException ? exception.Message : exception.ToString());
                 peerAddress.SetHandshakeAttempted(this.dateTimeProvider.GetUtcNow());
                 peer?.Disconnect("Error while connecting", exception);
             }
