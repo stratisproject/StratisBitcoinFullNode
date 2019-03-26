@@ -480,7 +480,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     /// </summary>
     public class VerifyRequest : RequestModel
     {
-        [Required(ErrorMessage = "Signature is required.")]
+        [Required(ErrorMessage = "A signature is required.")]
         public string Signature { get; set; }
 
         [Required(ErrorMessage = "ExternalAddress is required.")]
