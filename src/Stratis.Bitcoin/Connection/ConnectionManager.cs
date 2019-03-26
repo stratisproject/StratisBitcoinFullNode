@@ -84,8 +84,10 @@ namespace Stratis.Bitcoin.Connection
 
         private readonly AsyncQueue<INetworkPeer> connectedPeersQueue;
 
-        /// <summary>Traffic statistics from peers that have been disconnected.</summary> 
+        /// <summary>Traffic statistics from peers that have been disconnected.</summary>
         private readonly PerformanceCounter disconnectedPerfCounter;
+
+        public IPeerBanning PeerBanning { get; private set; }
 
         public ConnectionManager(IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
@@ -116,6 +118,7 @@ namespace Stratis.Bitcoin.Connection
             this.ConnectionSettings = connectionSettings;
             this.networkPeerDisposer = new NetworkPeerDisposer(this.loggerFactory);
             this.Servers = new List<NetworkPeerServer>();
+            this.PeerBanning = new PeerBanning(this, loggerFactory, dateTimeProvider, peerAddressManager);
 
             this.Parameters = parameters;
             this.Parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
@@ -404,6 +407,9 @@ namespace Stratis.Bitcoin.Connection
         {
             Guard.NotNull(ipEndpoint, nameof(ipEndpoint));
 
+            if (this.PeerBanning.IsBanned(ipEndpoint))
+                throw new InvalidOperationException("Can't perform 'addnode' for a banned peer.");
+
             this.peerAddressManager.AddPeer(ipEndpoint.MapToIpv6(), IPAddress.Loopback);
 
             if (!this.ConnectionSettings.AddNode.Any(p => p.Match(ipEndpoint)))
@@ -442,6 +448,9 @@ namespace Stratis.Bitcoin.Connection
 
         public async Task<INetworkPeer> ConnectAsync(IPEndPoint ipEndpoint)
         {
+            if (this.PeerBanning.IsBanned(ipEndpoint))
+                throw new InvalidOperationException("Can't connect to a banned peer.");
+
             var existingConnection = this.connectedPeers.FirstOrDefault(connectedPeer => connectedPeer.PeerEndPoint.Match(ipEndpoint));
 
             if (existingConnection != null)
