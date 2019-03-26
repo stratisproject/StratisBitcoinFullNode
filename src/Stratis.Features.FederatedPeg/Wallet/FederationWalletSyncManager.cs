@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -12,11 +13,11 @@ using Stratis.Features.FederatedPeg.Interfaces;
 
 namespace Stratis.Features.FederatedPeg.Wallet
 {
-    public class FederationWalletSyncManager : IFederationWalletSyncManager
+    public class FederationWalletSyncManager : IFederationWalletSyncManager, IDisposable
     {
         protected readonly IFederationWalletManager walletManager;
 
-        protected readonly ChainIndexer ChainIndexer;
+        protected readonly ChainIndexer chain;
 
         protected readonly CoinType coinType;
 
@@ -33,24 +34,40 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         public ChainedHeader WalletTip => this.walletTip;
 
-        public FederationWalletSyncManager(ILoggerFactory loggerFactory, IFederationWalletManager walletManager, ChainIndexer chainIndexer,
+        /// <summary>Queue which contains blocks that should be processed by <see cref="WalletManager"/>.</summary>
+        private readonly AsyncQueue<Block> blocksQueue;
+
+        /// <summary>Current <see cref="blocksQueue"/> size in bytes.</summary>
+        private long blocksQueueSize;
+
+        /// <summary>Flag to determine when the <see cref="MaxQueueSize"/> is reached.</summary>
+        private bool maxQueueSizeReached;
+
+        /// <summary>Limit <see cref="blocksQueue"/> size to 100MB.</summary>
+        private const int MaxQueueSize = 100 * 1024 * 1024;
+
+
+        public FederationWalletSyncManager(ILoggerFactory loggerFactory, IFederationWalletManager walletManager, ChainIndexer chain,
             Network network, IBlockStore blockStore, StoreSettings storeSettings, INodeLifetime nodeLifetime)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
-            Guard.NotNull(chainIndexer, nameof(chainIndexer));
+            Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(blockStore, nameof(blockStore));
             Guard.NotNull(storeSettings, nameof(storeSettings));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 
             this.walletManager = walletManager;
-            this.ChainIndexer = chainIndexer;
+            this.chain = chain;
             this.blockStore = blockStore;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.storeSettings = storeSettings;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.blocksQueue = new AsyncQueue<Block>(this.OnProcessBlockAsync);
+
+            this.blocksQueueSize = 0;
         }
 
         /// <inheritdoc />
@@ -65,7 +82,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             this.logger.LogInformation("WalletSyncManager initialized. Wallet at block {0}.", this.walletManager.LastBlockHeight());
 
-            this.walletTip = this.ChainIndexer.GetBlock(this.walletManager.WalletTipHash);
+            this.walletTip = this.chain.GetBlock(this.walletManager.WalletTipHash);
             if (this.walletTip == null)
             {
                 // The wallet tip was not found in the main chain.
@@ -78,7 +95,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 // state (behind the best chain).
                 ICollection<uint256> locators = this.walletManager.GetWallet().BlockLocator;
                 var blockLocator = new BlockLocator { Blocks = locators.ToList() };
-                ChainedHeader fork = this.ChainIndexer.FindFork(blockLocator);
+                ChainedHeader fork = this.chain.FindFork(blockLocator);
                 this.walletManager.RemoveBlocks(fork);
                 this.walletManager.WalletTipHash = fork.HashBlock;
                 this.walletTip = fork;
@@ -90,12 +107,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
         }
 
-        /// <inheritdoc />
-        public virtual void ProcessBlock(Block block)
+        private async Task OnProcessBlockAsync(Block block, CancellationToken cancellationToken)
         {
             Guard.NotNull(block, nameof(block));
 
-            ChainedHeader newTip = this.ChainIndexer.GetBlock(block.GetHash());
+            ChainedHeader newTip = this.chain.GetBlock(block.GetHash());
             if (newTip == null)
             {
                 this.logger.LogTrace("(-)[NEW_TIP_REORG]");
@@ -108,7 +124,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             {
                 // If previous block does not match there might have
                 // been a reorg, check if the wallet is still on the main chain.
-                ChainedHeader inBestChain = this.ChainIndexer.GetBlock(this.walletTip.HashBlock);
+                ChainedHeader inBestChain = this.chain.GetBlock(this.walletTip.HashBlock);
                 if (inBestChain == null)
                 {
                     // The current wallet hash was not found on the main chain.
@@ -116,7 +132,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     ChainedHeader fork = this.walletTip;
 
                     // We walk back the chained block object to find the fork.
-                    while (this.ChainIndexer.GetBlock(fork.HashBlock) == null)
+                    while (this.chain.GetBlock(fork.HashBlock) == null)
                         fork = fork.Previous;
 
                     this.logger.LogInformation("Reorg detected, going back from '{0}' to '{1}'.", this.walletTip, fork);
@@ -139,7 +155,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         return;
                     }
 
-                    CancellationToken token = this.nodeLifetime.ApplicationStopping;
                     this.logger.LogTrace("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
 
                     ChainedHeader next = this.walletTip;
@@ -158,7 +173,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         int index = 0;
                         while (true)
                         {
-                            if (token.IsCancellationRequested)
+                            if (cancellationToken.IsCancellationRequested)
                             {
                                 this.logger.LogTrace("(-)[CANCELLATION_REQUESTED]");
                                 return;
@@ -209,6 +224,36 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <inheritdoc />
+        public virtual void ProcessBlock(Block block)
+        {
+            Guard.NotNull(block, nameof(block));
+
+            // If the queue reaches the maximum limit, ignore incoming blocks until the queue is empty.
+            if (!this.maxQueueSizeReached)
+            {
+                if (this.blocksQueueSize >= MaxQueueSize)
+                {
+                    this.maxQueueSizeReached = true;
+                    this.logger.LogTrace("(-)[REACHED_MAX_QUEUE_SIZE]");
+                    return;
+                }
+            }
+            else
+            {
+                // If queue is empty then reset the maxQueueSizeReached flag.
+                this.maxQueueSizeReached = this.blocksQueueSize > 0;
+            }
+
+            if (!this.maxQueueSizeReached)
+            {
+                long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, block.BlockSize.Value);
+                this.logger.LogTrace("Queue sized changed to {0} bytes.", currentBlockQueueSize);
+
+                this.blocksQueue.Enqueue(block);
+            }
+        }
+
+        /// <inheritdoc />
         public virtual void ProcessTransaction(Transaction transaction)
         {
             Guard.NotNull(transaction, nameof(transaction));
@@ -219,16 +264,22 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public virtual void SyncFromDate(DateTime date)
         {
-            int blockSyncStart = this.ChainIndexer.GetHeightAtTime(date);
+            int blockSyncStart = this.chain.GetHeightAtTime(date);
             this.SyncFromHeight(blockSyncStart);
         }
 
         /// <inheritdoc />
         public virtual void SyncFromHeight(int height)
         {
-            ChainedHeader chainedBlock = this.ChainIndexer.GetBlock(height);
+            ChainedHeader chainedBlock = this.chain.GetBlock(height);
             this.walletTip = chainedBlock ?? throw new WalletException("Invalid block height");
             this.walletManager.WalletTipHash = chainedBlock.HashBlock;
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            this.blocksQueue.Dispose();
         }
     }
 }

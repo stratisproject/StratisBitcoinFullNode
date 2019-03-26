@@ -455,7 +455,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 result.Add(new
                 {
                     grouping.Key.Address,
-                    Sum = grouping.Sum(x => x.Transaction.SpendableAmount(false))
+                    Sum = grouping.Sum(x => x.Transaction.GetUnspentAmount(false))
                 });
             }
             
