@@ -53,6 +53,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             INetworkDifficulty networkDifficulty = null,
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
+            Network network = null,
             ConcurrentChain chain = null,
             IChainState chainState = null,
             Connection.IConnectionManager connectionManager = null,
@@ -61,6 +62,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             IInitialBlockDownloadState ibdState = null)
             : base(
                   fullNode: fullNode,
+                  network: network,
                   nodeSettings: nodeSettings,
                   chain: chain,
                   chainState: chainState,
@@ -275,7 +277,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             Guard.NotNull(hash, nameof(hash));
 
             this.logger.LogDebug("RPC GetBlockHeader {0}", hash);
-            
+
             if (this.Chain != null)
             {
                 BlockHeader blockHeader = this.Chain.GetBlock(uint256.Parse(hash))?.Header;

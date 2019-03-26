@@ -37,6 +37,7 @@ namespace Stratis.Bitcoin.Controllers
 
         public FeatureController(
             IFullNode fullNode = null,
+            Network network = null,
             NodeSettings nodeSettings = null,
             ConcurrentChain chain = null,
             IChainState chainState = null,
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.Controllers
         {
             this.FullNode = fullNode;
             this.Settings = nodeSettings;
-            this.Network = fullNode?.Network;
+            this.Network = network;
             this.Chain = chain;
             this.ChainState = chainState;
             this.ConnectionManager = connectionManager;
