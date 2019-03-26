@@ -53,7 +53,6 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             INetworkDifficulty networkDifficulty = null,
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
-            Network network = null,
             ConcurrentChain chain = null,
             IChainState chainState = null,
             Connection.IConnectionManager connectionManager = null,
@@ -63,7 +62,6 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             : base(
                   fullNode: fullNode,
                   nodeSettings: nodeSettings,
-                  network: network,
                   chain: chain,
                   chainState: chainState,
                   connectionManager: connectionManager,

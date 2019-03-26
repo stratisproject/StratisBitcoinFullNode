@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
@@ -17,11 +18,12 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             IConsensusManager consensusManager,
             IFullNode fullNode,
             ILoggerFactory loggerFactory,
-            Network network,
+            IScriptAddressReader scriptAddressReader,
+            StoreSettings storeSettings,
             IWalletManager walletManager,
             WalletSettings walletSettings,
             IWalletTransactionHandler walletTransactionHandler) :
-            base(blockStore, broadcasterManager, chain, consensusManager, fullNode, loggerFactory, network, walletManager, walletSettings, walletTransactionHandler)
+            base(blockStore, broadcasterManager, chain, consensusManager, fullNode, loggerFactory, scriptAddressReader, storeSettings, walletManager, walletSettings, walletTransactionHandler)
         {
         }
     }

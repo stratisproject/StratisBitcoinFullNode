@@ -9,6 +9,7 @@ using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -27,11 +28,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Wallet broadcast manager.</summary>
         private readonly IBroadcasterManager broadcasterManager;
 
-        /// <summary>Full node.</summary>
-        private readonly IFullNode fullNode;
-
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
+
+        /// <summary>A reader for extracting an address from a <see cref="Script"/>.</summary>
+        private readonly IScriptAddressReader scriptAddressReader;
+
+        /// <summary>Block store and repository related configuration.</summary>
+        private readonly StoreSettings storeSettings;
 
         /// <summary>Wallet manager.</summary>
         private readonly IWalletManager walletManager;
@@ -39,6 +43,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Wallet transaction handler.</summary>
         private readonly IWalletTransactionHandler walletTransactionHandler;
 
+        /// <summary>Wallet related configuration.</summary>
         private readonly WalletSettings walletSettings;
 
         public WalletRPCController(
@@ -48,15 +53,17 @@ namespace Stratis.Bitcoin.Features.Wallet
             IConsensusManager consensusManager,
             IFullNode fullNode,
             ILoggerFactory loggerFactory,
-            Network network,
+            IScriptAddressReader scriptAddressReader,
+            StoreSettings storeSettings,
             IWalletManager walletManager,
             WalletSettings walletSettings,
-            IWalletTransactionHandler walletTransactionHandler) : base(fullNode: fullNode, consensusManager: consensusManager, chain: chain, network: network)
+            IWalletTransactionHandler walletTransactionHandler) : base(fullNode: fullNode, consensusManager: consensusManager, chain: chain)
         {
             this.blockStore = blockStore;
             this.broadcasterManager = broadcasterManager;
-            this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.scriptAddressReader = scriptAddressReader;
+            this.storeSettings = storeSettings;
             this.walletManager = walletManager;
             this.walletSettings = walletSettings;
             this.walletTransactionHandler = walletTransactionHandler;
@@ -96,7 +103,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         public async Task<uint256> SendToAddressAsync(BitcoinAddress address, decimal amount, string commentTx, string commentDest)
         {
             WalletAccountReference account = this.GetAccount();
-            TransactionBuildContext context = new TransactionBuildContext(this.fullNode.Network)
+
+            TransactionBuildContext context = new TransactionBuildContext(this.FullNode.Network)
             {
                 AccountReference = this.GetAccount(),
                 Recipients = new[] { new Recipient { Amount = Money.Coins(amount), ScriptPubKey = address.ScriptPubKey } }.ToList(),
@@ -130,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         [ActionDescription("Submits raw transaction (serialized, hex-encoded) to local node and network.")]
         public async Task<uint256> SendTransactionAsync(string hex)
         {
-            Transaction transaction = this.fullNode.Network.CreateTransaction(hex);
+            Transaction transaction = this.FullNode.Network.CreateTransaction(hex);
             await this.broadcasterManager.BroadcastTransactionAsync(transaction);
 
             uint256 hash = transaction.GetHash();
@@ -335,13 +343,13 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         [ActionName("listaddressgroupings")]
         [ActionDescription("Returns a list of grouped addresses which have had their common ownership made public by common use as inputs or as the resulting change in past transactions.")]
-        public async Task<AddressGroupingModel[]> ListAddressGroupings(string walletName, CoinType coinType)
+        public async Task<AddressGroupingModel[]> ListAddressGroupings()
         {
-            //Get the wallet to check.
-            var wallet = this.walletManager.GetWallet(walletName);
+            if (!this.storeSettings.TxIndex)
+                throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, $"{nameof(ListAddressGroupings)} is incompatible with transaction indexing turned off (i.e. -txIndex=0).");
 
             //Get all the address groupings.
-            var addressGroupings = await GetAddressGroupingsAsync(wallet, coinType);
+            var addressGroupings = await GetAddressGroupingsAsync();
 
             var addressGroupingModels = new List<AddressGroupingModel>();
 
@@ -366,27 +374,29 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Please see https://github.com/bitcoin/bitcoin/blob/726d0668ff780acb59ab0200359488ce700f6ae6/src/wallet/wallet.cpp#L3641
         /// </summary>
-        /// <param name="wallet">The wallet to check.</param>
-        /// <param name="coinType">The cointype for this wallet.</param>
         /// <returns>A list of base 58 addresses.</returns>
-        private async Task<List<List<BitcoinPubKeyAddress>>> GetAddressGroupingsAsync(Wallet wallet, CoinType coinType)
+        private async Task<List<List<string>>> GetAddressGroupingsAsync()
         {
-            //Get all the transaction data records for this wallet.
-            var transactions = wallet.GetAllTransactionsByCoinType(coinType);
+            //Get the wallet to check.
+            var walletReference = this.GetAccount();
+            var wallet = this.walletManager.GetWallet(walletReference.WalletName);
 
-            var groupings = new List<List<BitcoinPubKeyAddress>>();
+            //Get the transaction data for this wallet.
+            var transactions = wallet.GetAllTransactionsByCoinType((CoinType)this.Network.Consensus.CoinType);
+
+            var groupings = new List<List<string>>();
 
             foreach (var transaction in transactions)
             {
                 var tx = await this.blockStore.GetTransactionByIdAsync(transaction.Id);
                 if (tx.Inputs.Count > 0)
                 {
-                    var addressGroupBase58 = new List<BitcoinPubKeyAddress>();
+                    var addressGroupBase58 = new List<string>();
 
                     // Group all input addresses with each other.
                     foreach (var txIn in tx.Inputs)
                     {
-                        if (!await IsTxInMineAsync(wallet, coinType, transactions, txIn))
+                        if (!await IsTxInMineAsync(wallet, (CoinType)this.Network.Consensus.CoinType, transactions, txIn))
                             continue;
 
                         // Get the address.
@@ -409,7 +419,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                             var txOutAddressBase58 = GetBase58AddressFromScript(txOut.ScriptPubKey);
                             if (txOutAddressBase58 != null)
                             {
-                                if (IsChange(wallet, coinType, txOutAddressBase58))
+                                if (IsChange(wallet, (CoinType)this.Network.Consensus.CoinType, txOutAddressBase58))
                                     addressGroupBase58.Add(txOutAddressBase58);
                             }
                         }
@@ -421,9 +431,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // Group lone addresses by themselves.
                 foreach (var txOut in tx.Outputs)
                 {
-                    if (IsAddressMine(wallet, txOut.ScriptPubKey, coinType))
+                    if (IsAddressMine(wallet, txOut.ScriptPubKey, (CoinType)this.Network.Consensus.CoinType))
                     {
-                        var grouping = new List<BitcoinPubKeyAddress>();
+                        var grouping = new List<string>();
 
                         var addressBase58 = GetBase58AddressFromScript(txOut.ScriptPubKey);
                         if (addressBase58 == null)
@@ -436,18 +446,18 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
             }
 
-            var uniqueGroupings = new List<List<BitcoinPubKeyAddress>>();
-            var setMap = new Dictionary<BitcoinPubKeyAddress, List<BitcoinPubKeyAddress>>();
+            var uniqueGroupings = new List<List<string>>();
+            var setMap = new Dictionary<string, List<string>>();
             foreach (var group in groupings)
             {
-                var hits = new List<List<BitcoinPubKeyAddress>>();
+                var hits = new List<List<string>>();
                 foreach (var address in group)
                 {
                     var mappedEntry = setMap.FirstOrDefault(m => m.Key == address);
                     if (mappedEntry.Value != null)
                         hits.Add(mappedEntry.Value);
 
-                    var merged = new List<BitcoinPubKeyAddress>(group);
+                    var merged = new List<string>(group);
                     foreach (var hit in hits)
                     {
                         merged.AddRange(hit);
@@ -466,22 +476,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             return uniqueGroupings;
         }
 
-        private BitcoinPubKeyAddress GetBase58AddressFromScript(Script script)
+        private string GetBase58AddressFromScript(Script script)
         {
-            PubKey payToPubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(script);
-
-            uint160 address = null;
-
-            if (payToPubKey != null)
-                address = new uint160(payToPubKey.Hash.ToBytes());
-
-            if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(script))
-                address = new uint160(PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(script).ToBytes());
-
-            if (address != null)
-                return new BitcoinPubKeyAddress(new KeyId(address), this.Network);
-
-            return null;
+            var result = this.scriptAddressReader.GetAddressFromScriptPubKey(this.Network, script);
+            return result;
         }
 
         /// <summary>
@@ -492,10 +490,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="coinType">The coin type associated with the wallet; Stratis or Bitcoin.</param>
         /// <param name="txOutAddressBase58">The base58 address to verify from the <see cref="TxOut"/>.</param>
         /// <returns><c>true</c> if the <paramref name="txOutAddressBase58"/> is a change address.</returns>
-        private bool IsChange(Wallet wallet, CoinType coinType, BitcoinPubKeyAddress txOutAddressBase58)
+        private bool IsChange(Wallet wallet, CoinType coinType, string txOutAddressBase58)
         {
             var internalAddresses = wallet.GetAccountsByCoinType(coinType).SelectMany(a => a.InternalAddresses);
-            var result = internalAddresses.FirstOrDefault(ia => ia.Address == txOutAddressBase58.ToString());
+            var result = internalAddresses.FirstOrDefault(ia => ia.Address == txOutAddressBase58);
             return result != null;
         }
 
@@ -529,7 +527,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private bool IsAddressMine(Wallet wallet, Script scriptPubKey, CoinType coinType)
         {
             var addressBase58 = GetBase58AddressFromScript(scriptPubKey);
-            var result = wallet.GetAllAddressesByCoinType(coinType).FirstOrDefault(a => a.Address == addressBase58.ToString());
+            var result = wallet.GetAllAddressesByCoinType(coinType).FirstOrDefault(a => a.Address == addressBase58);
             return result != null;
         }
 
@@ -540,7 +538,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             List<BitcoinAddress> addresses = new List<BitcoinAddress>();
             if (!string.IsNullOrEmpty(addressesJson))
             {
-                JsonConvert.DeserializeObject<List<string>>(addressesJson).ForEach(i => addresses.Add(BitcoinAddress.Create(i, this.fullNode.Network)));
+                JsonConvert.DeserializeObject<List<string>>(addressesJson).ForEach(i => addresses.Add(BitcoinAddress.Create(i, this.FullNode.Network)));
             }
 
             WalletAccountReference accountReference = this.GetAccount();
@@ -551,7 +549,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 if (spendableTx.Confirmations <= maxConfirmations)
                 {
-                    if (!addresses.Any() || addresses.Contains(BitcoinAddress.Create(spendableTx.Address.Address, this.fullNode.Network)))
+                    if (!addresses.Any() || addresses.Contains(BitcoinAddress.Create(spendableTx.Address.Address, this.FullNode.Network)))
                     {
                         unspentCoins.Add(new UnspentCoinModel()
                         {
@@ -600,7 +598,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 try
                 {
-                    subtractFeeFromAddresses = JsonConvert.DeserializeObject<List<string>>(subtractFeeFromJson).Select(i => BitcoinAddress.Create(i, this.fullNode.Network));
+                    subtractFeeFromAddresses = JsonConvert.DeserializeObject<List<string>>(subtractFeeFromJson).Select(i => BitcoinAddress.Create(i, this.FullNode.Network));
                 }
                 catch (JsonSerializationException ex)
                 {
@@ -612,7 +610,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             foreach (var address in addresses)
             {
                 // Check for duplicate recipients
-                var recipientAddress = BitcoinAddress.Create(address.Key, this.fullNode.Network).ScriptPubKey;
+                var recipientAddress = BitcoinAddress.Create(address.Key, this.FullNode.Network).ScriptPubKey;
                 if (recipients.Any(r => r.ScriptPubKey == recipientAddress))
                     throw new RPCServerException(RPCErrorCode.RPC_INVALID_PARAMETER, string.Format("Invalid parameter, duplicated address: {0}.", recipientAddress));
 
@@ -620,7 +618,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     ScriptPubKey = recipientAddress,
                     Amount = Money.Coins(address.Value),
-                    SubtractFeeFromAmount = subtractFeeFromAddresses == null ? false : subtractFeeFromAddresses.Contains(BitcoinAddress.Create(address.Key, this.fullNode.Network))
+                    SubtractFeeFromAmount = subtractFeeFromAddresses == null ? false : subtractFeeFromAddresses.Contains(BitcoinAddress.Create(address.Key, this.FullNode.Network))
                 };
 
                 recipients.Add(recipient);
@@ -628,7 +626,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             WalletAccountReference accountReference = this.GetAccount();
 
-            var context = new TransactionBuildContext(this.fullNode.Network)
+            var context = new TransactionBuildContext(this.FullNode.Network)
             {
                 AccountReference = accountReference,
                 MinConfirmations = minConf,
