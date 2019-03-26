@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -22,15 +23,17 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
     {
         private readonly DefaultEndpointsSettings defaultEndpointsSettings;
         private readonly IDistributedCache distributedCache;
-        public readonly IHubContext<DataUpdaterHub> updaterHub;
+        private readonly IHubContext<DataUpdaterHub> updaterHub;
+        private readonly ILogger<FetchingBackgroundService> logger;
         private bool successfullyBuilt;
         private Timer dataRetrieverTimer;
 
-        public FetchingBackgroundService(IDistributedCache distributedCache, IOptions<DefaultEndpointsSettings> defaultEndpointsSettings, IHubContext<DataUpdaterHub> hubContext)
+        public FetchingBackgroundService(IDistributedCache distributedCache, IOptions<DefaultEndpointsSettings> defaultEndpointsSettings, IHubContext<DataUpdaterHub> hubContext, ILogger<FetchingBackgroundService> logger)
         {
             this.defaultEndpointsSettings = defaultEndpointsSettings.Value;
             this.distributedCache = distributedCache;
             this.updaterHub = hubContext;
+            this.logger = logger;
         }
 
         /// <summary>
@@ -38,6 +41,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         /// </summary>
         public async Task StartAsync(CancellationToken cancellationToken)
         {
+            this.logger.LogInformation($"Starting the Fetching Background Service");
+
             DoWorkAsync(null);
 
             //TODO: Add timer setting in configuration file
@@ -51,6 +56,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         /// <returns></returns>
         private async Task BuildCacheAsync()
         {
+            this.logger.LogInformation($"Refresh the Dashboard Data");
+
             #region Stratis Node
             ApiResponse stratisStatus = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Node/status");
             ApiResponse stratisRawmempool = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Mempool/getrawmempool");
@@ -101,7 +108,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                         ConfirmedBalance = (double)stratisWalletBalances.Content.balances[0].amountConfirmed / 100000000,
                         UnconfirmedBalance = (double)stratisWalletBalances.Content.balances[0].amountUnconfirmed / 100000000,
                         CoinTicker = stratisStatus.Content.coinTicker ?? "STRAT"
-                    },  
+                    },
                     SidechainNode = new SidechainNodelModel
                     {
                         WebAPIUrl = string.Concat(this.defaultEndpointsSettings.SidechainNode, "/api"),
@@ -124,9 +131,9 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 //ignored
             }
 
-            if(!string.IsNullOrEmpty(this.distributedCache.GetString("DashboardData")))
+            if (!string.IsNullOrEmpty(this.distributedCache.GetString("DashboardData")))
             {
-                if(JToken.DeepEquals(this.distributedCache.GetString("DashboardData"), JsonConvert.SerializeObject(dashboardModel)) == false)
+                if (JToken.DeepEquals(this.distributedCache.GetString("DashboardData"), JsonConvert.SerializeObject(dashboardModel)) == false)
                 {
                     await this.updaterHub.Clients.All.SendAsync("CacheIsDifferent");
                 }
@@ -136,7 +143,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
 
         private void ParsePeers(dynamic stratisStatus, dynamic federationInfo, ref List<Peer> peers, ref List<Peer> federationMembers)
         {
-            foreach(dynamic peer in (JArray) stratisStatus.Content.outboundPeers)
+            foreach (dynamic peer in (JArray)stratisStatus.Content.outboundPeers)
             {
                 var endpointRegex = new Regex("\\[([A-Za-z0-9:.]*)\\]:([0-9]*)");
                 var endpointMatches = endpointRegex.Matches(Convert.ToString(peer.remoteSocketEndpoint));
@@ -150,7 +157,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                     Version = peer.version
                 });
             }
-            foreach(dynamic peer in (JArray) stratisStatus.Content.inboundPeers)
+            foreach (dynamic peer in (JArray)stratisStatus.Content.inboundPeers)
             {
                 var endpointRegex = new Regex("\\[([A-Za-z0-9:.]*)\\]:([0-9]*)");
                 var endpointMatches = endpointRegex.Matches(Convert.ToString(peer.remoteSocketEndpoint));
@@ -168,7 +175,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
 
         private async void DoWorkAsync(object state)
         {
-            if(this.PerformNodeCheck())
+            if (this.PerformNodeCheck())
             {
                 await this.BuildCacheAsync();
                 successfullyBuilt = true;
@@ -176,7 +183,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
             else
             {
                 await this.distributedCache.SetStringAsync("NodeUnavailable", "true");
-                if(successfullyBuilt)
+                if (successfullyBuilt)
                 {
                     await this.updaterHub.Clients.All.SendAsync("NodeUnavailable");
                 }
@@ -184,9 +191,10 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 successfullyBuilt = false;
             }
         }
-            
+
         public Task StopAsync(CancellationToken cancellationToken)
         {
+            this.logger.LogInformation($"Stopping the Fetching Background Service");
             this.dataRetrieverTimer?.Change(Timeout.Infinite, 0);
             return Task.CompletedTask;
         }
@@ -201,24 +209,27 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         /// </summary>
         /// <remarks>The ports can be changed in the future</remarks>
         /// <returns>True if the connection are succeed</returns>
-        private bool PerformNodeCheck() => this.PortCheck(new Uri(this.defaultEndpointsSettings.StratisNode).Port) && this.PortCheck(new Uri(this.defaultEndpointsSettings.SidechainNode).Port);
+        private bool PerformNodeCheck() => this.PortCheck(new Uri(this.defaultEndpointsSettings.StratisNode)) && this.PortCheck(new Uri(this.defaultEndpointsSettings.SidechainNode));
 
         /// <summary>
         /// Perform a TCP port scan
         /// </summary>
         /// <param name="port">Specify the port to scan</param>
         /// <returns>True if the port is opened</returns>
-        private bool PortCheck(int port)
+        private bool PortCheck(Uri endpointToCheck)
         {
-            using(var tcpClient = new TcpClient())
+            this.logger.LogInformation($"Perform a port check for {endpointToCheck.Host}:{endpointToCheck.Port}");
+            using (var tcpClient = new TcpClient())
             {
                 try
                 {
-                    tcpClient.Connect("127.0.0.1", port);
+                    this.logger.LogInformation($"Host {endpointToCheck.Host}:{endpointToCheck.Port} is available");
+                    tcpClient.Connect(endpointToCheck.Host, endpointToCheck.Port);
                     return true;
                 }
                 catch
                 {
+                    this.logger.LogWarning($"Host {endpointToCheck.Host}:{endpointToCheck.Port} unavailable");
                     return false;
                 }
             }
