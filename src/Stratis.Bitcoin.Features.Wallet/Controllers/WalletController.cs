@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Signs a message and returns the signature.
         /// </summary>
         /// <param name="request">The object containing the parameters used to sign a message.</param>
-        /// <returns>A JSON object containing signature.</returns>
+        /// <returns>A JSON object containing the generated signature.</returns>
         [Route("signmessage")]
         [HttpPost]
         public IActionResult SignMessage([FromBody]SignMessageRequest request)
