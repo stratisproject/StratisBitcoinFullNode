@@ -4,10 +4,14 @@ using Stratis.SmartContracts.CLR;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
+    public interface IContractTransactionFullValidationRule : IContractTransactionValidationRule { }
+
+    public interface IContractTransactionPartialValidationRule : IContractTransactionValidationRule { }
+
     /// <summary>
     /// Holds logic for validating a specific property of smart contract transactions.
     /// </summary>
-    public interface IContractTransactionValidationLogic
+    public interface IContractTransactionValidationRule
     {
         /// <summary>
         /// Ensures that a transaction is valid, throwing a <see cref="ConsensusError"/> otherwise.

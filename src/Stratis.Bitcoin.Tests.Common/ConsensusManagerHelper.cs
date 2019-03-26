@@ -58,17 +58,19 @@ namespace Stratis.Bitcoin.Tests.Common
             if (inMemoryCoinView == null)
                 inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
 
+            var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
+
             var networkPeerFactory = new NetworkPeerFactory(network,
                 dateTimeProvider,
                 loggerFactory, new PayloadProvider().DiscoverPayloads(),
-                new SelfEndpointTracker(loggerFactory),
+                new SelfEndpointTracker(loggerFactory, connectionManagerSettings),
                 new Mock<IInitialBlockDownloadState>().Object,
-                new ConnectionManagerSettings(nodeSettings));
+                connectionManagerSettings);
 
-            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker(loggerFactory));
-            var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
             var connectionSettings = new ConnectionManagerSettings(nodeSettings);
-            var selfEndpointTracker = new SelfEndpointTracker(loggerFactory);
+            var selfEndpointTracker = new SelfEndpointTracker(loggerFactory, connectionSettings);
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, selfEndpointTracker);
+            var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
             var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeSettings,
                 new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { },
                 peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider(), new Mock<INodeStats>().Object);
@@ -91,7 +93,7 @@ namespace Stratis.Bitcoin.Tests.Common
 
             var consensus = new ConsensusManager(tree, network, loggerFactory, chainState, new IntegrityValidator(consensusRules, loggerFactory),
                 new PartialValidator(consensusRules, loggerFactory), new FullValidator(consensusRules, loggerFactory), consensusRules,
-                new Mock<IFinalizedBlockInfoRepository>().Object, new Signals.Signals(), peerBanning, new Mock<IInitialBlockDownloadState>().Object, chain,
+                new Mock<IFinalizedBlockInfoRepository>().Object, new Signals.Signals(loggerFactory, null), peerBanning, new Mock<IInitialBlockDownloadState>().Object, chain,
                 new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object, new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object, new NodeLifetime(), consensusSettings);
 
             return consensus;

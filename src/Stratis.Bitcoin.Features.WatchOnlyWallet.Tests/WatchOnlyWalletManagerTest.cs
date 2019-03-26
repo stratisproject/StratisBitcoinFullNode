@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
@@ -22,7 +23,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
         public WatchOnlyWalletManagerTest()
         {
             this.networkTestNet = KnownNetworks.TestNet;
-            this.signals = new Signals.Signals();
+            this.signals = new Signals.Signals(new LoggerFactory(), null);
         }
 
         [Fact]

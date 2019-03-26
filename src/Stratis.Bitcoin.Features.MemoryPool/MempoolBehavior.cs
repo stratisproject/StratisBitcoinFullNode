@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
@@ -316,7 +317,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                 if (this.isBlocksOnlyMode)
                 {
-                    this.logger.LogInformation("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, peer.RemoteSocketEndpoint);
+                    this.logger.LogDebug("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, peer.RemoteSocketEndpoint);
                     continue;
                 }
 
@@ -390,7 +391,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 await this.validator.SanityCheck();
                 this.RelayTransaction(trxHash);
 
-                this.signals.OnTransactionReceived.Notify(trx);
+                this.signals.Publish(new TransactionReceived(trx));
 
                 long mmsize = state.MempoolSize;
                 long memdyn = state.MempoolDynamicSize;

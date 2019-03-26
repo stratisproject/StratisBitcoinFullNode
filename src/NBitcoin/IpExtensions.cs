@@ -181,7 +181,8 @@ namespace NBitcoin
             }
 
             // all unroutable addresses belong to the same group
-            if(!address.IsRoutable(true))
+            // RFC6598 is a special case that is not globally routable but still locally routable.
+            if(!address.IsRoutable(true) && !address.IsRFC6598())
             {
                 nClass = 0;
                 nBits = 0;

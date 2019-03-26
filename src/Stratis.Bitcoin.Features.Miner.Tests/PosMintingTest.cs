@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             };
             var milliseconds550MinutesAgo = (uint)Math.Max(this.chain.Tip.Header.Time - TimeSpan.FromMinutes(550).Milliseconds, 0);
             this.AddAccountWithSpendableOutputs(wallet);
-            var spendableTransactions = wallet.GetAllSpendableTransactions(CoinType.Stratis, this.chain.Tip.Height, 0).ToList();
+            var spendableTransactions = wallet.GetAllSpendableTransactions(this.chain.Tip.Height, 0).ToList();
 
             this.walletManager.Setup(w => w.GetSpendableTransactionsInWalletForStaking(It.IsAny<string>(), It.IsAny<int>()))
                 .Returns(spendableTransactions);
@@ -241,8 +241,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 .Where(u => u.Outputs.Any(o => o.Value >= this.posMinting.MinimumStakingCoinValue)).Should()
                 .NotBeEmpty("otherwise we are not sure the code actually includes them");
 
-            this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(fetchCoinsResponse));
+            this.coinView.Setup(c => c.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .Returns(fetchCoinsResponse);
 
             this.consensusManager.Setup(c => c.Tip).Returns(this.chain.Tip);
             this.dateTimeProvider.Setup(c => c.GetAdjustedTimeAsUnixTimestamp())

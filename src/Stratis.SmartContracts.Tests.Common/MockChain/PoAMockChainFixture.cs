@@ -1,15 +1,22 @@
 ﻿using System;
 using NBitcoin;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.SmartContracts.Networks;
 
 namespace Stratis.SmartContracts.Tests.Common.MockChain
 {
     public class PoAMockChainFixture : IMockChainFixture, IDisposable
     {
+        private readonly SmartContractNodeBuilder builder;
         public IMockChain Chain { get; }
 
         public PoAMockChainFixture()
         {
-            PoAMockChain mockChain = new PoAMockChain(2).Build();
+            var network = new SmartContractsPoARegTest();
+            this.builder = SmartContractNodeBuilder.Create(this);
+
+            Func<int, CoreNode> factory = (nodeIndex) => builder.CreateSmartContractPoANode(network, nodeIndex).Start();
+            PoAMockChain mockChain = new PoAMockChain(2, factory).Build();
             this.Chain = mockChain;
             MockChainNode node1 = this.Chain.Nodes[0];
             MockChainNode node2 = this.Chain.Nodes[1];
@@ -37,6 +44,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
 
         public void Dispose()
         {
+            this.builder.Dispose();
             this.Chain.Dispose();
         }
     }

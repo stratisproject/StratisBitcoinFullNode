@@ -21,9 +21,21 @@ namespace Stratis.Features.FederatedPeg
 
         public const string FederationIpsParam = "federationips";
 
+        public const string CounterChainDepositBlock = "counterchaindepositblock";
+
         private const string MinimumDepositConfirmationsParam = "mindepositconfirmations";
 
-        private const string TransactionFeeParam = "transactionfee";
+        /// <summary>
+        /// The transaction fee used by the federation to build withdrawal transactions.
+        /// </summary>
+        /// <remarks>
+        /// Changing <see cref="TransactionFee"/> affects both the deposit threshold on this chain and the withdrawal transaction fee on this chain.
+        /// This value shouldn't be different for the 2 pegged chain nodes or deposits could be extracted that don't have the amount required to
+        /// cover the withdrawal fee on the other chain.
+        /// 
+        /// TODO: This should be configurable on the Network level in the future, but individual nodes shouldn't be tweaking it.
+        /// </remarks>
+        public static readonly Money DefaultTransactionFee = Money.Coins(0.01m);
 
         /// <summary>
         /// Sidechains to STRAT don't need to check for deposits for the whole main chain. Only from when they begun.
@@ -55,7 +67,7 @@ namespace Stratis.Features.FederatedPeg
 
             this.PublicKey = configReader.GetOrDefault<string>(PublicKeyParam, null);
 
-            this.TransactionFee = new Money(configReader.GetOrDefault<decimal>(TransactionFeeParam, 0.01m), MoneyUnit.BTC);
+            this.TransactionFee = DefaultTransactionFee;
 
             if (this.FederationPublicKeys.All(p => p != new PubKey(this.PublicKey)))
             {
@@ -64,14 +76,19 @@ namespace Stratis.Features.FederatedPeg
 
             this.CounterChainApiPort = configReader.GetOrDefault(CounterChainApiPortParam, 0);
 
-            this.CounterChainDepositStartBlock = this.IsMainChain ? 1 : StratisMainDepositStartBlock;
+            // Federation IPs - These are required to receive and sign withdrawal transactions.
+            string federationIpsRaw = configReader.GetOrDefault<string>(FederationIpsParam, null);
 
-            this.FederationNodeIpEndPoints = configReader.GetOrDefault<string>(FederationIpsParam, null)?.Split(',')
-                .Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort)) ?? new List<IPEndPoint>();
+            if (federationIpsRaw == null)
+            {
+                throw new ConfigurationException("Federation IPs must be specified.");
+            }
 
-            //todo : remove that for prod code
+            this.FederationNodeIpEndPoints = federationIpsRaw.Split(',').Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort));
+
+            // These values are only configurable for tests at the moment. Fed members on live networks shouldn't play with them.
+            this.CounterChainDepositStartBlock = configReader.GetOrDefault<int>(CounterChainDepositBlock, this.IsMainChain ? 1 : StratisMainDepositStartBlock);
             this.MinimumDepositConfirmations = (uint)configReader.GetOrDefault<int>(MinimumDepositConfirmationsParam, (int)nodeSettings.Network.Consensus.MaxReorgLength + 1);
-            //this.MinimumDepositConfirmations = nodeSettings.Network.Consensus.MaxReorgLength + 1;
         }
 
         /// <inheritdoc/>

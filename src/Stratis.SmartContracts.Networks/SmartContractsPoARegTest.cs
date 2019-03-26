@@ -58,7 +58,8 @@ namespace Stratis.SmartContracts.Networks
                 maxStandardTxSigopsCost: 20_000 / 5,
                 federationPublicKeys: federationPubKeys,
                 targetSpacingSeconds: 60,
-                votingEnabled: true
+                votingEnabled: true,
+                autoKickIdleMembers: false
             );
 
             var buriedDeployments = new BuriedDeploymentsArray

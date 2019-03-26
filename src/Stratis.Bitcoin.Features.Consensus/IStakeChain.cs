@@ -16,11 +16,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Set the stake for the given block header.
         /// </summary>
-        Task SetAsync(ChainedHeader chainedHeader, BlockStake blockStake);
+        void Set(ChainedHeader chainedHeader, BlockStake blockStake);
 
         /// <summary>
         /// Initialize the stake store.
         /// </summary>
-        Task LoadAsync();
+        void Load();
     }
 }
