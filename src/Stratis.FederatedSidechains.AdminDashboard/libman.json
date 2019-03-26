@@ -3,7 +3,7 @@
   "defaultProvider": "unpkg",
   "libraries": [
     {
-      "library": "@aspnet/signalr@1.0.4",
+      "library": "@aspnet/signalr@1.1.2",
       "destination": "wwwroot/lib/signalr",
       "files": [
         "dist/browser/signalr.js",
@@ -11,7 +11,7 @@
       ]
     },
     {
-      "library": "bootstrap@4.1.3",
+      "library": "bootstrap@4.3.1",
       "destination": "wwwroot/lib/bootstrap"
     },
     {
@@ -23,7 +23,7 @@
       "destination": "wwwroot/lib/jquery"
     },
     {
-      "library": "popper.js@1.14.6",
+      "library": "popper.js@1.14.7",
       "destination": "wwwroot/lib/popper.js"
     },
     {
@@ -35,8 +35,8 @@
       "destination": "wwwroot/lib/nprogress"
     },
     {
+      "library": "font-awesome@5.8.1",
       "provider": "cdnjs",
-      "library": "font-awesome@5.7.2",
       "destination": "wwwroot/lib/font-awesome/"
     }
   ]
