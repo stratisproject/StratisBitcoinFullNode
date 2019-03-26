@@ -486,7 +486,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [Required(ErrorMessage = "An address is required.")]
         public string ExternalAddress { get; set; }
 
-        [Required(ErrorMessage = "Message is required.")]
+        [Required(ErrorMessage = "A message is required.")]
         public string Message { get; set; }
     }
 }
