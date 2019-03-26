@@ -74,6 +74,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact]
         public void NoSpendableTransactionsLogWarning()
         {
+            // Throw a 'no spendable transactions' exception
             this.federationWalletTransactionHandler.Setup(x => x.BuildTransaction(It.IsAny<TransactionBuildContext>()))
                 .Throws(new WalletException(FederationWalletTransactionBuilder.NoSpendableTransactionsMessage));
 
@@ -93,7 +94,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             Transaction ret = txBuilder.BuildWithdrawalTransaction(uint256.One, 100, recipient);
 
-            this.logger.Verify(x=>x.Log(It.IsAny<LogLevel>(), 0, It.IsAny<string>(), null, It.IsAny<Func<string, Exception, string>>()));
+            // Log out a warning in this case, not an error.
+            this.logger.Verify(x=>x.Log<object>(LogLevel.Warning, It.IsAny<EventId>(), It.IsAny<object>(), null, It.IsAny<Func<object, Exception, string>>()));
         }
     }
 }

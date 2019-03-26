@@ -76,7 +76,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             {
                 if (error is WalletException walletException && walletException.Message == FederationWalletTransactionBuilder.NoSpendableTransactionsMessage)
                 {
-                    // this.logger.Log(LogLevel.Warning, new EventId(1), "", new Exception(), new Func<string,Exception,string>((s, exception) => ""));
                     this.logger.LogWarning("No spendable transactions in the wallet. Should be resolved when a pending transaction is included in a block.");
                 }
                 else
