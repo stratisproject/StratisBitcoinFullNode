@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             return this.walletManager
                 .GetSpendableTransactionsInWallet(walletName)
                 .GroupBy(x => x.Address)
-                .Where(grouping => grouping.Sum(x => x.Transaction.SpendableAmount(true)) > 0)
+                .Where(grouping => grouping.Sum(x => x.Transaction.GetUnspentAmount(true)) > 0)
                 .Select(grouping => grouping.Key);
         }
 

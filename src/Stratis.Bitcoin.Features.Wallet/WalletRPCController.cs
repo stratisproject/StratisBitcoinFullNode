@@ -278,7 +278,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (sendTransactions.Any())
             {
                 Wallet wallet = this.walletManager.GetWallet(accountReference.WalletName);
-                feeSent = wallet.GetSentTransactionFee(wallet.AccountsRoot.First().CoinType, trxid);
+                feeSent = wallet.GetSentTransactionFee(trxid);
             }
 
             // Send transactions details.

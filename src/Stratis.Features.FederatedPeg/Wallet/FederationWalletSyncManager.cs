@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -12,7 +13,7 @@ using Stratis.Features.FederatedPeg.Interfaces;
 
 namespace Stratis.Features.FederatedPeg.Wallet
 {
-    public class FederationWalletSyncManager : IFederationWalletSyncManager
+    public class FederationWalletSyncManager : IFederationWalletSyncManager, IDisposable
     {
         protected readonly IFederationWalletManager walletManager;
 
@@ -33,6 +34,19 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         public ChainedHeader WalletTip => this.walletTip;
 
+        /// <summary>Queue which contains blocks that should be processed by <see cref="WalletManager"/>.</summary>
+        private readonly AsyncQueue<Block> blocksQueue;
+
+        /// <summary>Current <see cref="blocksQueue"/> size in bytes.</summary>
+        private long blocksQueueSize;
+
+        /// <summary>Flag to determine when the <see cref="MaxQueueSize"/> is reached.</summary>
+        private bool maxQueueSizeReached;
+
+        /// <summary>Limit <see cref="blocksQueue"/> size to 100MB.</summary>
+        private const int MaxQueueSize = 100 * 1024 * 1024;
+
+
         public FederationWalletSyncManager(ILoggerFactory loggerFactory, IFederationWalletManager walletManager, ConcurrentChain chain,
             Network network, IBlockStore blockStore, StoreSettings storeSettings, INodeLifetime nodeLifetime)
         {
@@ -51,6 +65,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.storeSettings = storeSettings;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.blocksQueue = new AsyncQueue<Block>(this.OnProcessBlockAsync);
+
+            this.blocksQueueSize = 0;
         }
 
         /// <inheritdoc />
@@ -90,8 +107,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
         }
 
-        /// <inheritdoc />
-        public virtual void ProcessBlock(Block block)
+        private async Task OnProcessBlockAsync(Block block, CancellationToken cancellationToken)
         {
             Guard.NotNull(block, nameof(block));
 
@@ -139,7 +155,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         return;
                     }
 
-                    CancellationToken token = this.nodeLifetime.ApplicationStopping;
                     this.logger.LogTrace("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
 
                     ChainedHeader next = this.walletTip;
@@ -158,7 +173,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         int index = 0;
                         while (true)
                         {
-                            if (token.IsCancellationRequested)
+                            if (cancellationToken.IsCancellationRequested)
                             {
                                 this.logger.LogTrace("(-)[CANCELLATION_REQUESTED]");
                                 return;
@@ -209,6 +224,36 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <inheritdoc />
+        public virtual void ProcessBlock(Block block)
+        {
+            Guard.NotNull(block, nameof(block));
+
+            // If the queue reaches the maximum limit, ignore incoming blocks until the queue is empty.
+            if (!this.maxQueueSizeReached)
+            {
+                if (this.blocksQueueSize >= MaxQueueSize)
+                {
+                    this.maxQueueSizeReached = true;
+                    this.logger.LogTrace("(-)[REACHED_MAX_QUEUE_SIZE]");
+                    return;
+                }
+            }
+            else
+            {
+                // If queue is empty then reset the maxQueueSizeReached flag.
+                this.maxQueueSizeReached = this.blocksQueueSize > 0;
+            }
+
+            if (!this.maxQueueSizeReached)
+            {
+                long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, block.BlockSize.Value);
+                this.logger.LogTrace("Queue sized changed to {0} bytes.", currentBlockQueueSize);
+
+                this.blocksQueue.Enqueue(block);
+            }
+        }
+
+        /// <inheritdoc />
         public virtual void ProcessTransaction(Transaction transaction)
         {
             Guard.NotNull(transaction, nameof(transaction));
@@ -229,6 +274,12 @@ namespace Stratis.Features.FederatedPeg.Wallet
             ChainedHeader chainedBlock = this.chain.GetBlock(height);
             this.walletTip = chainedBlock ?? throw new WalletException("Invalid block height");
             this.walletManager.WalletTipHash = chainedBlock.HashBlock;
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            this.blocksQueue.Dispose();
         }
     }
 }
