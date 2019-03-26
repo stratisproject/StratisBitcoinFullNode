@@ -5,13 +5,12 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.PoA;
-using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.SmartContracts.Networks.Policies;
 
 namespace Stratis.Sidechains.Networks.CirrusV2
 {
-    public class CirrusRegTest : PoANetwork, ISignedCodePubKeyHolder
+    public class CirrusRegTest : PoANetwork
     {
         public IList<Mnemonic> FederationMnemonics { get; }
 
@@ -24,17 +23,10 @@ namespace Stratis.Sidechains.Networks.CirrusV2
         // public IList<Mnemonic> FederationMnemonics { get; }
         public IList<Key> FederationKeys { get; private set; }
 
-        public Key SigningContractPrivKey { get; }
-
-        public PubKey SigningContractPubKey { get; }
-
         internal CirrusRegTest()
         {
-            this.SigningContractPrivKey = new Mnemonic("lava frown leave wedding virtual ghost sibling able mammal liar wide wisdom").DeriveExtKey().PrivateKey;
-            this.SigningContractPubKey = this.SigningContractPrivKey.PubKey;
-
             this.Name = nameof(CirrusRegTest);
-            this.CoinTicker = "TFPG";
+            this.CoinTicker = "TCRS";
             this.Magic = 0x522357C;
             this.DefaultPort = 26179;
             this.DefaultMaxOutboundConnections = 16;
@@ -107,7 +99,7 @@ namespace Stratis.Sidechains.Networks.CirrusV2
                 bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
-                maxReorgLength: 0, // No max reorg limit on PoA networks.
+                maxReorgLength: 240, // 2 loops of PoA members
                 defaultAssumeValid: null,
                 maxMoney: Money.Coins(20_000_000),
                 coinbaseMaturity: 1,
