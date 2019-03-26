@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         string SignMessage(string password, string walletName, string externalAddress, string message);
 
         /// <summary>
-        /// Verifies message signature.
+        /// Verifies the signed message.
         /// </summary>
         /// <param name="externalAddress">Address used to sign.</param>
         /// <param name="message">Signed message.</param>
