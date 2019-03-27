@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
@@ -56,8 +57,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc cref="IChainState"/>
         private readonly IChainState chainState;
 
-        /// <inheritdoc cref="StoreSettings"/>
-        private readonly StoreSettings storeSettings;
+        /// <inheritdoc cref="NodeSettings"/>
+        private readonly NodeSettings nodeSettings;
 
         /// <inheritdoc cref="ChainIndexer"/>
         private readonly ChainIndexer chainIndexer;
@@ -94,6 +95,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IChainState chainState,
             IBlockStoreQueueFlushCondition blockStoreQueueFlushCondition,
             StoreSettings storeSettings,
+            NodeSettings nodeSettings,
             IBlockRepository blockRepository,
             ILoggerFactory loggerFactory,
             INodeStats nodeStats)
@@ -101,13 +103,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotNull(blockStoreQueueFlushCondition, nameof(blockStoreQueueFlushCondition));
             Guard.NotNull(chainIndexer, nameof(chainIndexer));
             Guard.NotNull(chainState, nameof(chainState));
-            Guard.NotNull(storeSettings, nameof(storeSettings));
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
 
             this.blockStoreQueueFlushCondition = blockStoreQueueFlushCondition;
             this.chainIndexer = chainIndexer;
             this.chainState = chainState;
-            this.storeSettings = storeSettings;
+            this.nodeSettings = nodeSettings;
             this.blockRepository = blockRepository;
             this.batch = new List<ChainedHeaderBlock>();
             this.blocksCacheLock = new object();
@@ -138,9 +140,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             await this.blockRepository.InitializeAsync().ConfigureAwait(false);
 
-            if (this.storeSettings.ReIndex)
+            if (this.nodeSettings.ReIndex)
             {
-                await this.blockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
+                await this.blockRepository.SetTxIndexAsync(this.nodeSettings.TxIndex).ConfigureAwait(false);
                 await this.blockRepository.ReIndexAsync().ConfigureAwait(false);
             }
 
@@ -152,7 +154,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogDebug("Initialized block store tip at '{0}'.", this.storeTip);
 
-            if (this.storeSettings.TxIndex != this.blockRepository.TxIndex)
+            if (this.nodeSettings.TxIndex != this.blockRepository.TxIndex)
             {
                 if (this.storeTip != this.chainIndexer.Genesis)
                 {
@@ -162,7 +164,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 // We only reach here in the case where we are syncing with a database with no blocks.
                 // Always set the TxIndex here.
-                await this.blockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
+                await this.blockRepository.SetTxIndexAsync(this.nodeSettings.TxIndex).ConfigureAwait(false);
             }
 
             // Throw if block store was initialized after the consensus.
@@ -185,7 +187,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public Task<Transaction> GetTransactionByIdAsync(uint256 trxid)
         {
             // Only look for transactions if they're indexed.
-            if (!this.storeSettings.TxIndex)
+            if (!this.nodeSettings.TxIndex)
                 return Task.FromResult(default(Transaction));
 
             lock (this.blocksCacheLock)
