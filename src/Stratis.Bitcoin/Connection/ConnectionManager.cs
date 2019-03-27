@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Connection
 
         private readonly AsyncQueue<INetworkPeer> connectedPeersQueue;
 
-        /// <summary>Traffic statistics from peers that have been disconnected.</summary> 
+        /// <summary>Traffic statistics from peers that have been disconnected.</summary>
         private readonly PerformanceCounter disconnectedPerfCounter;
 
         public ConnectionManager(IDateTimeProvider dateTimeProvider,

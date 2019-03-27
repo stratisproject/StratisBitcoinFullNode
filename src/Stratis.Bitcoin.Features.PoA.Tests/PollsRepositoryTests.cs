@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         {
             string dir = TestBase.CreateTestDir(this);
 
-            this.repository = new PollsRepository(dir, new ExtendedLoggerFactory(), new DBreezeSerializer(new TestPoANetwork()));
+            this.repository = new PollsRepository(dir, new ExtendedLoggerFactory(), new DBreezeSerializer(new TestPoANetwork().Consensus.ConsensusFactory));
             this.repository.Initialize();
         }
 

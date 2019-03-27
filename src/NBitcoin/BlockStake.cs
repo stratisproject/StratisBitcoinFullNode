@@ -122,10 +122,10 @@ namespace NBitcoin
         /// <summary>
         /// Constructs a stake block from a set bytes and the given network.
         /// </summary>
-        public static BlockStake Load(byte[] bytes, Network network)
+        public static BlockStake Load(byte[] bytes, ConsensusFactory consensusFactory)
         {
             var blockStake = new BlockStake();
-            blockStake.ReadWrite(bytes, network.Consensus.ConsensusFactory);
+            blockStake.ReadWrite(bytes, consensusFactory);
             return blockStake;
         }
 
