@@ -338,7 +338,7 @@ namespace NBitcoin.Tests
 
         private ChainIndexer CreateChain(BlockHeader genesis, int height)
         {
-            var chain = new ChainIndexer(this.network, new ChainedHeader(genesis, genesis.GetHash(), 0));
+            var chain = new ChainIndexer(this.network);
 
             var chainedHeaderPrev = chain.Tip;
 
