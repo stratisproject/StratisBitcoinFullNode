@@ -1,7 +1,4 @@
-﻿using System;
-using System.Linq;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
@@ -11,10 +8,6 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Voting;
-using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
-using Stratis.Bitcoin.Features.SmartContracts.Rules;
-using Stratis.SmartContracts.CLR;
-using Stratis.SmartContracts.Core.ContractSigning;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {
@@ -50,6 +43,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 
                             return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
                         });
+
+                        // Voting.
+                        services.AddSingleton<VotingManager>();
+                        services.AddSingleton<VotingController>();
+                        services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
+                        services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
+                        services.AddSingleton<IdleFederationMembersKicker>();
                     });
             });
 

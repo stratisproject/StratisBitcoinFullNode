@@ -59,15 +59,15 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 TestHelper.Connect(user1, fed1);
 
                 // Let fed1 get the premine
-                TestHelper.WaitLoop(() => user1.FullNode.Chain.Height > network.Consensus.PremineHeight + network.Consensus.CoinbaseMaturity);
+                TestHelper.WaitLoop(() => user1.FullNode.ChainIndexer.Height > network.Consensus.PremineHeight + network.Consensus.CoinbaseMaturity);
 
                 // Send funds from fed1 to user1
                 string user1Address = user1.GetUnusedAddress();
                 Script scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new BitcoinPubKeyAddress(user1Address, network));
                 Result<WalletSendTransactionModel> result = SendTransaction(fed1, scriptPubKey, new Money(100_000, MoneyUnit.BTC));
                 Assert.True(result.IsSuccess);
-                int currentHeight = user1.FullNode.Chain.Height;
-                TestHelper.WaitLoop(() => user1.FullNode.Chain.Height > currentHeight + 2);
+                int currentHeight = user1.FullNode.ChainIndexer.Height;
+                TestHelper.WaitLoop(() => user1.FullNode.ChainIndexer.Height > currentHeight + 2);
 
                 // Send new SC tx from user
                 Assert.Equal(new Money(100_000, MoneyUnit.BTC), user1.GetBalance());
@@ -77,8 +77,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 // SC tx reaches node mempool
                 TestHelper.WaitLoop(() => fed1.CreateRPCClient().GetRawMempool().Length == 1);
 
-                currentHeight = user1.FullNode.Chain.Height;
-                TestHelper.WaitLoop(() => user1.FullNode.Chain.Height > currentHeight + 2);
+                currentHeight = user1.FullNode.ChainIndexer.Height;
+                TestHelper.WaitLoop(() => user1.FullNode.ChainIndexer.Height > currentHeight + 2);
 
                 // Did code save?
                 Assert.NotNull(user1.QueryContractCode(newContractAddress, network));
