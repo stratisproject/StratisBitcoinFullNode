@@ -243,13 +243,12 @@ namespace NBitcoin
         /// <summary>
         /// Get a <see cref="ChainedHeader"/> based on it's height.
         /// </summary>
-        public ChainedHeader this[int key] => this.blocksByHeight[key];
+        public ChainedHeader this[int key] => this.Get(key);
 
         /// <summary>
         /// Get a <see cref="ChainedHeader"/> based on it's hash.
         /// </summary>
-        public ChainedHeader this[uint256 id] => this.blocksById[id];
-
+        public ChainedHeader this[uint256 id] => this.Get(id);
 
         public override string ToString()
         {
