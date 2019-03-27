@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
@@ -606,6 +607,42 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.HashBlock == minerB.FullNode.ConsensusManager().Tip.HashBlock);
                 Assert.True(minerA.FullNode.ConsensusManager().Tip.HashBlock == minerB.FullNode.ConsensusManager().Tip.HashBlock);
+            }
+        }
+
+        [Fact]
+        public void ConsensusManager_Block_That_Failed_Partial_Validation_Is_Rejected()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var network = new StratisConsensusOptionsOverrideTest();
+
+                // MinerA requires a physical wallet to stake with.
+                var minerA = builder.CreateStratisPosNode(network, "minerA").OverrideDateTimeProvider().WithWallet().Start();
+                var minerB = builder.CreateStratisPosNode(network, "minerB").OverrideDateTimeProvider().Start();
+                var minerC = builder.CreateStratisPosNode(network, "minerC").OverrideDateTimeProvider().Start();
+
+                // MinerA mines to height 55.
+                TestHelper.MineBlocks(minerA, 5);
+
+                // Connect and sync minerA and minerB.
+                TestHelper.ConnectAndSync(minerA, minerB);
+
+                TestHelper.DisconnectAll(minerA);
+
+                (minerB.FullNode.ChainIndexer.GetBlock(5).Block as PosBlock).BlockSignature.Signature = new byte[] { 0 };
+
+                // Connect and sync minerA and minerB.
+                TestHelper.Connect(minerB, minerC);
+
+                // Wait for the nodes to disconnect due to invalid block.
+                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerB, minerC));
+
+                minerC.FullNode.NodeService<IPeerBanning>().UnBanPeer(minerA.Endpoint);
+
+                TestHelper.ConnectAndSync(minerC, minerA);
+
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSyncedMessage(minerA, minerC).Passed);
             }
         }
 
