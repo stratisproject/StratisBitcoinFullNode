@@ -1,4 +1,6 @@
-﻿using System;
+﻿// TODO: The BlockNotification class is not currently being used. Restore this test class when it does get used.
+/*
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -196,3 +198,4 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         }
     }
 }
+*/
