@@ -506,6 +506,10 @@ namespace Stratis.Bitcoin.Controllers
                             filename = ((FileTarget) wrapper.WrappedTarget).FileName.ToString();
                         }
                     }
+                    else if (rule.Targets.Any() && rule.Targets.First().GetType().Name == "FileTarget")
+                    {
+                        filename = ((FileTarget)rule.Targets.First()).FileName.ToString();
+                    }
 
                     rules.Add(new LogRuleModel
                     {

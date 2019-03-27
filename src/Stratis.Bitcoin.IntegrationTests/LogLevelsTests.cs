@@ -226,6 +226,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 rules.Should().Contain(r => r.RuleName == ruleName1 && r.LogLevel == "Info" && r.FileName.Contains("file1.txt"));
                 rules.Should().Contain(r => r.RuleName == ruleName2 && r.LogLevel == "Fatal" && r.FileName.Contains("file2.txt"));
                 rules.Should().Contain(r => r.RuleName == ruleName3 && r.LogLevel == "Trace" && r.FileName.Contains("file3.txt"));
+
+                // Addtionally, there is always a node.txt file by default.
+                rules.Should().Contain(r => r.FileName.Contains("node.txt"));
             }
         }
     }
