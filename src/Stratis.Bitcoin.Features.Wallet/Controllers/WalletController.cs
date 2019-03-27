@@ -1103,7 +1103,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     // From the list of removed transactions, check which one is the oldest and retrieve the block right before that time.
                     DateTimeOffset earliestDate = result.Min(r => r.creationTime);
-                    ChainedHeader chainedHeader = this.chainIndexer.Get(this.chainIndexer.GetHeightAtTime(earliestDate.DateTime));
+                    ChainedHeader chainedHeader = this.chainIndexer.GetHeader(this.chainIndexer.GetHeightAtTime(earliestDate.DateTime));
 
                     // Update the wallet and save it to the file system.
                     Wallet wallet = this.walletManager.GetWallet(request.WalletName);
@@ -1171,7 +1171,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
-            ChainedHeader block = this.chainIndexer.Get(uint256.Parse(model.Hash));
+            ChainedHeader block = this.chainIndexer.GetHeader(uint256.Parse(model.Hash));
 
             if (block == null)
             {
