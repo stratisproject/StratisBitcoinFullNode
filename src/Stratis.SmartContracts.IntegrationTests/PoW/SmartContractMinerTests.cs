@@ -161,10 +161,12 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             private ReflectionVirtualMachine reflectionVirtualMachine;
             private IContractRefundProcessor refundProcessor;
             internal StateRepositoryRoot StateRoot { get; private set; }
+
             private IContractTransferProcessor transferProcessor;
             private SmartContractValidator validator;
             private StateProcessor stateProcessor;
             private SmartContractStateFactory smartContractStateFactory;
+            public SmartContractPowConsensusFactory ConsensusFactory { get; private set; }
 
             #endregion
 
@@ -177,6 +179,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 // Note that by default, these tests run with size accounting enabled.
                 this.network = new SmartContractsRegTest();
+                this.ConsensusFactory = new SmartContractPowConsensusFactory();
                 this.PrivateKey = new Key();
                 this.scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(this.PrivateKey.PubKey);
 
@@ -272,7 +275,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                         block.Header.Nonce = ++this.Nonce;
 
                     // Serialization sets the BlockSize property.
-                    block = NBitcoin.Block.Load(block.ToBytes(), this.network);
+                    block = NBitcoin.Block.Load(block.ToBytes(), this.network.Consensus.ConsensusFactory);
 
                     var res = await this.consensusManager.BlockMinedAsync(block);
                     if (res == null)
@@ -807,7 +810,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             await context.InitializeAsync();
 
             // Create the transaction to be used as the input and add to mempool
-            var preTransaction = context.network.Consensus.ConsensusFactory.CreateTransaction();
+            var preTransaction = context.ConsensusFactory.CreateTransaction();
             var txIn = new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0))
             {
                 ScriptSig = context.PrivateKey.ScriptPubKey

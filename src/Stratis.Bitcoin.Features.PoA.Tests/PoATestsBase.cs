@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             this.signals = new Signals.Signals(loggerFactory, null);
             this.network = network == null ? new TestPoANetwork() : network;
             this.consensusOptions = this.network.ConsensusOptions;
-            this.dBreezeSerializer = new DBreezeSerializer(this.network);
+            this.dBreezeSerializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
 
             this.ChainIndexer = new ChainIndexer(this.network);
             IDateTimeProvider timeProvider = new DateTimeProvider();
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         public static FederationManager CreateFederationManager(object caller, Network network, LoggerFactory loggerFactory, ISignals signals)
         {
             string dir = TestBase.CreateTestDir(caller);
-            var keyValueRepo = new KeyValueRepository(dir, new DBreezeSerializer(network));
+            var keyValueRepo = new KeyValueRepository(dir, new DBreezeSerializer(network.Consensus.ConsensusFactory));
 
             var settings = new NodeSettings(network, args: new string[] { $"-datadir={dir}" });
             var federationManager = new FederationManager(settings, network, loggerFactory, keyValueRepo, signals);

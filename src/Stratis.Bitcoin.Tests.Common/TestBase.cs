@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Tests.Common
         public TestBase(Network network)
         {
             this.Network = network;
-            this.DBreezeSerializer = new DBreezeSerializer(network);
+            this.DBreezeSerializer = new DBreezeSerializer(network.Consensus.ConsensusFactory);
         }
 
         public static string AssureEmptyDir(string dir)

@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         block.Header.Nonce = ++this.nonce;
 
                     // Serialization sets the BlockSize property.
-                    block = Block.Load(block.ToBytes(), this.network);
+                    block = Block.Load(block.ToBytes(), this.network.Consensus.ConsensusFactory);
 
                     var res = await this.consensus.BlockMinedAsync(block);
 
