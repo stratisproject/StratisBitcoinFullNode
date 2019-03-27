@@ -295,6 +295,45 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
+        public string SignMessage(string password, string walletName, string externalAddress, string message)
+        {
+            Guard.NotEmpty(password, nameof(password));
+            Guard.NotEmpty(walletName, nameof(walletName));
+            Guard.NotEmpty(message, nameof(message));
+            Guard.NotEmpty(externalAddress, nameof(externalAddress));
+
+            // Get wallet
+            Wallet wallet = this.GetWalletByName(walletName);
+
+            // Sign the message.
+            HdAddress hdAddress = wallet.GetAddress(externalAddress);
+            Key privateKey = wallet.GetExtendedPrivateKeyForAddress(password, hdAddress).PrivateKey;
+            return privateKey.SignMessage(message);
+        }
+
+        /// <inheritdoc />
+        public bool VerifySignedMessage(string externalAddress, string message, string signature)
+        {
+            Guard.NotEmpty(message, nameof(message));
+            Guard.NotEmpty(externalAddress, nameof(externalAddress));
+            Guard.NotEmpty(signature, nameof(signature));
+
+            bool result = false;
+
+            try
+            {
+                BitcoinPubKeyAddress bitcoinPubKeyAddress = new BitcoinPubKeyAddress(externalAddress, this.network);
+                result = bitcoinPubKeyAddress.VerifyMessage(message, signature);
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogTrace("Failed to verify message: {0}", ex.ToString());
+                this.logger.LogTrace("(-)[EXCEPTION]");
+            }
+            return result;
+        }
+
+        /// <inheritdoc />
         public Wallet LoadWallet(string password, string name)
         {
             Guard.NotEmpty(password, nameof(password));
