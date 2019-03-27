@@ -527,7 +527,9 @@ namespace Stratis.Bitcoin.Features.RPC
             try
             {
                 webResponse = await webRequest.GetResponseAsync().ConfigureAwait(false);
-                webResponse.ContentType = "application/json; charset=utf-8";
+                if (string.IsNullOrEmpty(webResponse.ContentType))
+                    webResponse.ContentType = "application/json; charset=utf-8";
+
                 response = JArray.Load(new JsonTextReader(
                         new StreamReader(
                                 await ToMemoryStreamAsync(webResponse.GetResponseStream()).ConfigureAwait(false), Encoding.UTF8)));
