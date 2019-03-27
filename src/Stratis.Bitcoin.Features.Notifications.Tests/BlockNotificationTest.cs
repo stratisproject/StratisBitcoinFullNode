@@ -1,4 +1,6 @@
-﻿using System;
+﻿// TODO: The BlockNotification class is not currently being used. Restore this test class when it does get used.
+/*
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -121,7 +123,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         /// Ensures that <see cref="BlockNotification.StartHash" /> gets updated
         /// every time <see cref="BlockNotification.SyncFrom(uint256)"/> gets called.
         /// </summary>
-        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
+        [Fact]
         public void CallingSyncFromUpdatesStartHashAccordingly()
         {
             var notification = new BlockNotification(this.LoggerFactory.Object, this.chainIndexer, this.consensusManager.Object,
@@ -196,3 +198,4 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         }
     }
 }
+*/
