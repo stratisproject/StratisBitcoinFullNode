@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 ControllerActionDescriptor actionDescriptor = null;
                 if (!this.GetActionDescriptors()?.TryGetValue(methodName, out actionDescriptor) ?? false)
                     throw new Exception($"RPC method '{ methodName }' not found.");
-                
+
                 // Prepare the named parameters that were passed via the query string in the order that they are expected by SendCommand.
                 List<ControllerParameterDescriptor> paramInfos = actionDescriptor.Parameters.OfType<ControllerParameterDescriptor>().ToList();
 
@@ -130,8 +130,10 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                     }
                 }
 
+                RPCRequest request = new RPCRequest(methodName, paramsAsObjects);
+
                 // Build RPC request object.
-                RPCResponse response = this.SendRPCRequest(new RPCRequest(methodName, paramsAsObjects));
+                RPCResponse response = this.SendRPCRequest(request);
 
                 // Throw error if any.
                 if (response?.Error?.Message != null)

@@ -35,6 +35,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
     /// </remarks>
     public class FederationWalletTransactionBuilder : IFederationWalletTransactionBuilder
     {
+        public const string NoSpendableTransactionsMessage = "No spendable transactions found.";
+
         /// <summary>A threshold that if possible will limit the amount of UTXO sent to the <see cref="ICoinSelector"/>.</summary>
         /// <remarks>
         /// 500 is a safe number that if reached ensures the coin selector will not take too long to complete,
@@ -235,7 +237,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             if (context.UnspentOutputs.Count == 0)
             {
-                throw new WalletException("No spendable transactions found.");
+                throw new WalletException(NoSpendableTransactionsMessage);
             }
 
             // Get total spendable balance in the account.

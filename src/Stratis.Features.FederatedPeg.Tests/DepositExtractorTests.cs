@@ -29,7 +29,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
         private readonly TestTransactionBuilder transactionBuilder;
 
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         public DepositExtractorTests()
         {

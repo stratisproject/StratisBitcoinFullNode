@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Tests
         public async Task FinalizedHeightSavedOnDiskAsync()
         {
             string dir = CreateTestDir(this);
-            var kvRepo = new KeyValueRepository(dir, new DBreezeSerializer(this.Network));
+            var kvRepo = new KeyValueRepository(dir, new DBreezeSerializer(this.Network.Consensus.ConsensusFactory));
 
             using (var repo = new FinalizedBlockInfoRepository(kvRepo, this.loggerFactory))
             {
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Tests
         public async Task FinalizedHeightCantBeDecreasedAsync()
         {
             string dir = CreateTestDir(this);
-            var kvRepo = new KeyValueRepository(dir, new DBreezeSerializer(this.Network));
+            var kvRepo = new KeyValueRepository(dir, new DBreezeSerializer(this.Network.Consensus.ConsensusFactory));
 
             using (var repo = new FinalizedBlockInfoRepository(kvRepo, this.loggerFactory))
             {

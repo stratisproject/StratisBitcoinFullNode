@@ -4,7 +4,9 @@ using System.Linq;
 using System.Threading;
 using FluentAssertions;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -321,7 +323,31 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         }
 
         [Fact]
-        public void TestRpcGetBlockInfo()
+        public void TestRpcGetBlockHeaderForBestBlockHashSuccessfull()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                Network network = new BitcoinRegTest();
+                var node = builder.CreateStratisPowNode(new BitcoinRegTest()).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest150Miner).Start();
+
+                RPCClient rpcClient = node.CreateRPCClient();
+                var hash = rpcClient.GetBestBlockHash();
+
+                // get hex representation of block header
+                RPCResponse resp = rpcClient.SendCommand("getblockheader", hash.ToString(), false); 
+
+                // load header from hex representation
+                var header = rpcClient.Network.Consensus.ConsensusFactory.CreateBlockHeader();
+                var bytes = Encoders.Hex.DecodeData(resp.Result.Value<string>());
+                header.FromBytes(bytes);
+
+                // validate header has same hash as best block
+                header.GetHash().Should().Be(hash);
+            }
+        }
+
+        [Fact]
+        public void TestRpcGetBlockchainInfo()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {

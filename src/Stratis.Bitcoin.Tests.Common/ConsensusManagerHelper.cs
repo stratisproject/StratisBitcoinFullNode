@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Tests.Common
             string dataDir = null,
             ChainState chainState = null,
             InMemoryCoinView inMemoryCoinView = null,
-            ConcurrentChain chain = null,
+            ChainIndexer chainIndexer = null,
             IRuleRegistration ruleRegistration = null,
             ConsensusRuleEngine consensusRules = null)
         {
@@ -52,11 +52,11 @@ namespace Stratis.Bitcoin.Tests.Common
 
             var consensusSettings = new ConsensusSettings(nodeSettings);
 
-            if (chain == null)
-                chain = new ConcurrentChain(network);
+            if (chainIndexer == null)
+                chainIndexer = new ChainIndexer(network);
 
             if (inMemoryCoinView == null)
-                inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
+                inMemoryCoinView = new InMemoryCoinView(chainIndexer.Tip.HashBlock);
 
             var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
 
@@ -78,11 +78,11 @@ namespace Stratis.Bitcoin.Tests.Common
             if (chainState == null)
                 chainState = new ChainState();
             var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
-            var deployments = new NodeDeployments(network, chain);
+            var deployments = new NodeDeployments(network, chainIndexer);
 
             if (consensusRules == null)
             {
-                consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings,
+                consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chainIndexer, deployments, consensusSettings,
                     new Checkpoints(), inMemoryCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider)).Register();
             }
 
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Tests.Common
 
             var consensus = new ConsensusManager(tree, network, loggerFactory, chainState, new IntegrityValidator(consensusRules, loggerFactory),
                 new PartialValidator(consensusRules, loggerFactory), new FullValidator(consensusRules, loggerFactory), consensusRules,
-                new Mock<IFinalizedBlockInfoRepository>().Object, new Signals.Signals(loggerFactory, null), peerBanning, new Mock<IInitialBlockDownloadState>().Object, chain,
+                new Mock<IFinalizedBlockInfoRepository>().Object, new Signals.Signals(loggerFactory, null), peerBanning, new Mock<IInitialBlockDownloadState>().Object, chainIndexer,
                 new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object, new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object, new NodeLifetime(), consensusSettings);
 
             return consensus;

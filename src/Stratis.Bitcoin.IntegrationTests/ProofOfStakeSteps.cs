@@ -188,11 +188,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         private List<TransactionData> GetTransactionsSnapshot()
         {
             // Enumerate to a list otherwise the enumerable can change during enumeration as new transactions are added to the wallet.
-            return this.PremineNodeWithCoins.FullNode.WalletManager().Wallets
-                .First()
-                .GetAllTransactionsByCoinType((CoinType)this.PremineNodeWithCoins.FullNode.Network.Consensus
-                    .CoinType)
-                .ToList();
+            return this.PremineNodeWithCoins.FullNode.WalletManager().Wallets.First().GetAllTransactions().ToList();
         }
     }
 }

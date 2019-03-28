@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void IsSpendableWithTransactionHavingSpendingDetailsReturnsFalse()
+        public void IsSpentWithTransactionHavingSpendingDetailsReturnsTrue()
         {
             var transaction = new TransactionData
             {
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void IsSpendableWithTransactionHavingNoSpendingDetailsReturnsTrue()
+        public void IsSpentWithTransactionHavingNoSpendingDetailsReturnsFalse()
         {
             var transaction = new TransactionData
             {
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void SpendableAmountNotConfirmedOnlyGivenNoSpendingDetailsReturnsTransactionAmount()
+        public void UnspentAmountNotConfirmedOnlyGivenNoSpendingDetailsReturnsTransactionAmount()
         {
             var transaction = new TransactionData
             {
@@ -58,13 +58,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Amount = new Money(15)
             };
 
-            Money result = transaction.SpendableAmount(false);
+            Money result = transaction.GetUnspentAmount(false);
 
             Assert.Equal(new Money(15), result);
         }
 
         [Fact]
-        public void SpendableAmountNotConfirmedOnlyGivenBeingConfirmedAndSpentConfirmedReturnsZero()
+        public void UnspentAmountNotConfirmedOnlyGivenBeingConfirmedAndSpentConfirmedReturnsZero()
         {
             var transaction = new TransactionData
             {
@@ -73,13 +73,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 BlockHeight = 15
             };
 
-            Money result = transaction.SpendableAmount(false);
+            Money result = transaction.GetUnspentAmount(false);
 
             Assert.Equal(Money.Zero, result);
         }
 
         [Fact]
-        public void SpendableAmountNotConfirmedOnlyGivenBeingConfirmedAndSpentUnconfirmedReturnsZero()
+        public void UnspentAmountNotConfirmedOnlyGivenBeingConfirmedAndSpentUnconfirmedReturnsZero()
         {
             var transaction = new TransactionData
             {
@@ -88,13 +88,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 BlockHeight = 15
             };
 
-            Money result = transaction.SpendableAmount(false);
+            Money result = transaction.GetUnspentAmount(false);
 
             Assert.Equal(Money.Zero, result);
         }
 
         [Fact]
-        public void SpendableAmountConfirmedOnlyGivenBeingConfirmedAndSpentUnconfirmedReturnsZero()
+        public void UnspentAmountConfirmedOnlyGivenBeingConfirmedAndSpentUnconfirmedReturnsZero()
         {
             var transaction = new TransactionData
             {
@@ -103,13 +103,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 BlockHeight = 15
             };
 
-            Money result = transaction.SpendableAmount(true);
+            Money result = transaction.GetUnspentAmount(true);
 
             Assert.Equal(Money.Zero, result);
         }
 
         [Fact]
-        public void SpendableAmountNotConfirmedOnlyGivenBeingUnConfirmedAndSpentUnconfirmedReturnsZero()
+        public void UnspentAmountNotConfirmedOnlyGivenBeingUnConfirmedAndSpentUnconfirmedReturnsZero()
         {
             var transaction = new TransactionData
             {
@@ -117,26 +117,26 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Amount = new Money(15),
             };
 
-            Money result = transaction.SpendableAmount(false);
+            Money result = transaction.GetUnspentAmount(false);
 
             Assert.Equal(Money.Zero, result);
         }
 
         [Fact]
-        public void SpendableAmountConfirmedOnlyGivenNoSpendingDetailsReturnsZero()
+        public void UnspentAmountConfirmedOnlyGivenNoSpendingDetailsReturnsZero()
         {
             var transaction = new TransactionData
             {
                 SpendingDetails = null
             };
 
-            Money result = transaction.SpendableAmount(true);
+            Money result = transaction.GetUnspentAmount(true);
 
             Assert.Equal(Money.Zero, result);
         }
 
         [Fact]
-        public void SpendableAmountConfirmedOnlyGivenBeingConfirmedAndSpentConfirmedReturnsZero()
+        public void UnspentAmountConfirmedOnlyGivenBeingConfirmedAndSpentConfirmedReturnsZero()
         {
             var transaction = new TransactionData
             {
@@ -145,13 +145,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 BlockHeight = 15
             };
 
-            Money result = transaction.SpendableAmount(true);
+            Money result = transaction.GetUnspentAmount(true);
 
             Assert.Equal(Money.Zero, result);
         }
 
         [Fact]
-        public void SpendableAmountConfirmedOnlyGivenBeingUnConfirmedAndSpentUnconfirmedReturnsZero()
+        public void UnspentAmountConfirmedOnlyGivenBeingUnConfirmedAndSpentUnconfirmedReturnsZero()
         {
             var transaction = new TransactionData
             {
@@ -159,13 +159,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Amount = new Money(15),
             };
 
-            Money result = transaction.SpendableAmount(true);
+            Money result = transaction.GetUnspentAmount(true);
 
             Assert.Equal(Money.Zero, result);
         }
 
         [Fact]
-        public void SpendableAmountConfirmedOnlyGivenSpendableAndConfirmedReturnsAmount()
+        public void UnspentAmountConfirmedOnlyGivenSpendableAndConfirmedReturnsAmount()
         {
             var transaction = new TransactionData
             {
@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 BlockHeight = 15
             };
 
-            Money result = transaction.SpendableAmount(true);
+            Money result = transaction.GetUnspentAmount(true);
 
             Assert.Equal(new Money(15), result);
         }

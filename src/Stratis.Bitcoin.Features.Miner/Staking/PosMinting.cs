@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         private readonly IConsensusManager consensusManager;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         public PosMinting(
             IBlockProvider blockProvider,
             IConsensusManager consensusManager,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             Network network,
             IDateTimeProvider dateTimeProvider,
             IInitialBlockDownloadState initialBlockDownloadState,
@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         {
             this.blockProvider = blockProvider;
             this.consensusManager = consensusManager;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.network = network;
             this.dateTimeProvider = dateTimeProvider;
             this.initialBlockDownloadState = initialBlockDownloadState;
@@ -464,7 +464,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 if ((utxo == null) || (utxo.Value < this.MinimumStakingCoinValue))
                     continue;
 
-                uint256 hashBlock = this.chain.GetBlock((int)coinSet.Height)?.HashBlock;
+                uint256 hashBlock = this.chainIndexer.GetBlock((int)coinSet.Height)?.HashBlock;
                 if (hashBlock == null)
                     continue;
 
@@ -802,7 +802,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                         break;
                     }
 
-                    if (chainTip != this.chain.Tip)
+                    if (chainTip != this.chainIndexer.Tip)
                     {
                         context.Logger.LogTrace("Chain advanced, stopping work.");
                         stopWork = true;
@@ -1016,12 +1016,12 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// </returns>
         private async Task<int> GetDepthInMainChainAsync(UtxoStakeDescription utxoStakeDescription)
         {
-            ChainedHeader chainedBlock = this.chain.GetBlock(utxoStakeDescription.HashBlock);
+            ChainedHeader chainedBlock = this.chainIndexer.GetBlock(utxoStakeDescription.HashBlock);
 
             if (chainedBlock == null)
                 return await this.mempoolLock.ReadAsync(() => this.mempool.Exists(utxoStakeDescription.UtxoSet.TransactionId) ? 0 : -1).ConfigureAwait(false);
 
-            return this.chain.Tip.Height - chainedBlock.Height + 1;
+            return this.chainIndexer.Tip.Height - chainedBlock.Height + 1;
         }
 
         /// <inheritdoc/>

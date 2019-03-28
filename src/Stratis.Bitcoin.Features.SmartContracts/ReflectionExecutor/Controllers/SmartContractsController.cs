@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
         private readonly IBroadcasterManager broadcasterManager;
         private readonly IBlockStore blockStore;
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
         private readonly CSharpContractDecompiler contractDecompiler;
         private readonly ILogger logger;
         private readonly Network network;
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
         public SmartContractsController(IBroadcasterManager broadcasterManager,
             IBlockStore blockStore,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             CSharpContractDecompiler contractDecompiler,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.contractDecompiler = contractDecompiler;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.blockStore = blockStore;
             this.walletManager = walletManager;
             this.broadcasterManager = broadcasterManager;
@@ -228,7 +228,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             byte[] eventBytes = Encoding.UTF8.GetBytes(eventName);
 
             // Loop through all headers and check bloom.
-            IEnumerable<ChainedHeader> blockHeaders = this.chain.EnumerateToTip(this.chain.Genesis);
+            IEnumerable<ChainedHeader> blockHeaders = this.chainIndexer.EnumerateToTip(this.chainIndexer.Genesis);
             List<ChainedHeader> matches = new List<ChainedHeader>();
             foreach(ChainedHeader chainedHeader in blockHeaders)
             {
@@ -390,7 +390,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 ContractTxData txData = this.smartContractTransactionService.BuildLocalCallTxData(request);
 
                 ILocalExecutionResult result = this.localExecutor.Execute(
-                    (ulong)this.chain.Height,
+                    (ulong)this.chainIndexer.Height,
                     request.Sender?.ToUint160(this.network) ?? new uint160(),
                     string.IsNullOrWhiteSpace(request.Amount) ? (Money) request.Amount : 0,
                     txData);
@@ -455,7 +455,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 result.Add(new
                 {
                     grouping.Key.Address,
-                    Sum = grouping.Sum(x => x.Transaction.SpendableAmount(false))
+                    Sum = grouping.Sum(x => x.Transaction.GetUnspentAmount(false))
                 });
             }
             
