@@ -404,7 +404,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             builder.InitialChainTip.Block = null;
             builder.TestConsensusManager.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
 
-            builder.BlockStore.Setup(g => g.GetBlockAsync(builder.InitialChainTip.HashBlock))
+            builder.BlockStore.Setup(g => g.GetBlock(builder.InitialChainTip.HashBlock))
              .ReturnsAsync(() =>
              {
                  return initialChainTipBlock;
@@ -426,7 +426,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             builder.InitialChainTip.Block = null;
             builder.TestConsensusManager.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
 
-            builder.BlockStore.Setup(g => g.GetBlockAsync(builder.InitialChainTip.HashBlock))
+            builder.BlockStore.Setup(g => g.GetBlock(builder.InitialChainTip.HashBlock))
                 .ReturnsAsync(() =>
                 {
                     return null;

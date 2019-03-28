@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Pruning
                 startFromHeader = startFromHeader.Previous;
             }
 
-            await this.blockRepository.DeleteBlocksAsync(toDelete.Select(cb => cb.HashBlock).ToList()).ConfigureAwait(false);
+            await this.blockRepository.DeleteBlocks(toDelete.Select(cb => cb.HashBlock).ToList()).ConfigureAwait(false);
 
             this.UpdatePrunedTip(blockRepositoryTip.GetAncestor(upperHeight));
         }

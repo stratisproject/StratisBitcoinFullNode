@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<Transaction> task = repository.GetTransactionByIdAsync(uint256.Zero);
+                Task<Transaction> task = repository.GetTransactionById(uint256.Zero);
                 task.Wait();
 
                 Assert.Equal(default(Transaction), task.Result);
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<Transaction> task = repository.GetTransactionByIdAsync(new uint256(65));
+                Task<Transaction> task = repository.GetTransactionById(new uint256(65));
                 task.Wait();
 
                 Assert.Null(task.Result);
@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<Transaction> task = repository.GetTransactionByIdAsync(trans.GetHash());
+                Task<Transaction> task = repository.GetTransactionById(trans.GetHash());
                 task.Wait();
 
                 Assert.Equal((uint)125, task.Result.Version);
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<uint256> task = repository.GetBlockIdByTransactionIdAsync(new uint256(26));
+                Task<uint256> task = repository.GetBlockIdByTransactionId(new uint256(26));
                 task.Wait();
 
                 Assert.Equal(default(uint256), task.Result);
@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<uint256> task = repository.GetBlockIdByTransactionIdAsync(new uint256(26));
+                Task<uint256> task = repository.GetBlockIdByTransactionId(new uint256(26));
                 task.Wait();
 
                 Assert.Null(task.Result);
@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<uint256> task = repository.GetBlockIdByTransactionIdAsync(new uint256(26));
+                Task<uint256> task = repository.GetBlockIdByTransactionId(new uint256(26));
                 task.Wait();
 
                 Assert.Equal(new uint256(42), task.Result);
@@ -240,7 +240,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task task = repository.PutAsync(new HashHeightPair(nextBlockHash, 100), blocks);
+                Task task = repository.PutBlocks(new HashHeightPair(nextBlockHash, 100), blocks);
                 task.Wait();
             }
 
@@ -283,7 +283,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task task = repository.SetTxIndexAsync(false);
+                Task task = repository.SetTxIndex(false);
                 task.Wait();
             }
 
@@ -311,7 +311,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<Block> task = repository.GetBlockAsync(block.GetHash());
+                Task<Block> task = repository.GetBlock(block.GetHash());
                 task.Wait();
 
                 Assert.Equal(block.GetHash(), task.Result.GetHash());
@@ -341,7 +341,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<List<Block>> task = repository.GetBlocksAsync(blocks.Select(b => b.GetHash()).ToList());
+                Task<List<Block>> task = repository.GetBlocks(blocks.Select(b => b.GetHash()).ToList());
                 task.Wait();
 
                 Assert.Equal(blocks.Length, task.Result.Count);
@@ -357,7 +357,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<Block> task = repository.GetBlockAsync(new uint256());
+                Task<Block> task = repository.GetBlock(new uint256());
                 task.Wait();
 
                 Assert.Null(task.Result);
@@ -379,7 +379,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<bool> task = repository.ExistAsync(block.GetHash());
+                Task<bool> task = repository.Exist(block.GetHash());
                 task.Wait();
 
                 Assert.True(task.Result);
@@ -393,7 +393,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<bool> task = repository.ExistAsync(new uint256());
+                Task<bool> task = repository.Exist(new uint256());
                 task.Wait();
 
                 Assert.False(task.Result);
@@ -420,7 +420,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task task = repository.DeleteAsync(tip, new List<uint256> { block.GetHash() });
+                Task task = repository.Delete(tip, new List<uint256> { block.GetHash() });
                 task.Wait();
             }
 
@@ -457,10 +457,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             // Turn TxIndex on and then reindex database, as would happen on node startup if -txindex and -reindex are set.
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task setIndexTask = repository.SetTxIndexAsync(true);
+                Task setIndexTask = repository.SetTxIndex(true);
                 setIndexTask.Wait();
 
-                Task reindexTask = repository.ReIndexAsync();
+                Task reindexTask = repository.ReIndex();
                 reindexTask.Wait();
             }
 
@@ -503,10 +503,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             // Turn TxIndex off and then reindex database, as would happen on node startup if -txindex=0 and -reindex are set.
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task setIndexTask = repository.SetTxIndexAsync(false);
+                Task setIndexTask = repository.SetTxIndex(false);
                 setIndexTask.Wait();
 
-                Task reindexTask = repository.ReIndexAsync();
+                Task reindexTask = repository.ReIndex();
                 reindexTask.Wait();
             }
 
@@ -531,7 +531,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var dBreezeSerializer = new DBreezeSerializer(main.Consensus.ConsensusFactory);
 
             var repository = new BlockRepository(main, dir, this.LoggerFactory.Object, dBreezeSerializer);
-            repository.InitializeAsync().GetAwaiter().GetResult();
+            repository.Initialize().GetAwaiter().GetResult();
 
             return repository;
         }

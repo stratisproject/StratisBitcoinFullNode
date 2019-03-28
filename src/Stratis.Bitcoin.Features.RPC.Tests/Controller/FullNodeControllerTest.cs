@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 .ReturnsAsync((Transaction)null)
                 .Verifiable();
 
-            this.blockStore.Setup(b => b.GetTransactionByIdAsync(txId))
+            this.blockStore.Setup(b => b.GetTransactionById(txId))
                 .ReturnsAsync((Transaction)null)
                 .Verifiable();
 
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 .ReturnsAsync((Transaction)null);
 
             Transaction transaction = this.CreateTransaction();
-            this.blockStore.Setup(b => b.GetTransactionByIdAsync(txId))
+            this.blockStore.Setup(b => b.GetTransactionById(txId))
                 .ReturnsAsync(transaction);
 
             TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             var txId = new uint256(12142124);
 
             Transaction transaction = this.CreateTransaction();
-            this.blockStore.Setup(b => b.GetTransactionByIdAsync(txId))
+            this.blockStore.Setup(b => b.GetTransactionById(txId))
                 .ReturnsAsync(transaction);
             this.controller = new FullNodeController(this.LoggerFactory.Object, null, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object, this.consensusManager.Object, this.blockStore.Object);
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         {
             var txId = new uint256(12142124);
 
-            this.blockStore.Setup(f => f.GetTransactionByIdAsync(txId))
+            this.blockStore.Setup(f => f.GetTransactionById(txId))
                 .ReturnsAsync((Transaction)null)
                 .Verifiable();
 
@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync(transaction);
 
-            this.blockStore.Setup(b => b.GetBlockIdByTransactionIdAsync(txId))
+            this.blockStore.Setup(b => b.GetBlockIdByTransactionId(txId))
                 .ReturnsAsync(block.HashBlock);
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync(transaction);
 
-            this.blockStore.Setup(b => b.GetBlockIdByTransactionIdAsync(txId))
+            this.blockStore.Setup(b => b.GetBlockIdByTransactionId(txId))
                 .ReturnsAsync(block.HashBlock);
 
             TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 1).ConfigureAwait(false);
@@ -243,7 +243,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync(transaction);
 
-            this.blockStore.Setup(b => b.GetBlockIdByTransactionIdAsync(txId))
+            this.blockStore.Setup(b => b.GetBlockIdByTransactionId(txId))
                 .ReturnsAsync((uint256)null);
 
             TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 1).ConfigureAwait(false);

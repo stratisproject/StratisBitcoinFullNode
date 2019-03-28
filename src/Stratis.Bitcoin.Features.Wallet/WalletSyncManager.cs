@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                                 return;
                             }
 
-                            nextblock = await this.blockStore.GetBlockAsync(next.HashBlock).ConfigureAwait(false);
+                            nextblock = await this.blockStore.GetBlock(next.HashBlock).ConfigureAwait(false);
                             if (nextblock == null)
                             {
                                 // The idea in this abandoning of the loop is to release consensus to push the block.
