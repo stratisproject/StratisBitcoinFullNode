@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
         private readonly INodeStats nodeStats;
         private readonly DBreezeCoinView dbreezeCoinview;
 
-        private readonly ConcurrentChain concurrentChain;
+        private readonly ChainIndexer chainIndexer;
         private readonly StakeChainStore stakeChainStore;
         private readonly IRewindDataIndexCache rewindDataIndexCache;
         private readonly CachedCoinView cachedCoinView;
@@ -38,30 +38,30 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             this.loggerFactory = new ExtendedLoggerFactory();
             this.nodeStats = new NodeStats(this.dateTimeProvider);
 
-            this.dbreezeCoinview = new DBreezeCoinView(this.network, this.dataFolder, this.dateTimeProvider, this.loggerFactory, this.nodeStats, new DBreezeSerializer(this.network));
+            this.dbreezeCoinview = new DBreezeCoinView(this.network, this.dataFolder, this.dateTimeProvider, this.loggerFactory, this.nodeStats, new DBreezeSerializer(this.network.Consensus.ConsensusFactory));
             this.dbreezeCoinview.Initialize();
 
-            this.concurrentChain = new ConcurrentChain(this.network);
-            this.stakeChainStore = new StakeChainStore(this.network, this.concurrentChain, this.dbreezeCoinview, this.loggerFactory);
+            this.chainIndexer = new ChainIndexer(this.network);
+            this.stakeChainStore = new StakeChainStore(this.network, this.chainIndexer, this.dbreezeCoinview, this.loggerFactory);
             this.stakeChainStore.Load();
 
             this.rewindDataIndexCache = new RewindDataIndexCache(this.dateTimeProvider, this.network);
 
             this.cachedCoinView = new CachedCoinView(this.dbreezeCoinview, this.dateTimeProvider, this.loggerFactory, this.nodeStats, this.stakeChainStore, this.rewindDataIndexCache);
 
-            this.rewindDataIndexCache.Initialize(this.concurrentChain.Height, this.cachedCoinView);
+            this.rewindDataIndexCache.Initialize(this.chainIndexer.Height, this.cachedCoinView);
 
             this.random = new Random();
 
-            ChainedHeader newTip = ChainedHeadersHelper.CreateConsecutiveHeaders(1000, this.concurrentChain.Tip, true, null, this.network).Last();
-            this.concurrentChain.SetTip(newTip);
+            ChainedHeader newTip = ChainedHeadersHelper.CreateConsecutiveHeaders(1000, this.chainIndexer.Tip, true, null, this.network).Last();
+            this.chainIndexer.SetTip(newTip);
         }
 
         [Fact]
         public async Task TestRewindAsync()
         {
             uint256 tip = this.cachedCoinView.GetTipHash();
-            Assert.Equal(this.concurrentChain.Genesis.HashBlock, tip);
+            Assert.Equal(this.chainIndexer.Genesis.HashBlock, tip);
 
             int currentHeight = 0;
 
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
         private void SaveChanges(List<UnspentOutputs> unspent, List<TxOut[]> original, int height)
         {
-            ChainedHeader current = this.concurrentChain.Tip.GetAncestor(height);
+            ChainedHeader current = this.chainIndexer.Tip.GetAncestor(height);
             ChainedHeader previous = current.Previous;
 
             this.cachedCoinView.SaveChanges(unspent, original, previous.HashBlock, current.HashBlock, height);

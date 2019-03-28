@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         public ColdStakingWalletRPCController(
             IBlockStore blockStore,
             IBroadcasterManager broadcasterManager,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             IConsensusManager consensusManager,
             IFullNode fullNode,
             ILoggerFactory loggerFactory,
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             IWalletManager walletManager,
             WalletSettings walletSettings,
             IWalletTransactionHandler walletTransactionHandler) :
-            base(blockStore, broadcasterManager, chain, consensusManager, fullNode, loggerFactory, network, scriptAddressReader, storeSettings, walletManager, walletSettings, walletTransactionHandler)
+            base(blockStore, broadcasterManager, chainIndexer, consensusManager, fullNode, loggerFactory, network, scriptAddressReader, storeSettings, walletManager, walletSettings, walletTransactionHandler)
         {
         }
     }

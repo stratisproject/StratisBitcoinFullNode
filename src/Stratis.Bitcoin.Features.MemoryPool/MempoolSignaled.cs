@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Concurrent chain injected dependency.
         /// </summary>
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>
         /// Connection manager injected dependency.
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Starts the block notification loop to memory pool behaviors for connected nodes.
         /// </summary>
         /// <param name="manager">Memory pool manager injected dependency.</param>
-        /// <param name="chain">Concurrent chain injected dependency.</param>
+        /// <param name="chainIndexer">Concurrent chain injected dependency.</param>
         /// <param name="connection">Connection manager injected dependency.</param>
         /// <param name="nodeLifetime">Node lifetime injected dependency.</param>
         /// <param name="asyncLoopFactory">Asynchronous loop factory injected dependency.</param>
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="mempoolOrphans">The mempool orphan list.</param>
         public MempoolSignaled(
             MempoolManager manager,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             IConnectionManager connection,
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory,
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             ISignals signals)
         {
             this.manager = manager;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.connection = connection;
             this.nodeLifetime = nodeLifetime;
             this.asyncLoopFactory = asyncLoopFactory;

@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var coinviewRule = node.FullNode.NodeService<IConsensusRuleEngine>().GetRule<CoinViewRule>();
 
-            int startBlock = node.FullNode.Chain.Height - numberOfBlocks + 1;
+            int startBlock = node.FullNode.ChainIndexer.Height - numberOfBlocks + 1;
 
             return Enumerable.Range(startBlock, numberOfBlocks)
                 .Sum(p => coinviewRule.GetProofOfWorkReward(p));

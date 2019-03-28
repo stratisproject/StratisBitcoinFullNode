@@ -76,14 +76,19 @@ namespace Stratis.Features.FederatedPeg
 
             this.CounterChainApiPort = configReader.GetOrDefault(CounterChainApiPortParam, 0);
 
+            // Federation IPs - These are required to receive and sign withdrawal transactions.
+            string federationIpsRaw = configReader.GetOrDefault<string>(FederationIpsParam, null);
+
+            if (federationIpsRaw == null)
+            {
+                throw new ConfigurationException("Federation IPs must be specified.");
+            }
+
+            this.FederationNodeIpEndPoints = federationIpsRaw.Split(',').Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort));
+
+            // These values are only configurable for tests at the moment. Fed members on live networks shouldn't play with them.
             this.CounterChainDepositStartBlock = configReader.GetOrDefault<int>(CounterChainDepositBlock, this.IsMainChain ? 1 : StratisMainDepositStartBlock);
-
-            this.FederationNodeIpEndPoints = configReader.GetOrDefault<string>(FederationIpsParam, null)?.Split(',')
-                .Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort)) ?? new List<IPEndPoint>();
-
-            //todo : remove that for prod code
             this.MinimumDepositConfirmations = (uint)configReader.GetOrDefault<int>(MinimumDepositConfirmationsParam, (int)nodeSettings.Network.Consensus.MaxReorgLength + 1);
-            //this.MinimumDepositConfirmations = nodeSettings.Network.Consensus.MaxReorgLength + 1;
         }
 
         /// <inheritdoc/>

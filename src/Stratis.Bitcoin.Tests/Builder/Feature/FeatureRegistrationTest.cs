@@ -107,6 +107,8 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         {
             public bool InitializeBeforeBase { get; set; }
 
+            public string State { get; set; }
+
             public void LoadConfiguration()
             {
                 throw new NotImplementedException();

@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 {
     public class FullNodeControllerTest : LogsTestBase
     {
-        private ConcurrentChain chain;
+        private ChainIndexer chain;
         private readonly Mock<INodeLifetime> nodeLifeTime;
         private readonly Mock<IFullNode> fullNode;
         private readonly Mock<IChainState> chainState;

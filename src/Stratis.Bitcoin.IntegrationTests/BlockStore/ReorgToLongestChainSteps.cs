@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
             TestHelper.MineBlocks(this.jingNode, 1);
 
-            this.jingsBlockHeight = this.jingNode.FullNode.Chain.Height;
+            this.jingsBlockHeight = this.jingNode.FullNode.ChainIndexer.Height;
         }
 
         private void bob_creates_a_transaction_and_broadcasts()
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             TestHelper.MineBlocks(this.jingNode, 5);
 
-            this.jingsBlockHeight = this.jingNode.FullNode.Chain.Height;
+            this.jingsBlockHeight = this.jingNode.FullNode.ChainIndexer.Height;
         }
 
         private void jings_connection_comes_back()
@@ -139,9 +139,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void bob_charlie_and_dave_reorg_to_jings_longest_chain()
         {
-            TestHelper.WaitLoop(() => this.bobNode.FullNode.Chain.Height == this.jingsBlockHeight);
-            TestHelper.WaitLoop(() => this.charlieNode.FullNode.Chain.Height == this.jingsBlockHeight);
-            TestHelper.WaitLoop(() => this.daveNode.FullNode.Chain.Height == this.jingsBlockHeight);
+            TestHelper.WaitLoop(() => this.bobNode.FullNode.ChainIndexer.Height == this.jingsBlockHeight);
+            TestHelper.WaitLoop(() => this.charlieNode.FullNode.ChainIndexer.Height == this.jingsBlockHeight);
+            TestHelper.WaitLoop(() => this.daveNode.FullNode.ChainIndexer.Height == this.jingsBlockHeight);
         }
 
         private void bobs_transaction_from_shorter_chain_is_now_missing()

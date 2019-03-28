@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.RPC
         private readonly Uri address;
         private readonly Network network;
         private static ConcurrentDictionary<Network, string> defaultPaths = new ConcurrentDictionary<Network, string>();
-        private ConcurrentQueue<Tuple<RPCRequest, TaskCompletionSource<RPCResponse>>> batchedRequests;
+        private ConcurrentQueue<(RPCRequest request, TaskCompletionSource<RPCResponse> task)> batchedRequests;
         private RPCCredentialString credentialString;
 
         public Uri Address
@@ -365,7 +365,7 @@ namespace Stratis.Bitcoin.Features.RPC
         {
             return new RPCClient(this.CredentialString, this.Address, this.Network)
             {
-                batchedRequests = new ConcurrentQueue<Tuple<RPCRequest, TaskCompletionSource<RPCResponse>>>()
+                batchedRequests = new ConcurrentQueue<(RPCRequest request, TaskCompletionSource<RPCResponse> task)>()
             };
         }
 
@@ -434,7 +434,7 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <summary>Cancel all commands.</summary>
         public void CancelBatch()
         {
-            ConcurrentQueue<Tuple<RPCRequest, TaskCompletionSource<RPCResponse>>> batches;
+            ConcurrentQueue<(RPCRequest request, TaskCompletionSource<RPCResponse> task)> batches;
             lock (this)
             {
                 if (this.batchedRequests == null)
@@ -443,15 +443,15 @@ namespace Stratis.Bitcoin.Features.RPC
                 this.batchedRequests = null;
             }
 
-            Tuple<RPCRequest, TaskCompletionSource<RPCResponse>> req;
+            (RPCRequest request, TaskCompletionSource<RPCResponse> task) req;
             while (batches.TryDequeue(out req))
-                req.Item2.TrySetCanceled();
+                req.task.TrySetCanceled();
         }
 
         /// <summary>Send all commands in one batch.</summary>
         public async Task SendBatchAsync()
         {
-            ConcurrentQueue<Tuple<RPCRequest, TaskCompletionSource<RPCResponse>>> batches;
+            ConcurrentQueue<(RPCRequest request, TaskCompletionSource<RPCResponse> task)> batches;
             lock (this)
             {
                 if (this.batchedRequests == null)
@@ -462,8 +462,8 @@ namespace Stratis.Bitcoin.Features.RPC
                 this.batchedRequests = null;
             }
 
-            var requests = new List<Tuple<RPCRequest, TaskCompletionSource<RPCResponse>>>();
-            while (batches.TryDequeue(out Tuple<RPCRequest, TaskCompletionSource<RPCResponse>> req))
+            var requests = new List<(RPCRequest request, TaskCompletionSource<RPCResponse> task)>();
+            while (batches.TryDequeue(out (RPCRequest request, TaskCompletionSource<RPCResponse> task) req))
                 requests.Add(req);
 
             if (!requests.Any())
@@ -487,20 +487,20 @@ namespace Stratis.Bitcoin.Features.RPC
             }
         }
 
-        private async Task SendBatchAsyncCoreAsync(List<Tuple<RPCRequest, TaskCompletionSource<RPCResponse>>> requests)
+        private async Task SendBatchAsyncCoreAsync(List<(RPCRequest request, TaskCompletionSource<RPCResponse> task)> requests)
         {
             var writer = new StringWriter();
             writer.Write("[");
 
             bool first = true;
-            foreach (Tuple<RPCRequest, TaskCompletionSource<RPCResponse>> item in requests)
+            foreach ((RPCRequest request, TaskCompletionSource<RPCResponse> task) item in requests)
             {
                 if (!first)
                     writer.Write(",");
                 else
                     first = false;
 
-                item.Item1.WriteJSON(writer);
+                item.request.WriteJSON(writer);
             }
 
             writer.Write("]");
@@ -514,7 +514,6 @@ namespace Stratis.Bitcoin.Features.RPC
 #if !NETCORE
             webRequest.ContentLength = bytes.Length;
 #endif
-
             Stream dataStream = await webRequest.GetRequestStreamAsync().ConfigureAwait(false);
             await dataStream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
             await dataStream.FlushAsync().ConfigureAwait(false);
@@ -528,6 +527,8 @@ namespace Stratis.Bitcoin.Features.RPC
             try
             {
                 webResponse = await webRequest.GetResponseAsync().ConfigureAwait(false);
+                if (string.IsNullOrEmpty(webResponse.ContentType))
+                    webResponse.ContentType = "application/json; charset=utf-8";
 
                 response = JArray.Load(new JsonTextReader(
                         new StreamReader(
@@ -540,11 +541,11 @@ namespace Stratis.Bitcoin.Features.RPC
                     try
                     {
                         var rpcResponse = new RPCResponse(jobj);
-                        requests[responseIndex].Item2.TrySetResult(rpcResponse);
+                        requests[responseIndex].task.TrySetResult(rpcResponse);
                     }
                     catch (Exception ex)
                     {
-                        requests[responseIndex].Item2.TrySetException(ex);
+                        requests[responseIndex].task.TrySetException(ex);
                     }
 
                     responseIndex++;
@@ -557,8 +558,8 @@ namespace Stratis.Bitcoin.Features.RPC
                 if (ex.Response == null || ex.Response.ContentLength == 0
                     || !ex.Response.ContentType.Equals("application/json", StringComparison.Ordinal))
                 {
-                    foreach (Tuple<RPCRequest, TaskCompletionSource<RPCResponse>> item in requests)
-                        item.Item2.TrySetException(ex);
+                    foreach ((RPCRequest request, TaskCompletionSource<RPCResponse> task) item in requests)
+                        item.task.TrySetException(ex);
                 }
                 else
                 {
@@ -568,20 +569,20 @@ namespace Stratis.Bitcoin.Features.RPC
                     {
 
                         RPCResponse rpcResponse = RPCResponse.Load(await ToMemoryStreamAsync(errorResponse.GetResponseStream()).ConfigureAwait(false));
-                        foreach (Tuple<RPCRequest, TaskCompletionSource<RPCResponse>> item in requests)
-                            item.Item2.TrySetResult(rpcResponse);
+                        foreach ((RPCRequest request, TaskCompletionSource<RPCResponse> task) item in requests)
+                            item.task.TrySetResult(rpcResponse);
                     }
                     catch (Exception)
                     {
-                        foreach (Tuple<RPCRequest, TaskCompletionSource<RPCResponse>> item in requests)
-                            item.Item2.TrySetException(ex);
+                        foreach ((RPCRequest request, TaskCompletionSource<RPCResponse> task) item in requests)
+                            item.task.TrySetException(ex);
                     }
                 }
             }
             catch (Exception ex)
             {
-                foreach (Tuple<RPCRequest, TaskCompletionSource<RPCResponse>> item in requests)
-                    item.Item2.TrySetException(ex);
+                foreach ((RPCRequest request, TaskCompletionSource<RPCResponse> task) item in requests)
+                    item.task.TrySetException(ex);
             }
             finally
             {
@@ -657,12 +658,12 @@ namespace Stratis.Bitcoin.Features.RPC
         private async Task<RPCResponse> SendCommandAsyncCoreAsync(RPCRequest request, bool throwIfRPCError)
         {
             RPCResponse response = null;
-            ConcurrentQueue<Tuple<RPCRequest, TaskCompletionSource<RPCResponse>>> batches = this.batchedRequests;
+            ConcurrentQueue<(RPCRequest request, TaskCompletionSource<RPCResponse> task)> batches = this.batchedRequests;
 
             if (batches != null)
             {
                 var source = new TaskCompletionSource<RPCResponse>();
-                batches.Enqueue(Tuple.Create(request, source));
+                batches.Enqueue((request, source));
                 response = await source.Task.ConfigureAwait(false);
             }
 
@@ -966,7 +967,7 @@ namespace Stratis.Bitcoin.Features.RPC
         public async Task<Block> GetBlockAsync(uint256 blockId)
         {
             RPCResponse resp = await SendCommandAsync(RPCOperations.getblock, blockId.ToString(), 0).ConfigureAwait(false);
-            return Block.Load(Encoders.Hex.DecodeData(resp.Result.ToString()), this.Network);
+            return Block.Load(Encoders.Hex.DecodeData(resp.Result.ToString()), this.Network.Consensus.ConsensusFactory);
         }
 
         /// <summary>

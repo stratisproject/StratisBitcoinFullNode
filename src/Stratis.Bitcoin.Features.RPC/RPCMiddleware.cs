@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Net;
+using System.Net.Mime;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -151,6 +153,7 @@ namespace Stratis.Bitcoin.Features.RPC
         private async Task InvokeAsyncBatchAsync(HttpContext httpContext, JArray requests)
         {
             JArray responses = new JArray();
+            int i = 1;
             foreach (JObject requestObj in requests)
             {
                 var contextFeatures = new FeatureCollection(httpContext.Features);
@@ -189,9 +192,19 @@ namespace Stratis.Bitcoin.Features.RPC
                 }
 
                 responseMemoryStream.Position = 0;
+
                 var response = (responseMemoryStream.Length == 0) ? CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, "Method not found") : await JObject.LoadAsync(new JsonTextReader(new StreamReader(responseMemoryStream)));
+
+                if (requestObj.ContainsKey("id"))
+                    response["id"] = requestObj["id"];
+                else
+                    response.Remove("id");
+
                 responses.Add(response);
+                i++;
             }
+
+            httpContext.Response.ContentType = "application/json; charset=utf-8";
 
             // Update the response with the array of responses.
             using (StreamWriter streamWriter = new StreamWriter(httpContext.Response.Body))

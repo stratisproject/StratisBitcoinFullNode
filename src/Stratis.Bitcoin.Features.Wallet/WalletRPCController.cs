@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public WalletRPCController(
             IBlockStore blockStore,
             IBroadcasterManager broadcasterManager,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             IConsensusManager consensusManager,
             IFullNode fullNode,
             ILoggerFactory loggerFactory,
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             StoreSettings storeSettings,
             IWalletManager walletManager,
             WalletSettings walletSettings,
-            IWalletTransactionHandler walletTransactionHandler) : base(fullNode: fullNode, consensusManager: consensusManager, chain: chain, network: network)
+            IWalletTransactionHandler walletTransactionHandler) : base(fullNode: fullNode, consensusManager: consensusManager, chain: chainIndexer, network: network)
         {
             this.blockStore = blockStore;
             this.broadcasterManager = broadcasterManager;
@@ -235,7 +235,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 blockHeight = sendTransactions.First().SpendingDetails.BlockHeight;
                 blockIndex = sendTransactions.First().SpendingDetails.BlockIndex;
-                blockHash = blockHeight != null ? this.Chain.GetBlock(blockHeight.Value).HashBlock : null;
+                blockHash = blockHeight != null ? this.ChainIndexer.GetBlock(blockHeight.Value).HashBlock : null;
             }
 
             // Get the block containing the transaction (if it has  been confirmed).
@@ -294,7 +294,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (sendTransactions.Any())
             {
                 Wallet wallet = this.walletManager.GetWallet(accountReference.WalletName);
-                feeSent = wallet.GetSentTransactionFee(wallet.AccountsRoot.First().CoinType, trxid);
+                feeSent = wallet.GetSentTransactionFee(trxid);
             }
 
             // Send transactions details.

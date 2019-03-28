@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
         public NodeSettings NodeSettings { get; set; }
 
-        public ConcurrentChain Chain { get; set; }
+        public ChainIndexer ChainIndexer { get; set; }
 
         public Network Network { get; set; }
 
@@ -92,32 +92,32 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             ConsensusSettings consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
-            testRulesContext.Chain = new ConcurrentChain(network);
+            testRulesContext.ChainIndexer = new ChainIndexer(network);
             testRulesContext.ChainState = new ChainState();
 
-            NodeDeployments deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.Chain);
+            NodeDeployments deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.ChainIndexer);
             testRulesContext.Consensus = new PowConsensusRuleEngine(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider,
-                testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, null, testRulesContext.ChainState,
+                testRulesContext.ChainIndexer, deployments, consensusSettings, testRulesContext.Checkpoints, null, testRulesContext.ChainState,
                 new InvalidBlockHashStore(new DateTimeProvider()), new NodeStats(new DateTimeProvider())).Register();
 
             testRulesContext.CallDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(network));
             return testRulesContext;
         }
 
-        public static Block MineBlock(Network network, ConcurrentChain chain)
+        public static Block MineBlock(Network network, ChainIndexer chainIndexer)
         {
             Block block = network.Consensus.ConsensusFactory.CreateBlock();
 
             var coinbase = new Transaction();
-            coinbase.AddInput(TxIn.CreateCoinbase(chain.Height + 1));
+            coinbase.AddInput(TxIn.CreateCoinbase(chainIndexer.Height + 1));
             coinbase.AddOutput(new TxOut(Money.Zero, new Key()));
             block.AddTransaction(coinbase);
 
             block.Header.Version = (int)ThresholdConditionCache.VersionbitsTopBits;
 
-            block.Header.HashPrevBlock = chain.Tip.HashBlock;
-            block.Header.UpdateTime(DateTimeProvider.Default.GetTimeOffset(), network, chain.Tip);
-            block.Header.Bits = block.Header.GetWorkRequired(network, chain.Tip);
+            block.Header.HashPrevBlock = chainIndexer.Tip.HashBlock;
+            block.Header.UpdateTime(DateTimeProvider.Default.GetTimeOffset(), network, chainIndexer.Tip);
+            block.Header.Bits = block.Header.GetWorkRequired(network, chainIndexer.Tip);
             block.Header.Nonce = 0;
 
             var maxTries = int.MaxValue;

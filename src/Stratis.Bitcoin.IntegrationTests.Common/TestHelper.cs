@@ -73,10 +73,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             }
 
             // If the nodes are at genesis they are considered synced.
-            if (node1.FullNode.Chain.Tip.Height == 0 && node2.FullNode.Chain.Tip.Height == 0)
+            if (node1.FullNode.ChainIndexer.Tip.Height == 0 && node2.FullNode.ChainIndexer.Tip.Height == 0)
                 return true;
 
-            if (node1.FullNode.Chain.Tip.HashBlock != node2.FullNode.Chain.Tip.HashBlock)
+            if (node1.FullNode.ChainIndexer.Tip.HashBlock != node2.FullNode.ChainIndexer.Tip.HashBlock)
                 return false;
 
             if (node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
@@ -114,11 +114,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             }
 
             // If the nodes are at genesis they are considered synced.
-            if (node1.FullNode.Chain.Tip.Height == 0 && node2.FullNode.Chain.Tip.Height == 0)
+            if (node1.FullNode.ChainIndexer.Tip.Height == 0 && node2.FullNode.ChainIndexer.Tip.Height == 0)
                 return (true, "[TIPS_ARE_AT_GENESIS]");
 
-            if (node1.FullNode.Chain.Tip.HashBlock != node2.FullNode.Chain.Tip.HashBlock)
-                return (false, $"[CHAIN_TIP_HASH_DOES_NOT_MATCH_{node1.FullNode.Chain.Tip}_{node2.FullNode.Chain.Tip}]");
+            if (node1.FullNode.ChainIndexer.Tip.HashBlock != node2.FullNode.ChainIndexer.Tip.HashBlock)
+                return (false, $"[CHAIN_TIP_HASH_DOES_NOT_MATCH_{node1.FullNode.ChainIndexer.Tip}_{node2.FullNode.ChainIndexer.Tip}]");
 
             if (node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
                 return (false, $"[CONSENSUS_TIP_HASH_DOES_MATCH]_{node1.FullNode.ChainBehaviorState.ConsensusTip}_{node2.FullNode.ChainBehaviorState.ConsensusTip}]");
@@ -150,10 +150,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         public static bool IsNodeSynced(CoreNode node)
         {
             // If the node is at genesis it is considered synced.
-            if (node.FullNode.Chain.Tip.Height == 0)
+            if (node.FullNode.ChainIndexer.Tip.Height == 0)
                 return true;
 
-            if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
+            if (node.FullNode.ChainIndexer.Tip.HashBlock != node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
                 return false;
 
             // Check that node1 tip exists in store (either in disk or in the pending list)
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 return false;
 
             if ((node.FullNode.WalletManager().ContainsWallets) &&
-                (node.FullNode.Chain.Tip.HashBlock != node.FullNode.WalletManager().WalletTipHash))
+                (node.FullNode.ChainIndexer.Tip.HashBlock != node.FullNode.WalletManager().WalletTipHash))
                 return false;
 
             return true;
@@ -267,13 +267,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         public static Block GenerateBlockManually(CoreNode coreNode, List<Transaction> transactions, uint nonce = 0, bool callBlockMinedAsync = true)
         {
             var block = coreNode.FullNode.Network.CreateBlock();
-            block.Header.HashPrevBlock = coreNode.FullNode.Chain.Tip.HashBlock;
-            block.Header.Bits = block.Header.GetWorkRequired(coreNode.FullNode.Network, coreNode.FullNode.Chain.Tip);
-            block.Header.UpdateTime(DateTimeOffset.UtcNow, coreNode.FullNode.Network, coreNode.FullNode.Chain.Tip);
+            block.Header.HashPrevBlock = coreNode.FullNode.ChainIndexer.Tip.HashBlock;
+            block.Header.Bits = block.Header.GetWorkRequired(coreNode.FullNode.Network, coreNode.FullNode.ChainIndexer.Tip);
+            block.Header.UpdateTime(DateTimeOffset.UtcNow, coreNode.FullNode.Network, coreNode.FullNode.ChainIndexer.Tip);
 
             var coinbase = coreNode.FullNode.Network.CreateTransaction();
-            coinbase.AddInput(TxIn.CreateCoinbase(coreNode.FullNode.Chain.Height + 1));
-            coinbase.AddOutput(new TxOut(coreNode.FullNode.Network.GetReward(coreNode.FullNode.Chain.Height + 1), coreNode.MinerSecret.GetAddress()));
+            coinbase.AddInput(TxIn.CreateCoinbase(coreNode.FullNode.ChainIndexer.Height + 1));
+            coinbase.AddOutput(new TxOut(coreNode.FullNode.Network.GetReward(coreNode.FullNode.ChainIndexer.Height + 1), coreNode.MinerSecret.GetAddress()));
             block.AddTransaction(coinbase);
 
             if (transactions.Any())
@@ -288,7 +288,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 block.Header.Nonce = ++nonce;
 
             // This will set the block size.
-            block = Block.Load(block.ToBytes(), coreNode.FullNode.Network);
+            block = Block.Load(block.ToBytes(), coreNode.FullNode.Network.Consensus.ConsensusFactory);
 
             if (callBlockMinedAsync)
             {
@@ -485,7 +485,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 Connect(thisNode, coreNode);
 
             foreach (CoreNode coreNode in to)
-                WaitLoop(() => AreNodesSynced(thisNode, coreNode, ignoreMempool));
+                WaitLoop(() => AreNodesSynced(thisNode, coreNode, ignoreMempool), waitTimeSeconds: 120);
         }
 
         /// <summary>

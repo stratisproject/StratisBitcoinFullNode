@@ -26,7 +26,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         private readonly IWalletTransactionHandler walletTransactionHandler;
         private readonly IMethodParameterStringSerializer methodParameterStringSerializer;
         private readonly ICallDataSerializer callDataSerializer;
-        private readonly CoinType coinType;
         private readonly IAddressGenerator addressGenerator;
 
         public SmartContractTransactionService(
@@ -42,7 +41,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.walletTransactionHandler = walletTransactionHandler;
             this.methodParameterStringSerializer = methodParameterStringSerializer;
             this.callDataSerializer = callDataSerializer;
-            this.coinType = (CoinType)network.Consensus.CoinType;
             this.addressGenerator = addressGenerator;
         }
 
@@ -79,7 +77,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             if (!string.IsNullOrWhiteSpace(request.Sender))
             {
                 Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
-                HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
+                HdAccount account = wallet.GetAccount(request.AccountName);
                 if (account == null)
                     return BuildCallContractTransactionResponse.Failed($"No account with the name '{request.AccountName}' could be found.");
 
@@ -140,7 +138,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             if (!string.IsNullOrWhiteSpace(request.Sender))
             {
                 Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
-                HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
+                HdAccount account = wallet.GetAccount(request.AccountName);
                 if (account == null)
                     return BuildCreateContractTransactionResponse.Failed($"No account with the name '{request.AccountName}' could be found.");
 

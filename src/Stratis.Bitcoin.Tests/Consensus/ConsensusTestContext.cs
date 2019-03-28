@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         private IPeerBanning peerBanning;
         private IConnectionManager connectionManager;
         private static int nonceValue;
-        private ConcurrentChain chain;
+        internal ChainIndexer chainIndexer;
         private DateTimeProvider dateTimeProvider;
         private InvalidBlockHashStore hashStore;
         private NodeSettings nodeSettings;
@@ -75,11 +75,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             this.Network = KnownNetworks.RegTest;
 
-            this.chain = new ConcurrentChain(this.Network);
+            this.chainIndexer = new ChainIndexer(this.Network);
             this.dateTimeProvider = new DateTimeProvider();
             this.hashStore = new InvalidBlockHashStore(this.dateTimeProvider);
 
-            this.coinView = new TestInMemoryCoinView(this.chain.Tip.HashBlock);
+            this.coinView = new TestInMemoryCoinView(this.chainIndexer.Tip.HashBlock);
             this.HeaderValidator = new Mock<IHeaderValidator>();
             this.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
 
@@ -135,9 +135,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.nodeLifetime, new NetworkPeerConnectionParameters(), this.peerAddressManager, new IPeerConnector[] { },
                 peerDiscovery, this.selfEndpointTracker, connectionSettings, new VersionProvider(), this.nodeStats);
 
-            this.deployments = new NodeDeployments(this.Network, this.chain);
+            this.deployments = new NodeDeployments(this.Network, this.chainIndexer);
 
-            this.consensusRules = new PowConsensusRuleEngine(this.Network, this.loggerFactory, this.dateTimeProvider, this.chain, this.deployments, this.ConsensusSettings,
+            this.consensusRules = new PowConsensusRuleEngine(this.Network, this.loggerFactory, this.dateTimeProvider, this.chainIndexer, this.deployments, this.ConsensusSettings,
                      this.checkpoints.Object, this.coinView, this.ChainState.Object, this.hashStore, this.nodeStats);
 
             this.consensusRules.Register();
@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             ConsensusManager consensusManager = new ConsensusManager(tree, this.Network, this.loggerFactory, this.ChainState.Object, this.IntegrityValidator.Object,
                 this.PartialValidator.Object, this.FullValidator.Object, this.consensusRules,
-                this.FinalizedBlockMock.Object, new Stratis.Bitcoin.Signals.Signals(this.loggerFactory, null), this.peerBanning, this.ibd.Object, this.chain,
+                this.FinalizedBlockMock.Object, new Stratis.Bitcoin.Signals.Signals(this.loggerFactory, null), this.peerBanning, this.ibd.Object, this.chainIndexer,
                 this.BlockPuller.Object, this.BlockStore.Object, this.connectionManager, this.nodeStats, this.nodeLifetime, this.ConsensusSettings);
 
             this.TestConsensusManager = new TestConsensusManager(consensusManager);

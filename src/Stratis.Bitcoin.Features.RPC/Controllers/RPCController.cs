@@ -129,8 +129,10 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                     }
                 }
 
+                RPCRequest request = new RPCRequest(methodName, paramsAsObjects);
+
                 // Build RPC request object.
-                RPCResponse response = this.SendRPCRequest(new RPCRequest(methodName, paramsAsObjects));
+                RPCResponse response = this.SendRPCRequest(request);
 
                 // Throw error if any.
                 if (response?.Error?.Message != null)
