@@ -103,8 +103,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotNull(blockStoreQueueFlushCondition, nameof(blockStoreQueueFlushCondition));
             Guard.NotNull(chainIndexer, nameof(chainIndexer));
             Guard.NotNull(chainState, nameof(chainState));
+            Guard.NotNull(storeSettings, nameof(storeSettings));
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(blockRepository, nameof(blockRepository));
+            Guard.NotNull(nodeStats, nameof(nodeStats));
 
             this.blockStoreQueueFlushCondition = blockStoreQueueFlushCondition;
             this.chainIndexer = chainIndexer;
