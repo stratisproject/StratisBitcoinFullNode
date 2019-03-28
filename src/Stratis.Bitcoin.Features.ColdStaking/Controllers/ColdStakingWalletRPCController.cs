@@ -18,12 +18,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             IConsensusManager consensusManager,
             IFullNode fullNode,
             ILoggerFactory loggerFactory,
+            Network network,
             IScriptAddressReader scriptAddressReader,
             StoreSettings storeSettings,
             IWalletManager walletManager,
             WalletSettings walletSettings,
             IWalletTransactionHandler walletTransactionHandler) :
-            base(blockStore, broadcasterManager, chain, consensusManager, fullNode, loggerFactory, scriptAddressReader, storeSettings, walletManager, walletSettings, walletTransactionHandler)
+            base(blockStore, broadcasterManager, chain, consensusManager, fullNode, loggerFactory, network, scriptAddressReader, storeSettings, walletManager, walletSettings, walletTransactionHandler)
         {
         }
     }

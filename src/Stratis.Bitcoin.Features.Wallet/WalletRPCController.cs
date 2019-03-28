@@ -53,11 +53,12 @@ namespace Stratis.Bitcoin.Features.Wallet
             IConsensusManager consensusManager,
             IFullNode fullNode,
             ILoggerFactory loggerFactory,
+            Network network,
             IScriptAddressReader scriptAddressReader,
             StoreSettings storeSettings,
             IWalletManager walletManager,
             WalletSettings walletSettings,
-            IWalletTransactionHandler walletTransactionHandler) : base(fullNode: fullNode, consensusManager: consensusManager, chain: chain)
+            IWalletTransactionHandler walletTransactionHandler) : base(fullNode: fullNode, consensusManager: consensusManager, chain: chain, network: network)
         {
             this.blockStore = blockStore;
             this.broadcasterManager = broadcasterManager;
@@ -360,7 +361,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     var balance = this.walletManager.GetAddressBalance(address.ToString());
                     var addressGroupingModel = new AddressGroupingModel()
                     {
-                        Address = BitcoinAddress.Create(address.ToString(), this.Network),
+                        Address = address,
                         Amount = balance.AmountConfirmed
                     };
 
@@ -380,6 +381,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             //Get the wallet to check.
             var walletReference = this.GetAccount();
             var wallet = this.walletManager.GetWallet(walletReference.WalletName);
+
+            //Cache all the addresses in the wallet.
             var addresses = wallet.GetAllAddressesByCoinType((CoinType)this.Network.Consensus.CoinType);
 
             //Get the transaction data for this wallet.
@@ -391,6 +394,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 txDictionary.Add(item.Id, item);
             }
+
+            //Cache the wallet's set of internal (change addresses).
+            var internalAddresses = wallet.GetAccountsByCoinType((CoinType)this.Network.Consensus.CoinType).SelectMany(a => a.InternalAddresses);
 
             var groupings = new List<List<string>>();
 
@@ -407,7 +413,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         if (!await IsTxInMineAsync(addresses, txDictionary, txIn))
                             continue;
 
-                        // Get the address.
+                        // Get the txIn's previous transaction address.
                         var prevTransactionData = txs.FirstOrDefault(t => t.Id == txIn.PrevOut.Hash);
                         var prevTransaction = await this.blockStore.GetTransactionByIdAsync(prevTransactionData.Id);
                         var prevTransactionScriptPubkey = prevTransaction.Outputs[txIn.PrevOut.N].ScriptPubKey;
@@ -424,7 +430,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     {
                         foreach (var txOut in tx.Outputs)
                         {
-                            if (IsChange(wallet, (CoinType)this.Network.Consensus.CoinType, txOut.ScriptPubKey))
+                            if (IsChange(internalAddresses, txOut.ScriptPubKey))
                             {
                                 var txOutAddressBase58 = GetBase58AddressFromScript(txOut.ScriptPubKey);
                                 if (txOutAddressBase58 != null)
@@ -498,17 +504,22 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// This will check the wallet's list of <see cref="HdAccount.InternalAddress"/>es to see if this address is
         /// an address that received change.
         /// </summary>
-        /// <param name="wallet">The wallet to use.</param>
-        /// <param name="coinType">The coin type associated with the wallet; Stratis or Bitcoin.</param>
+        /// <param name="internalAddresses">The wallet's set of internal addresses.</param>
         /// <param name="txOutScriptPubkey">The base58 address to verify from the <see cref="TxOut"/>.</param>
         /// <returns><c>true</c> if the <paramref name="txOutScriptPubkey"/> is a change address.</returns>
-        private bool IsChange(Wallet wallet, CoinType coinType, Script txOutScriptPubkey)
+        private bool IsChange(IEnumerable<HdAddress> internalAddresses, Script txOutScriptPubkey)
         {
-            var internalAddresses = wallet.GetAccountsByCoinType(coinType).SelectMany(a => a.InternalAddresses);
             var result = internalAddresses.FirstOrDefault(ia => ia.ScriptPubKey == txOutScriptPubkey);
             return result != null;
         }
 
+        /// <summary>
+        /// Determines whether or not the input's address exists in the wallet's set of addresses.
+        /// </summary>
+        /// <param name="addresses">The wallet's external and internal addresses.</param>
+        /// <param name="txDictionary">The set of transactions to check against.</param>
+        /// <param name="txIn">The input to check.</param>
+        /// <returns><c>true</c>if the input's address exist in the wallet.</returns>
         private async Task<bool> IsTxInMineAsync(IEnumerable<HdAddress> addresses, Dictionary<uint256, TransactionData> txDictionary, TxIn txIn)
         {
             TransactionData previousTransaction = null;
@@ -516,12 +527,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (previousTransaction != null)
             {
-                var prevTx = await this.blockStore.GetTransactionByIdAsync(previousTransaction.Id);
-                if (txIn.PrevOut.N < prevTx.Outputs.Count)
+                var previousTx = await this.blockStore.GetTransactionByIdAsync(previousTransaction.Id);
+                if (txIn.PrevOut.N < previousTx.Outputs.Count)
                 {
                     // At this point we need to check if the scriptPubkey is in our wallet, see:
                     // https://github.com/bitcoin/bitcoin/blob/011c39c2969420d7ca8b40fbf6f3364fe72da2d0/src/script/ismine.cpp
-                    var txOutScriptPubKey = prevTx.Outputs[txIn.PrevOut.N].ScriptPubKey;
+                    var txOutScriptPubKey = previousTx.Outputs[txIn.PrevOut.N].ScriptPubKey;
                     return IsAddressMine(addresses, txOutScriptPubKey);
                 }
             }
@@ -534,7 +545,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <param name="addresses">All the addresses from the wallet.</param>
         /// <param name="scriptPubKey">The script to check.</param>
-        /// 
         /// <returns><c>true</c> if the <paramref name="scriptPubKey"/> is an address in the given wallet.</returns>
         private bool IsAddressMine(IEnumerable<HdAddress> addresses, Script scriptPubKey)
         {
