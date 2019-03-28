@@ -323,7 +323,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 this.logger.LogTrace("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
 
                 // Are we still on the main chain.
-                ChainedHeader current = this.chainIndexer.GetBlock(this.WalletTipHash);
+                ChainedHeader current = this.chainIndexer.GetHeader(this.WalletTipHash);
                 if (current == null)
                 {
                     this.logger.LogTrace("(-)[REORG]");

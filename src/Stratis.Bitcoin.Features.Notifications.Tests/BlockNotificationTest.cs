@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         {
             List<Block> blocks = this.CreateBlocks(3);
 
-            this.chainIndexer = new ChainIndexer(this.Network, new ChainedHeader(blocks[0].Header, blocks[0].GetHash(), 0));
+            this.chainIndexer = new ChainIndexer(this.Network);
             this.AppendBlocksToChain(this.chainIndexer, blocks.Skip(1));
 
             var notification = new BlockNotification(this.LoggerFactory.Object, this.chainIndexer, this.consensusManager.Object, this.signals.Object, new AsyncLoopFactory(new LoggerFactory()), this.lifetime);

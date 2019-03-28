@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
 
                 // Set the tip of the best chain to some blocks in the past.
-                stratisNodeSync.FullNode.ChainIndexer.SetTip(stratisNodeSync.FullNode.ChainIndexer.GetBlock(stratisNodeSync.FullNode.ChainIndexer.Height - 5));
+                stratisNodeSync.FullNode.ChainIndexer.SetTip(stratisNodeSync.FullNode.ChainIndexer.GetHeader(stratisNodeSync.FullNode.ChainIndexer.Height - 5));
 
                 // Stop the node to persist the chain with the reset tip.
                 stratisNodeSync.FullNode.Dispose();

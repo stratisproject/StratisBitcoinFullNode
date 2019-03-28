@@ -166,7 +166,7 @@ namespace Stratis.Features.FederatedPeg
                 return;
 
             int height = this.federationWalletManager.LastBlockHeight();
-            ChainedHeader block = this.chainIndexer.GetBlock(height);
+            ChainedHeader block = this.chainIndexer.GetHeader(height);
             uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
             FederationWallet federationWallet = this.federationWalletManager.GetWallet();

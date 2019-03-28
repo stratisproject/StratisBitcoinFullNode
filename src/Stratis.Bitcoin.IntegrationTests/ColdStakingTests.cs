@@ -63,14 +63,14 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Check that coldstaking states got updated as expected.
                 ThresholdConditionCache cache = (stratisNode.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine).NodeDeployments.BIP9;
-                Assert.Equal(ThresholdState.Defined, cache.GetState(stratisNode.FullNode.ChainIndexer.GetBlock(startedHeight - 1), StratisBIP9Deployments.ColdStaking));
-                Assert.Equal(ThresholdState.Started, cache.GetState(stratisNode.FullNode.ChainIndexer.GetBlock(startedHeight), StratisBIP9Deployments.ColdStaking));
-                Assert.Equal(ThresholdState.LockedIn, cache.GetState(stratisNode.FullNode.ChainIndexer.GetBlock(lockedInHeight), StratisBIP9Deployments.ColdStaking));
-                Assert.Equal(ThresholdState.Active, cache.GetState(stratisNode.FullNode.ChainIndexer.GetBlock(activeHeight), StratisBIP9Deployments.ColdStaking));
+                Assert.Equal(ThresholdState.Defined, cache.GetState(stratisNode.FullNode.ChainIndexer.GetHeader(startedHeight - 1), StratisBIP9Deployments.ColdStaking));
+                Assert.Equal(ThresholdState.Started, cache.GetState(stratisNode.FullNode.ChainIndexer.GetHeader(startedHeight), StratisBIP9Deployments.ColdStaking));
+                Assert.Equal(ThresholdState.LockedIn, cache.GetState(stratisNode.FullNode.ChainIndexer.GetHeader(lockedInHeight), StratisBIP9Deployments.ColdStaking));
+                Assert.Equal(ThresholdState.Active, cache.GetState(stratisNode.FullNode.ChainIndexer.GetHeader(activeHeight), StratisBIP9Deployments.ColdStaking));
 
                 // Verify that the block created before activation does not have the 'CheckColdStakeVerify' flag set.
                 var rulesEngine = stratisNode.FullNode.NodeService<IConsensusRuleEngine>();
-                ChainedHeader prevHeader = stratisNode.FullNode.ChainIndexer.GetBlock(activeHeight - 1);
+                ChainedHeader prevHeader = stratisNode.FullNode.ChainIndexer.GetHeader(activeHeight - 1);
                 DeploymentFlags flags1 = (rulesEngine as ConsensusRuleEngine).NodeDeployments.GetFlags(prevHeader);
                 Assert.Equal(0, (int)(flags1.ScriptFlags & ScriptVerify.CheckColdStakeVerify));
 
