@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.MineBlocks(reorg, 12);
 
                 // Make sure the nodes are actually on different chains.
-                Assert.NotEqual(miner.FullNode.ChainIndexer.GetBlock(2).HashBlock, reorg.FullNode.ChainIndexer.GetBlock(2).HashBlock);
+                Assert.NotEqual(miner.FullNode.ChainIndexer.GetHeader(2).HashBlock, reorg.FullNode.ChainIndexer.GetHeader(2).HashBlock);
 
                 TestHelper.ConnectAndSync(miner, syncer);
 

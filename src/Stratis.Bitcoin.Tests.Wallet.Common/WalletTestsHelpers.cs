@@ -457,7 +457,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             {
                 Amount = transaction.TotalOut,
                 BlockHash = chainInfo.blockHash,
-                BlockHeight = chainInfo.chain.GetBlock(chainInfo.blockHash).Height,
+                BlockHeight = chainInfo.chain.GetHeader(chainInfo.blockHash).Height,
                 CreationTime = DateTimeOffset.FromUnixTimeSeconds(chainInfo.block.Header.Time),
                 Id = transaction.GetHash(),
                 Index = 0,
@@ -516,7 +516,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
                 {
                     Amount = coinbase.TotalOut,
                     BlockHash = block.GetHash(),
-                    BlockHeight = chainIndexer.GetBlock(block.GetHash()).Height,
+                    BlockHeight = chainIndexer.GetHeader(block.GetHash()).Height,
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time),
                     Id = coinbase.GetHash(),
                     Index = 0,

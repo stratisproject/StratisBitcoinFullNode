@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             BlockHeaderModel model = null;
             if (this.ChainIndexer != null)
             {
-                BlockHeader blockHeader = this.ChainIndexer.GetBlock(uint256.Parse(hash))?.Header;
+                BlockHeader blockHeader = this.ChainIndexer.GetHeader(uint256.Parse(hash))?.Header;
                 if (blockHeader != null)
                 {
                     if (isJsonFormat)
@@ -366,7 +366,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (verbosity == 0)
                 return new HexModel(block?.ToHex(this.Network));
 
-            return new BlockModel(block, this.ChainIndexer.GetBlock(block.GetHash()), this.ChainIndexer.Tip, this.Network, verbosity);
+            return new BlockModel(block, this.ChainIndexer.GetHeader(block.GetHash()), this.ChainIndexer.Tip, this.Network, verbosity);
         }
 
         [ActionName("getnetworkinfo")]
@@ -427,7 +427,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             uint256 blockid = this.blockStore != null ? await this.blockStore.GetBlockIdByTransactionIdAsync(trxid) : null;
             if (blockid != null)
-                block = this.ChainIndexer?.GetBlock(blockid);
+                block = this.ChainIndexer?.GetHeader(blockid);
 
             return block;
         }

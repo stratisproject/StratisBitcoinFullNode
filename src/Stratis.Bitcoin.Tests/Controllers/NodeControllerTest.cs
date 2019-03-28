@@ -240,7 +240,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         {
             this.chainState.Setup(c => c.ConsensusTip)
                 .Returns(this.chainIndexer.Tip);
-            ChainedHeader block = this.chainIndexer.GetBlock(1);
+            ChainedHeader block = this.chainIndexer.GetHeader(1);
             Transaction transaction = this.CreateTransaction();
             var txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
@@ -286,7 +286,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public async Task GetTaskAsync_Verbose_ChainStateTipNull_DoesNotCalulateConfirmationsAsync()
         {
-            ChainedHeader block = this.chainIndexer.GetBlock(1);
+            ChainedHeader block = this.chainIndexer.GetHeader(1);
             Transaction transaction = this.CreateTransaction();
             var txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
@@ -568,7 +568,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public void GetBlockHeader_BlockHeaderFound_ReturnsBlockHeaderModel()
         {
-            ChainedHeader block = this.chainIndexer.GetBlock(2);
+            ChainedHeader block = this.chainIndexer.GetHeader(2);
             string bits = GetBlockHeaderBits(block.Header);
             string hash = block.HashBlock.ToString();
             bool isJsonFormat = true;
