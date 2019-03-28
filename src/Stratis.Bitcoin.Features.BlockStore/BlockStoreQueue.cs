@@ -208,6 +208,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc/>
+        public Transaction[] GetTransactionsByIds(uint256[] trxids)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc/>
         public Task<uint256> GetBlockIdByTransactionIdAsync(uint256 trxid)
         {
             lock (this.blocksCacheLock)

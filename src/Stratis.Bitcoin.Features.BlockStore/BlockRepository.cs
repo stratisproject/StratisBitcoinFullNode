@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
+using DBreeze.Exceptions;
 using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -51,7 +53,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         /// <param name="newTip">Hash and height of the new repository's tip.</param>
         /// <param name="hashes">List of all block hashes to be deleted.</param>
-        /// <exception cref="DBreeze.Exceptions.DBreezeException">Thrown if an error occurs during database operations.</exception>
+        /// <exception cref="DBreezeException">Thrown if an error occurs during database operations.</exception>
         Task DeleteAsync(HashHeightPair newTip, List<uint256> hashes);
 
         /// <summary>
@@ -190,6 +192,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
             });
 
             return task;
+        }
+
+        /// <inheritdoc/>
+        public Transaction[] GetTransactionsByIds(uint256[] trxids)
+        {
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />

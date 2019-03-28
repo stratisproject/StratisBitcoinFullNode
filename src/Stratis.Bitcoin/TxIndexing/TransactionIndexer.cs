@@ -99,11 +99,28 @@ namespace Stratis.Bitcoin.TxIndexing
                 throw new Exception(message);
             }
 
+            // TODO remove it later
+            if (this.blockReceivedQueue.Count > 10)
+            {
+                this.logger.LogWarning("TxIndexer is lagging behind. {0} items are enqueued.", this.blockReceivedQueue.Count);
+            }
+
+            Block block = item.Value.Block;
+
+            if (blockAdded)
+            {
+                // TODO process inputs
+               //List<TxIn> q =  block.Transactions.Select(x => x.Inputs).First().ToList();
+               //q.First().
+
+               // берем инпут, из него id транзакции, берем транзакцию из блокстора. из транзакции узнаем value аутпута и адрес
+
+                // TODO remove from inputs, add to outputs
+            }
 
             // TODO class:
             // KV where key is address and value is a list of operations.
             //operation: type (spend\deposit), block height, amount
-
 
             // TODO
             // update index, save the tip
