@@ -148,10 +148,12 @@ namespace Stratis.Bitcoin.Base
         public void CommitTipPersisted(ITipProvider provider, HashHeightPair tip)
         {
             ChainedHeader header = this.concurrentChain.GetBlock(tip.Hash);
-            if (tip == null)
+            if (header == null)
             {
                 throw new ArgumentException(string.Format("Invalid Hash: {0} not found in current chain", tip.Hash));
             }
+
+            this.CommitTipPersisted(provider, header);
         }
 
         /// <inheritdoc />
