@@ -31,13 +31,23 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
-        /// Determines whether this network is a bitcoin network.
+        /// Determines whether this network is a Bitcoin network.
         /// </summary>
         /// <param name="network">The network.</param>
-        /// <returns><c>true</c> if the specified network is bitcoin, <c>false</c> otherwise.</returns>
+        /// <returns><c>true</c> if the specified network is Bitcoin, <c>false</c> otherwise.</returns>
         public static bool IsBitcoin(this Network network)
         {
-            return !network.Name.ToLowerInvariant().Contains("stratis");
+            return network.Name.ToLowerInvariant().Contains("bitcoin");
+        }
+
+        /// <summary>
+        /// Determines whether this network is a Stratis network.
+        /// </summary>
+        /// <param name="network">The network.</param>
+        /// <returns><c>true</c> if the specified network is Stratis, <c>false</c> otherwise.</returns>
+        public static bool IsStratis(this Network network)
+        {
+            return network.Name.ToLowerInvariant().Contains("stratis");
         }
     }
 }

@@ -85,7 +85,7 @@ namespace NBitcoin.Tests
             Assert.Equal(NetworkRegistration.GetNetwork("main"), this.networkMain);
             Assert.Equal(NetworkRegistration.GetNetwork("mainnet"), this.networkMain);
 
-            Assert.Equal("Main", this.networkMain.Name);
+            Assert.Equal("BitcoinMain", this.networkMain.Name);
             Assert.Equal(BitcoinMain.BitcoinRootFolderName, this.networkMain.RootFolderName);
             Assert.Equal(BitcoinMain.BitcoinDefaultConfigFilename, this.networkMain.DefaultConfigFilename);
             Assert.Equal(0xD9B4BEF9, this.networkMain.Magic);
@@ -167,7 +167,7 @@ namespace NBitcoin.Tests
             Assert.Equal(3, network.DNSSeeds.Count);
             Assert.Empty(network.SeedNodes);
 
-            Assert.Equal("TestNet", network.Name);
+            Assert.Equal("BitcoinTestNet", network.Name);
             Assert.Equal(BitcoinMain.BitcoinRootFolderName, network.RootFolderName);
             Assert.Equal(BitcoinMain.BitcoinDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0x0709110B.ToString(), network.Magic.ToString());
@@ -249,7 +249,7 @@ namespace NBitcoin.Tests
             Assert.Empty(network.DNSSeeds);
             Assert.Empty(network.SeedNodes);
 
-            Assert.Equal("RegTest", network.Name);
+            Assert.Equal("BitcoinRegTest", network.Name);
             Assert.Equal(BitcoinMain.BitcoinRootFolderName, network.RootFolderName);
             Assert.Equal(BitcoinMain.BitcoinDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0xDAB5BFFA, network.Magic);

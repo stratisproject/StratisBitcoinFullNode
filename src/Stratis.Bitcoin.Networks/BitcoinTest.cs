@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Networks
     {
         public BitcoinTest()
         {
-            this.Name = "TestNet";
+            this.Name = "BitcoinTest";
             this.AdditionalNames = new List<string> { "test" };
             this.Magic = 0x0709110B;
             this.DefaultPort = 18333;

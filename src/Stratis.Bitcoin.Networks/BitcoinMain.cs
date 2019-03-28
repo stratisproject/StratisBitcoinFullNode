@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Networks
     {
         public BitcoinMain()
         {
-            this.Name = "Main";
+            this.Name = "BitcoinMain";
             this.AdditionalNames = new List<string> { "Mainnet" };
 
             this.RootFolderName = BitcoinRootFolderName;
