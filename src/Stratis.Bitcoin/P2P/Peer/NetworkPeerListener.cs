@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -24,10 +25,11 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// Initializes the instance of the object and subscribes to the peer's message producer.
         /// </summary>
+        /// <param name="logger">The logger created in the component that instantiate the NetworkPeerListener.</param>
         /// <param name="peer">Connected network peer that we receive messages from.</param>
-        public NetworkPeerListener(INetworkPeer peer)
+        public NetworkPeerListener(ILogger logger, INetworkPeer peer)
         {
-            this.asyncQueue = new AsyncQueue<IncomingMessage>();
+            this.asyncQueue = new AsyncQueue<IncomingMessage>(logger);
             this.messageProducerRegistration = peer.MessageProducer.AddMessageListener(this);
             this.peer = peer;
         }

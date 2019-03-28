@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.signals = signals;
 
-            this.blocksToAnnounce = new AsyncQueue<ChainedHeader>();
+            this.blocksToAnnounce = new AsyncQueue<ChainedHeader>(this.logger);
             this.dequeueLoopTask = this.DequeueContinuouslyAsync();
         }
 

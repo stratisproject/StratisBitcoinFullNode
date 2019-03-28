@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Connection
             this.Parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
             this.selfEndpointTracker = selfEndpointTracker;
             this.versionProvider = versionProvider;
-            this.connectedPeersQueue = new AsyncQueue<INetworkPeer>(this.OnPeerAdded);
+            this.connectedPeersQueue = new AsyncQueue<INetworkPeer>(this.logger, this.OnPeerAdded);
             this.disconnectedPerfCounter = new PerformanceCounter();
 
             this.Parameters.UserAgent = $"{this.ConnectionSettings.Agent}:{versionProvider.GetVersion()} ({(int)this.NodeSettings.ProtocolVersion})";

@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
             this.consensusRules = consensusRules;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.asyncQueue = new AsyncQueue<PartialValidationItem>(this.OnEnqueueAsync);
+            this.asyncQueue = new AsyncQueue<PartialValidationItem>(this.logger, this.OnEnqueueAsync);
         }
 
         /// <inheritdoc />

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -79,6 +80,11 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary><c>true</c> if <see cref="Dispose"/> was called, <c>false</c> otherwise.</summary>
         private bool disposed;
 
+        /// <summary>
+        /// The logger created in the component that instantiate the AsyncQueue
+        /// </summary>
+        private readonly ILogger logger;
+
         /// <summary><c>true</c> if the queue operates in callback mode, <c>false</c> if it operates in blocking dequeue mode.</summary>
         private readonly bool callbackMode;
 
@@ -94,9 +100,12 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>
         /// Initializes the queue either in blocking dequeue mode or in callback mode.
         /// </summary>
+        /// <param name="logger">The logger created in the component that instantiate the AsyncQueue.</param>
         /// <param name="onEnqueueAsync">Callback routine to be called when a new item is added to the queue, or <c>null</c> to operate in blocking dequeue mode.</param>
-        public AsyncQueue(OnEnqueueAsync onEnqueueAsync = null, OnEnqueueAsyncFails onEnqueueAsyncFails = null)
+        /// <param name="onEnqueueAsyncFails">Callback routine to be called when a dequeued item throws an unhandled exception.</param>
+        public AsyncQueue(ILogger logger, OnEnqueueAsync onEnqueueAsync = null, OnEnqueueAsyncFails onEnqueueAsyncFails = null)
         {
+            this.logger = Guard.NotNull(logger, nameof(logger));
             this.callbackMode = onEnqueueAsync != null;
             this.lockObject = new object();
             this.items = new Queue<T>();
@@ -172,9 +181,14 @@ namespace Stratis.Bitcoin.Utilities
                             {
                                 exceptionHandled = await this.onEnqueueAsyncFails(item, cancellationToken, ex);
                             }
+                            else
+                            {
+                                this.logger.LogError(ex, "OnEnqueueAsync failed");
+                            }
 
                             if (!exceptionHandled)
                             {
+                                this.logger.LogTrace("OnEnqueueAsync exception not handled, re-throwing it");
                                 throw;
                             }
                         }

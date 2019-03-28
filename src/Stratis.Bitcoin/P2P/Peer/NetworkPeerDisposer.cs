@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.onPeerDisposed = onPeerDisposed;
             this.connectedPeers = new ConcurrentDictionary<int, INetworkPeer>();
 
-            this.peersToDispose = new AsyncQueue<INetworkPeer>(this.OnEnqueueAsync, this.OnEnqueueAsyncFails);
+            this.peersToDispose = new AsyncQueue<INetworkPeer>(this.logger, this.OnEnqueueAsync, this.OnEnqueueAsyncFails);
         }
 
         /// <summary>

@@ -111,9 +111,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blockRepository = blockRepository;
             this.batch = new List<ChainedHeaderBlock>();
             this.blocksCacheLock = new object();
-            this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>();
-            this.pendingBlocksCache = new Dictionary<uint256, ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>(this.logger);
+            this.pendingBlocksCache = new Dictionary<uint256, ChainedHeaderBlock>();
             this.cancellation = new CancellationTokenSource();
             this.saveAsyncLoopException = null;
 

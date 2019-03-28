@@ -65,7 +65,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.storeSettings = storeSettings;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.blocksQueue = new AsyncQueue<Block>(this.OnProcessBlockAsync);
+            this.blocksQueue = new AsyncQueue<Block>(this.logger, this.OnProcessBlockAsync);
 
             this.blocksQueueSize = 0;
         }

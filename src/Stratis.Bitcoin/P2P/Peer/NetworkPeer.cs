@@ -300,7 +300,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.onDisconnected = onDisconnected;
             this.onSendingMessage = onSendingMessage;
 
-            this.asyncQueue = new AsyncQueue<Payload>(this.SendMessageHandledAsync);
+            this.asyncQueue = new AsyncQueue<Payload>(this.logger, this.SendMessageHandledAsync);
         }
 
         /// <summary>
@@ -702,7 +702,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public async Task VersionHandshakeAsync(NetworkPeerRequirement requirements, CancellationToken cancellationToken)
         {
             requirements = requirements ?? new NetworkPeerRequirement();
-            using (var listener = new NetworkPeerListener(this))
+            using (var listener = new NetworkPeerListener(this.logger, this))
             {
                 this.logger.LogTrace("Sending my version.");
                 await this.SendMessageAsync(this.MyVersion, cancellationToken).ConfigureAwait(false);
@@ -775,7 +775,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc/>
         public async Task RespondToHandShakeAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            using (var listener = new NetworkPeerListener(this))
+            using (var listener = new NetworkPeerListener(this.logger, this))
             {
                 this.logger.LogTrace("Responding to handshake with my version.");
                 await this.SendMessageAsync(this.MyVersion, cancellationToken).ConfigureAwait(false);

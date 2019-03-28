@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.storeSettings = storeSettings;
             this.signals = signals;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.blocksQueue = new AsyncQueue<Block>(this.OnProcessBlockAsync);
+            this.blocksQueue = new AsyncQueue<Block>(this.logger, this.OnProcessBlockAsync);
 
             this.blocksQueueSize = 0;
         }

@@ -40,9 +40,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.coinview = coinview;
             this.chainIndexer = chainIndexer;
 
-            this.headersQueue = new AsyncQueue<ChainedHeader>(this.OnHeaderEnqueuedAsync);
-            this.coinviewHelper = new CoinviewHelper();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            this.headersQueue = new AsyncQueue<ChainedHeader>(this.logger, this.OnHeaderEnqueuedAsync);
+            this.coinviewHelper = new CoinviewHelper();
         }
 
         /// <summary>

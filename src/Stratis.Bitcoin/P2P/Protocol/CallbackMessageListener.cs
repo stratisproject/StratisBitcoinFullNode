@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P.Protocol
@@ -28,10 +29,11 @@ namespace Stratis.Bitcoin.P2P.Protocol
         /// <summary>
         /// Initializes the instance of the object.
         /// </summary>
+        /// <param name="logger">The logger created in the component that instantiate the CallbackMessageListener.</param>
         /// <param name="processMessageAsync">User defined callback routine to be executed when a new message arrives to the listener.</param>
-        public CallbackMessageListener(ProcessMessageAsync<T> processMessageAsync)
+        public CallbackMessageListener(ILogger logger, ProcessMessageAsync<T> processMessageAsync)
         {
-            this.asyncQueue = new AsyncQueue<T>(new AsyncQueue<T>.OnEnqueueAsync(processMessageAsync));
+            this.asyncQueue = new AsyncQueue<T>(logger, new AsyncQueue<T>.OnEnqueueAsync(processMessageAsync));
         }
 
         /// <inheritdoc/>

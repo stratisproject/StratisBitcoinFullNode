@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -14,6 +16,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
     {
         /// <summary>Source of randomness.</summary>
         private Random random = new Random();
+        private ILogger logger = new Mock<ILogger>().Object;
 
         /// <summary>
         /// Tests that <see cref="AsyncQueue{T}.Dispose"/> triggers cancellation inside the on-enqueue callback.
@@ -23,13 +26,13 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             bool signal = false;
 
-            var asyncQueue = new AsyncQueue<int>(async (item, cancellation) =>
-            {
+            var asyncQueue = new AsyncQueue<int>(this.logger, async (item, cancellation) =>
+             {
                 // We set the signal and wait and if the wait is finished, we reset the signal, but that should not happen.
                 signal = true;
-                await Task.Delay(500, cancellation);
-                signal = false;
-            });
+                 await Task.Delay(500, cancellation);
+                 signal = false;
+             });
 
             // Enqueue an item, which should trigger the callback.
             asyncQueue.Enqueue(1);
@@ -42,7 +45,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         /// <summary>
-        /// Tests that <see cref="AsyncQueue{T}.Dispose"/> waits until the on-enqueue callback (and the consumer task) 
+        /// Tests that <see cref="AsyncQueue{T}.Dispose"/> waits until the on-enqueue callback (and the consumer task)
         /// are finished before returning to the caller.
         /// </summary>
         [Fact]
@@ -50,7 +53,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             bool signal = true;
 
-            var asyncQueue = new AsyncQueue<int>(async (item, cancellation) =>
+            var asyncQueue = new AsyncQueue<int>(this.logger, async (item, cancellation) =>
             {
                 // We only set the signal if the wait is finished.
                 await Task.Delay(250);
@@ -80,7 +83,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             int itemsProcessed = 0;
             var allItemsProcessed = new ManualResetEventSlim();
 
-            var asyncQueue = new AsyncQueue<int>(async (item, cancellation) =>
+            var asyncQueue = new AsyncQueue<int>(this.logger, async (item, cancellation) =>
             {
                 // Mark the callback as executing and wait a bit to make sure other callback operations can happen in the meantime.
                 Assert.False(executingCallback);
@@ -123,7 +126,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             int itemPrevious = -1;
             var signal = new ManualResetEventSlim();
 
-            var asyncQueue = new AsyncQueue<int>(async (item, cancellation) =>
+            var asyncQueue = new AsyncQueue<int>(this.logger, async (item, cancellation) =>
             {
                 // Wait a bit to make sure other enqueue operations can happen in the meantime.
                 await Task.Delay(this.random.Next(50));
@@ -153,7 +156,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             int itemsToProcess = 100;
             int itemsProcessed = 0;
 
-            var asyncQueue = new AsyncQueue<int>(async (item, cancellation) =>
+            var asyncQueue = new AsyncQueue<int>(this.logger, async (item, cancellation) =>
             {
                 // Wait a bit to make sure other enqueue operations can happen in the meantime.
                 await Task.Delay(this.random.Next(30));
@@ -173,7 +176,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
 
         /// <summary>
-        /// Tests that <see cref="AsyncQueue{T}.DequeueAsync(CancellationToken)"/> throws cancellation exception 
+        /// Tests that <see cref="AsyncQueue{T}.DequeueAsync(CancellationToken)"/> throws cancellation exception
         /// when the passed cancellation token is cancelled.
         /// </summary>
         [Fact]
@@ -183,7 +186,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             int itemsProcessed = 0;
 
             // Create a queue in blocking dequeue mode.
-            var asyncQueue = new AsyncQueue<int>();
+            var asyncQueue = new AsyncQueue<int>(this.logger);
 
             Task consumer = Task.Run(async () =>
             {
@@ -222,7 +225,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         /// <summary>
-        /// Tests that <see cref="AsyncQueue{T}.DequeueAsync(CancellationToken)"/> provides items in correct order 
+        /// Tests that <see cref="AsyncQueue{T}.DequeueAsync(CancellationToken)"/> provides items in correct order
         /// and that it throws cancellation exception when the queue is disposed.
         /// </summary>
         [Fact]
@@ -231,7 +234,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             int itemsToProcess = 50;
 
             // Create a queue in blocking dequeue mode.
-            var asyncQueue = new AsyncQueue<int>();
+            var asyncQueue = new AsyncQueue<int>(this.logger);
 
             // List of items collected by the consumer task.
             var list = new List<int>();
@@ -282,14 +285,14 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         /// <summary>
-        /// Tests that <see cref="AsyncQueue{T}.DequeueAsync(CancellationToken)"/> throws cancellation exception 
+        /// Tests that <see cref="AsyncQueue{T}.DequeueAsync(CancellationToken)"/> throws cancellation exception
         /// if it is called after the queue was disposed.
         /// </summary>
         [Fact]
         public async Task AsyncQueue_DequeueThrowsAfterDisposeAsync()
         {
             // Create a queue in blocking dequeue mode.
-            var asyncQueue = new AsyncQueue<int>();
+            var asyncQueue = new AsyncQueue<int>(this.logger);
 
             asyncQueue.Enqueue(1);
 
@@ -305,13 +308,13 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void AsyncQueue_DequeueBlocksOnEmptyQueue()
         {
             // Create a queue in blocking dequeue mode.
-            var asyncQueue = new AsyncQueue<int>();
+            var asyncQueue = new AsyncQueue<int>(this.logger);
 
             Assert.False(asyncQueue.DequeueAsync().Wait(100));
         }
 
         /// <summary>
-        /// Tests that <see cref="AsyncQueue{T}.DequeueAsync(CancellationToken)"/> can be used by 
+        /// Tests that <see cref="AsyncQueue{T}.DequeueAsync(CancellationToken)"/> can be used by
         /// two different threads safely.
         /// </summary>
         [Fact]
@@ -320,7 +323,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             int itemsToProcess = 50;
 
             // Create a queue in blocking dequeue mode.
-            var asyncQueue = new AsyncQueue<int>();
+            var asyncQueue = new AsyncQueue<int>(this.logger);
 
             // List of items collected by the consumer tasks.
             var list1 = new List<int>();
@@ -398,13 +401,13 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         /// <summary>
-        /// Tests that <see cref="AsyncQueue{T}.DequeueAsync(CancellationToken)"/> throws 
+        /// Tests that <see cref="AsyncQueue{T}.DequeueAsync(CancellationToken)"/> throws
         /// exception when it is called on a queue operating in callback mode.
         /// </summary>
         [Fact]
         public async Task AsyncQueue_DequeueThrowsInCallbackMode()
         {
-            var asyncQueue = new AsyncQueue<int>((item, cancellation) =>
+            var asyncQueue = new AsyncQueue<int>(this.logger, (item, cancellation) =>
             {
                 return Task.CompletedTask;
             });
@@ -421,7 +424,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             bool firstRun = true;
             bool shouldBeFalse = false;
-            var asyncQueue = new AsyncQueue<IDisposable>((item, cancellation) =>
+            var asyncQueue = new AsyncQueue<IDisposable>(this.logger, (item, cancellation) =>
             {
                 if (firstRun)
                 {
@@ -440,7 +443,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             // We wait until the queue callback calling consumer is finished.
             asyncQueue.ConsumerTask.Wait();
-            
+
             // Now enqueuing another item should not invoke the callback because the queue should be disposed.
             asyncQueue.Enqueue(asyncQueue);
 
