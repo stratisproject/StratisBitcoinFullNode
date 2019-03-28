@@ -238,6 +238,9 @@ namespace Stratis.Bitcoin.Consensus
 
             this.SetConsensusTip(pendingTip);
 
+            if (this.chainIndexer.Tip != pendingTip)
+                this.chainIndexer.Initialize(pendingTip);
+
             this.blockPuller.Initialize(this.BlockDownloaded);
 
             this.isIbd = this.ibdState.IsInitialBlockDownload();

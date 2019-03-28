@@ -1778,7 +1778,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Block block = WalletTestsHelpers.AppendTransactionInNewBlockToChain(chainInfo.chain, transaction);
 
-            int blockHeight = chainInfo.chain.GetBlock(block.GetHash()).Height;
+            int blockHeight = chainInfo.chain.GetHeader(block.GetHash()).Height;
             walletManager.ProcessTransaction(transaction, blockHeight);
 
             HdAddress spentAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);
@@ -2374,7 +2374,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.LoadKeysLookupLock();
             walletManager.WalletTipHash = block.Header.GetHash();
 
-            ChainedHeader chainedBlock = chainInfo.chain.GetBlock(block.GetHash());
+            ChainedHeader chainedBlock = chainInfo.chain.GetHeader(block.GetHash());
             walletManager.ProcessBlock(block, chainedBlock);
 
             HdAddress spentAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);

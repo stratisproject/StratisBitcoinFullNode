@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 blockHeight = sendTransactions.First().SpendingDetails.BlockHeight;
                 blockIndex = sendTransactions.First().SpendingDetails.BlockIndex;
-                blockHash = blockHeight != null ? this.ChainIndexer.GetBlock(blockHeight.Value).HashBlock : null;
+                blockHash = blockHeight != null ? this.ChainIndexer.GetHeader(blockHeight.Value).HashBlock : null;
             }
 
             // Get the block containing the transaction (if it has  been confirmed).

@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             var hashes = new List<uint256>();
             for (int i = 1; i < 5; i++)
             {
-                var chainedHeaderToAdd = chain.GetBlock(i);
+                var chainedHeaderToAdd = chain.GetHeader(i);
                 hashes.Add(chainedHeaderToAdd.HashBlock);
             }
             hashes.Reverse();
