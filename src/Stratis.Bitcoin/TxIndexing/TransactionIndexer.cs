@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.TxIndexing
 {
+    // TODO THIS CLASS IS NOT FINISHED AND NOT USED
     public class TransactionIndexer : IDisposable
     {
         private readonly ISignals signals;
@@ -113,7 +114,7 @@ namespace Stratis.Bitcoin.TxIndexing
                //List<TxIn> q =  block.Transactions.Select(x => x.Inputs).First().ToList();
                //q.First().
 
-               // берем инпут, из него id транзакции, берем транзакцию из блокстора. из транзакции узнаем value аутпута и адрес
+                // take input, tx id from it, fetch txes from blockstore. from txes get address and value
 
                 // TODO remove from inputs, add to outputs
             }
