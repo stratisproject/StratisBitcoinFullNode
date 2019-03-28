@@ -27,16 +27,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.ReadyData
         public static string StratisRegTest150Listener = @"ReadyData/StratisRegTest150Listener.zip";
         public static string StratisRegTest150NoWallet = @"ReadyData/StratisRegTest150NoWallet.zip";
 
-        public static string BitcoinRegTest10Miner = @"ReadyData/RegTest10Miner.zip";
-        public static string BitcoinRegTest10Listener = @"ReadyData/RegTest10Listener.zip";
-        public static string BitcoinRegTest10NoWallet = @"ReadyData/RegTest10NoWallet.zip";
+        public static string BitcoinRegTest10Miner = @"ReadyData/BitcoinRegTest10Miner.zip";
+        public static string BitcoinRegTest10Listener = @"ReadyData/BitcoinRegTest10Listener.zip";
+        public static string BitcoinRegTest10NoWallet = @"ReadyData/BitcoinRegTest10NoWallet.zip";
 
-        public static string BitcoinRegTest100Miner = @"ReadyData/RegTest100Miner.zip";
-        public static string BitcoinRegTest100Listener = @"ReadyData/RegTest100Listener.zip";
-        public static string BitcoinRegTest100NoWallet = @"ReadyData/RegTest100NoWallet.zip";
+        public static string BitcoinRegTest100Miner = @"ReadyData/BitcoinRegTest100Miner.zip";
+        public static string BitcoinRegTest100Listener = @"ReadyData/BitcoinRegTest100Listener.zip";
+        public static string BitcoinRegTest100NoWallet = @"ReadyData/BitcoinRegTest100NoWallet.zip";
 
-        public static string BitcoinRegTest150Miner = @"ReadyData/RegTest150Miner.zip";
-        public static string BitcoinRegTest150Listener = @"ReadyData/RegTest150Listener.zip";
-        public static string BitcoinRegTest150NoWallet = @"ReadyData/RegTest150NoWallet.zip";
+        public static string BitcoinRegTest150Miner = @"ReadyData/BitcoinRegTest150Miner.zip";
+        public static string BitcoinRegTest150Listener = @"ReadyData/BitcoinRegTest150Listener.zip";
+        public static string BitcoinRegTest150NoWallet = @"ReadyData/BitcoinRegTest150NoWallet.zip";
     }
 }

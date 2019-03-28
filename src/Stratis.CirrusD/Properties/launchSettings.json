@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Stratis.CirrusD": {
+      "commandName": "Project",
+      "commandLineArgs": "-sidechain -federationips= [ACTUAL_IPS] -counterchaindepositblock=1 -redeemscript="
+    }
+  }
+}
