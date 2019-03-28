@@ -496,8 +496,13 @@ namespace Stratis.Bitcoin.Controllers
                 {
                     string filename = string.Empty;
 
+                    if (!rule.Targets.Any())
+                    {
+                        continue;
+                    }
+
                     // Retrieve the full path of the current rule's log file.
-                    if (rule.Targets.Any() && rule.Targets.First().GetType().Name == "AsyncTargetWrapper")
+                    if (rule.Targets.First().GetType().Name == "AsyncTargetWrapper")
                     {
                         WrapperTargetBase wrapper = (WrapperTargetBase) rule.Targets.First();
 
@@ -506,7 +511,7 @@ namespace Stratis.Bitcoin.Controllers
                             filename = ((FileTarget) wrapper.WrappedTarget).FileName.ToString();
                         }
                     }
-                    else if (rule.Targets.Any() && rule.Targets.First().GetType().Name == "FileTarget")
+                    else if (rule.Targets.First().GetType().Name == "FileTarget")
                     {
                         filename = ((FileTarget)rule.Targets.First()).FileName.ToString();
                     }
@@ -515,7 +520,7 @@ namespace Stratis.Bitcoin.Controllers
                     {
                         RuleName = rule.LoggerNamePattern,
                         LogLevel = rule.Levels.First().Name,
-                        FileName = filename
+                        Filename = filename
                     });
                 }
 

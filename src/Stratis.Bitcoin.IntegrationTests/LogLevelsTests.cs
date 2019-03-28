@@ -223,12 +223,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                     .GetJsonAsync<List<LogRuleModel>>();
 
                 // Assert.
-                rules.Should().Contain(r => r.RuleName == ruleName1 && r.LogLevel == "Info" && r.FileName.Contains("file1.txt"));
-                rules.Should().Contain(r => r.RuleName == ruleName2 && r.LogLevel == "Fatal" && r.FileName.Contains("file2.txt"));
-                rules.Should().Contain(r => r.RuleName == ruleName3 && r.LogLevel == "Trace" && r.FileName.Contains("file3.txt"));
+                rules.Should().Contain(r => r.RuleName == ruleName1 && r.LogLevel == "Info" && r.Filename.Contains("file1.txt"));
+                rules.Should().Contain(r => r.RuleName == ruleName2 && r.LogLevel == "Fatal" && r.Filename.Contains("file2.txt"));
+                rules.Should().Contain(r => r.RuleName == ruleName3 && r.LogLevel == "Trace" && r.Filename.Contains("file3.txt"));
 
                 // Addtionally, there is always a node.txt file by default.
-                rules.Should().Contain(r => r.FileName.Contains("node.txt"));
+                rules.Should().Contain(r => r.Filename.Contains("node.txt"));
             }
         }
     }
