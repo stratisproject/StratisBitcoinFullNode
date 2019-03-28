@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// Constructs the cold staking manager which is used by the cold staking controller.
         /// </summary>
         /// <param name="network">The network that the manager is running on.</param>
-        /// <param name="chain">Thread safe class representing a chain of headers from genesis.</param>
+        /// <param name="chainIndexer">Thread safe class representing a chain of headers from genesis.</param>
         /// <param name="walletSettings">The wallet settings.</param>
         /// <param name="dataFolder">Contains path locations to folders and files on disk.</param>
         /// <param name="walletFeePolicy">The wallet fee policy.</param>
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="broadcasterManager">The broadcaster manager.</param>
         public ColdStakingManager(
             Network network,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             WalletSettings walletSettings,
             DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,
@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             IBroadcasterManager broadcasterManager = null) : base(
                 loggerFactory,
                 network,
-                chain,
+                chainIndexer,
                 walletSettings,
                 dataFolder,
                 walletFeePolicy,
@@ -501,7 +501,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             UnspentOutputReference[] res = null;
             lock (this.lockObject)
             {
-                res = wallet.GetAllSpendableTransactions(this.chain.Tip.Height, confirmations,
+                res = wallet.GetAllSpendableTransactions(this.ChainIndexer.Tip.Height, confirmations,
                     a => a.Index == (isColdWalletAccount ? ColdWalletAccountIndex : HotWalletAccountIndex)).ToArray();
             }
 

@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.loggerFactory = new LoggerFactory();
 
             this.network = new BitcoinRegTest();
-            this.dBreezeSerializer = new DBreezeSerializer(this.network);
+            this.dBreezeSerializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
         }
 
         [Fact]
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
 
                 // Set the tip of the best chain to some blocks in the past.
-                stratisNodeSync.FullNode.Chain.SetTip(stratisNodeSync.FullNode.Chain.GetBlock(stratisNodeSync.FullNode.Chain.Height - 5));
+                stratisNodeSync.FullNode.ChainIndexer.SetTip(stratisNodeSync.FullNode.ChainIndexer.GetHeader(stratisNodeSync.FullNode.ChainIndexer.Height - 5));
 
                 // Stop the node to persist the chain with the reset tip.
                 stratisNodeSync.FullNode.Dispose();
@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 newNodeInstance.Start();
 
                 // Check that the store recovered to be the same as the best chain.
-                Assert.Equal(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.GetBlockStoreTip().HashBlock);
+                Assert.Equal(newNodeInstance.FullNode.ChainIndexer.Tip.HashBlock, newNodeInstance.FullNode.GetBlockStoreTip().HashBlock);
             }
         }
 
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 TestHelper.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().Height == 10);
                 TestHelper.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().HashBlock == stratisNode2.FullNode.GetBlockStoreTip().HashBlock);
 
-                Block bestBlock1 = stratisNode1.FullNode.BlockStore().GetBlockAsync(stratisNode1.FullNode.Chain.Tip.HashBlock).Result;
+                Block bestBlock1 = stratisNode1.FullNode.BlockStore().GetBlockAsync(stratisNode1.FullNode.ChainIndexer.Tip.HashBlock).Result;
                 Assert.NotNull(bestBlock1);
 
                 // Get the block coinbase trx.
@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode node = builder.CreateStratisPowNode(this.network).Start();
-                uint256 genesisHash = node.FullNode.Chain.Genesis.HashBlock;
+                uint256 genesisHash = node.FullNode.ChainIndexer.Genesis.HashBlock;
                 Block genesisBlock = node.FullNode.BlockStore().GetBlockAsync(genesisHash).Result;
                 Assert.Equal(genesisHash, genesisBlock.GetHash());
             }

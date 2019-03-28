@@ -315,6 +315,21 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return inputsAmount - outputsAmount;
         }
+
+        /// <summary>
+        /// Finds the HD addresses for the address.
+        /// </summary>
+        /// <remarks>
+        /// Returns an HDAddress.
+        /// </remarks>
+        /// <param name="address">An address.</param>
+        /// <param name="accountFilter">An optional filter for filtering the accounts being returned.</param>
+        /// <returns>HD Address</returns>
+        public HdAddress GetAddress(string address, Func<HdAccount, bool> accountFilter = null)
+        {
+            Guard.NotNull(address, nameof(address));
+            return this.GetAllAddresses(accountFilter).SingleOrDefault(a => a.Address == address);
+        }
     }
 
     /// <summary>
@@ -490,7 +505,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                                             accountExtPubKey.ToString(network));
             }
 
-            string accountHdPath = HdOperations.GetAccountHdPath((int) this.CoinType, accountIndex);
+            string accountHdPath = HdOperations.GetAccountHdPath((int)this.CoinType, accountIndex);
 
             var newAccount = new HdAccount
             {
@@ -734,7 +749,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 var newAddress = new HdAddress
                 {
                     Index = i,
-                    HdPath = HdOperations.CreateHdPath((int) this.GetCoinType(), this.Index, isChange, i),
+                    HdPath = HdOperations.CreateHdPath((int)this.GetCoinType(), this.Index, isChange, i),
                     ScriptPubKey = address.ScriptPubKey,
                     Pubkey = pubkey.ScriptPubKey,
                     Address = address.ToString(),

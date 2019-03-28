@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         protected readonly PoABlockHeaderValidator poaHeaderValidator;
         protected readonly SlotsManager slotsManager;
         protected readonly ConsensusSettings consensusSettings;
-        protected readonly ConcurrentChain chain;
+        protected readonly ChainIndexer ChainIndexer;
         protected readonly FederationManager federationManager;
         protected readonly VotingManager votingManager;
         protected readonly Mock<IPollResultExecutor> resultExecutorMock;
@@ -43,9 +43,9 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             this.signals = new Signals.Signals(loggerFactory, null);
             this.network = network == null ? new TestPoANetwork() : network;
             this.consensusOptions = this.network.ConsensusOptions;
-            this.dBreezeSerializer = new DBreezeSerializer(this.network);
+            this.dBreezeSerializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
 
-            this.chain = new ConcurrentChain(this.network);
+            this.ChainIndexer = new ChainIndexer(this.network);
             IDateTimeProvider timeProvider = new DateTimeProvider();
             this.consensusSettings = new ConsensusSettings(NodeSettings.Default(this.network));
 
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             this.chainState = new ChainState();
 
-            this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, new DateTimeProvider(), this.chain, new NodeDeployments(this.network, this.chain),
+            this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, new DateTimeProvider(), this.ChainIndexer, new NodeDeployments(this.network, this.ChainIndexer),
                 this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object, this.chainState, new InvalidBlockHashStore(timeProvider),
                 new NodeStats(timeProvider), this.slotsManager, this.poaHeaderValidator, this.votingManager, this.federationManager);
 
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         public static FederationManager CreateFederationManager(object caller, Network network, LoggerFactory loggerFactory, ISignals signals)
         {
             string dir = TestBase.CreateTestDir(caller);
-            var keyValueRepo = new KeyValueRepository(dir, new DBreezeSerializer(network));
+            var keyValueRepo = new KeyValueRepository(dir, new DBreezeSerializer(network.Consensus.ConsensusFactory));
 
             var settings = new NodeSettings(network, args: new string[] { $"-datadir={dir}" });
             var federationManager = new FederationManager(settings, network, loggerFactory, keyValueRepo, signals);

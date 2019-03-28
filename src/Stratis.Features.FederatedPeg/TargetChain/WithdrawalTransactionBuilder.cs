@@ -2,8 +2,11 @@
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Wallet;
+using Recipient = Stratis.Features.FederatedPeg.Wallet.Recipient;
+using TransactionBuildContext = Stratis.Features.FederatedPeg.Wallet.TransactionBuildContext;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
 {
@@ -71,7 +74,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
             catch (Exception error)
             {
-                this.logger.LogError("Could not create transaction for deposit {0}: {1}", depositId, error.Message);
+                if (error is WalletException walletException && walletException.Message == FederationWalletTransactionBuilder.NoSpendableTransactionsMessage)
+                {
+                    this.logger.LogWarning("No spendable transactions in the wallet. Should be resolved when a pending transaction is included in a block.");
+                }
+                else
+                {
+                    this.logger.LogError("Could not create transaction for deposit {0}: {1}", depositId, error.Message);
+                }
             }
 
             this.logger.LogTrace("(-)[FAIL]");

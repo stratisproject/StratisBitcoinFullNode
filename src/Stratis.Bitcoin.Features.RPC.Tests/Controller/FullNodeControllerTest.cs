@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 {
     public class FullNodeControllerTest : LogsTestBase
     {
-        private ConcurrentChain chain;
+        private ChainIndexer chain;
         private readonly Mock<INodeLifetime> nodeLifeTime;
         private readonly Mock<IFullNode> fullNode;
         private readonly Mock<IChainState> chainState;
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.nodeSettings.ConfigReader.MergeInto(new TextFileConfiguration("-txindex=1"));
             this.chainState.Setup(c => c.ConsensusTip)
                 .Returns(this.chain.Tip);
-            ChainedHeader block = this.chain.GetBlock(1);
+            ChainedHeader block = this.chain.GetHeader(1);
 
             Transaction transaction = this.CreateTransaction();
             var txId = new uint256(12142124);
@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public async Task GetTaskAsync_Verbose_ChainStateTipNull_DoesNotCalulateConfirmationsAsync()
         {
-            ChainedHeader block = this.chain.GetBlock(1);
+            ChainedHeader block = this.chain.GetHeader(1);
             Transaction transaction = this.CreateTransaction();
             var txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
@@ -237,7 +237,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public async Task GetTaskAsync_Verbose_BlockNotFoundOnChain_ReturnsTransactionVerboseModelWithoutBlockInformationAsync()
         {
-            ChainedHeader block = this.chain.GetBlock(1);
+            ChainedHeader block = this.chain.GetHeader(1);
             Transaction transaction = this.CreateTransaction();
             var txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
@@ -399,7 +399,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         public void GetBlockCount_ReturnsHeightFromConsensusLoopTip()
         {
             this.consensusManager.Setup(c => c.Tip)
-                .Returns(this.chain.GetBlock(2));
+                .Returns(this.chain.GetHeader(2));
 
             var serviceProvider = new Mock<IServiceProvider>();
             serviceProvider.Setup(s => s.GetService(typeof(IConsensusManager)))
@@ -553,7 +553,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void GetBlockHeader_BlockHeaderFound_ReturnsBlockHeaderModel()
         {
-            ChainedHeader block = this.chain.GetBlock(2);
+            ChainedHeader block = this.chain.GetHeader(2);
             string bits = GetBlockHeaderBits(block.Header);
 
             BlockHeaderModel result = (BlockHeaderModel)this.controller.GetBlockHeader(block.HashBlock.ToString(), true);

@@ -259,7 +259,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 foreach (KeyValuePair<byte[], byte[]> item in blockDict)
                 {
                     Block bl = blocks.Single(b => b.GetHash() == new uint256(item.Key));
-                    Assert.Equal(bl.Header.GetHash(), Block.Load(item.Value, this.Network).Header.GetHash());
+                    Assert.Equal(bl.Header.GetHash(), Block.Load(item.Value, this.Network.Consensus.ConsensusFactory).Header.GetHash());
                 }
 
                 foreach (KeyValuePair<byte[], byte[]> item in transDict)
@@ -528,7 +528,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         private IBlockRepository SetupRepository(Network main, string dir)
         {
-            var dBreezeSerializer = new DBreezeSerializer(main);
+            var dBreezeSerializer = new DBreezeSerializer(main.Consensus.ConsensusFactory);
 
             var repository = new BlockRepository(main, dir, this.LoggerFactory.Object, dBreezeSerializer);
             repository.InitializeAsync().GetAwaiter().GetResult();

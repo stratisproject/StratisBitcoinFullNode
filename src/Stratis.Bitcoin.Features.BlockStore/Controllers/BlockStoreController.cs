@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         /// <summary>
         /// The chain.
         /// </summary>
-        private readonly ChainBase chain;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>
         /// Current network for the active controller instance.
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             ILoggerFactory loggerFactory,
             IBlockStore blockStore,
             IChainState chainState,
-            ConcurrentChain chain)
+            ChainIndexer chainIndexer)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             this.network = network;
             this.blockStore = blockStore;
             this.chainState = chainState;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -85,8 +85,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                 }
 
                 return query.ShowTransactionDetails
-                    ? this.Json(new BlockTransactionDetailsModel(block, this.chain.GetBlock(block.GetHash()), this.chain.Tip, this.network))
-                    : this.Json(new BlockModel(block, this.chain.GetBlock(block.GetHash()), this.chain.Tip, this.network));
+                    ? this.Json(new BlockTransactionDetailsModel(block, this.chainIndexer.GetHeader(block.GetHash()), this.chainIndexer.Tip, this.network))
+                    : this.Json(new BlockModel(block, this.chainIndexer.GetHeader(block.GetHash()), this.chainIndexer.Tip, this.network));
             }
             catch (Exception e)
             {

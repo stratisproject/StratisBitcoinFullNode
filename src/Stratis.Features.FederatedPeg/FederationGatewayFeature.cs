@@ -61,7 +61,7 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly IFederationWalletSyncManager walletSyncManager;
 
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly Network network;
 
@@ -85,7 +85,7 @@ namespace Stratis.Features.FederatedPeg
             IFederationWalletManager federationWalletManager,
             IFederationWalletSyncManager walletSyncManager,
             Network network,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             INodeStats nodeStats,
             ICrossChainTransferStore crossChainTransferStore,
             IPartialTransactionRequester partialTransactionRequester,
@@ -97,7 +97,7 @@ namespace Stratis.Features.FederatedPeg
             this.connectionManager = connectionManager;
             this.federationGatewaySettings = federationGatewaySettings;
             this.fullNode = fullNode;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.federationWalletManager = federationWalletManager;
             this.walletSyncManager = walletSyncManager;
             this.network = network;
@@ -166,7 +166,7 @@ namespace Stratis.Features.FederatedPeg
                 return;
 
             int height = this.federationWalletManager.LastBlockHeight();
-            ChainedHeader block = this.chain.GetBlock(height);
+            ChainedHeader block = this.chainIndexer.GetHeader(height);
             uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
             FederationWallet federationWallet = this.federationWalletManager.GetWallet();

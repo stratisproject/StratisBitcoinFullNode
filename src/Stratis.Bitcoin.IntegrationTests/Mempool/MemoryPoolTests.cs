@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
 
-                Block block = stratisNodeSync.FullNode.BlockStore().GetBlockAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
+                Block block = stratisNodeSync.FullNode.BlockStore().GetBlockAsync(stratisNodeSync.FullNode.ChainIndexer.GetHeader(4).HashBlock).Result;
                 Transaction prevTrx = block.Transactions.First();
                 var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
 
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
 
-                Block block = stratisNodeSync.FullNode.BlockStore().GetBlockAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
+                Block block = stratisNodeSync.FullNode.BlockStore().GetBlockAsync(stratisNodeSync.FullNode.ChainIndexer.GetHeader(4).HashBlock).Result;
                 Transaction prevTrx = block.Transactions.First();
                 var dest1 = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
                 var dest2 = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 var trxs = new List<Transaction>();
                 foreach (int index in Enumerable.Range(1, 100))
                 {
-                    Block block = stratisNodeSync.FullNode.BlockStore().GetBlockAsync(stratisNodeSync.FullNode.Chain.GetBlock(index).HashBlock).Result;
+                    Block block = stratisNodeSync.FullNode.BlockStore().GetBlockAsync(stratisNodeSync.FullNode.ChainIndexer.GetHeader(index).HashBlock).Result;
                     Transaction prevTrx = block.Transactions.First();
                     var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
 
@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
                 TestHelper.MineBlocks(stratisNodeSync, 101); // coinbase maturity = 100
 
-                Block block = stratisNodeSync.FullNode.BlockStore().GetBlockAsync(stratisNodeSync.FullNode.Chain.GetBlock(1).HashBlock).Result;
+                Block block = stratisNodeSync.FullNode.BlockStore().GetBlockAsync(stratisNodeSync.FullNode.ChainIndexer.GetHeader(1).HashBlock).Result;
                 Transaction prevTrx = block.Transactions.First();
                 var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
 
@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 var trxs = new List<Transaction>();
                 foreach (int index in Enumerable.Range(1, 5))
                 {
-                    Block block = stratisNodeSync.FullNode.BlockStore().GetBlockAsync(stratisNodeSync.FullNode.Chain.GetBlock(index).HashBlock).Result;
+                    Block block = stratisNodeSync.FullNode.BlockStore().GetBlockAsync(stratisNodeSync.FullNode.ChainIndexer.GetHeader(index).HashBlock).Result;
                     Transaction prevTrx = block.Transactions.First();
                     var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
 
@@ -343,7 +343,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
                 // New mined block contains this transaction from the orphaned block.
                 TestHelper.MineBlocks(node1, 1);
-                Assert.Contains(transaction, node1.FullNode.Chain.Tip.Block.Transactions);
+                Assert.Contains(transaction, node1.FullNode.ChainIndexer.Tip.Block.Transactions);
             }
         }
 
@@ -403,7 +403,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 trx.Inputs.First().Sequence = new Sequence(Sequence.SEQUENCE_LOCKTIME_DISABLE_FLAG);
 
                 // Set the nLockTime to be behind the current tip so that locktime has elapsed.
-                trx.LockTime = new LockTime(stratisSender.FullNode.Chain.Height - 1);
+                trx.LockTime = new LockTime(stratisSender.FullNode.ChainIndexer.Height - 1);
 
                 // Sign trx again after changing the nLockTime.
                 trx = context.TransactionBuilder.SignTransaction(trx);
@@ -441,7 +441,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 trx.Inputs.First().Sequence = new Sequence(Sequence.SEQUENCE_LOCKTIME_DISABLE_FLAG);
 
                 // Set the nLockTime to be ahead of the current tip so that locktime has not elapsed.
-                trx.LockTime = new LockTime(stratisSender.FullNode.Chain.Height + 1);
+                trx.LockTime = new LockTime(stratisSender.FullNode.ChainIndexer.Height + 1);
 
                 // Sign trx again after changing the nLockTime.
                 trx = context.TransactionBuilder.SignTransaction(trx);

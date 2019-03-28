@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -49,7 +50,7 @@ namespace Stratis.Bitcoin.Controllers
         private readonly IConnectionManager connectionManager;
 
         /// <summary>Thread safe access to the best chain of block headers from genesis.</summary>
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>An interface implementation used to retrieve the network's difficulty target.</summary>
         private readonly INetworkDifficulty networkDifficulty;
@@ -70,7 +71,7 @@ namespace Stratis.Bitcoin.Controllers
         private readonly IBlockStore blockStore;
 
         public NodeController(
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             IChainState chainState,
             IConnectionManager connectionManager,
             IDateTimeProvider dateTimeProvider,
@@ -86,14 +87,14 @@ namespace Stratis.Bitcoin.Controllers
         {
             Guard.NotNull(fullNode, nameof(fullNode));
             Guard.NotNull(network, nameof(network));
-            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chainIndexer, nameof(chainIndexer));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(connectionManager, nameof(connectionManager));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
 
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.chainState = chainState;
             this.connectionManager = connectionManager;
             this.dateTimeProvider = dateTimeProvider;
@@ -138,7 +139,11 @@ namespace Stratis.Bitcoin.Controllers
             // Add the list of features that are enabled.
             foreach (IFullNodeFeature feature in this.fullNode.Services.Features)
             {
-                model.EnabledFeatures.Add(feature.GetType().ToString());
+                model.FeaturesData.Add(new FeatureData
+                {
+                    Namespace = feature.GetType().ToString(),
+                    State = feature.State
+                });
             }
 
             // Include BlockStore Height if enabled
@@ -199,7 +204,7 @@ namespace Stratis.Bitcoin.Controllers
                 }
 
                 BlockHeaderModel model = null;
-                BlockHeader blockHeader = this.chain?.GetBlock(uint256.Parse(hash))?.Header;
+                BlockHeader blockHeader = this.chainIndexer?.GetHeader(uint256.Parse(hash))?.Header;
                 if (blockHeader != null)
                 {
                     model = new BlockHeaderModel(blockHeader);
@@ -252,7 +257,7 @@ namespace Stratis.Bitcoin.Controllers
 
                 if (verbose)
                 {
-                    ChainedHeader block = await GetTransactionBlockAsync(txid, this.fullNode, this.chain).ConfigureAwait(false);
+                    ChainedHeader block = await GetTransactionBlockAsync(txid, this.fullNode, this.chainIndexer).ConfigureAwait(false);
                     return this.Json(new TransactionVerboseModel(trx, this.network, block, this.chainState?.ConsensusTip));
                 }
                 else
@@ -382,7 +387,7 @@ namespace Stratis.Bitcoin.Controllers
                     return this.Json(null);
                 }
 
-                return this.Json(new GetTxOutModel(unspentOutputs, vout, this.network, this.chain.Tip));
+                return this.Json(new GetTxOutModel(unspentOutputs, vout, this.network, this.chainIndexer.Tip));
             }
             catch (Exception e)
             {
@@ -475,8 +480,7 @@ namespace Stratis.Bitcoin.Controllers
         /// <param name="chain">The full node's chain. Used to get <see cref="ChainedHeader"/> block.</param>
         /// <returns>A <see cref="ChainedHeader"/> for the given transaction hash. Returns <c>null</c> if fails.</returns>
         /// <exception cref="ArgumentNullException">Thrown if fullnode is not provided.</exception>
-        internal static async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid,
-            IFullNode fullNode, ChainBase chain)
+        internal static async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid, IFullNode fullNode, ChainIndexer chain)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
 
@@ -485,7 +489,7 @@ namespace Stratis.Bitcoin.Controllers
             uint256 blockid = blockStore != null ? await blockStore.GetBlockIdByTransactionIdAsync(trxid).ConfigureAwait(false) : null;
             if (blockid != null)
             {
-                block = chain?.GetBlock(blockid);
+                block = chain?.GetHeader(blockid);
             }
 
             return block;

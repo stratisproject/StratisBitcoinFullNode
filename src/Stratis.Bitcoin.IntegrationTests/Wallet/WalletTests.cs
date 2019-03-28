@@ -10,6 +10,7 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
@@ -125,7 +126,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Wait for block repo for block sync to work.
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
-                Assert.Equal(currentBestHeight, stratisReceiver.FullNode.Chain.Tip.Height);
+                Assert.Equal(currentBestHeight, stratisReceiver.FullNode.ChainIndexer.Tip.Height);
                 TestHelper.WaitLoop(() => transaction1MinedHeight == stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).First().Transaction.BlockHeight);
 
                 // Build Transaction 2.
@@ -133,7 +134,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestHelper.Disconnect(stratisReceiver, stratisReorg);
                 TestHelper.Disconnect(stratisSender, stratisReorg);
 
-                ChainedHeader forkblock = stratisReceiver.FullNode.Chain.Tip;
+                ChainedHeader forkblock = stratisReceiver.FullNode.ChainIndexer.Tip;
 
                 // Send more coins to the wallet
                 sendto = stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, Account));
@@ -154,7 +155,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestHelper.MineBlocks(stratisSender, 1);
                 currentBestHeight = currentBestHeight + 2;
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
-                Assert.Equal(currentBestHeight, stratisReceiver.FullNode.Chain.Tip.Height);
+                Assert.Equal(currentBestHeight, stratisReceiver.FullNode.ChainIndexer.Tip.Height);
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Any(b => b.Transaction.BlockHeight == transaction2MinedHeight));
 
                 // Create a reorg by mining on two different chains.
@@ -170,7 +171,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Wait for the chains to catch up.
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg, true));
-                Assert.Equal(currentBestHeight, stratisReceiver.FullNode.Chain.Tip.Height);
+                Assert.Equal(currentBestHeight, stratisReceiver.FullNode.ChainIndexer.Tip.Height);
 
                 // Ensure wallet reorg completes.
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager().WalletTipHash == stratisReorg.CreateRPCClient().GetBestBlockHash());
@@ -194,7 +195,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
 
-                Assert.Equal(currentBestHeight, stratisReceiver.FullNode.Chain.Tip.Height);
+                Assert.Equal(currentBestHeight, stratisReceiver.FullNode.ChainIndexer.Tip.Height);
                 long newsecondamount = stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
                 Assert.Equal(newamount, newsecondamount);
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Any(b => b.Transaction.BlockHeight == transaction2MinedHeight));
@@ -234,12 +235,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Wait for the chains to catch up.
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
-                Assert.Equal(20, stratisReceiver.FullNode.Chain.Tip.Height);
+                Assert.Equal(20, stratisReceiver.FullNode.ChainIndexer.Tip.Height);
 
                 TestHelper.MineBlocks(stratisSender, 5);
 
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
-                Assert.Equal(25, stratisReceiver.FullNode.Chain.Tip.Height);
+                Assert.Equal(25, stratisReceiver.FullNode.ChainIndexer.Tip.Height);
             }
         }
 
@@ -273,7 +274,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Wait for the chains to catch up.
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
-                Assert.Equal(20, stratisReceiver.FullNode.Chain.Tip.Height);
+                Assert.Equal(20, stratisReceiver.FullNode.ChainIndexer.Tip.Height);
 
                 // Rewind the wallet in the stratisReceiver node.
                 (stratisReceiver.FullNode.NodeService<IWalletSyncManager>() as WalletSyncManager).SyncFromHeight(10);
@@ -281,7 +282,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestHelper.MineBlocks(stratisSender, 5);
 
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
-                Assert.Equal(25, stratisReceiver.FullNode.Chain.Tip.Height);
+                Assert.Equal(25, stratisReceiver.FullNode.ChainIndexer.Tip.Height);
             }
         }
 
@@ -309,7 +310,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestHelper.MineBlocks(stratisNodeSync, 10);
 
                 // Set the tip of best chain some blocks in the past
-                stratisNodeSync.FullNode.Chain.SetTip(stratisNodeSync.FullNode.Chain.GetBlock(stratisNodeSync.FullNode.Chain.Height - 5));
+                stratisNodeSync.FullNode.ChainIndexer.SetTip(stratisNodeSync.FullNode.ChainIndexer.GetHeader(stratisNodeSync.FullNode.ChainIndexer.Height - 5));
 
                 // Stop the node (it will persist the chain with the reset tip)
                 stratisNodeSync.FullNode.Dispose();
@@ -320,7 +321,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 newNodeInstance.Start();
 
                 // Check that store recovered to be the same as the best chain.
-                Assert.Equal(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.WalletManager().WalletTipHash);
+                Assert.Equal(newNodeInstance.FullNode.ChainIndexer.Tip.HashBlock, newNodeInstance.FullNode.WalletManager().WalletTipHash);
             }
         }
 

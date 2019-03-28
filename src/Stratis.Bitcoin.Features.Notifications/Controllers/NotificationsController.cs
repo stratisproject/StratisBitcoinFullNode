@@ -14,17 +14,17 @@ namespace Stratis.Bitcoin.Features.Notifications.Controllers
     {
         private readonly IBlockNotification blockNotification;
 
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NotificationsController"/> class.
         /// </summary>
         /// <param name="blockNotification">The block notification.</param>
-        /// <param name="chain">The chain.</param>
-        public NotificationsController(IBlockNotification blockNotification, ConcurrentChain chain)
+        /// <param name="chainIndexer">The chain.</param>
+        public NotificationsController(IBlockNotification blockNotification, ChainIndexer chainIndexer)
         {
             this.blockNotification = blockNotification;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
         }
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Controllers
             bool isHeight = int.TryParse(from, out int height);
             if (isHeight)
             {
-                ChainedHeader block = this.chain.GetBlock(height);
+                ChainedHeader block = this.chainIndexer.GetHeader(height);
                 if (block == null)
                 {
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Block at height {height} was not found on the blockchain.", string.Empty);
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Controllers
             else
             {
                 uint256 hashToSyncFrom = uint256.Parse(from);
-                ChainedHeader block = this.chain.GetBlock(hashToSyncFrom);
+                ChainedHeader block = this.chainIndexer.GetHeader(hashToSyncFrom);
                 if (block == null)
                 {
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Block with hash {from} was not found on the blockchain.", string.Empty);

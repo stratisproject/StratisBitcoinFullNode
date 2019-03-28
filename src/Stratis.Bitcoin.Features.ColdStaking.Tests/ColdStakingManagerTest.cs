@@ -148,7 +148,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             };
 
             // Generate a spendable transaction
-            (ConcurrentChain chain, uint256 blockhash, Block block) chainInfo = WalletTestsHelpers.CreateChainAndCreateFirstBlockWithPaymentToAddress(wallet.Network, spendingAddress);
+            (ChainIndexer chain, uint256 blockhash, Block block) chainInfo = WalletTestsHelpers.CreateChainAndCreateFirstBlockWithPaymentToAddress(wallet.Network, spendingAddress);
             TransactionData spendingTransaction = WalletTestsHelpers.CreateTransactionDataFromFirstBlock(chainInfo);
             spendingAddress.Transactions.Add(spendingTransaction);
 

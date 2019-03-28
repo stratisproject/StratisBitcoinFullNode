@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
         private readonly IConnectionManager connectionManager;
 
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             IWalletSyncManager walletSyncManager,
             IConnectionManager connectionManager,
             Network network,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             IBroadcasterManager broadcasterManager,
             IDateTimeProvider dateTimeProvider)
         {
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             this.connectionManager = connectionManager;
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.broadcasterManager = broadcasterManager;
             this.dateTimeProvider = dateTimeProvider;
@@ -167,6 +167,64 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "There was a problem creating a wallet.", e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Signs a message and returns the signature.
+        /// </summary>
+        /// <param name="request">The object containing the parameters used to sign a message.</param>
+        /// <returns>A JSON object containing the generated signature.</returns>
+        [Route("signmessage")]
+        [HttpPost]
+        public IActionResult SignMessage([FromBody]SignMessageRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                string signature = this.walletManager.SignMessage(request.Password, request.WalletName, request.ExternalAddress, request.Message);
+                return this.Json(signature);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Verify the signature of a message.
+        /// </summary>
+        /// <param name="request">The object containing the parameters verify a signature.</param>
+        /// <returns>A JSON object containing the result of the verification.</returns>
+        [Route("verifymessage")]
+        [HttpPost]
+        public IActionResult VerifyMessage([FromBody]VerifyRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                bool result = this.walletManager.VerifySignedMessage(request.ExternalAddress, request.Message, request.Signature);
+                return this.Json(result.ToString());
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
 
@@ -328,8 +386,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     CreationTime = wallet.CreationTime,
                     LastBlockSyncedHeight = wallet.AccountsRoot.Single().LastBlockSyncedHeight,
                     ConnectedNodes = this.connectionManager.ConnectedPeers.Count(),
-                    ChainTip = this.chain.Tip.Height,
-                    IsChainSynced = this.chain.IsDownloaded(),
+                    ChainTip = this.chainIndexer.Tip.Height,
+                    IsChainSynced = this.chainIndexer.IsDownloaded(),
                     IsDecrypted = true
                 };
 
@@ -1103,7 +1161,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     // From the list of removed transactions, check which one is the oldest and retrieve the block right before that time.
                     DateTimeOffset earliestDate = result.Min(r => r.creationTime);
-                    ChainedHeader chainedHeader = this.chain.GetBlock(this.chain.GetHeightAtTime(earliestDate.DateTime));
+                    ChainedHeader chainedHeader = this.chainIndexer.GetHeader(this.chainIndexer.GetHeightAtTime(earliestDate.DateTime));
 
                     // Update the wallet and save it to the file system.
                     Wallet wallet = this.walletManager.GetWallet(request.WalletName);
@@ -1171,7 +1229,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
-            ChainedHeader block = this.chain.GetBlock(uint256.Parse(model.Hash));
+            ChainedHeader block = this.chainIndexer.GetHeader(uint256.Parse(model.Hash));
 
             if (block == null)
             {
@@ -1250,7 +1308,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         {
             // After recovery the wallet needs to be synced.
             // We only sync if the syncing process needs to go back.
-            int blockHeightToSyncFrom = this.chain.GetHeightAtTime(walletCreationDate);
+            int blockHeightToSyncFrom = this.chainIndexer.GetHeightAtTime(walletCreationDate);
             int currentSyncingHeight = this.walletSyncManager.WalletTip.Height;
 
             if (blockHeightToSyncFrom < currentSyncingHeight)

@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         private readonly IConnectionManager connectionManager;
 
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly NodeDeployments nodeDeployments;
 
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             IWalletSyncManager walletSyncManager,
             IWalletManager walletManager,
             IConnectionManager connectionManager,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             NodeDeployments nodeDeployments,
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
             this.connectionManager = connectionManager;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.nodeDeployments = nodeDeployments;
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
-            this.connectionManager.Parameters.TemplateBehaviors.Add(new DropNodesBehaviour(this.chain, this.connectionManager, this.loggerFactory));
+            this.connectionManager.Parameters.TemplateBehaviors.Add(new DropNodesBehaviour(this.chainIndexer, this.connectionManager, this.loggerFactory));
             this.walletSettings.IsLightWallet = true;
 
             this.walletManager.Start();
@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             CancellationTokenSource loopToken = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping);
             return this.asyncLoopFactory.Run("LightWalletFeature.CheckDeployments", token =>
             {
-                if (!this.chain.IsDownloaded())
+                if (!this.chainIndexer.IsDownloaded())
                     return Task.CompletedTask;
 
                 // check segwit activation on the chain of headers
@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             if (this.walletManager is WalletManager manager)
             {
                 int height = manager.LastBlockHeight();
-                ChainedHeader block = this.chain.GetBlock(height);
+                ChainedHeader block = this.chainIndexer.GetHeader(height);
                 uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
                 log.AppendLine("LightWallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +

@@ -74,7 +74,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         private readonly Network network;
 
         /// <summary>The chain of headers.</summary>
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -124,7 +124,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public FederationWalletManager(
             ILoggerFactory loggerFactory,
             Network network,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,
             IAsyncLoopFactory asyncLoopFactory,
@@ -136,7 +136,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
-            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chainIndexer, nameof(chainIndexer));
             Guard.NotNull(dataFolder, nameof(dataFolder));
             Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
@@ -150,7 +150,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<FederationWallet>(dataFolder.WalletPath);
@@ -232,7 +232,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             if (this.Wallet == null)
             {
-                int height = this.chain.Tip.Height;
+                int height = this.chainIndexer.Tip.Height;
                 this.logger.LogTrace("(-)[NO_WALLET]:{0}", height);
                 return height;
             }
@@ -249,7 +249,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             if (this.Wallet == null)
             {
-                uint256 hash = this.chain.Tip.HashBlock;
+                uint256 hash = this.chainIndexer.Tip.HashBlock;
                 this.logger.LogTrace("(-)[NO_WALLET]:'{0}'", hash);
                 return hash;
             }
@@ -258,7 +258,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             if (lastBlockSyncedHash == null)
             {
-                lastBlockSyncedHash = this.chain.Tip.HashBlock;
+                lastBlockSyncedHash = this.chainIndexer.Tip.HashBlock;
             }
 
             return lastBlockSyncedHash;
@@ -275,7 +275,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             UnspentOutputReference[] res;
             lock (this.lockObject)
             {
-                res = this.Wallet.GetSpendableTransactions(this.chain.Tip.Height, confirmations).ToArray();
+                res = this.Wallet.GetSpendableTransactions(this.chainIndexer.Tip.Height, confirmations).ToArray();
             }
 
             return res;
@@ -323,7 +323,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 this.logger.LogTrace("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
 
                 // Are we still on the main chain.
-                ChainedHeader current = this.chain.GetBlock(this.WalletTipHash);
+                ChainedHeader current = this.chainIndexer.GetHeader(this.WalletTipHash);
                 if (current == null)
                 {
                     this.logger.LogTrace("(-)[REORG]");
@@ -929,7 +929,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 Network = this.network,
                 CoinType = this.coinType,
                 LastBlockSyncedHeight = 0,
-                LastBlockSyncedHash = this.chain.Genesis.HashBlock,
+                LastBlockSyncedHash = this.chainIndexer.Genesis.HashBlock,
                 MultiSigAddress = new MultiSigAddress
                 {
                     Address = this.federationGatewaySettings.MultiSigAddress.ToString(),

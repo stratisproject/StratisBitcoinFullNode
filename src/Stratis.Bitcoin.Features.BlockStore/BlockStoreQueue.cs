@@ -59,8 +59,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc cref="StoreSettings"/>
         private readonly StoreSettings storeSettings;
 
-        /// <inheritdoc cref="ConcurrentChain"/>
-        private readonly ConcurrentChain chain;
+        /// <inheritdoc cref="ChainIndexer"/>
+        private readonly ChainIndexer chainIndexer;
 
         /// <inheritdoc cref="IBlockRepository"/>
         private readonly IBlockRepository blockRepository;
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private Exception saveAsyncLoopException;
 
         public BlockStoreQueue(
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             IChainState chainState,
             IBlockStoreQueueFlushCondition blockStoreQueueFlushCondition,
             StoreSettings storeSettings,
@@ -99,13 +99,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
             INodeStats nodeStats)
         {
             Guard.NotNull(blockStoreQueueFlushCondition, nameof(blockStoreQueueFlushCondition));
-            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chainIndexer, nameof(chainIndexer));
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(storeSettings, nameof(storeSettings));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
 
             this.blockStoreQueueFlushCondition = blockStoreQueueFlushCondition;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.chainState = chainState;
             this.storeSettings = storeSettings;
             this.blockRepository = blockRepository;
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 await this.blockRepository.ReIndexAsync().ConfigureAwait(false);
             }
 
-            ChainedHeader initializationTip = this.chain.GetBlock(this.blockRepository.TipHashAndHeight.Hash);
+            ChainedHeader initializationTip = this.chainIndexer.GetHeader(this.blockRepository.TipHashAndHeight.Hash);
             this.SetStoreTip(initializationTip);
 
             if (this.storeTip == null)
@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (this.storeSettings.TxIndex != this.blockRepository.TxIndex)
             {
-                if (this.storeTip != this.chain.Genesis)
+                if (this.storeTip != this.chainIndexer.Genesis)
                 {
                     this.logger.LogTrace("(-)[REBUILD_REQUIRED]");
                     throw new BlockStoreException("You need to rebuild the block store database using -reindex to change -txindex");
@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// Sets block store tip to the last block that exists both in the repository and in the <see cref="ConcurrentChain"/>.
+        /// Sets block store tip to the last block that exists both in the repository and in the <see cref="ChainIndexer"/>.
         /// </summary>
         private async Task RecoverStoreTipAsync()
         {
@@ -263,13 +263,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
             uint256 resetBlockHash = this.blockRepository.TipHashAndHeight.Hash;
             Block resetBlock = await this.blockRepository.GetBlockAsync(resetBlockHash).ConfigureAwait(false);
 
-            while (this.chain.GetBlock(resetBlockHash) == null)
+            while (this.chainIndexer.GetHeader(resetBlockHash) == null)
             {
                 blockStoreResetList.Add(resetBlockHash);
 
-                if (resetBlock.Header.HashPrevBlock == this.chain.Genesis.HashBlock)
+                if (resetBlock.Header.HashPrevBlock == this.chainIndexer.Genesis.HashBlock)
                 {
-                    resetBlockHash = this.chain.Genesis.HashBlock;
+                    resetBlockHash = this.chainIndexer.Genesis.HashBlock;
                     break;
                 }
 
@@ -284,15 +284,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 resetBlockHash = resetBlock.GetHash();
             }
 
-            ChainedHeader newTip = this.chain.GetBlock(resetBlockHash);
+            ChainedHeader newTip = this.chainIndexer.GetHeader(resetBlockHash);
 
             if (blockStoreResetList.Count != 0)
                 await this.blockRepository.DeleteAsync(new HashHeightPair(newTip), blockStoreResetList).ConfigureAwait(false);
 
             this.SetStoreTip(newTip);
 
-            //TODO this thing should remove stuff from chain database. Otherwise we are leaving redundant data.
-            this.chain.SetTip(newTip); // we have to set chain store to be same as the store tip.
+            // TODO: this will be replaced with tips manager
+            // TODO this thing should remove stuff from chain database. Otherwise we are leaving redundant data.
+            this.chainIndexer.Initialize(newTip); // we have to set chain store to be same as the store tip.
 
             this.logger.LogWarning("Block store tip recovered to block '{0}'.", newTip);
         }

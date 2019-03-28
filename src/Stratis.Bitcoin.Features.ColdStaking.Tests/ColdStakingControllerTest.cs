@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         private NodeSettings nodeSettings;
         private IDateTimeProvider dateTimeProvider;
         private ILoggerFactory loggerFactory;
-        private ConcurrentChain concurrentChain;
+        private ChainIndexer chainIndexer;
         private NodeDeployments nodeDeployments;
         private ConsensusSettings consensusSettings;
         private MempoolSettings mempoolSettings;
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             {
                 Flags = BlockFlag.BLOCK_PROOF_OF_STAKE,
                 StakeModifierV2 = 0,
-                StakeTime = (this.concurrentChain.Tip.Header.Time + 60) & ~PosConsensusOptions.StakeTimestampMask
+                StakeTime = (this.chainIndexer.Tip.Header.Time + 60) & ~PosConsensusOptions.StakeTimestampMask
             });
         }
 
@@ -117,13 +117,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                     for (int i = 0; i < txIds.Length; i++)
                         result[i] = this.unspentOutputs.TryGetValue(txIds[i], out UnspentOutputs unspent) ? unspent : null;
 
-                    return new FetchCoinsResponse(result, this.concurrentChain.Tip.HashBlock);
+                    return new FetchCoinsResponse(result, this.chainIndexer.Tip.HashBlock);
                 });
 
             // Mock the coinviews "GetTipHashAsync" method.
             this.coinView.Setup(d => d.GetTipHash(It.IsAny<CancellationToken>())).Returns(() =>
                 {
-                    return this.concurrentChain.Tip.HashBlock;
+                    return this.chainIndexer.Tip.HashBlock;
                 });
         }
 
@@ -136,8 +136,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             this.consensusSettings = new ConsensusSettings(this.nodeSettings);
             this.txMemPool = new TxMempool(this.dateTimeProvider, new BlockPolicyEstimator(
                 new MempoolSettings(this.nodeSettings), this.loggerFactory, this.nodeSettings), this.loggerFactory, this.nodeSettings);
-            this.concurrentChain = new ConcurrentChain(this.Network);
-            this.nodeDeployments = new NodeDeployments(this.Network, this.concurrentChain);
+            this.chainIndexer = new ChainIndexer(this.Network);
+            this.nodeDeployments = new NodeDeployments(this.Network, this.chainIndexer);
 
             this.MockCoinView();
             this.MockStakeChain();
@@ -148,13 +148,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             var chainState = new ChainState();
             new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(this.Network.Consensus);
             ConsensusRuleEngine consensusRuleEngine = new PosConsensusRuleEngine(this.Network, this.loggerFactory, this.dateTimeProvider,
-                this.concurrentChain, this.nodeDeployments, this.consensusSettings, checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
+                this.chainIndexer, this.nodeDeployments, this.consensusSettings, checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
                 this.stakeValidator.Object, chainState, new InvalidBlockHashStore(this.dateTimeProvider), new Mock<INodeStats>().Object, new Mock<IRewindDataIndexCache>().Object)
                 .Register();
 
             // Create mempool validator.
             var mempoolLock = new MempoolSchedulerLock();
-            var mempoolValidator = new MempoolValidator(this.txMemPool, mempoolLock, this.dateTimeProvider, this.mempoolSettings, this.concurrentChain,
+            var mempoolValidator = new MempoolValidator(this.txMemPool, mempoolLock, this.dateTimeProvider, this.mempoolSettings, this.chainIndexer,
                 this.coinView.Object, this.loggerFactory, this.nodeSettings, consensusRuleEngine);
 
             // Create mempool manager.
@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             var walletSettings = new WalletSettings(this.nodeSettings);
             this.loggerFactory = this.nodeSettings.LoggerFactory;
 
-            this.coldStakingManager = new ColdStakingManager(this.Network, new ConcurrentChain(this.Network), walletSettings, this.nodeSettings.DataFolder,
+            this.coldStakingManager = new ColdStakingManager(this.Network, new ChainIndexer(this.Network), walletSettings, this.nodeSettings.DataFolder,
                 new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), new ScriptAddressReader(),
                 this.loggerFactory, DateTimeProvider.Default);
 

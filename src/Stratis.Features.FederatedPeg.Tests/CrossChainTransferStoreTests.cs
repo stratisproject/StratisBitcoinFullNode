@@ -114,8 +114,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
-                Assert.Equal(this.chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
-                Assert.Equal(this.chain.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
+                Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
+                Assert.Equal(this.ChainIndexer.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
 
                 BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
                 BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
@@ -211,8 +211,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
-                Assert.Equal(this.chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
-                Assert.Equal(this.chain.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
+                Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
+                Assert.Equal(this.ChainIndexer.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
 
                 BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
                 BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
@@ -321,8 +321,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
-                Assert.Equal(this.chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
-                Assert.Equal(this.chain.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
+                Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
+                Assert.Equal(this.ChainIndexer.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
 
                 BitcoinAddress address = (new Key()).PubKey.Hash.GetAddress(this.network);
 
@@ -355,9 +355,9 @@ namespace Stratis.Features.FederatedPeg.Tests
                 newTest.Init(dataFolder2);
 
                 // Clone chain
-                for (int i = 1; i <= this.chain.Height; i++)
+                for (int i = 1; i <= this.ChainIndexer.Height; i++)
                 {
-                    ChainedHeader header = this.chain.GetBlock(i);
+                    ChainedHeader header = this.ChainIndexer.GetHeader(i);
                     Block block = this.blockDict[header.HashBlock];
                     newTest.AppendBlock(block);
                 }
@@ -367,8 +367,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                     crossChainTransferStore2.Initialize();
                     crossChainTransferStore2.Start();
 
-                    Assert.Equal(newTest.chain.Tip.HashBlock, crossChainTransferStore2.TipHashAndHeight.HashBlock);
-                    Assert.Equal(newTest.chain.Tip.Height, crossChainTransferStore2.TipHashAndHeight.Height);
+                    Assert.Equal(newTest.ChainIndexer.Tip.HashBlock, crossChainTransferStore2.TipHashAndHeight.HashBlock);
+                    Assert.Equal(newTest.ChainIndexer.Tip.Height, crossChainTransferStore2.TipHashAndHeight.Height);
 
                     crossChainTransferStore2.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
 
@@ -419,8 +419,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
-                Assert.Equal(this.chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
-                Assert.Equal(this.chain.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
+                Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
+                Assert.Equal(this.ChainIndexer.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
 
                 BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
                 BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);

@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        [Route("getfedmembers")]
+        [Route("fedmembers")]
         [HttpGet]
         public IActionResult GetFederationMembers()
         {
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        [Route("getpendingpolls")]
+        [Route("pendingpolls")]
         [HttpGet]
         public IActionResult GetPendingPolls()
         {
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        [Route("getfinishedpolls")]
+        [Route("finishedpolls")]
         [HttpGet]
         public IActionResult GetFinishedPolls()
         {
@@ -84,14 +84,14 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        [Route("schedulevote_addfedmember")]
+        [Route("schedulevote-addfedmember")]
         [HttpPost]
         public IActionResult VoteAddFedMember([FromBody]HexPubKeyModel request)
         {
             return this.VoteAddKickFedMember(request, true);
         }
 
-        [Route("schedulevote_kickfedmember")]
+        [Route("schedulevote-kickfedmember")]
         [HttpPost]
         public IActionResult VoteKickFedMember([FromBody]HexPubKeyModel request)
         {
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        [Route("getwhitelistedhashes")]
+        [Route("whitelistedhashes")]
         [HttpGet]
         public IActionResult GetWhitelistedHashes()
         {
@@ -144,14 +144,14 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        [Route("schedulevote_whitelisthash")]
+        [Route("schedulevote-whitelisthash")]
         [HttpPost]
         public IActionResult VoteWhitelistHash([FromBody]HashModel request)
         {
             return this.VoteWhitelistRemoveHashMember(request, true);
         }
 
-        [Route("schedulevote_removehash")]
+        [Route("schedulevote-removehash")]
         [HttpPost]
         public IActionResult VoteRemoveHash([FromBody]HashModel request)
         {
@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        [Route("getscheduledvotes")]
+        [Route("scheduledvotes")]
         [HttpGet]
         public IActionResult GetScheduledVotes()
         {

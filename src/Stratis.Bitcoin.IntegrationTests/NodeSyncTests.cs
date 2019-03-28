@@ -143,12 +143,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.MineBlocks(reorg, 12);
 
                 // Make sure the nodes are actually on different chains.
-                Assert.NotEqual(miner.FullNode.Chain.GetBlock(2).HashBlock, reorg.FullNode.Chain.GetBlock(2).HashBlock);
+                Assert.NotEqual(miner.FullNode.ChainIndexer.GetHeader(2).HashBlock, reorg.FullNode.ChainIndexer.GetHeader(2).HashBlock);
 
                 TestHelper.ConnectAndSync(miner, syncer);
 
                 // The hash before the reorg node is connected.
-                uint256 hashBeforeReorg = miner.FullNode.Chain.Tip.HashBlock;
+                uint256 hashBeforeReorg = miner.FullNode.ChainIndexer.Tip.HashBlock;
 
                 // Connect the reorg chain
                 TestHelper.ConnectNoCheck(miner, reorg);
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(reorg, syncer) == false);
 
                 // Check that a reorg did not happen.
-                Assert.Equal(hashBeforeReorg, syncer.FullNode.Chain.Tip.HashBlock);
+                Assert.Equal(hashBeforeReorg, syncer.FullNode.ChainIndexer.Tip.HashBlock);
             }
         }
 
@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     TestHelper.WaitForNodeToSync(nodes.ToArray());
                 });
 
-                Assert.Equal(minerNode.FullNode.Chain.Height, nodes.Count);
+                Assert.Equal(minerNode.FullNode.ChainIndexer.Height, nodes.Count);
 
                 // Random node on network generates a block.
                 TestHelper.MineBlocks(firstNode, 1);
