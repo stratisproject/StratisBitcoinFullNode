@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             if (this.walletManager is WalletManager walletManager)
             {
                 int height = walletManager.LastBlockHeight();
-                ChainedHeader block = this.chainIndexer.GetBlock(height);
+                ChainedHeader block = this.chainIndexer.GetHeader(height);
                 uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
                 log.AppendLine("Wallet[SC].Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +

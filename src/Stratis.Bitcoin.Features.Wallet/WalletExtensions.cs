@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             while (!found)
             {
                 int check = lowerLimit + (upperLimit - lowerLimit) / 2;
-                DateTime blockTimeAtCheck = chainIndexer.GetBlock(check).Header.BlockTime.DateTime;
+                DateTime blockTimeAtCheck = chainIndexer.GetHeader(check).Header.BlockTime.DateTime;
 
                 if (blockTimeAtCheck > date)
                 {
