@@ -167,7 +167,7 @@ namespace NBitcoin.Tests
             Assert.Equal(3, network.DNSSeeds.Count);
             Assert.Empty(network.SeedNodes);
 
-            Assert.Equal("BitcoinTestNet", network.Name);
+            Assert.Equal("BitcoinTest", network.Name);
             Assert.Equal(BitcoinMain.BitcoinRootFolderName, network.RootFolderName);
             Assert.Equal(BitcoinMain.BitcoinDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0x0709110B.ToString(), network.Magic.ToString());
