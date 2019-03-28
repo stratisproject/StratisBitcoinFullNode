@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Utilities
                             }
                             else
                             {
-                                this.logger.LogError(ex, "OnEnqueueAsync failed");
+                                this.logger.LogError(ex, "Unhandled exception in OnEnqueueAsync: stopping current AsyncQueue.");
                             }
 
                             if (!exceptionHandled)
