@@ -310,7 +310,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestHelper.MineBlocks(stratisNodeSync, 10);
 
                 // Set the tip of best chain some blocks in the past
-                stratisNodeSync.FullNode.ChainIndexer.SetTip(stratisNodeSync.FullNode.ChainIndexer.GetBlock(stratisNodeSync.FullNode.ChainIndexer.Height - 5));
+                stratisNodeSync.FullNode.ChainIndexer.SetTip(stratisNodeSync.FullNode.ChainIndexer.GetHeader(stratisNodeSync.FullNode.ChainIndexer.Height - 5));
 
                 // Stop the node (it will persist the chain with the reset tip)
                 stratisNodeSync.FullNode.Dispose();

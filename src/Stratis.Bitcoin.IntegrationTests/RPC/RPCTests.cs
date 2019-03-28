@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         public void CanGetBlockHeaderFromRPC()
         {
             uint256 hash = this.rpcTestFixture.RpcClient.GetBlockHash(0);
-            BlockHeader expectedHeader = this.rpcTestFixture.Node.FullNode.ChainIndexer?.GetBlock(hash)?.Header;
+            BlockHeader expectedHeader = this.rpcTestFixture.Node.FullNode.ChainIndexer?.GetHeader(hash)?.Header;
             BlockHeader actualHeader = this.rpcTestFixture.RpcClient.GetBlockHeader(0);
 
             // Assert block header fields match.

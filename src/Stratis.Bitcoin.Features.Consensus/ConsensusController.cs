@@ -111,10 +111,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogDebug("GetBlockHash {0}", height);
 
             uint256 bestBlockHash = this.ConsensusManager.Tip?.HashBlock;
-            ChainedHeader bestBlock = bestBlockHash == null ? null : this.ChainIndexer.GetBlock(bestBlockHash);
+            ChainedHeader bestBlock = bestBlockHash == null ? null : this.ChainIndexer.GetHeader(bestBlockHash);
             if (bestBlock == null)
                 return null;
-            ChainedHeader block = this.ChainIndexer.GetBlock(height);
+            ChainedHeader block = this.ChainIndexer.GetHeader(height);
             return block == null || block.Height > bestBlock.Height ? null : block.HashBlock;
         }
 

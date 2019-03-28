@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             // before the first had been spent.  Since those coinbases are sufficiently buried its no longer possible to create further
             // duplicate transactions descending from the known pairs either.
             // If we're on the known chain at height greater than where BIP34 activated, we can save the db accesses needed for the BIP30 check.
-            ChainedHeader bip34HeightChainedHeader = chainIndexer.GetBlock(chainparams.BuriedDeployments[BuriedDeployments.BIP34]);
+            ChainedHeader bip34HeightChainedHeader = chainIndexer.GetHeader(chainparams.BuriedDeployments[BuriedDeployments.BIP34]);
 
             // Only continue to enforce if we're below BIP34 activation height or the block hash at that height doesn't correspond.
             this.EnforceBIP30 = this.EnforceBIP30 && ((bip34HeightChainedHeader == null) || !(bip34HeightChainedHeader.HashBlock == chainparams.BIP34Hash));
