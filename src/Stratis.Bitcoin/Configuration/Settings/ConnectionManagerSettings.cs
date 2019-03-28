@@ -104,15 +104,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
             {
                 this.Bind.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), this.Port), false));
             }
-            else
-            {
-                var ports = this.Bind.Select(l => l.Endpoint.Port).ToList();
-
-                if (ports.Count != ports.Distinct().Count())
-                {
-                    throw new ConfigurationException("Invalid attempt to bind the same port twice");
-                }
-            }
 
             try
             {
@@ -188,6 +179,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#connect=<ip:port>");
             builder.AppendLine($"#Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
             builder.AppendLine($"#addnode=<ip:port>");
+            builder.AppendLine($"#Bind to given address. Use [host]:port notation for IPv6. Can be specified multiple times.");
+            builder.AppendLine($"#bind=<ip:port>");
             builder.AppendLine($"#Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
             builder.AppendLine($"#whitebind=<ip:port>");
             builder.AppendLine($"#Whitelist peers having the given IP:port address, both inbound or outbound. Can be specified multiple times.");
@@ -200,6 +193,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#maxoutboundconnections=<number>");
             builder.AppendLine($"#The maximum number of inbound connections. Default {network.DefaultMaxInboundConnections}.");
             builder.AppendLine($"#maxinboundconnections=<number>");
+            builder.AppendLine($"#The number of connections to be reached before a 1 second connection interval (initally 100ms). Default 1.");
+            builder.AppendLine($"#initialconnectiontarget=<number>");
             builder.AppendLine($"#Sync with peers. Default 1.");
             builder.AppendLine($"#synctime=1");
             builder.AppendLine($"#An optional prefix for the node's user agent shared with peers. Truncated if over { MaximumAgentPrefixLength } characters.");
@@ -226,12 +221,14 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"-listen=<0 or 1>          Accept connections from the outside (defaulted to 1 unless -connect args specified).");
             builder.AppendLine($"-connect=<ip:port>        Specified node to connect to. Can be specified multiple times.");
             builder.AppendLine($"-addnode=<ip:port>        Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
+            builder.AppendLine($"-bind=<ip:port>           Bind to given address. Use [host]:port notation for IPv6. Can be specified multiple times.");
             builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
             builder.AppendLine($"-whitelist=<ip:port>      Whitelist peers having the given IP:port address, both inbound or outbound. Can be specified multiple times.");
             builder.AppendLine($"-externalip=<ip>          Specify your own public address.");
             builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
             builder.AppendLine($"-maxoutboundconnections=<number> The maximum number of outbound connections. Default {network.DefaultMaxOutboundConnections}.");
-            builder.AppendLine($"-maxinboundconnections=<number>  The maximum number of inbound connections. Default {network.DefaultMaxInboundConnections}.");
+            builder.AppendLine($"-maxinboundconnections=<number> The maximum number of inbound connections. Default {network.DefaultMaxInboundConnections}.");
+            builder.AppendLine($"-initialconnectiontarget=<number> The number of connections to be reached before a 1 second connection interval (initally 100ms). Default 1.");
             builder.AppendLine($"-synctime=<0 or 1>        Sync with peers. Default 1.");
             builder.AppendLine($"-agentprefix=<string>     An optional prefix for the node's user agent that will be shared with peers in the version handshake.");
             builder.AppendLine($"-blocksonly=<0 or 1>      Enable bandwidth saving setting to send and received confirmed blocks only. Defaults to { DefaultBlocksOnly }.");

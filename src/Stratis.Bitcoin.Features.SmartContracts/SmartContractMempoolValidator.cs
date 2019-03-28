@@ -37,12 +37,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly IStateRepositoryRoot stateRepositoryRoot;
 
         public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock,
-            IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain,
+            IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ChainIndexer chainIndexer,
             ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings,
             IConsensusRuleEngine consensusRules, ICallDataSerializer callDataSerializer, Network network,
             IStateRepositoryRoot stateRepositoryRoot,
             IEnumerable<IContractTransactionFullValidationRule> txFullValidationRules)
-            : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings, consensusRules)
+            : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chainIndexer, coinView, loggerFactory, nodeSettings, consensusRules)
         {
             // Dirty hack, but due to AllowedScriptTypeRule we don't need to check for standard scripts on any network, even live.
             // TODO: Remove ASAP. Ensure RequireStandard isn't used on SC mainnets, or the StandardScripts check is modular.

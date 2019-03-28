@@ -20,11 +20,14 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        private readonly IPeerBanning peerBanning;
+
         public ConnectionManagerController(IConnectionManager connectionManager,
-            ILoggerFactory loggerFactory) : base(connectionManager: connectionManager)
+            ILoggerFactory loggerFactory, IPeerBanning peerBanning) : base(connectionManager: connectionManager)
         {
             Guard.NotNull(this.ConnectionManager, nameof(this.ConnectionManager));
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.peerBanning = peerBanning;
         }
 
         /// <summary>
@@ -43,6 +46,9 @@ namespace Stratis.Bitcoin.Connection
             switch (command)
             {
                 case "add":
+                    if (this.peerBanning.IsBanned(endpoint))
+                        throw new InvalidOperationException("Can't perform 'add' for a banned peer.");
+
                     this.ConnectionManager.AddNodeAddress(endpoint);
                     break;
 
@@ -51,6 +57,9 @@ namespace Stratis.Bitcoin.Connection
                     break;
 
                 case "onetry":
+                    if (this.peerBanning.IsBanned(endpoint))
+                        throw new InvalidOperationException("Can't connect to a banned peer.");
+
                     this.ConnectionManager.ConnectAsync(endpoint).GetAwaiter().GetResult();
                     break;
 

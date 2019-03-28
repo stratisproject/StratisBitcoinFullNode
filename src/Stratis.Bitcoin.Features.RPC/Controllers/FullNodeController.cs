@@ -42,6 +42,9 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>An interface implementation for the blockstore.</summary>
         private readonly IBlockStore blockStore;
 
+        /// <summary>A interface implementation for the initial block download state.</summary>
+        private readonly IInitialBlockDownloadState ibdState;
+
         public FullNodeController(
             ILoggerFactory loggerFactory,
             IPooledTransaction pooledTransaction = null,
@@ -51,16 +54,17 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
             Network network = null,
-            ConcurrentChain chain = null,
+            ChainIndexer chainIndexer = null,
             IChainState chainState = null,
             Connection.IConnectionManager connectionManager = null,
             IConsensusManager consensusManager = null,
-            IBlockStore blockStore = null)
+            IBlockStore blockStore = null,
+            IInitialBlockDownloadState ibdState = null)
             : base(
                   fullNode: fullNode,
                   nodeSettings: nodeSettings,
                   network: network,
-                  chain: chain,
+                  chainIndexer: chainIndexer,
                   chainState: chainState,
                   connectionManager: connectionManager,
                   consensusManager: consensusManager)
@@ -71,6 +75,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             this.getUnspentTransaction = getUnspentTransaction;
             this.networkDifficulty = networkDifficulty;
             this.blockStore = blockStore;
+            this.ibdState = ibdState;
         }
 
         /// <summary>
@@ -211,7 +216,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (unspentOutputs == null)
                 return null;
 
-            return new GetTxOutModel(unspentOutputs, vout, this.Network, this.Chain.Tip);
+            return new GetTxOutModel(unspentOutputs, vout, this.Network, this.ChainIndexer.Tip);
         }
 
         /// <summary>
@@ -264,31 +269,33 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <param name="hash">Hash of the block.</param>
         /// <param name="isJsonFormat">Indicates whether to provide data in Json or binary format.</param>
         /// <returns>The block header rpc format.</returns>
-        /// <exception cref="NotImplementedException">Thrown if isJsonFormat = false</exception>
         /// <remarks>The binary format is not supported with RPC.</remarks>
         [ActionName("getblockheader")]
         [ActionDescription("Gets the block header of the block identified by the hash.")]
-        public BlockHeaderModel GetBlockHeader(string hash, bool isJsonFormat = true)
+        public object GetBlockHeader(string hash, bool isJsonFormat = true)
         {
             Guard.NotNull(hash, nameof(hash));
 
             this.logger.LogDebug("RPC GetBlockHeader {0}", hash);
 
-            if (!isJsonFormat)
-            {
-                this.logger.LogError("Binary serialization is not supported for RPC '{0}'.", nameof(this.GetBlockHeader));
-                throw new NotImplementedException();
-            }
-
             BlockHeaderModel model = null;
-            if (this.Chain != null)
+            if (this.ChainIndexer != null)
             {
-                BlockHeader blockHeader = this.Chain.GetBlock(uint256.Parse(hash))?.Header;
+                BlockHeader blockHeader = this.ChainIndexer.GetBlock(uint256.Parse(hash))?.Header;
                 if (blockHeader != null)
-                    model = new BlockHeaderModel(blockHeader);
+                {
+                    if (isJsonFormat)
+                    {
+                        return new BlockHeaderModel(blockHeader);
+                    }
+                    else
+                    {
+                        return new HexModel(blockHeader.ToHex(this.Network));
+                    }
+                }
             }
 
-            return model;
+            return null;
         }
 
         /// <summary>
@@ -357,9 +364,9 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             Block block = this.blockStore != null ? await this.blockStore.GetBlockAsync(uint256.Parse(blockHash)).ConfigureAwait(false) : null;
 
             if (verbosity == 0)
-                return block?.ToHex(this.Network);
+                return new HexModel(block?.ToHex(this.Network));
 
-            return new BlockModel(block, this.Chain.GetBlock(block.GetHash()), this.Chain.Tip, this.Network, verbosity);
+            return new BlockModel(block, this.ChainIndexer.GetBlock(block.GetHash()), this.ChainIndexer.Tip, this.Network, verbosity);
         }
 
         [ActionName("getnetworkinfo")]
@@ -396,12 +403,12 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 Chain = this.Network?.Name,
                 Blocks = (uint)(this.ChainState?.ConsensusTip?.Height ?? 0),
-                Headers = (uint)(this.Chain?.Height ?? 0),
+                Headers = (uint)(this.ChainIndexer?.Height ?? 0),
                 BestBlockHash = this.ChainState?.ConsensusTip?.HashBlock,
                 Difficulty = this.GetNetworkDifficulty()?.Difficulty ?? 0.0,
                 MedianTime = this.ChainState?.ConsensusTip?.GetMedianTimePast().ToUnixTimeSeconds() ?? 0,
                 VerificationProgress = 0.0,
-                IsInitialBlockDownload = !this.ChainState?.IsAtBestChainTip ?? true,
+                IsInitialBlockDownload = this.ibdState?.IsInitialBlockDownload() ?? true,
                 Chainwork = this.ChainState?.ConsensusTip?.ChainWork,
                 IsPruned = false
             };
@@ -420,7 +427,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             uint256 blockid = this.blockStore != null ? await this.blockStore.GetBlockIdByTransactionIdAsync(trxid) : null;
             if (blockid != null)
-                block = this.Chain?.GetBlock(blockid);
+                block = this.ChainIndexer?.GetBlock(blockid);
 
             return block;
         }

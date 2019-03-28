@@ -31,14 +31,14 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly CoinviewHelper coinviewHelper;
 
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly ILogger logger;
 
-        public CoinviewPrefetcher(ICoinView coinview, ConcurrentChain chain, ILoggerFactory loggerFactory)
+        public CoinviewPrefetcher(ICoinView coinview, ChainIndexer chainIndexer, ILoggerFactory loggerFactory)
         {
             this.coinview = coinview;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
 
             this.headersQueue = new AsyncQueue<ChainedHeader>(this.OnHeaderEnqueuedAsync);
             this.coinviewHelper = new CoinviewHelper();
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return;
             }
 
-            bool farFromTip = currentHeader.Height > this.chain.Tip.Height + (Lookahead / 2);
+            bool farFromTip = currentHeader.Height > this.chainIndexer.Tip.Height + (Lookahead / 2);
 
             if (!farFromTip)
             {

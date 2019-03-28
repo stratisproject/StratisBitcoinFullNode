@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public async void ForEachAsync_TestDegreeOfParallelism_Async()
+        public async Task ForEachAsync_TestDegreeOfParallelism_Async()
         {
             int sum = 0;
 
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public async void ForEachAsync_TestDegreeOfParallelism2_Async()
+        public async Task ForEachAsync_TestDegreeOfParallelism2_Async()
         {
             int sum = 0;
 
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public async void ForEachAsync_DoesNothingWithEmptyCollection_Async()
+        public async Task ForEachAsync_DoesNothingWithEmptyCollection_Async()
         {
             var emptyList = new List<int>();
 
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public async void ForEachAsync_CanBeCancelled_Async()
+        public async Task ForEachAsync_CanBeCancelled_Async()
         {
             var tokenSource = new CancellationTokenSource();
 
