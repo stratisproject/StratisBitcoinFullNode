@@ -691,7 +691,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (block == null)
                 {
                     this.logger.LogTrace("Block '{0}' wasn't cached. Loading it from the database.", current.HashBlock);
-                    block = await this.blockStore.GetBlock(current.HashBlock).ConfigureAwait(false);
+                    block = this.blockStore.GetBlock(current.HashBlock);
 
                     if (block == null)
                     {
@@ -1212,7 +1212,7 @@ namespace Stratis.Bitcoin.Consensus
                 return chainedHeaderBlock;
             }
 
-            Block block = await this.blockStore.GetBlock(blockHash).ConfigureAwait(false);
+            Block block = this.blockStore.GetBlock(blockHash);
             if (block != null)
             {
                 var newBlockPair = new ChainedHeaderBlock(block, chainedHeaderBlock.ChainedHeader);

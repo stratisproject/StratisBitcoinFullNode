@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var blockStore = new BlockStoreQueue(testChainContext.ChainIndexer, testChainContext.ChainState, blockStoreFlushCondition, new Mock<StoreSettings>().Object, new Mock<NodeSettings>().Object,
                 blockRepository, testChainContext.LoggerFactory, new Mock<INodeStats>().Object);
 
-            await blockStore.Initialize();
+            blockStore.Initialize();
 
             testChainContext.Consensus = ConsensusManagerHelper.CreateConsensusManager(network, dataDir);
 
