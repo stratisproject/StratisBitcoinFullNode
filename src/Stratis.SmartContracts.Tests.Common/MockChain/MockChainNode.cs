@@ -311,7 +311,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
         /// </summary
         public NBitcoin.Block GetLastBlock()
         {
-            return this.blockStore.GetBlockAsync(this.CoreNode.FullNode.ChainIndexer.Tip.HashBlock).Result;
+            return this.blockStore.GetBlock(this.CoreNode.FullNode.ChainIndexer.Tip.HashBlock);
         }
 
         /// <summary>

@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Pruning
 
             ChainedHeader prunedTip = chainedHeadersToDelete.First();
 
-            await this.blockRepository.DeleteBlocksAsync(chainedHeadersToDelete.Select(c => c.HashBlock).ToList());
+            this.blockRepository.DeleteBlocks(chainedHeadersToDelete.Select(c => c.HashBlock).ToList());
             this.prunedBlockRepository.UpdatePrunedTip(prunedTip);
 
             this.PrunedUpToHeaderTip = prunedTip;

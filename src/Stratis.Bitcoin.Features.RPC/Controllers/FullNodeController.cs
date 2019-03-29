@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 // Look for the transaction in the mempool, and if not found, look in the indexed transactions.
                 trx = (this.pooledTransaction == null ? null : await this.pooledTransaction.GetTransaction(trxid)) ??
-                      await this.blockStore.GetTransactionByIdAsync(trxid).ConfigureAwait(false);
+                      this.blockStore.GetTransactionById(trxid);
 
                 if (trx == null)
                 {
@@ -361,7 +361,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionDescription("Returns the block in hex, given a block hash.")]
         public async Task<object> GetBlockAsync(string blockHash, int verbosity = 0)
         {
-            Block block = this.blockStore != null ? await this.blockStore.GetBlockAsync(uint256.Parse(blockHash)).ConfigureAwait(false) : null;
+            Block block = this.blockStore != null ? this.blockStore.GetBlock(uint256.Parse(blockHash)) : null;
 
             if (verbosity == 0)
                 return new HexModel(block?.ToHex(this.Network));
@@ -425,7 +425,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             ChainedHeader block = null;
 
-            uint256 blockid = this.blockStore != null ? await this.blockStore.GetBlockIdByTransactionIdAsync(trxid) : null;
+            uint256 blockid = this.blockStore != null ? this.blockStore.GetBlockIdByTransactionId(trxid) : null;
             if (blockid != null)
                 block = this.ChainIndexer?.GetHeader(blockid);
 
