@@ -615,14 +615,14 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var network = new StratisConsensusOptionsOverrideTest();
+                var network = new StratisRegTest();
 
                 // MinerA requires a physical wallet to stake with.
-                var minerA = builder.CreateStratisPosNode(network, "minerA").OverrideDateTimeProvider().WithWallet().Start();
-                var minerB = builder.CreateStratisPosNode(network, "minerB").OverrideDateTimeProvider().Start();
-                var minerC = builder.CreateStratisPosNode(network, "minerC").OverrideDateTimeProvider().Start();
+                var minerA = builder.CreateStratisPosNode(network, "minerA").WithWallet().Start();
+                var minerB = builder.CreateStratisPosNode(network, "minerB").Start();
+                var minerC = builder.CreateStratisPosNode(network, "minerC").Start();
 
-                // MinerA mines to height 55.
+                // MinerA mines to height 5.
                 TestHelper.MineBlocks(minerA, 5);
 
                 // Connect and sync minerA and minerB.
@@ -630,9 +630,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 TestHelper.Disconnect(minerA, minerB);
 
+                // Mark block 5 as invalid by changing the signature of the block in memory.
                 (minerB.FullNode.ChainIndexer.GetBlock(5).Block as PosBlock).BlockSignature.Signature = new byte[] { 0 };
 
-                // Connect and sync minerA and minerB.
+                // Connect and sync minerB and minerC.
                 TestHelper.ConnectNoCheck(minerB, minerC);
 
                 // TODO: when signaling failed blocks is enabled we should check this here.
