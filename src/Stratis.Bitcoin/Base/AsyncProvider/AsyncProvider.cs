@@ -6,12 +6,12 @@ using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Base.BackgroundWork
+namespace Stratis.Bitcoin.Base.AsyncProvider
 {
     /// <summary>
-    /// Provides functionality for creating and tracking operations that happens in background.
+    /// Provides functionality for creating and tracking asynchronous operations that happens in background.
     /// </summary>
-    public partial class BackgroundWorkProvider : IBackgroundWorkProvider
+    public partial class AsyncProvider : IBackgroundWorkProvider
     {
         private const int DefaultLoopRepeatInterval = 1000;
 
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Base.BackgroundWork
         private readonly INodeLifetime nodeLifetime;
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
-        public BackgroundWorkProvider(ILoggerFactory loggerFactory, ISignals signals, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
+        public AsyncProvider(ILoggerFactory loggerFactory, ISignals signals, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
         {
             this.lockAsyncDelegates = new object();
             this.lockAsyncLoops = new object();
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Base.BackgroundWork
             this.asyncDelegateWorkers = new Dictionary<IAsyncDelegateWorker, AsyncTaskInfo>();
 
             this.loggerFactory = Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            this.logger = this.loggerFactory.CreateLogger(nameof(BackgroundWorkProvider));
+            this.logger = this.loggerFactory.CreateLogger(nameof(AsyncProvider));
 
             this.signals = Guard.NotNull(signals, nameof(signals));
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));

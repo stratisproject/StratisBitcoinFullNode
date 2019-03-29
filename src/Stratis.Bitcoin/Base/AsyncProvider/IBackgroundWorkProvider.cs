@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Base.BackgroundWork
+namespace Stratis.Bitcoin.Base.AsyncProvider
 {
     public interface IBackgroundWorkProvider
     {

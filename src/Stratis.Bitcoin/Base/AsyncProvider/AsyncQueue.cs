@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Stratis.Bitcoin.Base.BackgroundWork;
+using Stratis.Bitcoin.Base.AsyncProvider;
 
 namespace Stratis.Bitcoin.Utilities
 {
