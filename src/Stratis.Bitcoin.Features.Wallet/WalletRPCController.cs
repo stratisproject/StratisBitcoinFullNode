@@ -358,7 +358,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 foreach (var address in addressGrouping)
                 {
-                    var balance = this.walletManager.GetAddressBalance(address.ToString());
+                    var balance = this.walletManager.GetAddressBalance(address);
                     var addressGroupingModel = new AddressGroupingModel()
                     {
                         Address = address,
