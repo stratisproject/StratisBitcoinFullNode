@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
@@ -63,7 +64,7 @@ namespace Stratis.CirrusPegD
             };
 
             IFullNode node = new FullNodeBuilder()
-                .AddCommonFeatures(nodeSettings)
+                .AddCommonFeatures(nodeSettings, FederatedPegNetwork.NetworksSelector)
                 .UsePosConsensus()
                 .UseWallet()
                 .AddPowPosMining()
@@ -80,7 +81,7 @@ namespace Stratis.CirrusPegD
             };
 
             IFullNode node = new FullNodeBuilder()
-                .AddCommonFeatures(nodeSettings)
+                .AddCommonFeatures(nodeSettings, Networks.Stratis)
                 .AddSmartContracts(options =>
                 {
                     options.UseReflectionExecutor();
@@ -95,12 +96,15 @@ namespace Stratis.CirrusPegD
 
     internal static class CommonFeaturesExtension
     {
-        internal static IFullNodeBuilder AddCommonFeatures(this IFullNodeBuilder fullNodeBuilder, NodeSettings nodeSettings)
+        internal static IFullNodeBuilder AddCommonFeatures(this IFullNodeBuilder fullNodeBuilder, NodeSettings nodeSettings, NetworksSelector counterChainNetworksSelector)
         {
             return fullNodeBuilder
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
-                .AddFederationGateway()
+                .AddFederationGateway(o =>
+                {
+                    o.SetCounterChainNetworkSelector(counterChainNetworksSelector);
+                })
                 .UseTransactionNotification()
                 .UseBlockNotification()
                 .UseApi()

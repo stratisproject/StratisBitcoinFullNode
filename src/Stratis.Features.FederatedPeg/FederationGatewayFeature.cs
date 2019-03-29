@@ -274,7 +274,7 @@ namespace Stratis.Features.FederatedPeg
     /// </summary>
     public static class FullNodeBuilderSidechainRuntimeFeatureExtension
     {
-        public static IFullNodeBuilder AddFederationGateway(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder AddFederationGateway(this IFullNodeBuilder fullNodeBuilder, Action<FederatedPegOptions> options = null)
         {
             LoggingConfiguration.RegisterFeatureNamespace<FederationGatewayFeature>(
                 FederationGatewayFeature.FederationGatewayFeatureNamespace);
@@ -306,6 +306,9 @@ namespace Stratis.Features.FederatedPeg
                         // Set up events.
                         services.AddSingleton<TransactionObserver>();
                         services.AddSingleton<BlockObserver>();
+
+                        // After setting up, invoke any additional options which can replace services as required.
+                        options?.Invoke(new FederatedPegOptions(services, fullNodeBuilder.NodeSettings));
                     });
             });
             return fullNodeBuilder;

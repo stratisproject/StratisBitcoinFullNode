@@ -21,10 +21,13 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
     /// </summary>
     public class MainChainFederationNodeRunner : NodeRunner
     {
-        public MainChainFederationNodeRunner(string dataDir, string agent, Network network)
+        private Network counterChainNetwork;
+
+        public MainChainFederationNodeRunner(string dataDir, string agent, Network network, Network counterChainNetwork)
             : base(dataDir, agent)
         {
             this.Network = network;
+            this.counterChainNetwork = counterChainNetwork;
         }
 
         public override void BuildNode()
@@ -34,7 +37,10 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)
                 .UseBlockStore()
-                .AddFederationGateway()
+                .AddFederationGateway(o =>
+                {
+                    o.SetCounterChainNetwork(this.counterChainNetwork);
+                })
                 .UseTransactionNotification()
                 .UseBlockNotification()
                 .UseApi()

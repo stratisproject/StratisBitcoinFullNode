@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Features.FederatedPeg.NetworkHelpers;
 
 namespace Stratis.Features.FederatedPeg
 {
@@ -40,10 +39,13 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly Network network;
 
-        public OpReturnDataReader(ILoggerFactory loggerFactory, Network network)
+        private readonly Network counterChainNetwork;
+
+        public OpReturnDataReader(ILoggerFactory loggerFactory, Network network, Network counterChainNetwork)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
+            this.counterChainNetwork = counterChainNetwork;
         }
 
         /// <inheritdoc />
@@ -107,7 +109,7 @@ namespace Stratis.Features.FederatedPeg
             // Attempt to parse the string. Validates the base58 string.
             try
             {
-                var bitcoinAddress = this.network.ToCounterChainNetwork().Parse<BitcoinAddress>(destination);
+                var bitcoinAddress = this.counterChainNetwork.Parse<BitcoinAddress>(destination);
                 this.logger.LogTrace($"ConvertValidOpReturnDataToAddress received {destination} and network.Parse received {bitcoinAddress}.");
                 return destination;
             }

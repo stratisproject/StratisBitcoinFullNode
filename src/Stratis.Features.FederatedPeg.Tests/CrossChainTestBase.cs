@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
@@ -29,6 +30,7 @@ namespace Stratis.Features.FederatedPeg.Tests
     {
         protected const string walletPassword = "password";
         protected Network network;
+        protected Network counterChainNetwork;
         protected ChainIndexer ChainIndexer;
         protected ILoggerFactory loggerFactory;
         protected ILogger logger;
@@ -65,9 +67,11 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// Initializes the cross-chain transfer tests.
         /// </summary>
         /// <param name="network">The network to run the tests for.</param>
-        public CrossChainTestBase(Network network = null)
+        public CrossChainTestBase(Network network = null, Network counterChainNetwork = null)
         {
             this.network = network ?? FederatedPegNetwork.NetworksSelector.Regtest();
+            this.counterChainNetwork = counterChainNetwork ?? Networks.Stratis.Regtest();
+
             NetworkRegistration.Register(this.network);
 
             this.loggerFactory = Substitute.For<ILoggerFactory>();
@@ -75,7 +79,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.asyncLoopFactory = new AsyncLoopFactory(this.loggerFactory);
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.dateTimeProvider = DateTimeProvider.Default;
-            this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.network);
+            this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.network, counterChainNetwork);
             this.blockRepository = Substitute.For<IBlockRepository>();
             this.fullNode = Substitute.For<IFullNode>();
             this.withdrawalTransactionBuilder = Substitute.For<IWithdrawalTransactionBuilder>();
