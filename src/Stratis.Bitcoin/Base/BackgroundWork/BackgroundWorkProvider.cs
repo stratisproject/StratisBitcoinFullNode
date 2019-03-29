@@ -79,12 +79,10 @@ namespace Stratis.Bitcoin.Base.BackgroundWork
         /// <param name="state">The <see cref="IAsyncDelegateWorker"/> that's run by the delegateTask</param>
         private void onAsyncDelegateUnhandledException(Task task, object state)
         {
-            var key = (IAsyncDelegateWorker)state;
-
             AsyncTaskInfo delegateInfo;
             lock (this.lockAsyncDelegates)
             {
-                if (this.asyncDelegateWorkers.TryGetValue(key, out delegateInfo))
+                if (this.asyncDelegateWorkers.TryGetValue((IAsyncDelegateWorker)state, out delegateInfo))
                 {
                     IAsyncTaskInfoSetter infoSetter;
                     infoSetter = (IAsyncTaskInfoSetter)delegateInfo;
@@ -110,12 +108,10 @@ namespace Stratis.Bitcoin.Base.BackgroundWork
         /// <param name="state">The IAsyncDelegate that's run by the delegateTask</param>
         private void onAsyncDelegateCompleted(Task task, object state)
         {
-            IAsyncDelegateWorker key = (IAsyncDelegateWorker)state;
-
             bool removed;
             lock (this.lockAsyncDelegates)
             {
-                removed = this.asyncDelegateWorkers.Remove(key);
+                removed = this.asyncDelegateWorkers.Remove((IAsyncDelegateWorker)state);
             }
 
             if (removed)
@@ -163,12 +159,10 @@ namespace Stratis.Bitcoin.Base.BackgroundWork
         /// <param name="state">The <see cref="IAsyncDelegateWorker"/> that's run by the delegateTask</param>
         private void onAsyncLoopUnhandledException(Task task, object state)
         {
-            IAsyncDelegateWorker key = (IAsyncDelegateWorker)state;
-
             AsyncTaskInfo delegateInfo;
             lock (this.lockAsyncLoops)
             {
-                if (this.asyncDelegateWorkers.TryGetValue(key, out delegateInfo))
+                if (this.asyncLoops.TryGetValue((IAsyncLoop)state, out delegateInfo))
                 {
                     IAsyncTaskInfoSetter infoSetter;
                     infoSetter = (IAsyncTaskInfoSetter)delegateInfo;
@@ -194,22 +188,20 @@ namespace Stratis.Bitcoin.Base.BackgroundWork
         /// <param name="state">The IAsyncDelegate that's run by the delegateTask</param>
         private void onAsyncLoopCompleted(Task task, object state)
         {
-            IAsyncDelegateWorker key = (IAsyncDelegateWorker)state;
-
             bool removed;
             lock (this.lockAsyncLoops)
             {
-                removed = this.asyncDelegateWorkers.Remove(key);
+                removed = this.asyncLoops.Remove((IAsyncLoop)state);
             }
 
             if (removed)
             {
-                this.logger.LogTrace("Async delegate worker task removed. Id: {0}", task.Id);
+                this.logger.LogTrace("Async loop task removed. Id: {0}", task.Id);
             }
             else
             {
                 // Should never happen.
-                this.logger.LogError("Cannot find the async delegate worker task with Id {0}", task.Id);
+                this.logger.LogError("Cannot find the async loop task with Id {0}", task.Id);
             }
         }
 
