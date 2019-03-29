@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Base.BackgroundWork
     /// <summary>
     /// Defines a queue that can be dequeued asynchronously by multiple threads.
     /// </summary>
-    public interface IAsyncQueue<T>
+    public interface IAsyncQueue<T> : IDisposable
     {
         /// <summary>
         /// The number of items in the queue.

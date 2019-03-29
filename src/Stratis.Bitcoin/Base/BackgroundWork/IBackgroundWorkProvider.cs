@@ -24,12 +24,17 @@ namespace Stratis.Bitcoin.Base.BackgroundWork
         IAsyncDelegateWorker CreateAndRunAsyncDelegate<T>(string name, Func<T, CancellationToken, Task> @delegate);
 
         /// <summary>
-        /// Creates an asynchronous loop.
+        /// Creates an starts an application defined task inside a newly created async loop.
         /// </summary>
         /// <typeparam name="T">Type of the queued items used in the loop.</typeparam>
         /// <param name="name">Name of the loop.</param>
         /// <param name="loop">The loop.</param>
+        /// <param name="cancellation">Cancellation token that triggers when the task and the loop should be cancelled.</param>
+        /// <param name="repeatEvery">Interval between each execution of the task.
+        /// If this is <see cref="TimeSpans.RunOnce"/>, the task is only run once and there is no loop.
+        /// If this is null, the task is repeated every 1 second by default.</param>
+        /// <param name="startAfter">Delay before the first run of the task, or null if no startup delay is required.</param>
         /// <returns></returns>
-        IAsyncLoop CreateAsyncLoop<T>(string name, Func<CancellationToken, Task> loop);
+        IAsyncLoop CreateAndRunAsyncLoop<T>(string name, Func<CancellationToken, Task> loop, CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
     }
 }

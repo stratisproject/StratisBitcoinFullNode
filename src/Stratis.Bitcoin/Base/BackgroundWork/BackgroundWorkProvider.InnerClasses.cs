@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Base.BackgroundWork
         /// <summary>
         /// Interface used to allow BackgroundWorkProvider to set private properties
         /// </summary>
-        private interface IAsyncDelegateInfoSetter
+        private interface IAsyncTaskInfoSetter
         {
             TaskStatus Status { set; }
 
@@ -24,8 +24,8 @@ namespace Stratis.Bitcoin.Base.BackgroundWork
         /// <summary>
         /// Class that holds the status of running or faulted async delegate created by the BackgroundWorkProvider
         /// </summary>
-        /// <seealso cref="Stratis.Bitcoin.Base.BackgroundWork.BackgroundWorkProvider.IAsyncDelegateInfoSetter" />
-        internal class AsyncDelegateInfo : IAsyncDelegateInfoSetter
+        /// <seealso cref="Stratis.Bitcoin.Base.BackgroundWork.BackgroundWorkProvider.IAsyncTaskInfoSetter" />
+        internal class AsyncTaskInfo : IAsyncTaskInfoSetter
         {
             public string FriendlyName { get; }
 
@@ -33,11 +33,11 @@ namespace Stratis.Bitcoin.Base.BackgroundWork
 
             public Exception Exception { get; private set; }
 
-            TaskStatus IAsyncDelegateInfoSetter.Status { set => this.Status = value; }
+            TaskStatus IAsyncTaskInfoSetter.Status { set => this.Status = value; }
 
-            Exception IAsyncDelegateInfoSetter.Exception { set => this.Exception = value; }
+            Exception IAsyncTaskInfoSetter.Exception { set => this.Exception = value; }
 
-            public AsyncDelegateInfo(string friendlyName)
+            public AsyncTaskInfo(string friendlyName)
             {
                 this.FriendlyName = friendlyName;
             }
