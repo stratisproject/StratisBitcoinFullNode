@@ -7,9 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
-using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -34,8 +34,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>A reader for extracting an address from a <see cref="Script"/>.</summary>
         private readonly IScriptAddressReader scriptAddressReader;
 
-        /// <summary>Block store and repository related configuration.</summary>
-        private readonly StoreSettings storeSettings;
+        /// <summary>Node related configuration.</summary>
+        private readonly NodeSettings nodeSettings;
 
         /// <summary>Wallet manager.</summary>
         private readonly IWalletManager walletManager;
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             ILoggerFactory loggerFactory,
             Network network,
             IScriptAddressReader scriptAddressReader,
-            StoreSettings storeSettings,
+            NodeSettings nodeSettings,
             IWalletManager walletManager,
             WalletSettings walletSettings,
             IWalletTransactionHandler walletTransactionHandler) : base(fullNode: fullNode, consensusManager: consensusManager, chainIndexer: chainIndexer, network: network)
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.broadcasterManager = broadcasterManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.scriptAddressReader = scriptAddressReader;
-            this.storeSettings = storeSettings;
+            this.nodeSettings = nodeSettings;
             this.walletManager = walletManager;
             this.walletSettings = walletSettings;
             this.walletTransactionHandler = walletTransactionHandler;
@@ -344,13 +344,13 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         [ActionName("listaddressgroupings")]
         [ActionDescription("Returns a list of grouped addresses which have had their common ownership made public by common use as inputs or as the resulting change in past transactions.")]
-        public async Task<AddressGroupingModel[]> ListAddressGroupings()
+        public AddressGroupingModel[] ListAddressGroupings()
         {
-            if (!this.storeSettings.TxIndex)
+            if (!this.nodeSettings.TxIndex)
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, $"{nameof(ListAddressGroupings)} is incompatible with transaction indexing turned off (i.e. -txIndex=0).");
 
             //Get all the address groupings.
-            var addressGroupings = await GetAddressGroupingsAsync();
+            var addressGroupings = GetAddressGroupings();
 
             var addressGroupingModels = new List<AddressGroupingModel>();
 
@@ -376,7 +376,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Please see https://github.com/bitcoin/bitcoin/blob/726d0668ff780acb59ab0200359488ce700f6ae6/src/wallet/wallet.cpp#L3641
         /// </summary>
         /// <returns>A list of base 58 addresses.</returns>
-        private async Task<List<List<string>>> GetAddressGroupingsAsync()
+        private List<List<string>> GetAddressGroupings()
         {
             // Get the wallet to check.
             var walletReference = this.GetAccount();
@@ -402,7 +402,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             foreach (var transaction in txDictionary)
             {
-                var tx = await this.blockStore.GetTransactionByIdAsync(transaction.Value.Id);
+                var tx = this.blockStore.GetTransactionById(transaction.Value.Id);
                 if (tx.Inputs.Count > 0)
                 {
                     var addressGroupBase58 = new List<string>();
@@ -410,12 +410,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                     // Group all input addresses with each other.
                     foreach (var txIn in tx.Inputs)
                     {
-                        if (!await IsTxInMineAsync(addresses, txDictionary, txIn))
+                        if (!IsTxInMine(addresses, txDictionary, txIn))
                             continue;
 
                         // Get the txIn's previous transaction address.
                         var prevTransactionData = txs.FirstOrDefault(t => t.Id == txIn.PrevOut.Hash);
-                        var prevTransaction = await this.blockStore.GetTransactionByIdAsync(prevTransactionData.Id);
+                        var prevTransaction = this.blockStore.GetTransactionById(prevTransactionData.Id);
                         var prevTransactionScriptPubkey = prevTransaction.Outputs[txIn.PrevOut.N].ScriptPubKey;
 
                         var addressBase58 = this.scriptAddressReader.GetAddressFromScriptPubKey(this.Network, prevTransactionScriptPubkey);
@@ -494,7 +494,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="txDictionary">The set of transactions to check against.</param>
         /// <param name="txIn">The input to check.</param>
         /// <returns><c>true</c>if the input's address exist in the wallet.</returns>
-        private async Task<bool> IsTxInMineAsync(IEnumerable<HdAddress> addresses, Dictionary<uint256, TransactionData> txDictionary, TxIn txIn)
+        private bool IsTxInMine(IEnumerable<HdAddress> addresses, Dictionary<uint256, TransactionData> txDictionary, TxIn txIn)
         {
             TransactionData previousTransaction = null;
             txDictionary.TryGetValue(txIn.PrevOut.Hash, out previousTransaction);
@@ -502,7 +502,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (previousTransaction == null)
                 return false;
 
-            var previousTx = await this.blockStore.GetTransactionByIdAsync(previousTransaction.Id);
+            var previousTx = this.blockStore.GetTransactionById(previousTransaction.Id);
             if (txIn.PrevOut.N >= previousTx.Outputs.Count)
                 return false;
 
