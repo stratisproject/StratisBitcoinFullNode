@@ -30,7 +30,6 @@ namespace Stratis.Bitcoin.Tests.Common
             ChainState chainState = null,
             InMemoryCoinView inMemoryCoinView = null,
             ChainIndexer chainIndexer = null,
-            IRuleRegistration ruleRegistration = null,
             ConsensusRuleEngine consensusRules = null)
         {
             string[] param = dataDir == null ? new string[] { } : new string[] { $"-datadir={dataDir}" };
@@ -41,11 +40,6 @@ namespace Stratis.Bitcoin.Tests.Common
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
             network.Consensus.Options = new ConsensusOptions();
-
-            if (ruleRegistration == null)
-                ruleRegistration = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration();
-
-            ruleRegistration.RegisterRules(network.Consensus);
 
             // Dont check PoW of a header in this test.
             network.Consensus.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));

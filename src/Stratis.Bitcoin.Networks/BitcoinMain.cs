@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using NBitcoin.Rules;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Networks.Deployments;
 using Stratis.Bitcoin.Networks.Policies;
 
@@ -151,6 +153,9 @@ namespace Stratis.Bitcoin.Networks
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+
+            // Registering consensus rules.
+            AddConsensusRules(this.Consensus);
         }
 
         /// <summary> Bitcoin maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
@@ -195,6 +200,48 @@ namespace Stratis.Bitcoin.Networks
             genesis.Header.HashPrevBlock = uint256.Zero;
             genesis.UpdateMerkleRoot();
             return genesis;
+        }
+
+        protected static void AddConsensusRules(IConsensus consensus)
+        {
+            consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
+            {
+                new HeaderTimeChecksRule(),
+                new CheckDifficultyPowRule(),
+                new BitcoinActivationRule(),
+                new BitcoinHeaderVersionRule()
+            };
+
+            consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+            {
+                new BlockMerkleRootRule()
+            };
+
+            consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
+            {
+                new SetActivationDeploymentsPartialValidationRule(),
+
+                new TransactionLocktimeActivationRule(), // implements BIP113
+                new CoinbaseHeightActivationRule(), // implements BIP34
+                new WitnessCommitmentsRule(), // BIP141, BIP144
+                new BlockSizeRule(),
+
+                // rules that are inside the method CheckBlock
+                new EnsureCoinbaseRule(),
+                new CheckPowTransactionRule(),
+                new CheckSigOpsRule(),
+            };
+
+            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+            {
+                new SetActivationDeploymentsFullValidationRule(),
+
+                // rules that require the store to be loaded (coinview)
+                new LoadCoinviewRule(),
+                new TransactionDuplicationActivationRule(), // implements BIP30
+                new PowCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward calculation
+                new SaveCoinviewRule()
+            };
         }
     }
 }

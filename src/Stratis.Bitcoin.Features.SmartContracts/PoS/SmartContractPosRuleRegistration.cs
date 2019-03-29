@@ -15,7 +15,7 @@ using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoS
 {
-    public sealed class SmartContractPosRuleRegistration : IRuleRegistration
+    public sealed class SmartContractPosRuleRegistration 
     {
         private readonly Network network;
         private readonly IStateRepositoryRoot stateRepositoryRoot;
@@ -46,6 +46,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
             this.coinView = coinView;
             this.stakeChain = stakeChain;
             this.stakeValidator = stakeValidator;
+
+            // Ugly hack this needs to move to a specific network.
+            this.RegisterRules(network.Consensus);
         }
 
         public void RegisterRules(IConsensus consensus)

@@ -11,12 +11,10 @@ namespace Stratis.Bitcoin.Consensus
     public class DiConsensusRuleEngine : IConsensusRuleEngine
     {
         private readonly ConsensusRuleEngine implementation;
-        private readonly IRuleRegistration ruleRegistration;
 
-        public DiConsensusRuleEngine(ConsensusRuleEngine implementation, IRuleRegistration ruleRegistration)
+        public DiConsensusRuleEngine(ConsensusRuleEngine implementation)
         {
             this.implementation = implementation;
-            this.ruleRegistration = ruleRegistration;
         }
 
         public void Dispose()
@@ -31,9 +29,6 @@ namespace Stratis.Bitcoin.Consensus
 
         public ConsensusRuleEngine Register()
         {
-            // Hack the rules onto Consensus
-            this.ruleRegistration.RegisterRules(this.implementation.Network.Consensus);
-
             // Call the implementation to register the rules on the Network.
             this.implementation.Register();
 

@@ -122,54 +122,6 @@ namespace Stratis.Bitcoin.Features.PoA
         }
     }
 
-    public class PoAConsensusRulesRegistration : IRuleRegistration
-    {
-        public void RegisterRules(IConsensus consensus)
-        {
-            consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
-            {
-                new HeaderTimeChecksPoARule(),
-                new StratisHeaderVersionRule(),
-                new PoAHeaderDifficultyRule(),
-                new PoAHeaderSignatureRule()
-            };
-
-            consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
-            {
-                new BlockMerkleRootRule(),
-                new PoAIntegritySignatureRule()
-            };
-
-            consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
-            {
-                new SetActivationDeploymentsPartialValidationRule(),
-
-                // rules that are inside the method ContextualCheckBlock
-                new TransactionLocktimeActivationRule(), // implements BIP113
-                new CoinbaseHeightActivationRule(), // implements BIP34
-                new BlockSizeRule(),
-
-                // rules that are inside the method CheckBlock
-                new EnsureCoinbaseRule(),
-                new CheckPowTransactionRule(),
-                new CheckSigOpsRule(),
-
-                new PoAVotingCoinbaseOutputFormatRule(),
-            };
-
-            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
-            {
-                new SetActivationDeploymentsFullValidationRule(),
-
-                // rules that require the store to be loaded (coinview)
-                new LoadCoinviewRule(),
-                new TransactionDuplicationActivationRule(), // implements BIP30
-                new PoACoinviewRule(),
-                new SaveCoinviewRule()
-            };
-        }
-    }
-
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
@@ -210,8 +162,6 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<ConsensusQuery>()
                             .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())
                             .AddSingleton<IGetUnspentTransaction, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>());
-
-                        new PoAConsensusRulesRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
 
                         // Voting.
                         services.AddSingleton<VotingManager>();

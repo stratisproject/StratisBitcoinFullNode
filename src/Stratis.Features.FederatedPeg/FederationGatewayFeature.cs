@@ -353,13 +353,11 @@ namespace Stratis.Features.FederatedPeg
 
                     // Consensus Rules
                     services.AddSingleton<PoAConsensusRuleEngine>();
-                    services.AddSingleton<IRuleRegistration, SmartContractPoARuleRegistration>();
                     services.AddSingleton<IConsensusRuleEngine>(f =>
                     {
                         var concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
-                        var ruleRegistration = f.GetService<IRuleRegistration>();
 
-                        return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
+                        return new DiConsensusRuleEngine(concreteRuleEngine);
                     });
                 });
             });

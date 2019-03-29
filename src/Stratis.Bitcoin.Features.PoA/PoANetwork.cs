@@ -3,7 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using NBitcoin.Rules;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
 using Stratis.Bitcoin.Features.PoA.Policies;
+using Stratis.Bitcoin.Features.PoA.Voting.ConsensusRules;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -173,6 +177,9 @@ namespace Stratis.Bitcoin.Features.PoA
             {
                 throw new Exception("No keys for initial federation are configured!");
             }
+
+            // Registering consensus rules.
+            this.AddConsensusRules(this.Consensus);
         }
 
         protected static Block CreatePoAGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
@@ -205,5 +212,51 @@ namespace Stratis.Bitcoin.Features.PoA
             genesis.UpdateMerkleRoot();
             return genesis;
         }
+
+        public void AddConsensusRules(IConsensus consensus)
+        {
+            consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
+            {
+                new HeaderTimeChecksPoARule(),
+                new StratisHeaderVersionRule(),
+                new PoAHeaderDifficultyRule(),
+                new PoAHeaderSignatureRule()
+            };
+
+            consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+            {
+                new BlockMerkleRootRule(),
+                new PoAIntegritySignatureRule()
+            };
+
+            consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
+            {
+                new SetActivationDeploymentsPartialValidationRule(),
+
+                // rules that are inside the method ContextualCheckBlock
+                new TransactionLocktimeActivationRule(), // implements BIP113
+                new CoinbaseHeightActivationRule(), // implements BIP34
+                new BlockSizeRule(),
+
+                // rules that are inside the method CheckBlock
+                new EnsureCoinbaseRule(),
+                new CheckPowTransactionRule(),
+                new CheckSigOpsRule(),
+
+                new PoAVotingCoinbaseOutputFormatRule(),
+            };
+
+            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+            {
+                new SetActivationDeploymentsFullValidationRule(),
+
+                // rules that require the store to be loaded (coinview)
+                new LoadCoinviewRule(),
+                new TransactionDuplicationActivationRule(), // implements BIP30
+                new PoACoinviewRule(),
+                new SaveCoinviewRule()
+            };
+        }
+
     }
 }

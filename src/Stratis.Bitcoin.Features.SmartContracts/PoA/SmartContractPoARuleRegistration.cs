@@ -18,7 +18,7 @@ using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {
-    public class SmartContractPoARuleRegistration : IRuleRegistration
+    public class SmartContractPoARuleRegistration 
     {
         private readonly Network network;
         private readonly IStateRepositoryRoot stateRepositoryRoot;
@@ -27,7 +27,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
         private readonly ISenderRetriever senderRetriever;
         private readonly IReceiptRepository receiptRepository;
         private readonly ICoinView coinView;
-        private readonly PoAConsensusRulesRegistration baseRuleRegistration;
         private readonly IEnumerable<IContractTransactionPartialValidationRule> partialTxValidationRules;
         private readonly IEnumerable<IContractTransactionFullValidationRule> fullTxValidationRules;
 
@@ -41,7 +40,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             IEnumerable<IContractTransactionPartialValidationRule> partialTxValidationRules,
             IEnumerable<IContractTransactionFullValidationRule> fullTxValidationRules)
         {
-            this.baseRuleRegistration = new PoAConsensusRulesRegistration();
             this.network = network;
             this.stateRepositoryRoot = stateRepositoryRoot;
             this.executorFactory = executorFactory;
@@ -51,12 +49,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             this.coinView = coinView;
             this.partialTxValidationRules = partialTxValidationRules;
             this.fullTxValidationRules = fullTxValidationRules;
+
+            // Ugly hack this needs to move to a specific network.
+            this.RegisterRules(network.Consensus);
         }
 
         public void RegisterRules(IConsensus consensus)
         {
-            this.baseRuleRegistration.RegisterRules(consensus);
-
             // Add SC-Specific partial rules
             var txValidationRules = new List<IContractTransactionPartialValidationRule>(this.partialTxValidationRules)
             {

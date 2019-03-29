@@ -44,9 +44,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
                         services.AddSingleton<IConsensusRuleEngine>(f =>
                         {
                             var concreteRuleEngine = f.GetService<PosConsensusRuleEngine>();
-                            var ruleRegistration = f.GetService<IRuleRegistration>();
 
-                            return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
+                            return new DiConsensusRuleEngine(concreteRuleEngine);
                         });
                     });
             });

@@ -47,7 +47,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
             this.powReward = Money.Coins(50);
             this.testNet = KnownNetworks.TestNet;
-            new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(this.testNet.Consensus);
             this.minerSettings = new MinerSettings(NodeSettings.Default(this.Network));
             this.key = new Key();
 

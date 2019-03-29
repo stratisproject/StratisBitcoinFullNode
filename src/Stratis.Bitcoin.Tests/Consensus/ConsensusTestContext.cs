@@ -59,7 +59,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
         private InvalidBlockHashStore hashStore;
         private NodeSettings nodeSettings;
         private ILoggerFactory loggerFactory;
-        private IRuleRegistration ruleRegistration;
         public ConsensusSettings ConsensusSettings;
         private INetworkPeerFactory networkPeerFactory;
         public Mock<IChainState> ChainState;
@@ -104,9 +103,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             var connectionSettings = new ConnectionManagerSettings(this.nodeSettings);
             this.selfEndpointTracker = new SelfEndpointTracker(this.loggerFactory, connectionSettings);
             this.Network.Consensus.Options = new ConsensusOptions();
-
-            this.ruleRegistration = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration();
-            this.ruleRegistration.RegisterRules(this.Network.Consensus);
 
             // Dont check PoW of a header in this test.
             this.Network.Consensus.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));

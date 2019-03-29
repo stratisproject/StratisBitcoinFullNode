@@ -15,7 +15,7 @@ using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoW
 {
-    public sealed class SmartContractPowRuleRegistration : IRuleRegistration
+    public sealed class SmartContractPowRuleRegistration 
     {
         private readonly Network network;
         private readonly IStateRepositoryRoot stateRepositoryRoot;
@@ -40,6 +40,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             this.senderRetriever = senderRetriever;
             this.receiptRepository = receiptRepository;
             this.coinView = coinView;
+
+            // Ugly hack this needs to move to a specific network.
+            this.RegisterRules(network.Consensus);
         }
 
         public void RegisterRules(IConsensus consensus)
