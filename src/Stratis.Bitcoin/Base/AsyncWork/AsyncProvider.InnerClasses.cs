@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace Stratis.Bitcoin.Base.AsyncProvider
+namespace Stratis.Bitcoin.Base.AsyncWork
 {
-    public partial class AsyncProvider : IBackgroundWorkProvider
+    public partial class AsyncProvider : IAsyncProvider
     {
         /// <summary>
         /// Interface used to allow BackgroundWorkProvider to set private properties
@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Base.AsyncProvider
         /// <summary>
         /// Class that holds the status of running or faulted async delegate created by the BackgroundWorkProvider
         /// </summary>
-        /// <seealso cref="Stratis.Bitcoin.Base.AsyncProvider.AsyncProvider.IAsyncTaskInfoSetter" />
+        /// <seealso cref="Stratis.Bitcoin.Base.AsyncWork.AsyncProvider.IAsyncTaskInfoSetter" />
         internal class AsyncTaskInfo : IAsyncTaskInfoSetter
         {
             public string FriendlyName { get; }

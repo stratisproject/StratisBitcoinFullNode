@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Stratis.Bitcoin.Base.AsyncProvider
+namespace Stratis.Bitcoin.Base.AsyncWork
 {
     /// <summary>
     /// Defines a queue that can be dequeued asynchronously by multiple threads.
@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Base.AsyncProvider
         int Count { get; }
 
         /// <summary>
-        /// Add a new item to the queue and signal to the consumer task.
+        /// Add a new item to the queue.
         /// </summary>
         /// <param name="item">Item to be added to the queue.</param>
         void Enqueue(T item);

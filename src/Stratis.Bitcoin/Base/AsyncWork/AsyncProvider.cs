@@ -6,12 +6,12 @@ using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Base.AsyncProvider
+namespace Stratis.Bitcoin.Base.AsyncWork
 {
     /// <summary>
     /// Provides functionality for creating and tracking asynchronous operations that happens in background.
     /// </summary>
-    public partial class AsyncProvider : IBackgroundWorkProvider
+    public partial class AsyncProvider : IAsyncProvider
     {
         private const int DefaultLoopRepeatInterval = 1000;
 
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Base.AsyncProvider
         /// Holds a list of currently running async delegates or delegates that stopped because of unhandled exceptions.
         /// Protected by <see cref="lockAsyncDelegates"/> lock
         /// </summary>
-        private Dictionary<IAsyncDelegateWorker, AsyncTaskInfo> asyncDelegateWorkers;
+        private Dictionary<IAsyncDelegateDequeuer, AsyncTaskInfo> asyncDelegateWorkers;
 
         /// <summary>
         /// Holds a list of currently running async loops or loops that stopped because of unhandled exceptions.
@@ -34,25 +34,23 @@ namespace Stratis.Bitcoin.Base.AsyncProvider
         private ILogger logger;
         private ISignals signals;
         private readonly INodeLifetime nodeLifetime;
-        private readonly IAsyncLoopFactory asyncLoopFactory;
 
-        public AsyncProvider(ILoggerFactory loggerFactory, ISignals signals, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
+        public AsyncProvider(ILoggerFactory loggerFactory, ISignals signals, INodeLifetime nodeLifetime)
         {
             this.lockAsyncDelegates = new object();
             this.lockAsyncLoops = new object();
 
-            this.asyncDelegateWorkers = new Dictionary<IAsyncDelegateWorker, AsyncTaskInfo>();
+            this.asyncDelegateWorkers = new Dictionary<IAsyncDelegateDequeuer, AsyncTaskInfo>();
 
             this.loggerFactory = Guard.NotNull(loggerFactory, nameof(loggerFactory));
             this.logger = this.loggerFactory.CreateLogger(nameof(AsyncProvider));
 
             this.signals = Guard.NotNull(signals, nameof(signals));
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
-            this.asyncLoopFactory = Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
         }
 
         /// <inheritdoc />
-        public IAsyncDelegateWorker CreateAndRunAsyncDelegate<T>(string friendlyName, Func<T, CancellationToken, Task> @delegate)
+        public IAsyncDelegateDequeuer<T> CreateAndRunAsyncDelegateDequeuer<T>(string friendlyName, Func<T, CancellationToken, Task> @delegate)
         {
             AsyncQueue<T> newDelegate;
 
@@ -60,14 +58,14 @@ namespace Stratis.Bitcoin.Base.AsyncProvider
             {
                 newDelegate = new AsyncQueue<T>(new AsyncQueue<T>.OnEnqueueAsync(@delegate));
 
-                // task will continue with onAsyncDelegateUnhandledException if @delegate had unhandled exceptions
-                newDelegate.ConsumerTask.ContinueWith(this.onAsyncDelegateUnhandledException, newDelegate, TaskContinuationOptions.OnlyOnFaulted);
-
-                // task will continue with onAsyncDelegateCompleted if @delegate completed or was canceled
-                newDelegate.ConsumerTask.ContinueWith(this.onAsyncDelegateCompleted, newDelegate, TaskContinuationOptions.NotOnFaulted);
-
                 this.asyncDelegateWorkers.Add(newDelegate, new AsyncTaskInfo(friendlyName));
             }
+
+            // task will continue with onAsyncDelegateUnhandledException if @delegate had unhandled exceptions
+            newDelegate.ConsumerTask.ContinueWith(this.onAsyncDelegateUnhandledException, newDelegate, TaskContinuationOptions.OnlyOnFaulted);
+
+            // task will continue with onAsyncDelegateCompleted if @delegate completed or was canceled
+            newDelegate.ConsumerTask.ContinueWith(this.onAsyncDelegateCompleted, newDelegate, TaskContinuationOptions.NotOnFaulted);
 
             return newDelegate;
         }
@@ -76,13 +74,13 @@ namespace Stratis.Bitcoin.Base.AsyncProvider
         ///  This method is called when delegateTask had an unhandled exception.
         /// </summary>
         /// <param name="task">The delegate task.</param>
-        /// <param name="state">The <see cref="IAsyncDelegateWorker"/> that's run by the delegateTask</param>
+        /// <param name="state">The <see cref="IAsyncDelegateDequeuer"/> that's run by the delegateTask</param>
         private void onAsyncDelegateUnhandledException(Task task, object state)
         {
             AsyncTaskInfo delegateInfo;
             lock (this.lockAsyncDelegates)
             {
-                if (this.asyncDelegateWorkers.TryGetValue((IAsyncDelegateWorker)state, out delegateInfo))
+                if (this.asyncDelegateWorkers.TryGetValue((IAsyncDelegateDequeuer)state, out delegateInfo))
                 {
                     IAsyncTaskInfoSetter infoSetter;
                     infoSetter = (IAsyncTaskInfoSetter)delegateInfo;
@@ -111,7 +109,7 @@ namespace Stratis.Bitcoin.Base.AsyncProvider
             bool removed;
             lock (this.lockAsyncDelegates)
             {
-                removed = this.asyncDelegateWorkers.Remove((IAsyncDelegateWorker)state);
+                removed = this.asyncDelegateWorkers.Remove((IAsyncDelegateDequeuer)state);
             }
 
             if (removed)
@@ -138,10 +136,10 @@ namespace Stratis.Bitcoin.Base.AsyncProvider
             Task loopTask;
             lock (this.lockAsyncLoops)
             {
-                loopTask = loopInstance.Run(cancellation, repeatEvery ?? TimeSpan.FromMilliseconds(DefaultLoopRepeatInterval), startAfter).RunningTask;
-
                 this.asyncLoops.Add(loopInstance, new AsyncTaskInfo(name));
             }
+
+            loopTask = loopInstance.Run(cancellation, repeatEvery ?? TimeSpan.FromMilliseconds(DefaultLoopRepeatInterval), startAfter).RunningTask;
 
             // task will continue with onAsyncDelegateUnhandledException if @delegate had unhandled exceptions
             loopTask.ContinueWith(this.onAsyncLoopUnhandledException, loopInstance, TaskContinuationOptions.OnlyOnFaulted);
@@ -156,7 +154,7 @@ namespace Stratis.Bitcoin.Base.AsyncProvider
         ///  This method is called when delegateTask had an unhandled exception.
         /// </summary>
         /// <param name="task">The loop task.</param>
-        /// <param name="state">The <see cref="IAsyncDelegateWorker"/> that's run by the delegateTask</param>
+        /// <param name="state">The <see cref="IAsyncDelegateDequeuer"/> that's run by the delegateTask</param>
         private void onAsyncLoopUnhandledException(Task task, object state)
         {
             AsyncTaskInfo delegateInfo;

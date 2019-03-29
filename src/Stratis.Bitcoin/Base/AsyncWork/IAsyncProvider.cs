@@ -3,9 +3,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Base.AsyncProvider
+namespace Stratis.Bitcoin.Base.AsyncWork
 {
-    public interface IBackgroundWorkProvider
+    public interface IAsyncProvider
     {
         /// <summary>
         /// Creates a queue that can be dequeued asynchronously by multiple threads.
@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Base.AsyncProvider
         /// <param name="name">Name of the delegate.</param>
         /// <param name="delegate">The delegate.</param>
         /// <returns></returns>
-        IAsyncDelegateWorker CreateAndRunAsyncDelegate<T>(string name, Func<T, CancellationToken, Task> @delegate);
+        IAsyncDelegateDequeuer<T> CreateAndRunAsyncDelegateDequeuer<T>(string name, Func<T, CancellationToken, Task> @delegate);
 
         /// <summary>
         /// Creates an starts an application defined task inside a newly created async loop.
