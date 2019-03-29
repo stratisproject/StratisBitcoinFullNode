@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
 {
-    public class VotingTests : IDisposable
+    public class VotingAndMiningTests : IDisposable
     {
         private readonly TestPoANetwork network;
 
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
 
         private readonly PubKey testPubKey;
 
-        public VotingTests()
+        public VotingAndMiningTests()
         {
             this.testPubKey = new Mnemonic("lava frown leave virtual wedding ghost sibling able liar wide wisdom mammal").DeriveExtKey().PrivateKey.PubKey;
             this.network = new TestPoANetwork();
