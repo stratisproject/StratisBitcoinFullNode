@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Base.BackgroundWork
         /// Holds a list of currently running async delegates or delegates that stopped because of unhandled exceptions.
         /// Protected by <see cref="lockObject"/> lock
         /// </summary>
-        private Dictionary<IAsyncDelegate, AsyncDelegateInfo> asyncDelegates;
+        private Dictionary<IAsyncDelegateWorker, AsyncDelegateInfo> asyncDelegates;
 
         private ILoggerFactory loggerFactory;
         private ILogger logger;
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Base.BackgroundWork
         public BackgroundWorkProvider(ILoggerFactory loggerFactory, ISignals signals, INodeLifetime nodeLifetime)
         {
             this.lockObject = new object();
-            this.asyncDelegates = new Dictionary<IAsyncDelegate, AsyncDelegateInfo>();
+            this.asyncDelegates = new Dictionary<IAsyncDelegateWorker, AsyncDelegateInfo>();
 
             this.loggerFactory = Guard.NotNull(loggerFactory, nameof(loggerFactory));
             this.logger = this.loggerFactory.CreateLogger(nameof(BackgroundWorkProvider));
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Base.BackgroundWork
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
         }
 
-        public IAsyncDelegate CreateAndRunAsyncDelegate<T>(string friendlyName, Func<T, CancellationToken, Task> @delegate)
+        public IAsyncDelegateWorker CreateAndRunAsyncDelegate<T>(string friendlyName, Func<T, CancellationToken, Task> @delegate)
         {
             AsyncQueue<T> newDelegate;
 
@@ -63,10 +63,10 @@ namespace Stratis.Bitcoin.Base.BackgroundWork
         ///  This method is called when delegateTask had an unhandled exception.
         /// </summary>
         /// <param name="delegateTask">The delegate task.</param>
-        /// <param name="state">The <see cref="IAsyncDelegate"/> that's run by the delegateTask</param>
+        /// <param name="state">The <see cref="IAsyncDelegateWorker"/> that's run by the delegateTask</param>
         private void onAsyncDelegateUnhandledException(Task delegateTask, object state)
         {
-            IAsyncDelegate key = (IAsyncDelegate)state;
+            IAsyncDelegateWorker key = (IAsyncDelegateWorker)state;
 
             lock (this.lockObject)
             {

@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Utilities
     /// </para>
     /// </summary>
     /// <typeparam name="T">Type of items to be inserted in the queue.</typeparam>
-    public class AsyncQueue<T> : IDisposable, IAsyncQueue<T>, IAsyncDelegate<T>
+    public class AsyncQueue<T> : IDisposable, IAsyncQueue<T>, IAsyncDelegateWorker<T>
     {
         /// <summary>
         /// Execution context holding information about the current status of the execution

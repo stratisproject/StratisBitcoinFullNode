@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Base.BackgroundWork
@@ -19,13 +15,13 @@ namespace Stratis.Bitcoin.Base.BackgroundWork
         IAsyncQueue<T> CreateAsyncQueue<T>();
 
         /// <summary>
-        /// Creates a delegate that is called asynchronously in the background whenever a new <typeparamref name="T"/> is queued and run it.
+        /// Creates a delegate that is called asynchronously in the background whenever a new <typeparamref name="T"/> is queued.
         /// </summary>
         /// <typeparam name="T">Type of the queued items used in the delegate.</typeparam>
         /// <param name="name">Name of the delegate.</param>
         /// <param name="delegate">The delegate.</param>
         /// <returns></returns>
-        IAsyncDelegate CreateAndRunAsyncDelegate<T>(string name, Func<T, CancellationToken, Task> @delegate);
+        IAsyncDelegateWorker CreateAndRunAsyncDelegate<T>(string name, Func<T, CancellationToken, Task> @delegate);
 
         /// <summary>
         /// Creates an asynchronous loop.
