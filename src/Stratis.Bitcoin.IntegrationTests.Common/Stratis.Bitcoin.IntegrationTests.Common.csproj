@@ -32,6 +32,33 @@
   </ItemGroup>
   
   <ItemGroup>
+    <None Update="ReadyData\BitcoinRegTest100Listener.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ReadyData\BitcoinRegTest100Miner.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ReadyData\BitcoinRegTest100NoWallet.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ReadyData\BitcoinRegTest10Listener.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ReadyData\BitcoinRegTest10Miner.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ReadyData\BitcoinRegTest10NoWallet.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ReadyData\BitcoinRegTest150Listener.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ReadyData\BitcoinRegTest150Miner.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ReadyData\BitcoinRegTest150NoWallet.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="ReadyData\RegTest100Listener.zip">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
