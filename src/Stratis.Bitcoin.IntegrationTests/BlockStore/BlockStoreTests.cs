@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (var blockRepository = new BlockRepository(this.network, TestBase.CreateDataFolder(this), this.loggerFactory, this.dBreezeSerializer))
             {
-                blockRepository.SetTxIndexAsync(true).Wait();
+                blockRepository.SetTxIndex(true);
 
                 var blocks = new List<Block>();
                 for (int i = 0; i < 5; i++)
@@ -50,24 +50,24 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 }
 
                 // put
-                blockRepository.PutAsync(new HashHeightPair(blocks.Last().GetHash(), blocks.Count), blocks).GetAwaiter().GetResult();
+                blockRepository.PutBlocks(new HashHeightPair(blocks.Last().GetHash(), blocks.Count), blocks);
 
                 // check the presence of each block in the repository
                 foreach (Block block in blocks)
                 {
-                    Block received = blockRepository.GetBlockAsync(block.GetHash()).GetAwaiter().GetResult();
+                    Block received = blockRepository.GetBlock(block.GetHash());
                     Assert.True(block.ToBytes().SequenceEqual(received.ToBytes()));
 
                     foreach (Transaction transaction in block.Transactions)
                     {
-                        Transaction trx = blockRepository.GetTransactionByIdAsync(transaction.GetHash()).GetAwaiter().GetResult();
+                        Transaction trx = blockRepository.GetTransactionById(transaction.GetHash());
                         Assert.True(trx.ToBytes().SequenceEqual(transaction.ToBytes()));
                     }
                 }
 
                 // delete
-                blockRepository.DeleteAsync(new HashHeightPair(blocks.ElementAt(2).GetHash(), 2), new[] { blocks.ElementAt(2).GetHash() }.ToList()).GetAwaiter().GetResult();
-                Block deleted = blockRepository.GetBlockAsync(blocks.ElementAt(2).GetHash()).GetAwaiter().GetResult();
+                blockRepository.Delete(new HashHeightPair(blocks.ElementAt(2).GetHash(), 2), new[] {blocks.ElementAt(2).GetHash()}.ToList());
+                Block deleted = blockRepository.GetBlock(blocks.ElementAt(2).GetHash());
                 Assert.Null(deleted);
             }
         }
@@ -172,11 +172,11 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 TestHelper.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().Height == 10);
                 TestHelper.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().HashBlock == stratisNode2.FullNode.GetBlockStoreTip().HashBlock);
 
-                Block bestBlock1 = stratisNode1.FullNode.BlockStore().GetBlockAsync(stratisNode1.FullNode.ChainIndexer.Tip.HashBlock).Result;
+                Block bestBlock1 = stratisNode1.FullNode.BlockStore().GetBlock(stratisNode1.FullNode.ChainIndexer.Tip.HashBlock);
                 Assert.NotNull(bestBlock1);
 
                 // Get the block coinbase trx.
-                Transaction trx = stratisNode2.FullNode.BlockStore().GetTransactionByIdAsync(bestBlock1.Transactions.First().GetHash()).Result;
+                Transaction trx = stratisNode2.FullNode.BlockStore().GetTransactionById(bestBlock1.Transactions.First().GetHash());
                 Assert.NotNull(trx);
                 Assert.Equal(bestBlock1.Transactions.First().GetHash(), trx.GetHash());
             }
@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             {
                 CoreNode node = builder.CreateStratisPowNode(this.network).Start();
                 uint256 genesisHash = node.FullNode.ChainIndexer.Genesis.HashBlock;
-                Block genesisBlock = node.FullNode.BlockStore().GetBlockAsync(genesisHash).Result;
+                Block genesisBlock = node.FullNode.BlockStore().GetBlock(genesisHash);
                 Assert.Equal(genesisHash, genesisBlock.GetHash());
             }
         }

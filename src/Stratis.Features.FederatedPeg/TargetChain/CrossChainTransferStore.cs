@@ -846,7 +846,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     break;
             }
 
-            List<Block> blocks = this.blockRepository.GetBlocksAsync(blockHashes).GetAwaiter().GetResult();
+            List<Block> blocks = this.blockRepository.GetBlocks(blockHashes);
             int availableBlocks = blocks.FindIndex(b => (b == null));
             if (availableBlocks < 0)
                 availableBlocks = blocks.Count;

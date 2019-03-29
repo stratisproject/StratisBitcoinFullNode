@@ -14,12 +14,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary><c>true</c> to maintain a full transaction index.</summary>
-        public bool TxIndex { get; set; }
-
-        /// <summary><c>true</c> to rebuild chain state and block index from block data files on disk.</summary>
-        public bool ReIndex { get; set; }
-
         /// <summary>Amount of blocks that we should keep in case node is running in pruned mode.</summary>
         /// <remarks>Should only be used if <see cref="PruningEnabled"/> is <c>true</c>.</remarks>
         public int AmountOfBlocksToKeep { get; set; }
@@ -60,13 +54,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.PruningEnabled && this.AmountOfBlocksToKeep < this.GetMinPruningAmount())
                 throw new ConfigurationException($"The minimum amount of blocks to keep can't be less than {this.GetMinPruningAmount()}.");
 
-            this.TxIndex = config.GetOrDefault<bool>("txindex", false, this.logger);
-            this.ReIndex = config.GetOrDefault<bool>("reindex", false, this.logger);
-
             // For now we reuse the same value as ConsensusSetting, when store moves to core this can be updated.
             this.MaxCacheSize = config.GetOrDefault("maxblkstoremem", 5, this.logger);
 
-            if (this.PruningEnabled && this.TxIndex)
+            if (this.PruningEnabled && nodeSettings.TxIndex)
                 throw new ConfigurationException("Prune mode is incompatible with -txindex");
         }
 
@@ -75,12 +66,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             var builder = new StringBuilder();
 
-            builder.AppendLine($"-txindex=<0 or 1>              Enable to maintain a full transaction index.");
-            builder.AppendLine($"-reindex=<0 or 1>              Rebuild chain state and block index from block data files on disk.");
             builder.AppendLine($"-prune=<amount of blocks>      Enable pruning to reduce storage requirements by enabling deleting of old blocks. Value of 0 means pruning is disabled.");
             builder.AppendLine($"-maxblkstoremem=<number>       Max memory to use before flushing blocks to disk in MB. Default is 5 MB.");
-
-
 
             NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
         }

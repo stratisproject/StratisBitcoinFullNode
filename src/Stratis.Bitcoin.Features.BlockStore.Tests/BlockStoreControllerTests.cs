@@ -76,8 +76,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             (Mock<IBlockStore> store, BlockStoreController controller) = GetControllerAndStore();
 
-            store.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
-                .Returns(Task.FromResult((Block)null));
+            store.Setup(c => c.GetBlock(It.IsAny<uint256>()))
+                .Returns((Block)null);
 
             Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest()
             { Hash = ValidHash, OutputJson = true });
@@ -108,8 +108,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             (Mock<IBlockStore> store, BlockStoreController controller) = GetControllerAndStore();
 
-            store.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
-                .Returns(Task.FromResult(Block.Parse(BlockAsHex, KnownNetworks.StratisTest.Consensus.ConsensusFactory)));
+            store.Setup(c => c.GetBlock(It.IsAny<uint256>()))
+                .Returns(Block.Parse(BlockAsHex, KnownNetworks.StratisTest.Consensus.ConsensusFactory));
 
             Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest()
             { Hash = ValidHash, OutputJson = true });
@@ -129,8 +129,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             (Mock<IBlockStore> store, BlockStoreController controller) = GetControllerAndStore();
 
             store
-                .Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
-                .Returns(Task.FromResult(Block.Parse(BlockAsHex, KnownNetworks.StratisTest.Consensus.ConsensusFactory)));
+                .Setup(c => c.GetBlock(It.IsAny<uint256>()))
+                .Returns(Block.Parse(BlockAsHex, KnownNetworks.StratisTest.Consensus.ConsensusFactory));
 
             Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest() { Hash = ValidHash, OutputJson = true, ShowTransactionDetails = true });
 
@@ -147,8 +147,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             (Mock<IBlockStore> store, BlockStoreController controller) = GetControllerAndStore();
 
             store
-                .Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
-                .Returns(Task.FromResult(Block.Parse(BlockAsHex, KnownNetworks.StratisTest.Consensus.ConsensusFactory)));
+                .Setup(c => c.GetBlock(It.IsAny<uint256>()))
+                .Returns(Block.Parse(BlockAsHex, KnownNetworks.StratisTest.Consensus.ConsensusFactory));
 
             Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest() { Hash = ValidHash, OutputJson = false });
 

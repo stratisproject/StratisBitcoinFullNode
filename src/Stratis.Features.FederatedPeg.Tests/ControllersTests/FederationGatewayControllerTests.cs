@@ -80,7 +80,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         {
             var blockRepository = Substitute.For<IBlockRepository>();
 
-            blockRepository.GetBlocksAsync(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) =>
+            blockRepository.GetBlocks(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) =>
             {
                 var hashes = x.ArgAt<List<uint256>>(0);
                 var blocks = new List<Block>();

@@ -108,7 +108,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.blockDict = new Dictionary<uint256, Block>();
             this.blockDict[this.network.GenesisHash] = this.network.GetGenesis();
 
-            this.blockRepository.GetBlocksAsync(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) => {
+            this.blockRepository.GetBlocks(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) => {
                 var hashes = x.ArgAt<List<uint256>>(0);
                 var blocks = new List<Block>();
                 for (int i = 0; i < hashes.Count; i++)

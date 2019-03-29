@@ -241,7 +241,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             List<NBitcoin.Block> blocks = new List<NBitcoin.Block>();
             foreach(ChainedHeader chainedHeader in matches)
             {
-                blocks.Add(await this.blockStore.GetBlockAsync(chainedHeader.HashBlock).ConfigureAwait(false));
+                blocks.Add(this.blockStore.GetBlock(chainedHeader.HashBlock));
             }
 
             // For each block, get all receipts, and if they match, add to list to return.
