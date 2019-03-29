@@ -989,10 +989,8 @@ namespace NBitcoin.Tests
         private void CanVerifySequenceLockCore(Sequence[] sequences, int[] prevHeights, int currentHeight, DateTimeOffset first, bool expected, SequenceLock expectedLock)
         {
             Network network = this.stratisMain;
-            BlockHeader blockHeader = network.Consensus.ConsensusFactory.CreateBlockHeader();
-            blockHeader.BlockTime = first;
 
-            var chain = new ChainIndexer(network, new ChainedHeader(blockHeader, blockHeader.GetHash(), 0));
+            var chain = new ChainIndexer(network);
             first = first + TimeSpan.FromMinutes(10);
 
             while (currentHeight != chain.Height)

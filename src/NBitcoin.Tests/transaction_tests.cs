@@ -1113,10 +1113,7 @@ namespace NBitcoin.Tests
         {
             Network network = KnownNetworks.Main;
 
-            BlockHeader blockHeader = network.Consensus.ConsensusFactory.CreateBlockHeader();
-            blockHeader.BlockTime = first;
-
-            var chain = new ChainIndexer(this.networkMain, new ChainedHeader(blockHeader, blockHeader.GetHash(), 0));
+            var chain = new ChainIndexer(this.networkMain);
 
             first = first + TimeSpan.FromMinutes(10);
 

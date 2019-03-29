@@ -263,7 +263,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.ReadTxPrevFailed.Throw();
             }
 
-            ChainedHeader prevBlock = this.chainIndexer.GetBlock(coins.BlockHash);
+            ChainedHeader prevBlock = this.chainIndexer.GetHeader(coins.BlockHash);
             if (prevBlock == null)
             {
                 this.logger.LogTrace("(-)[REORG]");

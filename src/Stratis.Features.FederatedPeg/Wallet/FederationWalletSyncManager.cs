@@ -82,7 +82,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             this.logger.LogInformation("WalletSyncManager initialized. Wallet at block {0}.", this.walletManager.LastBlockHeight());
 
-            this.walletTip = this.chain.GetBlock(this.walletManager.WalletTipHash);
+            this.walletTip = this.chain.GetHeader(this.walletManager.WalletTipHash);
             if (this.walletTip == null)
             {
                 // The wallet tip was not found in the main chain.
@@ -111,7 +111,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(block, nameof(block));
 
-            ChainedHeader newTip = this.chain.GetBlock(block.GetHash());
+            ChainedHeader newTip = this.chain.GetHeader(block.GetHash());
             if (newTip == null)
             {
                 this.logger.LogTrace("(-)[NEW_TIP_REORG]");
@@ -124,7 +124,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             {
                 // If previous block does not match there might have
                 // been a reorg, check if the wallet is still on the main chain.
-                ChainedHeader inBestChain = this.chain.GetBlock(this.walletTip.HashBlock);
+                ChainedHeader inBestChain = this.chain.GetHeader(this.walletTip.HashBlock);
                 if (inBestChain == null)
                 {
                     // The current wallet hash was not found on the main chain.
@@ -132,7 +132,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     ChainedHeader fork = this.walletTip;
 
                     // We walk back the chained block object to find the fork.
-                    while (this.chain.GetBlock(fork.HashBlock) == null)
+                    while (this.chain.GetHeader(fork.HashBlock) == null)
                         fork = fork.Previous;
 
                     this.logger.LogInformation("Reorg detected, going back from '{0}' to '{1}'.", this.walletTip, fork);
@@ -271,7 +271,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public virtual void SyncFromHeight(int height)
         {
-            ChainedHeader chainedBlock = this.chain.GetBlock(height);
+            ChainedHeader chainedBlock = this.chain.GetHeader(height);
             this.walletTip = chainedBlock ?? throw new WalletException("Invalid block height");
             this.walletManager.WalletTipHash = chainedBlock.HashBlock;
         }

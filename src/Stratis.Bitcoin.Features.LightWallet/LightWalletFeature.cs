@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             if (this.walletManager is WalletManager manager)
             {
                 int height = manager.LastBlockHeight();
-                ChainedHeader block = this.chainIndexer.GetBlock(height);
+                ChainedHeader block = this.chainIndexer.GetHeader(height);
                 uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
                 log.AppendLine("LightWallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
