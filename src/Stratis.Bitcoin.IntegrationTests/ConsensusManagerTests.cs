@@ -628,15 +628,19 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Connect and sync minerA and minerB.
                 TestHelper.ConnectAndSync(minerA, minerB);
 
-                TestHelper.DisconnectAll(minerA);
+                TestHelper.Disconnect(minerA, minerB);
 
                 (minerB.FullNode.ChainIndexer.GetBlock(5).Block as PosBlock).BlockSignature.Signature = new byte[] { 0 };
 
                 // Connect and sync minerA and minerB.
-                TestHelper.Connect(minerB, minerC);
+                TestHelper.ConnectNoCheck(minerB, minerC);
+
+                // TODO: when signaling failed blocks is enabled we should check this here.
 
                 // Wait for the nodes to disconnect due to invalid block.
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerB, minerC));
+                
+                Assert.True(minerC.FullNode.NodeService<IPeerBanning>().IsBanned(minerB.Endpoint));
 
                 minerC.FullNode.NodeService<IPeerBanning>().UnBanPeer(minerA.Endpoint);
 
