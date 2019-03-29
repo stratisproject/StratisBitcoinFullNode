@@ -179,7 +179,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                                 return;
                             }
 
-                            nextblock = this.blockStore.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+                            nextblock = this.blockStore.GetBlock(next.HashBlock);
                             if (nextblock == null)
                             {
                                 // The idea in this abandoning of the loop is to release consensus to push the block.

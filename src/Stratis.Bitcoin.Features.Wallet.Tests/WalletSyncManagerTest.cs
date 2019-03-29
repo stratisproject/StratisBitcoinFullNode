@@ -140,8 +140,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletSyncManager = new WalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chainIndexer, KnownNetworks.StratisMain,
                 this.blockStore.Object, this.storeSettings, this.signals);
             // setup blockstore to return blocks on the chain.
-            this.blockStore.Setup(b => b.GetBlockAsync(It.IsAny<uint256>()))
-                .ReturnsAsync((uint256 hashblock) =>
+            this.blockStore.Setup(b => b.GetBlock(It.IsAny<uint256>()))
+                .Returns((uint256 hashblock) =>
                 {
                     return result.LeftForkBlocks.Union(result.RightForkBlocks).Single(b => b.GetHash() == hashblock);
                 });
@@ -182,8 +182,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletSyncManager = new WalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chainIndexer, KnownNetworks.StratisMain,
                 this.blockStore.Object, this.storeSettings, this.signals);
             // setup blockstore to return blocks on the chain.
-            this.blockStore.Setup(b => b.GetBlockAsync(It.IsAny<uint256>()))
-                .ReturnsAsync((uint256 hashblock) =>
+            this.blockStore.Setup(b => b.GetBlock(It.IsAny<uint256>()))
+                .Returns((uint256 hashblock) =>
                 {
                     return blocks.Single(b => b.GetHash() == hashblock);
                 });
@@ -219,8 +219,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 this.blockStore.Object, this.storeSettings, this.signals);
             var blockEmptyCounters = new Dictionary<uint256, int>();
             // setup blockstore to return blocks on the chain but postpone by 3 rounds for each block.
-            this.blockStore.Setup(b => b.GetBlockAsync(It.IsAny<uint256>()))
-                .ReturnsAsync((uint256 hashblock) =>
+            this.blockStore.Setup(b => b.GetBlock(It.IsAny<uint256>()))
+                .Returns((uint256 hashblock) =>
                 {
                     if (!blockEmptyCounters.ContainsKey(hashblock))
                     {
