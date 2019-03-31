@@ -24,8 +24,6 @@ namespace Stratis.Bitcoin.Features.Api
 
         private readonly ApiSettings apiSettings;
 
-        private readonly ApiFeatureOptions apiFeatureOptions;
-
         private readonly ILogger logger;
 
         private IWebHost webHost;
@@ -35,14 +33,12 @@ namespace Stratis.Bitcoin.Features.Api
         public ApiFeature(
             IFullNodeBuilder fullNodeBuilder,
             FullNode fullNode,
-            ApiFeatureOptions apiFeatureOptions,
             ApiSettings apiSettings,
             ILoggerFactory loggerFactory,
             ICertificateStore certificateStore)
         {
             this.fullNodeBuilder = fullNodeBuilder;
             this.fullNode = fullNode;
-            this.apiFeatureOptions = apiFeatureOptions;
             this.apiSettings = apiSettings;
             this.certificateStore = certificateStore;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -117,20 +113,19 @@ namespace Stratis.Bitcoin.Features.Api
         }
     }
 
-    public sealed class ApiFeatureOptions
-    {
-    }
-
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
     public static class ApiFeatureExtension
     {
-        public static IFullNodeBuilder UseApi(this IFullNodeBuilder fullNodeBuilder, Action<ApiFeatureOptions> optionsAction = null)
+        public static IFullNodeBuilder UseApi(this IFullNodeBuilder fullNodeBuilder, Action<ApiSettings> optionsAction)
         {
-            // TODO: move the options in to the feature builder
-            var options = new ApiFeatureOptions();
-            optionsAction?.Invoke(options);
+            return UseApi(fullNodeBuilder, new ApiSettings(fullNodeBuilder.NodeSettings, optionsAction));
+        }
+
+        public static IFullNodeBuilder UseApi(this IFullNodeBuilder fullNodeBuilder, ApiSettings options = null)
+        {
+            options = options ?? new ApiSettings(fullNodeBuilder.NodeSettings);
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
@@ -140,7 +135,6 @@ namespace Stratis.Bitcoin.Features.Api
                     {
                         services.AddSingleton(fullNodeBuilder);
                         services.AddSingleton(options);
-                        services.AddSingleton<ApiSettings>();
                         services.AddSingleton<ICertificateStore, CertificateStore>();
                     });
             });

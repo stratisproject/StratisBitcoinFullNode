@@ -13,19 +13,7 @@ namespace Stratis.Bitcoin.Features.Api
     /// </summary>
     public class ApiSettings
     {
-        /// <summary>The default port used by the API when the node runs on the bitcoin network.</summary>
-        public const int DefaultBitcoinApiPort = 37220;
-
-        /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
-        public const int DefaultStratisApiPort = 37221;
-
-        /// <summary>The default port used by the API when the node runs on the bitcoin testnet network.</summary>
-        public const int TestBitcoinApiPort = 38220;
-
-        /// <summary>The default port used by the API when the node runs on the Stratis testnet network.</summary>
-        public const int TestStratisApiPort = 38221;
-
-        /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
+        /// <summary>The default api host.</summary>
         public const string DefaultApiHost = "http://localhost";
 
         /// <summary>Instance logger.</summary>
@@ -40,6 +28,9 @@ namespace Stratis.Bitcoin.Features.Api
         /// <summary>URI to node's API interface.</summary>
         public Timer KeepaliveTimer { get; private set; }
 
+        // TODO: Refactor static PrintHelp method.
+        private static ApiSettings settingsHelp;
+
         /// <summary>
         /// The HTTPS certificate file path.
         /// </summary>
@@ -48,37 +39,55 @@ namespace Stratis.Bitcoin.Features.Api
         /// Please refer to .Net Core documentation for usage: <seealso cref="https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.x509certificates.x509certificate2.-ctor?view=netcore-2.1#System_Security_Cryptography_X509Certificates_X509Certificate2__ctor_System_Byte___" />.
         /// </remarks>
         public string HttpsCertificateFilePath { get; set; }
-        
+
         /// <summary>Use HTTPS or not.</summary>
         public bool UseHttps { get; set; }
-    
+
         /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
         /// <param name="nodeSettings">The node configuration.</param>
-        public ApiSettings(NodeSettings nodeSettings)
+        /// <param name="defaultArgs">Allows overriding the default values before config and command line are applied.</param>
+        public ApiSettings(NodeSettings nodeSettings, Action<ApiSettings> defaultArgs = null)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
-            this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ApiSettings).FullName);    
+            this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ApiSettings).FullName);
 
+            // Constants.
+            this.UseHttps = false;
+            this.HttpsCertificateFilePath = (string)null;
+            this.ApiUri = new Uri($"{DefaultApiHost}");
+            this.KeepaliveTimer = null;
+
+            // DefaultArgs.
+            defaultArgs?.Invoke(this);
+
+            // For printing help.
+            // TODO: Refactor.
+            settingsHelp = (ApiSettings)this.MemberwiseClone();
+
+            // Config and Command Line.
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
-            this.UseHttps = config.GetOrDefault("usehttps", false);
-            this.HttpsCertificateFilePath = config.GetOrDefault("certificatefilepath", (string)null);
+            this.UseHttps = config.GetOrDefault("usehttps", this.UseHttps);
+            this.HttpsCertificateFilePath = config.GetOrDefault("certificatefilepath", this.HttpsCertificateFilePath);
 
             if (this.UseHttps && string.IsNullOrWhiteSpace(this.HttpsCertificateFilePath))
                 throw new ConfigurationException("The path to a certificate needs to be provided when using https. Please use the argument 'certificatefilepath' to provide it.");
 
-            var defaultApiHost = this.UseHttps 
-                ? DefaultApiHost.Replace(@"http://", @"https://") 
-                : DefaultApiHost;
+            string defaultApiHost = this.ApiUri.IsDefaultPort ? this.ApiUri.OriginalString : this.ApiUri.OriginalString.Split(':')[0];
+
+            if (this.UseHttps)
+                defaultApiHost = defaultApiHost.Replace(@"http://", @"https://");
+            else
+                defaultApiHost = defaultApiHost.Replace(@"https://", @"http://");
 
             string apiHost = config.GetOrDefault("apiuri", defaultApiHost, this.logger);
             var apiUri = new Uri(apiHost);
 
             // Find out which port should be used for the API.
-            int apiPort = config.GetOrDefault("apiport", GetDefaultPort(nodeSettings.Network), this.logger);
+            int apiPort = config.GetOrDefault("apiport", this.ApiPort, this.logger);
 
             // If no port is set in the API URI.
             if (apiUri.IsDefaultPort)
@@ -94,28 +103,30 @@ namespace Stratis.Bitcoin.Features.Api
             }
 
             // Set the keepalive interval (set in seconds).
-            int keepAlive = config.GetOrDefault("keepalive", 0, this.logger);
-            if (keepAlive > 0)
+            double keepAlive = config.GetOrDefault("keepalive", (double?)null, this.logger) * 1000 ?? this.KeepaliveTimer?.Interval ?? 0;
+            if (this.KeepaliveTimer != null)
             {
-                this.KeepaliveTimer = new Timer
+                if (keepAlive > 0)
                 {
-                    AutoReset = false,
-                    Interval = keepAlive * 1000
-                };
+                    this.KeepaliveTimer.Interval = keepAlive;
+                }
+                else
+                {
+                    this.KeepaliveTimer.Dispose();
+                    this.KeepaliveTimer = null;
+                }
             }
-        }
-
-        /// <summary>
-        /// Determines the default API port.
-        /// </summary>
-        /// <param name="network">The network to use.</param>
-        /// <returns>The default API port.</returns>
-        private static int GetDefaultPort(Network network)
-        {
-            if (network.IsBitcoin())
-                return network.IsTest() ? TestBitcoinApiPort : DefaultBitcoinApiPort;
-            
-            return network.IsTest() ? TestStratisApiPort : DefaultStratisApiPort;
+            else
+            {
+                if (keepAlive > 0)
+                {
+                    this.KeepaliveTimer = new Timer
+                    {
+                        AutoReset = false,
+                        Interval = keepAlive
+                    };
+                }
+            }
         }
 
         /// <summary>Prints the help information on how to configure the API settings to the logger.</summary>
@@ -124,8 +135,8 @@ namespace Stratis.Bitcoin.Features.Api
         {
             var builder = new StringBuilder();
 
-            builder.AppendLine($"-apiuri=<string>                  URI to node's API interface. Defaults to '{ DefaultApiHost }'.");
-            builder.AppendLine($"-apiport=<0-65535>                Port of node's API interface. Defaults to { GetDefaultPort(network) }.");
+            builder.AppendLine($"-apiuri=<string>                  URI to node's API interface. Defaults to '{ settingsHelp.ApiUri }'.");
+            builder.AppendLine($"-apiport=<0-65535>                Port of node's API interface. Defaults to { settingsHelp.ApiPort }.");
             builder.AppendLine($"-keepalive=<seconds>              Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
             builder.AppendLine($"-usehttps=<bool>                  Use https protocol on the API. Defaults to false.");
             builder.AppendLine($"-certificatefilepath=<string>     Path to the certificate used for https traffic encryption. Defaults to <null>. Password protected files are not supported. On MacOs, only p12 certificates can be used without password.");
@@ -141,10 +152,10 @@ namespace Stratis.Bitcoin.Features.Api
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
             builder.AppendLine("####API Settings####");
-            builder.AppendLine($"#URI to node's API interface. Defaults to '{ DefaultApiHost }'.");
-            builder.AppendLine($"#apiuri={ DefaultApiHost }");
-            builder.AppendLine($"#Port of node's API interface. Defaults to { GetDefaultPort(network) }.");
-            builder.AppendLine($"#apiport={ GetDefaultPort(network) }");
+            builder.AppendLine($"#URI to node's API interface. Defaults to '{ settingsHelp.ApiUri }'.");
+            builder.AppendLine($"#apiuri={ settingsHelp.ApiUri }");
+            builder.AppendLine($"#Port of node's API interface. Defaults to { settingsHelp.ApiPort }.");
+            builder.AppendLine($"#apiport={ settingsHelp.ApiPort }");
             builder.AppendLine($"#Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
             builder.AppendLine($"#keepalive=0");
             builder.AppendLine($"#Use HTTPS protocol on the API. Default is false.");
