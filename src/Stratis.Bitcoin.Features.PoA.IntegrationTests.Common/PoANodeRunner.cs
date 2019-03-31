@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
                 .UsePoAConsensus()
                 .UseMempool()
                 .UseWallet()
-                .UseApi()
+                .UseApi((s) => { s.ApiPort = TestHelper.GetDefaultPort(this.Network); })
                 .AddRPC()
                 .MockIBD()
                 .UseTestChainedHeaderTree()

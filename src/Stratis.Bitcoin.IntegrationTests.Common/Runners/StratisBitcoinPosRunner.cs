@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                 .UseWallet()
                 .AddPowPosMining()
                 .AddRPC()
-                .UseApi()
+                .UseApi((s) => { s.ApiPort = TestHelper.GetDefaultPort(settings.Network); })
                 .UseTestChainedHeaderTree()
                 .MockIBD();
 

@@ -43,7 +43,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                 .UseSmartContractPoAMining()
                 .UseSmartContractWallet()
                 .UseMempool()
-                .UseApi()
+                .UseApi((s) => { s.ApiPort = TestHelper.GetDefaultPort(settings.Network); })
                 .MockIBD()
                 .AddRPC()
                 .ReplaceTimeProvider(this.timeProvider)

@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                .AddMining()
                .UseWallet()
                .AddRPC()
-               .UseApi()
+               .UseApi((s) => { s.ApiPort = TestHelper.GetDefaultPort(builder.Network); })
                .UseTestChainedHeaderTree()
                .MockIBD());
 

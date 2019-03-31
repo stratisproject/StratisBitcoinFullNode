@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 builder
                  .AddPowPosMining()
                  .AddRPC()
-                 .UseApi()
+                 .UseApi((s) => { s.ApiPort = TestHelper.GetDefaultPort(builder.Network); })
                  .UseTestChainedHeaderTree()
                  .MockIBD();
             });

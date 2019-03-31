@@ -43,13 +43,13 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                 {
                     options.UseReflectionExecutor();
                 })
-                .UseSmartContractWallet()                
+                .UseSmartContractWallet()
                 .AddFederationGateway()
                 .UseFederatedPegPoAMining()
                 .UseMempool()
                 .UseTransactionNotification()
                 .UseBlockNotification()
-                .UseApi()
+                .UseApi((s) => { s.ApiPort = TestHelper.GetDefaultPort(settings.Network); })
                 .AddRPC()
                 .MockIBD()
                 .ReplaceTimeProvider(this.timeProvider)
