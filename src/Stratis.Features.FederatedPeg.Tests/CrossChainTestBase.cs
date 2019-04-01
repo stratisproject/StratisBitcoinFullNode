@@ -245,6 +245,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             block.UpdateMerkleRoot();
             block.Header.HashPrevBlock = this.ChainIndexer.Tip.HashBlock;
             block.Header.Nonce = RandomUtils.GetUInt32();
+            block.ToBytes(); // Funnily enough, the only way to set .BlockSize. Forgive me for my sins.
 
             return AppendBlock(block);
         }
