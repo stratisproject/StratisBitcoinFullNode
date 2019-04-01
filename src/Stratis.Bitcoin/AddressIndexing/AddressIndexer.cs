@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using DBreeze;
 using DBreeze.DataTypes;
 using DBreeze.Utils;
+using LiteDB;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -24,10 +25,6 @@ namespace Stratis.Bitcoin.AddressIndexing
     {
         private readonly ISignals signals;
 
-        private readonly DBreezeEngine dBreeze;
-
-        private readonly DBreezeSerializer dBreezeSerializer;
-
         private readonly NodeSettings nodeSettings;
 
         private readonly Network network;
@@ -38,38 +35,33 @@ namespace Stratis.Bitcoin.AddressIndexing
 
         private readonly ILogger logger;
 
-        internal const string TableName = "Data";
+        private readonly DataFolder dataFolder;
 
-        internal const string TipKey = "Txindexertip";
+        private readonly IKeyValueRepository kvRepo;
 
         private HashHeightPair tip;
+
+        private const string TipKey = "AddressIndexerTip";
 
         private SubscriptionToken blockConnectedSubscription, blockDisconnectedSubscription;
 
         /// <summary>Queue that is populated when block is connected or disconnected.</summary>
         /// <remarks><c>bool</c> key is <c>true</c> when block is connected.</remarks>
-        private Queue<KeyValuePair<bool, ChainedHeaderBlock>> blockReceivedQueue;
+        private AsyncQueue<KeyValuePair<bool, ChainedHeaderBlock>> blockReceivedQueue;
 
-        /// <summary>Protects access to <see cref="blockReceivedQueue"/>.</summary>
-        private readonly object lockObj;
+        private LiteDatabase db;
 
-        private readonly CancellationTokenSource cancellation;
-
-        private Task queueProcessingTask;
-
-        public AddressIndexer(NodeSettings nodeSettings, ISignals signals, DataFolder dataFolder, ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer,
-            Network network, IBlockStore blockStore, INodeStats nodeStats)
+        public AddressIndexer(NodeSettings nodeSettings, ISignals signals, DataFolder dataFolder, ILoggerFactory loggerFactory,
+            Network network, IBlockStore blockStore, INodeStats nodeStats, IKeyValueRepository kvRepo)
         {
             this.signals = signals;
-            this.dBreezeSerializer = dBreezeSerializer;
             this.nodeSettings = nodeSettings;
             this.network = network;
             this.blockStore = blockStore;
             this.nodeStats = nodeStats;
+            this.dataFolder = dataFolder;
+            this.kvRepo = kvRepo;
 
-            this.cancellation = new CancellationTokenSource();
-            this.lockObj = new object();
-            this.dBreeze = new DBreezeEngine(dataFolder.AddrIndexPath);
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -77,8 +69,10 @@ namespace Stratis.Bitcoin.AddressIndexing
         {
             if (this.nodeSettings.TxIndex)
             {
+                this.db = new LiteDatabase(Path.Combine(this.dataFolder.AddrIndexPath, "addressindex.litedb"));
+
                 this.logger.LogDebug("TxIndexing is enabled.");
-                this.tip = this.LoadTip();
+                this.tip = this.kvRepo.LoadValue<HashHeightPair>(TipKey);
 
                 if (this.tip == null)
                 {
@@ -86,29 +80,28 @@ namespace Stratis.Bitcoin.AddressIndexing
                     this.tip = new HashHeightPair(this.network.GenesisHash, 0);
                 }
 
-                this.blockReceivedQueue = new Queue<KeyValuePair<bool, ChainedHeaderBlock>>();
+                this.blockReceivedQueue = new AsyncQueue<KeyValuePair<bool, ChainedHeaderBlock>>(this.OnEnqueueAsync);
 
                 // Subscribe to events.
                 this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(blockConnectedData =>
                 {
-                    lock (this.lockObj)
-                    {
-                        this.blockReceivedQueue.Enqueue(new KeyValuePair<bool, ChainedHeaderBlock>(true, blockConnectedData.ConnectedBlock));
-                    }
+                    this.blockReceivedQueue.Enqueue(new KeyValuePair<bool, ChainedHeaderBlock>(true, blockConnectedData.ConnectedBlock));
                 });
 
                 this.blockDisconnectedSubscription = this.signals.Subscribe<BlockDisconnected>(blockDisconnectedData =>
                 {
-                    lock (this.lockObj)
-                    {
-                        this.blockReceivedQueue.Enqueue(new KeyValuePair<bool, ChainedHeaderBlock>(false, blockDisconnectedData.DisconnectedBlock));
-                    }
+                    this.blockReceivedQueue.Enqueue(new KeyValuePair<bool, ChainedHeaderBlock>(false, blockDisconnectedData.DisconnectedBlock));
                 });
-
-                this.queueProcessingTask = this.ProcessQueueContinuouslyAsync();
 
                 this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 400);
             }
+        }
+
+        private Task OnEnqueueAsync(KeyValuePair<bool, ChainedHeaderBlock> item, CancellationToken cancellationtoken)
+        {
+            this.ProcessBlockAddedOrRemoved(item);
+
+            return Task.CompletedTask;
         }
 
         private void AddComponentStats(StringBuilder benchLog)
@@ -119,71 +112,8 @@ namespace Stratis.Bitcoin.AddressIndexing
             benchLog.AppendLine($"Unprocessed blocks: {this.blockReceivedQueue.Count}");
         }
 
-        /// <summary>Continuously processes <see cref="blockReceivedQueue"/>.</summary>
-        private async Task ProcessQueueContinuouslyAsync()
-        {
-            while (!this.cancellation.IsCancellationRequested || this.blockReceivedQueue.Count > 0)
-            {
-                bool wait;
-
-                lock (this.lockObj)
-                {
-                    wait = this.blockReceivedQueue.Count == 0;
-                }
-
-                if (wait)
-                {
-                    try
-                    {
-                        await Task.Delay(1000, this.cancellation.Token).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                    }
-
-                    continue;
-                }
-
-                using (Transaction dbreezeTransaction = this.dBreeze.GetTransaction())
-                {
-                    int itemsProcessed = 0;
-
-                    while (true)
-                    {
-                        // Dequeue the items.
-                        KeyValuePair<bool, ChainedHeaderBlock> item;
-
-                        lock (this.lockObj)
-                        {
-                            if (this.blockReceivedQueue.Count == 0)
-                                break;
-
-                            item = this.blockReceivedQueue.Dequeue();
-                        }
-
-                        try
-                        {
-                            this.ProcessBlockAddedOrRemoved(item, dbreezeTransaction);
-                        }
-                        catch (Exception e)
-                        {
-                            this.logger.LogError(e.ToString());
-                            throw;
-                        }
-
-                        itemsProcessed++;
-
-                        if (itemsProcessed > 100)
-                            break;
-                    }
-
-                    dbreezeTransaction.Commit();
-                }
-            }
-        }
-
         /// <summary>Processes block that was added or removed from consensus chain.</summary>
-        private void ProcessBlockAddedOrRemoved(KeyValuePair<bool, ChainedHeaderBlock> item, Transaction dbreezeTransaction)
+        private void ProcessBlockAddedOrRemoved(KeyValuePair<bool, ChainedHeaderBlock> item)
         {
             // Make sure it's on top of the tip.
             bool blockAdded = item.Key;
@@ -228,16 +158,12 @@ namespace Stratis.Bitcoin.AddressIndexing
 
                 Money amountSpent = txOut.Value;
 
-                Row<byte[], byte[]> addrDataRow = dbreezeTransaction.Select<byte[], byte[]>(TableName, address.ToString().ToBytes());
-
-                AddressIndexData addressIndexData = addrDataRow.Exists ?
-                    this.dBreezeSerializer.Deserialize<AddressIndexData>(addrDataRow.Value) :
-                    new AddressIndexData() { AddressBalanceChanges = new List<AddressBalanceChange>() };
+                LiteCollection<AddressBalanceChange> addressChanges = this.db.GetCollection<AddressBalanceChange>(address.ToString());
 
                 if (blockAdded)
                 {
                     // Record money being spent.
-                    addressIndexData.AddressBalanceChanges.Add(new AddressBalanceChange()
+                    addressChanges.Insert(new AddressBalanceChange()
                     {
                         Height = currentHeight,
                         Amount = amountSpent,
@@ -247,11 +173,8 @@ namespace Stratis.Bitcoin.AddressIndexing
                 else
                 {
                     // Remove changes.
-                    foreach (AddressBalanceChange change in addressIndexData.AddressBalanceChanges.Where(x => x.Height == currentHeight).ToList())
-                        addressIndexData.AddressBalanceChanges.Remove(change);
+                    addressChanges.Delete(x => x.Height == currentHeight);
                 }
-
-                dbreezeTransaction.Insert<byte[], byte[]>(TableName, address.ToString().ToBytes(), this.dBreezeSerializer.Serialize(addressIndexData));
             }
 
             // Process outputs.
@@ -269,15 +192,12 @@ namespace Stratis.Bitcoin.AddressIndexing
 
                     Money amountReceived = txOut.Value;
 
-                    Row<byte[], byte[]> addrDataRow = dbreezeTransaction.Select<byte[], byte[]>(TableName, address.ToString().ToBytes());
-                    AddressIndexData addressIndexData = addrDataRow.Exists ?
-                        this.dBreezeSerializer.Deserialize<AddressIndexData>(addrDataRow.Value) :
-                        new AddressIndexData() { AddressBalanceChanges = new List<AddressBalanceChange>()};
+                    LiteCollection<AddressBalanceChange> addressChanges = this.db.GetCollection<AddressBalanceChange>(address.ToString());
 
                     if (blockAdded)
                     {
                         // Record money being sent.
-                        addressIndexData.AddressBalanceChanges.Add(new AddressBalanceChange()
+                        addressChanges.Insert(new AddressBalanceChange()
                         {
                             Height = currentHeight,
                             Amount = amountReceived,
@@ -287,39 +207,13 @@ namespace Stratis.Bitcoin.AddressIndexing
                     else
                     {
                         // Remove changes.
-                        foreach (AddressBalanceChange change in addressIndexData.AddressBalanceChanges.Where(x => x.Height == currentHeight).ToList())
-                            addressIndexData.AddressBalanceChanges.Remove(change);
+                        addressChanges.Delete(x => x.Height == currentHeight);
                     }
-
-                    dbreezeTransaction.Insert<byte[], byte[]>(TableName, address.ToString().ToBytes(), this.dBreezeSerializer.Serialize(addressIndexData));
                 }
             }
 
             this.tip = new HashHeightPair(item.Value.ChainedHeader.HashBlock, currentHeight);
-            this.SaveTip(this.tip, dbreezeTransaction);
-        }
-
-        private HashHeightPair LoadTip()
-        {
-            using (Transaction transaction = this.dBreeze.GetTransaction())
-            {
-                Row<byte[], byte[]> tipRow = transaction.Select<byte[], byte[]>(TableName, TipKey.ToBytes());
-
-                if (!tipRow.Exists)
-                {
-                    this.logger.LogTrace("(-)[NO_TIP]:null");
-                    return null;
-                }
-
-                var loadedTip = this.dBreezeSerializer.Deserialize<HashHeightPair>(tipRow.Value);
-
-                return loadedTip;
-            }
-        }
-
-        private void SaveTip(HashHeightPair tipToSave, DBreeze.Transactions.Transaction transaction)
-        {
-            transaction.Insert<byte[], byte[]>(TableName, TipKey.ToBytes(), this.dBreezeSerializer.Serialize(tipToSave));
+            this.kvRepo.SaveValue(TipKey, this.tip);
         }
 
         /// <summary>Returns balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
@@ -348,11 +242,9 @@ namespace Stratis.Bitcoin.AddressIndexing
             this.signals.Unsubscribe(this.blockConnectedSubscription);
             this.signals.Unsubscribe(this.blockDisconnectedSubscription);
 
-            this.cancellation.Cancel();
+            this.blockReceivedQueue.Dispose();
 
-            this.queueProcessingTask.GetAwaiter().GetResult();
-
-            this.dBreeze.Dispose();
+            this.db?.Dispose();
         }
     }
 
