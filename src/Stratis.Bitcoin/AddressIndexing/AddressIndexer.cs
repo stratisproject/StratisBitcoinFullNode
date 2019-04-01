@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.AddressIndexing
                 {
                     try
                     {
-                        await Task.Delay(1000).ConfigureAwait(false);
+                        await Task.Delay(1000, this.cancellation.Token).ConfigureAwait(false);
                     }
                     catch (OperationCanceledException)
                     {
@@ -161,7 +161,16 @@ namespace Stratis.Bitcoin.AddressIndexing
                             item = this.blockReceivedQueue.Dequeue();
                         }
 
-                        this.ProcessBlockAddedOrRemoved(item, dbreezeTransaction);
+                        try
+                        {
+                            this.ProcessBlockAddedOrRemoved(item, dbreezeTransaction);
+                        }
+                        catch (Exception e)
+                        {
+                            this.logger.LogError(e.ToString());
+                            throw;
+                        }
+
                         itemsProcessed++;
 
                         if (itemsProcessed > 100)
