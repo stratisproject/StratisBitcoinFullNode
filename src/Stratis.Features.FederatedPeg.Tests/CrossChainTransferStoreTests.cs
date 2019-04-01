@@ -15,7 +15,6 @@ using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.Payloads;
 using Stratis.Features.FederatedPeg.SourceChain;
 using Stratis.Features.FederatedPeg.TargetChain;
-using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Features.FederatedPeg.Wallet;
 using Xunit;
 
@@ -98,7 +97,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <summary>
         /// Recording deposits when the wallet UTXOs are sufficient succeeds with deterministic transactions.
         /// </summary>
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void StoringDepositsWhenWalletBalanceSufficientSucceedsWithDeterministicTransactions()
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
@@ -195,7 +194,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <summary>
         /// Recording deposits when the wallet UTXOs are sufficient succeeds with deterministic transactions.
         /// </summary>
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void StoringDepositsWhenWalletBalanceInSufficientSucceedsWithSuspendStatus()
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
@@ -214,28 +213,32 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
                 Assert.Equal(this.ChainIndexer.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
 
+                uint256 txId1 = 0;
+                uint256 txId2 = 1;
+                uint256 blockHash = 2;
+
                 BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
                 BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
 
-                var deposit1 = new Deposit(0, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
-                var deposit2 = new Deposit(1, new Money(100m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                var deposit1 = new Deposit(txId1, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, blockHash);
+                var deposit2 = new Deposit(txId2, new Money(100m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, blockHash);
 
                 MaturedBlockDepositsModel[] blockDeposits = new[] { new MaturedBlockDepositsModel(
                     new MaturedBlockInfoModel() {
-                        BlockHash = 1,
+                        BlockHash = blockHash,
                         BlockHeight = crossChainTransferStore.NextMatureDepositHeight },
                     new[] { deposit1, deposit2 })
                 };
 
                 crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
 
-                ICrossChainTransfer[] transfers = crossChainTransferStore.GetAsync(new uint256[] { 0, 1 }).GetAwaiter().GetResult().ToArray();
+                ICrossChainTransfer[] transfers = crossChainTransferStore.GetAsync(new uint256[] { txId1, txId2 }).GetAwaiter().GetResult().ToArray();
 
                 Transaction[] transactions = transfers.Select(t => t.PartialTransaction).ToArray();
 
                 Assert.Equal(2, transactions.Length);
 
-                // Transactions[0] inputs.
+                // Transactions[0] inputs. GetOrderedInputs() will put 
                 Assert.Equal(2, transactions[0].Inputs.Count);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[0].PrevOut.Hash);
                 Assert.Equal((uint)0, transactions[0].Inputs[0].PrevOut.N);
