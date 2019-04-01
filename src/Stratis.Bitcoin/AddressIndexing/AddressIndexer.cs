@@ -16,7 +16,6 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.AddressIndexing
 {
-    // TODO THIS CLASS IS NOT FINISHED AND NOT USED
     public class AddressIndexer : IDisposable
     {
         private readonly ISignals signals;
@@ -59,7 +58,6 @@ namespace Stratis.Bitcoin.AddressIndexing
             if (this.nodeSettings.TxIndex)
             {
                 this.logger.LogDebug("TxIndexing is enabled.");
-
                 this.tip = this.LoadTip();
 
                 if (this.tip == null)
@@ -153,6 +151,7 @@ namespace Stratis.Bitcoin.AddressIndexing
         }
 
         /// <summary>Returns balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
+        /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed.</returns>
         public Money GetAddressBalance(BitcoinAddress address, int minConfirmations = 0)
         {
             if (this.tip == null)
@@ -162,16 +161,8 @@ namespace Stratis.Bitcoin.AddressIndexing
         }
 
         /// <summary>Returns the total amount received by the given address in transactions with at least <paramref name="minConfirmations"/> confirmations.</summary>
+        /// <returns>Total amount received by a given address or <c>null</c> if address wasn't indexed.</returns>
         public Money GetReceivedByAddress(BitcoinAddress address, int minConfirmations = 0)
-        {
-            if (this.tip == null)
-                throw new IndexerNotInitializedException();
-
-            throw new NotImplementedException();
-        }
-
-        /// <summary>Returns the total amount spent from the given address in transactions with at least <paramref name="minConfirmations"/> confirmations.</summary>
-        public Money GetSpentByAddress(BitcoinAddress address, int minConfirmations = 0)
         {
             if (this.tip == null)
                 throw new IndexerNotInitializedException();
