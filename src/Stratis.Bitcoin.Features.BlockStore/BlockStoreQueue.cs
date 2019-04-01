@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc/>
         public Transaction[] GetTransactionsByIds(uint256[] trxids)
         {
-            throw new NotImplementedException();
+            return this.blockRepository.GetTransactionsByIds(trxids);
         }
 
         /// <inheritdoc/>
