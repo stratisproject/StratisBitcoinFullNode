@@ -98,7 +98,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <summary>
         /// Recording deposits when the wallet UTXOs are sufficient succeeds with deterministic transactions.
         /// </summary>
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void StoringDepositsWhenWalletBalanceSufficientSucceedsWithDeterministicTransactions()
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
