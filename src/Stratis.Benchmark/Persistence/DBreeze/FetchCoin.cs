@@ -9,6 +9,7 @@ using DBreeze.DataTypes;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Networks;
+using Transaction = DBreeze.Transactions.Transaction;
 
 namespace Stratis.Benchmark.Persistence.DBreeze
 {
@@ -49,7 +50,7 @@ namespace Stratis.Benchmark.Persistence.DBreeze
             using (var engine = this.GetDBEngine())
             {
                 // Store data.
-                using (global::DBreeze.Transactions.Transaction tx = engine.GetTransaction())
+                using (Transaction tx = engine.GetTransaction())
                 {
                     tx.Insert("BlockHash", new byte[0], this.data[0].ToBytes());
 
@@ -68,7 +69,7 @@ namespace Stratis.Benchmark.Persistence.DBreeze
         {
             using (var engine = this.GetDBEngine())
             {
-                using (global::DBreeze.Transactions.Transaction transaction = engine.GetTransaction())
+                using (Transaction transaction = engine.GetTransaction())
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
 
@@ -96,7 +97,7 @@ namespace Stratis.Benchmark.Persistence.DBreeze
                 var rangePartitioner = Partitioner.Create(0, this.data.Length);
                 Parallel.ForEach(rangePartitioner, (range, loopState) =>
                 {
-                    using (global::DBreeze.Transactions.Transaction transaction = engine.GetTransaction())
+                    using (Transaction transaction = engine.GetTransaction())
                     {
                         transaction.ValuesLazyLoadingIsOn = false;
 
@@ -119,7 +120,7 @@ namespace Stratis.Benchmark.Persistence.DBreeze
         {
             using (var engine = this.GetDBEngine())
             {
-                using (global::DBreeze.Transactions.Transaction transaction = engine.GetTransaction())
+                using (Transaction transaction = engine.GetTransaction())
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
 
@@ -143,7 +144,7 @@ namespace Stratis.Benchmark.Persistence.DBreeze
         {
             using (var engine = this.GetDBEngine())
             {
-                using (global::DBreeze.Transactions.Transaction transaction = engine.GetTransaction())
+                using (Transaction transaction = engine.GetTransaction())
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
 
