@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.AddressIndexing
         /// <summary>Continuously processes <see cref="blockReceivedQueue"/>.</summary>
         private async Task ProcessQueueContinuouslyAsync()
         {
-            while (!this.cancellation.IsCancellationRequested)
+            while (!this.cancellation.IsCancellationRequested || this.blockReceivedQueue.Count > 0)
             {
                 bool wait;
 
@@ -230,7 +230,9 @@ namespace Stratis.Bitcoin.AddressIndexing
 
                 Row<byte[], byte[]> addrDataRow = dbreezeTransaction.Select<byte[], byte[]>(TableName, address.ToString().ToBytes());
 
-                AddressIndexData addressIndexData = this.dBreezeSerializer.Deserialize<AddressIndexData>(addrDataRow.Value);
+                AddressIndexData addressIndexData = addrDataRow.Exists ?
+                    this.dBreezeSerializer.Deserialize<AddressIndexData>(addrDataRow.Value) :
+                    new AddressIndexData() { AddressBalanceChanges = new List<AddressBalanceChange>() };
 
                 if (blockAdded)
                 {
