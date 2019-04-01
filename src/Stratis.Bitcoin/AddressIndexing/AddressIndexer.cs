@@ -56,6 +56,8 @@ namespace Stratis.Bitcoin.AddressIndexing
 
         private LiteDatabase db;
 
+        private LiteCollection<AddressIndexData> addressesCollection;
+
         public AddressIndexer(NodeSettings nodeSettings, ISignals signals, DataFolder dataFolder, ILoggerFactory loggerFactory,
             Network network, IBlockStore blockStore, INodeStats nodeStats, IKeyValueRepository kvRepo)
         {
@@ -88,9 +90,19 @@ namespace Stratis.Bitcoin.AddressIndexing
 
                 this.blockReceivedQueue = new AsyncQueue<KeyValuePair<bool, ChainedHeaderBlock>>(this.OnEnqueueAsync);
 
+                this.addressesCollection = this.db.GetCollection<AddressIndexData>(AddressesKey);
+
                 // Subscribe to events.
                 this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(blockConnectedData =>
                 {
+                    if (this.blockReceivedQueue.Count > 1000)
+                    {
+                        this.logger.LogWarning("Address indexing is slowing down the consensus.");
+
+                        while (this.blockReceivedQueue.Count > 100)
+                            Thread.Sleep(1000);
+                    }
+
                     this.blockReceivedQueue.Enqueue(new KeyValuePair<bool, ChainedHeaderBlock>(true, blockConnectedData.ConnectedBlock));
                 });
 
@@ -155,8 +167,6 @@ namespace Stratis.Bitcoin.AddressIndexing
 
             NBitcoin.Transaction[] transactions = this.blockStore.GetTransactionsByIds(inputs.Select(x => x.PrevOut.Hash).ToArray());
 
-            LiteCollection<AddressIndexData> addresses = this.db.GetCollection<AddressIndexData>(AddressesKey);
-
             for (int i = 0; i < inputs.Count; i++)
             {
                 TxIn currentInput = inputs[i];
@@ -165,7 +175,7 @@ namespace Stratis.Bitcoin.AddressIndexing
 
                 Money amountSpent = txOut.Value;
 
-                AddressIndexData addrData = this.GetOrCreateAddressData(txOut.ScriptPubKey, addresses);
+                AddressIndexData addrData = this.GetOrCreateAddressData(txOut.ScriptPubKey);
 
                 if (blockAdded)
                 {
@@ -183,7 +193,7 @@ namespace Stratis.Bitcoin.AddressIndexing
                     addrData.Changes.RemoveAll(x => x.Height == currentHeight);
                 }
 
-                addresses.Update(addrData);
+                this.addressesCollection.Update(addrData);
             }
 
             // Process outputs.
@@ -193,7 +203,7 @@ namespace Stratis.Bitcoin.AddressIndexing
                 {
                     Money amountReceived = txOut.Value;
 
-                    AddressIndexData addrData = this.GetOrCreateAddressData(txOut.ScriptPubKey, addresses);
+                    AddressIndexData addrData = this.GetOrCreateAddressData(txOut.ScriptPubKey);
 
                     if (blockAdded)
                     {
@@ -211,7 +221,7 @@ namespace Stratis.Bitcoin.AddressIndexing
                         addrData.Changes.RemoveAll(x => x.Height == currentHeight);
                     }
 
-                    addresses.Update(addrData);
+                    this.addressesCollection.Update(addrData);
                 }
             }
 
@@ -219,10 +229,10 @@ namespace Stratis.Bitcoin.AddressIndexing
             this.kvRepo.SaveValue(TipKey, this.tip);
         }
 
-        private AddressIndexData GetOrCreateAddressData(Script scriptPubKey, LiteCollection<AddressIndexData> addresses)
+        private AddressIndexData GetOrCreateAddressData(Script scriptPubKey)
         {
             byte[] scriptPubKeyBytes = scriptPubKey.ToBytes();
-            AddressIndexData addrData = addresses.FindOne(x => StructuralComparisons.StructuralEqualityComparer.Equals(scriptPubKeyBytes, x.ScriptPubKeyBytes));
+            AddressIndexData addrData = this.addressesCollection.FindOne(x => StructuralComparisons.StructuralEqualityComparer.Equals(scriptPubKeyBytes, x.ScriptPubKeyBytes));
 
             if (addrData == null)
             {
@@ -232,7 +242,7 @@ namespace Stratis.Bitcoin.AddressIndexing
                     Changes = new List<AddressBalanceChange>()
                 };
 
-                addresses.Insert(addrData);
+                this.addressesCollection.Insert(addrData);
             }
 
             return addrData;
