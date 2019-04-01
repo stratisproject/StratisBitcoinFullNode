@@ -30,7 +30,6 @@ namespace Stratis.Bitcoin.Configuration
             this.KeyValueRepositoryPath = Path.Combine(path, "common");
             this.BlockPath = Path.Combine(path, "blocks");
             this.PollsPath = Path.Combine(path, "polls");
-            this.AddrIndexPath = Path.Combine(path, "addrindex");
             this.IndexPath = Path.Combine(path, "index");
             this.RpcCookieFile = Path.Combine(path, ".cookie");
             this.WalletPath = Path.Combine(path);
@@ -68,10 +67,6 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>Path to the folder with polls.</summary>
         public string PollsPath { get; internal set; }
-
-        /// <summary>Path to the folder with address index.</summary>
-        /// <remarks><see cref=" AddressIndexer"/></remarks>
-        public string AddrIndexPath { get; internal set; }
 
         /// <summary>Path to the folder with block repository database files.</summary>
         /// <seealso cref="Features.IndexStore.IndexRepository.IndexRepository"/>

@@ -69,7 +69,8 @@ namespace Stratis.Bitcoin.AddressIndexing
         {
             if (this.nodeSettings.TxIndex)
             {
-                this.db = new LiteDatabase(Path.Combine(this.dataFolder.AddrIndexPath, "addressindex.litedb"));
+                string dbPath = Path.Combine(this.dataFolder.RootPath, "addressindex.litedb");
+                this.db = new LiteDatabase(new ConnectionString() {Filename = dbPath});
 
                 this.logger.LogDebug("TxIndexing is enabled.");
                 this.tip = this.kvRepo.LoadValue<HashHeightPair>(TipKey);
@@ -99,7 +100,15 @@ namespace Stratis.Bitcoin.AddressIndexing
 
         private Task OnEnqueueAsync(KeyValuePair<bool, ChainedHeaderBlock> item, CancellationToken cancellationtoken)
         {
-            this.ProcessBlockAddedOrRemoved(item);
+            try
+            {
+                this.ProcessBlockAddedOrRemoved(item);
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError(ex.ToString());
+                throw;
+            }
 
             return Task.CompletedTask;
         }
