@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.AddressIndexing
 
                 this.queueProcessingTask = this.ProcessQueueContinuouslyAsync();
 
-                this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1100);
+                this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 400);
             }
         }
 
@@ -119,6 +119,7 @@ namespace Stratis.Bitcoin.AddressIndexing
             benchLog.AppendLine($"Unprocessed blocks: {this.blockReceivedQueue.Count}");
         }
 
+        /// <summary>Continuously processes <see cref="blockReceivedQueue"/>.</summary>
         private async Task ProcessQueueContinuouslyAsync()
         {
             while (!this.cancellation.IsCancellationRequested)
@@ -289,7 +290,7 @@ namespace Stratis.Bitcoin.AddressIndexing
 
         private HashHeightPair LoadTip()
         {
-            using (DBreeze.Transactions.Transaction transaction = this.dBreeze.GetTransaction())
+            using (Transaction transaction = this.dBreeze.GetTransaction())
             {
                 Row<byte[], byte[]> tipRow = transaction.Select<byte[], byte[]>(TableName, TipKey.ToBytes());
 
