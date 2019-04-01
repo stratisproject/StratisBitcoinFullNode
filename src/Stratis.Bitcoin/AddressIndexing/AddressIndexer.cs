@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using DBreeze;
@@ -10,6 +12,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.EventBus.CoreEvents;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
@@ -28,6 +31,8 @@ namespace Stratis.Bitcoin.AddressIndexing
 
         private readonly Network network;
 
+        private readonly IBlockStore blockStore;
+
         private readonly ILogger logger;
 
         internal const string TableName = "Data";
@@ -42,12 +47,14 @@ namespace Stratis.Bitcoin.AddressIndexing
         /// <remarks><c>bool</c> key is <c>true</c> when block is connected.</remarks>
         private AsyncQueue<KeyValuePair<bool, ChainedHeaderBlock>> blockReceivedQueue;
 
-        public AddressIndexer(NodeSettings nodeSettings, ISignals signals, DataFolder dataFolder, ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer, Network network)
+        public AddressIndexer(NodeSettings nodeSettings, ISignals signals, DataFolder dataFolder, ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer, Network network,
+            IBlockStore blockStore)
         {
             this.signals = signals;
             this.dBreezeSerializer = dBreezeSerializer;
             this.nodeSettings = nodeSettings;
             this.network = network;
+            this.blockStore = blockStore;
 
             this.dBreeze = new DBreezeEngine(dataFolder.TxIndexPath);
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -105,24 +112,98 @@ namespace Stratis.Bitcoin.AddressIndexing
             }
 
             Block block = item.Value.Block;
+            int currentHeight = item.Value.ChainedHeader.Height;
 
-            if (blockAdded)
+            using (DBreeze.Transactions.Transaction dbreezeTransaction = this.dBreeze.GetTransaction())
             {
-                // TODO process inputs
-               //List<TxIn> q =  block.Transactions.Select(x => x.Inputs).First().ToList();
-               //q.First().
+                // Process inputs
+                var inputs = new List<TxIn>();
 
-                // take input, tx id from it, fetch txes from blockstore. from txes get address and value
+                foreach (TxInList inputsCollection in block.Transactions.Select(x => x.Inputs))
+                    inputs.AddRange(inputsCollection);
 
-                // TODO remove from inputs, add to outputs
+                Transaction[] transactions = this.blockStore.GetTransactionsByIds(inputs.Select(x => x.PrevOut.Hash).ToArray());
+
+                for (int i = 0; i < inputs.Count; i++)
+                {
+                    TxIn currentInput = inputs[i];
+
+                    TxOut txOut = transactions[i].Outputs[currentInput.PrevOut.N];
+
+                    // Address from which money were spent.
+                    BitcoinAddress address = txOut.ScriptPubKey.GetDestinationAddress(this.network);
+
+                    if (address == null)
+                    {
+                        this.logger.LogTrace("Address wasn't recognized. ScriptPubKey: '{0}'.", txOut.ScriptPubKey);
+                        continue;
+                    }
+
+                    Money amountSpent = txOut.Value;
+
+                    Row<byte[], byte[]> addrDataRow = dbreezeTransaction.Select<byte[], byte[]>(TableName, address.ToBytes());
+                    AddressIndexData addressIndexData = this.dBreezeSerializer.Deserialize<AddressIndexData>(addrDataRow.Value);
+
+                    if (blockAdded)
+                    {
+                        // Record money being spent.
+                        addressIndexData.AddressBalanceChanges.Add(new AddressBalanceChange()
+                        {
+                            Height = currentHeight,
+                            Amount = amountSpent,
+                            Deposited = false
+                        });
+                    }
+                    else
+                    {
+                        // Remove changes.
+                        foreach (AddressBalanceChange change in addressIndexData.AddressBalanceChanges.Where(x => x.Height == currentHeight).ToList())
+                            addressIndexData.AddressBalanceChanges.Remove(change);
+                    }
+                }
+
+                // Process outputs.
+                foreach (Transaction tx in block.Transactions)
+                {
+                    foreach (TxOut txOut in tx.Outputs)
+                    {
+                        BitcoinAddress address = txOut.ScriptPubKey.GetDestinationAddress(this.network);
+
+                        if (address == null)
+                        {
+                            this.logger.LogTrace("Address wasn't recognized. ScriptPubKey: '{0}'.", txOut.ScriptPubKey);
+                            continue;
+                        }
+
+                        Money amountReceived = txOut.Value;
+
+                        Row<byte[], byte[]> addrDataRow = dbreezeTransaction.Select<byte[], byte[]>(TableName, address.ToBytes());
+                        AddressIndexData addressIndexData = this.dBreezeSerializer.Deserialize<AddressIndexData>(addrDataRow.Value);
+
+                        if (blockAdded)
+                        {
+                            // Record money being sent.
+                            addressIndexData.AddressBalanceChanges.Add(new AddressBalanceChange()
+                            {
+                                Height = currentHeight,
+                                Amount = amountReceived,
+                                Deposited = true
+                            });
+                        }
+                        else
+                        {
+                            // Remove changes.
+                            foreach (AddressBalanceChange change in addressIndexData.AddressBalanceChanges.Where(x => x.Height == currentHeight).ToList())
+                                addressIndexData.AddressBalanceChanges.Remove(change);
+                        }
+                    }
+                }
+
+                this.tip = new HashHeightPair(item.Value.ChainedHeader.HashBlock, currentHeight);
+                this.SaveTip(this.tip, dbreezeTransaction);
+
+                dbreezeTransaction.Commit();
             }
-
-            // TODO class:
-            // KV where key is address and value is a list of operations.
-            //operation: type (spend\deposit), block height, amount
-
-            // TODO
-            // update index, save the tip
 
             return Task.CompletedTask;
         }
