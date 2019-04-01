@@ -118,6 +118,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 // Start the node, this should hit the block store recover code.
                 newNodeInstance.Start();
 
+                // Restart stopped node & sync.
+                stratisNode1.Start();
+                TestHelper.ConnectAndSync(newNodeInstance, stratisNode1);
+
                 // Check that the store recovered to be the same as the best chain.
                 Assert.Equal(newNodeInstance.FullNode.ChainIndexer.Tip.HashBlock, newNodeInstance.FullNode.GetBlockStoreTip().HashBlock);
             }

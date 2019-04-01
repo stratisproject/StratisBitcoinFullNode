@@ -305,7 +305,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
                 CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(stratisNode1, 10);
@@ -321,6 +321,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // Load the node, this should hit the block store recover code
                 newNodeInstance.Start();
+
+                // Restart stopped node & sync.
+                stratisNode1.Start();
+                TestHelper.ConnectAndSync(newNodeInstance, stratisNode1);
 
                 // Check that store recovered to be the same as the best chain.
                 Assert.Equal(newNodeInstance.FullNode.ChainIndexer.Tip.HashBlock, newNodeInstance.FullNode.WalletManager().WalletTipHash);
