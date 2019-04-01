@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,12 +12,14 @@ using LiteDB;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using Script = NBitcoin.Script;
 using Transaction = DBreeze.Transactions.Transaction;
 
 namespace Stratis.Bitcoin.AddressIndexing
@@ -42,6 +45,8 @@ namespace Stratis.Bitcoin.AddressIndexing
         private HashHeightPair tip;
 
         private const string TipKey = "AddressIndexerTip";
+
+        private const string AddressesKey = "addr";
 
         private SubscriptionToken blockConnectedSubscription, blockDisconnectedSubscription;
 
@@ -150,40 +155,35 @@ namespace Stratis.Bitcoin.AddressIndexing
 
             NBitcoin.Transaction[] transactions = this.blockStore.GetTransactionsByIds(inputs.Select(x => x.PrevOut.Hash).ToArray());
 
+            LiteCollection<AddressIndexData> addresses = this.db.GetCollection<AddressIndexData>(AddressesKey);
+
             for (int i = 0; i < inputs.Count; i++)
             {
                 TxIn currentInput = inputs[i];
 
                 TxOut txOut = transactions[i].Outputs[currentInput.PrevOut.N];
 
-                // Address from which money were spent.
-                BitcoinAddress address = txOut.ScriptPubKey.GetDestinationAddress(this.network);
-
-                if (address == null)
-                {
-                    this.logger.LogTrace("Address wasn't recognized. ScriptPubKey: '{0}'.", txOut.ScriptPubKey);
-                    continue;
-                }
-
                 Money amountSpent = txOut.Value;
 
-                LiteCollection<AddressBalanceChange> addressChanges = this.db.GetCollection<AddressBalanceChange>(address.ToString());
+                AddressIndexData addrData = this.GetOrCreateAddressData(txOut.ScriptPubKey, addresses);
 
                 if (blockAdded)
                 {
                     // Record money being spent.
-                    addressChanges.Insert(new AddressBalanceChange()
+                    addrData.Changes.Add(new AddressBalanceChange()
                     {
                         Height = currentHeight,
-                        Amount = amountSpent,
+                        Satoshi = amountSpent.Satoshi,
                         Deposited = false
                     });
                 }
                 else
                 {
                     // Remove changes.
-                    addressChanges.Delete(x => x.Height == currentHeight);
+                    addrData.Changes.RemoveAll(x => x.Height == currentHeight);
                 }
+
+                addresses.Update(addrData);
             }
 
             // Process outputs.
@@ -191,38 +191,51 @@ namespace Stratis.Bitcoin.AddressIndexing
             {
                 foreach (TxOut txOut in tx.Outputs)
                 {
-                    BitcoinAddress address = txOut.ScriptPubKey.GetDestinationAddress(this.network);
-
-                    if (address == null)
-                    {
-                        this.logger.LogTrace("Address wasn't recognized. ScriptPubKey: '{0}'.", txOut.ScriptPubKey);
-                        continue;
-                    }
-
                     Money amountReceived = txOut.Value;
 
-                    LiteCollection<AddressBalanceChange> addressChanges = this.db.GetCollection<AddressBalanceChange>(address.ToString());
+                    AddressIndexData addrData = this.GetOrCreateAddressData(txOut.ScriptPubKey, addresses);
 
                     if (blockAdded)
                     {
                         // Record money being sent.
-                        addressChanges.Insert(new AddressBalanceChange()
+                        addrData.Changes.Add(new AddressBalanceChange()
                         {
                             Height = currentHeight,
-                            Amount = amountReceived,
+                            Satoshi = amountReceived.Satoshi,
                             Deposited = true
                         });
                     }
                     else
                     {
                         // Remove changes.
-                        addressChanges.Delete(x => x.Height == currentHeight);
+                        addrData.Changes.RemoveAll(x => x.Height == currentHeight);
                     }
+
+                    addresses.Update(addrData);
                 }
             }
 
             this.tip = new HashHeightPair(item.Value.ChainedHeader.HashBlock, currentHeight);
             this.kvRepo.SaveValue(TipKey, this.tip);
+        }
+
+        private AddressIndexData GetOrCreateAddressData(Script scriptPubKey, LiteCollection<AddressIndexData> addresses)
+        {
+            byte[] scriptPubKeyBytes = scriptPubKey.ToBytes();
+            AddressIndexData addrData = addresses.FindOne(x => StructuralComparisons.StructuralEqualityComparer.Equals(scriptPubKeyBytes, x.ScriptPubKeyBytes));
+
+            if (addrData == null)
+            {
+                addrData = new AddressIndexData()
+                {
+                    ScriptPubKeyBytes = scriptPubKeyBytes,
+                    Changes = new List<AddressBalanceChange>()
+                };
+
+                addresses.Insert(addrData);
+            }
+
+            return addrData;
         }
 
         /// <summary>Returns balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
