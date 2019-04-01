@@ -2,6 +2,7 @@
 using System.Net;
 using NBitcoin;
 using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.TxIndexing;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Configuration
@@ -69,7 +70,7 @@ namespace Stratis.Bitcoin.Configuration
         public string PollsPath { get; internal set; }
 
         /// <summary>Path to the folder with tx index.</summary>
-        /// <remarks><see cref=" Stratis.Bitcoin.TxIndexing.TransactionIndexer"/></remarks>
+        /// <remarks><see cref=" AddressIndexer"/></remarks>
         public string TxIndexPath { get; internal set; }
 
         /// <summary>Path to the folder with block repository database files.</summary>

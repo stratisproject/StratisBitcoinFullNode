@@ -2,7 +2,7 @@
 using System.Linq;
 using NBitcoin;
 
-namespace Stratis.Bitcoin.TxIndexing
+namespace Stratis.Bitcoin.AddressIndexing
 {
     /// <summary>Contains information about operations that happened to an address.</summary>
     public class AddressIndexData : IBitcoinSerializable

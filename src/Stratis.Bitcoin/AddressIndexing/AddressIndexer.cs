@@ -14,10 +14,10 @@ using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.TxIndexing
+namespace Stratis.Bitcoin.AddressIndexing
 {
     // TODO THIS CLASS IS NOT FINISHED AND NOT USED
-    public class TransactionIndexer : IDisposable
+    public class AddressIndexer : IDisposable
     {
         private readonly ISignals signals;
 
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.TxIndexing
         /// <remarks><c>bool</c> key is <c>true</c> when block is connected.</remarks>
         private AsyncQueue<KeyValuePair<bool, ChainedHeaderBlock>> blockReceivedQueue;
 
-        public TransactionIndexer(NodeSettings nodeSettings, ISignals signals, DataFolder dataFolder, ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer, Network network)
+        public AddressIndexer(NodeSettings nodeSettings, ISignals signals, DataFolder dataFolder, ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer, Network network)
         {
             this.signals = signals;
             this.dBreezeSerializer = dBreezeSerializer;
