@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 TestHelper.ConnectAndSync(newNodeInstance, stratisNode1);
 
                 // Check that the store recovered to be the same as the best chain.
-                Assert.Equal(newNodeInstance.FullNode.ChainIndexer.Tip.HashBlock, newNodeInstance.FullNode.GetBlockStoreTip().HashBlock);
+                Assert.Equal(newNodeInstance.FullNode.ChainIndexer.Tip.HashBlock, stratisNode1.FullNode.GetBlockStoreTip().HashBlock);
             }
         }
 
