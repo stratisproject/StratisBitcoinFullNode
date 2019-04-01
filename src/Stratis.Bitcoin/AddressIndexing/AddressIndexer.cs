@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DBreeze;
@@ -33,6 +34,8 @@ namespace Stratis.Bitcoin.AddressIndexing
 
         private readonly IBlockStore blockStore;
 
+        private readonly INodeStats nodeStats;
+
         private readonly ILogger logger;
 
         internal const string TableName = "Data";
@@ -54,14 +57,15 @@ namespace Stratis.Bitcoin.AddressIndexing
 
         private Task queueProcessingTask;
 
-        public AddressIndexer(NodeSettings nodeSettings, ISignals signals, DataFolder dataFolder, ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer, Network network,
-            IBlockStore blockStore)
+        public AddressIndexer(NodeSettings nodeSettings, ISignals signals, DataFolder dataFolder, ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer,
+            Network network, IBlockStore blockStore, INodeStats nodeStats)
         {
             this.signals = signals;
             this.dBreezeSerializer = dBreezeSerializer;
             this.nodeSettings = nodeSettings;
             this.network = network;
             this.blockStore = blockStore;
+            this.nodeStats = nodeStats;
 
             this.cancellation = new CancellationTokenSource();
             this.lockObj = new object();
@@ -102,7 +106,17 @@ namespace Stratis.Bitcoin.AddressIndexing
                 });
 
                 this.queueProcessingTask = this.ProcessQueueContinuouslyAsync();
+
+                this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1100);
             }
+        }
+
+        private void AddComponentStats(StringBuilder benchLog)
+        {
+            benchLog.AppendLine();
+            benchLog.AppendLine("======AddressIndexer======");
+
+            benchLog.AppendLine($"Unprocessed blocks: {this.blockReceivedQueue.Count}");
         }
 
         private async Task ProcessQueueContinuouslyAsync()
@@ -150,10 +164,7 @@ namespace Stratis.Bitcoin.AddressIndexing
                         itemsProcessed++;
 
                         if (itemsProcessed > 100)
-                        {
-                            this.logger.LogWarning("TxIndexer is lagging behind. {0} items are enqueued.", this.blockReceivedQueue.Count);
                             break;
-                        }
                     }
 
                     dbreezeTransaction.Commit();
