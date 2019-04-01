@@ -20,7 +20,7 @@ namespace Stratis.Benchmark
         public NetworkBenchmarkBase(Network network)
         {
             this.network = Guard.NotNull(network, nameof(network));
-            this.dBreezeSerializer = new DBreezeSerializer(new ConsensusFactory());
+            this.dBreezeSerializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
 
             this.dataFolder = System.IO.Path.GetDirectoryName(this.GetType().Assembly.Location);
         }
