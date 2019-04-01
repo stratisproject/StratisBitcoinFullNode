@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
             try
             {
-                Block block = await this.blockStore.GetBlockAsync(uint256.Parse(query.Hash)).ConfigureAwait(false);
+                Block block = this.blockStore.GetBlock(uint256.Parse(query.Hash));
 
                 if (block == null)
                 {
