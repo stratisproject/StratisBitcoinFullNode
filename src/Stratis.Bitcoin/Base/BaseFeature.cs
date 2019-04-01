@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AddressIndexing;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
@@ -100,6 +101,8 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
+        private readonly AddressIndexer addressIndexer;
+
         /// <inheritdoc cref="Network"/>
         private readonly Network network;
 
@@ -141,6 +144,7 @@ namespace Stratis.Bitcoin.Base
             Network network,
             ITipsManager tipsManager,
             IKeyValueRepository keyValueRepo,
+            AddressIndexer addressIndexer,
             IProvenBlockHeaderStore provenBlockHeaderStore = null)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
@@ -161,6 +165,7 @@ namespace Stratis.Bitcoin.Base
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
             this.tipsManager = Guard.NotNull(tipsManager, nameof(tipsManager));
             this.keyValueRepo = Guard.NotNull(keyValueRepo, nameof(keyValueRepo));
+            this.addressIndexer = Guard.NotNull(addressIndexer, nameof(addressIndexer));
 
             this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
             this.peerAddressManager.PeerFilePath = this.dataFolder;
@@ -202,6 +207,8 @@ namespace Stratis.Bitcoin.Base
             connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings));
             connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.initialBlockDownloadState, this.dateTimeProvider, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(this.connectionManager, this.loggerFactory));
+
+            this.addressIndexer.Initialize();
 
             this.StartAddressManager(connectionParameters);
 
@@ -435,6 +442,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IIntegrityValidator, IntegrityValidator>();
                     services.AddSingleton<IPartialValidator, PartialValidator>();
                     services.AddSingleton<IFullValidator, FullValidator>();
+                    services.AddScoped<AddressIndexer>();
 
                     // Console
                     services.AddSingleton<INodeStats, NodeStats>();

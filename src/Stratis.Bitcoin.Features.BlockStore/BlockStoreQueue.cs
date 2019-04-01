@@ -213,7 +213,55 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc/>
         public Transaction[] GetTransactionsByIds(uint256[] trxids)
         {
-            return this.blockRepository.GetTransactionsByIds(trxids);
+            // Only look for transactions if they're indexed.
+            if (!this.nodeSettings.TxIndex)
+                return null;
+
+            Transaction[] txes = new Transaction[trxids.Length];
+
+            lock (this.blocksCacheLock)
+            {
+                for (int i = 0; i < trxids.Length; i++)
+                {
+                    uint256 txId = trxids[i];
+
+                    foreach (ChainedHeaderBlock chainedHeaderBlock in this.pendingBlocksCache.Values)
+                    {
+                        Transaction tx = chainedHeaderBlock.Block.Transactions.FirstOrDefault(x => x.GetHash() == txId);
+
+                        if (tx != null)
+                        {
+                            this.logger.LogTrace("Transaction '{0}' was found in the pending blocks cache.", txId);
+                            txes[i] = tx;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            var notFoundIds = new List<uint256>();
+
+            for (int i = 0; i < trxids.Length; i++)
+            {
+                if (txes[i] == null)
+                {
+                    notFoundIds.Add(trxids[i]);
+                }
+            }
+
+            Transaction[] fetchedTxes = this.blockRepository.GetTransactionsByIds(notFoundIds.ToArray());
+            int fetchedIndex = 0;
+
+            for (int i = 0; i < txes.Length; i++)
+            {
+                if (txes[i] == null)
+                {
+                    txes[i] = fetchedTxes[fetchedIndex];
+                    fetchedIndex++;
+                }
+            }
+
+            return txes;
         }
 
         /// <inheritdoc/>

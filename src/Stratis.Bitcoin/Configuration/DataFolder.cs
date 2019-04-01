@@ -2,7 +2,7 @@
 using System.Net;
 using NBitcoin;
 using Stratis.Bitcoin.P2P;
-using Stratis.Bitcoin.TxIndexing;
+using Stratis.Bitcoin.AddressIndexing;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Configuration
@@ -30,11 +30,11 @@ namespace Stratis.Bitcoin.Configuration
             this.KeyValueRepositoryPath = Path.Combine(path, "common");
             this.BlockPath = Path.Combine(path, "blocks");
             this.PollsPath = Path.Combine(path, "polls");
-            this.TxIndexPath = Path.Combine(path, "txindex");
+            this.AddrIndexPath = Path.Combine(path, "addrindex");
             this.IndexPath = Path.Combine(path, "index");
             this.RpcCookieFile = Path.Combine(path, ".cookie");
             this.WalletPath = Path.Combine(path);
-            this.LogPath = Path.Combine(path, "Logs");
+            this.LogPath = Path.Combine(path, "logs");
             this.ApplicationsPath = Path.Combine(path, "apps");
             this.DnsMasterFilePath = path;
             this.SmartContractStatePath = Path.Combine(path, "contracts");
@@ -69,9 +69,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Path to the folder with polls.</summary>
         public string PollsPath { get; internal set; }
 
-        /// <summary>Path to the folder with tx index.</summary>
+        /// <summary>Path to the folder with address index.</summary>
         /// <remarks><see cref=" AddressIndexer"/></remarks>
-        public string TxIndexPath { get; internal set; }
+        public string AddrIndexPath { get; internal set; }
 
         /// <summary>Path to the folder with block repository database files.</summary>
         /// <seealso cref="Features.IndexStore.IndexRepository.IndexRepository"/>
