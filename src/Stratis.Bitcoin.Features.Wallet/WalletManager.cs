@@ -53,6 +53,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
+        /// <summary>Access to the block and transaction database on disk.</summary>
+        private readonly IBlockStore blockStore;
+
         /// <summary>Gets the list of wallets.</summary>
         public ConcurrentBag<Wallet> Wallets { get; }
 
@@ -99,6 +102,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         internal ScriptToAddressLookup scriptToAddressLookup;
 
         public WalletManager(
+            IBlockStore blockStore,
             ILoggerFactory loggerFactory,
             Network network,
             ChainIndexer chainIndexer,
@@ -128,6 +132,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.Wallets = new ConcurrentBag<Wallet>();
 
             this.network = network;
+            this.blockStore = blockStore;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.ChainIndexer = chainIndexer;
             this.asyncLoopFactory = asyncLoopFactory;
@@ -855,6 +860,156 @@ namespace Stratis.Bitcoin.Features.Wallet
             return lastBlockSyncedHash;
         }
 
+        /// <summary>
+        /// Please see https://github.com/bitcoin/bitcoin/blob/726d0668ff780acb59ab0200359488ce700f6ae6/src/wallet/wallet.cpp#L3641
+        /// </summary>
+        /// <returns>A grouped list of base 58 addresses.</returns>
+        public List<List<string>> GetAddressGroupings()
+        {
+            // Get the wallet to check.
+            var walletName = this.GetDefaultOrFirstWalletName();
+            var wallet = this.GetWallet(walletName);
+
+            // Cache all the addresses in the wallet.
+            var addresses = wallet.GetAllAddresses();
+
+            // Get the transaction data for this wallet.
+            var txs = wallet.GetAllTransactions();
+
+            // Create a transaction dictionary for performant lookups.
+            var txDictionary = new Dictionary<uint256, TransactionData>(txs.Count());
+            foreach (var item in txs)
+            {
+                txDictionary.TryAdd(item.Id, item);
+            }
+
+            // Cache the wallet's set of internal (change addresses).
+            var internalAddresses = wallet.GetAccounts().SelectMany(a => a.InternalAddresses);
+
+            var addressGroupings = new List<List<string>>();
+
+            foreach (var transaction in txDictionary)
+            {
+                var tx = this.blockStore.GetTransactionById(transaction.Value.Id);
+                if (tx.Inputs.Count > 0)
+                {
+                    var addressGroupBase58 = new List<string>();
+
+                    // Group all input addresses with each other.
+                    foreach (var txIn in tx.Inputs)
+                    {
+                        if (!IsTxInMine(addresses, txDictionary, txIn))
+                            continue;
+
+                        // Get the txIn's previous transaction address.
+                        var prevTransactionData = txs.FirstOrDefault(t => t.Id == txIn.PrevOut.Hash);
+                        var prevTransaction = this.blockStore.GetTransactionById(prevTransactionData.Id);
+                        var prevTransactionScriptPubkey = prevTransaction.Outputs[txIn.PrevOut.N].ScriptPubKey;
+
+                        var addressBase58 = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, prevTransactionScriptPubkey);
+                        if (addressBase58 == null)
+                            continue;
+
+                        addressGroupBase58.Add(addressBase58);
+                    }
+
+                    // If any of the inputs were "mine", also include any change addresses associated to the transaction.
+                    if (addressGroupBase58.Any())
+                    {
+                        foreach (var txOut in tx.Outputs)
+                        {
+                            if (IsChange(internalAddresses, txOut.ScriptPubKey))
+                            {
+                                var txOutAddressBase58 = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, txOut.ScriptPubKey);
+                                if (txOutAddressBase58 != null)
+                                    addressGroupBase58.Add(txOutAddressBase58);
+                            }
+                        }
+
+                        addressGroupings.Add(addressGroupBase58);
+                    }
+                }
+
+                // Group lone addresses by themselves.
+                foreach (var txOut in tx.Outputs)
+                {
+                    if (IsAddressMine(addresses, txOut.ScriptPubKey))
+                    {
+                        var grouping = new List<string>();
+
+                        var addressBase58 = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, txOut.ScriptPubKey);
+                        if (addressBase58 == null)
+                            continue;
+
+                        grouping.Add(addressBase58);
+                        addressGroupings.Add(grouping);
+                    }
+                }
+            }
+
+            // Merge the results into a distinct set of addresses.
+            var mergedGroupings = new List<List<string>>();
+            foreach (var addressGroup in addressGroupings)
+            {
+                foreach (var address in addressGroup)
+                {
+                    if (mergedGroupings.SelectMany(a => a).Any(a => a == address))
+                        continue;
+
+                    mergedGroupings.Add(new List<string>() { address });
+                }
+            }
+
+            return mergedGroupings;
+        }
+
+        /// <summary>
+        /// This will check the wallet's list of <see cref="HdAccount.InternalAddress"/>es to see if this address is
+        /// an address that received change.
+        /// </summary>
+        /// <param name="internalAddresses">The wallet's set of internal addresses.</param>
+        /// <param name="txOutScriptPubkey">The base58 address to verify from the <see cref="TxOut"/>.</param>
+        /// <returns><c>true</c> if the <paramref name="txOutScriptPubkey"/> is a change address.</returns>
+        private bool IsChange(IEnumerable<HdAddress> internalAddresses, Script txOutScriptPubkey)
+        {
+            return internalAddresses.FirstOrDefault(ia => ia.ScriptPubKey == txOutScriptPubkey) != null;
+        }
+
+        /// <summary>
+        /// Determines whether or not the input's address exists in the wallet's set of addresses.
+        /// </summary>
+        /// <param name="addresses">The wallet's external and internal addresses.</param>
+        /// <param name="txDictionary">The set of transactions to check against.</param>
+        /// <param name="txIn">The input to check.</param>
+        /// <returns><c>true</c>if the input's address exist in the wallet.</returns>
+        private bool IsTxInMine(IEnumerable<HdAddress> addresses, Dictionary<uint256, TransactionData> txDictionary, TxIn txIn)
+        {
+            TransactionData previousTransaction = null;
+            txDictionary.TryGetValue(txIn.PrevOut.Hash, out previousTransaction);
+
+            if (previousTransaction == null)
+                return false;
+
+            var previousTx = this.blockStore.GetTransactionById(previousTransaction.Id);
+            if (txIn.PrevOut.N >= previousTx.Outputs.Count)
+                return false;
+
+            // We now need to check if the scriptPubkey is in our wallet.
+            // See https://github.com/bitcoin/bitcoin/blob/011c39c2969420d7ca8b40fbf6f3364fe72da2d0/src/script/ismine.cpp
+            return IsAddressMine(addresses, previousTx.Outputs[txIn.PrevOut.N].ScriptPubKey);
+        }
+
+        /// <summary>
+        /// Determines whether the script translates to an address that exists in the given wallet.
+        /// </summary>
+        /// <param name="addresses">All the addresses from the wallet.</param>
+        /// <param name="scriptPubKey">The script to check.</param>
+        /// <returns><c>true</c> if the <paramref name="scriptPubKey"/> is an address in the given wallet.</returns>
+        private bool IsAddressMine(IEnumerable<HdAddress> addresses, Script scriptPubKey)
+        {
+            return addresses.FirstOrDefault(a => a.ScriptPubKey == scriptPubKey) != null;
+        }
+
         /// <inheritdoc />
         public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(string walletName, int confirmations = 0)
         {
@@ -1540,6 +1695,22 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return wallet;
+        }
+
+        /// <inheritdoc />
+        public string GetDefaultOrFirstWalletName()
+        {
+            string walletName = null;
+
+            if (this.walletSettings.IsDefaultWalletEnabled())
+                walletName = this.GetWalletsNames().FirstOrDefault(w => w == this.walletSettings.DefaultWalletName);
+            else
+            {
+                //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
+                walletName = this.GetWalletsNames().FirstOrDefault();
+            }
+
+            return walletName;
         }
 
         /// <inheritdoc />

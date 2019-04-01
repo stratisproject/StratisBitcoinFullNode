@@ -23,8 +23,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 {
     public class WalletRPCController : FeatureController
     {
-        private readonly IBlockStore blockStore;
-
         /// <summary>Wallet broadcast manager.</summary>
         private readonly IBroadcasterManager broadcasterManager;
 
@@ -47,7 +45,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly WalletSettings walletSettings;
 
         public WalletRPCController(
-            IBlockStore blockStore,
             IBroadcasterManager broadcasterManager,
             ChainIndexer chainIndexer,
             IConsensusManager consensusManager,
@@ -60,7 +57,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             WalletSettings walletSettings,
             IWalletTransactionHandler walletTransactionHandler) : base(fullNode: fullNode, consensusManager: consensusManager, chainIndexer: chainIndexer, network: network)
         {
-            this.blockStore = blockStore;
             this.broadcasterManager = broadcasterManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.scriptAddressReader = scriptAddressReader;
@@ -77,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             Guard.NotEmpty(passphrase, nameof(passphrase));
 
-            WalletAccountReference account = this.GetAccount();
+            WalletAccountReference account = this.GetWalletAccountReference();
 
             try
             {
@@ -94,7 +90,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         [ActionDescription("Removes the wallet encryption key from memory, locking the wallet. After calling this method, you will need to call walletpassphrase again before being able to call any methods which require the wallet to be unlocked.")]
         public bool LockWallet()
         {
-            WalletAccountReference account = this.GetAccount();
+            WalletAccountReference account = this.GetWalletAccountReference();
             this.walletManager.LockWallet(account.WalletName);
             return true; // NOTE: Have to return a value or else RPC middleware doesn't serialize properly.
         }
@@ -103,11 +99,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         [ActionDescription("Sends money to an address. Requires wallet to be unlocked using walletpassphrase.")]
         public async Task<uint256> SendToAddressAsync(BitcoinAddress address, decimal amount, string commentTx, string commentDest)
         {
-            WalletAccountReference account = this.GetAccount();
+            WalletAccountReference account = this.GetWalletAccountReference();
 
             TransactionBuildContext context = new TransactionBuildContext(this.FullNode.Network)
             {
-                AccountReference = this.GetAccount(),
+                AccountReference = this.GetWalletAccountReference(),
                 Recipients = new[] { new Recipient { Amount = Money.Coins(amount), ScriptPubKey = address.ScriptPubKey } }.ToList(),
                 CacheSecret = false
             };
@@ -167,7 +163,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 if (!addressType.Equals("legacy", StringComparison.InvariantCultureIgnoreCase))
                     throw new RPCServerException(RPCErrorCode.RPC_METHOD_NOT_FOUND, "Only address type 'legacy' is currently supported.");
             }
-            HdAddress hdAddress = this.walletManager.GetUnusedAddress(this.GetAccount());
+            HdAddress hdAddress = this.walletManager.GetUnusedAddress(this.GetWalletAccountReference());
             string base58Address = hdAddress.Address;
 
             return new NewAddressModel(base58Address);
@@ -189,7 +185,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (!string.IsNullOrEmpty(accountName) && !accountName.Equals("*"))
                 throw new RPCServerException(RPCErrorCode.RPC_METHOD_DEPRECATED, "Account has been deprecated, must be excluded or set to \"*\"");
 
-            WalletAccountReference account = this.GetAccount();
+            WalletAccountReference account = this.GetWalletAccountReference();
 
             Money balance = this.walletManager.GetSpendableTransactionsInAccount(account, minConfirmations).Sum(x => x.Transaction.Amount);
             return balance?.ToUnit(MoneyUnit.BTC) ?? 0;
@@ -208,7 +204,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (!uint256.TryParse(txid, out uint256 trxid))
                 throw new ArgumentException(nameof(txid));
 
-            WalletAccountReference accountReference = this.GetAccount();
+            WalletAccountReference accountReference = this.GetWalletAccountReference();
             HdAccount account = this.walletManager.GetAccounts(accountReference.WalletName).Single(a => a.Name == accountReference.AccountName);
 
             // Get the transaction from the wallet by looking into received and send transactions.
@@ -349,8 +345,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (!this.nodeSettings.TxIndex)
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, $"{nameof(ListAddressGroupings)} is incompatible with transaction indexing turned off (i.e. -txIndex=0).");
 
-            //Get all the address groupings.
-            var addressGroupings = GetAddressGroupings();
+            var addressGroupings = this.walletManager.GetAddressGroupings();
 
             var addressGroupingModels = new List<AddressGroupingModel>();
 
@@ -372,156 +367,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             return addressGroupingModels.ToArray();
         }
 
-        /// <summary>
-        /// Please see https://github.com/bitcoin/bitcoin/blob/726d0668ff780acb59ab0200359488ce700f6ae6/src/wallet/wallet.cpp#L3641
-        /// </summary>
-        /// <returns>A list of base 58 addresses.</returns>
-        private List<List<string>> GetAddressGroupings()
-        {
-            // Get the wallet to check.
-            var walletReference = this.GetAccount();
-            var wallet = this.walletManager.GetWallet(walletReference.WalletName);
-
-            // Cache all the addresses in the wallet.
-            var addresses = wallet.GetAllAddresses();
-
-            // Get the transaction data for this wallet.
-            var txs = wallet.GetAllTransactions();
-
-            // Create a transaction dictionary for performant lookups.
-            var txDictionary = new Dictionary<uint256, TransactionData>(txs.Count());
-            foreach (var item in txs)
-            {
-                txDictionary.TryAdd(item.Id, item);
-            }
-
-            // Cache the wallet's set of internal (change addresses).
-            var internalAddresses = wallet.GetAccounts().SelectMany(a => a.InternalAddresses);
-
-            var addressGroupings = new List<List<string>>();
-
-            foreach (var transaction in txDictionary)
-            {
-                var tx = this.blockStore.GetTransactionById(transaction.Value.Id);
-                if (tx.Inputs.Count > 0)
-                {
-                    var addressGroupBase58 = new List<string>();
-
-                    // Group all input addresses with each other.
-                    foreach (var txIn in tx.Inputs)
-                    {
-                        if (!IsTxInMine(addresses, txDictionary, txIn))
-                            continue;
-
-                        // Get the txIn's previous transaction address.
-                        var prevTransactionData = txs.FirstOrDefault(t => t.Id == txIn.PrevOut.Hash);
-                        var prevTransaction = this.blockStore.GetTransactionById(prevTransactionData.Id);
-                        var prevTransactionScriptPubkey = prevTransaction.Outputs[txIn.PrevOut.N].ScriptPubKey;
-
-                        var addressBase58 = this.scriptAddressReader.GetAddressFromScriptPubKey(this.Network, prevTransactionScriptPubkey);
-                        if (addressBase58 == null)
-                            continue;
-
-                        addressGroupBase58.Add(addressBase58);
-                    }
-
-                    // If any of the inputs were "mine", also include any change addresses associated to the transaction.
-                    if (addressGroupBase58.Any())
-                    {
-                        foreach (var txOut in tx.Outputs)
-                        {
-                            if (IsChange(internalAddresses, txOut.ScriptPubKey))
-                            {
-                                var txOutAddressBase58 = this.scriptAddressReader.GetAddressFromScriptPubKey(this.Network, txOut.ScriptPubKey);
-                                if (txOutAddressBase58 != null)
-                                    addressGroupBase58.Add(txOutAddressBase58);
-                            }
-                        }
-
-                        addressGroupings.Add(addressGroupBase58);
-                    }
-                }
-
-                // Group lone addresses by themselves.
-                foreach (var txOut in tx.Outputs)
-                {
-                    if (IsAddressMine(addresses, txOut.ScriptPubKey))
-                    {
-                        var grouping = new List<string>();
-
-                        var addressBase58 = this.scriptAddressReader.GetAddressFromScriptPubKey(this.Network, txOut.ScriptPubKey);
-                        if (addressBase58 == null)
-                            continue;
-
-                        grouping.Add(addressBase58);
-                        addressGroupings.Add(grouping);
-                    }
-                }
-            }
-
-            // Merge the results into a distinct set of addresses.
-            var mergedGroupings = new List<List<string>>();
-            foreach (var addressGroup in addressGroupings)
-            {
-                foreach (var address in addressGroup)
-                {
-                    if (mergedGroupings.SelectMany(a => a).Any(a => a == address))
-                        continue;
-
-                    mergedGroupings.Add(new List<string>() { address });
-                }
-            }
-
-            return mergedGroupings;
-        }
-
-        /// <summary>
-        /// This will check the wallet's list of <see cref="HdAccount.InternalAddress"/>es to see if this address is
-        /// an address that received change.
-        /// </summary>
-        /// <param name="internalAddresses">The wallet's set of internal addresses.</param>
-        /// <param name="txOutScriptPubkey">The base58 address to verify from the <see cref="TxOut"/>.</param>
-        /// <returns><c>true</c> if the <paramref name="txOutScriptPubkey"/> is a change address.</returns>
-        private bool IsChange(IEnumerable<HdAddress> internalAddresses, Script txOutScriptPubkey)
-        {
-            return internalAddresses.FirstOrDefault(ia => ia.ScriptPubKey == txOutScriptPubkey) != null;
-        }
-
-        /// <summary>
-        /// Determines whether or not the input's address exists in the wallet's set of addresses.
-        /// </summary>
-        /// <param name="addresses">The wallet's external and internal addresses.</param>
-        /// <param name="txDictionary">The set of transactions to check against.</param>
-        /// <param name="txIn">The input to check.</param>
-        /// <returns><c>true</c>if the input's address exist in the wallet.</returns>
-        private bool IsTxInMine(IEnumerable<HdAddress> addresses, Dictionary<uint256, TransactionData> txDictionary, TxIn txIn)
-        {
-            TransactionData previousTransaction = null;
-            txDictionary.TryGetValue(txIn.PrevOut.Hash, out previousTransaction);
-
-            if (previousTransaction == null)
-                return false;
-
-            var previousTx = this.blockStore.GetTransactionById(previousTransaction.Id);
-            if (txIn.PrevOut.N >= previousTx.Outputs.Count)
-                return false;
-
-            // We now need to check if the scriptPubkey is in our wallet.
-            // See https://github.com/bitcoin/bitcoin/blob/011c39c2969420d7ca8b40fbf6f3364fe72da2d0/src/script/ismine.cpp
-            return IsAddressMine(addresses, previousTx.Outputs[txIn.PrevOut.N].ScriptPubKey);
-        }
-
-        /// <summary>
-        /// Determines whether the script translates to an address that exists in the given wallet.
-        /// </summary>
-        /// <param name="addresses">All the addresses from the wallet.</param>
-        /// <param name="scriptPubKey">The script to check.</param>
-        /// <returns><c>true</c> if the <paramref name="scriptPubKey"/> is an address in the given wallet.</returns>
-        private bool IsAddressMine(IEnumerable<HdAddress> addresses, Script scriptPubKey)
-        {
-            return addresses.FirstOrDefault(a => a.ScriptPubKey == scriptPubKey) != null;
-        }
-
         [ActionName("listunspent")]
         [ActionDescription("Returns an array of unspent transaction outputs belonging to this wallet.")]
         public UnspentCoinModel[] ListUnspent(int minConfirmations = 1, int maxConfirmations = 9999999, string addressesJson = null)
@@ -532,7 +377,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 JsonConvert.DeserializeObject<List<string>>(addressesJson).ForEach(i => addresses.Add(BitcoinAddress.Create(i, this.FullNode.Network)));
             }
 
-            WalletAccountReference accountReference = this.GetAccount();
+            WalletAccountReference accountReference = this.GetWalletAccountReference();
             IEnumerable<UnspentOutputReference> spendableTransactions = this.walletManager.GetSpendableTransactionsInAccount(accountReference, minConfirmations);
 
             var unspentCoins = new List<UnspentCoinModel>();
@@ -615,7 +460,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 recipients.Add(recipient);
             }
 
-            WalletAccountReference accountReference = this.GetAccount();
+            WalletAccountReference accountReference = this.GetWalletAccountReference();
 
             var context = new TransactionBuildContext(this.FullNode.Network)
             {
@@ -670,19 +515,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Gets the first account from the "default" wallet if it specified, otherwise returns the first available account in the existing wallets.
         /// </summary>
         /// <returns>Reference to the default wallet account, or the first available if no default wallet is specified.</returns>
-        private WalletAccountReference GetAccount()
+        private WalletAccountReference GetWalletAccountReference()
         {
-            string walletName;
-
-            if (this.walletSettings.IsDefaultWalletEnabled())
-            {
-                walletName = this.walletManager.GetWalletsNames().FirstOrDefault(w => w == this.walletSettings.DefaultWalletName);
-            }
-            else
-            {
-                //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
-                walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
-            }
+            string walletName = this.walletManager.GetDefaultOrFirstWalletName();
 
             if (walletName == null)
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");

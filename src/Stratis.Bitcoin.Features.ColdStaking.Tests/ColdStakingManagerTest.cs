@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -10,6 +8,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Tests;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities;
@@ -19,10 +18,12 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 {
     public class ColdStakingManagerTest : LogsTestBase, IClassFixture<WalletFixture>
     {
+        private readonly IBlockStore blockStore;
         private readonly WalletFixture walletFixture;
 
         public ColdStakingManagerTest(WalletFixture walletFixture)
         {
+            this.blockStore = new Mock<IBlockStore>().Object;
             this.walletFixture = walletFixture;
             this.Network.StandardScriptsRegistry.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
         }
@@ -188,14 +189,14 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             var walletSettings = new WalletSettings(new NodeSettings(network: this.Network));
 
-            var coldWalletManager = new ColdStakingManager(this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
+            var coldWalletManager = new ColdStakingManager(this.blockStore, this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
                 new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), new ScriptAddressReader(), this.LoggerFactory.Object, DateTimeProvider.Default, new Mock<IBroadcasterManager>().Object);
             coldWalletManager.Wallets.Add(wallet);
             coldWalletManager.Wallets.Add(coldWallet);
             coldWalletManager.LoadKeysLookupLock();
 
             // Create another instance for the hot wallet as it is not allowed to have both wallets on the same instance.
-            var hotWalletManager = new ColdStakingManager(this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
+            var hotWalletManager = new ColdStakingManager(this.blockStore, this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
                 new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), new ScriptAddressReader(), this.LoggerFactory.Object, DateTimeProvider.Default, new Mock<IBroadcasterManager>().Object);
             hotWalletManager.Wallets.Add(hotWallet);
             hotWalletManager.LoadKeysLookupLock();
@@ -267,7 +268,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 new Money(750), new Money(262));
 
             // Wallet manager for the wallet receiving the funds.
-            var receivingWalletManager = new ColdStakingManager(this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
+            var receivingWalletManager = new ColdStakingManager(this.blockStore, this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
                 new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), new ScriptAddressReader(), this.LoggerFactory.Object, DateTimeProvider.Default, new Mock<IBroadcasterManager>().Object);
             receivingWalletManager.Wallets.Add(withdrawalWallet);
             receivingWalletManager.LoadKeysLookupLock();

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Security;
 using NBitcoin;
 using NBitcoin.BuilderExtensions;
 
@@ -234,6 +233,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         int LastBlockHeight();
 
         /// <summary>
+        /// Returns a list of grouped addresses which have had their common ownership made public by common use as inputs or as the resulting change in past transactions.
+        /// </summary>
+        /// <returns>The grouped list of base58 addresses.</returns>
+        List<List<string>> GetAddressGroupings();
+
+        /// <summary>
         /// Remove all the transactions in the wallet that are above this block height
         /// </summary>
         void RemoveBlocks(ChainedHeader fork);
@@ -271,6 +276,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <returns></returns>
         string GetWalletFileExtension();
+
+        /// <summary>
+        /// Returns the "default" wallet's name first if specified, otherwise the first wallet's name.
+        /// </summary>
+        /// <returns>The default or first wallet's name.</returns>
+        string GetDefaultOrFirstWalletName();
 
         /// <summary>
         /// Gets all the wallets' names.
