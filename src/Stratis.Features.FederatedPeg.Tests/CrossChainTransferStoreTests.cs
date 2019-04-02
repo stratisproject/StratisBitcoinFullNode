@@ -138,19 +138,19 @@ namespace Stratis.Features.FederatedPeg.Tests
                 // Transactions[0] inputs.
                 Assert.Equal(2, transactions[0].Inputs.Count);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[0].PrevOut.Hash);
-                Assert.Equal((uint)0, transactions[0].Inputs[0].PrevOut.N);
+                Assert.Equal((uint)1, transactions[0].Inputs[0].PrevOut.N);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[1].PrevOut.Hash);
-                Assert.Equal((uint)1, transactions[0].Inputs[1].PrevOut.N);
+                Assert.Equal((uint)0, transactions[0].Inputs[1].PrevOut.N);
 
                 // Transaction[0] outputs.
                 Assert.Equal(3, transactions[0].Outputs.Count);
 
                 // Transaction[0] output value - change.
-                Assert.Equal(new Money(9.99m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
+                Assert.Equal(new Money(10m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[0].Outputs[0].ScriptPubKey);
 
                 // Transaction[0] output value - recipient 1.
-                Assert.Equal(new Money(160m, MoneyUnit.BTC), transactions[0].Outputs[1].Value);
+                Assert.Equal(new Money(159.99m, MoneyUnit.BTC), transactions[0].Outputs[1].Value);
                 Assert.Equal(address1.ScriptPubKey, transactions[0].Outputs[1].ScriptPubKey);
 
                 // Transaction[0] output value - op_return.
@@ -167,11 +167,11 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(3, transactions[1].Outputs.Count);
 
                 // Transaction[1] output value - change.
-                Assert.Equal(new Money(9.99m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
+                Assert.Equal(new Money(10m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[1].Outputs[0].ScriptPubKey);
 
                 // Transaction[1] output value - recipient 2.
-                Assert.Equal(new Money(60m, MoneyUnit.BTC), transactions[1].Outputs[1].Value);
+                Assert.Equal(new Money(59.99m, MoneyUnit.BTC), transactions[1].Outputs[1].Value);
                 Assert.Equal(address2.ScriptPubKey, transactions[1].Outputs[1].ScriptPubKey);
 
                 // Transaction[1] output value - op_return.
@@ -238,22 +238,22 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 Assert.Equal(2, transactions.Length);
 
-                // Transactions[0] inputs. GetOrderedInputs() will put 
+                // Transactions[0] inputs. Note that inputs are ordered by amount.
                 Assert.Equal(2, transactions[0].Inputs.Count);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[0].PrevOut.Hash);
-                Assert.Equal((uint)0, transactions[0].Inputs[0].PrevOut.N);
+                Assert.Equal((uint)1, transactions[0].Inputs[0].PrevOut.N);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[1].PrevOut.Hash);
-                Assert.Equal((uint)1, transactions[0].Inputs[1].PrevOut.N);
+                Assert.Equal((uint)0, transactions[0].Inputs[1].PrevOut.N);
 
                 // Transaction[0] outputs.
                 Assert.Equal(3, transactions[0].Outputs.Count);
 
-                // Transaction[0] output value - change.
-                Assert.Equal(new Money(9.99m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
+                // Transaction[0] output value - change. 
+                Assert.Equal(new Money(10m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[0].Outputs[0].ScriptPubKey);
 
-                // Transaction[0] output value - recipient 1.
-                Assert.Equal(new Money(160m, MoneyUnit.BTC), transactions[0].Outputs[1].Value);
+                // Transaction[0] output value - recipient 1, but minus 0.01 for the tx fee.
+                Assert.Equal(new Money(159.99m, MoneyUnit.BTC), transactions[0].Outputs[1].Value);
                 Assert.Equal(address1.ScriptPubKey, transactions[0].Outputs[1].ScriptPubKey);
 
                 // Transaction[0] output value - op_return.
@@ -272,23 +272,23 @@ namespace Stratis.Features.FederatedPeg.Tests
                 // Add more funds and resubmit the deposits.
                 AddFundingTransaction(new Money[] { Money.COIN * 1000 });
                 crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
-                transfers = crossChainTransferStore.GetAsync(new uint256[] { 0, 1 }).GetAwaiter().GetResult().ToArray();
+                transfers = crossChainTransferStore.GetAsync(new uint256[] { txId1, txId2 }).GetAwaiter().GetResult().ToArray();
                 transactions = transfers.Select(t => t.PartialTransaction).ToArray();
 
                 // Transactions[1] inputs.
-                Assert.Equal(2, transactions[1].Inputs.Count);
-                Assert.Equal(this.fundingTransactions[1].GetHash(), transactions[1].Inputs[0].PrevOut.Hash);
+                Assert.Equal(1, transactions[1].Inputs.Count);
+                Assert.Equal(this.fundingTransactions[2].GetHash(), transactions[1].Inputs[0].PrevOut.Hash);
                 Assert.Equal((uint)0, transactions[1].Inputs[0].PrevOut.N);
 
                 // Transaction[1] outputs.
                 Assert.Equal(3, transactions[1].Outputs.Count);
 
                 // Transaction[1] output value - change.
-                Assert.Equal(new Money(969.99m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
+                Assert.Equal(new Money(900m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[1].Outputs[0].ScriptPubKey);
 
-                // Transaction[1] output value - recipient 2.
-                Assert.Equal(new Money(100m, MoneyUnit.BTC), transactions[1].Outputs[1].Value);
+                // Transaction[1] output value - recipient 2, but minus 0.01 for the tx fee.
+                Assert.Equal(new Money(99.99m, MoneyUnit.BTC), transactions[1].Outputs[1].Value);
                 Assert.Equal(address2.ScriptPubKey, transactions[1].Outputs[1].ScriptPubKey);
 
                 // Transaction[1] output value - op_return.
@@ -303,7 +303,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 (Money confirmed, Money unconfirmed) spendable = this.wallet.GetSpendableAmount();
 
-                Assert.Equal(new Money(979.98m, MoneyUnit.BTC), spendable.unconfirmed);
+                Assert.Equal(new Money(910m, MoneyUnit.BTC), spendable.unconfirmed);
             }
         }
 

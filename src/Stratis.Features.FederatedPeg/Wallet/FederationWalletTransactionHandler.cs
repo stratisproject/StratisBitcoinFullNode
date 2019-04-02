@@ -111,12 +111,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             var transactionBuilder = new TransactionBuilder(this.network);
 
-            // We only want to send the minimum number of UTXOs at once.
-            transactionBuilder.CoinSelector = new DefaultCoinSelector
-            {
-                GroupByScriptPubKey = false,
-                
-            };
+            transactionBuilder.CoinSelector = new DeterministicCoinSelector();
 
             this.AddRecipients(transactionBuilder, context);
             this.AddOpReturnOutput(transactionBuilder, context);
@@ -271,13 +266,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
             int index = 0;
             var coins = new List<Coin>();
 
-            IEnumerable<UnspentOutputReference> orderedUnspentOutputs = context.OrderCoinsDeterministic
-                ? this.GetOrderedUnspentOutputs(context)
-                : context.UnspentOutputs.OrderByDescending(a => a.Transaction.Amount);
-
-            var first = orderedUnspentOutputs.First();
-            var second = orderedUnspentOutputs.ElementAt(1);
-
+            // Note that the coins are ordered and selected by the CoinSelector later on.
+            // TODO: Move GetOrderedUnspentOutputs to happen inside the DeterministicCoinSelector.
+            IEnumerable<UnspentOutputReference> orderedUnspentOutputs = this.GetOrderedUnspentOutputs(context);
 
             foreach (UnspentOutputReference item in orderedUnspentOutputs)
             {
@@ -447,11 +438,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// If false, allows unselected inputs, but requires all selected inputs be used
         /// </summary>
         public bool AllowOtherInputs { get; set; }
-
-        /// <summary>
-        /// If <c>true</c> coins will be ordered using (block height + transaction id + output index) ordering.
-        /// </summary>
-        public bool OrderCoinsDeterministic { get; set; }
 
         /// <summary>
         /// Specify whether to sign the transaction.

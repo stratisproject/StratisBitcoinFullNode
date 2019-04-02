@@ -55,7 +55,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     recipient.WithPaymentReducedByFee(this.federationGatewaySettings.TransactionFee)
                 }.ToList(), opReturnData: opReturnData.ToBytes())
                 {
-                    OrderCoinsDeterministic = true,
                     TransactionFee = this.federationGatewaySettings.TransactionFee,
                     MinConfirmations = MinConfirmations,
                     Shuffle = false,
