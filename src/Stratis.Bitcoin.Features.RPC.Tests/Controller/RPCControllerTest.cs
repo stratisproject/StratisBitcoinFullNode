@@ -46,15 +46,14 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.fullNode.Setup(f => f.Network)
                 .Returns(this.testNetwork);
             this.rpcHost = new Mock<IWebHost>();
-            var nodeSettings = new NodeSettings(this.testNetwork, args: new string[] { "-server=1" });
+            var nodeSettings = new NodeSettings(this.testNetwork, args: new string[] { "-server=1", "-rpcuser=test", "-rpcpassword=test", "-rpcport=0" });
             this.rpcSettings = new RpcSettings(nodeSettings);
             this.serviceProvider = new Mock<IServiceProvider>();
             this.rpcClientFactory = new Mock<IRPCClientFactory>();
             this.actionDescriptorCollectionProvider = new Mock<IActionDescriptorCollectionProvider>();
 
             this.rpcClient = new Mock<IRPCClient>();
-            this.rpcSettings.Bind.Add(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 0));
-            this.rpcClientFactory.Setup(r => r.Create(this.rpcSettings, It.Is<Uri>(u => u.ToString() == "http://127.0.0.1:0/"), It.IsAny<Network>()))
+            this.rpcClientFactory.Setup(r => r.Create(It.IsAny<RpcSettings>(), It.Is<Uri>(u => u.ToString() == "http://127.0.0.1:0/"), It.IsAny<Network>()))
                 .Returns(this.rpcClient.Object);
 
             this.fullNode.Setup(f => f.RPCHost)
