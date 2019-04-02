@@ -53,13 +53,7 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <param name="network">The network to base the defaults off.</param>
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
-            builder.AppendLine("####RPC Settings####");
-            builder.AppendLine("#Activate RPC Server (default: 0)");
-            builder.AppendLine("#server=0");
-            builder.AppendLine("#Where the RPC Server binds (default: 127.0.0.1 and ::1)");
-            builder.AppendLine("#rpcbind=127.0.0.1");
-            builder.AppendLine("#Ip address allowed to connect to RPC (default all: 0.0.0.0 and ::)");
-            builder.AppendLine("#rpcallowip=127.0.0.1");
+            RpcSettings.BuildDefaultConfigurationFile(builder, network);
         }
 
         public override Task InitializeAsync()

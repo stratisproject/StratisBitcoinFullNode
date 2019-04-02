@@ -40,6 +40,26 @@ namespace Stratis.Bitcoin.Features.RPC
         // TODO: Refactor static PrintHelp method.
         private static RpcSettings settingsHelp;
 
+        public List<IPEndPoint> DefaultBinding() => DefaultBinding(this.AllowIp.Any(), this.RPCPort);
+
+        private static List<IPEndPoint> DefaultBinding(bool haveAllowIps, int rpcPort)
+        {
+            var defaultBinding = new List<IPEndPoint>();
+
+            if (haveAllowIps)
+            {
+                defaultBinding.Add(new IPEndPoint(IPAddress.Parse("::"), rpcPort));
+                defaultBinding.Add(new IPEndPoint(IPAddress.Parse("0.0.0.0"), rpcPort));
+            }
+            else
+            {
+                defaultBinding.Add(new IPEndPoint(IPAddress.Parse("::1"), rpcPort));
+                defaultBinding.Add(new IPEndPoint(IPAddress.Parse("127.0.0.1"), rpcPort));
+            }
+
+            return defaultBinding;
+        }
+
         /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
@@ -53,8 +73,6 @@ namespace Stratis.Bitcoin.Features.RPC
 
             this.RPCPort = nodeSettings.Network.DefaultRPCPort;
             this.Bind = new List<IPEndPoint>();
-            this.Bind.Add(new IPEndPoint(IPAddress.Parse("::1"), this.RPCPort));
-            this.Bind.Add(new IPEndPoint(IPAddress.Parse("127.0.0.1"), this.RPCPort));
             this.AllowIp = new List<IPAddressBlock>();
             this.Server = false;
             this.RpcUser = null;
@@ -111,25 +129,19 @@ namespace Stratis.Bitcoin.Features.RPC
                         .Select(p => p.ToIPEndPoint(this.RPCPort))
                         .ToList();
 
+                    if (bind.Count != 0)
+                        this.Bind = bind;
+
                     if (this.AllowIp.Count == 0)
                     {
-                        if (bind.Count != 0)
+                        if (this.Bind.Count != 0)
                             this.logger.LogWarning("WARNING: RPC bind selection (-rpcbind) was ignored because allowed ip's (-rpcallowip) were not specified, refusing to allow everyone to connect");
 
                         this.Bind.Clear();
-                        this.Bind.Add(new IPEndPoint(IPAddress.Parse("::1"), this.RPCPort));
-                        this.Bind.Add(new IPEndPoint(IPAddress.Parse("127.0.0.1"), this.RPCPort));
-                    }
-                    else
-                    {
-                        this.Bind = bind;
                     }
 
                     if (this.Bind.Count == 0)
-                    {
-                        this.Bind.Add(new IPEndPoint(IPAddress.Parse("::"), this.RPCPort));
-                        this.Bind.Add(new IPEndPoint(IPAddress.Parse("0.0.0.0"), this.RPCPort));
-                    }
+                        this.Bind = this.DefaultBinding();
                 }
                 catch (FormatException)
                 {
@@ -163,7 +175,7 @@ namespace Stratis.Bitcoin.Features.RPC
             NodeSettings defaults = NodeSettings.Default(network);
             var builder = new StringBuilder();
             var allowIp = string.Join(" and ", settingsHelp.AllowIp.Select(ipab => $"'{ipab}'"));
-            var bind = string.Join(" and ", settingsHelp.Bind.Select(ep => $"'{ep}'"));
+            var bind = string.Join(" and ", DefaultBinding(settingsHelp.AllowIp.Any(), settingsHelp.RPCPort).Select(ep => $"'{ep}'"));
 
             builder.AppendLine($"-server=<0 or 1>          Accept command line and JSON-RPC commands. Default: {settingsHelp.Server}.");
             builder.AppendLine($"-rpcuser=<string>         Username for JSON-RPC connections. Default: '{settingsHelp.RpcUser}'.");
@@ -173,6 +185,30 @@ namespace Stratis.Bitcoin.Features.RPC
             builder.AppendLine($"-rpcallowip=<ip>          Allow JSON-RPC connections from specified source. This option can be specified multiple times. Default: {allowIp}");
 
             defaults.Logger.LogInformation(builder.ToString());
+        }
+
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            var allowIp = settingsHelp.AllowIp.Select(ipab => ipab.ToString());
+            var bind = DefaultBinding(settingsHelp.AllowIp.Any(), settingsHelp.RPCPort).Select(ep => ep.ToString());
+
+            var allowIpStr = string.Join(" and ", $"'{allowIp}'");
+            var bindStr = string.Join(" and ", $"'{bind}'");
+
+            builder.AppendLine($"####RPC Settings####");
+            builder.AppendLine($"#Activate RPC Server (default: {settingsHelp.Server})");
+            builder.AppendLine($"#server={(settingsHelp.Server ? 1 : 0)}");
+            builder.AppendLine($"#Where the RPC Server binds (default: {bindStr})");
+            foreach (var str in bind)
+                builder.AppendLine($"#rpcbind={str}");
+            builder.AppendLine($"#Ip address allowed to connect to RPC (default: {allowIpStr})");
+            foreach (var str in allowIp)
+                builder.AppendLine($"#rpcallowip={str}");
         }
 
         /// <summary>Obtains a list of HTTP URLs to RPC interfaces.</summary>
