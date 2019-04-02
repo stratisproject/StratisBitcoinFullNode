@@ -44,13 +44,13 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 // Sync miner with receiver.
                 TestHelper.ConnectAndSync(this.miner, this.receiver);
 
-                // Send coins to receiver.
+                // Send 10 coins from miner to receiver.
                 SendCoins(this.miner, this.receiver, Money.Coins(10));
 
-                // There should now only be one item in receiver's listaddressgroupings response.
+                // Receiver's listaddressgroupings response contains 1 array with 1 item.
                 var result = await CallListAddressGroupingsAsync();
                 result.Count().Should().Be(1);
-                result.First().Amount.Should().Be(Money.Coins(10));
+                result[0].AddressGroups.First().Amount.Should().Be(Money.Coins(10));
 
                 // Send 5 coins to miner from receiver; this will return 5 coins back to a change address on receiver.
                 SendCoins(this.receiver, this.miner, Money.Coins(5));
@@ -59,24 +59,34 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 var receiver_Wallet = this.receiver.FullNode.WalletManager().GetWallet(walletName);
                 var firstChangeAddress = receiver_Wallet.GetAllAddresses().First(a => a.IsChangeAddress() && a.Transactions.Any());
 
-                // There should now be 2 items in the listaddressgroupings response and contain the change address.
+                //---------------------------------------------------
+                //  Receiver's listaddressgroupings response contains 1 array with 2 items:
+                //  - The initial receive address
+                //  - The change address address
+                //---------------------------------------------------
                 result = await CallListAddressGroupingsAsync();
-                result.Count().Should().Be(2);
-                result.Count(a => a.Address == firstChangeAddress.Address).Should().Be(1);
-                result.First().Amount.Should().Be(Money.Coins(0));
-                // The change address now contains the balance after sending 5 coins.
-                result.First(a => a.Address == firstChangeAddress.Address).Amount.Should().Be(Money.Coins((decimal)4.9999548));
+                result.Count().Should().Be(1);
+                result[0].AddressGroups.Count().Should().Be(2);
+                result[0].AddressGroups.First().Amount.Should().Be(Money.Coins(0)); // Initial receive address balance should be 0.
+                result[0].AddressGroups.First(a => a.Address == firstChangeAddress.Address).Amount.Should().Be(Money.Coins((decimal)4.9999548)); // Change address balance after sending 5 coins.
+                //---------------------------------------------------
 
                 // Send 5 coins from miner to receiver's change address
                 SendCoins(this.miner, this.receiver, Money.Coins(5), firstChangeAddress);
 
-                // There should still only be 2 items in the listaddressgroupings response.
+                //---------------------------------------------------
+                //  Receiver's listaddressgroupings response contains 1 array with 2 items:
+                //  - The initial receive address
+                //  - The change address address
+                //---------------------------------------------------
                 result = await CallListAddressGroupingsAsync();
-                result.Count().Should().Be(2);
-                result.First().Amount.Should().Be(Money.Coins(0));
-                result.First(a => a.Address == firstChangeAddress.Address).Amount.Should().Be(Money.Coins((decimal)4.9999548 + 5));
+                result.Count().Should().Be(1);
+                result[0].AddressGroups.Count().Should().Be(2);
+                result[0].AddressGroups.First().Amount.Should().Be(Money.Coins(0)); // Initial receive address balance should be 0.
+                result[0].AddressGroups.First(a => a.Address == firstChangeAddress.Address).Amount.Should().Be(Money.Coins((decimal)4.9999548 + 5)); // Change address balance + 5 coins.
+                //---------------------------------------------------
 
-                // Send the full balance - 1 from receiver to miner.
+                // Send the (full balance - 1) from receiver to miner.
                 var balance = this.receiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Sum(t => t.Transaction.Amount) - Money.Coins(1);
                 SendCoins(this.receiver, this.miner, balance);
 
@@ -85,12 +95,31 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 var changeAddresses = receiver_Wallet.GetAllAddresses().Where(a => a.IsChangeAddress() && a.Transactions.Any());
                 var secondChangeAddress = receiver_Wallet.GetAllAddresses().First(a => a.IsChangeAddress() && a.Transactions.Any() && a.Address != firstChangeAddress.Address);
 
-                // There should now be 3 items in the listaddressgroupings response and contain another change address.
+                //---------------------------------------------------
+                //  Receiver's listaddressgroupings response contains 1 array with 3 items:
+                //  - The initial receive address
+                //  - The change address address
+                //  - The change address of sending the full balance - 1
+                //---------------------------------------------------
                 result = await CallListAddressGroupingsAsync();
-                result.Count().Should().Be(3);
-                result.Count(a => a.Address == firstChangeAddress.Address).Should().Be(1);
-                result.Count(a => a.Address == secondChangeAddress.Address).Should().Be(1);
-                result.First(a => a.Address == secondChangeAddress.Address).Amount.Should().Be(Money.Coins((decimal)0.99992520));
+                result.Count().Should().Be(1);
+                result[0].AddressGroups.Count().Should().Be(3);
+                result[0].AddressGroups.Count(a => a.Address == firstChangeAddress.Address).Should().Be(1);
+                result[0].AddressGroups.Count(a => a.Address == secondChangeAddress.Address).Should().Be(1);
+                result[0].AddressGroups.First(a => a.Address == secondChangeAddress.Address).Amount.Should().Be(Money.Coins((decimal)0.99992520));
+                //---------------------------------------------------
+
+                // Send 5 coins to a new unused address on the receiver's wallet.
+                SendCoins(this.miner, this.receiver, Money.Coins(5));
+
+                // Receiver's listaddressgroupings response contains 2 arrays:
+                //  - Array 1 > The initial receive address
+                //  - Array 1 > The change address address
+                //  - Array 1 > The change address of sending the full balance - 1
+                //  - Array 2 > The receive address of the new transaction
+                result = await CallListAddressGroupingsAsync();
+                result.Count().Should().Be(2);
+                result[1].AddressGroups[0].Amount.Should().Be(Money.Coins(5));
             }
         }
 

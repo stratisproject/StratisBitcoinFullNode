@@ -947,20 +947,38 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
             }
 
-            // Merge the results into a distinct set of addresses.
-            var mergedGroupings = new List<List<string>>();
+            // Merge the results into a distinct set of grouped addresses.
+            var uniqueGroupings = new List<List<string>>();
             foreach (var addressGroup in addressGroupings)
             {
-                foreach (var address in addressGroup)
-                {
-                    if (mergedGroupings.SelectMany(a => a).Any(a => a == address))
-                        continue;
+                var addressGroupDistinct = addressGroup.Distinct();
 
-                    mergedGroupings.Add(new List<string>() { address });
+                List<string> existing = null;
+
+                foreach (var address in addressGroupDistinct)
+                {
+                    // If the address was found to be apart of an existing group add it here.
+                    // The assumption here is that if we have a grouping of [a,b], finding [a] would have returned
+                    // the existing set and we can just add the address to that set.
+                    if (existing != null)
+                    {
+                        var existingAddress = existing.FirstOrDefault(a => a == address);
+                        if (existingAddress == null)
+                            existing.Add(address);
+
+                        continue;
+                    }
+
+                    // Check if the address already exists in a group.
+                    // If it does not, add the distinct set into the unique groupings list,
+                    // thereby creating a new "grouping".
+                    existing = uniqueGroupings.FirstOrDefault(g => g.Contains(address));
+                    if (existing == null)
+                        uniqueGroupings.Add(new List<string>(addressGroupDistinct));
                 }
             }
 
-            return mergedGroupings;
+            return uniqueGroupings.ToList();
         }
 
         /// <summary>

@@ -346,22 +346,23 @@ namespace Stratis.Bitcoin.Features.Wallet
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, $"{nameof(ListAddressGroupings)} is incompatible with transaction indexing turned off (i.e. -txIndex=0).");
 
             var addressGroupings = this.walletManager.GetAddressGroupings();
-
             var addressGroupingModels = new List<AddressGroupingModel>();
 
             foreach (var addressGrouping in addressGroupings)
             {
+                var addressGroupingModel = new AddressGroupingModel();
+
                 foreach (var address in addressGrouping)
                 {
                     var balance = this.walletManager.GetAddressBalance(address);
-                    var addressGroupingModel = new AddressGroupingModel()
+                    addressGroupingModel.AddressGroups.Add(new AddressGroupModel()
                     {
                         Address = address,
                         Amount = balance.AmountConfirmed
-                    };
-
-                    addressGroupingModels.Add(addressGroupingModel);
+                    });
                 }
+
+                addressGroupingModels.Add(addressGroupingModel);
             }
 
             return addressGroupingModels.ToArray();
