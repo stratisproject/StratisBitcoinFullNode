@@ -36,13 +36,7 @@ namespace Stratis.Bitcoin.AddressIndexing
 
         private readonly DataFolder dataFolder;
 
-        private readonly IKeyValueRepository kvRepo;
-
-        private HashHeightPair tip;
-
-        private const string TipKey = "AddressIndexerTip";
-
-        private const string AddressesKey = "addr";
+        private const string DbKey = "AddrData";
 
         private SubscriptionToken blockConnectedSubscription, blockDisconnectedSubscription;
 
@@ -52,10 +46,12 @@ namespace Stratis.Bitcoin.AddressIndexing
 
         private LiteDatabase db;
 
-        private LiteCollection<AddressIndexData> addressesCollection;
+        private LiteCollection<AddressIndexerData> dataStore;
+
+        private AddressIndexerData data;
 
         public AddressIndexer(NodeSettings nodeSettings, ISignals signals, DataFolder dataFolder, ILoggerFactory loggerFactory,
-            Network network, IBlockStore blockStore, INodeStats nodeStats, IKeyValueRepository kvRepo)
+            Network network, IBlockStore blockStore, INodeStats nodeStats)
         {
             this.signals = signals;
             this.nodeSettings = nodeSettings;
@@ -63,7 +59,6 @@ namespace Stratis.Bitcoin.AddressIndexing
             this.blockStore = blockStore;
             this.nodeStats = nodeStats;
             this.dataFolder = dataFolder;
-            this.kvRepo = kvRepo;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -76,27 +71,32 @@ namespace Stratis.Bitcoin.AddressIndexing
                 this.db = new LiteDatabase(new ConnectionString() {Filename = dbPath});
 
                 this.logger.LogDebug("TxIndexing is enabled.");
-                this.tip = this.kvRepo.LoadValue<HashHeightPair>(TipKey);
 
-                if (this.tip == null)
+                this.dataStore = this.db.GetCollection<AddressIndexerData>(DbKey);
+
+                this.data = this.dataStore.FindAll().FirstOrDefault();
+
+                if (this.data == null)
                 {
                     this.logger.LogDebug("Tip was not found, initializing with genesis.");
-                    this.tip = new HashHeightPair(this.network.GenesisHash, 0);
+
+                    this.data = new AddressIndexerData()
+                    {
+                        TipHash = this.network.GenesisHash.ToString(),
+                        AddressIndexDatas = new List<AddressIndexData>()
+                    };
+                    this.dataStore.Insert(this.data);
                 }
 
                 this.blockReceivedQueue = new AsyncQueue<KeyValuePair<bool, ChainedHeaderBlock>>(this.OnEnqueueAsync);
 
-                this.addressesCollection = this.db.GetCollection<AddressIndexData>(AddressesKey);
-
                 // Subscribe to events.
                 this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(blockConnectedData =>
                 {
-                    if (this.blockReceivedQueue.Count > 1000)
+                    while (this.blockReceivedQueue.Count > 100)
                     {
                         this.logger.LogWarning("Address indexing is slowing down the consensus.");
-
-                        while (this.blockReceivedQueue.Count > 100)
-                            Thread.Sleep(1000);
+                        Thread.Sleep(5000);
                     }
 
                     this.blockReceivedQueue.Enqueue(new KeyValuePair<bool, ChainedHeaderBlock>(true, blockConnectedData.ConnectedBlock));
@@ -140,8 +140,8 @@ namespace Stratis.Bitcoin.AddressIndexing
             // Make sure it's on top of the tip.
             bool blockAdded = item.Key;
 
-            if ((blockAdded && item.Value.ChainedHeader.Header.HashPrevBlock != this.tip.Hash) ||
-                (!blockAdded && item.Value.ChainedHeader.HashBlock != this.tip.Hash))
+            if ((blockAdded && item.Value.ChainedHeader.Header.HashPrevBlock.ToString() != this.data.TipHash) ||
+                (!blockAdded && item.Value.ChainedHeader.HashBlock.ToString() != this.data.TipHash))
             {
                 const string message = "TransactionIndexer is in inconsistent state. This can happen if you've enabled txindex on an already synced or partially synced node. " +
                                        "Remove everything from the data folder and run the node with -txindex=true.";
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.AddressIndexing
             foreach (TxInList inputsCollection in block.Transactions.Where(x => !x.IsCoinBase).Select(x => x.Inputs))
                 inputs.AddRange(inputsCollection);
 
-            NBitcoin.Transaction[] transactions = this.blockStore.GetTransactionsByIds(inputs.Select(x => x.PrevOut.Hash).ToArray());
+            Transaction[] transactions = this.blockStore.GetTransactionsByIds(inputs.Select(x => x.PrevOut.Hash).ToArray());
 
             for (int i = 0; i < inputs.Count; i++)
             {
@@ -188,12 +188,10 @@ namespace Stratis.Bitcoin.AddressIndexing
                     // Remove changes.
                     addrData.Changes.RemoveAll(x => x.Height == currentHeight);
                 }
-
-                this.addressesCollection.Update(addrData);
             }
 
             // Process outputs.
-            foreach (NBitcoin.Transaction tx in block.Transactions)
+            foreach (Transaction tx in block.Transactions)
             {
                 foreach (TxOut txOut in tx.Outputs)
                 {
@@ -216,18 +214,17 @@ namespace Stratis.Bitcoin.AddressIndexing
                         // Remove changes.
                         addrData.Changes.RemoveAll(x => x.Height == currentHeight);
                     }
-
-                    this.addressesCollection.Update(addrData);
                 }
             }
 
-            this.tip = new HashHeightPair(item.Value.ChainedHeader.HashBlock, currentHeight);
+            this.data.TipHash = item.Value.ChainedHeader.HashBlock.ToString();
         }
 
         private AddressIndexData GetOrCreateAddressData(Script scriptPubKey)
         {
             byte[] scriptPubKeyBytes = scriptPubKey.ToBytes();
-            AddressIndexData addrData = this.addressesCollection.FindOne(x => StructuralComparisons.StructuralEqualityComparer.Equals(scriptPubKeyBytes, x.ScriptPubKeyBytes));
+
+            AddressIndexData addrData = this.data.AddressIndexDatas.SingleOrDefault(x => StructuralComparisons.StructuralEqualityComparer.Equals(scriptPubKeyBytes, x.ScriptPubKeyBytes));
 
             if (addrData == null)
             {
@@ -237,7 +234,8 @@ namespace Stratis.Bitcoin.AddressIndexing
                     Changes = new List<AddressBalanceChange>()
                 };
 
-                this.addressesCollection.Insert(addrData);
+                this.data.AddressIndexDatas.Add(addrData);
+                return addrData;
             }
 
             return addrData;
@@ -247,7 +245,7 @@ namespace Stratis.Bitcoin.AddressIndexing
         /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed.</returns>
         public Money GetAddressBalance(BitcoinAddress address, int minConfirmations = 0)
         {
-            if (this.tip == null)
+            if (this.data == null)
                 throw new IndexerNotInitializedException();
 
             throw new NotImplementedException();
@@ -257,7 +255,7 @@ namespace Stratis.Bitcoin.AddressIndexing
         /// <returns>Total amount received by a given address or <c>null</c> if address wasn't indexed.</returns>
         public Money GetReceivedByAddress(BitcoinAddress address, int minConfirmations = 0)
         {
-            if (this.tip == null)
+            if (this.data == null)
                 throw new IndexerNotInitializedException();
 
             throw new NotImplementedException();
@@ -271,7 +269,8 @@ namespace Stratis.Bitcoin.AddressIndexing
 
             this.blockReceivedQueue.Dispose();
 
-            this.kvRepo.SaveValue(TipKey, this.tip);
+            this.dataStore.Update(this.data);
+
             this.db?.Dispose();
         }
     }
