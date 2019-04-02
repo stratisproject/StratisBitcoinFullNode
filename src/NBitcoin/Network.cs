@@ -33,6 +33,13 @@ namespace NBitcoin
         WITNESS_SCRIPT_ADDRESS
     }
 
+    public enum NetworkType
+    {
+        Mainnet,
+        Testnet,
+        Regtest
+    }
+
     /// <summary>
     /// A container of all network instances of a certain high level network.
     /// Every network normally comes in 3 flavors mainnet, testnet and regtest.
@@ -125,6 +132,8 @@ namespace NBitcoin
         /// The name of the network.
         /// </summary>
         public string Name { get; protected set; }
+
+        public NetworkType NetworkType { get; protected set; }
 
         /// <summary>
         /// A list of additional names the network can be referred as.

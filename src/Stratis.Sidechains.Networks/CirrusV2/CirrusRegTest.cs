@@ -26,6 +26,7 @@ namespace Stratis.Sidechains.Networks.CirrusV2
         internal CirrusRegTest()
         {
             this.Name = nameof(CirrusRegTest);
+            this.NetworkType = NetworkType.Regtest;
             this.CoinTicker = "TCRS";
             this.Magic = 0x522357C;
             this.DefaultPort = 26179;
