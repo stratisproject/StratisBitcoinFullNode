@@ -859,16 +859,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (!this.TransactionHasValidUTXOs(transaction, coins))
                     return false;
 
-                //// Verify that there are no earlier unspent UTXOs.
-                //Comparer<TransactionData> comparer = Comparer<TransactionData>.Create((x, y) => FederationWalletTransactionHandler.CompareTransactionData(x, y));
-                //TransactionData earliestUnspent = this.Wallet.MultiSigAddress.Transactions.Where(t => t.SpendingDetails == null).OrderBy(t => t, comparer).FirstOrDefault();
-                //if (earliestUnspent != null)
-                //{
-                //    TransactionData oldestInput = transaction.Inputs.Select(i => this.outpointLookup[i.PrevOut]).OrderByDescending(t => t, comparer).FirstOrDefault();
-                //    if (oldestInput != null && FederationWalletTransactionHandler.CompareTransactionData(earliestUnspent, oldestInput) < 0)
-                //        return false;
-                //}
-
                 // Verify that all inputs are signed.
                 if (checkSignature)
                 {
