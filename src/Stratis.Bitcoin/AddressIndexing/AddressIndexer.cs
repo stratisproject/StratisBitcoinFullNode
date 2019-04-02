@@ -6,13 +6,10 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using DBreeze.DataTypes;
-using DBreeze.Utils;
 using LiteDB;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Interfaces;
@@ -20,7 +17,6 @@ using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Script = NBitcoin.Script;
-using Transaction = DBreeze.Transactions.Transaction;
 
 namespace Stratis.Bitcoin.AddressIndexing
 {
@@ -226,7 +222,6 @@ namespace Stratis.Bitcoin.AddressIndexing
             }
 
             this.tip = new HashHeightPair(item.Value.ChainedHeader.HashBlock, currentHeight);
-            this.kvRepo.SaveValue(TipKey, this.tip);
         }
 
         private AddressIndexData GetOrCreateAddressData(Script scriptPubKey)
@@ -276,6 +271,7 @@ namespace Stratis.Bitcoin.AddressIndexing
 
             this.blockReceivedQueue.Dispose();
 
+            this.kvRepo.SaveValue(TipKey, this.tip);
             this.db?.Dispose();
         }
     }
