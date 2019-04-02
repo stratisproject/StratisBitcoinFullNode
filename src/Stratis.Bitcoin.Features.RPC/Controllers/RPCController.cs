@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             // Find the binding to 127.0.0.1 or the first available. The logic in RPC settings ensures there will be at least 1.
             IPEndPoint nodeEndPoint = this.rpcSettings.Bind.Where(b => b.Address.ToString() == "127.0.0.1").FirstOrDefault() ?? this.rpcSettings.Bind[0];
-            IRPCClient rpcClient = this.rpcClientFactory.Create($"{this.rpcSettings.RpcUser}:{this.rpcSettings.RpcPassword}", new Uri($"http://{nodeEndPoint}"), this.fullNode.Network);            
+            IRPCClient rpcClient = this.rpcClientFactory.Create(this.rpcSettings, new Uri($"http://{nodeEndPoint}"), this.fullNode.Network);
 
             return rpcClient.SendCommand(request);
         }
