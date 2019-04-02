@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Networks
             this.DefaultPort = 8333;
             this.DefaultMaxOutboundConnections = 8;
             this.DefaultMaxInboundConnections = 117;
-            this.RPCPort = 8332;
+            this.DefaultRPCPort = 8332;
             this.MaxTimeOffsetSeconds = BitcoinMaxTimeOffsetSeconds;
             this.MaxTipAge = BitcoinDefaultMaxTipAgeInSeconds;
             this.MinTxFee = 1000;

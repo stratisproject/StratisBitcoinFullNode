@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.DefaultPort = 16438;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
-            this.RPCPort = 16474;
+            this.DefaultRPCPort = 16474;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;

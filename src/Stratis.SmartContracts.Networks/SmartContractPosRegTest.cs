@@ -24,7 +24,7 @@ namespace Stratis.SmartContracts.Networks
             this.DefaultPort = 18444;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
-            this.RPCPort = 18332;
+            this.DefaultRPCPort = 18332;
             this.MaxTipAge = SmartContractNetwork.BitcoinDefaultMaxTipAgeInSeconds;
             this.MinTxFee = 1000;
             this.FallbackFee = 20000;
