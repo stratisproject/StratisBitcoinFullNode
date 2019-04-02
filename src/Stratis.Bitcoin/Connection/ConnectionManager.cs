@@ -236,9 +236,11 @@ namespace Stratis.Bitcoin.Connection
             long totalRead = this.disconnectedPerfCounter.ReadBytes;
             long totalWritten = this.disconnectedPerfCounter.WrittenBytes;
             var peerBuilder = new StringBuilder();
-            foreach (INetworkPeer peer in this.ConnectedPeers)
+
+            void AddPeerInfo(INetworkPeer peer)
             {
                 var chainHeadersBehavior = peer.Behavior<ConsensusManagerBehavior>();
+                var connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
 
                 string peerHeights = $"(r/s/c):" +
                                      $"{(chainHeadersBehavior.BestReceivedTip != null ? chainHeadersBehavior.BestReceivedTip.Height.ToString() : peer.PeerVersion != null ? peer.PeerVersion.StartHeight + "*" : "-")}" +
@@ -255,6 +257,41 @@ namespace Stratis.Bitcoin.Connection
                     + peerHeights.PadRight(LoggingConfiguration.ColumnLength + 14)
                     + peerTraffic.PadRight(LoggingConfiguration.ColumnLength + 7)
                     + " agent:" + agent);
+            }
+
+            var oneTryPeers = this.ConnectedPeers.Where(p => p.Behavior<ConnectionManagerBehavior>().OneTry);
+            if (oneTryPeers.Any())
+            {
+                peerBuilder.AppendLine("Connect/OneTry Peers:");
+
+                foreach (INetworkPeer peer in oneTryPeers)
+                {
+                    AddPeerInfo(peer);
+                }
+
+                peerBuilder.AppendLine();
+            }
+
+            var whiteListedPeers = this.ConnectedPeers.Where(p => p.Behavior<ConnectionManagerBehavior>().Whitelisted);
+            if (whiteListedPeers.Any())
+            {
+                peerBuilder.AppendLine("Whitelisted Peers:");
+
+                foreach (INetworkPeer peer in whiteListedPeers)
+                {
+                    AddPeerInfo(peer);
+                }
+
+                peerBuilder.AppendLine();
+            }
+
+            var remainingPeers = this.ConnectedPeers.Where(p => !p.Behavior<ConnectionManagerBehavior>().OneTry && !p.Behavior<ConnectionManagerBehavior>().Whitelisted);
+            if (remainingPeers.Any())
+            {
+                foreach (INetworkPeer peer in remainingPeers)
+                {
+                    AddPeerInfo(peer);
+                }
             }
 
             int inbound = this.ConnectedPeers.Count(x => x.Inbound);
