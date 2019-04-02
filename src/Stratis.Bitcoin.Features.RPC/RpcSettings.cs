@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
             this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(RpcSettings).FullName);
 
-            this.RPCPort = nodeSettings.Network.RPCPort;
+            this.RPCPort = nodeSettings.Network.DefaultRPCPort;
             this.Bind = new List<IPEndPoint>();
             this.Bind.Add(new IPEndPoint(IPAddress.Parse("::1"), this.RPCPort));
             this.Bind.Add(new IPEndPoint(IPAddress.Parse("127.0.0.1"), this.RPCPort));

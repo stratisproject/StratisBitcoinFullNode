@@ -99,7 +99,7 @@ namespace NBitcoin
         /// <summary>
         /// Port on which to listen for incoming RPC connections.
         /// </summary>
-        public int RPCPort { get; protected set; }
+        public int DefaultRPCPort { get; protected set; }
 
         /// <summary>
         /// The default port on which nodes of this network communicate with external clients. 
