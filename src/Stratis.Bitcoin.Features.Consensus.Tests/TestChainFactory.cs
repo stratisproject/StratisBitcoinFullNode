@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Base.AsyncWork;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -23,6 +24,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -78,6 +80,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         public PartialValidator PartialValidator { get; set; }
 
         public FullValidator FullValidator { get; set; }
+
+        public ISignals Signals { get; set; }
+
+        public IAsyncProvider AsyncProvider { get; set; }
     }
 
     /// <summary>
@@ -97,6 +103,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.ConnectionSettings = new ConnectionManagerSettings(testChainContext.NodeSettings);
             testChainContext.LoggerFactory = testChainContext.NodeSettings.LoggerFactory;
             testChainContext.DateTimeProvider = DateTimeProvider.Default;
+
+            testChainContext.Signals = new Signals.Signals(testChainContext.NodeSettings.LoggerFactory, null);
+            testChainContext.AsyncProvider = new AsyncProvider(testChainContext.NodeSettings.LoggerFactory, testChainContext.Signals, new Mock<INodeLifetime>().Object);
 
             network.Consensus.Options = new ConsensusOptions();
             new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(network.Consensus);
@@ -133,7 +142,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             testChainContext.HeaderValidator = new HeaderValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
             testChainContext.IntegrityValidator = new IntegrityValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
-            testChainContext.PartialValidator = new PartialValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
+            testChainContext.PartialValidator = new PartialValidator(testChainContext.AsyncProvider, testChainContext.ConsensusRules, testChainContext.LoggerFactory);
             testChainContext.FullValidator = new FullValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
 
             var dBreezeSerializer = new DBreezeSerializer(network.Consensus.ConsensusFactory);

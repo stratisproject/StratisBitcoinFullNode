@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Base.AsyncWork
         }
 
         /// <inheritdoc />
-        public IAsyncDelegateDequeuer<T> CreateAndRunAsyncDelegateDequeuer<T>(string friendlyName, Func<T, CancellationToken, Task> @delegate)
+        public IAsyncDelegateDequeuer<T> CreateAndRunAsyncDelegateDequeuer<T>(string friendlyName, OnAsyncDelegateDequeue<T> @delegate)
         {
             AsyncQueue<T> newDelegate;
 

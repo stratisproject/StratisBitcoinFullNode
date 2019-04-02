@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base.AsyncWork;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol;
@@ -104,6 +105,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>Configuration related to incoming and outgoing connections.</summary>
         private readonly ConnectionManagerSettings connectionManagerSettings;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>Callback that is invoked just before a message is to be sent to a peer, or <c>null</c> when nothing needs to be called.</summary>
         private Action<IPEndPoint, Payload> onSendingMessage;
@@ -124,7 +126,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             PayloadProvider payloadProvider,
             ISelfEndpointTracker selfEndpointTracker,
             IInitialBlockDownloadState initialBlockDownloadState,
-            ConnectionManagerSettings connectionManagerSettings)
+            ConnectionManagerSettings connectionManagerSettings,
+            IAsyncProvider asyncProvider)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
@@ -139,6 +142,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.lastClientId = 0;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.connectionManagerSettings = connectionManagerSettings;
+            this.asyncProvider = Guard.NotNull(asyncProvider, nameof(asyncProvider));
         }
 
         /// <inheritdoc/>
@@ -151,7 +155,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (networkPeerDisposer != null)
                 onDisconnected = networkPeerDisposer.OnPeerDisconnectedHandler;
 
-            var peer = new NetworkPeer((IPEndPoint)client.Client.RemoteEndPoint, this.network, parameters, client, this.dateTimeProvider, this, this.loggerFactory, this.selfEndpointTracker, onDisconnected, this.onSendingMessage);
+            var peer = new NetworkPeer((IPEndPoint)client.Client.RemoteEndPoint, this.network, parameters, client, this.dateTimeProvider, this, this.loggerFactory, this.selfEndpointTracker, this.asyncProvider, onDisconnected, this.onSendingMessage);
 
             networkPeerDisposer?.AddPeer(peer);
 
@@ -193,7 +197,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (networkPeerDisposer != null)
                 onDisconnected = networkPeerDisposer.OnPeerDisconnectedHandler;
 
-            var peer = new NetworkPeer(peerEndPoint, this.network, parameters, this, this.dateTimeProvider, this.loggerFactory, this.selfEndpointTracker, onDisconnected, this.onSendingMessage);
+            var peer = new NetworkPeer(peerEndPoint, this.network, parameters, this, this.dateTimeProvider, this.loggerFactory, this.selfEndpointTracker, this.asyncProvider, onDisconnected, this.onSendingMessage);
 
             try
             {
@@ -227,7 +231,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             Guard.NotNull(processMessageAsync, nameof(processMessageAsync));
 
             int id = Interlocked.Increment(ref this.lastClientId);
-            return new NetworkPeerConnection(this.network, peer, client, id, processMessageAsync, this.dateTimeProvider, this.loggerFactory, this.payloadProvider);
+            return new NetworkPeerConnection(this.network, peer, client, id, processMessageAsync, this.dateTimeProvider, this.loggerFactory, this.payloadProvider, this.asyncProvider);
         }
 
         /// <inheritdoc/>

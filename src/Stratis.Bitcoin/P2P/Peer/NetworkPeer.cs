@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base.AsyncWork;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -321,8 +322,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ISelfEndpointTracker selfEndpointTracker,
+            IAsyncProvider asyncProvider,
             Action<INetworkPeer> onDisconnected = null,
-            Action<IPEndPoint, Payload> onSendingMessage = null)
+            Action<IPEndPoint, Payload> onSendingMessage = null
+            )
             : this(false, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, selfEndpointTracker, onDisconnected, onSendingMessage)
         {
             var client = new TcpClient(AddressFamily.InterNetworkV6);
@@ -355,6 +358,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             INetworkPeerFactory networkPeerFactory,
             ILoggerFactory loggerFactory,
             ISelfEndpointTracker selfEndpointTracker,
+            IAsyncProvider asyncProvider,
             Action<INetworkPeer> onDisconnected = null,
             Action<IPEndPoint, Payload> onSendingMessage = null)
             : this(true, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, selfEndpointTracker, onDisconnected, onSendingMessage)
