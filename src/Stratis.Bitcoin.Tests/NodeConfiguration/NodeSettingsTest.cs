@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         /// Verifies API port value can be passed in on startup.
         /// </summary>
         [Fact]
-        public void NodeSettings_CanOverrideAllPorts()
+        public void NodeSettings_CanOverrideOnlyApiPort()
         {
             const int apiport = 12345;
             var nodeSettings = new NodeSettings(networksSelector: Networks.Networks.Bitcoin, args: new[] {  $"-apiport={apiport}" });
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         /// Verifies all port values can be passed in on startup.
         /// </summary>
         [Fact]
-        public void NodeSettings_CanOverrideOnlyApiPort()
+        public void NodeSettings_CanOverrideAllPorts()
         {
             // On MacOS ports below 1024 are privileged, and cannot be bound to by anyone other than root.
             const int port = 1024 + 123;
