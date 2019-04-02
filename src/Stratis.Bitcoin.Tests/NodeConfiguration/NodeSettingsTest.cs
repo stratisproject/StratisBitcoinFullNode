@@ -148,5 +148,35 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             // Assert
             Assert.Empty(result);
         }
+
+        /// <summary>
+        /// Verifies API port value can be passed in on startup.
+        /// </summary>
+        [Fact]
+        public void NodeSettings_CanOverrideAllPorts()
+        {
+            const int apiport = 12345;
+            var nodeSettings = new NodeSettings(networksSelector: Networks.Networks.Bitcoin, args: new[] {  $"-apiport={apiport}" });
+            string result = nodeSettings.ConfigReader.GetOrDefault("apiport", string.Empty);
+            Assert.Equal("12345", result);
+        }
+
+        /// <summary>
+        /// Verifies all port values can be passed in on startup.
+        /// </summary>
+        [Fact]
+        public void NodeSettings_CanOverrideOnlyApiPort()
+        {
+            // On MacOS ports below 1024 are privileged, and cannot be bound to by anyone other than root.
+            const int port = 1024 + 123;
+            const int rpcPort = 1024 + 456;
+            const int apiPort = 1024 + 567;
+
+            var nodeSettings = new NodeSettings(networksSelector: Networks.Networks.Bitcoin, args: new[] { $"-port={port.ToString()}", $"-rpcport={rpcPort.ToString()}", $"-apiport={apiPort.ToString()}" });
+            
+            Assert.Equal(port.ToString(), nodeSettings.ConfigReader.GetOrDefault("port", string.Empty));
+            Assert.Equal(rpcPort.ToString(), nodeSettings.ConfigReader.GetOrDefault("rpcport", string.Empty));
+            Assert.Equal(apiPort.ToString(), nodeSettings.ConfigReader.GetOrDefault("apiport", string.Empty));
+        }
     }
 }
