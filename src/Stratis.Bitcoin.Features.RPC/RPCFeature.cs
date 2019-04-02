@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.RPC
             {
                 this.logger.LogInformation("RPC Server is off based on configuration.");
             }
-            
+
             return Task.CompletedTask;
         }
     }
@@ -121,8 +121,10 @@ namespace Stratis.Bitcoin.Features.RPC
     /// </summary>
     public static class FullNodeBuilderRPCExtension
     {
-        public static IFullNodeBuilder AddRPC(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder AddRPC(this IFullNodeBuilder fullNodeBuilder, Action<RpcSettings> defaultArgs = null)
         {
+            var options = new RpcSettings(fullNodeBuilder.NodeSettings, defaultArgs);
+
             LoggingConfiguration.RegisterFeatureNamespace<RPCFeature>("rpc");
 
             fullNodeBuilder.ConfigureFeature(features =>
@@ -137,7 +139,7 @@ namespace Stratis.Bitcoin.Features.RPC
             {
                 service.AddSingleton<FullNodeController>();
                 service.AddSingleton<ConnectionManagerController>();
-                service.AddSingleton<RpcSettings>();
+                service.AddSingleton(options);
                 service.AddSingleton<IRPCClientFactory, RPCClientFactory>();
                 service.AddSingleton<RPCController>();
             });

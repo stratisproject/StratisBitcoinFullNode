@@ -40,12 +40,10 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             Assert.Equal("testpassword", rpcSettings.RpcPassword);
             Assert.NotEmpty(rpcSettings.Bind);
             Assert.Equal("127.0.0.1:1378", rpcSettings.Bind[0].ToString());
-            Assert.NotEmpty(rpcSettings.DefaultBindings);
-            Assert.Equal("127.0.0.1:1378", rpcSettings.DefaultBindings[0].ToString());
             Assert.NotEmpty(rpcSettings.AllowIp);
             Assert.Equal("0.0.0.0", rpcSettings.AllowIp[0].ToString());
         }
-        
+
         [Fact]
         public void Load_DefaultConfiguration_UsesDefaultNodeSettings()
         {
@@ -63,7 +61,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             Assert.Null(rpcSettings.RpcUser);
             Assert.Null(rpcSettings.RpcPassword);
             Assert.Empty(rpcSettings.Bind);
-            Assert.Empty(rpcSettings.DefaultBindings);
             Assert.Empty(rpcSettings.AllowIp);
         }
 
