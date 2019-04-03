@@ -308,7 +308,7 @@ namespace Stratis.Features.FederatedPeg
                         services.AddSingleton<BlockObserver>();
 
                         // Inject our options
-                        services.AddSingleton<FederatedPegOptions>();
+                        services.AddSingleton(options);
                     });
             });
             return fullNodeBuilder;
