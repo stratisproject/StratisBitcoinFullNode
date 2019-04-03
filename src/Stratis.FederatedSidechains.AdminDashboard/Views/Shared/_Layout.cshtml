@@ -7,13 +7,14 @@
     <environment include="Development">
         <link href="~/css/default.css" rel="stylesheet" />
         <link rel="stylesheet" type="text/css" href="~/lib/font-awesome/css/all.css" />
+        <link rel="stylesheet" type="text/css" href="~/lib/node-snackbar/dist/snackbar.css" />
+        <link rel="stylesheet" type="text/css" href="~/lib/nprogress/nprogress.css" />
     </environment>
     <environment exclude="Development">
-        <link href="~/css/default.min.css" rel="stylesheet" />
         <link rel="stylesheet" type="text/css" href="~/lib/font-awesome/css/all.min.css" />
+        <link href="~/css/default.min.css" asp-append-version="true" rel="stylesheet" />
+        <link href="~/css/default.bundle.min.css" asp-append-version="true" rel="stylesheet" />
     </environment>
-    <link rel="stylesheet" type="text/css" href="~/lib/node-snackbar/dist/snackbar.css" />
-    <link rel="stylesheet" type="text/css" href="~/lib/nprogress/nprogress.css" />
     <link rel="icon" type="image/png" href="~/images/logo.png" />
 </head>
 <body>
@@ -93,17 +94,18 @@
   <section class="container-fluid marginTop" id="container">
     @RenderBody()
   </section>
-  <script type="text/javascript" src="~/lib/signalr/dist/browser/signalr.min.js"></script>
-  <script type="text/javascript" src="~/lib/jquery/dist/jquery.min.js"></script>
-  <script type="text/javascript" src="~/lib/popper.js/dist/umd/popper.min.js"></script>
-  <script type="text/javascript" src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
-  <script type="text/javascript" src="~/lib/jquery-ajax-unobtrusive/dist/jquery.unobtrusive-ajax.min.js"></script>
-  <script type="text/javascript" src="~/lib/node-snackbar/dist/snackbar.min.js"></script>
-  <script type="text/javascript" src="~/lib/nprogress/nprogress.js"></script>
   <environment include="Development">
+      <script type="text/javascript" src="~/lib/signalr/dist/browser/signalr.min.js"></script>
+      <script type="text/javascript" src="~/lib/jquery/dist/jquery.min.js"></script>
+      <script type="text/javascript" src="~/lib/popper.js/dist/umd/popper.min.js"></script>
+      <script type="text/javascript" src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
+      <script type="text/javascript" src="~/lib/jquery-ajax-unobtrusive/dist/jquery.unobtrusive-ajax.min.js"></script>
+      <script type="text/javascript" src="~/lib/node-snackbar/dist/snackbar.min.js"></script>
+      <script type="text/javascript" src="~/lib/nprogress/nprogress.js"></script>
       <script type="text/javascript" src="~/js/default.js"></script>
   </environment>
   <environment exclude="Development">
+      <script type="text/javascript" src="~/js/default.bundle.min.js"></script>
       <script type="text/javascript" src="~/js/default.min.js"></script>
   </environment>
   @RenderSection("Scripts", false)
