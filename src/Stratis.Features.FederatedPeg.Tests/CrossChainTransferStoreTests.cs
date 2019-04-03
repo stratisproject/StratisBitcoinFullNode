@@ -38,7 +38,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <summary>
         /// Test that after synchronizing with the chain the store tip equals the chain tip.
         /// </summary>
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void StartSynchronizesWithWallet()
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
@@ -59,7 +59,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <summary>
         /// Test that after synchronizing with the chain the store tip equals the chain tip.
         /// </summary>
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void StartSynchronizesWithWalletAndSurvivesRestart()
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
@@ -308,7 +308,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <summary>
         /// Tests whether the store merges signatures as expected.
         /// </summary>
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void StoreMergesSignaturesAsExpected()
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
@@ -404,7 +404,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <summary>
         /// Check that partial transactions present in the store cause partial transaction requests made to peers.
         /// </summary>
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void StoredPartialTransactionsTriggerSignatureRequest()
         {
             var dataFolder = new DataFolder(CreateTestDir(this));

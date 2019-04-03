@@ -114,8 +114,8 @@ namespace Stratis.Bitcoin.Tests.Controllers
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync((Transaction)null)
                 .Verifiable();
-            this.blockStore.Setup(b => b.GetTransactionByIdAsync(txId))
-                .ReturnsAsync((Transaction)null)
+            this.blockStore.Setup(b => b.GetTransactionById(txId))
+                .Returns((Transaction)null)
                 .Verifiable();
             this.controller = new NodeController(this.chainIndexer, this.chainState.Object,
                 this.connectionManager.Object, this.dateTimeProvider.Object, this.fullNode.Object,
@@ -139,8 +139,8 @@ namespace Stratis.Bitcoin.Tests.Controllers
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync((Transaction)null);
             Transaction transaction = this.CreateTransaction();
-            this.blockStore.Setup(b => b.GetTransactionByIdAsync(txId))
-                .ReturnsAsync(transaction);
+            this.blockStore.Setup(b => b.GetTransactionById(txId))
+                .Returns(transaction);
             this.controller = new NodeController(this.chainIndexer, this.chainState.Object,
                 this.connectionManager.Object, this.dateTimeProvider.Object, this.fullNode.Object,
                 this.LoggerFactory.Object, this.nodeSettings, this.network, this.blockStore.Object, this.getUnspentTransaction.Object,
@@ -161,8 +161,8 @@ namespace Stratis.Bitcoin.Tests.Controllers
         {
             var txId = new uint256(12142124);
             Transaction transaction = this.CreateTransaction();
-            this.blockStore.Setup(b => b.GetTransactionByIdAsync(txId))
-                .ReturnsAsync(transaction);
+            this.blockStore.Setup(b => b.GetTransactionById(txId))
+                .Returns(transaction);
             string txid = txId.ToString();
 
             var json = (JsonResult)await this.controller.GetRawTransactionAsync(txid).ConfigureAwait(false);
@@ -178,8 +178,8 @@ namespace Stratis.Bitcoin.Tests.Controllers
         {
             var txId = new uint256(12142124);
             Transaction transaction = this.CreateTransaction();
-            this.blockStore.Setup(b => b.GetTransactionByIdAsync(txId))
-                .ReturnsAsync(transaction);
+            this.blockStore.Setup(b => b.GetTransactionById(txId))
+                .Returns(transaction);
             this.controller = new NodeController(this.chainIndexer, this.chainState.Object,
                 this.connectionManager.Object, this.dateTimeProvider.Object, this.fullNode.Object,
                 this.LoggerFactory.Object, this.nodeSettings, this.network, this.blockStore.Object, this.getUnspentTransaction.Object,
@@ -198,8 +198,8 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public async Task GetRawTransactionAsync_PooledTransactionAndBlockStoreServiceNotAvailable_ReturnsNullAsync()
         {
             var txId = new uint256(12142124);
-            this.blockStore.Setup(f => f.GetTransactionByIdAsync(txId))
-                .ReturnsAsync((Transaction)null)
+            this.blockStore.Setup(f => f.GetTransactionById(txId))
+                .Returns((Transaction)null)
                 .Verifiable();
             this.controller = new NodeController(this.chainIndexer, this.chainState.Object,
                 this.connectionManager.Object, this.dateTimeProvider.Object, this.fullNode.Object,
@@ -246,8 +246,8 @@ namespace Stratis.Bitcoin.Tests.Controllers
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync(transaction);
             var blockStore = new Mock<IBlockStore>();
-            blockStore.Setup(b => b.GetBlockIdByTransactionIdAsync(txId))
-                .ReturnsAsync(block.HashBlock);
+            blockStore.Setup(b => b.GetBlockIdByTransactionId(txId))
+                .Returns(block.HashBlock);
             this.fullNode.Setup(f => f.NodeFeature<IBlockStore>(false))
                 .Returns(blockStore.Object);
             string txid = txId.ToString();
@@ -293,8 +293,8 @@ namespace Stratis.Bitcoin.Tests.Controllers
                 .ReturnsAsync(transaction);
 
             var blockStore = new Mock<IBlockStore>();
-            blockStore.Setup(b => b.GetBlockIdByTransactionIdAsync(txId))
-                .ReturnsAsync(block.HashBlock);
+            blockStore.Setup(b => b.GetBlockIdByTransactionId(txId))
+                .Returns(block.HashBlock);
             this.fullNode.Setup(f => f.NodeFeature<IBlockStore>(false))
                 .Returns(blockStore.Object);
             string txid = txId.ToString();
@@ -316,8 +316,8 @@ namespace Stratis.Bitcoin.Tests.Controllers
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync(transaction);
             var blockStore = new Mock<IBlockStore>();
-            blockStore.Setup(b => b.GetBlockIdByTransactionIdAsync(txId))
-                .ReturnsAsync((uint256)null);
+            blockStore.Setup(b => b.GetBlockIdByTransactionId(txId))
+                .Returns((uint256)null);
             this.fullNode.Setup(f => f.NodeFeature<IBlockStore>(false))
                 .Returns(blockStore.Object);
             string txid = txId.ToString();

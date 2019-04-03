@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var dBreezeSerializer = new DBreezeSerializer(this.Network.Consensus.ConsensusFactory);
 
             var blockRepository = new BlockRepository(this.Network, dataFolder, this.LoggerFactory.Object, dBreezeSerializer);
-            await blockRepository.PutAsync(new HashHeightPair(posBlocks.Last().GetHash(), 50), posBlocks);
+            blockRepository.PutBlocks(new HashHeightPair(posBlocks.Last().GetHash(), 50), posBlocks);
 
             var storeSettings = new StoreSettings(NodeSettings.Default(this.Network))
             {
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             Assert.Equal(chainedHeaderTip.GetAncestor(40).HashBlock, prunedBlockRepository.PrunedTip.Hash);
             Assert.Equal(chainedHeaderTip.GetAncestor(40).Height, prunedBlockRepository.PrunedTip.Height);
             // Ensure that the block has been deleted from disk.
-            Assert.Null(await blockRepository.GetBlockAsync(chainedHeaderTip.GetAncestor(39).HashBlock));
+            Assert.Null(blockRepository.GetBlock(chainedHeaderTip.GetAncestor(39).HashBlock));
         }
 
         [Fact]
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var dBreezeSerializer = new DBreezeSerializer(this.Network.Consensus.ConsensusFactory);
 
             var blockRepository = new BlockRepository(this.Network, dataFolder, this.LoggerFactory.Object, dBreezeSerializer);
-            await blockRepository.PutAsync(new HashHeightPair(posBlocks.Take(100).Last().GetHash(), 100), posBlocks.Take(100).ToList());
+            blockRepository.PutBlocks(new HashHeightPair(posBlocks.Take(100).Last().GetHash(), 100), posBlocks.Take(100).ToList());
 
             var storeSettings = new StoreSettings(NodeSettings.Default(this.Network))
             {
@@ -72,16 +72,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             Assert.Equal(chainedHeaderTip.GetAncestor(50).HashBlock, prunedBlockRepository.PrunedTip.Hash);
             Assert.Equal(chainedHeaderTip.GetAncestor(50).Height, prunedBlockRepository.PrunedTip.Height);
             // Ensure that the block has been deleted from disk.
-            Assert.Null(await blockRepository.GetBlockAsync(chainedHeaderTip.GetAncestor(49).HashBlock));
+            Assert.Null(blockRepository.GetBlock(chainedHeaderTip.GetAncestor(49).HashBlock));
 
             // Push more blocks to the repository and prune again.
             // This will delete blocks from height 150 to 50.
-            await blockRepository.PutAsync(new HashHeightPair(posBlocks.Skip(100).Take(100).Last().GetHash(), 200), posBlocks.Skip(100).Take(100).ToList());
+            blockRepository.PutBlocks(new HashHeightPair(posBlocks.Skip(100).Take(100).Last().GetHash(), 200), posBlocks.Skip(100).Take(100).ToList());
             await prunedBlockRepository.PruneAndCompactDatabase(chainedHeaderTip, this.Network, true);
             Assert.Equal(chainedHeaderTip.GetAncestor(150).HashBlock, prunedBlockRepository.PrunedTip.Hash);
             Assert.Equal(chainedHeaderTip.GetAncestor(150).Height, prunedBlockRepository.PrunedTip.Height);
             // Ensure that the block has been deleted from disk.
-            Assert.Null(await blockRepository.GetBlockAsync(chainedHeaderTip.GetAncestor(149).HashBlock));
+            Assert.Null(blockRepository.GetBlock(chainedHeaderTip.GetAncestor(149).HashBlock));
         }
 
         [Fact]
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var dBreezeSerializer = new DBreezeSerializer(this.Network.Consensus.ConsensusFactory);
 
             var blockRepository = new BlockRepository(this.Network, dataFolder, this.LoggerFactory.Object, dBreezeSerializer);
-            await blockRepository.PutAsync(new HashHeightPair(posBlocks.Last().GetHash(), 50), posBlocks);
+            blockRepository.PutBlocks(new HashHeightPair(posBlocks.Last().GetHash(), 50), posBlocks);
 
             var storeSettings = new StoreSettings(NodeSettings.Default(this.Network))
             {
@@ -107,16 +107,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             await prunedBlockRepository.InitializeAsync();
 
             // Delete blocks 30 to 0 from the repo, this would have been done by the service before shutdown was initiated.
-            await blockRepository.DeleteBlocksAsync(posBlocks.Take(30).Select(b => b.GetHash()).ToList());
+            blockRepository.DeleteBlocks(posBlocks.Take(30).Select(b => b.GetHash()).ToList());
             prunedBlockRepository.UpdatePrunedTip(chainedHeaderTip.GetAncestor(30));
             // Ensure that the block has been deleted from disk.
-            Assert.Null(await blockRepository.GetBlockAsync(chainedHeaderTip.GetAncestor(29).HashBlock));
+            Assert.Null(blockRepository.GetBlock(chainedHeaderTip.GetAncestor(29).HashBlock));
 
             // On shutdown the database will only be compacted.
             await prunedBlockRepository.PruneAndCompactDatabase(chainedHeaderTip.GetAncestor(50), this.Network, false);
             Assert.Equal(chainedHeaderTip.GetAncestor(30).HashBlock, prunedBlockRepository.PrunedTip.Hash);
             Assert.Equal(chainedHeaderTip.GetAncestor(30).Height, prunedBlockRepository.PrunedTip.Height);
-            Assert.Null(await blockRepository.GetBlockAsync(chainedHeaderTip.GetAncestor(29).HashBlock));
+            Assert.Null(blockRepository.GetBlock(chainedHeaderTip.GetAncestor(29).HashBlock));
         }
     }
 }
