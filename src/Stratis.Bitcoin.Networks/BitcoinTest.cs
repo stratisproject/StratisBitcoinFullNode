@@ -20,6 +20,7 @@ namespace Stratis.Bitcoin.Networks
             this.DefaultMaxOutboundConnections = 8;
             this.DefaultMaxInboundConnections = 117;
             this.RPCPort = 18332;
+            this.DefaultAPIPort = 38220;
             this.CoinTicker = "TBTC";
 
             var consensusFactory = new ConsensusFactory();
