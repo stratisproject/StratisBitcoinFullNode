@@ -345,7 +345,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (!this.nodeSettings.TxIndex)
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, $"{nameof(ListAddressGroupings)} is incompatible with transaction indexing turned off (i.e. -txIndex=0).");
 
-            var addressGroupings = this.walletManager.GetAddressGroupings();
+            var walletReference = this.GetWalletAccountReference();
+            var addressGroupings = this.walletManager.GetAddressGroupings(walletReference.WalletName);
             var addressGroupingModels = new List<AddressGroupingModel>();
 
             foreach (var addressGrouping in addressGroupings)
@@ -518,7 +519,15 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>Reference to the default wallet account, or the first available if no default wallet is specified.</returns>
         private WalletAccountReference GetWalletAccountReference()
         {
-            string walletName = this.walletManager.GetDefaultOrFirstWalletName();
+            string walletName = null;
+
+            if (this.walletSettings.IsDefaultWalletEnabled())
+                walletName = this.walletManager.GetWalletsNames().FirstOrDefault(w => w == this.walletSettings.DefaultWalletName);
+            else
+            {
+                //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
+                walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
+            }
 
             if (walletName == null)
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");

@@ -234,9 +234,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 
         /// <summary>
         /// Returns a list of grouped addresses which have had their common ownership made public by common use as inputs or as the resulting change in past transactions.
-        /// </summary>
+        /// </summary
+        /// <remarks>
+        /// Please see https://github.com/bitcoin/bitcoin/blob/726d0668ff780acb59ab0200359488ce700f6ae6/src/wallet/wallet.cpp#L3641
+        /// </remarks>
+        /// <param name="walletName">The wallet in question.</param>
         /// <returns>The grouped list of base58 addresses.</returns>
-        List<List<string>> GetAddressGroupings();
+        List<List<string>> GetAddressGroupings(string walletName);
 
         /// <summary>
         /// Remove all the transactions in the wallet that are above this block height
@@ -276,12 +280,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <returns></returns>
         string GetWalletFileExtension();
-
-        /// <summary>
-        /// Returns the "default" wallet's name first if specified, otherwise the first wallet's name.
-        /// </summary>
-        /// <returns>The default or first wallet's name.</returns>
-        string GetDefaultOrFirstWalletName();
 
         /// <summary>
         /// Gets all the wallets' names.

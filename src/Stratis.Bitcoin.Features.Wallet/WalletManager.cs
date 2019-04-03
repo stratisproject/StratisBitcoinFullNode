@@ -860,14 +860,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             return lastBlockSyncedHash;
         }
 
-        /// <summary>
-        /// Please see https://github.com/bitcoin/bitcoin/blob/726d0668ff780acb59ab0200359488ce700f6ae6/src/wallet/wallet.cpp#L3641
-        /// </summary>
-        /// <returns>A grouped list of base 58 addresses.</returns>
-        public List<List<string>> GetAddressGroupings()
+        /// <inheritdoc />
+        public List<List<string>> GetAddressGroupings(string walletName)
         {
             // Get the wallet to check.
-            var walletName = this.GetDefaultOrFirstWalletName();
             var wallet = this.GetWallet(walletName);
 
             // Cache all the addresses in the wallet.
@@ -1713,22 +1709,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return wallet;
-        }
-
-        /// <inheritdoc />
-        public string GetDefaultOrFirstWalletName()
-        {
-            string walletName = null;
-
-            if (this.walletSettings.IsDefaultWalletEnabled())
-                walletName = this.GetWalletsNames().FirstOrDefault(w => w == this.walletSettings.DefaultWalletName);
-            else
-            {
-                //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
-                walletName = this.GetWalletsNames().FirstOrDefault();
-            }
-
-            return walletName;
         }
 
         /// <inheritdoc />
