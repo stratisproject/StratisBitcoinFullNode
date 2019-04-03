@@ -235,9 +235,8 @@ namespace Stratis.Bitcoin.Connection
             // The total traffic will be the sum of the disconnected peers' traffic and the currently connected peers' traffic.
             long totalRead = this.disconnectedPerfCounter.ReadBytes;
             long totalWritten = this.disconnectedPerfCounter.WrittenBytes;
-            var peerBuilder = new StringBuilder();
 
-            void AddPeerInfo(INetworkPeer peer)
+            void AddPeerInfo(StringBuilder peerBuilder, INetworkPeer peer)
             {
                 var chainHeadersBehavior = peer.Behavior<ConsensusManagerBehavior>();
                 var connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
@@ -259,38 +258,38 @@ namespace Stratis.Bitcoin.Connection
                     + " agent:" + agent);
             }
 
-            var oneTryPeers = this.ConnectedPeers.Where(p => p.Behavior<ConnectionManagerBehavior>().OneTry);
-            if (oneTryPeers.Any())
-            {
-                peerBuilder.AppendLine("Connect/OneTry Peers:");
+            var oneTryBuilder = new StringBuilder();
+            var whiteListedBuilder = new StringBuilder();
+            var addNodeBuilder = new StringBuilder();
+            var otherBuilder = new StringBuilder();
+            var addNodeDict = this.ConnectionSettings.AddNode.ToDictionary(ep => ep.MapToIpv6(), ep => ep);
 
-                foreach (INetworkPeer peer in oneTryPeers)
+            foreach (INetworkPeer peer in this.ConnectedPeers)
+            {
+                bool added = false;
+
+                var connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
+                if (connectionManagerBehavior.OneTry)
                 {
-                    AddPeerInfo(peer);
+                    AddPeerInfo(oneTryBuilder, peer);
+                    added = true;
                 }
 
-                peerBuilder.AppendLine();
-            }
-
-            var whiteListedPeers = this.ConnectedPeers.Where(p => p.Behavior<ConnectionManagerBehavior>().Whitelisted);
-            if (whiteListedPeers.Any())
-            {
-                peerBuilder.AppendLine("Whitelisted Peers:");
-
-                foreach (INetworkPeer peer in whiteListedPeers)
+                if (connectionManagerBehavior.Whitelisted)
                 {
-                    AddPeerInfo(peer);
+                    AddPeerInfo(whiteListedBuilder, peer);
+                    added = true;
                 }
 
-                peerBuilder.AppendLine();
-            }
-
-            var remainingPeers = this.ConnectedPeers.Where(p => !p.Behavior<ConnectionManagerBehavior>().OneTry && !p.Behavior<ConnectionManagerBehavior>().Whitelisted);
-            if (remainingPeers.Any())
-            {
-                foreach (INetworkPeer peer in remainingPeers)
+                if (addNodeDict.ContainsKey(peer.PeerEndPoint))
                 {
-                    AddPeerInfo(peer);
+                    AddPeerInfo(addNodeBuilder, peer);
+                    added = true;
+                }
+
+                if (!added)
+                {
+                    AddPeerInfo(otherBuilder, peer);
                 }
             }
 
@@ -298,7 +297,30 @@ namespace Stratis.Bitcoin.Connection
 
             builder.AppendLine();
             builder.AppendLine($"======Connection====== agent {this.Parameters.UserAgent} [in:{inbound} out:{this.ConnectedPeers.Count() - inbound}] [recv: {totalRead.BytesToMegaBytes()} MB sent: {totalWritten.BytesToMegaBytes()} MB]");
-            builder.AppendLine(peerBuilder.ToString());
+
+            if (oneTryBuilder.Length > 0)
+            {
+                builder.AppendLine(">>> Connect:");
+                builder.Append(oneTryBuilder.ToString());
+                builder.AppendLine("<<<");
+            }
+
+            if (whiteListedBuilder.Length > 0)
+            {
+                builder.AppendLine(">>> Whitelisted:");
+                builder.Append(whiteListedBuilder.ToString());
+                builder.AppendLine("<<<");
+            }
+
+            if (addNodeBuilder.Length > 0)
+            {
+                builder.AppendLine(">>> AddNode:");
+                builder.Append(addNodeBuilder.ToString());
+                builder.AppendLine("<<<");
+            }
+
+            if (otherBuilder.Length > 0)
+                builder.Append(otherBuilder.ToString());
         }
 
         private string ToKBSec(ulong bytesPerSec)
