@@ -1375,57 +1375,63 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task EstimateFee()
+        public async Task EstimateFeeAsync()
         {
             // Arrange.
             var address1 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
             var address2 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
 
             // Act.
-            string query = $"http://localhost:{this.fixture.Node.ApiPort}/" +
-                           $"api/wallet/estimate-txfee?" +
-                           $"walletname={this.fixture.walletWithFundsName}" +
-                           $"&accountname=account 0" +
-                           $"&recipients[0].destinationaddress={address1}" +
-                           $"&recipients[0].amount=240000" +
-                           $"&recipients[1].destinationaddress={address2}" +
-                           $"&recipients[1].amount=1000" +
-                           $"&feetype=low" +
-                           $"&allowunconfirmed=true" +
-                           $"&shuffleoutputs=true";
-
-            Money estimatedFee = await query.GetJsonAsync<Money>();
+            Money act = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                        .AppendPathSegment("wallet/estimate-txfee")
+                        .PostJsonAsync(new TxFeeEstimateRequest
+                        {
+                            WalletName = this.fixture.walletWithFundsName,
+                            AccountName = "account 0",
+                            Recipients = new List<RecipientModel>
+                            {
+                                new RecipientModel { DestinationAddress = address1, Amount = "240000" },
+                                new RecipientModel { DestinationAddress = address2, Amount = "1000" },
+                            },
+                            FeeType = FeeType.Low.ToString(),
+                            AllowUnconfirmed = true,
+                            ShuffleOutputs = true
+                        })
+                        .ReceiveJson<Money>();
 
             // Assert.
-            estimatedFee.Should().Be(new Money(10000));
+            act.Should().Be(new Money(10000));
         }
 
         [Fact]
-        public async Task EstimateFeeWithOpReturn()
+        public async Task EstimateFeeWithOpReturnAsync()
         {
             // Arrange.
             var address1 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
             var address2 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
 
             // Act.
-            string query = $"http://localhost:{this.fixture.Node.ApiPort}/" +
-                           $"api/wallet/estimate-txfee?" +
-                           $"walletname={this.fixture.walletWithFundsName}" +
-                           $"&accountname=account 0" +
-                           $"&recipients[0].destinationaddress={address1}" +
-                           $"&recipients[0].amount=240000" +
-                           $"&recipients[1].destinationaddress={address2}" +
-                           $"&recipients[1].amount=2000" +
-                           $"&feetype=low" +
-                           $"&opreturndata=always something interesting to say here" +
-                           $"&opreturnamount=1" +
-                           $"&allowunconfirmed=true" +
-                           $"&shuffleoutputs=true";
-
-            Money estimatedFee = await query.GetJsonAsync<Money>();
+            Money act = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                        .AppendPathSegment("wallet/estimate-txfee")
+                        .PostJsonAsync(new TxFeeEstimateRequest
+                        {
+                            WalletName = this.fixture.walletWithFundsName,
+                            AccountName = "account 0",
+                            Recipients = new List<RecipientModel>
+                            {
+                                new RecipientModel { DestinationAddress = address1, Amount = "240000" },
+                                new RecipientModel { DestinationAddress = address2, Amount = "2000" },
+                            },
+                            FeeType = FeeType.Low.ToString(),
+                            OpReturnData = "always something interesting to say here",
+                            OpReturnAmount = "1",
+                            AllowUnconfirmed = true,
+                            ShuffleOutputs = true
+                        })
+                        .ReceiveJson<Money>();
 
             // Assert.
-            estimatedFee.Should().Be(new Money(10000));
+            act.Should().Be(new Money(10000));
         }
 
         [Fact]
