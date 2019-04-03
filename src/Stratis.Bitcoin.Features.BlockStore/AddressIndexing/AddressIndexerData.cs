@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Stratis.Bitcoin.AddressIndexing
+namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 {
     public class AddressIndexerData
     {

@@ -4,13 +4,13 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.AddressIndexing;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.BlockStore.Pruning;
 using Stratis.Bitcoin.Interfaces;
@@ -199,6 +199,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         services.AddSingleton<StoreSettings>();
                         services.AddSingleton<BlockStoreController>();
                         services.AddSingleton<IBlockStoreQueueFlushCondition, BlockStoreQueueFlushCondition>();
+                        services.AddSingleton<AddressIndexer>();
                     });
             });
 

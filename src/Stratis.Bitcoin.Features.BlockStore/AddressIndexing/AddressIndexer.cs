@@ -10,6 +10,7 @@ using LiteDB;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Interfaces;
@@ -18,7 +19,7 @@ using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Script = NBitcoin.Script;
 
-namespace Stratis.Bitcoin.AddressIndexing
+namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 {
     public class AddressIndexer : IDisposable
     {
@@ -36,6 +37,8 @@ namespace Stratis.Bitcoin.AddressIndexing
 
         private readonly DataFolder dataFolder;
 
+        private readonly IConsensusManager consensusManager;
+
         private const string DbKey = "AddrData";
 
         private SubscriptionToken blockConnectedSubscription, blockDisconnectedSubscription;
@@ -51,7 +54,7 @@ namespace Stratis.Bitcoin.AddressIndexing
         private AddressIndexerData addressesIndex;
 
         public AddressIndexer(NodeSettings nodeSettings, ISignals signals, DataFolder dataFolder, ILoggerFactory loggerFactory,
-            Network network, IBlockStore blockStore, INodeStats nodeStats)
+            Network network, IBlockStore blockStore, INodeStats nodeStats, IConsensusManager consensusManager)
         {
             this.signals = signals;
             this.nodeSettings = nodeSettings;
@@ -59,6 +62,7 @@ namespace Stratis.Bitcoin.AddressIndexing
             this.blockStore = blockStore;
             this.nodeStats = nodeStats;
             this.dataFolder = dataFolder;
+            this.consensusManager = consensusManager;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -108,6 +112,16 @@ namespace Stratis.Bitcoin.AddressIndexing
                 });
 
                 this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 400);
+
+                if ((this.consensusManager.Tip.HashBlock.ToString() != this.addressesIndex.TipHash))
+                {
+                    const string message = "TransactionIndexer is in inconsistent state. This can happen if you've enabled txindex on an already synced or partially synced node. " +
+                                           "Remove everything from the data folder and run the node with -txindex=true.";
+
+                    this.logger.LogCritical(message);
+                    this.logger.LogTrace("(-)[INCONSISTENT_STATE]");
+                    throw new Exception(message);
+                }
             }
         }
 
@@ -139,17 +153,6 @@ namespace Stratis.Bitcoin.AddressIndexing
         {
             // Make sure it's on top of the tip.
             bool blockAdded = item.Key;
-
-            if ((blockAdded && item.Value.ChainedHeader.Header.HashPrevBlock.ToString() != this.addressesIndex.TipHash) ||
-                (!blockAdded && item.Value.ChainedHeader.HashBlock.ToString() != this.addressesIndex.TipHash))
-            {
-                const string message = "TransactionIndexer is in inconsistent state. This can happen if you've enabled txindex on an already synced or partially synced node. " +
-                                       "Remove everything from the data folder and run the node with -txindex=true.";
-
-                this.logger.LogCritical(message);
-                this.logger.LogTrace("(-)[INCONSISTENT_STATE]");
-                throw new Exception(message);
-            }
 
             Block block = item.Value.Block;
             int currentHeight = item.Value.ChainedHeader.Height;
