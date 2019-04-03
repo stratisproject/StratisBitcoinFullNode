@@ -81,8 +81,15 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
             var sidechainPeers = new List<Peer>();
             var sidechainFederationMembers = new List<Peer>();
 
-            this.ParsePeers(stratisStatus, stratisFederationInfo, ref stratisPeers, ref stratisFederationMembers);
-            this.ParsePeers(sidechainStatus, sidechainFederationInfo, ref sidechainPeers, ref sidechainFederationMembers);
+            try
+            {
+                this.ParsePeers(stratisStatus, stratisFederationInfo, ref stratisPeers, ref stratisFederationMembers);
+                this.ParsePeers(sidechainStatus, sidechainFederationInfo, ref sidechainPeers, ref sidechainFederationMembers);
+            }
+            catch(Exception e)
+            {
+                this.logger.LogError(e, "Unable to parse feeds");
+            }
 
             var dashboardModel = new DashboardModel();
             try
@@ -126,9 +133,9 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                     }
                 };
             }
-            catch
+            catch(Exception e)
             {
-                //ignored
+                this.logger.LogError(e, "Unable to fetch feeds.");
             }
 
             if (!string.IsNullOrEmpty(this.distributedCache.GetString("DashboardData")))
