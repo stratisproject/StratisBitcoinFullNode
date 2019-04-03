@@ -53,7 +53,6 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         /// <summary>
         /// Retrieve all node information and store it in IDistributedCache object
         /// </summary>
-        /// <returns></returns>
         private async Task BuildCacheAsync()
         {
             this.logger.LogInformation($"Refresh the Dashboard Data");
@@ -153,7 +152,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
             foreach (dynamic peer in (JArray)stratisStatus.Content.outboundPeers)
             {
                 var endpointRegex = new Regex("\\[([A-Za-z0-9:.]*)\\]:([0-9]*)");
-                var endpointMatches = endpointRegex.Matches(Convert.ToString(peer.remoteSocketEndpoint));
+                dynamic endpointMatches = endpointRegex.Matches(Convert.ToString(peer.remoteSocketEndpoint));
                 var endpoint = new IPEndPoint(IPAddress.Parse(endpointMatches[0].Groups[1].Value), int.Parse(endpointMatches[0].Groups[2].Value));
                 (Convert.ToString(federationInfo.Content.endpoints).Contains($"{endpoint.Address.MapToIPv4().ToString()}:{endpointMatches[0].Groups[2].Value}") ? federationMembers : peers)
                 .Add(new Peer()
@@ -167,7 +166,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
             foreach (dynamic peer in (JArray)stratisStatus.Content.inboundPeers)
             {
                 var endpointRegex = new Regex("\\[([A-Za-z0-9:.]*)\\]:([0-9]*)");
-                var endpointMatches = endpointRegex.Matches(Convert.ToString(peer.remoteSocketEndpoint));
+                dynamic endpointMatches = endpointRegex.Matches(Convert.ToString(peer.remoteSocketEndpoint));
                 var endpoint = new IPEndPoint(IPAddress.Parse(endpointMatches[0].Groups[1].Value), int.Parse(endpointMatches[0].Groups[2].Value));
                 (Convert.ToString(federationInfo.Content.endpoints).Contains($"{endpoint.Address.MapToIPv4().ToString()}:{endpointMatches[0].Groups[2].Value}") ? federationMembers : peers)
                 .Add(new Peer()
@@ -185,17 +184,17 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
             if (this.PerformNodeCheck())
             {
                 await this.BuildCacheAsync();
-                successfullyBuilt = true;
+                this.successfullyBuilt = true;
             }
             else
             {
                 await this.distributedCache.SetStringAsync("NodeUnavailable", "true");
-                if (successfullyBuilt)
+                if (this.successfullyBuilt)
                 {
                     await this.updaterHub.Clients.All.SendAsync("NodeUnavailable");
                 }
                 await this.distributedCache.RemoveAsync("DashboardData");
-                successfullyBuilt = false;
+                this.successfullyBuilt = false;
             }
         }
 
