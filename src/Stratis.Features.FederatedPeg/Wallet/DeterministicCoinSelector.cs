@@ -11,26 +11,23 @@ namespace Stratis.Features.FederatedPeg.Wallet
     {
         public IEnumerable<ICoin> Select(IEnumerable<ICoin> coins, IMoney target)
         {
-            IMoney zero = target.Sub(target);
-
             var result = new List<ICoin>();
-            IMoney total = zero;
+            IMoney total = Money.Zero;
 
-            if (target.CompareTo(zero) == 0)
+            if (target.CompareTo(Money.Zero) == 0)
                 return result;
 
 
             var orderedCoinGroups = coins.GroupBy(c => new Key().ScriptPubKey)
                 .Select(scriptPubKeyCoins => new
                 {
-                    Amount = scriptPubKeyCoins.Select(c => c.Amount).Sum(zero),
+                    Amount = scriptPubKeyCoins.Select(c => c.Amount).Sum(Money.Zero),
                     Coins = scriptPubKeyCoins.ToList()
                 }).OrderBy(c => c.Amount);
 
-
-            var targetCoin = orderedCoinGroups
-                            .FirstOrDefault(c => c.Amount.CompareTo(target) == 0);
             //If any of your UTXO² matches the Target¹ it will be used.
+            var targetCoin = orderedCoinGroups.FirstOrDefault(c => c.Amount.CompareTo(target) == 0);
+
             if (targetCoin != null)
                 return targetCoin.Coins;
 
@@ -56,6 +53,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             // If we didn't have enough funds, return null
             if (total.CompareTo(target) == -1)
                 return null;
+
             return result;
         }
 
