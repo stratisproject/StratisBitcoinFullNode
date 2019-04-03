@@ -397,7 +397,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 rpcClient.SendBatch();
                 blockCount = blockCountAsync.GetAwaiter().GetResult();
 
-                rpcClient = new RPCClient("bla:bla", "http://toto/", this.regTest);
+                rpcClient = new RPCClient("bla:bla", new Uri("http://toto/"), this.regTest);
             }
         }
     }
