@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Stratis.FederatedSidechains.AdminDashboard.Helpers;
 using Stratis.FederatedSidechains.AdminDashboard.Hubs;
 using Stratis.FederatedSidechains.AdminDashboard.Models;
 using Stratis.FederatedSidechains.AdminDashboard.Rest;
@@ -102,8 +103,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                     MiningPublicKeys = stratisFederationInfo.Content.federationMultisigPubKeys,
                     StratisNode = new StratisNodeModel
                     {
-                        WebAPIUrl = string.Concat(this.defaultEndpointsSettings.StratisNode, "/api"),
-                        SwaggerUrl = string.Concat(this.defaultEndpointsSettings.StratisNode, "/swagger"),
+                        WebAPIUrl = UriHelper.BuildUri(this.defaultEndpointsSettings.StratisNode, "/api").ToString(),
+                        SwaggerUrl = UriHelper.BuildUri(this.defaultEndpointsSettings.StratisNode, "/swagger").ToString(),
                         SyncingStatus = stratisStatus.Content.consensusHeight > 0 ? (stratisStatus.Content.blockStoreHeight / stratisStatus.Content.consensusHeight) * 100 : 0,
                         Peers = stratisPeers,
                         FederationMembers = stratisFederationMembers,
@@ -117,8 +118,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                     },
                     SidechainNode = new SidechainNodelModel
                     {
-                        WebAPIUrl = string.Concat(this.defaultEndpointsSettings.SidechainNode, "/api"),
-                        SwaggerUrl = string.Concat(this.defaultEndpointsSettings.SidechainNode, "/swagger"),
+                        WebAPIUrl = UriHelper.BuildUri(this.defaultEndpointsSettings.SidechainNode, "/api").ToString(),
+                        SwaggerUrl = UriHelper.BuildUri(this.defaultEndpointsSettings.SidechainNode, "/swagger").ToString(),
                         SyncingStatus = sidechainStatus.Content.consensusHeight > 0 ? (sidechainStatus.Content.blockStoreHeight / sidechainStatus.Content.consensusHeight) * 100 : 0,
                         Peers = sidechainPeers,
                         FederationMembers = sidechainFederationMembers,
