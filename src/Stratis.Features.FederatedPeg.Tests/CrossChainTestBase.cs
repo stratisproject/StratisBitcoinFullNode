@@ -31,6 +31,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         protected const string walletPassword = "password";
         protected Network network;
         protected Network counterChainNetwork;
+        protected FederatedPegOptions federatedPegOptions;
         protected ChainIndexer ChainIndexer;
         protected ILoggerFactory loggerFactory;
         protected ILogger logger;
@@ -71,6 +72,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.network = network ?? FederatedPegNetwork.NetworksSelector.Regtest();
             this.counterChainNetwork = counterChainNetwork ?? Networks.Stratis.Regtest();
+            this.federatedPegOptions = new FederatedPegOptions(counterChainNetwork);
 
             NetworkRegistration.Register(this.network);
 
@@ -79,7 +81,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.asyncLoopFactory = new AsyncLoopFactory(this.loggerFactory);
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.dateTimeProvider = DateTimeProvider.Default;
-            this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.network, counterChainNetwork);
+            this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.network, this.federatedPegOptions);
             this.blockRepository = Substitute.For<IBlockRepository>();
             this.fullNode = Substitute.For<IFullNode>();
             this.withdrawalTransactionBuilder = Substitute.For<IWithdrawalTransactionBuilder>();

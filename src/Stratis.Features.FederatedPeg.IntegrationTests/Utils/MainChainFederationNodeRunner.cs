@@ -37,10 +37,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)
                 .UseBlockStore()
-                .AddFederationGateway(o =>
-                {
-                    o.SetCounterChainNetwork(this.counterChainNetwork);
-                })
+                .AddFederationGateway(new FederatedPegOptions(this.counterChainNetwork))
                 .UseTransactionNotification()
                 .UseBlockNotification()
                 .UseApi()

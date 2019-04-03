@@ -41,11 +41,11 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly Network counterChainNetwork;
 
-        public OpReturnDataReader(ILoggerFactory loggerFactory, Network network, Network counterChainNetwork)
+        public OpReturnDataReader(ILoggerFactory loggerFactory, Network network, FederatedPegOptions federatedPegOptions)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
-            this.counterChainNetwork = counterChainNetwork;
+            this.counterChainNetwork = federatedPegOptions.CounterChainNetwork;
         }
 
         /// <inheritdoc />
