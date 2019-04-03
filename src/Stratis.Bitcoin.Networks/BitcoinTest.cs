@@ -14,6 +14,7 @@ namespace Stratis.Bitcoin.Networks
         {
             this.Name = "TestNet";
             this.AdditionalNames = new List<string> { "test" };
+            this.NetworkType = NetworkType.Testnet;
             this.Magic = 0x0709110B;
             this.DefaultPort = 18333;
             this.DefaultMaxOutboundConnections = 8;

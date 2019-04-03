@@ -24,6 +24,7 @@ namespace Stratis.Sidechains.Networks
         internal FederatedPegMain()
         {
             this.Name = "CirrusMain";
+            this.NetworkType = NetworkType.Mainnet;
             this.CoinTicker = "CRS";
             this.Magic = 0x522357A0;
             this.DefaultPort = 16179;

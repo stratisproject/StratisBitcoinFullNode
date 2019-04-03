@@ -14,6 +14,7 @@ namespace Stratis.Bitcoin.Networks
         {
             this.Name = "Main";
             this.AdditionalNames = new List<string> { "Mainnet" };
+            this.NetworkType = NetworkType.Mainnet;
 
             this.RootFolderName = BitcoinRootFolderName;
             this.DefaultConfigFilename = BitcoinDefaultConfigFilename;

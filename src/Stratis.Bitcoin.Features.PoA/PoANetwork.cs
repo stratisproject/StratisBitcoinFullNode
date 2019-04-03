@@ -39,6 +39,7 @@ namespace Stratis.Bitcoin.Features.PoA
             uint magic = BitConverter.ToUInt32(messageStart, 0);
 
             this.Name = "PoAMain";
+            this.NetworkType = NetworkType.Mainnet;
             this.Magic = magic;
             this.DefaultPort = 16438;
             this.DefaultMaxOutboundConnections = 16;

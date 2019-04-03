@@ -17,6 +17,7 @@ namespace Stratis.SmartContracts.Networks
         public SmartContractsRegTest()
         {
             this.Name = "SmartContractsRegTest";
+            this.NetworkType = NetworkType.Regtest;
             this.RootFolderName = SmartContractNetwork.StratisRootFolderName;
             this.DefaultConfigFilename = SmartContractNetwork.StratisDefaultConfigFilename;
             this.Magic = 0xDAB5BFFA;

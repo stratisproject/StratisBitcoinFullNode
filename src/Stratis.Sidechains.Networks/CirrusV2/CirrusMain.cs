@@ -20,6 +20,7 @@ namespace Stratis.Sidechains.Networks.CirrusV2
         internal CirrusMain()
         {
             this.Name = nameof(CirrusMain);
+            this.NetworkType = NetworkType.Mainnet;
             this.CoinTicker = "CRS";
             this.Magic = 0x522357A0; //
             this.DefaultPort = 16179;
