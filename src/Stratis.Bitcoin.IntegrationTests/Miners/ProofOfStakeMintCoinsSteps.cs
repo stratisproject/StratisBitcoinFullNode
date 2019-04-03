@@ -16,11 +16,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
 
         protected override void AfterTest() { }
 
-        private void a_proof_of_stake_node_with_wallet()
-        {
-            this.proofOfStakeSteps.PremineNodeWithWallet();
-        }
-
         private void a_proof_of_stake_node_with_wallet_with_overrides()
         {
             this.proofOfStakeSteps.PremineNodeWithWalletWithOverrides();
