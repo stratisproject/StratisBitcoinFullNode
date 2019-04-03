@@ -14,6 +14,7 @@ namespace Stratis.SmartContracts.Networks
         public SmartContractsTest()
         {
             this.Name = "SmartContractsTestNet";
+            this.NetworkType = NetworkType.Testnet;
             this.RootFolderName = SmartContractNetwork.StratisRootFolderName;
             this.DefaultConfigFilename = SmartContractNetwork.StratisDefaultConfigFilename;
             this.Magic = 0x0709110E; // Incremented 19/06
@@ -21,6 +22,7 @@ namespace Stratis.SmartContracts.Networks
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
             this.DefaultRPCPort = 18332;
+            this.DefaultAPIPort = 38221; // TODO: Confirm
             this.MaxTipAge = SmartContractNetwork.BitcoinDefaultMaxTipAgeInSeconds;
             this.MinTxFee = 1000;
             this.FallbackFee = 20000;
