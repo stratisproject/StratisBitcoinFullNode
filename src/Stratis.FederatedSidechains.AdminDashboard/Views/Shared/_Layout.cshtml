@@ -5,14 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Stratis Federated Sidechains Dashboard</title>
     <environment include="Development">
-      <link href="~/css/default.css" rel="stylesheet" />
+        <link href="~/css/default.css" rel="stylesheet" />
+        <link rel="stylesheet" type="text/css" href="~/lib/font-awesome/css/all.css" />
     </environment>
     <environment exclude="Development">
-      <link href="~/css/default.min.css" rel="stylesheet" />
+        <link href="~/css/default.min.css" rel="stylesheet" />
+        <link rel="stylesheet" type="text/css" href="~/lib/font-awesome/css/all.min.css" />
     </environment>
-    <link rel="stylesheet" type="text/css" href="~/lib/node-snackbar/dist/snackbar.min.css" />
+    <link rel="stylesheet" type="text/css" href="~/lib/node-snackbar/dist/snackbar.css" />
     <link rel="stylesheet" type="text/css" href="~/lib/nprogress/nprogress.css" />
-    <link rel="stylesheet" type="text/css" href="~/lib/font-awesome/css/all.min.css" />
     <link rel="icon" type="image/svg" href="~/images/logo.svg" />
 </head>
 <body>
@@ -66,7 +67,26 @@
         <li class="list-inline-item text-truncate">@(ViewBag.SidechainMultisigAddress ?? "Not Running")</li>
       </ul>
     </div>
-    <div class="navbar-text ml-auto">
+    <div class="navbar-text p-0 mr-3 d-inline ml-auto">
+      <ul class="list-inline mb-0 d-flex align-items-center">
+        <li class="list-inline-item">
+          <a href="#"><i class="fas fa-vote-yea"></i>&nbsp; Federation Votes</a>
+        </li>
+        <li class="list-inline-item ml-3 dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fas fa-book"></i>&nbsp; Log Level
+          </a>
+          <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+            <a class="dropdown-item" data-ajax="true" data-ajax-success="LogLevelDone" asp-action="SetLogLevel" asp-route-level="trace">Trace</a>
+            <a class="dropdown-item active" data-ajax="true" data-ajax-success="LogLevelDone" asp-action="SetLogLevel" asp-route-level="information">Information</a>
+            <a class="dropdown-item" data-ajax="true" data-ajax-success="LogLevelDone" asp-action="SetLogLevel" asp-route-level="warning">Warning</a>
+            <a class="dropdown-item" data-ajax="true" data-ajax-success="LogLevelDone" asp-action="SetLogLevel" asp-route-level="error">Error</a>
+            <a class="dropdown-item" data-ajax="true" data-ajax-success="LogLevelDone" asp-action="SetLogLevel" asp-route-level="critical">Critical</a>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div class="navbar-text">
       <a data-toggle="modal" data-target="#miningPublicKeys" class="d-flex align-items-center"><i class="fas fa-key"></i>&nbsp; Mining Public keys <!--<i class="material-icons md-18 ml-2">open_in_new</i>--></a>
     </div>
   </nav>
