@@ -261,8 +261,10 @@ namespace Stratis.Bitcoin.Connection
             var oneTryBuilder = new StringBuilder();
             var whiteListedBuilder = new StringBuilder();
             var addNodeBuilder = new StringBuilder();
+            var connectBuilder = new StringBuilder();
             var otherBuilder = new StringBuilder();
             var addNodeDict = this.ConnectionSettings.AddNode.ToDictionary(ep => ep.MapToIpv6(), ep => ep);
+            var connectDict = this.ConnectionSettings.Connect.ToDictionary(ep => ep.MapToIpv6(), ep => ep);
 
             foreach (INetworkPeer peer in this.ConnectedPeers)
             {
@@ -278,6 +280,12 @@ namespace Stratis.Bitcoin.Connection
                 if (connectionManagerBehavior.Whitelisted)
                 {
                     AddPeerInfo(whiteListedBuilder, peer);
+                    added = true;
+                }
+
+                if (connectDict.ContainsKey(peer.PeerEndPoint))
+                {
+                    AddPeerInfo(connectBuilder, peer);
                     added = true;
                 }
 
@@ -298,13 +306,6 @@ namespace Stratis.Bitcoin.Connection
             builder.AppendLine();
             builder.AppendLine($"======Connection====== agent {this.Parameters.UserAgent} [in:{inbound} out:{this.ConnectedPeers.Count() - inbound}] [recv: {totalRead.BytesToMegaBytes()} MB sent: {totalWritten.BytesToMegaBytes()} MB]");
 
-            if (oneTryBuilder.Length > 0)
-            {
-                builder.AppendLine(">>> Connect:");
-                builder.Append(oneTryBuilder.ToString());
-                builder.AppendLine("<<<");
-            }
-
             if (whiteListedBuilder.Length > 0)
             {
                 builder.AppendLine(">>> Whitelisted:");
@@ -316,6 +317,20 @@ namespace Stratis.Bitcoin.Connection
             {
                 builder.AppendLine(">>> AddNode:");
                 builder.Append(addNodeBuilder.ToString());
+                builder.AppendLine("<<<");
+            }
+
+            if (oneTryBuilder.Length > 0)
+            {
+                builder.AppendLine(">>> OneTry:");
+                builder.Append(oneTryBuilder.ToString());
+                builder.AppendLine("<<<");
+            }
+
+            if (connectBuilder.Length > 0)
+            {
+                builder.AppendLine(">>> Connect:");
+                builder.Append(connectBuilder.ToString());
                 builder.AppendLine("<<<");
             }
 
