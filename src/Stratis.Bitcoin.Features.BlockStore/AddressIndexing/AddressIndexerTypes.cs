@@ -27,12 +27,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         public long Satoshi { get; set; }
 
         /// <summary>Height of a block in which operation was confirmed.</summary>
-        public int Height { get; set; }
+        public int BalanceChangedHeight { get; set; }
 
         /// <inheritdoc />
         public override string ToString()
         {
-            return $"{nameof(this.Deposited)}:{this.Deposited}, {nameof(this.Satoshi)}:{this.Satoshi}, {nameof(this.Height)}:{this.Height}";
+            return $"{nameof(this.Deposited)}:{this.Deposited}, {nameof(this.Satoshi)}:{this.Satoshi}, {nameof(this.BalanceChangedHeight)}:{this.BalanceChangedHeight}";
         }
     }
 }

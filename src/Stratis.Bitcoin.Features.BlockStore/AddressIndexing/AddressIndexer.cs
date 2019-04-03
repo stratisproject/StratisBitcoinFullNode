@@ -21,6 +21,8 @@ using Script = NBitcoin.Script;
 
 namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 {
+    /// <summary>Component that builds an index of all addresses and deposits\withdrawals that happened to\from them.</summary>
+    /// <remarks>Disabled by default. Node should be synced from scratch with txindexing enabled to build address index.</remarks>
     public class AddressIndexer : IDisposable
     {
         private readonly ISignals signals;
@@ -166,6 +168,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             Transaction[] transactions = this.blockStore.GetTransactionsByIds(inputs.Select(x => x.PrevOut.Hash).ToArray());
 
+            // TODO is it possible that transactions is null because block with requested ID was reorged away already?
+
             for (int i = 0; i < inputs.Count; i++)
             {
                 TxIn currentInput = inputs[i];
@@ -181,7 +185,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     // Record money being spent.
                     addrData.Changes.Add(new AddressBalanceChange()
                     {
-                        Height = currentHeight,
+                        BalanceChangedHeight = currentHeight,
                         Satoshi = amountSpent.Satoshi,
                         Deposited = false
                     });
@@ -189,7 +193,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 else
                 {
                     // Remove changes.
-                    addrData.Changes.RemoveAll(x => x.Height == currentHeight);
+                    addrData.Changes.RemoveAll(x => x.BalanceChangedHeight == currentHeight);
                 }
             }
 
@@ -207,7 +211,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         // Record money being sent.
                         addrData.Changes.Add(new AddressBalanceChange()
                         {
-                            Height = currentHeight,
+                            BalanceChangedHeight = currentHeight,
                             Satoshi = amountReceived.Satoshi,
                             Deposited = true
                         });
@@ -215,7 +219,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     else
                     {
                         // Remove changes.
-                        addrData.Changes.RemoveAll(x => x.Height == currentHeight);
+                        addrData.Changes.RemoveAll(x => x.BalanceChangedHeight == currentHeight);
                     }
                 }
             }

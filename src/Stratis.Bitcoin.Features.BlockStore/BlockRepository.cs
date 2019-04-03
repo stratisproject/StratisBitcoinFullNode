@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (!this.TxIndex)
             {
-                this.logger.LogTrace("(-)[NOT_INDEXED]:null");
+                this.logger.LogTrace("(-)[TX_INDEXING_DISABLED]:null");
                 return default(Transaction);
             }
 
@@ -192,7 +192,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             if (!this.TxIndex)
             {
-                this.logger.LogTrace("(-)[NOT_INDEXED]:null");
+                this.logger.LogTrace("(-)[TX_INDEXING_DISABLED]:null");
                 return null;
             }
 
@@ -224,7 +224,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     txes[i] = tx;
                 }
-
             }
 
             return txes;

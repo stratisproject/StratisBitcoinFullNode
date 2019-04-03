@@ -191,7 +191,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             // Only look for transactions if they're indexed.
             if (!this.nodeSettings.TxIndex)
+            {
+                this.logger.LogTrace("(-)[TX_INDEX_DISABLED]:null");
                 return default(Transaction);
+            }
 
             lock (this.blocksCacheLock)
             {
@@ -215,7 +218,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             // Only look for transactions if they're indexed.
             if (!this.nodeSettings.TxIndex)
+            {
+                this.logger.LogTrace("(-)[TX_INDEX_DISABLED]:null");
                 return null;
+            }
 
             Transaction[] txes = new Transaction[trxids.Length];
 
@@ -225,16 +231,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     uint256 txId = trxids[i];
 
-                    foreach (ChainedHeaderBlock chainedHeaderBlock in this.pendingBlocksCache.Values)
-                    {
-                        Transaction tx = chainedHeaderBlock.Block.Transactions.FirstOrDefault(x => x.GetHash() == txId);
+                    Transaction tx = this.pendingBlocksCache.Values.SelectMany(block => block.Block.Transactions).FirstOrDefault(x => x.GetHash() == txId);
 
-                        if (tx != null)
-                        {
-                            this.logger.LogTrace("Transaction '{0}' was found in the pending blocks cache.", txId);
-                            txes[i] = tx;
-                            break;
-                        }
+                    if (tx != null)
+                    {
+                        this.logger.LogTrace("Transaction '{0}' was found in the pending blocks cache.", txId);
+                        txes[i] = tx;
                     }
                 }
             }
