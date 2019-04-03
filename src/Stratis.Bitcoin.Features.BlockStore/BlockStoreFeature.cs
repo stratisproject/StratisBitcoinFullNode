@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AddressIndexing;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -47,6 +48,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly IPrunedBlockRepository prunedBlockRepository;
 
+        private readonly AddressIndexer addressIndexer;
+
         public BlockStoreFeature(
             Network network,
             ChainIndexer chainIndexer,
@@ -59,7 +62,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             INodeStats nodeStats,
             IConsensusManager consensusManager,
             ICheckpoints checkpoints,
-            IPrunedBlockRepository prunedBlockRepository)
+            IPrunedBlockRepository prunedBlockRepository,
+            AddressIndexer addressIndexer)
         {
             this.network = network;
             this.chainIndexer = chainIndexer;
@@ -73,6 +77,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.consensusManager = consensusManager;
             this.checkpoints = checkpoints;
             this.prunedBlockRepository = prunedBlockRepository;
+            this.addressIndexer = addressIndexer;
 
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 900);
         }
@@ -146,6 +151,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.connectionManager.Parameters.Services |= NetworkPeerServices.NODE_WITNESS;
 
             this.blockStoreSignaled.Initialize();
+
+            this.addressIndexer.Initialize();
         }
 
         /// <inheritdoc />
@@ -160,6 +167,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogInformation("Stopping BlockStore.");
 
             this.blockStoreSignaled.Dispose();
+
+            this.addressIndexer.Dispose();
         }
     }
 

@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.AddressIndexing
 
         private LiteCollection<AddressIndexerData> dataStore;
 
-        private AddressIndexerData data;
+        private AddressIndexerData addressesIndex;
 
         public AddressIndexer(NodeSettings nodeSettings, ISignals signals, DataFolder dataFolder, ILoggerFactory loggerFactory,
             Network network, IBlockStore blockStore, INodeStats nodeStats)
@@ -74,18 +74,18 @@ namespace Stratis.Bitcoin.AddressIndexing
 
                 this.dataStore = this.db.GetCollection<AddressIndexerData>(DbKey);
 
-                this.data = this.dataStore.FindAll().FirstOrDefault();
+                this.addressesIndex = this.dataStore.FindAll().FirstOrDefault();
 
-                if (this.data == null)
+                if (this.addressesIndex == null)
                 {
                     this.logger.LogDebug("Tip was not found, initializing with genesis.");
 
-                    this.data = new AddressIndexerData()
+                    this.addressesIndex = new AddressIndexerData()
                     {
                         TipHash = this.network.GenesisHash.ToString(),
                         AddressIndexDatas = new List<AddressIndexData>()
                     };
-                    this.dataStore.Insert(this.data);
+                    this.dataStore.Insert(this.addressesIndex);
                 }
 
                 this.blockReceivedQueue = new AsyncQueue<KeyValuePair<bool, ChainedHeaderBlock>>(this.OnEnqueueAsync);
@@ -140,8 +140,8 @@ namespace Stratis.Bitcoin.AddressIndexing
             // Make sure it's on top of the tip.
             bool blockAdded = item.Key;
 
-            if ((blockAdded && item.Value.ChainedHeader.Header.HashPrevBlock.ToString() != this.data.TipHash) ||
-                (!blockAdded && item.Value.ChainedHeader.HashBlock.ToString() != this.data.TipHash))
+            if ((blockAdded && item.Value.ChainedHeader.Header.HashPrevBlock.ToString() != this.addressesIndex.TipHash) ||
+                (!blockAdded && item.Value.ChainedHeader.HashBlock.ToString() != this.addressesIndex.TipHash))
             {
                 const string message = "TransactionIndexer is in inconsistent state. This can happen if you've enabled txindex on an already synced or partially synced node. " +
                                        "Remove everything from the data folder and run the node with -txindex=true.";
@@ -217,14 +217,14 @@ namespace Stratis.Bitcoin.AddressIndexing
                 }
             }
 
-            this.data.TipHash = item.Value.ChainedHeader.HashBlock.ToString();
+            this.addressesIndex.TipHash = item.Value.ChainedHeader.HashBlock.ToString();
         }
 
         private AddressIndexData GetOrCreateAddressData(Script scriptPubKey)
         {
             byte[] scriptPubKeyBytes = scriptPubKey.ToBytes();
 
-            AddressIndexData addrData = this.data.AddressIndexDatas.SingleOrDefault(x => StructuralComparisons.StructuralEqualityComparer.Equals(scriptPubKeyBytes, x.ScriptPubKeyBytes));
+            AddressIndexData addrData = this.addressesIndex.AddressIndexDatas.SingleOrDefault(x => StructuralComparisons.StructuralEqualityComparer.Equals(scriptPubKeyBytes, x.ScriptPubKeyBytes));
 
             if (addrData == null)
             {
@@ -234,7 +234,7 @@ namespace Stratis.Bitcoin.AddressIndexing
                     Changes = new List<AddressBalanceChange>()
                 };
 
-                this.data.AddressIndexDatas.Add(addrData);
+                this.addressesIndex.AddressIndexDatas.Add(addrData);
                 return addrData;
             }
 
@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.AddressIndexing
         /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed.</returns>
         public Money GetAddressBalance(BitcoinAddress address, int minConfirmations = 0)
         {
-            if (this.data == null)
+            if (this.addressesIndex == null)
                 throw new IndexerNotInitializedException();
 
             throw new NotImplementedException();
@@ -255,7 +255,7 @@ namespace Stratis.Bitcoin.AddressIndexing
         /// <returns>Total amount received by a given address or <c>null</c> if address wasn't indexed.</returns>
         public Money GetReceivedByAddress(BitcoinAddress address, int minConfirmations = 0)
         {
-            if (this.data == null)
+            if (this.addressesIndex == null)
                 throw new IndexerNotInitializedException();
 
             throw new NotImplementedException();
@@ -269,7 +269,7 @@ namespace Stratis.Bitcoin.AddressIndexing
 
             this.blockReceivedQueue.Dispose();
 
-            this.dataStore.Update(this.data);
+            this.dataStore.Update(this.addressesIndex);
 
             this.db?.Dispose();
         }
