@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -13,9 +14,15 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Rest
         /// <param name="endpoint">HTTP node endpoint</param>
         /// <param name="path">URL</param>
         /// <returns>An ApiResponse object</returns>
-        public static async Task<ApiResponse> GetRequestAsync(string endpoint, string path)
+        public static async Task<ApiResponse> GetRequestAsync(string endpoint, string path, string query = null)
         {
-            var restClient = new RestClient(string.Concat(endpoint, path));
+            var uriToQuery = new UriBuilder(endpoint)
+            {
+                Path = path,
+                Query = query
+            };
+
+            var restClient = new RestClient(uriToQuery.Uri);
             var restRequest = new RestRequest(Method.GET);
             IRestResponse restResponse = await restClient.ExecuteTaskAsync(restRequest);
             return new ApiResponse
@@ -34,7 +41,12 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Rest
         /// <returns>An ApiResponse object</returns>
         public static async Task<ApiResponse> PostRequestAsync(string endpoint, string path, object body)
         {
-            var restClient = new RestClient(string.Concat(endpoint, path));
+            var uriToQuery = new UriBuilder(endpoint)
+            {
+                Path = path
+            };
+
+            var restClient = new RestClient(uriToQuery.Uri);
             var restRequest = new RestRequest(Method.POST);
             restRequest.AddHeader("Content-type", "application/json");
             restRequest.AddJsonBody(body);
