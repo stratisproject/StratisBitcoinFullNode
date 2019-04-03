@@ -114,12 +114,6 @@
     /// </summary>
     public class PosConsensusOptions : ConsensusOptions
     {
-        /// <summary>Coinstake minimal confirmations softfork activation height for mainnet.</summary>
-        public const int CoinstakeMinConfirmationActivationHeightMainnet = 1005000;
-
-        /// <summary>Coinstake minimal confirmations softfork activation height for testnet.</summary>
-        public const int CoinstakeMinConfirmationActivationHeightTestnet = 436000;
-
         /// <summary>A mask for coinstake transaction's timestamp and header's timestamp.</summary>
         /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>
         public const uint StakeTimestampMask = 0x0000000F;
@@ -172,19 +166,6 @@
             int maxStandardTxSigopsCost
             ) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
-        }
-
-        /// <summary>
-        /// Gets the minimum confirmations amount required for a coin to be good enough to participate in staking.
-        /// </summary>
-        /// <param name="height">Block height.</param>
-        /// <param name="network">The network.</param>
-        public virtual int GetStakeMinConfirmations(int height, Network network)
-        {
-            if (network.Name.ToLowerInvariant().Contains("test")) // TODO: When rules are moved to network, we can use the extension method IsTest() from Stratis.Bitcoin.
-                return height < CoinstakeMinConfirmationActivationHeightTestnet ? 10 : 20;
-
-            return height < CoinstakeMinConfirmationActivationHeightMainnet ? 50 : 500;
         }
     }
 }

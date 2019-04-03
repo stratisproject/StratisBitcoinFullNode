@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Proof of stake override for the coinview rules - BIP68, MaxSigOps and BlockReward checks.
     /// </summary>
-    public sealed class PosCoinviewRule : CoinViewRule
+    public class PosCoinviewRule : CoinViewRule
     {
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
         private IStakeValidator stakeValidator;
@@ -200,6 +200,37 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 return this.consensus.PremineReward;
 
             return this.consensus.ProofOfStakeReward;
+        }
+
+        /// <summary>
+        /// Gets the minimum confirmations amount required for a coin to be good enough to participate in staking.
+        /// </summary>
+        /// <param name="height">Block height.</param>
+        /// <param name="network">The network.</param>
+        public virtual int GetStakeMinConfirmations(int height, Network network)
+        {
+            // By default stake min confirmations should be greater or equal to max reorg.
+            return (int)this.Parent.Network.Consensus.MaxReorgLength;
+        }
+    }
+
+    /// <summary>
+    /// The class <see cref="PosCoinviewRule"/> should be split in two and the stake validation move to its own rule.
+    /// </summary>
+    public class StratisPosCoinviewRule : PosCoinviewRule
+    {
+        /// <summary>Coinstake minimal confirmations softfork activation height for mainnet.</summary>
+        public const int CoinstakeMinConfirmationActivationHeightMainnet = 1005000;
+
+        /// <summary>Coinstake minimal confirmations softfork activation height for testnet.</summary>
+        public const int CoinstakeMinConfirmationActivationHeightTestnet = 436000;
+
+        public override int GetStakeMinConfirmations(int height, Network network)
+        {
+            if (network.IsTest())
+                return height < CoinstakeMinConfirmationActivationHeightTestnet ? 10 : 20;
+
+            return height < CoinstakeMinConfirmationActivationHeightMainnet ? 50 : 500;
         }
     }
 }

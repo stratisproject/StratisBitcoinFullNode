@@ -9,6 +9,7 @@ using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
@@ -405,7 +406,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             Guard.NotNull(prevChainedHeader, nameof(ChainedHeader));
 
-            return (this.network.Consensus.Options as PosConsensusOptions).GetStakeMinConfirmations(prevChainedHeader.Height + 1, this.network) - 1;
+            return this.network.Consensus.GetRule<PosCoinviewRule>().GetStakeMinConfirmations(prevChainedHeader.Height + 1, this.network) - 1;
         }
 
         /// <summary>

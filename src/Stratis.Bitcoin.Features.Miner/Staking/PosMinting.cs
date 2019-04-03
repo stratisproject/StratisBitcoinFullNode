@@ -949,7 +949,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             var res = new List<UtxoStakeDescription>();
 
             long currentValue = 0;
-            long requiredDepth = ((PosConsensusOptions)this.network.Consensus.Options).GetStakeMinConfirmations(chainTip.Height + 1, this.network) - 1;
+            long requiredDepth = this.network.Consensus.GetRule<PosCoinviewRule>().GetStakeMinConfirmations(chainTip.Height + 1, this.network) - 1;
             foreach (UtxoStakeDescription utxoStakeDescription in utxoStakeDescriptions.OrderByDescending(x => x.TxOut.Value))
             {
                 int depth = await this.GetDepthInMainChainAsync(utxoStakeDescription).ConfigureAwait(false);
@@ -1134,7 +1134,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 return false;
             }
 
-            long coinAgeLimit = ((PosConsensusOptions)this.network.Consensus.Options).GetStakeMinConfirmations(chainHeight + 1, this.network);
+            long coinAgeLimit = this.network.Consensus.GetRule<PosCoinviewRule>().GetStakeMinConfirmations(chainHeight + 1, this.network) - 1;
             long coinMaturityLimit = this.network.Consensus.CoinbaseMaturity;
             long requiredCoinAgeForStaking = Math.Max(coinMaturityLimit, coinAgeLimit);
             this.logger.LogTrace("Required coin age for staking is {0}.", requiredCoinAgeForStaking);

@@ -200,8 +200,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         {
             ChainedHeader prevChainedHeader = chainedHeader.Previous;
 
-            var options = (PosConsensusOptions)this.PosParent.Network.Consensus.Options;
-            int targetDepth = options.GetStakeMinConfirmations(chainedHeader.Height, this.PosParent.Network) - 1;
+            int targetDepth = this.Parent.Network.Consensus.GetRule<PosCoinviewRule>().GetStakeMinConfirmations(prevChainedHeader.Height + 1, this.Parent.Network) - 1;
 
             if (this.stakeValidator.IsConfirmedInNPrevBlocks(unspentOutputs, prevChainedHeader, targetDepth))
             {

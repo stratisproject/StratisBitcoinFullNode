@@ -9,6 +9,7 @@ using NBitcoin.Policy;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
@@ -1231,7 +1232,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.Network = KnownNetworks.StratisTest;
             this.stakeValidator = CreateStakeValidator();
 
-            var height = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightTestnet - 2;
+            var height = StratisPosCoinviewRule.CoinstakeMinConfirmationActivationHeightTestnet - 2;
             BlockHeader blockHeader = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
             ChainedHeader header = new ChainedHeader(blockHeader, uint256.One, height);
 
@@ -1246,7 +1247,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.Network = KnownNetworks.StratisTest;
             this.stakeValidator = CreateStakeValidator();
 
-            var height = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightTestnet - 1;
+            var height = StratisPosCoinviewRule.CoinstakeMinConfirmationActivationHeightTestnet - 1;
             BlockHeader blockHeader = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
             ChainedHeader header = new ChainedHeader(blockHeader, uint256.One, height);
 
@@ -1261,7 +1262,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.Network = KnownNetworks.StratisMain;
             this.stakeValidator = CreateStakeValidator();
 
-            var height = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightMainnet - 2;
+            var height = StratisPosCoinviewRule.CoinstakeMinConfirmationActivationHeightMainnet - 2;
             BlockHeader blockHeader = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
             ChainedHeader header = new ChainedHeader(blockHeader, uint256.One, height);
 
@@ -1276,7 +1277,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.Network = KnownNetworks.StratisMain;
             this.stakeValidator = CreateStakeValidator();
 
-            var height = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightMainnet - 1;
+            var height = StratisPosCoinviewRule.CoinstakeMinConfirmationActivationHeightMainnet - 1;
             BlockHeader blockHeader = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
             ChainedHeader header = new ChainedHeader(blockHeader, uint256.One, height);
 

@@ -1,4 +1,7 @@
-﻿using NBitcoin;
+﻿using System.Linq;
+using NBitcoin;
+using Stratis.Bitcoin.Consensus.Rules;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -38,6 +41,23 @@ namespace Stratis.Bitcoin.Utilities
         public static bool IsBitcoin(this Network network)
         {
             return !network.Name.ToLowerInvariant().Contains("stratis");
+        }
+
+        [NoTrace]
+        public static T GetRule<T>(this IConsensus consensus) where T : ConsensusRuleBase
+        {
+            T rule = consensus.HeaderValidationRules.OfType<T>().SingleOrDefault();
+
+            if (rule == null)
+                rule = consensus.IntegrityValidationRules.OfType<T>().SingleOrDefault();
+
+            if (rule == null)
+                rule = consensus.PartialValidationRules.OfType<T>().SingleOrDefault();
+
+            if (rule == null)
+                rule = consensus.FullValidationRules.OfType<T>().SingleOrDefault();
+
+            return rule;
         }
     }
 }

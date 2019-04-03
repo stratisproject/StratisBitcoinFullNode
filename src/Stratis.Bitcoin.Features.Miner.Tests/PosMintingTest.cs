@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
@@ -442,7 +443,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void CoinstakeAge_AfterActivation_Testnet()
         {
-            int activationHeight = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightTestnet;
+            int activationHeight = StratisPosCoinviewRule.CoinstakeMinConfirmationActivationHeightTestnet;
             int afterActivationHeight = activationHeight + 1000;
 
             Assert.True(this.WasUtxoSelectedForStaking(KnownNetworks.StratisTest, afterActivationHeight, afterActivationHeight - 18));
@@ -455,7 +456,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void CoinstakeAge_AtTheActivation_Testnet()
         {
-            int activationHeight = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightTestnet;
+            int activationHeight = StratisPosCoinviewRule.CoinstakeMinConfirmationActivationHeightTestnet;
 
             Assert.True(this.WasUtxoSelectedForStaking(KnownNetworks.StratisTest, activationHeight - 2, activationHeight - 10)); // mining block before activation
 
@@ -479,7 +480,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void CoinstakeAge_AfterActivation_Mainnet()
         {
-            int activationHeight = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightMainnet;
+            int activationHeight = StratisPosCoinviewRule.CoinstakeMinConfirmationActivationHeightMainnet;
             int afterActivationHeight = activationHeight + 1000;
 
             Assert.True(this.WasUtxoSelectedForStaking(KnownNetworks.StratisMain, afterActivationHeight, afterActivationHeight - 498));
@@ -492,7 +493,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void CoinstakeAge_AtTheActivation_Mainnet()
         {
-            int activationHeight = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightMainnet;
+            int activationHeight = StratisPosCoinviewRule.CoinstakeMinConfirmationActivationHeightMainnet;
 
             Assert.True(this.WasUtxoSelectedForStaking(KnownNetworks.StratisMain, activationHeight - 2, activationHeight - 50)); // mining block before activation
 

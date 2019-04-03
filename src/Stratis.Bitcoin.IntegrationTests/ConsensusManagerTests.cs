@@ -44,10 +44,10 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
             }
 
-            public override int GetStakeMinConfirmations(int height, Network network)
-            {
-                return height < 55 ? 50 : 60;
-            }
+            //public override int GetStakeMinConfirmations(int height, Network network)
+            //{
+            //    return height < 55 ? 50 : 60;
+            //}
         }
 
         public class StratisConsensusOptionsOverrideTest : StratisRegTest
