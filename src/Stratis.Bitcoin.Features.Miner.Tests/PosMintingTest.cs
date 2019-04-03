@@ -400,7 +400,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             foreach (int blockHeight in new int[] { 74, 75, 76 })
             {
-                uint256 blockHash = this.chainIndexer.GetBlock(blockHeight).HashBlock;
+                uint256 blockHash = this.chainIndexer.GetHeader(blockHeight).HashBlock;
                 this.powBlocks.Add(blockHash);
             }
 

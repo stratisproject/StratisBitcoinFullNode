@@ -73,11 +73,11 @@ namespace Stratis.Bitcoin.Features.Notifications
             {
                 this.ReSync = true;
 
-                ChainedHeader startBlock = this.ChainIndexer.GetBlock(startHash);
+                ChainedHeader startBlock = this.ChainIndexer.GetHeader(startHash);
                 if (startBlock != null)
                 {
                     // Sets the location of the puller to the block preceding the one we want to receive.
-                    ChainedHeader previousBlock = this.ChainIndexer.GetBlock(startBlock.Height > 0 ? startBlock.Height - 1 : 0);
+                    ChainedHeader previousBlock = this.ChainIndexer.GetHeader(startBlock.Height > 0 ? startBlock.Height - 1 : 0);
                    // this.Puller.SetLocation(previousBlock);
                     this.tip = previousBlock;
 
@@ -112,12 +112,12 @@ namespace Stratis.Bitcoin.Features.Notifications
                 return Task.CompletedTask;
 
             // Not syncing until the chain is downloaded at least up to this block.
-            ChainedHeader startBlock = this.ChainIndexer.GetBlock(this.StartHash);
+            ChainedHeader startBlock = this.ChainIndexer.GetHeader(this.StartHash);
             if (startBlock == null)
                 return Task.CompletedTask;
 
             // Sets the location of the puller to the block preceding the one we want to receive.
-            ChainedHeader previousBlock = this.ChainIndexer.GetBlock(startBlock.Height > 0 ? startBlock.Height - 1 : 0);
+            ChainedHeader previousBlock = this.ChainIndexer.GetHeader(startBlock.Height > 0 ? startBlock.Height - 1 : 0);
            // this.Puller.SetLocation(previousBlock);
             this.tip = previousBlock;
 
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Features.Notifications
                 // In reorg we reset the puller to the fork.
                 // When a reorg happens the puller is pushed back and continues from the current fork.
                 // Find the location of the fork.
-                while (this.ChainIndexer.GetBlock(this.tip.HashBlock) == null)
+                while (this.ChainIndexer.GetHeader(this.tip.HashBlock) == null)
                     this.tip = this.tip.Previous;
 
                 // Set the puller to the fork location.

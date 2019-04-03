@@ -166,7 +166,7 @@ namespace Stratis.Features.FederatedPeg
                 return;
 
             int height = this.federationWalletManager.LastBlockHeight();
-            ChainedHeader block = this.chainIndexer.GetBlock(height);
+            ChainedHeader block = this.chainIndexer.GetHeader(height);
             uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
             FederationWallet federationWallet = this.federationWalletManager.GetWallet();
@@ -292,7 +292,7 @@ namespace Stratis.Features.FederatedPeg
                         services.AddSingleton<IWithdrawalExtractor, WithdrawalExtractor>();
                         services.AddSingleton<FederationGatewayController>();
                         services.AddSingleton<IFederationWalletSyncManager, FederationWalletSyncManager>();
-                        services.AddSingleton<IFederationWalletTransactionBuilder, FederationWalletTransactionBuilder>();
+                        services.AddSingleton<IFederationWalletTransactionHandler, FederationWalletTransactionHandler>();
                         services.AddSingleton<IFederationWalletManager, FederationWalletManager>();
                         services.AddSingleton<IWithdrawalTransactionBuilder, WithdrawalTransactionBuilder>();
                         services.AddSingleton<FederationWalletController>();
@@ -347,6 +347,7 @@ namespace Stratis.Features.FederatedPeg
                     services.AddSingleton<VotingManager>();
                     services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
                     services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
+                    services.AddSingleton<IdleFederationMembersKicker>();
                     services.AddSingleton<PoAMinerSettings>();
                     services.AddSingleton<MinerSettings>();
 

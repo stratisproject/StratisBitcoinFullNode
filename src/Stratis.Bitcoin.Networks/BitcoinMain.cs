@@ -14,6 +14,7 @@ namespace Stratis.Bitcoin.Networks
         {
             this.Name = "Main";
             this.AdditionalNames = new List<string> { "Mainnet" };
+            this.NetworkType = NetworkType.Mainnet;
 
             this.RootFolderName = BitcoinRootFolderName;
             this.DefaultConfigFilename = BitcoinDefaultConfigFilename;
@@ -25,6 +26,7 @@ namespace Stratis.Bitcoin.Networks
             this.DefaultMaxOutboundConnections = 8;
             this.DefaultMaxInboundConnections = 117;
             this.RPCPort = 8332;
+            this.DefaultAPIPort = 37220;
             this.MaxTimeOffsetSeconds = BitcoinMaxTimeOffsetSeconds;
             this.MaxTipAge = BitcoinDefaultMaxTipAgeInSeconds;
             this.MinTxFee = 1000;

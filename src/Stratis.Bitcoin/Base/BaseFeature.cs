@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Base
 
             // Block store must be initialized before consensus manager.
             // This may be a temporary solution until a better way is found to solve this dependency.
-            await this.blockStore.InitializeAsync().ConfigureAwait(false);
+            this.blockStore.Initialize();
 
             this.consensusRules.Initialize(this.chainIndexer.Tip);
 

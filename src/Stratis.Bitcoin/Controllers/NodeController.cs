@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.Controllers
                 }
 
                 BlockHeaderModel model = null;
-                BlockHeader blockHeader = this.chainIndexer?.GetBlock(uint256.Parse(hash))?.Header;
+                BlockHeader blockHeader = this.chainIndexer?.GetHeader(uint256.Parse(hash))?.Header;
                 if (blockHeader != null)
                 {
                     model = new BlockHeaderModel(blockHeader);
@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Controllers
                 Transaction trx = this.pooledTransaction != null ? await this.pooledTransaction.GetTransaction(txid).ConfigureAwait(false) : null;
                 if (trx == null)
                 {
-                    trx = this.blockStore != null ? await this.blockStore.GetTransactionByIdAsync(txid).ConfigureAwait(false) : null;
+                    trx = this.blockStore != null ? this.blockStore.GetTransactionById(txid) : null;
                 }
 
                 if (trx == null)
@@ -486,10 +486,10 @@ namespace Stratis.Bitcoin.Controllers
 
             ChainedHeader block = null;
             var blockStore = fullNode.NodeFeature<IBlockStore>();
-            uint256 blockid = blockStore != null ? await blockStore.GetBlockIdByTransactionIdAsync(trxid).ConfigureAwait(false) : null;
+            uint256 blockid = blockStore != null ? blockStore.GetBlockIdByTransactionId(trxid) : null;
             if (blockid != null)
             {
-                block = chain?.GetBlock(blockid);
+                block = chain?.GetHeader(blockid);
             }
 
             return block;

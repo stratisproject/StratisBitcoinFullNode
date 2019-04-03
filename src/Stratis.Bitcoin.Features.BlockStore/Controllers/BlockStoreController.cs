@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
             try
             {
-                Block block = await this.blockStore.GetBlockAsync(uint256.Parse(query.Hash)).ConfigureAwait(false);
+                Block block = this.blockStore.GetBlock(uint256.Parse(query.Hash));
 
                 if (block == null)
                 {
@@ -85,8 +85,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                 }
 
                 return query.ShowTransactionDetails
-                    ? this.Json(new BlockTransactionDetailsModel(block, this.chainIndexer.GetBlock(block.GetHash()), this.chainIndexer.Tip, this.network))
-                    : this.Json(new BlockModel(block, this.chainIndexer.GetBlock(block.GetHash()), this.chainIndexer.Tip, this.network));
+                    ? this.Json(new BlockTransactionDetailsModel(block, this.chainIndexer.GetHeader(block.GetHash()), this.chainIndexer.Tip, this.network))
+                    : this.Json(new BlockModel(block, this.chainIndexer.GetHeader(block.GetHash()), this.chainIndexer.Tip, this.network));
             }
             catch (Exception e)
             {
