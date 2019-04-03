@@ -159,8 +159,8 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         public void NodeSettings_CanOverrideOnlyApiPort()
         {
             const int apiport = 12345;
-            var network = Networks.Networks.Bitcoin;
-            var nodeSettings = new NodeSettings(networksSelector: network, args: new[] {  $"-apiport={apiport}" });
+
+            var nodeSettings = new NodeSettings(new BitcoinRegTest(), args: new[] {  $"-apiport={apiport}" });
 
             var apiSettings = new ApiSettings(nodeSettings);
             var rpcSettings = new RpcSettings(nodeSettings);
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
 
             var args = new [] {$"-port={port.ToString()}", $"-rpcport={rpcPort.ToString()}", $"-apiport={apiPort.ToString()}"};
 
-            var nodeSettings = new NodeSettings(networksSelector: Networks.Networks.Bitcoin, args: args);
+            var nodeSettings = new NodeSettings(new BitcoinRegTest(), args: args);
 
             var apiSettings = new ApiSettings(nodeSettings);
             var rpcSettings = new RpcSettings(nodeSettings);
