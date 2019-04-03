@@ -82,8 +82,8 @@ namespace NBitcoin
         /// 1-satoshi-fee transactions. It should be set above the real cost to you of processing a transaction.
         /// </summary>
         /// <remarks>
-        /// The <see cref="MinRelayTxFee"/> and <see cref="MinTxFee"/> are typically the same value to prevent dos attacks on the network. 
-        /// If <see cref="MinRelayTxFee"/> is less than <see cref="MinTxFee"/>, an attacker can broadcast a lot of transactions with fees between these two values, 
+        /// The <see cref="MinRelayTxFee"/> and <see cref="MinTxFee"/> are typically the same value to prevent dos attacks on the network.
+        /// If <see cref="MinRelayTxFee"/> is less than <see cref="MinTxFee"/>, an attacker can broadcast a lot of transactions with fees between these two values,
         /// which will lead to transactions filling the mempool without ever being mined.
         /// </remarks>
         public long MinTxFee { get; protected set; }
@@ -97,8 +97,8 @@ namespace NBitcoin
         /// The minimum fee under which transactions may be rejected from being relayed.
         /// </summary>
         /// <remarks>
-        /// The <see cref="MinRelayTxFee"/> and <see cref="MinTxFee"/> are typically the same value to prevent dos attacks on the network. 
-        /// If <see cref="MinRelayTxFee"/> is less than <see cref="MinTxFee"/>, an attacker can broadcast a lot of transactions with fees between these two values, 
+        /// The <see cref="MinRelayTxFee"/> and <see cref="MinTxFee"/> are typically the same value to prevent dos attacks on the network.
+        /// If <see cref="MinRelayTxFee"/> is less than <see cref="MinTxFee"/>, an attacker can broadcast a lot of transactions with fees between these two values,
         /// which will lead to transactions filling the mempool without ever being mined.
         /// </remarks>
         public long MinRelayTxFee { get; protected set; }
@@ -109,7 +109,12 @@ namespace NBitcoin
         public int RPCPort { get; protected set; }
 
         /// <summary>
-        /// The default port on which nodes of this network communicate with external clients. 
+        /// Port on which to listen for incoming API connections.
+        /// </summary>
+        public int DefaultAPIPort { get; protected set; }
+
+        /// <summary>
+        /// The default port on which nodes of this network communicate with external clients.
         /// </summary>
         public int DefaultPort { get; protected set; }
 
@@ -258,7 +263,7 @@ namespace NBitcoin
         /// Typically, 3 such genesis blocks need to be created when bootstrapping a new coin: for Main, Test and Reg networks.
         /// </summary>
         /// <param name="consensusFactory">
-        /// The consensus factory used to create transactions and blocks. 
+        /// The consensus factory used to create transactions and blocks.
         /// Use <see cref="PosConsensusFactory"/> for proof-of-stake based networks.
         /// </param>
         /// <param name="coinbaseText">
@@ -267,7 +272,7 @@ namespace NBitcoin
         /// It should be shorter than 92 characters.
         /// </param>
         /// <param name="target">
-        /// The difficulty target under which the hash of the block need to be. 
+        /// The difficulty target under which the hash of the block need to be.
         /// Some more details: As an example, the target for the Stratis Main network is 00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.
         /// To make it harder to mine the genesis block, have more zeros at the beginning (keeping the length the same). This will make the target smaller, so finding a number under it will be more difficult.
         /// To make it easier to mine the genesis block ,do the opposite. Example of an easy one: 00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.
@@ -277,7 +282,7 @@ namespace NBitcoin
         /// Specify how many coins to put in the genesis transaction's output. These coins are unspendable.
         /// </param>
         /// <param name="version">
-        /// The version of the transaction and the block header set in the genesis block. 
+        /// The version of the transaction and the block header set in the genesis block.
         /// </param>
         /// <example>
         /// The following example shows the creation of a genesis block.

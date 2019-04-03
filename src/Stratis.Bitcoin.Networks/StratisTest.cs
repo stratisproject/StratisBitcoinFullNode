@@ -30,6 +30,7 @@ namespace Stratis.Bitcoin.Networks
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
             this.RPCPort = 26174;
+            this.DefaultAPIPort = 38221;
             this.CoinTicker = "TSTRAT";
 
             var powLimit = new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000"));
