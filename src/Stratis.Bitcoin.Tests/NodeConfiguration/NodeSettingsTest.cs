@@ -1,5 +1,8 @@
 ﻿using System.IO;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Features.Api;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -156,9 +159,16 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         public void NodeSettings_CanOverrideOnlyApiPort()
         {
             const int apiport = 12345;
-            var nodeSettings = new NodeSettings(networksSelector: Networks.Networks.Bitcoin, args: new[] {  $"-apiport={apiport}" });
-            string result = nodeSettings.ConfigReader.GetOrDefault("apiport", string.Empty);
-            Assert.Equal("12345", result);
+            var network = Networks.Networks.Bitcoin;
+            var nodeSettings = new NodeSettings(networksSelector: network, args: new[] {  $"-apiport={apiport}" });
+
+            var apiSettings = new ApiSettings(nodeSettings);
+            var rpcSettings = new RpcSettings(nodeSettings);
+            var configurationManagerSettings = new ConnectionManagerSettings(nodeSettings);
+
+            Assert.Equal(apiport, apiSettings.ApiPort);
+            Assert.Equal(nodeSettings.Network.RPCPort, rpcSettings.RPCPort);
+            Assert.Equal(nodeSettings.Network.DefaultPort, configurationManagerSettings.Port); 
         }
 
         /// <summary>
@@ -172,11 +182,17 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             const int rpcPort = 1024 + 456;
             const int apiPort = 1024 + 567;
 
-            var nodeSettings = new NodeSettings(networksSelector: Networks.Networks.Bitcoin, args: new[] { $"-port={port.ToString()}", $"-rpcport={rpcPort.ToString()}", $"-apiport={apiPort.ToString()}" });
-            
-            Assert.Equal(port.ToString(), nodeSettings.ConfigReader.GetOrDefault("port", string.Empty));
-            Assert.Equal(rpcPort.ToString(), nodeSettings.ConfigReader.GetOrDefault("rpcport", string.Empty));
-            Assert.Equal(apiPort.ToString(), nodeSettings.ConfigReader.GetOrDefault("apiport", string.Empty));
+            var args = new [] {$"-port={port.ToString()}", $"-rpcport={rpcPort.ToString()}", $"-apiport={apiPort.ToString()}"};
+
+            var nodeSettings = new NodeSettings(networksSelector: Networks.Networks.Bitcoin, args: args);
+
+            var apiSettings = new ApiSettings(nodeSettings);
+            var rpcSettings = new RpcSettings(nodeSettings);
+            var configurationManagerSettings = new ConnectionManagerSettings(nodeSettings);
+
+            Assert.Equal(apiPort, apiSettings.ApiPort);
+            Assert.Equal(rpcPort, rpcSettings.RPCPort);
+            Assert.Equal(port, configurationManagerSettings.Port);
         }
     }
 }
