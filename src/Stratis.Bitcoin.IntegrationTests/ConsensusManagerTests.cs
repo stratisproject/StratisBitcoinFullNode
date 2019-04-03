@@ -631,7 +631,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.Disconnect(minerA, minerB);
 
                 // Mark block 5 as invalid by changing the signature of the block in memory.
-                (minerB.FullNode.ChainIndexer.GetBlock(5).Block as PosBlock).BlockSignature.Signature = new byte[] { 0 };
+                (minerB.FullNode.ChainIndexer.GetHeader(5).Block as PosBlock).BlockSignature.Signature = new byte[] { 0 };
 
                 // Connect and sync minerB and minerC.
                 TestHelper.ConnectNoCheck(minerB, minerC);
