@@ -90,7 +90,7 @@ namespace NBitcoin.Tests
             Assert.Equal(BitcoinMain.BitcoinDefaultConfigFilename, this.networkMain.DefaultConfigFilename);
             Assert.Equal(0xD9B4BEF9, this.networkMain.Magic);
             Assert.Equal(8333, this.networkMain.DefaultPort);
-            Assert.Equal(8332, this.networkMain.RPCPort);
+            Assert.Equal(8332, this.networkMain.DefaultRPCPort);
             Assert.Equal(BitcoinMain.BitcoinMaxTimeOffsetSeconds, this.networkMain.MaxTimeOffsetSeconds);
             Assert.Equal(BitcoinMain.BitcoinDefaultMaxTipAgeInSeconds, this.networkMain.MaxTipAge);
             Assert.Equal(1000, this.networkMain.MinTxFee);
@@ -172,7 +172,7 @@ namespace NBitcoin.Tests
             Assert.Equal(BitcoinMain.BitcoinDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0x0709110B.ToString(), network.Magic.ToString());
             Assert.Equal(18333, network.DefaultPort);
-            Assert.Equal(18332, network.RPCPort);
+            Assert.Equal(18332, network.DefaultRPCPort);
             Assert.Equal(BitcoinMain.BitcoinMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
             Assert.Equal(BitcoinMain.BitcoinDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(1000, network.MinTxFee);
@@ -254,7 +254,7 @@ namespace NBitcoin.Tests
             Assert.Equal(BitcoinMain.BitcoinDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0xDAB5BFFA, network.Magic);
             Assert.Equal(18444, network.DefaultPort);
-            Assert.Equal(18332, network.RPCPort);
+            Assert.Equal(18332, network.DefaultRPCPort);
             Assert.Equal(BitcoinMain.BitcoinMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
             Assert.Equal(BitcoinMain.BitcoinDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(1000, network.MinTxFee);
@@ -335,7 +335,7 @@ namespace NBitcoin.Tests
             Assert.Equal(StratisMain.StratisDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0x5223570.ToString(), network.Magic.ToString());
             Assert.Equal(16178, network.DefaultPort);
-            Assert.Equal(16174, network.RPCPort);
+            Assert.Equal(16174, network.DefaultRPCPort);
             Assert.Equal(StratisMain.StratisMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
             Assert.Equal(StratisMain.StratisDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(10000, network.MinTxFee);
@@ -412,7 +412,7 @@ namespace NBitcoin.Tests
             Assert.Equal(StratisMain.StratisDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0x11213171.ToString(), network.Magic.ToString());
             Assert.Equal(26178, network.DefaultPort);
-            Assert.Equal(26174, network.RPCPort);
+            Assert.Equal(26174, network.DefaultRPCPort);
             Assert.Equal(StratisMain.StratisMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
             Assert.Equal(StratisMain.StratisDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(10000, network.MinTxFee);
@@ -489,7 +489,7 @@ namespace NBitcoin.Tests
             Assert.Equal(StratisMain.StratisDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0xefc0f2cd, network.Magic);
             Assert.Equal(18444, network.DefaultPort);
-            Assert.Equal(18442, network.RPCPort);
+            Assert.Equal(18442, network.DefaultRPCPort);
             Assert.Equal(StratisMain.StratisMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
             Assert.Equal(StratisMain.StratisDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(10000, network.MinTxFee);

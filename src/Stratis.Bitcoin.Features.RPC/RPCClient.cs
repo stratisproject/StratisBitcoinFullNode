@@ -18,9 +18,9 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.RPC
 {
     /*
-        Category            Name                        Implemented 
+        Category            Name                        Implemented
         ------------------ --------------------------- -----------------------
-        ------------------ Overall control/query calls 
+        ------------------ Overall control/query calls
         control            getinfo
         control            help
         control            stop
@@ -165,18 +165,18 @@ namespace Stratis.Bitcoin.Features.RPC
         /// Use default bitcoin parameters to configure a RPCClient.
         /// </summary>
         /// <param name="network">The network used by the node. Must not be null.</param>
-        public RPCClient(Network network) : this(null as string, BuildUri(null, network.RPCPort), network)
+        public RPCClient(Network network) : this(null as string, BuildUri(null, network.DefaultRPCPort), network)
         {
         }
 
         [Obsolete("Use RPCClient(ConnectionString, string, Network)")]
         public RPCClient(NetworkCredential credentials, string host, Network network)
-            : this(credentials, BuildUri(host, network.RPCPort), network)
+            : this(credentials, BuildUri(host, network.DefaultRPCPort), network)
         {
         }
 
         public RPCClient(RPCCredentialString credentials, string host, Network network)
-            : this(credentials, BuildUri(host, network.RPCPort), network)
+            : this(credentials, BuildUri(host, network.DefaultRPCPort), network)
         {
         }
 
@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
             if (address != null && network == null)
             {
-                network = NetworkRegistration.GetNetworks().FirstOrDefault(n => n.RPCPort == address.Port);
+                network = NetworkRegistration.GetNetworks().FirstOrDefault(n => n.DefaultRPCPort == address.Port);
                 if (network == null)
                     throw new ArgumentNullException("network");
             }
@@ -200,7 +200,7 @@ namespace Stratis.Bitcoin.Features.RPC
                 throw new ArgumentException("network parameter is required if you use default uri");
 
             if (address == null)
-                address = new Uri("http://127.0.0.1:" + network.RPCPort + "/");
+                address = new Uri("http://127.0.0.1:" + network.DefaultRPCPort + "/");
 
             if (credentials.UseDefault)
             {
@@ -310,7 +310,7 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <param name="hostOrUri"></param>
         /// <param name="network"></param>
         public RPCClient(string authenticationString, string hostOrUri, Network network)
-            : this(authenticationString, BuildUri(hostOrUri, network.RPCPort), network)
+            : this(authenticationString, BuildUri(hostOrUri, network.DefaultRPCPort), network)
         {
         }
 

@@ -26,7 +26,7 @@ namespace Stratis.Sidechains.Networks.CirrusV2
             this.DefaultPort = 16179;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
-            this.RPCPort = 16175;
+            this.DefaultRPCPort = 16175;
             this.DefaultAPIPort = 37221; // TODO: Confirm
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
