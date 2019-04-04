@@ -55,13 +55,14 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             var nodeSettings = new NodeSettings(this.Network, args:new string[] { "-conf=" + confFile });
 
             var rpcSettings = new RpcSettings(nodeSettings);
+            var defaults = new RpcSettings(NodeSettings.Default(this.Network));
 
-            Assert.False(rpcSettings.Server);
-            Assert.Equal(18332, rpcSettings.RPCPort);
-            Assert.Null(rpcSettings.RpcUser);
-            Assert.Null(rpcSettings.RpcPassword);
-            Assert.Empty(rpcSettings.Bind);
-            Assert.Empty(rpcSettings.AllowIp);
+            Assert.Equal(defaults.Server, rpcSettings.Server);
+            Assert.Equal(defaults.RPCPort, rpcSettings.RPCPort);
+            Assert.Equal(defaults.RpcUser, rpcSettings.RpcUser);
+            Assert.Equal(defaults.RpcPassword, rpcSettings.RpcPassword);
+            Assert.Equal(defaults.Bind, rpcSettings.Bind);
+            Assert.Equal(defaults.AllowIp, rpcSettings.AllowIp);
         }
 
         [Fact]
