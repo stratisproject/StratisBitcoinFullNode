@@ -166,6 +166,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
                 "rpcport=1378",
                 "rpcuser=testuser",
                 "rpcpassword=testpassword",
+                "rpcbind=1.1.1.1",
                 "rpcallowip=0.0.0.0",
                 "rpcbind=127.0.0.1"
             };
@@ -178,11 +179,11 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             string[] urls = rpcSettings.GetUrls();
 
             Assert.NotEmpty(urls);
-            Assert.Equal("http://127.0.0.1:1378/", urls[0]);
+            Assert.Equal("http://1.1.1.1:1378/", urls[0]);
         }
 
         [Fact]
-        public void GetUrls_NoBindsConfigured_ReturnsEmptyArray()
+        public void GetUrls_NoBindsConfigured_ReturnsDefaultBinds()
         {
             string dir = CreateTestDir(this);
             string confFile = Path.Combine(dir, "bitcoin.conf");
@@ -198,7 +199,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             var rpcSettings = new RpcSettings(new NodeSettings(this.Network));
             string[] urls = rpcSettings.GetUrls();
 
-            Assert.Empty(urls);
+            Assert.Equal(new[] { "http://[::1]:18332/", "http://127.0.0.1:18332/" }, urls);
         }
 
         private static void WriteConfigurationToFile(string confFile, List<string> configurationFileLines)
