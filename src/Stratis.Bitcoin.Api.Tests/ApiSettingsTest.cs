@@ -16,18 +16,6 @@ namespace Stratis.Bitcoin.Api.Tests
     /// </summary>
     public class ApiSettingsTest : TestBase
     {
-        /// <summary>The default port used by the API when the node runs on the bitcoin network.</summary>
-        private const int DefaultBitcoinApiPort = 37220;
-
-        /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
-        private const int DefaultStratisApiPort = 37221;
-
-        /// <summary>The default port used by the API when the node runs on the bitcoin testnet network.</summary>
-        private const int TestBitcoinApiPort = 38220;
-
-        /// <summary>The default port used by the API when the node runs on the Stratis testnet network.</summary>
-        private const int TestStratisApiPort = 38221;
-
         public ApiSettingsTest() : base(KnownNetworks.Main)
         {
         }
@@ -276,19 +264,6 @@ namespace Stratis.Bitcoin.Api.Tests
 
             // Assert.
             settingsAction.Should().Throw<ConfigurationException>();
-        }
-
-        /// <summary>
-        /// Determines the default API port.
-        /// </summary>
-        /// <param name="network">The network to use.</param>
-        /// <returns>The default API port.</returns>
-        private static int GetDefaultPort(Network network)
-        {
-            if (!network.Name.ToLowerInvariant().Contains("stratis"))
-                return network.IsTest() ? TestBitcoinApiPort : DefaultBitcoinApiPort;
-
-            return network.IsTest() ? TestStratisApiPort : DefaultStratisApiPort;
         }
 
         private static ApiSettings FullNodeSetup(NodeSettings nodeSettings)
