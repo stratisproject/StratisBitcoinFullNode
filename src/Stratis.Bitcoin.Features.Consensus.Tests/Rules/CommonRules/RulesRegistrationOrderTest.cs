@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             fullValidationRules[1].Should().BeOfType<CheckDifficultyHybridRule>();
             fullValidationRules[2].Should().BeOfType<LoadCoinviewRule>();
             fullValidationRules[3].Should().BeOfType<TransactionDuplicationActivationRule>();
-            fullValidationRules[4].Should().BeOfType<PosCoinviewRule>();
+            fullValidationRules[4].Should().BeOfType<StratisPosCoinviewRule>();
             fullValidationRules[5].Should().BeOfType<PosColdStakingRule>();
             fullValidationRules[6].Should().BeOfType<SaveCoinviewRule>();
         }

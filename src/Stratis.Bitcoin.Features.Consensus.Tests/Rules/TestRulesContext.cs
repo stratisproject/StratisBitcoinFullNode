@@ -55,9 +55,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
     public class RuleRegistrationHelper
     {
-        public T RegisterRule<T>(ConsensusRuleEngine ruleEngine) where T : ConsensusRuleBase, new()
+        public T RegisterRule<T>(ConsensusRuleEngine ruleEngine, bool clearAll = true) where T : ConsensusRuleBase, new()
         {
             var rule = new T();
+
+            if (clearAll)
+            {
+                ruleEngine.Network.Consensus.HeaderValidationRules.Clear();
+                ruleEngine.Network.Consensus.IntegrityValidationRules.Clear();
+                ruleEngine.Network.Consensus.PartialValidationRules.Clear();
+                ruleEngine.Network.Consensus.FullValidationRules.Clear();
+            }
 
             if (rule is IHeaderValidationConsensusRule validationConsensusRule)
                 ruleEngine.Network.Consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>() { validationConsensusRule };
@@ -127,9 +135,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.ruleRegistrationHelper = new RuleRegistrationHelper();
         }
 
-        public T RegisterRule<T>() where T : ConsensusRuleBase, new()
+        public T RegisterRule<T>(bool clearAll = true) where T : ConsensusRuleBase, new()
         {
-            return this.ruleRegistrationHelper.RegisterRule<T>(this);
+            return this.ruleRegistrationHelper.RegisterRule<T>(this, clearAll);
         }
     }
 
