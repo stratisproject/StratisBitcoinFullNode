@@ -576,7 +576,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
 
-                ICrossChainTransfer crossChainTransfer = (await crossChainTransferStore.GetAsync(new[] { deposit.Id })).SingleOrDefault();
+                ICrossChainTransfer[] crossChainTransfers = await crossChainTransferStore.GetAsync(new[] {deposit.Id});
+                ICrossChainTransfer crossChainTransfer = crossChainTransfers.SingleOrDefault();
 
                 Assert.NotNull(crossChainTransfer);
 
@@ -584,7 +585,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 Assert.True(crossChainTransferStore.ValidateTransaction(transaction));
 
-                ICrossChainTransfer crossChainTransfer2 = (await crossChainTransferStore.GetAsync(new[] { deposit.Id })).SingleOrDefault();
+                crossChainTransfers = await crossChainTransferStore.GetAsync(new[] { deposit.Id });
+                ICrossChainTransfer crossChainTransfer2 = crossChainTransfers.SingleOrDefault();
 
                 Assert.NotNull(crossChainTransfer2);
 
@@ -599,7 +601,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 await crossChainTransferStore.MergeTransactionSignaturesAsync(deposit.Id, new[] { transaction2 });
 
                 // Test the outcome.
-                crossChainTransfer = (await crossChainTransferStore.GetAsync(new[] { deposit.Id })).SingleOrDefault();
+                crossChainTransfers = await crossChainTransferStore.GetAsync(new[] { deposit.Id });
+                crossChainTransfer = crossChainTransfers.SingleOrDefault();
 
                 Assert.NotNull(crossChainTransfer);
 
@@ -607,7 +610,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.NotEqual(CrossChainTransferStatus.FullySigned, crossChainTransfer.Status);
 
                 // Should return null.
-                Transaction signedTransaction = (await crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned)).Values.SingleOrDefault();
+                Dictionary<uint256, Transaction> signedTransactions = await crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned);
+                Transaction signedTransaction = signedTransactions.Values.SingleOrDefault();
 
                 Assert.Null(signedTransaction);
             }
