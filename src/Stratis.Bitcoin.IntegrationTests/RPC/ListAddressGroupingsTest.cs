@@ -35,8 +35,8 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                     { "-txIndex", "1" }
                 };
 
-                this.miner = builder.CreateStratisPowNode(network, agent: "miner", configParameters: nodeConfig).WithWallet().Start();
-                this.receiver = builder.CreateStratisPowNode(network, agent: "receiver", configParameters: nodeConfig).WithWallet().Start();
+                this.miner = builder.CreateStratisPowNode(network, agent: "la-1-miner", configParameters: nodeConfig).WithWallet().Start();
+                this.receiver = builder.CreateStratisPowNode(network, agent: "la-1-receiver", configParameters: nodeConfig).WithWallet().Start();
 
                 // Mine blocks to get coins.
                 TestHelper.MineBlocks(this.miner, 101);
