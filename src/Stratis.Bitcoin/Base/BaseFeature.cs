@@ -337,6 +337,8 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogInformation("Disposing finalized block info repository.");
             this.finalizedBlockInfoRepository.Dispose();
 
+            this.logger.LogInformation("Disposing address indexer.");
+
             this.logger.LogInformation("Disposing block store.");
             this.blockStore.Dispose();
 

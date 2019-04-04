@@ -109,12 +109,6 @@ namespace Stratis.Bitcoin.Configuration
         /// </summary>
         public FeeRate MinRelayTxFeeRate { get; private set; }
 
-        /// <summary><c>true</c> to maintain a full transaction index.</summary>
-        public bool TxIndex { get; set; }
-
-        /// <summary><c>true</c> to rebuild chain state and block index from block data files on disk.</summary>
-        public bool ReIndex { get; set; }
-
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -198,9 +192,6 @@ namespace Stratis.Bitcoin.Configuration
 
                 this.Logger.LogDebug("Network set to '{0}'.", this.Network.Name);
             }
-
-            this.TxIndex = this.ConfigReader.GetOrDefault<bool>("txindex", false, this.Logger);
-            this.ReIndex = this.ConfigReader.GetOrDefault<bool>("reindex", false, this.Logger);
 
             // Ensure the network being used is registered and we have the correct Network object reference.
             this.Network = NetworkRegistration.Register(this.Network);
@@ -397,9 +388,6 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to {network.MinTxFee}.");
             builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to {network.FallbackFee}.");
             builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to {network.MinRelayTxFee}.");
-
-            builder.AppendLine($"-txindex=<0 or 1>              Enable to maintain a full transaction index.");
-            builder.AppendLine($"-reindex=<0 or 1>              Rebuild chain state and block index from block data files on disk.");
 
             defaults.Logger.LogInformation(builder.ToString());
 
