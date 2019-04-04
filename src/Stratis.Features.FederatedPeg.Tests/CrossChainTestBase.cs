@@ -81,7 +81,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.asyncLoopFactory = new AsyncLoopFactory(this.loggerFactory);
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.dateTimeProvider = DateTimeProvider.Default;
-            this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.network, this.federatedPegOptions);
+            this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions);
             this.blockRepository = Substitute.For<IBlockRepository>();
             this.fullNode = Substitute.For<IFullNode>();
             this.withdrawalTransactionBuilder = Substitute.For<IWithdrawalTransactionBuilder>();
