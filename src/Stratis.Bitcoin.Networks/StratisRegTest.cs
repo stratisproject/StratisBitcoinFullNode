@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Networks
             this.DefaultPort = 18444;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
-            this.RPCPort = 18442;
+            this.DefaultRPCPort = 18442;
             this.DefaultAPIPort = 38221;
             this.CoinTicker = "TSTRAT";
 

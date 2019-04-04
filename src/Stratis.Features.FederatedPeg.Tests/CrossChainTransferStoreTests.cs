@@ -16,6 +16,7 @@ using Stratis.Features.FederatedPeg.Payloads;
 using Stratis.Features.FederatedPeg.SourceChain;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
+using Stratis.Sidechains.Networks;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests
@@ -155,7 +156,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Transaction[0] output value - op_return.
                 Assert.Equal(new Money(0m, MoneyUnit.BTC), transactions[0].Outputs[2].Value);
-                new OpReturnDataReader(this.loggerFactory, this.network).TryGetTransactionId(transactions[0], out string actualDepositId);
+                new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions).TryGetTransactionId(transactions[0], out string actualDepositId);
                 Assert.Equal(deposit1.Id.ToString(), actualDepositId);
 
                 // Transactions[1] inputs.
@@ -176,7 +177,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Transaction[1] output value - op_return.
                 Assert.Equal(new Money(0m, MoneyUnit.BTC), transactions[1].Outputs[2].Value);
-                new OpReturnDataReader(this.loggerFactory, this.network).TryGetTransactionId(transactions[1], out string actualDepositId2);
+                new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions).TryGetTransactionId(transactions[1], out string actualDepositId2);
                 Assert.Equal(deposit2.Id.ToString(), actualDepositId2);
 
                 ICrossChainTransfer[] transfers = crossChainTransferStore.GetAsync(new uint256[] { 0, 1 }).GetAwaiter().GetResult().ToArray();
@@ -258,7 +259,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Transaction[0] output value - op_return.
                 Assert.Equal(new Money(0m, MoneyUnit.BTC), transactions[0].Outputs[2].Value);
-                new OpReturnDataReader(this.loggerFactory, this.network).TryGetTransactionId(transactions[0], out string actualDepositId);
+                new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions).TryGetTransactionId(transactions[0], out string actualDepositId);
                 Assert.Equal(deposit1.Id.ToString(), actualDepositId);
 
                 Assert.Null(transactions[1]);
@@ -293,7 +294,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Transaction[1] output value - op_return.
                 Assert.Equal(new Money(0m, MoneyUnit.BTC), transactions[1].Outputs[2].Value);
-                new OpReturnDataReader(this.loggerFactory, this.network).TryGetTransactionId(transactions[1], out string actualDepositId2);
+                new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions).TryGetTransactionId(transactions[1], out string actualDepositId2);
                 Assert.Equal(deposit2.Id.ToString(), actualDepositId2);
 
                 Assert.Equal(2, transfers.Length);
@@ -518,7 +519,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             var transaction = new PosTransaction(model.Hex);
 
-            var reader = new OpReturnDataReader(this.loggerFactory, Networks.Stratis.Testnet());
+            var reader = new OpReturnDataReader(this.loggerFactory, new FederatedPegOptions(FederatedPegNetwork.NetworksSelector.Testnet()));
             var extractor = new DepositExtractor(this.loggerFactory, this.federationGatewaySettings, reader);
             IDeposit deposit = extractor.ExtractDepositFromTransaction(transaction, 2, 1);
 

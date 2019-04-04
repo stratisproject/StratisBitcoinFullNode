@@ -106,7 +106,7 @@ namespace NBitcoin
         /// <summary>
         /// Port on which to listen for incoming RPC connections.
         /// </summary>
-        public int RPCPort { get; protected set; }
+        public int DefaultRPCPort { get; protected set; }
 
         /// <summary>
         /// Port on which to listen for incoming API connections.
