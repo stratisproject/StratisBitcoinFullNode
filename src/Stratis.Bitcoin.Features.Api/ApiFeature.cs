@@ -118,11 +118,6 @@ namespace Stratis.Bitcoin.Features.Api
     /// </summary>
     public static class ApiFeatureExtension
     {
-        public static IFullNodeBuilder UseApi(this IFullNodeBuilder fullNodeBuilder, Action<ApiSettings> optionsAction)
-        {
-            return UseApi(fullNodeBuilder, new ApiSettings(fullNodeBuilder.NodeSettings, optionsAction));
-        }
-
         public static IFullNodeBuilder UseApi(this IFullNodeBuilder fullNodeBuilder, ApiSettings options = null)
         {
             options = options ?? new ApiSettings(fullNodeBuilder.NodeSettings);
