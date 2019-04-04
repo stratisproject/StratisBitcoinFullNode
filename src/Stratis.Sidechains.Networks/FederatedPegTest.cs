@@ -23,12 +23,14 @@ namespace Stratis.Sidechains.Networks
         internal FederatedPegTest()
         {
             this.Name = "FederatedPegTest";
+            this.NetworkType = NetworkType.Testnet;
             this.CoinTicker = "TFPG";
             this.Magic = 0x522357B;
             this.DefaultPort = 26179;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
-            this.RPCPort = 26175;
+            this.DefaultRPCPort = 26175;
+            this.DefaultAPIPort = 38221; // TODO: Confirm
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
