@@ -57,8 +57,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc cref="IChainState"/>
         private readonly IChainState chainState;
 
-        /// <inheritdoc cref="NodeSettings"/>
-        private readonly NodeSettings nodeSettings;
+        /// <inheritdoc cref="StoreSettings"/>
+        private readonly StoreSettings storeSettings;
 
         /// <inheritdoc cref="ChainIndexer"/>
         private readonly ChainIndexer chainIndexer;
@@ -95,7 +95,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IChainState chainState,
             IBlockStoreQueueFlushCondition blockStoreQueueFlushCondition,
             StoreSettings storeSettings,
-            NodeSettings nodeSettings,
             IBlockRepository blockRepository,
             ILoggerFactory loggerFactory,
             INodeStats nodeStats)
@@ -104,7 +103,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotNull(chainIndexer, nameof(chainIndexer));
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(storeSettings, nameof(storeSettings));
-            Guard.NotNull(nodeSettings, nameof(nodeSettings));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(blockRepository, nameof(blockRepository));
             Guard.NotNull(nodeStats, nameof(nodeStats));
@@ -112,7 +110,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blockStoreQueueFlushCondition = blockStoreQueueFlushCondition;
             this.chainIndexer = chainIndexer;
             this.chainState = chainState;
-            this.nodeSettings = nodeSettings;
+            this.storeSettings = storeSettings;
             this.blockRepository = blockRepository;
             this.batch = new List<ChainedHeaderBlock>();
             this.blocksCacheLock = new object();
@@ -143,9 +141,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.blockRepository.Initialize();
 
-            if (this.nodeSettings.ReIndex)
+            if (this.storeSettings.ReIndex)
             {
-                this.blockRepository.SetTxIndex(this.nodeSettings.TxIndex);
+                this.blockRepository.SetTxIndex(this.storeSettings.TxIndex);
                 this.blockRepository.ReIndex();
             }
 
@@ -157,7 +155,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogDebug("Initialized block store tip at '{0}'.", this.storeTip);
 
-            if (this.nodeSettings.TxIndex != this.blockRepository.TxIndex)
+            if (this.storeSettings.TxIndex != this.blockRepository.TxIndex)
             {
                 if (this.storeTip != this.chainIndexer.Genesis)
                 {
@@ -167,7 +165,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 // We only reach here in the case where we are syncing with a database with no blocks.
                 // Always set the TxIndex here.
-                this.blockRepository.SetTxIndex(this.nodeSettings.TxIndex);
+                this.blockRepository.SetTxIndex(this.storeSettings.TxIndex);
             }
 
             // Throw if block store was initialized after the consensus.
@@ -190,7 +188,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public Transaction GetTransactionById(uint256 trxid)
         {
             // Only look for transactions if they're indexed.
-            if (!this.nodeSettings.TxIndex)
+            if (!this.storeSettings.TxIndex)
             {
                 this.logger.LogTrace("(-)[TX_INDEX_DISABLED]:null");
                 return default(Transaction);
@@ -217,7 +215,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public Transaction[] GetTransactionsByIds(uint256[] trxids)
         {
             // Only look for transactions if they're indexed.
-            if (!this.nodeSettings.TxIndex)
+            if (!this.storeSettings.TxIndex)
             {
                 this.logger.LogTrace("(-)[TX_INDEX_DISABLED]:null");
                 return null;

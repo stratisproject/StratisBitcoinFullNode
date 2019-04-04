@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
     {
         private readonly ISignals signals;
 
-        private readonly NodeSettings nodeSettings;
+        private readonly StoreSettings storeSettings;
 
         private readonly Network network;
 
@@ -55,11 +55,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private AddressIndexerData addressesIndex;
 
-        public AddressIndexer(NodeSettings nodeSettings, ISignals signals, DataFolder dataFolder, ILoggerFactory loggerFactory,
+        public AddressIndexer(StoreSettings storeSettings, ISignals signals, DataFolder dataFolder, ILoggerFactory loggerFactory,
             Network network, IBlockStore blockStore, INodeStats nodeStats, IConsensusManager consensusManager)
         {
             this.signals = signals;
-            this.nodeSettings = nodeSettings;
+            this.storeSettings = storeSettings;
             this.network = network;
             this.blockStore = blockStore;
             this.nodeStats = nodeStats;
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         public void Initialize()
         {
-            if (this.nodeSettings.TxIndex)
+            if (this.storeSettings.TxIndex)
             {
                 string dbPath = Path.Combine(this.dataFolder.RootPath, "addressindex.litedb");
                 this.db = new LiteDatabase(new ConnectionString() {Filename = dbPath});
@@ -271,7 +271,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <inheritdoc/>
         public void Dispose()
         {
-            if (this.nodeSettings.TxIndex)
+            if (this.storeSettings.TxIndex)
             {
                 this.signals.Unsubscribe(this.blockConnectedSubscription);
                 this.signals.Unsubscribe(this.blockDisconnectedSubscription);
