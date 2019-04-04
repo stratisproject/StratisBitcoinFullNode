@@ -30,7 +30,7 @@ namespace Stratis.Sidechains.Networks
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
             this.DefaultRPCPort = 26175;
-            this.DefaultAPIPort = 38221; // TODO: Confirm
+            this.DefaultAPIPort = 38223;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;

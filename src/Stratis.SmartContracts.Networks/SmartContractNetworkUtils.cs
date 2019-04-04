@@ -4,7 +4,7 @@ using Stratis.Bitcoin.Features.SmartContracts;
 
 namespace Stratis.SmartContracts.Networks
 {
-    public static class SmartContractNetwork
+    public static class SmartContractNetworkUtils
     {
         /// <summary> The name of the root folder containing the different Stratis blockchains (StratisMain, StratisTest, StratisRegTest). </summary>
         public const string StratisRootFolderName = "stratis";
