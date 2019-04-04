@@ -229,7 +229,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             List<Block> blocks = await TestChainFactory.MineBlocksAsync(context, 2, MinerScriptPubKey);
 
             Block block = blocks.First();
-            block.Header.HashPrevBlock = context.Chain.Tip.HashBlock;
+            block.Header.HashPrevBlock = context.ChainIndexer.Tip.HashBlock;
             return block;
         }
 

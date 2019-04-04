@@ -8,7 +8,6 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
@@ -26,6 +25,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
     [Route("api/[controller]")]
     public class WalletController : Controller
     {
+        public const int MaxHistoryItemsPerAccount = 500;
+
         private readonly IWalletManager walletManager;
 
         private readonly IWalletTransactionHandler walletTransactionHandler;
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
         private readonly IConnectionManager connectionManager;
 
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -56,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             IWalletSyncManager walletSyncManager,
             IConnectionManager connectionManager,
             Network network,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             IBroadcasterManager broadcasterManager,
             IDateTimeProvider dateTimeProvider)
         {
@@ -66,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             this.connectionManager = connectionManager;
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.broadcasterManager = broadcasterManager;
             this.dateTimeProvider = dateTimeProvider;
@@ -166,6 +167,64 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "There was a problem creating a wallet.", e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Signs a message and returns the signature.
+        /// </summary>
+        /// <param name="request">The object containing the parameters used to sign a message.</param>
+        /// <returns>A JSON object containing the generated signature.</returns>
+        [Route("signmessage")]
+        [HttpPost]
+        public IActionResult SignMessage([FromBody]SignMessageRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                string signature = this.walletManager.SignMessage(request.Password, request.WalletName, request.ExternalAddress, request.Message);
+                return this.Json(signature);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Verify the signature of a message.
+        /// </summary>
+        /// <param name="request">The object containing the parameters verify a signature.</param>
+        /// <returns>A JSON object containing the result of the verification.</returns>
+        [Route("verifymessage")]
+        [HttpPost]
+        public IActionResult VerifyMessage([FromBody]VerifyRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                bool result = this.walletManager.VerifySignedMessage(request.ExternalAddress, request.Message, request.Signature);
+                return this.Json(result.ToString());
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
 
@@ -325,10 +384,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     Network = wallet.Network,
                     CreationTime = wallet.CreationTime,
-                    LastBlockSyncedHeight = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight,
+                    LastBlockSyncedHeight = wallet.AccountsRoot.Single().LastBlockSyncedHeight,
                     ConnectedNodes = this.connectionManager.ConnectedPeers.Count(),
-                    ChainTip = this.chain.Tip.Height,
-                    IsChainSynced = this.chain.IsDownloaded(),
+                    ChainTip = this.chainIndexer.Tip.Height,
+                    IsChainSynced = this.chainIndexer.IsDownloaded(),
                     IsDecrypted = true
                 };
 
@@ -377,7 +436,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                     // Sorting the history items by descending dates. That includes received and sent dates.
                     List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.SpendingDetails?.CreationTime ?? o.Transaction.CreationTime).ToList();
-                    items = string.IsNullOrEmpty(request.SearchQuery) ? items.Take(200).ToList() : items;
 
                     // Represents a sublist containing only the transactions that have already been spent.
                     List<FlatHistory> spendingDetails = items.Where(t => t.Transaction.SpendingDetails != null).ToList();
@@ -389,22 +447,23 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     // Represents a sublist of 'change' transactions.
                     List<FlatHistory> allchange = items.Where(t => t.Address.IsChangeAddress()).ToList();
 
+                    int itemsCount = 0;
                     foreach (FlatHistory item in history)
                     {
+
+                        if (itemsCount == MaxHistoryItemsPerAccount)
+                        {
+                            break;
+                        }
+
                         TransactionData transaction = item.Transaction;
                         HdAddress address = item.Address;
 
-                        // We don't show in history transactions that are outputs of staking transactions.
-                        if (transaction.IsCoinStake != null && transaction.IsCoinStake.Value && transaction.SpendingDetails == null)
-                        {
-                            continue;
-                        }
-
                         // First we look for staking transaction as they require special attention.
-                        // A staking transaction spends one of our inputs into 2 outputs, paid to the same address.
+                        // A staking transaction spends one of our inputs into 2 outputs or more, paid to the same address.
                         if (transaction.SpendingDetails?.IsCoinStake != null && transaction.SpendingDetails.IsCoinStake.Value)
                         {
-                            // We look for the 2 outputs related to our spending input.
+                            // We look for the output(s) related to our spending input.
                             List<FlatHistory> relatedOutputs = items.Where(h => h.Transaction.Id == transaction.SpendingDetails.TransactionId && h.Transaction.IsCoinStake != null && h.Transaction.IsCoinStake.Value).ToList();
                             if (relatedOutputs.Any())
                             {
@@ -417,10 +476,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                     Amount = relatedOutputs.Sum(o => o.Transaction.Amount) - transaction.Amount,
                                     Id = transaction.SpendingDetails.TransactionId,
                                     Timestamp = transaction.SpendingDetails.CreationTime,
-                                    ConfirmedInBlock = transaction.SpendingDetails.BlockHeight
+                                    ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
+                                    BlockIndex = transaction.SpendingDetails.BlockIndex
                                 };
 
                                 transactionItems.Add(stakingItem);
+                                itemsCount++;
                             }
 
                             // No need for further processing if the transaction itself is the output of a staking transaction.
@@ -428,23 +489,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             {
                                 continue;
                             }
-                        }
-
-                        // Create a record for a 'receive' transaction.
-                        if (!address.IsChangeAddress())
-                        {
-                            // Add incoming fund transaction details.
-                            var receivedItem = new TransactionItemModel
-                            {
-                                Type = TransactionItemType.Received,
-                                ToAddress = address.Address,
-                                Amount = transaction.Amount,
-                                Id = transaction.Id,
-                                Timestamp = transaction.CreationTime,
-                                ConfirmedInBlock = transaction.BlockHeight
-                            };
-
-                            transactionItems.Add(receivedItem);
                         }
 
                         // If this is a normal transaction (not staking) that has been spent, add outgoing fund transaction details.
@@ -458,6 +502,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                 Id = spendingTransactionId,
                                 Timestamp = transaction.SpendingDetails.CreationTime,
                                 ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
+                                BlockIndex = transaction.SpendingDetails.BlockIndex,
                                 Amount = Money.Zero
                             };
 
@@ -492,13 +537,38 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             if (sentItem.Fee < 0)
                                 sentItem.Fee = 0;
 
-                            if (!transactionItems.Contains(sentItem, new SentTransactionItemModelComparer()))
+                            transactionItems.Add(sentItem);
+                            itemsCount++;
+                        }
+
+                        // We don't show in history transactions that are outputs of staking transactions.
+                        if (transaction.IsCoinStake != null && transaction.IsCoinStake.Value && transaction.SpendingDetails == null)
+                        {
+                            continue;
+                        }
+
+                        // Create a record for a 'receive' transaction.
+                        if (transaction.IsCoinStake == null && !address.IsChangeAddress())
+                        {
+                            // Add incoming fund transaction details.
+                            var receivedItem = new TransactionItemModel
                             {
-                                transactionItems.Add(sentItem);
-                            }
+                                Type = TransactionItemType.Received,
+                                ToAddress = address.Address,
+                                Amount = transaction.Amount,
+                                Id = transaction.Id,
+                                Timestamp = transaction.CreationTime,
+                                ConfirmedInBlock = transaction.BlockHeight,
+                                BlockIndex = transaction.BlockIndex
+                            };
+
+                            transactionItems.Add(receivedItem);
+                            itemsCount++;
                         }
                     }
 
+                    transactionItems = transactionItems.Distinct(new SentTransactionItemModelComparer()).Select(e => e).ToList();
+                    
                     // Sort and filter the history items.
                     List<TransactionItemModel> itemsToInclude = transactionItems.OrderByDescending(t => t.Timestamp)
                         .Where(x => string.IsNullOrEmpty(request.SearchQuery) || (x.Id.ToString() == request.SearchQuery || x.ToAddress == request.SearchQuery || x.Payments.Any(p => p.DestinationAddress == request.SearchQuery)))
@@ -686,6 +756,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// and then building the transaction and retrieving the fee from the context.
         /// </summary>
         /// <param name="request">The transaction parameters.</param>
+        /// <remarks>
+        /// The OpenApi specification doesn't support arrays of objects as a query parameter so this method is not usable
+        /// by the Swagger UI.
+        /// Here is an example of how to call this endpoint:
+        /// /api/wallet/estimate-txfee?walletname=wallet1&accountname=account 0&recipients[0].destinationaddress=TMLvkmSsDJnBi8vfszHSaVQ67NxEjgsUw6&recipients[0].amount=1000255&feetype=low 
+        /// </remarks>
         /// <returns>The estimated fee for the transaction.</returns>
         [Route("estimate-txfee")]
         [HttpGet]
@@ -1020,7 +1096,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             try
             {
                 Wallet wallet = this.walletManager.GetWallet(request.WalletName);
-                HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
+                HdAccount account = wallet.GetAccount(request.AccountName);
                 if (account == null)
                     throw new WalletException($"No account with the name '{request.AccountName}' could be found.");
 
@@ -1070,7 +1146,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     result = this.walletManager.RemoveTransactionsFromDate(request.WalletName, request.FromDate);
                 }
-                else if(request.TransactionsIds != null)
+                else if (request.TransactionsIds != null)
                 {
                     IEnumerable<uint256> ids = request.TransactionsIds.Select(uint256.Parse);
                     result = this.walletManager.RemoveTransactionsByIdsLocked(request.WalletName, ids);
@@ -1085,11 +1161,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     // From the list of removed transactions, check which one is the oldest and retrieve the block right before that time.
                     DateTimeOffset earliestDate = result.Min(r => r.creationTime);
-                    ChainedHeader chainedHeader = this.chain.GetBlock(this.chain.GetHeightAtTime(earliestDate.DateTime));
+                    ChainedHeader chainedHeader = this.chainIndexer.GetHeader(this.chainIndexer.GetHeightAtTime(earliestDate.DateTime));
 
                     // Update the wallet and save it to the file system.
                     Wallet wallet = this.walletManager.GetWallet(request.WalletName);
-                    wallet.SetLastBlockDetailsByCoinType(this.coinType, chainedHeader);
+                    wallet.SetLastBlockDetails(chainedHeader);
                     this.walletManager.SaveWallet(wallet);
 
                     // Start the syncing process from the block before the earliest transaction was seen.
@@ -1153,7 +1229,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
-            ChainedHeader block = this.chain.GetBlock(uint256.Parse(model.Hash));
+            ChainedHeader block = this.chainIndexer.GetHeader(uint256.Parse(model.Hash));
 
             if (block == null)
             {
@@ -1232,7 +1308,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         {
             // After recovery the wallet needs to be synced.
             // We only sync if the syncing process needs to go back.
-            int blockHeightToSyncFrom = this.chain.GetHeightAtTime(walletCreationDate);
+            int blockHeightToSyncFrom = this.chainIndexer.GetHeightAtTime(walletCreationDate);
             int currentSyncingHeight = this.walletSyncManager.WalletTip.Height;
 
             if (blockHeightToSyncFrom < currentSyncingHeight)

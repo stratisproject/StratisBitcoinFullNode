@@ -21,20 +21,22 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// </summary>
         /// <param name="context">The context that is used to build a new transaction.</param>
         /// <returns>The new transaction.</returns>
-        Transaction BuildTransaction(Wallet.TransactionBuildContext context);
+        Transaction BuildTransaction(TransactionBuildContext context);
     }
 
     /// <summary>
-    /// A handler that has various functionalities related to transaction operations.
+    /// A builder for building federation transactions.
     /// </summary>
     /// <remarks>
-    /// This will uses the <see cref="IWalletFeePolicy"/> and the <see cref="TransactionBuilder"/>.
+    /// This uses the <see cref="IWalletFeePolicy"/> and the <see cref="TransactionBuilder"/>.
     /// TODO: Move also the broadcast transaction to this class
     /// TODO: Implement lockUnspents
     /// TODO: Implement subtractFeeFromOutputs
     /// </remarks>
     public class FederationWalletTransactionHandler : IFederationWalletTransactionHandler
     {
+        public const string NoSpendableTransactionsMessage = "No spendable transactions found.";
+
         /// <summary>A threshold that if possible will limit the amount of UTXO sent to the <see cref="ICoinSelector"/>.</summary>
         /// <remarks>
         /// 500 is a safe number that if reached ensures the coin selector will not take too long to complete,
@@ -73,21 +75,21 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public Transaction BuildTransaction(TransactionBuildContext context)
         {
-            this.InitializeTransactionBuilder(context);
+            TransactionBuilder transactionBuilder = this.InitializeTransactionBuilder(context);
 
             if (context.Shuffle)
             {
-                context.TransactionBuilder.Shuffle();
+                transactionBuilder.Shuffle();
             }
 
             // build transaction
-            context.Transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
+            Transaction transaction = transactionBuilder.BuildTransaction(context.Sign);
 
             // If this is a multisig transaction, then by definition we only (usually) possess one of the keys
             // and can therefore not immediately construct a transaction that passes verification
             if (!context.IgnoreVerify)
             {
-                if (!context.TransactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
+                if (!transactionBuilder.Verify(transaction, out TransactionPolicyError[] errors))
                 {
                     string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
                     this.logger.LogError($"Build transaction failed: {errorsMessage}");
@@ -95,33 +97,41 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 }
             }
 
-            return context.Transaction;
+            return transaction;
         }
 
         /// <summary>
         /// Initializes the context transaction builder from information in <see cref="TransactionBuildContext"/>.
         /// </summary>
         /// <param name="context">Transaction build context.</param>
-        private void InitializeTransactionBuilder(Wallet.TransactionBuildContext context)
+        private TransactionBuilder InitializeTransactionBuilder(Wallet.TransactionBuildContext context)
         {
             Guard.NotNull(context, nameof(context));
             Guard.NotNull(context.Recipients, nameof(context.Recipients));
 
-            context.TransactionBuilder = new TransactionBuilder(this.network);
+            var transactionBuilder = new TransactionBuilder(this.network);
 
-            this.AddRecipients(context);
-            this.AddOpReturnOutput(context);
-            this.AddCoins(context);
-            this.AddSecrets(context);
-            this.FindChangeAddress(context);
-            this.AddFee(context);
+            transactionBuilder.CoinSelector = new DeterministicCoinSelector();
+
+            this.AddRecipients(transactionBuilder, context);
+            this.AddOpReturnOutput(transactionBuilder, context);
+            this.AddCoins(transactionBuilder, context);
+            this.AddSecrets(transactionBuilder, context);
+            this.FindChangeAddress(transactionBuilder, context);
+            this.AddFee(transactionBuilder, context);
+
+            if (context.Time.HasValue)
+                transactionBuilder.SetTimeStamp(context.Time.Value);
+
+            return transactionBuilder;
         }
 
         /// <summary>
         /// Loads the private key for the multisig address.
         /// </summary>
+        /// <param name="transactionBuilder"></param>
         /// <param name="context">The context associated with the current transaction being built.</param>
-        private void AddSecrets(TransactionBuildContext context)
+        private void AddSecrets(TransactionBuilder transactionBuilder, TransactionBuildContext context)
         {
             if (!context.Sign)
                 return;
@@ -146,7 +156,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
 
             // Add the key used to sign the output.
-            context.TransactionBuilder.AddKeys(new[] { privateKey.GetBitcoinSecret(this.network) });
+            transactionBuilder.AddKeys(new[] { privateKey.GetBitcoinSecret(this.network) });
         }
 
         /// <summary>
@@ -202,26 +212,28 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <summary>
         /// Find the next available change address.
         /// </summary>
+        /// <param name="transactionBuilder"></param>
         /// <param name="context">The context associated with the current transaction being built.</param>
-        private void FindChangeAddress(TransactionBuildContext context)
+        private void FindChangeAddress(TransactionBuilder transactionBuilder, TransactionBuildContext context)
         {
             // Change address should be the multisig address.
             context.ChangeAddress = this.walletManager.GetWallet().MultiSigAddress;
-            context.TransactionBuilder.SetChange(context.ChangeAddress.ScriptPubKey);
+            transactionBuilder.SetChange(context.ChangeAddress.ScriptPubKey);
         }
 
         /// <summary>
         /// Find all available outputs (UTXO's) that belong to the multisig address.
         /// Then add them to the <see cref="TransactionBuildContext.UnspentOutputs"/> or <see cref="TransactionBuildContext.UnspentMultiSigOutputs"/>.
         /// </summary>
+        /// <param name="transactionBuilder"></param>
         /// <param name="context">The context associated with the current transaction being built.</param>
-        private void AddCoins(TransactionBuildContext context)
+        private void AddCoins(TransactionBuilder transactionBuilder, TransactionBuildContext context)
         {
             context.UnspentOutputs = this.walletManager.GetSpendableTransactionsInWallet(context.MinConfirmations).ToList();
 
             if (context.UnspentOutputs.Count == 0)
             {
-                throw new WalletException("No spendable transactions found.");
+                throw new WalletException(NoSpendableTransactionsMessage);
             }
 
             // Get total spendable balance in the account.
@@ -254,8 +266,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
             int index = 0;
             var coins = new List<Coin>();
 
-            foreach (UnspentOutputReference item in context.OrderCoinsDeterministic ?
-                this.GetOrderedUnspentOutputs(context) : context.UnspentOutputs.OrderByDescending(a => a.Transaction.Amount))
+            // Note that the coins are ordered and selected by the CoinSelector later on.
+            // TODO: Move GetOrderedUnspentOutputs to happen inside the DeterministicCoinSelector.
+            IEnumerable<UnspentOutputReference> orderedUnspentOutputs = this.GetOrderedUnspentOutputs(context);
+
+            foreach (UnspentOutputReference item in orderedUnspentOutputs)
             {
                 coins.Add(ScriptCoin.Create(this.network, item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, this.walletManager.GetWallet().MultiSigAddress.RedeemScript));
                 sum += item.Transaction.Amount;
@@ -267,33 +282,32 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             }
 
-            context.TransactionBuilder.AddCoins(coins);
+            transactionBuilder.AddCoins(coins);
         }
 
         /// <summary>
         /// Add recipients to the <see cref="TransactionBuilder"/>.
         /// </summary>
+        /// <param name="transactionBuilder"></param>
         /// <param name="context">The context associated with the current transaction being built.</param>
         /// <remarks>
         /// Add outputs to the <see cref="TransactionBuilder"/> based on the <see cref="Recipient"/> list.
         /// </remarks>
-        private void AddRecipients(TransactionBuildContext context)
+        private void AddRecipients(TransactionBuilder transactionBuilder, TransactionBuildContext context)
         {
             if (context.Recipients.Any(a => a.Amount == Money.Zero))
                 throw new WalletException("No amount specified.");
 
-            if (context.Recipients.Any(a => a.SubtractFeeFromAmount))
-                throw new NotImplementedException("Substracting the fee from the recipient is not supported yet.");
-
             foreach (Recipient recipient in context.Recipients)
-                context.TransactionBuilder.Send(recipient.ScriptPubKey, recipient.Amount);
+                transactionBuilder.Send(recipient.ScriptPubKey, recipient.Amount);
         }
 
         /// <summary>
         /// Use the <see cref="FeeRate"/> from the <see cref="walletFeePolicy"/>.
         /// </summary>
+        /// <param name="transactionBuilder"></param>
         /// <param name="context">The context associated with the current transaction being built.</param>
-        private void AddFee(TransactionBuildContext context)
+        private void AddFee(TransactionBuilder transactionBuilder, TransactionBuildContext context)
         {
             Money fee;
             Money minTrxFee = new Money(this.network.MinTxFee, MoneyUnit.Satoshi);
@@ -302,7 +316,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             if (context.TransactionFee == null)
             {
                 FeeRate feeRate = context.OverrideFeeRate ?? this.walletFeePolicy.GetFeeRate(context.FeeType.ToConfirmations());
-                fee = context.TransactionBuilder.EstimateFees(feeRate);
+                fee = transactionBuilder.EstimateFees(feeRate);
 
                 // Make sure that the fee is at least the minimum transaction fee.
                 fee = Math.Max(fee, minTrxFee);
@@ -317,20 +331,21 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 fee = context.TransactionFee;
             }
 
-            context.TransactionBuilder.SendFees(fee);
+            transactionBuilder.SendFees(fee);
             context.TransactionFee = fee;
         }
 
         /// <summary>
         /// Add extra unspendable output to the transaction if there is anything in OpReturnData.
         /// </summary>
+        /// <param name="transactionBuilder"></param>
         /// <param name="context">The context associated with the current transaction being built.</param>
-        private void AddOpReturnOutput(TransactionBuildContext context)
+        private void AddOpReturnOutput(TransactionBuilder transactionBuilder, TransactionBuildContext context)
         {
             if (context.OpReturnData == null) return;
 
             Script opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(context.OpReturnData);
-            context.TransactionBuilder.Send(opReturnScript, Money.Zero);
+            transactionBuilder.Send(opReturnScript, Money.Zero);
         }
     }
 
@@ -386,14 +401,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <summary>
         /// Coins that are available to be spent.
         /// </summary>
-        public List<Wallet.UnspentOutputReference> UnspentOutputs { get; set; }
-
-        public Network Network { get; set; }
-
-        /// <summary>
-        /// The builder used to build the current transaction.
-        /// </summary>
-        public TransactionBuilder TransactionBuilder { get; set; }
+        public List<UnspentOutputReference> UnspentOutputs { get; set; }
 
         /// <summary>
         /// The change address, where any remaining funds will be sent to.
@@ -408,11 +416,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// The total fee on the transaction.
         /// </summary>
         public Money TransactionFee { get; set; }
-
-        /// <summary>
-        /// The final transaction.
-        /// </summary>
-        public Transaction Transaction { get; set; }
 
         /// <summary>
         /// The password that protects the member's seed.
@@ -435,11 +438,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// If false, allows unselected inputs, but requires all selected inputs be used
         /// </summary>
         public bool AllowOtherInputs { get; set; }
-
-        /// <summary>
-        /// If <c>true</c> coins will be ordered using (block height + transaction id + output index) ordering.
-        /// </summary>
-        public bool OrderCoinsDeterministic { get; set; }
 
         /// <summary>
         /// Specify whether to sign the transaction.
@@ -470,6 +468,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// If true, do not perform verification on the built transaction (e.g. it is partially signed)
         /// </summary>
         public bool IgnoreVerify { get; set; }
+
+        /// <summary>
+        /// The timestamp to set on the transaction.
+        /// </summary>
+        public uint? Time { get; set; }
     }
 
     /// <summary>
@@ -488,8 +491,16 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public Money Amount { get; set; }
 
         /// <summary>
-        /// An indicator if the fee is subtracted from the current recipient.
+        /// We need to reduce the amount being withdrawn by the fees our transaction is going to have.
         /// </summary>
-        public bool SubtractFeeFromAmount { get; set; }
+        public Recipient WithPaymentReducedByFee(Money transactionFee)
+        {
+            Money newAmount = this.Amount - transactionFee;
+            return new Recipient
+            {
+                Amount = newAmount,
+                ScriptPubKey = this.ScriptPubKey
+            };
+        }
     }
 }

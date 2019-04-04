@@ -27,11 +27,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             ILoggerFactory loggerFactory,
             IChainState chainState,
             IConsensusManager consensusManager,
-            ConcurrentChain chain)
-            : base(chainState: chainState, consensusManager: consensusManager, chain: chain)
+            ChainIndexer chainIndexer)
+            : base(chainState: chainState, consensusManager: consensusManager, chainIndexer: chainIndexer)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chainIndexer, nameof(chainIndexer));
             Guard.NotNull(chainState, nameof(chainState));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -111,10 +111,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogDebug("GetBlockHash {0}", height);
 
             uint256 bestBlockHash = this.ConsensusManager.Tip?.HashBlock;
-            ChainedHeader bestBlock = bestBlockHash == null ? null : this.Chain.GetBlock(bestBlockHash);
+            ChainedHeader bestBlock = bestBlockHash == null ? null : this.ChainIndexer.GetHeader(bestBlockHash);
             if (bestBlock == null)
                 return null;
-            ChainedHeader block = this.Chain.GetBlock(height);
+            ChainedHeader block = this.ChainIndexer.GetHeader(height);
             return block == null || block.Height > bestBlock.Height ? null : block.HashBlock;
         }
 

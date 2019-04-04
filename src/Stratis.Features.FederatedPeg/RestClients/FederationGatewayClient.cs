@@ -12,9 +12,6 @@ namespace Stratis.Features.FederatedPeg.RestClients
     /// <summary>Rest client for <see cref="FederationGatewayController"/>.</summary>
     public interface IFederationGatewayClient
     {
-        /// <summary><see cref="FederationGatewayController.PushCurrentBlockTip"/></summary>
-        Task<HttpResponseMessage> PushCurrentBlockTipAsync(BlockTipModel model, CancellationToken cancellation = default(CancellationToken));
-
         /// <summary><see cref="FederationGatewayController.GetMaturedBlockDepositsAsync"/></summary>
         Task<List<MaturedBlockDepositsModel>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model, CancellationToken cancellation = default(CancellationToken));
     }
@@ -25,12 +22,6 @@ namespace Stratis.Features.FederatedPeg.RestClients
         public FederationGatewayClient(ILoggerFactory loggerFactory, IFederationGatewaySettings settings, IHttpClientFactory httpClientFactory)
             : base(loggerFactory, settings, httpClientFactory)
         {
-        }
-
-        /// <inheritdoc />
-        public Task<HttpResponseMessage> PushCurrentBlockTipAsync(BlockTipModel model, CancellationToken cancellation = default(CancellationToken))
-        {
-            return this.SendPostRequestAsync(model, FederationGatewayRouteEndPoint.PushCurrentBlockTip, cancellation);
         }
 
         /// <inheritdoc />

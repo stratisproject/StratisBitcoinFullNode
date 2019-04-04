@@ -109,6 +109,12 @@ namespace Stratis.Bitcoin.Configuration
         /// </summary>
         public FeeRate MinRelayTxFeeRate { get; private set; }
 
+        /// <summary><c>true</c> to maintain a full transaction index.</summary>
+        public bool TxIndex { get; set; }
+
+        /// <summary><c>true</c> to rebuild chain state and block index from block data files on disk.</summary>
+        public bool ReIndex { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -193,6 +199,9 @@ namespace Stratis.Bitcoin.Configuration
                 this.Logger.LogDebug("Network set to '{0}'.", this.Network.Name);
             }
 
+            this.TxIndex = this.ConfigReader.GetOrDefault<bool>("txindex", false, this.Logger);
+            this.ReIndex = this.ConfigReader.GetOrDefault<bool>("reindex", false, this.Logger);
+
             // Ensure the network being used is registered and we have the correct Network object reference.
             this.Network = NetworkRegistration.Register(this.Network);
 
@@ -269,6 +278,8 @@ namespace Stratis.Bitcoin.Configuration
                 this.Logger.LogDebug("Creating configuration file '{0}'.", this.ConfigurationFile);
 
                 var builder = new StringBuilder();
+
+                BuildDefaultConfigurationFile(builder, this.Network);
 
                 foreach (IFeatureRegistration featureRegistration in features)
                 {
@@ -376,6 +387,7 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine($"-help/--help              Show this help.");
             builder.AppendLine($"-conf=<Path>              Path to the configuration file. Defaults to {defaults.ConfigurationFile}.");
             builder.AppendLine($"-datadir=<Path>           Path to the data directory. Defaults to {defaults.DataDir}.");
+            builder.AppendLine($"-datadirroot=<Path>       The path to the root data directory, which holds all node data on the machine. Defaults to 'StratisNode'.");
             builder.AppendLine($"-debug[=<string>]         Set 'Debug' logging level. Specify what to log via e.g. '-debug=Stratis.Bitcoin.Miner,Stratis.Bitcoin.Wallet'.");
             builder.AppendLine($"-loglevel=<string>        Direct control over the logging level: '-loglevel=trace/debug/info/warn/error/fatal'.");
 
@@ -385,6 +397,9 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to {network.MinTxFee}.");
             builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to {network.FallbackFee}.");
             builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to {network.MinRelayTxFee}.");
+
+            builder.AppendLine($"-txindex=<0 or 1>              Enable to maintain a full transaction index.");
+            builder.AppendLine($"-reindex=<0 or 1>              Rebuild chain state and block index from block data files on disk.");
 
             defaults.Logger.LogInformation(builder.ToString());
 

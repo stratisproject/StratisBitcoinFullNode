@@ -43,9 +43,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             IFullNode fullNode, 
             IBroadcasterManager broadcasterManager,
             IConsensusManager consensusManager,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             ILoggerFactory loggerFactory,
-            WalletSettings walletSettings) : base(fullNode: fullNode, consensusManager: consensusManager, chain: chain)
+            WalletSettings walletSettings) : base(fullNode: fullNode, consensusManager: consensusManager, chainIndexer: chainIndexer)
         {
             this.walletManager = walletManager;
             this.walletTransactionHandler = walletTransactionHandler;
@@ -206,18 +206,20 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Get the block hash from the transaction in the wallet.
             TransactionData transactionFromWallet = null;
             uint256 blockHash = null;
-            int? blockHeight;
+            int? blockHeight, blockIndex;
 
             if (receivedTransactions.Any())
             {
                 blockHeight = receivedTransactions.First().BlockHeight;
+                blockIndex = receivedTransactions.First().BlockIndex;
                 blockHash = receivedTransactions.First().BlockHash;
                 transactionFromWallet = receivedTransactions.First();
             }
             else
             {
                 blockHeight = sendTransactions.First().SpendingDetails.BlockHeight;
-                blockHash = blockHeight != null ? this.Chain.GetBlock(blockHeight.Value).HashBlock : null;
+                blockIndex = sendTransactions.First().SpendingDetails.BlockIndex;
+                blockHash = blockHeight != null ? this.ChainIndexer.GetHeader(blockHeight.Value).HashBlock : null;
             }
 
             // Get the block containing the transaction (if it has  been confirmed).
@@ -258,17 +260,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                 hex = null; // TODO get from mempool
             }
 
-            Money amountSent = sendTransactions.Select(s => s.SpendingDetails).SelectMany(sds => sds.Payments).GroupBy(p => p.DestinationAddress).Select(g => g.First()).Sum(p => p.Amount);
-            Money totalAmount = receivedTransactions.Sum(t => t.Amount) - amountSent;
-
             var model = new GetTransactionModel
             {
-                Amount = totalAmount.ToDecimal(MoneyUnit.BTC),
-                Fee = null,// TODO this still needs to be worked on.
                 Confirmations = blockHeight != null ? this.ConsensusManager.Tip.Height - blockHeight.Value + 1 : 0,
                 Isgenerated = isGenerated ? true : (bool?) null,
                 BlockHash = blockHash,
-                BlockIndex = block?.Transactions.FindIndex(t => t.GetHash() == trxid),
+                BlockIndex = blockIndex ?? block?.Transactions.FindIndex(t => t.GetHash() == trxid),
                 BlockTime = block?.Header.BlockTime.ToUnixTimeSeconds(),
                 TransactionId = uint256.Parse(txid),
                 TransactionTime = transactionTime.ToUnixTimeSeconds(),
@@ -276,6 +273,13 @@ namespace Stratis.Bitcoin.Features.Wallet
                 Details = new List<GetTransactionDetailsModel>(),
                 Hex = hex
             };
+
+            Money feeSent = Money.Zero;
+            if (sendTransactions.Any())
+            {
+                Wallet wallet = this.walletManager.GetWallet(accountReference.WalletName);
+                feeSent = wallet.GetSentTransactionFee(trxid);
+            }
 
             // Send transactions details.
             foreach (PaymentDetails paymentDetail in sendTransactions.Select(s => s.SpendingDetails).SelectMany(sd => sd.Payments))
@@ -288,7 +292,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         Address = paymentDetail.DestinationAddress,
                         Category = GetTransactionDetailsCategoryModel.Send,
                         Amount = -paymentDetail.Amount.ToDecimal(MoneyUnit.BTC),
-                        Fee = null, // TODO this still needs to be worked on.
+                        Fee = -feeSent.ToDecimal(MoneyUnit.BTC),
                         OutputIndex = paymentDetail.OutputIndex
                     });
                 }
@@ -315,6 +319,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                     OutputIndex = trxInWallet.Index
                 });
             }
+
+            model.Amount = model.Details.Sum(d => d.Amount);
+            model.Fee = model.Details.FirstOrDefault(d => d.Category == GetTransactionDetailsCategoryModel.Send)?.Fee;
 
             return model;
         }

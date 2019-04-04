@@ -18,8 +18,6 @@ namespace Stratis.Features.FederatedPeg.Tests
 
         private readonly ILoggerFactory loggerFactory;
 
-        private IWithdrawalReceiver withdrawalReceiver;
-
         private WithdrawalExtractor withdrawalExtractor;
 
         private readonly Network network;
@@ -35,7 +33,6 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.settings = Substitute.For<IFederationGatewaySettings>();
             this.opReturnDataReader = Substitute.For<IOpReturnDataReader>();
-            this.withdrawalReceiver = Substitute.For<IWithdrawalReceiver>();
 
             this.addressHelper = new MultisigAddressHelper(this.network);
 

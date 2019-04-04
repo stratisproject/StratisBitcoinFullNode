@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Tests.Common
         public TestBase(Network network)
         {
             this.Network = network;
-            this.DBreezeSerializer = new DBreezeSerializer(network);
+            this.DBreezeSerializer = new DBreezeSerializer(network.Consensus.ConsensusFactory);
         }
 
         public static string AssureEmptyDir(string dir)
@@ -90,13 +90,13 @@ namespace Stratis.Bitcoin.Tests.Common
             return Path.Combine("..", "..", "..", "..", "TestCase", testDirectory);
         }
 
-        public void AppendBlocksToChain(ConcurrentChain chain, IEnumerable<Block> blocks)
+        public void AppendBlocksToChain(ChainIndexer chainIndexer, IEnumerable<Block> blocks)
         {
             foreach (Block block in blocks)
             {
-                if (chain.Tip != null)
-                    block.Header.HashPrevBlock = chain.Tip.HashBlock;
-                chain.SetTip(block.Header);
+                if (chainIndexer.Tip != null)
+                    block.Header.HashPrevBlock = chainIndexer.Tip.HashBlock;
+                chainIndexer.SetTip(block.Header);
             }
         }
 

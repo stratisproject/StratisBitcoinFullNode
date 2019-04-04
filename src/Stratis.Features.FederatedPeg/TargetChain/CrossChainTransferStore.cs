@@ -59,23 +59,24 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         private readonly DBreezeSerializer dBreezeSerializer;
         private readonly Network network;
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
         private readonly IWithdrawalExtractor withdrawalExtractor;
         private readonly IBlockRepository blockRepository;
         private readonly CancellationTokenSource cancellation;
         private readonly IFederationWalletManager federationWalletManager;
         private readonly IWithdrawalTransactionBuilder withdrawalTransactionBuilder;
+        private readonly IFederationGatewaySettings settings;
 
         /// <summary>Provider of time functions.</summary>
         private readonly object lockObj;
 
-        public CrossChainTransferStore(Network network, DataFolder dataFolder, ConcurrentChain chain, IFederationGatewaySettings settings, IDateTimeProvider dateTimeProvider,
+        public CrossChainTransferStore(Network network, DataFolder dataFolder, ChainIndexer chainIndexer, IFederationGatewaySettings settings, IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory, IWithdrawalExtractor withdrawalExtractor, IFullNode fullNode, IBlockRepository blockRepository,
             IFederationWalletManager federationWalletManager, IWithdrawalTransactionBuilder withdrawalTransactionBuilder, DBreezeSerializer dBreezeSerializer)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(dataFolder, nameof(dataFolder));
-            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chainIndexer, nameof(chainIndexer));
             Guard.NotNull(settings, nameof(settings));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -86,7 +87,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             Guard.NotNull(withdrawalTransactionBuilder, nameof(withdrawalTransactionBuilder));
 
             this.network = network;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.blockRepository = blockRepository;
             this.federationWalletManager = federationWalletManager;
             this.withdrawalTransactionBuilder = withdrawalTransactionBuilder;
@@ -94,9 +95,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.dBreezeSerializer = dBreezeSerializer;
             this.lockObj = new object();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.TipHashAndHeight = this.chain.GetBlock(0);
+            this.TipHashAndHeight = this.chainIndexer.GetHeader(0);
             this.NextMatureDepositHeight = 1;
             this.cancellation = new CancellationTokenSource();
+            this.settings = settings;
 
             // Future-proof store name.
             string depositStoreName = "federatedTransfers" + settings.MultiSigAddress.ToString();
@@ -213,7 +215,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             if (crossChainTransfers == null)
             {
-                crossChainTransfers = Get(
+                crossChainTransfers = this.Get(
                     this.depositsIdsByStatus[CrossChainTransferStatus.Partial].Union(
                         this.depositsIdsByStatus[CrossChainTransferStatus.FullySigned]).ToArray());
             }
@@ -554,6 +556,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                     if (transfer.PartialTransaction.GetHash() == oldTransaction.GetHash())
                     {
+                        // We will finish dealing with the request here if an invalid signature is sent.
+                        // The incoming partial transaction will not have the same inputs / outputs as what our node has generated
+                        // so would have failed CrossChainTransfer.TemplatesMatch() and leave through here.
                         this.logger.LogInformation("FAILED to combineSignatures : {0}", transfer.DepositTransactionId);
 
                         this.logger.LogTrace("(-)[MERGE_UNCHANGED]");
@@ -628,7 +633,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             if (allDepositIds.Count == 0)
             {
                 // Exiting here and saving the tip after the sync.
-                this.TipHashAndHeight = this.chain.GetBlock(blocks.Last().GetHash());
+                this.TipHashAndHeight = this.chainIndexer.GetHeader(blocks.Last().GetHash());
 
                 this.logger.LogTrace("(-)[NO_DEPOSIT_IDS]");
                 return;
@@ -692,7 +697,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     this.PutTransfers(dbreezeTransaction, tracker.Keys.ToArray());
 
                     // Commit additions
-                    ChainedHeader newTip = this.chain.GetBlock(blocks.Last().GetHash());
+                    ChainedHeader newTip = this.chainIndexer.GetHeader(blocks.Last().GetHash());
                     this.SaveTipHashAndHeight(dbreezeTransaction, newTip);
                     dbreezeTransaction.Commit();
 
@@ -725,21 +730,21 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
 
             // We are dependent on the wallet manager having dealt with any fork by now.
-            if (this.chain.GetBlock(tipToChase.Hash) == null)
+            if (this.chainIndexer.GetHeader(tipToChase.Hash) == null)
             {
                 ICollection<uint256> locators = this.federationWalletManager.GetWallet().BlockLocator;
                 var blockLocator = new BlockLocator { Blocks = locators.ToList() };
-                ChainedHeader fork = this.chain.FindFork(blockLocator);
+                ChainedHeader fork = this.chainIndexer.FindFork(blockLocator);
                 this.federationWalletManager.RemoveBlocks(fork);
                 tipToChase = this.TipToChase();
             }
 
             // If the chain does not contain our tip.
             if (this.TipHashAndHeight != null && (this.TipHashAndHeight.Height > tipToChase.Height ||
-                this.chain.GetBlock(this.TipHashAndHeight.HashBlock)?.Height != this.TipHashAndHeight.Height))
+                this.chainIndexer.GetHeader(this.TipHashAndHeight.HashBlock)?.Height != this.TipHashAndHeight.Height))
             {
                 // We are ahead of the current chain or on the wrong chain.
-                ChainedHeader fork = this.chain.FindFork(this.TipHashAndHeight.GetLocator()) ?? this.chain.GetBlock(0);
+                ChainedHeader fork = this.chainIndexer.FindFork(this.TipHashAndHeight.GetLocator()) ?? this.chainIndexer.GetHeader(0);
 
                 // Must not exceed wallet height otherise transaction validations may fail.
                 while (fork.Height > tipToChase.Height)
@@ -827,9 +832,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             int batchSize = 0;
             HashHeightPair tipToChase = this.TipToChase();
 
-            foreach (ChainedHeader header in this.chain.EnumerateToTip(this.TipHashAndHeight.HashBlock).Skip(1))
+            foreach (ChainedHeader header in this.chainIndexer.EnumerateToTip(this.TipHashAndHeight.HashBlock).Skip(1))
             {
-                if (this.chain.GetBlock(header.HashBlock) == null)
+                if (this.chainIndexer.GetHeader(header.HashBlock) == null)
                     break;
 
                 if (header.Height > tipToChase.Height)
@@ -841,7 +846,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     break;
             }
 
-            List<Block> blocks = this.blockRepository.GetBlocksAsync(blockHashes).GetAwaiter().GetResult();
+            List<Block> blocks = this.blockRepository.GetBlocks(blockHashes);
             int availableBlocks = blocks.FindIndex(b => (b == null));
             if (availableBlocks < 0)
                 availableBlocks = blocks.Count;
@@ -875,7 +880,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 blockLocator.Blocks = new List<uint256> { this.network.GenesisHash };
             }
 
-            this.TipHashAndHeight = this.chain.GetBlock(blockLocator.Blocks[0]) ?? this.chain.FindFork(blockLocator);
+            this.TipHashAndHeight = this.chainIndexer.GetHeader(blockLocator.Blocks[0]) ?? this.chainIndexer.FindFork(blockLocator);
             return this.TipHashAndHeight;
         }
 
@@ -884,7 +889,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <param name="newTip">The new tip to persist.</param>
         private void SaveTipHashAndHeight(DBreeze.Transactions.Transaction dbreezeTransaction, ChainedHeader newTip)
         {
-            BlockLocator locator = this.chain.Tip.GetLocator();
+            BlockLocator locator = this.chainIndexer.Tip.GetLocator();
             this.TipHashAndHeight = newTip;
             dbreezeTransaction.Insert<byte[], byte[]>(commonTableName, RepositoryTipKey, locator.ToBytes());
         }
@@ -895,8 +900,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private int LoadNextMatureHeight(DBreeze.Transactions.Transaction dbreezeTransaction)
         {
             Row<byte[], int> row = dbreezeTransaction.Select<byte[], int>(commonTableName, NextMatureTipKey);
+
             if (row.Exists)
                 this.NextMatureDepositHeight = row.Value;
+
+            // We only want to sync deposits from a certain block number if the main chain is very long.
+            this.NextMatureDepositHeight = Math.Max(this.settings.CounterChainDepositStartBlock, this.NextMatureDepositHeight);
 
             return this.NextMatureDepositHeight;
         }

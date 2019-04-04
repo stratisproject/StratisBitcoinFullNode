@@ -250,6 +250,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         }
     }
 
+    /// <summary>
+    /// A class containing the necessary parameters to perform a send transaction request.
+    /// </summary>
     public class SendTransactionRequest : RequestModel
     {
         public SendTransactionRequest()
@@ -262,6 +265,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         }
 
         [Required(ErrorMessage = "A transaction in hexadecimal format is required.")]
+
+        /// <summary>
+        /// The transaction as a hexadecimal string.
+        /// </summary>
         public string Hex { get; set; }
     }
 
@@ -448,5 +455,38 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
         [Required]
         public int UtxosCount { get; set; }
+    }
+
+    /// <summary>
+    /// Object to sign a message.
+    /// </summary>
+    public class SignMessageRequest : RequestModel
+    {
+        [Required(ErrorMessage = "The name of the wallet is missing.")]
+        public string WalletName { get; set; }
+
+        [Required(ErrorMessage = "A password is required.")]
+        public string Password { get; set; }
+
+        [Required(ErrorMessage = "An address is required.")]
+        public string ExternalAddress { get; set; }
+
+        [Required(ErrorMessage = "A message is required.")]
+        public string Message { get; set; }
+    }
+
+    /// <summary>
+    /// Object to verify a signed message.
+    /// </summary>
+    public class VerifyRequest : RequestModel
+    {
+        [Required(ErrorMessage = "A signature is required.")]
+        public string Signature { get; set; }
+
+        [Required(ErrorMessage = "An address is required.")]
+        public string ExternalAddress { get; set; }
+
+        [Required(ErrorMessage = "A message is required.")]
+        public string Message { get; set; }
     }
 }

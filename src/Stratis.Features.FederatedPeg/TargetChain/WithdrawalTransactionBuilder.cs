@@ -2,13 +2,22 @@
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Wallet;
+using Recipient = Stratis.Features.FederatedPeg.Wallet.Recipient;
+using TransactionBuildContext = Stratis.Features.FederatedPeg.Wallet.TransactionBuildContext;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
 {
     public class WithdrawalTransactionBuilder : IWithdrawalTransactionBuilder
     {
+        /// <summary>
+        /// The wallet should always consume UTXOs that have already been seen in a block. This makes it much easier to maintain
+        /// determinism across the wallets on all the nodes.
+        /// </summary>
+        public const int MinConfirmations = 1;
+
         private readonly ILogger logger;
         private readonly Network network;
 
@@ -41,29 +50,22 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 uint256 opReturnData = depositId;
                 string walletPassword = this.federationWalletManager.Secret.WalletPassword;
                 bool sign = (walletPassword ?? "") != "";
-                var multiSigContext = new TransactionBuildContext(new[] { recipient }.ToList(), opReturnData: opReturnData.ToBytes())
+                var multiSigContext = new TransactionBuildContext(new[]
                 {
-                    OrderCoinsDeterministic = true,
+                    recipient.WithPaymentReducedByFee(this.federationGatewaySettings.TransactionFee)
+                }.ToList(), opReturnData: opReturnData.ToBytes())
+                {
                     TransactionFee = this.federationGatewaySettings.TransactionFee,
-                    MinConfirmations = this.federationGatewaySettings.MinCoinMaturity,
+                    MinConfirmations = MinConfirmations,
                     Shuffle = false,
                     IgnoreVerify = true,
                     WalletPassword = walletPassword,
                     Sign = sign,
+                    Time = this.network.Consensus.IsProofOfStake ? blockTime : (uint?) null
                 };
 
-                Transaction transaction = this.federationWalletTransactionHandler.BuildTransaction(multiSigContext);
-
                 // Build the transaction.
-                if (this.network.Consensus.IsProofOfStake)
-                {
-                    transaction.Time = blockTime;
-
-                    if (sign)
-                    {
-                        transaction = multiSigContext.TransactionBuilder.SignTransaction(transaction);
-                    }
-                }
+                Transaction transaction = this.federationWalletTransactionHandler.BuildTransaction(multiSigContext);
 
                 this.logger.LogInformation("transaction = {0}", transaction.ToString(this.network, RawFormat.BlockExplorer));
 
@@ -71,7 +73,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
             catch (Exception error)
             {
-                this.logger.LogError("Could not create transaction for deposit {0}: {1}", depositId, error.Message);
+                if (error is WalletException walletException && walletException.Message == FederationWalletTransactionHandler.NoSpendableTransactionsMessage)
+                {
+                    this.logger.LogWarning("No spendable transactions in the wallet. Should be resolved when a pending transaction is included in a block.");
+                }
+                else
+                {
+                    this.logger.LogError("Could not create transaction for deposit {0}: {1}", depositId, error.Message);
+                }
             }
 
             this.logger.LogTrace("(-)[FAIL]");

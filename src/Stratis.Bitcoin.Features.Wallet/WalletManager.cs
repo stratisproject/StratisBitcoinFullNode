@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         protected readonly Network network;
 
         /// <summary>The chain of headers.</summary>
-        protected readonly ConcurrentChain chain;
+        protected readonly ChainIndexer ChainIndexer;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public WalletManager(
             ILoggerFactory loggerFactory,
             Network network,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             WalletSettings walletSettings,
             DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
-            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chainIndexer, nameof(chainIndexer));
             Guard.NotNull(walletSettings, nameof(walletSettings));
             Guard.NotNull(dataFolder, nameof(dataFolder));
             Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
-            this.chain = chain;
+            this.ChainIndexer = chainIndexer;
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
@@ -195,8 +195,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             foreach (Wallet wallet in wallets)
             {
-                this.Wallets.Add(wallet);
-                foreach (HdAccount account in wallet.GetAccountsByCoinType(this.coinType))
+                this.Load(wallet);
+                foreach (HdAccount account in wallet.GetAccounts())
                 {
                     this.AddAddressesToMaintainBuffer(account, false);
                     this.AddAddressesToMaintainBuffer(account, true);
@@ -269,7 +269,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Generate multiple accounts and addresses from the get-go.
             for (int i = 0; i < WalletCreationAccountsCount; i++)
             {
-                HdAccount account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
+                HdAccount account = wallet.AddNewAccount(password, this.dateTimeProvider.GetTimeOffset());
                 IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
                 IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
                 this.UpdateKeysLookupLocked(newReceivingAddresses.Concat(newChangeAddresses));
@@ -278,9 +278,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             // If the chain is downloaded, we set the height of the newly created wallet to it.
             // However, if the chain is still downloading when the user creates a wallet,
             // we wait until it is downloaded in order to set it. Otherwise, the height of the wallet will be the height of the chain at that moment.
-            if (this.chain.IsDownloaded())
+            if (this.ChainIndexer.IsDownloaded())
             {
-                this.UpdateLastBlockSyncedHeight(wallet, this.chain.Tip);
+                this.UpdateLastBlockSyncedHeight(wallet, this.ChainIndexer.Tip);
             }
             else
             {
@@ -292,6 +292,45 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.Load(wallet);
 
             return mnemonic;
+        }
+
+        /// <inheritdoc />
+        public string SignMessage(string password, string walletName, string externalAddress, string message)
+        {
+            Guard.NotEmpty(password, nameof(password));
+            Guard.NotEmpty(walletName, nameof(walletName));
+            Guard.NotEmpty(message, nameof(message));
+            Guard.NotEmpty(externalAddress, nameof(externalAddress));
+
+            // Get wallet
+            Wallet wallet = this.GetWalletByName(walletName);
+
+            // Sign the message.
+            HdAddress hdAddress = wallet.GetAddress(externalAddress);
+            Key privateKey = wallet.GetExtendedPrivateKeyForAddress(password, hdAddress).PrivateKey;
+            return privateKey.SignMessage(message);
+        }
+
+        /// <inheritdoc />
+        public bool VerifySignedMessage(string externalAddress, string message, string signature)
+        {
+            Guard.NotEmpty(message, nameof(message));
+            Guard.NotEmpty(externalAddress, nameof(externalAddress));
+            Guard.NotEmpty(signature, nameof(signature));
+
+            bool result = false;
+
+            try
+            {
+                BitcoinPubKeyAddress bitcoinPubKeyAddress = new BitcoinPubKeyAddress(externalAddress, this.network);
+                result = bitcoinPubKeyAddress.VerifyMessage(message, signature);
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogTrace("Failed to verify message: {0}", ex.ToString());
+                this.logger.LogTrace("(-)[EXCEPTION]");
+            }
+            return result;
         }
 
         /// <inheritdoc />
@@ -395,7 +434,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 HdAccount account;
                 lock (this.lockObject)
                 {
-                    account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
+                    account = wallet.AddNewAccount(password, this.dateTimeProvider.GetTimeOffset());
                 }
 
                 IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
@@ -406,10 +445,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             // If the chain is downloaded, we set the height of the recovered wallet to that of the recovery date.
             // However, if the chain is still downloading when the user restores a wallet,
             // we wait until it is downloaded in order to set it. Otherwise, the height of the wallet may not be known.
-            if (this.chain.IsDownloaded())
+            if (this.ChainIndexer.IsDownloaded())
             {
-                int blockSyncStart = this.chain.GetHeightAtTime(creationTime);
-                this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(blockSyncStart));
+                int blockSyncStart = this.ChainIndexer.GetHeightAtTime(creationTime);
+                this.UpdateLastBlockSyncedHeight(wallet, this.ChainIndexer.GetHeader(blockSyncStart));
             }
             else
             {
@@ -436,7 +475,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             HdAccount account;
             lock (this.lockObject)
             {
-                account = wallet.AddNewAccount(this.coinType, extPubKey, accountIndex, this.dateTimeProvider.GetTimeOffset());
+                account = wallet.AddNewAccount(extPubKey, accountIndex, this.dateTimeProvider.GetTimeOffset());
             }
 
             IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
@@ -446,10 +485,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             // If the chain is downloaded, we set the height of the recovered wallet to that of the recovery date.
             // However, if the chain is still downloading when the user restores a wallet,
             // we wait until it is downloaded in order to set it. Otherwise, the height of the wallet may not be known.
-            if (this.chain.IsDownloaded())
+            if (this.ChainIndexer.IsDownloaded())
             {
-                int blockSyncStart = this.chain.GetHeightAtTime(creationTime);
-                this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(blockSyncStart));
+                int blockSyncStart = this.ChainIndexer.GetHeightAtTime(creationTime);
+                this.UpdateLastBlockSyncedHeight(wallet, this.ChainIndexer.GetHeader(blockSyncStart));
             }
             else
             {
@@ -490,7 +529,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                account = wallet.GetFirstUnusedAccount(this.coinType);
+                account = wallet.GetFirstUnusedAccount();
 
                 if (account != null)
                 {
@@ -499,7 +538,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
 
                 // No unused account was found, create a new one.
-                account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
+                account = wallet.AddNewAccount(password, this.dateTimeProvider.GetTimeOffset());
                 IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
                 IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
                 this.UpdateKeysLookupLocked(newReceivingAddresses.Concat(newChangeAddresses));
@@ -521,7 +560,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             lock (this.lockObject)
             {
                 // Get the account.
-                HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
+                HdAccount account = wallet.GetAccount(accountReference.AccountName);
                 if (account == null)
                     throw new WalletException($"No account with the name '{accountReference.AccountName}' could be found.");
                 extPubKey = account.ExtendedPubKey;
@@ -560,7 +599,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             lock (this.lockObject)
             {
                 // Get the account.
-                HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
+                HdAccount account = wallet.GetAccount(accountReference.AccountName);
                 if (account == null)
                     throw new WalletException($"No account with the name '{accountReference.AccountName}' could be found.");
 
@@ -610,7 +649,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 var accounts = new List<HdAccount>();
                 if (!string.IsNullOrEmpty(accountName))
                 {
-                    HdAccount account = wallet.GetAccountByCoinType(accountName, this.coinType);
+                    HdAccount account = wallet.GetAccount(accountName);
                     if (account == null)
                         throw new WalletException($"No account with the name '{accountName}' could be found.");
 
@@ -618,7 +657,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
                 else
                 {
-                    accounts.AddRange(wallet.GetAccountsByCoinType(this.coinType));
+                    accounts.AddRange(wallet.GetAccounts());
                 }
 
                 foreach (HdAccount account in accounts)
@@ -658,7 +697,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 var accounts = new List<HdAccount>();
                 if (!string.IsNullOrEmpty(accountName))
                 {
-                    HdAccount account = wallet.GetAccountByCoinType(accountName, this.coinType);
+                    HdAccount account = wallet.GetAccount(accountName);
                     if (account == null)
                         throw new WalletException($"No account with the name '{accountName}' could be found.");
 
@@ -666,13 +705,13 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
                 else
                 {
-                    accounts.AddRange(wallet.GetAccountsByCoinType(this.coinType));
+                    accounts.AddRange(wallet.GetAccounts());
                 }
 
                 foreach (HdAccount account in accounts)
                 {
                     // Calculates the amount of spendable coins.
-                    UnspentOutputReference[] spendableBalance = account.GetSpendableTransactions(this.chain.Tip.Height, this.network.Consensus.CoinbaseMaturity).ToArray();
+                    UnspentOutputReference[] spendableBalance = account.GetSpendableTransactions(this.ChainIndexer.Tip.Height, this.network.Consensus.CoinbaseMaturity).ToArray();
                     Money spendableAmount = Money.Zero;
                     foreach (UnspentOutputReference bal in spendableBalance)
                     {
@@ -681,7 +720,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                     // Get the total balances.
                     (Money amountConfirmed, Money amountUnconfirmed) result = account.GetBalances();
-                    
+
                     balances.Add(new AccountBalance
                     {
                         Account = account,
@@ -712,7 +751,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 foreach (Wallet wallet in this.Wallets)
                 {
-                    hdAddress = wallet.GetAllAddressesByCoinType(this.coinType).FirstOrDefault(a => a.Address == address);
+                    hdAddress = wallet.GetAllAddresses().FirstOrDefault(a => a.Address == address);
                     if (hdAddress == null) continue;
 
                     (Money amountConfirmed, Money amountUnconfirmed) result = hdAddress.GetBalances();
@@ -753,7 +792,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             HdAccount[] res = null;
             lock (this.lockObject)
             {
-                res = wallet.GetAccountsByCoinType(this.coinType).ToArray();
+                res = wallet.GetAccounts().ToArray();
             }
             return res;
         }
@@ -763,7 +802,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             if (!this.Wallets.Any())
             {
-                int height = this.chain.Tip.Height;
+                int height = this.ChainIndexer.Tip.Height;
                 this.logger.LogTrace("(-)[NO_WALLET]:{0}", height);
                 return height;
             }
@@ -771,7 +810,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             int res;
             lock (this.lockObject)
             {
-                res = this.Wallets.Min(w => w.AccountsRoot.SingleOrDefault(a => a.CoinType == this.coinType)?.LastBlockSyncedHeight) ?? 0;
+                res = this.Wallets.Min(w => w.AccountsRoot.Single().LastBlockSyncedHeight) ?? 0;
             }
 
             return res;
@@ -788,7 +827,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             if (!this.Wallets.Any())
             {
-                uint256 hash = this.chain.Tip.HashBlock;
+                uint256 hash = this.ChainIndexer.Tip.HashBlock;
                 this.logger.LogTrace("(-)[NO_WALLET]:'{0}'", hash);
                 return hash;
             }
@@ -797,7 +836,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             lock (this.lockObject)
             {
                 lastBlockSyncedHash = this.Wallets
-                    .Select(w => w.AccountsRoot.SingleOrDefault(a => a.CoinType == this.coinType))
+                    .Select(w => w.AccountsRoot.Single())
                     .Where(w => w != null)
                     .OrderBy(o => o.LastBlockSyncedHeight)
                     .FirstOrDefault()?.LastBlockSyncedHash;
@@ -809,7 +848,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     this.logger.LogWarning("There were no details about the last block synced in the wallets.");
                     DateTimeOffset earliestWalletDate = this.Wallets.Min(c => c.CreationTime);
                     this.UpdateWhenChainDownloaded(this.Wallets, earliestWalletDate.DateTime);
-                    lastBlockSyncedHash = this.chain.Tip.HashBlock;
+                    lastBlockSyncedHash = this.ChainIndexer.Tip.HashBlock;
                 }
             }
 
@@ -835,7 +874,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             UnspentOutputReference[] res = null;
             lock (this.lockObject)
             {
-                res = wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations, accountFilter).ToArray();
+                res = wallet.GetAllSpendableTransactions(this.ChainIndexer.Tip.Height, confirmations, accountFilter).ToArray();
             }
 
             return res;
@@ -850,7 +889,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             UnspentOutputReference[] res = null;
             lock (this.lockObject)
             {
-                HdAccount account = wallet.GetAccountByCoinType(walletAccountReference.AccountName, this.coinType);
+                HdAccount account = wallet.GetAccount(walletAccountReference.AccountName);
 
                 if (account == null)
                 {
@@ -859,7 +898,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         $"Account '{walletAccountReference.AccountName}' in wallet '{walletAccountReference.WalletName}' not found.");
                 }
 
-                res = account.GetSpendableTransactions(this.chain.Tip.Height, this.network.Consensus.CoinbaseMaturity, confirmations).ToArray();
+                res = account.GetSpendableTransactions(this.ChainIndexer.Tip.Height, this.network.Consensus.CoinbaseMaturity, confirmations).ToArray();
             }
 
             return res;
@@ -913,7 +952,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.logger.LogTrace("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
 
                 // Are we still on the main chain.
-                ChainedHeader current = this.chain.GetBlock(this.WalletTipHash);
+                ChainedHeader current = this.ChainIndexer.GetHeader(this.WalletTipHash);
                 if (current == null)
                 {
                     this.logger.LogTrace("(-)[REORG]");
@@ -1048,6 +1087,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true,
                     BlockHeight = blockHeight,
                     BlockHash = block?.GetHash(),
+                    BlockIndex = block?.Transactions.FindIndex(t => t.GetHash() == transactionHash),
                     Id = transactionHash,
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? transaction.Time),
                     Index = index,
@@ -1074,6 +1114,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     foundTransaction.BlockHeight = blockHeight;
                     foundTransaction.BlockHash = block?.GetHash();
+                    foundTransaction.BlockIndex = block?.Transactions.FindIndex(t => t.GetHash() == transactionHash);
                 }
 
                 // Update the block time.
@@ -1111,6 +1152,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(transaction, nameof(transaction));
             Guard.NotNull(paidToOutputs, nameof(paidToOutputs));
 
+            uint256 transactionHash = transaction.GetHash();
+
             // Get the transaction being spent.
             TransactionData spentTransaction = this.scriptToAddressLookup.Values.Distinct().SelectMany(v => v.Transactions)
                 .SingleOrDefault(t => (t.Id == spendingTransactionId) && (t.Index == spendingTransactionIndex));
@@ -1146,10 +1189,11 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 var spendingDetails = new SpendingDetails
                 {
-                    TransactionId = transaction.GetHash(),
+                    TransactionId = transactionHash,
                     Payments = payments,
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? transaction.Time),
                     BlockHeight = blockHeight,
+                    BlockIndex = block?.Transactions.FindIndex(t => t.GetHash() == transactionHash),
                     Hex = this.walletSettings.SaveTransactionHex ? transaction.ToHex() : null,
                     IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true
                 };
@@ -1171,6 +1215,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 if (block != null)
                 {
                     spentTransaction.SpendingDetails.CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time);
+                    spentTransaction.BlockIndex = block?.Transactions.FindIndex(t => t.GetHash() == transactionHash);
                 }
             }
 
@@ -1185,7 +1230,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             foreach (Wallet wallet in this.Wallets)
             {
-                foreach (HdAccount account in wallet.GetAccountsByCoinType(this.coinType, accountFilter ?? Wallet.NormalAccounts))
+                foreach (HdAccount account in wallet.GetAccounts(accountFilter ?? Wallet.NormalAccounts))
                 {
                     bool isChange;
                     if (account.ExternalAddresses.Any(address => address.ScriptPubKey == script))
@@ -1277,7 +1322,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                wallet.SetLastBlockDetailsByCoinType(this.coinType, chainedHeader);
+                wallet.SetLastBlockDetails(chainedHeader);
             }
         }
 
@@ -1363,7 +1408,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Loads the wallet to be used by the manager.
+        /// Loads the wallet to be used by the manager if a wallet with this name has not already been loaded.
         /// </summary>
         /// <param name="wallet">The wallet to load.</param>
         private void Load(Wallet wallet)
@@ -1388,7 +1433,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 foreach (Wallet wallet in this.Wallets)
                 {
-                    IEnumerable<HdAddress> addresses = wallet.GetAllAddressesByCoinType(this.coinType, a => true);
+                    IEnumerable<HdAddress> addresses = wallet.GetAllAddresses(a => true);
                     foreach (HdAddress address in addresses)
                     {
                         this.scriptToAddressLookup[address.ScriptPubKey] = address;
@@ -1465,7 +1510,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 foreach (Wallet wallet in this.Wallets)
                 {
-                    foreach (HdAddress address in wallet.GetAllAddressesByCoinType(this.coinType, a => true))
+                    foreach (HdAddress address in wallet.GetAllAddresses(a => true))
                     {
                         // Get the UTXOs that are unspent or spent but not confirmed.
                         // We only exclude from the list the confirmed spent UTXOs.
@@ -1506,7 +1551,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public int? GetEarliestWalletHeight()
         {
-            return this.Wallets.Min(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight);
+            return this.Wallets.Min(w => w.AccountsRoot.Single().LastBlockSyncedHeight);
         }
 
         /// <inheritdoc />
@@ -1528,7 +1573,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                IEnumerable<HdAccount> accounts = wallet.GetAccountsByCoinType(this.coinType);
+                IEnumerable<HdAccount> accounts = wallet.GetAccounts();
                 foreach (HdAccount account in accounts)
                 {
                     foreach (HdAddress address in account.GetCombinedAddresses())
@@ -1578,7 +1623,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                IEnumerable<HdAccount> accounts = wallet.GetAccountsByCoinType(this.coinType);
+                IEnumerable<HdAccount> accounts = wallet.GetAccounts();
                 foreach (HdAccount account in accounts)
                 {
                     foreach (HdAddress address in account.GetCombinedAddresses())
@@ -1610,7 +1655,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                IEnumerable<HdAccount> accounts = wallet.GetAccountsByCoinType(this.coinType);
+                IEnumerable<HdAccount> accounts = wallet.GetAccounts();
                 foreach (HdAccount account in accounts)
                 {
                     foreach (HdAddress address in account.GetCombinedAddresses())
@@ -1644,15 +1689,15 @@ namespace Stratis.Bitcoin.Features.Wallet
         private void UpdateWhenChainDownloaded(IEnumerable<Wallet> wallets, DateTime date)
         {
             this.asyncLoopFactory.RunUntil("WalletManager.DownloadChain", this.nodeLifetime.ApplicationStopping,
-                () => this.chain.IsDownloaded(),
+                () => this.ChainIndexer.IsDownloaded(),
                 () =>
                 {
-                    int heightAtDate = this.chain.GetHeightAtTime(date);
+                    int heightAtDate = this.ChainIndexer.GetHeightAtTime(date);
 
                     foreach (Wallet wallet in wallets)
                     {
                         this.logger.LogTrace("The chain of headers has finished downloading, updating wallet '{0}' with height {1}", wallet.Name, heightAtDate);
-                        this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(heightAtDate));
+                        this.UpdateLastBlockSyncedHeight(wallet, this.ChainIndexer.GetHeader(heightAtDate));
                         this.SaveWallet(wallet);
                     }
                 },
@@ -1664,7 +1709,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                     foreach (Wallet wallet in wallets)
                     {
-                        this.UpdateLastBlockSyncedHeight(wallet, this.chain.Tip);
+                        this.UpdateLastBlockSyncedHeight(wallet, this.ChainIndexer.Tip);
                     }
                 },
                 TimeSpans.FiveSeconds);

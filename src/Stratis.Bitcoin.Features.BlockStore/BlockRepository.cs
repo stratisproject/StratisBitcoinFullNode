@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -28,48 +29,48 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         /// <remarks>TODO: This will need to be revisited once DBreeze has been fixed or replaced with a solution that works.</remarks>
         /// <param name="hashes">List of block hashes to be deleted.</param>
-        Task DeleteBlocksAsync(List<uint256> hashes);
+        void DeleteBlocks(List<uint256> hashes);
 
         /// <summary>
         /// Persist the next block hash and insert new blocks into the database.
         /// </summary>
         /// <param name="newTip">Hash and height of the new repository's tip.</param>
         /// <param name="blocks">Blocks to be inserted.</param>
-        Task PutAsync(HashHeightPair newTip, List<Block> blocks);
+        void PutBlocks(HashHeightPair newTip, List<Block> blocks);
 
         /// <summary>
         /// Get the blocks from the database by using block hashes.
         /// </summary>
         /// <param name="hashes">A list of unique block hashes.</param>
         /// <returns>The blocks (or null if not found) in the same order as the hashes on input.</returns>
-        Task<List<Block>> GetBlocksAsync(List<uint256> hashes);
+        List<Block> GetBlocks(List<uint256> hashes);
 
         /// <summary>
         /// Wipe out blocks and their transactions then replace with a new block.
         /// </summary>
         /// <param name="newTip">Hash and height of the new repository's tip.</param>
         /// <param name="hashes">List of all block hashes to be deleted.</param>
-        /// <exception cref="DBreeze.Exceptions.DBreezeException">Thrown if an error occurs during database operations.</exception>
-        Task DeleteAsync(HashHeightPair newTip, List<uint256> hashes);
+        /// <exception cref="DBreezeException">Thrown if an error occurs during database operations.</exception>
+        void Delete(HashHeightPair newTip, List<uint256> hashes);
 
         /// <summary>
         /// Determine if a block already exists
         /// </summary>
         /// <param name="hash">The hash.</param>
         /// <returns><c>true</c> if the block hash can be found in the database, otherwise return <c>false</c>.</returns>
-        Task<bool> ExistAsync(uint256 hash);
+        bool Exist(uint256 hash);
 
         /// <summary>
         /// Iterate over every block in the database.
         /// If <see cref="TxIndex"/> is true, we store the block hash alongside the transaction hash in the transaction table, otherwise clear the transaction table.
         /// </summary>
-        Task ReIndexAsync();
+        void ReIndex();
 
         /// <summary>
         /// Set whether to index transactions by block hash, as well as storing them inside of the block.
         /// </summary>
         /// <param name="txIndex">Whether to index transactions.</param>
-        Task SetTxIndexAsync(bool txIndex);
+        void SetTxIndex(bool txIndex);
 
         /// <summary>Hash and height of the repository's tip.</summary>
         HashHeightPair TipHashAndHeight { get; }
@@ -152,90 +153,82 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public virtual Task InitializeAsync()
+        public virtual void Initialize()
         {
             Block genesis = this.network.GetGenesis();
 
-            Task task = Task.Run(() =>
+            using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.ReadWrite))
             {
-                using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.ReadWrite))
+                bool doCommit = false;
+
+                if (this.LoadTipHashAndHeight(dbTransaction) == null)
                 {
-                    bool doCommit = false;
-
-                    if (this.LoadTipHashAndHeight(dbTransaction) == null)
-                    {
-                        this.SaveTipHashAndHeight(dbTransaction, new HashHeightPair(genesis.GetHash(), 0));
-                        doCommit = true;
-                    }
-
-                    if (this.LoadTxIndex(dbTransaction) == null)
-                    {
-                        this.SaveTxIndex(dbTransaction, false);
-                        doCommit = true;
-                    }
-
-                    if (doCommit) dbTransaction.Commit();
+                    this.SaveTipHashAndHeight(dbTransaction, new HashHeightPair(genesis.GetHash(), 0));
+                    doCommit = true;
                 }
-            });
 
-            return task;
+                if (this.LoadTxIndex(dbTransaction) == null)
+                {
+                    this.SaveTxIndex(dbTransaction, false);
+                    doCommit = true;
+                }
+
+                if (doCommit) dbTransaction.Commit();
+            }
         }
 
         /// <inheritdoc />
-        public Task<Transaction> GetTransactionByIdAsync(uint256 trxid)
+        public Transaction GetTransactionById(uint256 trxid)
         {
             Guard.NotNull(trxid, nameof(trxid));
 
             if (!this.TxIndex)
-                return Task.FromResult(default(Transaction));
+                return default(Transaction);
 
-            Task<Transaction> task = Task.Run(() =>
+            Transaction res = null;
+            using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.Read))
             {
-                Transaction res = null;
-                using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.Read))
+                if (!dbTransaction.Select(TransactionTableName, trxid, out uint256 blockHash))
                 {
-                    if (!dbTransaction.Select(TransactionTableName, trxid, out uint256 blockHash))
-                    {
-                        this.logger.LogTrace("(-)[NO_BLOCK]:null");
-                        return null;
-                    }
-
-                    if (dbTransaction.Select(BlockTableName, blockHash, out Block block))
-                    {
-                        res = block.Transactions.FirstOrDefault(t => t.GetHash() == trxid);
-                    }
+                    this.logger.LogTrace("(-)[NO_BLOCK]:null");
+                    return null;
                 }
 
-                return res;
-            });
+                if (dbTransaction.Select(BlockTableName, blockHash, out Block block))
+                {
+                    res = block.Transactions.FirstOrDefault(t => t.GetHash() == trxid);
+                }
+            }
 
-            return task;
+            return res;
+        }
+
+        /// <inheritdoc/>
+        public Transaction[] GetTransactionsByIds(uint256[] trxids)
+        {
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public Task<uint256> GetBlockIdByTransactionIdAsync(uint256 trxid)
+        public uint256 GetBlockIdByTransactionId(uint256 trxid)
         {
             Guard.NotNull(trxid, nameof(trxid));
 
             if (!this.TxIndex)
             {
                 this.logger.LogTrace("(-)[NO_TXINDEX]:null");
-                return Task.FromResult(default(uint256));
+                return default(uint256);
             }
 
-            Task<uint256> task = Task.Run(() =>
+
+            uint256 res = null;
+            using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.Read))
             {
-                uint256 res = null;
-                using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.Read))
-                {
-                    if (dbTransaction.Select(TransactionTableName, trxid, out uint256 blockHash))
-                        res = blockHash;
-                }
+                if (dbTransaction.Select(TransactionTableName, trxid, out uint256 blockHash))
+                    res = blockHash;
+            }
 
-                return res;
-            });
-
-            return task;
+            return res;
         }
 
         protected virtual void OnInsertBlocks(IStratisDBTransaction dbTransaction, List<Block> blocks)
@@ -267,56 +260,44 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public Task ReIndexAsync()
+        public void ReIndex()
         {
-            Task task = Task.Run(() =>
+            using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.ReadWrite, BlockTableName, TransactionTableName))
             {
-                using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.ReadWrite, BlockTableName, TransactionTableName))
+                if (this.TxIndex)
                 {
-                    if (this.TxIndex)
+                    // Insert transactions to database.
+                    foreach ((uint256 blockHash, Block block) in dbTransaction.SelectForward<uint256, Block>(BlockTableName))
                     {
-                        // Insert transactions to database.
-                        foreach ((uint256 blockHash, Block block) in dbTransaction.SelectForward<uint256, Block>(BlockTableName))
-                        {
-                            dbTransaction.InsertMultiple(TransactionTableName, block.Transactions.Select(t => (t.GetHash(), blockHash)).ToArray());
-                        }
+                        dbTransaction.InsertMultiple(TransactionTableName, block.Transactions.Select(t => (t.GetHash(), blockHash)).ToArray());
                     }
-                    else
-                    {
-                        // Clear tx from database.
-                        dbTransaction.RemoveAllKeys(TransactionTableName);
-                    }
-
-                    dbTransaction.Commit();
+                }
+                else
+                {
+                    // Clear tx from database.
+                    dbTransaction.RemoveAllKeys(TransactionTableName);
                 }
 
-                return Task.CompletedTask;
-            });
-
-            return task;
+                dbTransaction.Commit();
+            }
         }
 
         /// <inheritdoc />
-        public Task PutAsync(HashHeightPair newTip, List<Block> blocks)
+        public void PutBlocks(HashHeightPair newTip, List<Block> blocks)
         {
             Guard.NotNull(newTip, nameof(newTip));
             Guard.NotNull(blocks, nameof(blocks));
 
-            Task task = Task.Run(() =>
+            // DBreeze is faster if sort ascending by key in memory before insert
+            // however we need to find how byte arrays are sorted in DBreeze.
+            using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.ReadWrite, BlockTableName, TransactionTableName, CommonTableName))
             {
-                // DBreeze is faster if sort ascending by key in memory before insert
-                // however we need to find how byte arrays are sorted in DBreeze.
-                using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.ReadWrite, BlockTableName, TransactionTableName, CommonTableName))
-                {
-                    this.OnInsertBlocks(dbTransaction, blocks);
+                this.OnInsertBlocks(dbTransaction, blocks);
 
-                    // Commit additions
-                    this.SaveTipHashAndHeight(dbTransaction, newTip);
-                    dbTransaction.Commit();
-                }
-            });
-
-            return task;
+                // Commit additions
+                this.SaveTipHashAndHeight(dbTransaction, newTip);
+                dbTransaction.Commit();
+            }
         }
 
         private bool? LoadTxIndex(IStratisDBTransaction dbTransaction)
@@ -338,18 +319,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public Task SetTxIndexAsync(bool txIndex)
+        public Task SetTxIndex(bool txIndex)
         {
-            Task task = Task.Run(() =>
+            using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.ReadWrite))
             {
-                using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.ReadWrite))
-                {
-                    this.SaveTxIndex(dbTransaction, txIndex);
-                    dbTransaction.Commit();
-                }
-            });
-
-            return task;
+                this.SaveTxIndex(dbTransaction, txIndex);
+                dbTransaction.Commit();
+            }
         }
 
         private HashHeightPair LoadTipHashAndHeight(IStratisDBTransaction dbTransaction)
@@ -367,70 +343,55 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public Task<Block> GetBlockAsync(uint256 hash)
+        public Block GetBlock(uint256 hash)
         {
             Guard.NotNull(hash, nameof(hash));
 
-            Task<Block> task = Task.Run(() =>
+            Block res = null;
+            using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.Read))
             {
-                Block res = null;
-                using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.Read))
-                {
-                    if (dbTransaction.Select(BlockTableName, hash, out Block block))
-                        res = block;
-                }
+                if (dbTransaction.Select(BlockTableName, hash, out Block block))
+                    res = block;
+            }
 
-                // If searching for genesis block, return it.
-                if (res == null && hash == this.network.GenesisHash)
-                {
-                    res = this.network.GetGenesis();
-                }
+            // If searching for genesis block, return it.
+            if (res == null && hash == this.network.GenesisHash)
+            {
+                res = this.network.GetGenesis();
+            }
 
-                return res;
-            });
-
-            return task;
+            return res;
         }
 
         /// <inheritdoc />
-        public Task<List<Block>> GetBlocksAsync(List<uint256> hashes)
+        public List<Block> GetBlocks(List<uint256> hashes)
         {
             Guard.NotNull(hashes, nameof(hashes));
 
-            Task<List<Block>> task = Task.Run(() =>
+            List<Block> blocks;
+
+            using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.Read))
             {
-                List<Block> blocks;
+                blocks = this.GetBlocksFromHashes(dbTransaction, hashes);
+            }
 
-                using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.Read))
-                {
-                    blocks = this.GetBlocksFromHashes(dbTransaction, hashes);
-                }
-
-                return blocks;
-            });
-
-            return task;
+            return blocks;
         }
 
         /// <inheritdoc />
-        public Task<bool> ExistAsync(uint256 hash)
+        public bool Exist(uint256 hash)
         {
             Guard.NotNull(hash, nameof(hash));
 
-            Task<bool> task = Task.Run(() =>
+            bool res = false;
+            using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.Read))
             {
-                bool res = false;
-                using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.Read))
-                {
-                    // Lazy loading is on so we don't fetch the whole value, just the row.
-                    if (dbTransaction.Exists(BlockTableName, hash))
-                        res = true;
-                }
+                // Lazy loading is on so we don't fetch the whole value, just the row.
+                if (dbTransaction.Exists(BlockTableName, hash))
+                    res = true;
+            }
 
-                return res;
-            });
-
-            return task;
+            return res;
         }
 
         protected virtual void OnDeleteTransactions(IStratisDBTransaction dbTransaction, List<(Transaction, Block)> transactions)
@@ -462,43 +423,33 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public Task DeleteAsync(HashHeightPair newTip, List<uint256> hashes)
+        public void Delete(HashHeightPair newTip, List<uint256> hashes)
         {
             Guard.NotNull(newTip, nameof(newTip));
             Guard.NotNull(hashes, nameof(hashes));
 
-            Task task = Task.Run(() =>
+            using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.ReadWrite, BlockTableName, CommonTableName, TransactionTableName))
             {
-                using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.ReadWrite, BlockTableName, CommonTableName, TransactionTableName))
-                {
-                    List<Block> blocks = this.GetBlocksFromHashes(dbTransaction, hashes);
-                    this.OnDeleteBlocks(dbTransaction, blocks.Where(b => b != null).ToList());
-                    this.SaveTipHashAndHeight(dbTransaction, newTip);
-                    dbTransaction.Commit();
-                }
-            });
-
-            return task;
+                List<Block> blocks = this.GetBlocksFromHashes(dbTransaction, hashes);
+                this.OnDeleteBlocks(dbTransaction, blocks.Where(b => b != null).ToList());
+                this.SaveTipHashAndHeight(dbTransaction, newTip);
+                dbTransaction.Commit();
+            }
         }
 
         /// <inheritdoc />
-        public Task DeleteBlocksAsync(List<uint256> hashes)
+        public void DeleteBlocks(List<uint256> hashes)
         {
             Guard.NotNull(hashes, nameof(hashes));
 
-            Task task = Task.Run(() =>
+            using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.ReadWrite, BlockTableName, CommonTableName, TransactionTableName))
             {
-                using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.ReadWrite, BlockTableName, CommonTableName, TransactionTableName))
-                {
-                    List<Block> blocks = this.GetBlocksFromHashes(dbTransaction, hashes);
+                List<Block> blocks = this.GetBlocksFromHashes(dbTransaction, hashes);
 
-                    this.OnDeleteBlocks(dbTransaction, blocks.Where(b => b != null).ToList());
+                this.OnDeleteBlocks(dbTransaction, blocks.Where(b => b != null).ToList());
 
-                    dbTransaction.Commit();
-                }
-            });
-
-            return task;
+                dbTransaction.Commit();
+            }
         }
 
         /// <inheritdoc />

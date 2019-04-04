@@ -2,7 +2,6 @@
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
@@ -15,6 +14,8 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
         private readonly ILogger logger;
 
+        private readonly IFederationGatewaySettings settings;
+
         private readonly Script depositScript;
 
         public uint MinimumDepositConfirmations { get; private set; }
@@ -22,8 +23,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         public DepositExtractor(
             ILoggerFactory loggerFactory,
             IFederationGatewaySettings federationGatewaySettings,
-            IOpReturnDataReader opReturnDataReader,
-            IFullNode fullNode)
+            IOpReturnDataReader opReturnDataReader)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             // Note: MultiSigRedeemScript.PaymentScript equals MultiSigAddress.ScriptPubKey
@@ -31,6 +31,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                 federationGatewaySettings?.MultiSigRedeemScript?.PaymentScript ??
                 federationGatewaySettings?.MultiSigAddress?.ScriptPubKey;
             this.opReturnDataReader = opReturnDataReader;
+            this.settings = federationGatewaySettings;
             this.MinimumDepositConfirmations = federationGatewaySettings.MinimumDepositConfirmations;
         }
 
@@ -57,7 +58,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         {
             List<TxOut> depositsToMultisig = transaction.Outputs.Where(output =>
                 output.ScriptPubKey == this.depositScript
-                && !output.IsDust(FeeRate.Zero)).ToList();
+                && output.Value > this.settings.TransactionFee).ToList();
 
             if (!depositsToMultisig.Any())
                 return null;

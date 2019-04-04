@@ -113,7 +113,8 @@ namespace Stratis.Bitcoin.Features.Dns
                 whitelist = whitelist.Where(p => !p.Endpoint.Match(this.externalEndpoint));
             }
 
-            IMasterFile masterFile = new DnsSeedMasterFile();
+            var resourceRecords = new List<IResourceRecord>();
+
             foreach (PeerAddress whitelistEntry in whitelist)
             {
                 if (this.peerBanning.IsBanned(whitelistEntry.Endpoint))
@@ -129,14 +130,16 @@ namespace Stratis.Bitcoin.Features.Dns
                 {
                     IPAddress ipv4Address = whitelistEntry.Endpoint.Address.MapToIPv4();
                     var resourceRecord = new IPAddressResourceRecord(domain, ipv4Address);
-                    masterFile.Add(resourceRecord);
+                    resourceRecords.Add(resourceRecord);
                 }
                 else
                 {
                     var resourceRecord = new IPAddressResourceRecord(domain, whitelistEntry.Endpoint.Address);
-                    masterFile.Add(resourceRecord);
+                    resourceRecords.Add(resourceRecord);
                 }
             }
+
+            IMasterFile masterFile = new DnsSeedMasterFile(resourceRecords);
 
             this.dnsServer.SwapMasterfile(masterFile);
         }

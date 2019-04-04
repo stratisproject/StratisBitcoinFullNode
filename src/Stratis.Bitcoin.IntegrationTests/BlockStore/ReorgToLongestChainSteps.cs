@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
             TestHelper.MineBlocks(this.jingNode, 1);
 
-            this.jingsBlockHeight = this.jingNode.FullNode.Chain.Height;
+            this.jingsBlockHeight = this.jingNode.FullNode.ChainIndexer.Height;
         }
 
         private void bob_creates_a_transaction_and_broadcasts()
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void dave_confirms_transaction_is_present()
         {
-            Transaction transaction = this.daveNode.FullNode.BlockStore().GetTransactionByIdAsync(this.shorterChainTransaction.GetHash()).Result;
+            Transaction transaction = this.daveNode.FullNode.BlockStore().GetTransactionById(this.shorterChainTransaction.GetHash());
             transaction.Should().NotBeNull();
             transaction.GetHash().Should().Be(this.shorterChainTransaction.GetHash());
         }
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             TestHelper.MineBlocks(this.jingNode, 5);
 
-            this.jingsBlockHeight = this.jingNode.FullNode.Chain.Height;
+            this.jingsBlockHeight = this.jingNode.FullNode.ChainIndexer.Height;
         }
 
         private void jings_connection_comes_back()
@@ -139,15 +139,15 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void bob_charlie_and_dave_reorg_to_jings_longest_chain()
         {
-            TestHelper.WaitLoop(() => this.bobNode.FullNode.Chain.Height == this.jingsBlockHeight);
-            TestHelper.WaitLoop(() => this.charlieNode.FullNode.Chain.Height == this.jingsBlockHeight);
-            TestHelper.WaitLoop(() => this.daveNode.FullNode.Chain.Height == this.jingsBlockHeight);
+            TestHelper.WaitLoop(() => this.bobNode.FullNode.ChainIndexer.Height == this.jingsBlockHeight);
+            TestHelper.WaitLoop(() => this.charlieNode.FullNode.ChainIndexer.Height == this.jingsBlockHeight);
+            TestHelper.WaitLoop(() => this.daveNode.FullNode.ChainIndexer.Height == this.jingsBlockHeight);
         }
 
         private void bobs_transaction_from_shorter_chain_is_now_missing()
         {
-            TestHelper.WaitLoop(() => this.bobNode.FullNode.BlockStore().GetTransactionByIdAsync(this.shorterChainTransaction.GetHash()).Result == null, waitTimeSeconds: 300);
-            this.bobNode.FullNode.BlockStore().GetTransactionByIdAsync(this.shorterChainTransaction.GetHash()).Result
+            TestHelper.WaitLoop(() => this.bobNode.FullNode.BlockStore().GetTransactionById(this.shorterChainTransaction.GetHash()) == null, waitTimeSeconds: 300);
+            this.bobNode.FullNode.BlockStore().GetTransactionById(this.shorterChainTransaction.GetHash())
                 .Should().BeNull("longest chain comes from selfish miner and shouldn't contain the transaction made on the chain with the other 3 nodes");
         }
 

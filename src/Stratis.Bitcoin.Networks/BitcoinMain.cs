@@ -14,6 +14,7 @@ namespace Stratis.Bitcoin.Networks
         {
             this.Name = "Main";
             this.AdditionalNames = new List<string> { "Mainnet" };
+            this.NetworkType = NetworkType.Mainnet;
 
             this.RootFolderName = BitcoinRootFolderName;
             this.DefaultConfigFilename = BitcoinDefaultConfigFilename;
@@ -24,7 +25,8 @@ namespace Stratis.Bitcoin.Networks
             this.DefaultPort = 8333;
             this.DefaultMaxOutboundConnections = 8;
             this.DefaultMaxInboundConnections = 117;
-            this.RPCPort = 8332;
+            this.DefaultRPCPort = 8332;
+            this.DefaultAPIPort = 37220;
             this.MaxTimeOffsetSeconds = BitcoinMaxTimeOffsetSeconds;
             this.MaxTipAge = BitcoinDefaultMaxTipAgeInSeconds;
             this.MinTxFee = 1000;
@@ -74,7 +76,7 @@ namespace Stratis.Bitcoin.Networks
                 ruleChangeActivationThreshold: 1916, // 95% of 2016,
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
                 maxReorgLength: 0,
-                defaultAssumeValid: new uint256("0x000000000000000000174f783cc20c1415f90c4d17c9a5bcd06ba67207c9bc80"), // 518180
+                defaultAssumeValid: new uint256("0x0000000000000000000f1c54590ee18d15ec70e68c8cd4cfbadb1b4f11697eee"), // 563378
                 maxMoney: 21000000 * Money.COIN,
                 coinbaseMaturity: 100,
                 premineHeight: 0,

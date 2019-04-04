@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         [Fact]
         public void CanGetGetBestBlockHashFromRPC()
         {
-            uint256 expected = this.rpcTestFixture.Node.FullNode.Chain.Tip.Header.GetHash();
+            uint256 expected = this.rpcTestFixture.Node.FullNode.ChainIndexer.Tip.Header.GetHash();
 
             uint256 response = this.rpcTestFixture.RpcClient.GetBestBlockHash();
 
@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         public void CanGetBlockHeaderFromRPC()
         {
             uint256 hash = this.rpcTestFixture.RpcClient.GetBlockHash(0);
-            BlockHeader expectedHeader = this.rpcTestFixture.Node.FullNode.Chain?.GetBlock(hash)?.Header;
+            BlockHeader expectedHeader = this.rpcTestFixture.Node.FullNode.ChainIndexer?.GetHeader(hash)?.Header;
             BlockHeader actualHeader = this.rpcTestFixture.RpcClient.GetBlockHeader(0);
 
             // Assert block header fields match.
@@ -255,7 +255,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         }
 
         [Fact]
-        public async void TestRpcBatchAsync()
+        public async Task TestRpcBatchAsync()
         {
             var rpcBatch = this.rpcTestFixture.RpcClient.PrepareBatch();
             var rpc1 = rpcBatch.SendCommandAsync("getpeerinfo");
@@ -270,7 +270,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         }
 
         [Fact]
-        public async void TestRpcBatchWithUnknownMethodsReturnsArrayAsync()
+        public async Task TestRpcBatchWithUnknownMethodsReturnsArrayAsync()
         {
             var rpcBatch = this.rpcTestFixture.RpcClient.PrepareBatch();
             var unknownRpc = rpcBatch.SendCommandAsync("unknownmethod", "random");

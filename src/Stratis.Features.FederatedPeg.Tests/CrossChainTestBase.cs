@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
@@ -28,7 +29,7 @@ namespace Stratis.Features.FederatedPeg.Tests
     {
         protected const string walletPassword = "password";
         protected Network network;
-        protected ConcurrentChain chain;
+        protected ChainIndexer ChainIndexer;
         protected ILoggerFactory loggerFactory;
         protected ILogger logger;
         protected IDateTimeProvider dateTimeProvider;
@@ -39,7 +40,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         protected IFederationWalletManager federationWalletManager;
         protected IFederationGatewaySettings federationGatewaySettings;
         protected IFederationWalletSyncManager federationWalletSyncManager;
-        protected IFederationWalletTransactionHandler federationWalletTransactionHandler;
+        protected IFederationWalletTransactionHandler FederationWalletTransactionHandler;
         protected IWithdrawalTransactionBuilder withdrawalTransactionBuilder;
         protected DataFolder dataFolder;
         protected IWalletFeePolicy walletFeePolicy;
@@ -80,17 +81,16 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.withdrawalTransactionBuilder = Substitute.For<IWithdrawalTransactionBuilder>();
             this.federationWalletManager = Substitute.For<IFederationWalletManager>();
             this.federationWalletSyncManager = Substitute.For<IFederationWalletSyncManager>();
-            this.federationWalletTransactionHandler = Substitute.For<IFederationWalletTransactionHandler>();
+            this.FederationWalletTransactionHandler = Substitute.For<IFederationWalletTransactionHandler>();
             this.walletFeePolicy = Substitute.For<IWalletFeePolicy>();
             this.nodeLifetime = new NodeLifetime();
             this.connectionManager = Substitute.For<IConnectionManager>();
-            this.dBreezeSerializer = new DBreezeSerializer(this.network);
+            this.dBreezeSerializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
 
             this.wallet = null;
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
-            this.chain = new ConcurrentChain(this.network);
+            this.ChainIndexer = new ChainIndexer(this.network);
 
-            this.federationGatewaySettings.MinCoinMaturity.Returns(1);
             this.federationGatewaySettings.TransactionFee.Returns(new Money(0.01m, MoneyUnit.BTC));
 
             // Generate the keys used by the federation members for our tests.
@@ -108,7 +108,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.blockDict = new Dictionary<uint256, Block>();
             this.blockDict[this.network.GenesisHash] = this.network.GetGenesis();
 
-            this.blockRepository.GetBlocksAsync(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) => {
+            this.blockRepository.GetBlocks(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) => {
                 var hashes = x.ArgAt<List<uint256>>(0);
                 var blocks = new List<Block>();
                 for (int i = 0; i < hashes.Count; i++)
@@ -170,7 +170,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationWalletManager = new FederationWalletManager(
                 this.loggerFactory,
                 this.network,
-                this.chain,
+                this.ChainIndexer,
                 dataFolder,
                 this.walletFeePolicy,
                 this.asyncLoopFactory,
@@ -184,15 +184,15 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.wallet = this.federationWalletManager.GetWallet();
 
             // TODO: The transaction builder, cross-chain store and fed wallet tx handler should be tested individually.
-            this.federationWalletTransactionHandler = new FederationWalletTransactionHandler(this.loggerFactory, this.federationWalletManager, this.walletFeePolicy, this.network);
-            this.withdrawalTransactionBuilder = new WithdrawalTransactionBuilder(this.loggerFactory, this.network, this.federationWalletManager, this.federationWalletTransactionHandler, this.federationGatewaySettings);
+            this.FederationWalletTransactionHandler = new FederationWalletTransactionHandler(this.loggerFactory, this.federationWalletManager, this.walletFeePolicy, this.network);
+            this.withdrawalTransactionBuilder = new WithdrawalTransactionBuilder(this.loggerFactory, this.network, this.federationWalletManager, this.FederationWalletTransactionHandler, this.federationGatewaySettings);
 
             var storeSettings = (StoreSettings)FormatterServices.GetUninitializedObject(typeof(StoreSettings));
 
-            this.federationWalletSyncManager = new FederationWalletSyncManager(this.loggerFactory, this.federationWalletManager, this.chain, this.network,
+            this.federationWalletSyncManager = new FederationWalletSyncManager(this.loggerFactory, this.federationWalletManager, this.ChainIndexer, this.network,
                 this.blockRepository, storeSettings, Substitute.For<INodeLifetime>());
 
-            this.federationWalletSyncManager.Start();
+            this.federationWalletSyncManager.Initialize();
 
             // Set up the encrypted seed on the wallet.
             string encryptedSeed = this.extendedKey.PrivateKey.GetEncryptedBitcoinSecret(walletPassword, this.network).ToWif();
@@ -208,7 +208,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
         protected ICrossChainTransferStore CreateStore()
         {
-            return new CrossChainTransferStore(this.network, this.dataFolder, this.chain, this.federationGatewaySettings, this.dateTimeProvider,
+            return new CrossChainTransferStore(this.network, this.dataFolder, this.ChainIndexer, this.federationGatewaySettings, this.dateTimeProvider,
                 this.loggerFactory, this.withdrawalExtractor, this.fullNode, this.blockRepository, this.federationWalletManager, this.withdrawalTransactionBuilder, this.dBreezeSerializer);
         }
 
@@ -243,8 +243,9 @@ namespace Stratis.Features.FederatedPeg.Tests
             }
 
             block.UpdateMerkleRoot();
-            block.Header.HashPrevBlock = this.chain.Tip.HashBlock;
+            block.Header.HashPrevBlock = this.ChainIndexer.Tip.HashBlock;
             block.Header.Nonce = RandomUtils.GetUInt32();
+            block.ToBytes(); // Funnily enough, the only way to set .BlockSize. Forgive me for my sins.
 
             return AppendBlock(block);
         }
@@ -256,7 +257,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <returns>The last chained header.</returns>
         protected ChainedHeader AppendBlock(Block block)
         {
-            if (!this.chain.TrySetTip(block.Header, out ChainedHeader last))
+            if (!this.ChainIndexer.TrySetTip(block.Header, out ChainedHeader last))
                 throw new InvalidOperationException("Previous not existing");
 
             this.blockDict[block.GetHash()] = block;
