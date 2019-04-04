@@ -71,60 +71,64 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         public void Initialize()
         {
-            if (this.storeSettings.TxIndex)
+            if (!this.storeSettings.TxIndex || !this.storeSettings.IndexAddresses)
             {
-                string dbPath = Path.Combine(this.dataFolder.RootPath, "addressindex.litedb");
-                this.db = new LiteDatabase(new ConnectionString() {Filename = dbPath});
-
-                this.logger.LogDebug("TxIndexing is enabled.");
-
-                this.dataStore = this.db.GetCollection<AddressIndexerData>(DbKey);
-
-                this.addressesIndex = this.dataStore.FindAll().FirstOrDefault();
-
-                if (this.addressesIndex == null)
-                {
-                    this.logger.LogDebug("Tip was not found, initializing with genesis.");
-
-                    this.addressesIndex = new AddressIndexerData()
-                    {
-                        TipHash = this.network.GenesisHash.ToString(),
-                        AddressIndexDatas = new List<AddressIndexData>()
-                    };
-                    this.dataStore.Insert(this.addressesIndex);
-                }
-
-                this.blockReceivedQueue = new AsyncQueue<KeyValuePair<bool, ChainedHeaderBlock>>(this.OnEnqueueAsync);
-
-                // Subscribe to events.
-                this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(blockConnectedData =>
-                {
-                    while (this.blockReceivedQueue.Count > 100)
-                    {
-                        this.logger.LogWarning("Address indexing is slowing down the consensus.");
-                        Thread.Sleep(5000);
-                    }
-
-                    this.blockReceivedQueue.Enqueue(new KeyValuePair<bool, ChainedHeaderBlock>(true, blockConnectedData.ConnectedBlock));
-                });
-
-                this.blockDisconnectedSubscription = this.signals.Subscribe<BlockDisconnected>(blockDisconnectedData =>
-                {
-                    this.blockReceivedQueue.Enqueue(new KeyValuePair<bool, ChainedHeaderBlock>(false, blockDisconnectedData.DisconnectedBlock));
-                });
-
-                this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 400);
-
-                if ((this.consensusManager.Tip.HashBlock.ToString() != this.addressesIndex.TipHash))
-                {
-                    const string message = "TransactionIndexer is in inconsistent state. This can happen if you've enabled txindex on an already synced or partially synced node. " +
-                                           "Remove everything from the data folder and run the node with -txindex=true.";
-
-                    this.logger.LogCritical(message);
-                    this.logger.LogTrace("(-)[INCONSISTENT_STATE]");
-                    throw new Exception(message);
-                }
+                this.logger.LogTrace("(-)[DISABLED]");
+                return;
             }
+
+            string dbPath = Path.Combine(this.dataFolder.RootPath, "addressindex.litedb");
+            this.db = new LiteDatabase(new ConnectionString() {Filename = dbPath});
+
+            this.logger.LogDebug("TxIndexing is enabled.");
+
+            this.dataStore = this.db.GetCollection<AddressIndexerData>(DbKey);
+
+            this.addressesIndex = this.dataStore.FindAll().FirstOrDefault();
+
+            if (this.addressesIndex == null)
+            {
+                this.logger.LogDebug("Tip was not found, initializing with genesis.");
+
+                this.addressesIndex = new AddressIndexerData()
+                {
+                    TipHash = this.network.GenesisHash.ToString(),
+                    AddressIndexDatas = new List<AddressIndexData>()
+                };
+                this.dataStore.Insert(this.addressesIndex);
+            }
+
+            this.blockReceivedQueue = new AsyncQueue<KeyValuePair<bool, ChainedHeaderBlock>>(this.OnEnqueueAsync);
+
+            // Subscribe to events.
+            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(blockConnectedData =>
+            {
+                while (this.blockReceivedQueue.Count > 100)
+                {
+                    this.logger.LogWarning("Address indexing is slowing down the consensus.");
+                    Thread.Sleep(5000);
+                }
+
+                this.blockReceivedQueue.Enqueue(new KeyValuePair<bool, ChainedHeaderBlock>(true, blockConnectedData.ConnectedBlock));
+            });
+
+            this.blockDisconnectedSubscription = this.signals.Subscribe<BlockDisconnected>(blockDisconnectedData =>
+            {
+                this.blockReceivedQueue.Enqueue(new KeyValuePair<bool, ChainedHeaderBlock>(false, blockDisconnectedData.DisconnectedBlock));
+            });
+
+            this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 400);
+
+            if ((this.consensusManager.Tip.HashBlock.ToString() != this.addressesIndex.TipHash))
+            {
+                const string message = "TransactionIndexer is in inconsistent state. This can happen if you've enabled txindex on an already synced or partially synced node. " +
+                                       "Remove everything from the data folder and run the node with -txindex=true.";
+
+                this.logger.LogCritical(message);
+                this.logger.LogTrace("(-)[INCONSISTENT_STATE]");
+                throw new Exception(message);
+            }
+
         }
 
         private Task OnEnqueueAsync(KeyValuePair<bool, ChainedHeaderBlock> item, CancellationToken cancellationtoken)
@@ -271,7 +275,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <inheritdoc/>
         public void Dispose()
         {
-            if (this.storeSettings.TxIndex)
+            if (this.storeSettings.TxIndex && this.storeSettings.IndexAddresses)
             {
                 this.signals.Unsubscribe(this.blockConnectedSubscription);
                 this.signals.Unsubscribe(this.blockDisconnectedSubscription);
