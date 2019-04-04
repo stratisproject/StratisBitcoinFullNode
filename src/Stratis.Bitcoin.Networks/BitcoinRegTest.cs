@@ -14,11 +14,13 @@ namespace Stratis.Bitcoin.Networks
         {
             this.Name = "RegTest";
             this.AdditionalNames = new List<string> { "reg" };
+            this.NetworkType = NetworkType.Regtest;
             this.Magic = 0xDAB5BFFA;
             this.DefaultPort = 18444;
             this.DefaultMaxOutboundConnections = 8;
             this.DefaultMaxInboundConnections = 117;
-            this.RPCPort = 18332;
+            this.DefaultRPCPort = 18332;
+            this.DefaultAPIPort = 38220;
             this.CoinTicker = "TBTC";
 
             // Create the genesis block.

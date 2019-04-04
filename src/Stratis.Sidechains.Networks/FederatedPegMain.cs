@@ -24,12 +24,14 @@ namespace Stratis.Sidechains.Networks
         internal FederatedPegMain()
         {
             this.Name = "CirrusMain";
+            this.NetworkType = NetworkType.Mainnet;
             this.CoinTicker = "CRS";
             this.Magic = 0x522357A0;
             this.DefaultPort = 16179;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
-            this.RPCPort = 16175;
+            this.DefaultRPCPort = 16175;
+            this.DefaultAPIPort = 37221; // TODO: Confirm
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
