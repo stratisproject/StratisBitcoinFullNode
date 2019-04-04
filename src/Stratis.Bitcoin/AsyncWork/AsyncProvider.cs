@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Base.AsyncWork
+namespace Stratis.Bitcoin.AsyncWork
 {
     /// <summary>
     /// Provides functionality for creating and tracking asynchronous operations that happens in background.

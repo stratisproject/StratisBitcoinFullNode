@@ -1,11 +1,6 @@
-﻿using System;
-using System.Runtime.CompilerServices;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
-using DBreeze;
-using NBitcoin;
-using Stratis.Bitcoin.Base.AsyncWork;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Benchmark

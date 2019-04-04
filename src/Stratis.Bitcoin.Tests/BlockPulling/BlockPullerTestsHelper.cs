@@ -10,7 +10,7 @@ using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Base.AsyncWork;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;

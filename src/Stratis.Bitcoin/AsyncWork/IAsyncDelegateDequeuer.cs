@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Stratis.Bitcoin.Base.AsyncWork
+namespace Stratis.Bitcoin.AsyncWork
 {
     public interface IAsyncDelegateDequeuer : IDisposable { }
 

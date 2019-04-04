@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Stratis.Bitcoin.Base.AsyncWork;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P.Protocol
