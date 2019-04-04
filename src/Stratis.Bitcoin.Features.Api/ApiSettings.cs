@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Api
         public Timer KeepaliveTimer { get; private set; }
 
         // TODO: Refactor static PrintHelp method.
-        private static ApiSettings settingsHelp;
+        private static Action<ApiSettings> savedNodeDefaults;
 
         /// <summary>
         /// The HTTPS certificate file path.
@@ -47,8 +47,8 @@ namespace Stratis.Bitcoin.Features.Api
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
         /// <param name="nodeSettings">The node configuration.</param>
-        /// <param name="defaultArgs">Allows overriding the default values before config and command line are applied.</param>
-        public ApiSettings(NodeSettings nodeSettings, Action<ApiSettings> defaultArgs = null)
+        /// <param name="nodeDefaults">Allows overriding the default values before config and command line are applied.</param>
+        public ApiSettings(NodeSettings nodeSettings, Action<ApiSettings> nodeDefaults = null)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
@@ -62,11 +62,11 @@ namespace Stratis.Bitcoin.Features.Api
             this.KeepaliveTimer = null;
 
             // DefaultArgs.
-            defaultArgs?.Invoke(this);
+            nodeDefaults?.Invoke(this);
 
             // For printing help.
             // TODO: Refactor.
-            settingsHelp = (ApiSettings)this.MemberwiseClone();
+            savedNodeDefaults = nodeDefaults;
 
             // Config and Command Line.
             TextFileConfiguration config = nodeSettings.ConfigReader;
@@ -135,12 +135,15 @@ namespace Stratis.Bitcoin.Features.Api
         public static void PrintHelp(Network network)
         {
             var builder = new StringBuilder();
+            var defaults = new ApiSettings(NodeSettings.Default(network), savedNodeDefaults);
+            var keepAlive = (defaults.KeepaliveTimer?.Interval ?? 0) / 1000;
 
-            builder.AppendLine($"-apiuri=<string>                  URI to node's API interface. Defaults to '{ settingsHelp.ApiUri }'.");
-            builder.AppendLine($"-apiport=<0-65535>                Port of node's API interface. Defaults to { settingsHelp.ApiPort }.");
-            builder.AppendLine($"-keepalive=<seconds>              Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
-            builder.AppendLine($"-usehttps=<bool>                  Use https protocol on the API. Defaults to false.");
-            builder.AppendLine($"-certificatefilepath=<string>     Path to the certificate used for https traffic encryption. Defaults to <null>. Password protected files are not supported. On MacOs, only p12 certificates can be used without password.");
+            builder.AppendLine($"-apiuri=<string>                  URI to node's API interface. Defaults to '{ defaults.ApiUri }'.");
+            builder.AppendLine($"-apiport=<0-65535>                Port of node's API interface. Defaults to { defaults.ApiPort }.");
+            builder.AppendLine($"-keepalive=<seconds>              Keep Alive interval (set in seconds). Default: { keepAlive } (0 means no keep alive).");
+            builder.AppendLine($"-usehttps=<bool>                  Use https protocol on the API. Defaults to { defaults.UseHttps }.");
+            builder.AppendLine($"-certificatefilepath=<string>     Path to the certificate used for https traffic encryption. Defaults to { (defaults.HttpsCertificateFilePath ?? "<null>") }.");
+            builder.AppendLine($"                                  Password protected files are not supported. On MacOs, only p12 certificates can be used without password.");
 
             NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
         }
@@ -152,18 +155,22 @@ namespace Stratis.Bitcoin.Features.Api
         /// <param name="network">The network to base the defaults off.</param>
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
+            var defaults = new ApiSettings(NodeSettings.Default(network), savedNodeDefaults);
+            var keepAlive = (defaults.KeepaliveTimer?.Interval ?? 0) / 1000;
+
             builder.AppendLine("####API Settings####");
-            builder.AppendLine($"#URI to node's API interface. Defaults to '{ settingsHelp.ApiUri }'.");
-            builder.AppendLine($"#apiuri={ settingsHelp.ApiUri }");
-            builder.AppendLine($"#Port of node's API interface. Defaults to { settingsHelp.ApiPort }.");
-            builder.AppendLine($"#apiport={ settingsHelp.ApiPort }");
-            builder.AppendLine($"#Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
-            builder.AppendLine($"#keepalive=0");
-            builder.AppendLine($"#Use HTTPS protocol on the API. Default is false.");
-            builder.AppendLine($"#usehttps=false");
+            builder.AppendLine($"#URI to node's API interface. Defaults to '{ defaults.ApiUri }'.");
+            builder.AppendLine($"#apiuri={ defaults.ApiUri }");
+            builder.AppendLine($"#Port of node's API interface. Defaults to { defaults.ApiPort }.");
+            builder.AppendLine($"#apiport={ defaults.ApiPort }");
+            builder.AppendLine($"#Keep Alive interval (set in seconds). Default: { keepAlive } (0 means no keep alive).");
+            builder.AppendLine($"#keepalive= { keepAlive }");
+            builder.AppendLine($"#Use HTTPS protocol on the API. Default is { defaults.UseHttps }.");
+            builder.AppendLine($"#usehttps={ defaults.UseHttps }");
             builder.AppendLine($"#Path to the file containing the certificate to use for https traffic encryption. Password protected files are not supported. On MacOs, only p12 certificates can be used without password.");
             builder.AppendLine(@"#Please refer to .Net Core documentation for usage: 'https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.x509certificates.x509certificate2.-ctor?view=netcore-2.1#System_Security_Cryptography_X509Certificates_X509Certificate2__ctor_System_Byte___'.");
-            builder.AppendLine($"#certificatefilepath=");
+            builder.AppendLine($"#Default is { (defaults.HttpsCertificateFilePath ?? "<null>") }.");
+            builder.AppendLine($"#certificatefilepath={ defaults.HttpsCertificateFilePath }");
         }
     }
 }
