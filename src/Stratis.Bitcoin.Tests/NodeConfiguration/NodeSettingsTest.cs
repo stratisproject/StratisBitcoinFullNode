@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
 
             Assert.Equal(apiport, apiSettings.ApiPort);
             Assert.Equal(nodeSettings.Network.DefaultRPCPort, rpcSettings.RPCPort);
-            Assert.Equal(nodeSettings.Network.DefaultPort, configurationManagerSettings.Port); 
+            Assert.Equal(nodeSettings.Network.DefaultPort, configurationManagerSettings.Port);
         }
 
         /// <summary>
