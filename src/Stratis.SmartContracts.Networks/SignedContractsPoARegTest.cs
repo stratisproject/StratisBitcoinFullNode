@@ -12,6 +12,7 @@ namespace Stratis.SmartContracts.Networks
         public SignedContractsPoARegTest()
         {
             this.Name = "SignedContractsPoARegTest";
+            this.NetworkType = NetworkType.Regtest;
             this.SigningContractPrivKey = new Mnemonic("lava frown leave wedding virtual ghost sibling able mammal liar wide wisdom").DeriveExtKey().PrivateKey;
             this.SigningContractPubKey = this.SigningContractPrivKey.PubKey;
         }

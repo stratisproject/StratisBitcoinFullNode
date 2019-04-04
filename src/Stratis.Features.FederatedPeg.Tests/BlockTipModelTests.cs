@@ -19,7 +19,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             return blockTip;
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void ShouldSerialiseAsJson()
         {
             IBlockTip blockTip = PrepareBlockTip();

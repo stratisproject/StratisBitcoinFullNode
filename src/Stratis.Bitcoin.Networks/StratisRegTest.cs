@@ -20,11 +20,13 @@ namespace Stratis.Bitcoin.Networks
             uint magic = BitConverter.ToUInt32(messageStart, 0); // 0xefc0f2cd
 
             this.Name = "StratisRegTest";
+            this.NetworkType = NetworkType.Regtest;
             this.Magic = magic;
             this.DefaultPort = 18444;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
-            this.RPCPort = 18442;
+            this.DefaultRPCPort = 18442;
+            this.DefaultAPIPort = 38221;
             this.CoinTicker = "TSTRAT";
 
             var powLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
