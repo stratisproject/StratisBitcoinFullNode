@@ -24,7 +24,6 @@ namespace Stratis.BreezeD
                 bool isStratis = args.Contains("stratis");
 
                 NodeSettings nodeSettings;
-                ApiSettings apiSettings;
 
                 IFullNodeBuilder fullNodeBuilder = null;
 

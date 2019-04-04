@@ -531,31 +531,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         }
 
         /// <summary>
-        /// Determines the default API port.
-        /// </summary>
-        /// <param name="network">The network to use.</param>
-        /// <returns>The default API port.</returns>
-        public static int GetDefaultPort(Network network)
-        {
-            /// <summary>The default port used by the API when the node runs on the bitcoin network.</summary>
-            const int DefaultBitcoinApiPort = 37220;
-
-            /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
-            const int DefaultStratisApiPort = 37221;
-
-            /// <summary>The default port used by the API when the node runs on the bitcoin testnet network.</summary>
-            const int TestBitcoinApiPort = 38220;
-
-            /// <summary>The default port used by the API when the node runs on the Stratis testnet network.</summary>
-            const int TestStratisApiPort = 38221;
-
-            if (!network.Name.ToLowerInvariant().Contains("stratis"))
-                return network.IsTest() ? TestBitcoinApiPort : DefaultBitcoinApiPort;
-
-            return network.IsTest() ? TestStratisApiPort : DefaultStratisApiPort;
-        }
-
-        /// <summary>
         /// A helper that constructs valid and various types of invalid blocks manually.
         /// </summary>
         public static BlockBuilder BuildBlocks { get { return new BlockBuilder(); } }
