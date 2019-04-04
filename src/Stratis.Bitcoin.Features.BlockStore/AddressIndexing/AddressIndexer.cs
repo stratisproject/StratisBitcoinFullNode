@@ -271,14 +271,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <inheritdoc/>
         public void Dispose()
         {
-            this.signals.Unsubscribe(this.blockConnectedSubscription);
-            this.signals.Unsubscribe(this.blockDisconnectedSubscription);
+            if (this.nodeSettings.TxIndex)
+            {
+                this.signals.Unsubscribe(this.blockConnectedSubscription);
+                this.signals.Unsubscribe(this.blockDisconnectedSubscription);
 
-            this.blockReceivedQueue.Dispose();
+                this.blockReceivedQueue.Dispose();
 
-            this.dataStore.Update(this.addressesIndex);
+                this.dataStore.Update(this.addressesIndex);
 
-            this.db?.Dispose();
+                this.db.Dispose();
+            }
         }
     }
 
