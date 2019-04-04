@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
+using Stratis.Bitcoin.Networks;
 using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
 using Xunit;
@@ -15,6 +16,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
         private readonly Network network;
 
+        private readonly Network counterChainNetwork;
+
         private readonly OpReturnDataReader opReturnDataReader;
 
         private readonly AddressHelper addressHelper;
@@ -25,10 +28,11 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.network = FederatedPegNetwork.NetworksSelector.Regtest();
-            this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.network);
+            this.counterChainNetwork = Networks.Stratis.Regtest();
+            this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, new FederatedPegOptions(this.counterChainNetwork));
 
             this.transactionBuilder = new TestTransactionBuilder();
-            this.addressHelper = new AddressHelper(this.network);
+            this.addressHelper = new AddressHelper(this.network, this.counterChainNetwork);
         }
 
         [Fact]

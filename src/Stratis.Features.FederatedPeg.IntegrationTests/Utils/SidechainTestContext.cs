@@ -73,15 +73,15 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             this.nodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this);
 
             this.MainUser = this.nodeBuilder.CreateStratisPosNode(this.MainChainNetwork, nameof(this.MainUser)).WithWallet();
-            this.FedMain1 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork).WithWallet();
-            this.FedMain2 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork);
-            this.FedMain3 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork);
+            this.FedMain1 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork, this.SideChainNetwork).WithWallet();
+            this.FedMain2 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork, this.SideChainNetwork);
+            this.FedMain3 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork, this.SideChainNetwork);
 
             this.SideUser = this.nodeBuilder.CreateSidechainNode(this.SideChainNetwork).WithWallet();
 
-            this.FedSide1 = this.nodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.SideChainNetwork.FederationKeys[0]);
-            this.FedSide2 = this.nodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.SideChainNetwork.FederationKeys[1]);
-            this.FedSide3 = this.nodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.SideChainNetwork.FederationKeys[2]);
+            this.FedSide1 = this.nodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.MainChainNetwork, this.SideChainNetwork.FederationKeys[0]);
+            this.FedSide2 = this.nodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.MainChainNetwork, this.SideChainNetwork.FederationKeys[1]);
+            this.FedSide3 = this.nodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.MainChainNetwork, this.SideChainNetwork.FederationKeys[2]);
 
             this.SideChainNodes = new List<CoreNode>()
             {
