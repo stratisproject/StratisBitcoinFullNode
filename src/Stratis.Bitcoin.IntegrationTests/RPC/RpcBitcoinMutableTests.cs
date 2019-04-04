@@ -15,7 +15,7 @@ using Xunit;
 namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
     /// <summary>
-    /// These tests are for RPC tests that require modifying the chain/nodes. 
+    /// These tests are for RPC tests that require modifying the chain/nodes.
     /// Setup of the chain or nodes can be done in each test.
     /// </summary>
     public class RpcBitcoinMutableTests
@@ -382,7 +382,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 Assert.Throws<FileNotFoundException>(() => new RPCClient($"cookiefile={notFoundCookiePath}", new Uri("http://localhost/"), this.regTest));
 
                 rpcClient = new RPCClient("bla:bla", null as Uri, this.regTest);
-                Assert.Equal("http://127.0.0.1:" + this.regTest.RPCPort + "/", rpcClient.Address.AbsoluteUri);
+                Assert.Equal("http://127.0.0.1:" + this.regTest.DefaultRPCPort + "/", rpcClient.Address.AbsoluteUri);
 
                 rpcClient = node.CreateRPCClient();
                 rpcClient = rpcClient.PrepareBatch();

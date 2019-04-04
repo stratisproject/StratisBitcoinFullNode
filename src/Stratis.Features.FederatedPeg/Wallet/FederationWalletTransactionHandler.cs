@@ -14,7 +14,7 @@ using Stratis.Features.FederatedPeg.Interfaces;
 
 namespace Stratis.Features.FederatedPeg.Wallet
 {
-    public interface IFederationWalletTransactionBuilder
+    public interface IFederationWalletTransactionHandler
     {
         /// <summary>
         /// Builds a new transaction based on information from the <see cref="TransactionBuildContext"/>.
@@ -33,7 +33,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
     /// TODO: Implement lockUnspents
     /// TODO: Implement subtractFeeFromOutputs
     /// </remarks>
-    public class FederationWalletTransactionBuilder : IFederationWalletTransactionBuilder
+    public class FederationWalletTransactionHandler : IFederationWalletTransactionHandler
     {
         public const string NoSpendableTransactionsMessage = "No spendable transactions found.";
 
@@ -54,7 +54,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         private readonly MemoryCache privateKeyCache;
 
-        public FederationWalletTransactionBuilder(
+        public FederationWalletTransactionHandler(
             ILoggerFactory loggerFactory,
             IFederationWalletManager walletManager,
             IWalletFeePolicy walletFeePolicy,
@@ -111,11 +111,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             var transactionBuilder = new TransactionBuilder(this.network);
 
-            // We only want to send the minimum number of UTXOs at once.
-            transactionBuilder.CoinSelector = new DefaultCoinSelector
-            {
-                GroupByScriptPubKey = false
-            };
+            transactionBuilder.CoinSelector = new DeterministicCoinSelector();
 
             this.AddRecipients(transactionBuilder, context);
             this.AddOpReturnOutput(transactionBuilder, context);
@@ -270,8 +266,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
             int index = 0;
             var coins = new List<Coin>();
 
-            foreach (UnspentOutputReference item in context.OrderCoinsDeterministic ?
-                this.GetOrderedUnspentOutputs(context) : context.UnspentOutputs.OrderByDescending(a => a.Transaction.Amount))
+            // Note that the coins are ordered and selected by the CoinSelector later on.
+            // TODO: Move GetOrderedUnspentOutputs to happen inside the DeterministicCoinSelector.
+            IEnumerable<UnspentOutputReference> orderedUnspentOutputs = this.GetOrderedUnspentOutputs(context);
+
+            foreach (UnspentOutputReference item in orderedUnspentOutputs)
             {
                 coins.Add(ScriptCoin.Create(this.network, item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, this.walletManager.GetWallet().MultiSigAddress.RedeemScript));
                 sum += item.Transaction.Amount;
@@ -441,11 +440,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public bool AllowOtherInputs { get; set; }
 
         /// <summary>
-        /// If <c>true</c> coins will be ordered using (block height + transaction id + output index) ordering.
-        /// </summary>
-        public bool OrderCoinsDeterministic { get; set; }
-
-        /// <summary>
         /// Specify whether to sign the transaction.
         /// </summary>
         public bool Sign { get; set; }
@@ -482,7 +476,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
     }
 
     /// <summary>
-    /// Represents recipients of a payment, used in <see cref="FederationWalletTransactionBuilder.BuildTransaction"/>
+    /// Represents recipients of a payment, used in <see cref="FederationWalletTransactionHandler.BuildTransaction"/>
     /// </summary>
     public class Recipient
     {
