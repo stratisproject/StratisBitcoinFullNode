@@ -22,12 +22,6 @@ namespace Stratis.StratisDnsD
     /// </summary>
     public class Program
     {
-        /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
-        private const int DefaultStratisApiPort = 37221;
-
-        /// <summary>The default port used by the API when the node runs on the Stratis testnet network.</summary>
-        private const int TestStratisApiPort = 38221;
-
         /// <summary>
         /// The async entry point for the Stratis Dns process.
         /// </summary>
@@ -47,10 +41,6 @@ namespace Stratis.StratisDnsD
                 if (string.IsNullOrWhiteSpace(dnsSettings.DnsHostName) || string.IsNullOrWhiteSpace(dnsSettings.DnsNameServer) || string.IsNullOrWhiteSpace(dnsSettings.DnsMailBox))
                     throw new ConfigurationException("When running as a DNS Seed service, the -dnshostname, -dnsnameserver and -dnsmailbox arguments must be specified on the command line.");
 
-                var apiSettings = new ApiSettings(nodeSettings, (s) => {
-                    s.ApiPort = nodeSettings.Network.IsTest() ? TestStratisApiPort : DefaultStratisApiPort;
-                });
-
                 // Run as a full node with DNS or just a DNS service?
                 IFullNode node;
                 if (dnsSettings.DnsFullNode)
@@ -63,7 +53,7 @@ namespace Stratis.StratisDnsD
                         .UseMempool()
                         .UseWallet()
                         .AddPowPosMining()
-                        .UseApi(apiSettings)
+                        .UseApi()
                         .AddRPC()
                         .UseDns()
                         .Build();
@@ -74,7 +64,7 @@ namespace Stratis.StratisDnsD
                     node = new FullNodeBuilder()
                         .UseNodeSettings(nodeSettings)
                         .UsePosConsensus()
-                        .UseApi(apiSettings)
+                        .UseApi()
                         .AddRPC()
                         .UseDns()
                         .Build();

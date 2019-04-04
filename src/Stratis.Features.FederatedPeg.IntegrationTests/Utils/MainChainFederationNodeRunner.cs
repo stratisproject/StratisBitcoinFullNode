@@ -37,7 +37,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                 .AddFederationGateway()
                 .UseTransactionNotification()
                 .UseBlockNotification()
-                .UseApi((s) => { s.ApiPort = TestHelper.GetDefaultPort(settings.Network); })
+                .UseApi()
                 .UseMempool()
                 .AddRPC()
                 .UsePosConsensus()

@@ -295,7 +295,7 @@ namespace Stratis.Bitcoin.Api.Tests
         {
             return new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
-                .UseApi((s) => { s.ApiPort = GetDefaultPort(nodeSettings.Network); })
+                .UseApi()
                 .UsePowConsensus()
                 .Build()
                 .NodeService<ApiSettings>();

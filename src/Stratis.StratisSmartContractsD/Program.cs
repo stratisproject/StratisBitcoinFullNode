@@ -18,12 +18,6 @@ namespace Stratis.StratisSmartContractsD
 {
     class Program
     {
-        /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
-        private const int DefaultStratisApiPort = 37221;
-
-        /// <summary>The default port used by the API when the node runs on the Stratis testnet network.</summary>
-        private const int TestStratisApiPort = 38221;
-
         public static void Main(string[] args)
         {
             MainAsync(args).Wait();
@@ -34,9 +28,6 @@ namespace Stratis.StratisSmartContractsD
             try
             {
                 var nodeSettings = new NodeSettings(new SmartContractsPoATest(), ProtocolVersion.ALT_PROTOCOL_VERSION, "StratisSC", args: args);
-                var apiSettings = new ApiSettings(nodeSettings, (s) => {
-                    s.ApiPort = nodeSettings.Network.IsTest() ? TestStratisApiPort : DefaultStratisApiPort;
-                });
 
                 Bitcoin.IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
@@ -49,7 +40,7 @@ namespace Stratis.StratisSmartContractsD
                     .UseSmartContractPoAConsensus()
                     .UseSmartContractPoAMining()
                     .UseSmartContractWallet()
-                    .UseApi(apiSettings)
+                    .UseApi()
                     .UseMempool()
                     .Build();
 

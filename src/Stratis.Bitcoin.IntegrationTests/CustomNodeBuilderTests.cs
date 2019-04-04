@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .AddMining()
                         .UseWallet()
                         .AddRPC()
-                        .UseApi((s) => { s.ApiPort = TestHelper.GetDefaultPort(builder.Network); })
+                        .UseApi()
                         .MockIBD());
 
                 var coreNode = nodeBuilder.CreateCustomNode(buildAction, this.network,
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .AddMining()
                         .UseWallet()
                         .AddRPC()
-                        .UseApi((s) => { s.ApiPort = TestHelper.GetDefaultPort(builder.Network); })
+                        .UseApi()
                         .MockIBD());
 
                 var coreNode = nodeBuilder.CreateCustomNode(buildAction, this.network,
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .AddMining()
                         .UseWallet()
                         .AddRPC()
-                        .UseApi((s) => { s.ApiPort = TestHelper.GetDefaultPort(builder.Network); })
+                        .UseApi()
                         .MockIBD());
 
                 var coreNode = nodeBuilder.CreateCustomNode(buildAction, this.network,
@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .AddMining()
                         .UseWallet()
                         .AddRPC()
-                        .UseApi((s) => { s.ApiPort = TestHelper.GetDefaultPort(builder.Network); })
+                        .UseApi()
                         .MockIBD());
 
                 var coreNode = nodeBuilder.CreateCustomNode(buildAction, this.network, ProtocolVersion.PROTOCOL_VERSION, configParameters: extraParams);

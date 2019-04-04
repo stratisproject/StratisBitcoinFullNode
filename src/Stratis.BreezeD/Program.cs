@@ -17,18 +17,6 @@ namespace Stratis.BreezeD
 {
     public class Program
     {
-        /// <summary>The default port used by the API when the node runs on the bitcoin network.</summary>
-        private const int DefaultBitcoinApiPort = 37220;
-
-        /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
-        private const int DefaultStratisApiPort = 37221;
-
-        /// <summary>The default port used by the API when the node runs on the bitcoin testnet network.</summary>
-        private const int TestBitcoinApiPort = 38220;
-
-        /// <summary>The default port used by the API when the node runs on the Stratis testnet network.</summary>
-        private const int TestStratisApiPort = 38221;
-
         public static async Task Main(string[] args)
         {
             try
@@ -50,14 +38,9 @@ namespace Stratis.BreezeD
                         MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
                     };
 
-                    apiSettings = new ApiSettings(nodeSettings, (s) =>
-                    {
-                        s.ApiPort = nodeSettings.Network.IsTest() ? TestStratisApiPort : DefaultStratisApiPort;
-                    });
-
                     fullNodeBuilder = new FullNodeBuilder()
                                     .UseNodeSettings(nodeSettings)
-                                    .UseApi(apiSettings)
+                                    .UseApi()
                                     .UseBlockStore()
                                     .UsePosConsensus()
                                     .UseLightWallet()
@@ -67,14 +50,10 @@ namespace Stratis.BreezeD
                 else
                 {
                     nodeSettings = new NodeSettings(networksSelector: Networks.Bitcoin, agent: "Breeze", args: args);
-                    apiSettings = new ApiSettings(nodeSettings, (s) =>
-                    {
-                        s.ApiPort = nodeSettings.Network.IsTest() ? TestBitcoinApiPort : DefaultBitcoinApiPort;
-                    });
 
                     fullNodeBuilder = new FullNodeBuilder()
                                     .UseNodeSettings(nodeSettings)
-                                    .UseApi(apiSettings)
+                                    .UseApi()
                                     .UseBlockStore()
                                     .UsePowConsensus()
                                     .UseLightWallet()

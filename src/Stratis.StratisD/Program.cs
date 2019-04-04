@@ -19,12 +19,6 @@ namespace Stratis.StratisD
 {
     public class Program
     {
-        /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
-        public const int DefaultStratisApiPort = 37221;
-
-        /// <summary>The default port used by the API when the node runs on the Stratis testnet network.</summary>
-        public const int TestStratisApiPort = 38221;
-
         public static async Task Main(string[] args)
         {
             try
@@ -34,10 +28,6 @@ namespace Stratis.StratisD
                     MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
                 };
 
-                var apiSettings = new ApiSettings(nodeSettings, (s) => {
-                    s.ApiPort = nodeSettings.Network.IsTest() ? TestStratisApiPort : DefaultStratisApiPort;
-                });
-
                 IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()
@@ -45,7 +35,7 @@ namespace Stratis.StratisD
                     .UseMempool()
                     .UseColdStakingWallet()
                     .AddPowPosMining()
-                    .UseApi(apiSettings)
+                    .UseApi()
                     .UseApps()
                     .AddRPC()
                     .Build();

@@ -49,7 +49,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                 .UseMempool()
                 .UseTransactionNotification()
                 .UseBlockNotification()
-                .UseApi((s) => { s.ApiPort = settings.Network.DefaultAPIPort; })
+                .UseApi()
                 .AddRPC()
                 .MockIBD()
                 .ReplaceTimeProvider(this.timeProvider)

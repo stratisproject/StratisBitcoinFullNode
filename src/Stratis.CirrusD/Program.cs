@@ -59,7 +59,7 @@ namespace Stratis.CirrusD
                 .UseSmartContractPoAConsensus()
                 .UseSmartContractPoAMining()
                 .UseSmartContractWallet()
-                .UseApi(/* TODO: Select default port here or supplied exclusively by command-line? */)
+                .UseApi()
                 .AddRPC()
                 .Build();
 

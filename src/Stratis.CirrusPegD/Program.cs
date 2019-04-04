@@ -103,7 +103,7 @@ namespace Stratis.CirrusPegD
                 .AddFederationGateway()
                 .UseTransactionNotification()
                 .UseBlockNotification()
-                .UseApi(/* TODO: Select default port here or supplied exclusively by command-line? */)
+                .UseApi()
                 .UseMempool()
                 .AddRPC();
         }

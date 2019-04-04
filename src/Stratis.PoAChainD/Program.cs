@@ -39,7 +39,7 @@ namespace Stratis.PoAChainD
                     .UsePoAConsensus()
                     .UseMempool()
                     .UseWallet()
-                    .UseApi(/* TODO: Select default port here or supplied exclusively by command-line? */)
+                    .UseApi()
                     .UseApps()
                     .AddRPC()
                     .Build();

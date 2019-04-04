@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 .UsePosConsensus()
                 .UseMempool()
                 .AddRPC()
-                .UseApi((s) => { s.ApiPort = TestHelper.GetDefaultPort(builder.Network); })
+                .UseApi()
                 .UseTestChainedHeaderTree()
                 .MockIBD()
                 );
