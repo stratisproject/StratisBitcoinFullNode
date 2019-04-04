@@ -38,11 +38,13 @@ namespace Stratis.Bitcoin.Networks
             uint magic = BitConverter.ToUInt32(messageStart, 0); //0x5223570;
 
             this.Name = "StratisMain";
+            this.NetworkType = NetworkType.Mainnet;
             this.Magic = magic;
             this.DefaultPort = 16178;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
-            this.RPCPort = 16174;
+            this.DefaultRPCPort = 16174;
+            this.DefaultAPIPort = 37221;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
