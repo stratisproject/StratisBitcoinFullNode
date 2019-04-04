@@ -5,6 +5,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
+using Stratis.Bitcoin.Networks;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.SourceChain;
 using Stratis.Features.FederatedPeg.Tests.Utils;
@@ -25,6 +26,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
         private readonly Network network;
 
+        private readonly Network counterChainNetwork;
+
         private readonly MultisigAddressHelper addressHelper;
 
         private readonly TestTransactionBuilder transactionBuilder;
@@ -34,12 +37,13 @@ namespace Stratis.Features.FederatedPeg.Tests
         public DepositExtractorTests()
         {
             this.network = FederatedPegNetwork.NetworksSelector.Regtest();
+            this.counterChainNetwork = Networks.Stratis.Regtest();
 
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.settings = Substitute.For<IFederationGatewaySettings>();
             this.opReturnDataReader = Substitute.For<IOpReturnDataReader>();
 
-            this.addressHelper = new MultisigAddressHelper(this.network);
+            this.addressHelper = new MultisigAddressHelper(this.network, this.counterChainNetwork);
 
             this.settings.MultiSigRedeemScript.Returns(this.addressHelper.PayToMultiSig);
             this.settings.TransactionFee.Returns(FederationGatewaySettings.DefaultTransactionFee);
