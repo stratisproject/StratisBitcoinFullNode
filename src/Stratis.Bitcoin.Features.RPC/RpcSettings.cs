@@ -100,53 +100,49 @@ namespace Stratis.Bitcoin.Features.RPC
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             this.Server = config.GetOrDefault<bool>("server", this.Server, this.logger);
+            this.RPCPort = config.GetOrDefault<int>("rpcport", this.RPCPort, this.logger);
+            this.RpcUser = config.GetOrDefault<string>("rpcuser", this.RpcUser, this.logger);
+            this.RpcPassword = config.GetOrDefault<string>("rpcpassword", this.RpcPassword); // No logging!
 
-            if (this.Server)
+            try
             {
-                this.RPCPort = config.GetOrDefault<int>("rpcport", this.RPCPort, this.logger);
-                this.RpcUser = config.GetOrDefault<string>("rpcuser", this.RpcUser, this.logger);
-                this.RpcPassword = config.GetOrDefault<string>("rpcpassword", this.RpcPassword); // No logging!
+                List<IPAddressBlock> allowIp = config
+                    .GetAll("rpcallowip", this.logger)
+                    .Select(p => IPAddressBlock.Parse(p))
+                    .ToList();
 
-                try
+                if (allowIp.Count != 0)
+                    this.AllowIp = allowIp;
+            }
+            catch (FormatException)
+            {
+                throw new ConfigurationException("Invalid rpcallowip value");
+            }
+
+            try
+            {
+                List<IPEndPoint> bind = config
+                    .GetAll("rpcbind", this.logger)
+                    .Select(p => p.ToIPEndPoint(this.RPCPort))
+                    .ToList();
+
+                if (bind.Count != 0)
+                    this.Bind = bind;
+
+                if (this.AllowIp.Count == 0)
                 {
-                    List<IPAddressBlock> allowIp = config
-                        .GetAll("rpcallowip", this.logger)
-                        .Select(p => IPAddressBlock.Parse(p))
-                        .ToList();
+                    if (this.Bind.Count != 0)
+                        this.logger.LogWarning("WARNING: RPC bind selection (-rpcbind) was ignored because allowed ip's (-rpcallowip) were not specified, refusing to allow everyone to connect");
 
-                    if (allowIp.Count != 0)
-                        this.AllowIp = allowIp;
-                }
-                catch (FormatException)
-                {
-                    throw new ConfigurationException("Invalid rpcallowip value");
+                    this.Bind.Clear();
                 }
 
-                try
-                {
-                    List<IPEndPoint> bind = config
-                        .GetAll("rpcbind", this.logger)
-                        .Select(p => p.ToIPEndPoint(this.RPCPort))
-                        .ToList();
-
-                    if (bind.Count != 0)
-                        this.Bind = bind;
-
-                    if (this.AllowIp.Count == 0)
-                    {
-                        if (this.Bind.Count != 0)
-                            this.logger.LogWarning("WARNING: RPC bind selection (-rpcbind) was ignored because allowed ip's (-rpcallowip) were not specified, refusing to allow everyone to connect");
-
-                        this.Bind.Clear();
-                    }
-
-                    if (this.Bind.Count == 0)
-                        this.Bind = this.DefaultBinding();
-                }
-                catch (FormatException)
-                {
-                    throw new ConfigurationException("Invalid rpcbind value");
-                }
+                if (this.Bind.Count == 0)
+                    this.Bind = this.DefaultBinding();
+            }
+            catch (FormatException)
+            {
+                throw new ConfigurationException("Invalid rpcbind value");
             }
         }
 
