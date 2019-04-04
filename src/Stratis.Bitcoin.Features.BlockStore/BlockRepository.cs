@@ -319,7 +319,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public Task SetTxIndex(bool txIndex)
+        public void SetTxIndex(bool txIndex)
         {
             using (IStratisDBTransaction dbTransaction = this.StratisDB.CreateTransaction(StratisDBTransactionMode.ReadWrite))
             {
