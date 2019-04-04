@@ -5,14 +5,6 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Base.AsyncWork
 {
-    /// <summary>
-    /// Represents a callback method to be executed when an item in the queue is dequeued and passed to the delegate.
-    /// </summary>
-    /// <param name="item">Newly added item.</param>
-    /// <param name="cancellationToken">Cancellation token that the callback method should use for its async operations to avoid blocking the queue during shutdown.</param>
-    /// <remarks>It is allowed to call <see cref="Dispose"/> from the callback method.</remarks>
-    public delegate Task OnAsyncDelegateDequeue<T>(T item, CancellationToken cancellationToken);
-
     public interface IAsyncProvider
     {
         /// <summary>
@@ -29,7 +21,7 @@ namespace Stratis.Bitcoin.Base.AsyncWork
         /// <param name="name">Name of the delegate.</param>
         /// <param name="delegate">The delegate.</param>
         /// <returns></returns>
-        IAsyncDelegateDequeuer<T> CreateAndRunAsyncDelegateDequeuer<T>(string name, OnAsyncDelegateDequeue<T> @delegate);
+        IAsyncDelegateDequeuer<T> CreateAndRunAsyncDelegateDequeuer<T>(string name, Func<T, CancellationToken, Task> @delegate);
 
         /// <summary>
         /// Creates an starts an application defined task inside a newly created async loop.
