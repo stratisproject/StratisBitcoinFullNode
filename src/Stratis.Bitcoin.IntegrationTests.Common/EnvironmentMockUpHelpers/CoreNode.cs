@@ -12,6 +12,7 @@ using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -256,7 +257,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 new PayloadProvider().DiscoverPayloads(),
                 selfEndPointTracker,
                 ibdState.Object,
-                connectionManagerSettings);
+                connectionManagerSettings,
+                this.runner.FullNode.NodeService<IAsyncProvider>());
 
             return networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ProtocolPort).GetAwaiter().GetResult();
         }

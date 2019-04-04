@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
         public CallbackMessageListener(IAsyncProvider asyncProvider, ProcessMessageAsync<T> processMessageAsync)
         {
             this.asyncProvider = Guard.NotNull(asyncProvider, nameof(asyncProvider));
-            this.asyncQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<T>(this.GetType().Name, new OnAsyncDelegateDequeue<T>(processMessageAsync));
+            this.asyncQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<T>(this.GetType().Name, new Func<T, CancellationToken, Task>(processMessageAsync));
         }
 
         /// <inheritdoc/>
