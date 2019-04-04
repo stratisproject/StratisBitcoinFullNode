@@ -17,6 +17,7 @@ namespace Stratis.SmartContracts.Networks
         public SmartContractsPoATest()
         {
             this.Name = "SmartContractsPoATest-0.13.0-beta";
+            this.NetworkType = NetworkType.Testnet;
             this.CoinTicker = "SCPOA";
 
             var consensusFactory = new SmartContractPoAConsensusFactory();

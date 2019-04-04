@@ -57,6 +57,7 @@ namespace Stratis.Bitcoin.Features.Api
             // Constants.
             this.UseHttps = false;
             this.HttpsCertificateFilePath = (string)null;
+            this.ApiPort = nodeSettings.Network.DefaultAPIPort;
             this.ApiUri = new Uri($"{DefaultApiHost}");
             this.KeepaliveTimer = null;
 

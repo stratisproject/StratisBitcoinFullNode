@@ -414,6 +414,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             var cancellation = new CancellationTokenSource((int)TimeSpan.FromSeconds(30).TotalMilliseconds);
 
+            var isConnecting = false;
+
             WaitLoop(() =>
             {
                 try
@@ -421,11 +423,17 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                     if (IsNodeConnectedTo(thisNode, connectToNode))
                         return true;
 
-                    thisNode.CreateRPCClient().AddNode(connectToNode.Endpoint, true);
+                    // Don't try the same connection again until it failed or connected.
+                    if (!isConnecting)
+                    {
+                        thisNode.CreateRPCClient().AddNode(connectToNode.Endpoint, true);
+                        isConnecting = true;
+                    }
                 }
                 catch (Exception)
                 {
                     // The connect request failed, probably due to a web exception so try again.
+                    isConnecting = false;
                 }
 
                 return false;
