@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.AsyncWork
 {
@@ -23,6 +24,9 @@ namespace Stratis.Bitcoin.AsyncWork
         {
             public string FriendlyName { get; }
 
+            /// <summary>
+            /// Gets the status of the task running the delegate.
+            /// </summary>
             public TaskStatus Status { get; private set; }
 
             public Exception Exception { get; private set; }
@@ -31,9 +35,26 @@ namespace Stratis.Bitcoin.AsyncWork
 
             Exception IAsyncTaskInfoSetter.Exception { set => this.Exception = value; }
 
-            public AsyncTaskInfo(string friendlyName)
+            /// <summary>
+            /// Gets a value indicating whether this instance contains an <see cref="IAsyncLoop"/> information.
+            /// </summary>
+            public bool IsLoop { get; }
+
+            /// <summary>
+            /// Gets a value indicating whether this instance contains an <see cref="IAsyncDelegateDequeuer{T}"/> information.
+            /// </summary>
+            public bool IsDelegateWorker { get; }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="AsyncTaskInfo"/> class.
+            /// </summary>
+            /// <param name="friendlyName">Friendly name of the async delegate.</param>
+            /// <param name="isDelegateWorker">if set to <c>true</c> the information represents an <see cref="IAsyncDelegateDequeuer"/>, otherwise an <see cref="IAsyncLoop"/>.</param>
+            public AsyncTaskInfo(string friendlyName, bool isDelegateWorker)
             {
                 this.FriendlyName = friendlyName;
+                this.IsDelegateWorker = isDelegateWorker;
+                this.IsLoop = !isDelegateWorker;
             }
         }
     }
