@@ -74,8 +74,8 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        /// <summary>Provider for creating and managing background async loop tasks.</summary>
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>Logger for the node.</summary>
         private readonly ILogger logger;
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Base
             IChainRepository chainRepository,
             IFinalizedBlockInfoRepository finalizedBlockInfo,
             IDateTimeProvider dateTimeProvider,
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             ITimeSyncBehaviorState timeSyncBehaviorState,
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Base
 
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.dateTimeProvider = dateTimeProvider;
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.timeSyncBehaviorState = timeSyncBehaviorState;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -255,7 +255,7 @@ namespace Stratis.Bitcoin.Base
 
             this.logger.LogInformation("Chain loaded at height {0}.", this.chainIndexer.Height);
 
-            this.flushChainLoop = this.asyncLoopFactory.Run("FlushChain", async token =>
+            this.flushChainLoop = this.asyncProvider.CreateAndRunAsyncLoop("FlushChain", async token =>
             {
                 await this.chainRepository.SaveAsync(this.chainIndexer).ConfigureAwait(false);
 
@@ -283,7 +283,7 @@ namespace Stratis.Bitcoin.Base
                 this.peerAddressManager.LoadPeers();
             }
 
-            this.flushAddressManagerLoop = this.asyncLoopFactory.Run("Periodic peer flush", token =>
+            this.flushAddressManagerLoop = this.asyncProvider.CreateAndRunAsyncLoop("Periodic peer flush", token =>
             {
                 this.peerAddressManager.SavePeers();
                 return Task.CompletedTask;
@@ -386,7 +386,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
                     services.AddSingleton<IKeyValueRepository, KeyValueRepository>();
                     services.AddSingleton<ITipsManager, TipsManager>();
-                    services.AddSingleton<IAsyncProvider, AsyncWork.AsyncProvider>();
+                    services.AddSingleton<IAsyncProvider, AsyncProvider>();
 
                     // Consensus
                     services.AddSingleton<ConsensusSettings>();
