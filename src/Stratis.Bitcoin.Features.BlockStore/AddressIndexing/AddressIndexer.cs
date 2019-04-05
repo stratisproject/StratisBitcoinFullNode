@@ -160,8 +160,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                         this.logger.LogDebug("Reorg detected. Rewinding till '{0}'.", lastCommonHeader);
 
-                        foreach (AddressIndexData addressIndexData in this.addressesIndex.AddressIndexDatas)
-                            addressIndexData.Changes.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
+                        lock (this.lockObject)
+                        {
+                            foreach (AddressIndexData addressIndexData in this.addressesIndex.AddressIndexDatas)
+                                addressIndexData.Changes.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
+                        }
 
                         this.chainedHeaderTip = lastCommonHeader;
                         continue;
@@ -208,7 +211,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     }
 
                     this.chainedHeaderTip = nextHeader;
-                    this.addressesIndex.TipHashBytes = this.chainedHeaderTip.HashBlock.ToBytes();
+
+                    lock (this.lockObject)
+                    {
+                        this.addressesIndex.TipHashBytes = this.chainedHeaderTip.HashBlock.ToBytes();
+                    }
                 }
 
                 lock (this.lockObject)
@@ -249,48 +256,52 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 return false;
             }
 
-            for (int i = 0; i < inputs.Count; i++)
+            lock (this.lockObject)
             {
-                TxIn currentInput = inputs[i];
-
-                TxOut txOut = transactions[i].Outputs[currentInput.PrevOut.N];
-
-                Money amountSpent = txOut.Value;
-
-                AddressIndexData addrData = this.GetOrCreateAddressData(txOut.ScriptPubKey);
-
-                // Record money being spent.
-                addrData.Changes.Add(new AddressBalanceChange()
+                for (int i = 0; i < inputs.Count; i++)
                 {
-                    BalanceChangedHeight = header.Height,
-                    Satoshi = amountSpent.Satoshi,
-                    Deposited = false
-                });
-            }
+                    TxIn currentInput = inputs[i];
 
-            // Process outputs.
-            foreach (Transaction tx in block.Transactions)
-            {
-                foreach (TxOut txOut in tx.Outputs)
-                {
-                    Money amountReceived = txOut.Value;
+                    TxOut txOut = transactions[i].Outputs[currentInput.PrevOut.N];
 
-                    AddressIndexData addrData = this.GetOrCreateAddressData(txOut.ScriptPubKey);
+                    Money amountSpent = txOut.Value;
 
-                    // Record money being sent.
+                    AddressIndexData addrData = this.GetOrCreateAddressDataLocked(txOut.ScriptPubKey);
+
+                    // Record money being spent.
                     addrData.Changes.Add(new AddressBalanceChange()
                     {
                         BalanceChangedHeight = header.Height,
-                        Satoshi = amountReceived.Satoshi,
-                        Deposited = true
+                        Satoshi = amountSpent.Satoshi,
+                        Deposited = false
                     });
+                }
+
+                // Process outputs.
+                foreach (Transaction tx in block.Transactions)
+                {
+                    foreach (TxOut txOut in tx.Outputs)
+                    {
+                        Money amountReceived = txOut.Value;
+
+                        AddressIndexData addrData = this.GetOrCreateAddressDataLocked(txOut.ScriptPubKey);
+
+                        // Record money being sent.
+                        addrData.Changes.Add(new AddressBalanceChange()
+                        {
+                            BalanceChangedHeight = header.Height,
+                            Satoshi = amountReceived.Satoshi,
+                            Deposited = true
+                        });
+                    }
                 }
             }
 
             return true;
         }
 
-        private AddressIndexData GetOrCreateAddressData(Script scriptPubKey)
+        /// <remarks>Should be protected by <see cref="lockObject"/>.</remarks>
+        private AddressIndexData GetOrCreateAddressDataLocked(Script scriptPubKey)
         {
             byte[] scriptPubKeyBytes = scriptPubKey.ToBytes();
 
@@ -312,25 +323,54 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
 
         /// <summary>Returns balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
-        /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed.</returns>
+        /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed or doesn't exists.</returns>
         public Money GetAddressBalance(BitcoinAddress address, int minConfirmations = 0)
         {
             if (this.addressesIndex == null)
                 throw new IndexerNotInitializedException();
 
-            // TODO access data while holding a lock
-            throw new NotImplementedException();
+            lock (this.lockObject)
+            {
+                AddressIndexData addressIndexData = this.addressesIndex.AddressIndexDatas.SingleOrDefault(x => x.ScriptPubKeyBytes.SequenceEqual(address.ScriptPubKey.ToBytes()));
+
+                if (addressIndexData == null)
+                {
+                    this.logger.LogTrace("(-)[NOT_FOUND]");
+                    return null;
+                }
+
+                long balance = 0;
+
+                foreach (AddressBalanceChange change in addressIndexData.Changes)
+                {
+                    if (change.Deposited)
+                        balance += change.Satoshi;
+                    else
+                        balance -= change.Satoshi;
+                }
+
+                return new Money(balance);
+            }
         }
 
         /// <summary>Returns the total amount received by the given address in transactions with at least <paramref name="minConfirmations"/> confirmations.</summary>
         /// <returns>Total amount received by a given address or <c>null</c> if address wasn't indexed.</returns>
         public Money GetReceivedByAddress(BitcoinAddress address, int minConfirmations = 0)
         {
-            if (this.addressesIndex == null)
-                throw new IndexerNotInitializedException();
+            lock (this.lockObject)
+            {
+                AddressIndexData addressIndexData = this.addressesIndex.AddressIndexDatas.SingleOrDefault(x => x.ScriptPubKeyBytes.SequenceEqual(address.ScriptPubKey.ToBytes()));
 
-            // TODO access data while holding a lock
-            throw new NotImplementedException();
+                if (addressIndexData == null)
+                {
+                    this.logger.LogTrace("(-)[NOT_FOUND]");
+                    return null;
+                }
+
+                long deposited = addressIndexData.Changes.Where(x => x.Deposited).Sum(x => x.Satoshi);
+
+                return new Money(deposited);
+            }
         }
 
         /// <inheritdoc/>
