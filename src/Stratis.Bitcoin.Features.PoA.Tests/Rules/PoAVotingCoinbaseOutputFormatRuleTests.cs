@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             block.Transactions.Add(new Transaction());
             block.Transactions[0].AddOutput(Money.COIN, Script.Empty);
 
-            this.votingFormatRule.RunAsync(new RuleContext(new ValidationContext() {BlockToValidate = block}, DateTimeOffset.Now)).GetAwaiter().GetResult();
+            this.votingFormatRule.Run(new RuleContext(new ValidationContext() {BlockToValidate = block}, DateTimeOffset.Now));
         }
 
         [Fact]
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             block.Transactions[0].AddOutput(Money.COIN, votingOutputScript);
 
             Assert.Throws<ConsensusErrorException>(() =>
-                this.votingFormatRule.RunAsync(new RuleContext(new ValidationContext() { BlockToValidate = block }, DateTimeOffset.Now)).GetAwaiter().GetResult());
+                this.votingFormatRule.Run(new RuleContext(new ValidationContext() { BlockToValidate = block }, DateTimeOffset.Now)));
         }
 
         [Fact]
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             block.Transactions[0].AddOutput(Money.COIN, votingOutputScript);
 
             Assert.Throws<ConsensusErrorException>(() =>
-                this.votingFormatRule.RunAsync(new RuleContext(new ValidationContext() {BlockToValidate = block}, DateTimeOffset.Now)).GetAwaiter().GetResult());
+                this.votingFormatRule.Run(new RuleContext(new ValidationContext() {BlockToValidate = block}, DateTimeOffset.Now)));
         }
     }
 }

@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.failcount = failcount;
             }
 
-            public override Task RunAsync(RuleContext context)
+            public override void Run(RuleContext context)
             {
                 if (this.failcount > 0)
                 {
@@ -98,8 +98,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                         throw new ConsensusErrorException(new ConsensusError("error", "error"));
                     }
                 }
-
-                return Task.CompletedTask;
             }
         }
 

@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     {
         /// <inheritdoc />>
         /// <exception cref="ConsensusErrors.BadTransactionBIP30"> Thrown if BIP30 is not passed.</exception>
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             if (!context.SkipValidation)
             {
@@ -42,8 +42,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 }
             }
             else this.Logger.LogTrace("BIP30 validation skipped for checkpointed block at height {0}.", context.ValidationContext.ChainedHeaderToValidate.Height);
-
-            return Task.CompletedTask;
         }
     }
 }

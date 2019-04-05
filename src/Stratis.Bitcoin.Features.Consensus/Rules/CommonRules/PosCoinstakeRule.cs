@@ -27,10 +27,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadStakeBlock">The second transaction is not a coinstake transaction.</exception>
         /// <exception cref="ConsensusErrors.BadMultipleCoinstake">There are multiple coinstake tranasctions in the block.</exception>
         /// <exception cref="ConsensusErrors.BlockTimeBeforeTrx">The block contains a transaction with a timestamp after the block timestamp.</exception>
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             if (context.SkipValidation)
-                return Task.CompletedTask;
+                return;
 
             Block block = context.ValidationContext.BlockToValidate;
 
@@ -68,8 +68,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     ConsensusErrors.BlockTimeBeforeTrx.Throw();
                 }
             }
-
-            return Task.CompletedTask;
         }
     }
 }

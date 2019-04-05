@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         }
 
         [Fact]
-        public async Task SmartContractFormatRule_SuccessAsync()
+        public void SmartContractFormatRule_SuccessAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             ContractTransactionPartialValidationRule rule = testContext.CreateContractValidationRule();
@@ -95,11 +95,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                transaction
             };
 
-            await rule.RunAsync(context);
+            rule.Run(context);
         }
 
         [Fact]
-        public async Task SmartContractFormatRule_MultipleOutputs_SuccessAsync()
+        public void SmartContractFormatRule_MultipleOutputs_SuccessAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             ContractTransactionPartialValidationRule rule = testContext.CreateContractValidationRule();
@@ -145,14 +145,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 transaction
             };
 
-            await rule.RunAsync(context);
+            rule.Run(context);
         }
 
         /// <summary>
         /// In this test we supply a higher gas limit in our carrier than what we budgeted for in our transaction
         /// </summary>
         [Fact]
-        public async Task SmartContractFormatRule_FailureAsync()
+        public void SmartContractFormatRule_FailureAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             ContractTransactionPartialValidationRule rule = testContext.CreateContractValidationRule();
@@ -194,7 +194,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 transaction
             };
 
-            await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            Assert.Throws<ConsensusErrorException>(() => rule.Run(context));
         }
     }
 }

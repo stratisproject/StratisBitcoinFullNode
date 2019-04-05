@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadColdstakeInputs">Thrown if the input scriptPubKeys mismatch.</exception>
         /// <exception cref="ConsensusErrors.BadColdstakeOutputs">Thrown if the output scriptPubKeys mismatch.</exception>
         /// <exception cref="ConsensusErrors.BadColdstakeAmount">Thrown if the total input is smaller or equal than the sum of outputs.</exception>
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             this.Logger.LogTrace("()");
 
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (!(coinstakeTransaction?.IsColdCoinStake ?? false))
             {
                 this.Logger.LogTrace("(-)[SKIP_COLDSTAKE_RULE]");
-                return Task.CompletedTask;
+                return;
             }
 
             var posRuleContext = context as PosRuleContext;
@@ -112,8 +112,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             this.Logger.LogTrace("(-)");
-
-            return Task.CompletedTask;
         }
     }
 }

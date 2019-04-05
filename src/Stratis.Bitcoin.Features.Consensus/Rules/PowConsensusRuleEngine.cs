@@ -81,9 +81,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             }
         }
 
-        public override async Task<ValidationContext> FullValidationAsync(ChainedHeader header, Block block)
+        public override ValidationContext FullValidationAsync(ChainedHeader header, Block block)
         {
-            ValidationContext result = await base.FullValidationAsync(header, block).ConfigureAwait(false);
+            ValidationContext result = base.FullValidationAsync(header, block);
 
             if ((result != null) && (result.Error == null))
             {

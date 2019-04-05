@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             // Block validation check works
             Block block = this.network.CreateBlock();
             block.AddTransaction(transaction);
-            this.rule.RunAsync(new RuleContext(new ValidationContext {BlockToValidate = block}, DateTimeOffset.Now));
+            this.rule.Run(new RuleContext(new ValidationContext {BlockToValidate = block}, DateTimeOffset.Now));
         }
 
         [Fact]
@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             // Block validation check fails
             Block block = this.network.CreateBlock();
             block.AddTransaction(transaction);
-            Assert.ThrowsAnyAsync<ConsensusErrorException>(() => this.rule.RunAsync(new RuleContext(new ValidationContext { BlockToValidate = block }, DateTimeOffset.Now)));
+            Assert.ThrowsAny<ConsensusErrorException>(() => this.rule.Run(new RuleContext(new ValidationContext { BlockToValidate = block }, DateTimeOffset.Now)));
         }
     }
 }

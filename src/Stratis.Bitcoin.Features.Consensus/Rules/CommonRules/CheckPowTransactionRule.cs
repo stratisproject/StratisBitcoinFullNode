@@ -20,10 +20,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadTransactionDuplicateInputs">Thrown if any of transaction inputs are duplicate.</exception>
         /// <exception cref="ConsensusErrors.BadCoinbaseSize">Thrown if coinbase transaction is too small or too big.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionNullPrevout">Thrown if transaction contains a null prevout.</exception>
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             if (context.SkipValidation)
-                return Task.CompletedTask;
+                return;
 
             Block block = context.ValidationContext.BlockToValidate;
             var options = this.Parent.Network.Consensus.Options;
@@ -31,8 +31,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // Check transactions
             foreach (Transaction tx in block.Transactions)
                 this.CheckTransaction(this.Parent.Network, options, tx);
-
-            return Task.CompletedTask;
         }
 
         public virtual void CheckTransaction(Network network, ConsensusOptions options, Transaction tx)

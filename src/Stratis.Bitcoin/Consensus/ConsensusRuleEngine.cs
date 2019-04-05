@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public virtual async Task<ValidationContext> FullValidationAsync(ChainedHeader header, Block block)
+        public virtual ValidationContext FullValidationAsync(ChainedHeader header, Block block)
         {
             Guard.NotNull(header, nameof(header));
             Guard.NotNull(block, nameof(block));
@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.Consensus
             var validationContext = new ValidationContext { BlockToValidate = block, ChainedHeaderToValidate = header };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
-            await this.ExecuteRulesAsync(this.fullValidationRules, ruleContext).ConfigureAwait(false);
+            this.ExecuteRulesAsync(this.fullValidationRules, ruleContext);
 
             if (validationContext.Error != null)
                 this.HandleConsensusError(validationContext);
@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public virtual async Task<ValidationContext> PartialValidationAsync(ChainedHeader header, Block block)
+        public virtual ValidationContext PartialValidationAsync(ChainedHeader header, Block block)
         {
             Guard.NotNull(header, nameof(header));
             Guard.NotNull(block, nameof(block));
@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Consensus
             var validationContext = new ValidationContext { BlockToValidate = block, ChainedHeaderToValidate = header };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
-            await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);
+            this.ExecuteRulesAsync(this.partialValidationRules, ruleContext);
 
             if (validationContext.Error != null)
                 this.HandleConsensusError(validationContext);
@@ -224,17 +224,17 @@ namespace Stratis.Bitcoin.Consensus
             return validationContext;
         }
 
-        private async Task ExecuteRulesAsync(IEnumerable<AsyncConsensusRule> asyncRules, RuleContext ruleContext)
+        private void ExecuteRulesAsync(IEnumerable<ConsensusRuleBase> asyncRules, RuleContext ruleContext)
         {
             try
             {
                 ruleContext.SkipValidation = ruleContext.ValidationContext.ChainedHeaderToValidate.IsAssumedValid;
 
-                foreach (AsyncConsensusRule rule in asyncRules)
+                foreach (ConsensusRuleBase rule in asyncRules)
                 {
                     using (this.performanceCounter.MeasureRuleExecutionTime(rule))
                     {
-                        await rule.RunAsync(ruleContext).ConfigureAwait(false);
+                        rule.Run(ruleContext);
                     }
                 }
             }
@@ -266,13 +266,13 @@ namespace Stratis.Bitcoin.Consensus
             this.invalidBlockHashStore.MarkInvalid(hashToBan, validationContext.RejectUntil);
         }
 
-        private void ExecuteRules(IEnumerable<SyncConsensusRule> rules, RuleContext ruleContext)
+        private void ExecuteRules(IEnumerable<ConsensusRuleBase> rules, RuleContext ruleContext)
         {
             try
             {
                 ruleContext.SkipValidation = ruleContext.ValidationContext.ChainedHeaderToValidate.IsAssumedValid;
 
-                foreach (SyncConsensusRule rule in rules)
+                foreach (ConsensusRuleBase rule in rules)
                 {
                     using (this.performanceCounter.MeasureRuleExecutionTime(rule))
                     {

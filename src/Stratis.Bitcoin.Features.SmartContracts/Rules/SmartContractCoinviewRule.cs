@@ -60,9 +60,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         }
 
         /// <inheritdoc />
-        public override async Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
-            await this.logic.RunAsync(base.RunAsync, context);
+            this.logic.Run(base.Run, context);
         }
 
         /// <inheritdoc/>

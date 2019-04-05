@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task BlockReceived_IsNextBlock_ValidationSucessAsync()
+        public void BlockReceived_IsNextBlock_ValidationSucessAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             var blockHeaderRule = testContext.CreateRule<SetActivationDeploymentsPartialValidationRule>();
@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             context.ValidationContext.BlockToValidate.Header.HashPrevBlock = testContext.ChainIndexer.Tip.HashBlock;
             context.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(context.ValidationContext.BlockToValidate.Header, context.ValidationContext.BlockToValidate.Header.GetHash(), 0);
 
-            await blockHeaderRule.RunAsync(context);
+            blockHeaderRule.Run(context);
 
             Assert.NotNull(context.ValidationContext.ChainedHeaderToValidate);
             Assert.NotNull(context.Flags);

@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         }
 
         [Fact]
-        public async Task TxOutSmartContractExec_AllTransactions_ValidationSuccessAsync()
+        public void TxOutSmartContractExec_AllTransactions_ValidationSuccessAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             TxOutSmartContractExecRule rule = testContext.CreateRule<TxOutSmartContractExecRule>();
@@ -39,11 +39,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 }
             };
 
-            await rule.RunAsync(context);
+            rule.Run(context);
         }
 
         [Fact]
-        public async Task TxOutSmartContractExec_AllTransactions_ValidationFailAsync()
+        public void TxOutSmartContractExec_AllTransactions_ValidationFailAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             TxOutSmartContractExecRule rule = testContext.CreateRule<TxOutSmartContractExecRule>();
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             };
 
             context.ValidationContext.BlockToValidate.Transactions = transactions;
-            await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            Assert.Throws<ConsensusErrorException>( () =>  rule.Run(context));
 
             transactions = new List<Transaction>
             {
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             };
 
             context.ValidationContext.BlockToValidate.Transactions = transactions;
-            await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            Assert.Throws<ConsensusErrorException>( () =>  rule.Run(context));
 
             transactions = new List<Transaction>
             {
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             };
 
             context.ValidationContext.BlockToValidate.Transactions = transactions;
-            await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            Assert.Throws<ConsensusErrorException>(() =>  rule.Run(context));
         }
 
         [Fact]
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             };
 
             context.ValidationContext.BlockToValidate.Transactions = transactions;
-            await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            Assert.Throws<ConsensusErrorException>(() => rule.Run(context));
 
             transactions = new List<Transaction>
             {
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             };
 
             context.ValidationContext.BlockToValidate.Transactions = transactions;
-            await rule.RunAsync(context);
+            rule.Run(context);
         }
     }
 }

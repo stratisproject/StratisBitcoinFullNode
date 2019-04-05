@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
 
         private async Task OnEnqueueAsync(PartialValidationItem item, CancellationToken cancellationtoken)
         {
-            ValidationContext result = await this.consensusRules.PartialValidationAsync(item.ChainedHeader, item.Block).ConfigureAwait(false);
+            ValidationContext result = this.consensusRules.PartialValidationAsync(item.ChainedHeader, item.Block);
 
             try
             {
@@ -168,11 +168,11 @@ namespace Stratis.Bitcoin.Consensus.Validators
         }
 
         /// <inheritdoc />
-        public async Task<ValidationContext> ValidateAsync(ChainedHeader header, Block block)
+        public Task<ValidationContext> ValidateAsync(ChainedHeader header, Block block)
         {
-            ValidationContext result = await this.consensusRules.PartialValidationAsync(header, block).ConfigureAwait(false);
+            ValidationContext result = this.consensusRules.PartialValidationAsync(header, block);
 
-            return result;
+            return Task.FromResult(result);
         }
 
         /// <summary>
@@ -210,11 +210,11 @@ namespace Stratis.Bitcoin.Consensus.Validators
         }
 
         /// <inheritdoc />
-        public async Task<ValidationContext> ValidateAsync(ChainedHeader header, Block block)
+        public Task<ValidationContext> ValidateAsync(ChainedHeader header, Block block)
         {
-            ValidationContext result = await this.consensusRules.FullValidationAsync(header, block).ConfigureAwait(false);
+            ValidationContext result = this.consensusRules.FullValidationAsync(header, block);
 
-            return result;
+            return Task.FromResult(result);
         }
     }
 }

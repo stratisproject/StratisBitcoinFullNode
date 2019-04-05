@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.receipts = new List<Receipt>();            
         }
 
-        public async Task RunAsync(Func<RuleContext, Task> baseRunAsync, RuleContext context)
+        public void Run(Action<RuleContext> baseRunAsync, RuleContext context)
         {
             this.blockTxsProcessed.Clear();
             this.receipts.Clear();
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             byte[] blockRoot = ((ISmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes();
             this.mutableStateRepository = this.stateRepositoryRoot.GetSnapshotTo(blockRoot);
 
-            await baseRunAsync(context);
+            baseRunAsync(context);
 
             var blockHeader = (ISmartContractBlockHeader) block.Header;
 

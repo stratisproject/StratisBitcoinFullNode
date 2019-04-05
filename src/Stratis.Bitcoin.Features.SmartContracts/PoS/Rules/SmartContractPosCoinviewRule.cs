@@ -40,14 +40,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
 
         /// <inheritdoc />
         /// <summary>Compute and store the stake proofs.</summary>
-        public override async Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             this.blockTxsProcessed = new List<Transaction>();
             this.refundCounter = 1;
 
             this.CheckAndComputeStake(context);
 
-            await base.RunAsync(context);
+            base.Run(context);
 
             this.stakeChain.Set(context.ValidationContext.ChainedHeaderToValidate, (context as PosRuleContext).BlockStake);
         }

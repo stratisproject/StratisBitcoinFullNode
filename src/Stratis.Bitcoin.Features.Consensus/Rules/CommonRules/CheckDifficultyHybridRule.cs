@@ -24,10 +24,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.HighHash">Thrown if block doesn't have a valid PoW header.</exception>
         /// <exception cref="ConsensusErrors.BadDiffBits">Thrown if proof of stake is incorrect.</exception>
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             if (context.SkipValidation)
-                return Task.CompletedTask;
+                return;
 
             var posRuleContext = context as PosRuleContext;
 
@@ -53,8 +53,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 this.Logger.LogTrace("(-)[BAD_DIFF_BITS]");
                 ConsensusErrors.BadDiffBits.Throw();
             }
-
-            return Task.CompletedTask;
         }
     }
 }

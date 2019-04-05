@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.callDataSerializer = callDataSerializer;
         }
 
-        public Task RunAsync(RuleContext context, IEnumerable<IContractTransactionValidationRule> rules)
+        public void Run(RuleContext context, IEnumerable<IContractTransactionValidationRule> rules)
         {
             Block block = context.ValidationContext.BlockToValidate;
 
@@ -32,8 +32,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             {
                 this.CheckTransaction(transaction, contractTransactionValidationRules, null);
             }
-
-            return Task.CompletedTask;
         }
 
         public void CheckTransaction(MempoolValidationContext context, IEnumerable<IContractTransactionValidationRule> rules)

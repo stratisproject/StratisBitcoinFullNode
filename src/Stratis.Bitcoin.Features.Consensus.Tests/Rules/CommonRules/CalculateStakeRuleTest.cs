@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfStakeBlock_SetsStake_SetsNextWorkRequiredAsync()
+        public void RunAsync_ProofOfStakeBlock_SetsStake_SetsNextWorkRequiredAsync()
         {
             Block block = this.network.CreateBlock();
             Transaction transaction = this.network.CreateTransaction();
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 .Returns(target)
                 .Verifiable();
 
-            await this.consensusRules.RegisterRule<CheckDifficultyHybridRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<CheckDifficultyHybridRule>().Run(this.ruleContext);
 
             this.stakeValidator.Verify();
             Assert.NotNull(this.ruleContext as PosRuleContext);
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfWorkBlock_CheckPow_ValidPow_SetsStake_SetsNextWorkRequiredAsync()
+        public void RunAsync_ProofOfWorkBlock_CheckPow_ValidPow_SetsStake_SetsNextWorkRequiredAsync()
         {
             this.network = KnownNetworks.RegTest;
             this.ChainIndexer = MineChainWithHeight(2, this.network);
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 .Returns(target)
                 .Verifiable();
 
-            await this.consensusRules.RegisterRule<CheckDifficultyHybridRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<CheckDifficultyHybridRule>().Run(this.ruleContext);
 
             this.stakeValidator.Verify();
             Assert.NotNull((this.ruleContext as PosRuleContext));
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsHighHashConsensusErrorExceptionAsync()
+        public void RunAsync_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsHighHashConsensusErrorExceptionAsync()
         {
             Block block = this.network.CreateBlock();
             Transaction transaction = this.network.CreateTransaction();
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 ChainedHeaderToValidate = this.ChainIndexer.GetHeader(4)
             };
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultyHybridRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultyHybridRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.HighHash, exception.ConsensusError);
         }

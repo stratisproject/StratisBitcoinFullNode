@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_BestBlockAvailable_BadCoinBaseHeight_ThrowsBadCoinbaseHeightConsensusErrorExceptionAsync()
+        public void RunAsync_BestBlockAvailable_BadCoinBaseHeight_ThrowsBadCoinbaseHeightConsensusErrorExceptionAsync()
         {
             Block blockToValidate = this.network.CreateBlock();
 
@@ -25,13 +25,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Inputs.Add(new TxIn(new Script(Op.GetPushOp(3))));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CoinbaseHeightRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CoinbaseHeightRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadCoinbaseHeight, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_BestBlockUnAvailable_BadCoinBaseHeight_ThrowsBadCoinbaseHeightConsensusErrorExceptionAsync()
+        public void RunAsync_BestBlockUnAvailable_BadCoinBaseHeight_ThrowsBadCoinbaseHeightConsensusErrorExceptionAsync()
         {
             Block blockToValidate = this.network.CreateBlock();
             
@@ -42,13 +42,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Inputs.Add(new TxIn(new Script(Op.GetPushOp(3))));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CoinbaseHeightRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CoinbaseHeightRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadCoinbaseHeight, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_CorrectCoinBaseHeight_DoesNotThrowExceptionAsync()
+        public void RunAsync_CorrectCoinBaseHeight_DoesNotThrowExceptionAsync()
         {
             Block blockToValidate = this.network.CreateBlock();
 
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Inputs.Add(new TxIn(new Script(Op.GetPushOp(4))));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            await this.consensusRules.RegisterRule<CoinbaseHeightRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<CoinbaseHeightRule>().Run(this.ruleContext);
         }
     }
 }

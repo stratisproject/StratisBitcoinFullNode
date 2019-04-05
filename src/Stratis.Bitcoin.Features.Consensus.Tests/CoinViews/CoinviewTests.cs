@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
         }
 
         [Fact]
-        public async Task TestRewindAsync()
+        public void TestRewindAsync()
         {
             uint256 tip = this.cachedCoinView.GetTipHash();
             Assert.Equal(this.chainIndexer.Genesis.HashBlock, tip);
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 }
             }
 
-            await this.ValidateCoinviewIntegrityAsync(outPoints);
+            this.ValidateCoinviewIntegrity(outPoints);
 
             for (int i = 0; i < addChangesTimes; i++)
             {
@@ -126,12 +126,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 uint256 currentTip = this.cachedCoinView.GetTipHash();
 
                 if (currentTip == coinviewTipAfterHalf)
-                    await this.ValidateCoinviewIntegrityAsync(copyAfterHalfOfAdditions);
+                    this.ValidateCoinviewIntegrity(copyAfterHalfOfAdditions);
             }
 
             Assert.Equal(tipAfterOriginalCoinsCreation, this.cachedCoinView.GetTipHash());
 
-            await this.ValidateCoinviewIntegrityAsync(copyOfOriginalOutPoints);
+            this.ValidateCoinviewIntegrity(copyOfOriginalOutPoints);
         }
 
         private List<OutPoint> ConvertToListOfOutputPoints(List<UnspentOutputs> outputsList)
@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             this.cachedCoinView.SaveChanges(unspent, original, previous.HashBlock, current.HashBlock, height);
         }
 
-        private async Task ValidateCoinviewIntegrityAsync(List<OutPoint> expectedAvailableOutPoints)
+        private void ValidateCoinviewIntegrity(List<OutPoint> expectedAvailableOutPoints)
         {
             foreach (IGrouping<uint256, OutPoint> outPointsGroup in expectedAvailableOutPoints.GroupBy(x => x.Hash))
             {

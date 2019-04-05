@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         }
 
         [Fact]
-        public async Task OpSpend_PreviousTransactionOpCall_SuccessAsync()
+        public void OpSpend_PreviousTransactionOpCall_SuccessAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             OpSpendRule rule = testContext.CreateRule<OpSpendRule>();
@@ -47,11 +47,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 }
             };
 
-            await rule.RunAsync(context);
+            rule.Run(context);
         }
 
         [Fact]
-        public async Task OpSpend_PreviousTransactionNone_FailureAsync()
+        public void OpSpend_PreviousTransactionNone_FailureAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             OpSpendRule rule = testContext.CreateRule<OpSpendRule>();
@@ -70,11 +70,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 }
             };
 
-            await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            Assert.Throws<ConsensusErrorException>(() => rule.Run(context));
         }
 
         [Fact]
-        public async Task OpSpend_PreviousTransactionOther_FailureAsync()
+        public void OpSpend_PreviousTransactionOther_FailureAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             OpSpendRule rule = testContext.CreateRule<OpSpendRule>();
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 }
             };
 
-            await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            Assert.Throws<ConsensusErrorException>(() => rule.Run(context));
         }
     }
 }

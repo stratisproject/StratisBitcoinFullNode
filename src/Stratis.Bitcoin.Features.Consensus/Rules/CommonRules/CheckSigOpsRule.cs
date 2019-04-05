@@ -10,10 +10,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadBlockSigOps">The block contains more signature check operations than allowed.</exception>
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             if (context.SkipValidation)
-                return Task.CompletedTask;
+                return;
 
             Block block = context.ValidationContext.BlockToValidate;
             ConsensusOptions options = this.Parent.Network.Consensus.Options;
@@ -27,8 +27,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 this.Logger.LogTrace("(-)[BAD_BLOCK_SIGOPS]");
                 ConsensusErrors.BadBlockSigOps.Throw();
             }
-
-            return Task.CompletedTask;
         }
 
         private long GetLegacySigOpCount(Transaction tx)

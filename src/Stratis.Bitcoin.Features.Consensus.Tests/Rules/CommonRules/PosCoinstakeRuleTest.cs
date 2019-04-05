@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfStakeBlock_CoinBaseNotEmpty_NoOutputsOnTransaction_ThrowsBadStakeBlockConsensusErrorExceptionAsync()
+        public void RunAsync_ProofOfStakeBlock_CoinBaseNotEmpty_NoOutputsOnTransaction_ThrowsBadStakeBlockConsensusErrorExceptionAsync()
         {
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(new Transaction());
 
@@ -30,13 +30,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.BlockToValidate));
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosCoinstakeRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosCoinstakeRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadStakeBlock, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfStakeBlock_CoinBaseNotEmpty_TransactionNotEmpty_ThrowsBadStakeBlockConsensusErrorExceptionAsync()
+        public void RunAsync_ProofOfStakeBlock_CoinBaseNotEmpty_TransactionNotEmpty_ThrowsBadStakeBlockConsensusErrorExceptionAsync()
         {
             var transaction = this.network.CreateTransaction();
             transaction.Outputs.Add(new TxOut(new Money(1), (IDestination)null));
@@ -54,13 +54,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.BlockToValidate));
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosCoinstakeRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosCoinstakeRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadStakeBlock, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfStakeBlock_MultipleCoinStakeAfterSecondTransaction_ThrowsBadMultipleCoinstakeConsensusErrorExceptionAsync()
+        public void RunAsync_ProofOfStakeBlock_MultipleCoinStakeAfterSecondTransaction_ThrowsBadMultipleCoinstakeConsensusErrorExceptionAsync()
         {
             var transaction = this.network.CreateTransaction();
             transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
@@ -79,13 +79,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.BlockToValidate));
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosCoinstakeRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosCoinstakeRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadMultipleCoinstake.Message, exception.ConsensusError.Message);
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfStakeBlock_TransactionTimestampAfterBlockTimeStamp_ThrowsBlockTimeBeforeTrxConsensusErrorExceptionAsync()
+        public void RunAsync_ProofOfStakeBlock_TransactionTimestampAfterBlockTimeStamp_ThrowsBlockTimeBeforeTrxConsensusErrorExceptionAsync()
         {
             var transaction = this.network.CreateTransaction();
             transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
@@ -106,13 +106,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.BlockToValidate));
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosCoinstakeRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosCoinstakeRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BlockTimeBeforeTrx, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfWorkBlock_TransactionTimestampAfterBlockTimeStamp_ThrowsBlockTimeBeforeTrxConsensusErrorExceptionAsync()
+        public void RunAsync_ProofOfWorkBlock_TransactionTimestampAfterBlockTimeStamp_ThrowsBlockTimeBeforeTrxConsensusErrorExceptionAsync()
         {
             var transaction = this.network.CreateTransaction();
             transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
@@ -123,13 +123,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             Assert.True(BlockStake.IsProofOfWork(this.ruleContext.ValidationContext.BlockToValidate));
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosCoinstakeRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosCoinstakeRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BlockTimeBeforeTrx, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfStakeBlock_ValidBlock_DoesNotThrowExceptionAsync()
+        public void RunAsync_ProofOfStakeBlock_ValidBlock_DoesNotThrowExceptionAsync()
         {
             var transaction = this.network.CreateTransaction();
             transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
@@ -151,11 +151,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.BlockToValidate));
 
-            await this.consensusRules.RegisterRule<PosCoinstakeRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<PosCoinstakeRule>().Run(this.ruleContext);
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfWorkBlock_ValidBlock_DoesNotThrowExceptionAsync()
+        public void RunAsync_ProofOfWorkBlock_ValidBlock_DoesNotThrowExceptionAsync()
         {
             var transaction = this.network.CreateTransaction();
             transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             Assert.True(BlockStake.IsProofOfWork(this.ruleContext.ValidationContext.BlockToValidate));
 
-            await this.consensusRules.RegisterRule<PosCoinstakeRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<PosCoinstakeRule>().Run(this.ruleContext);
         }
     }
 }

@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting.ConsensusRules
             base.Initialize();
         }
 
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             Transaction coinbase = context.ValidationContext.BlockToValidate.Transactions[0];
 
@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting.ConsensusRules
             if (votingDataBytes == null)
             {
                 this.Logger.LogTrace("(-)[NO_VOTING_DATA]");
-                return Task.CompletedTask;
+                return;
             }
 
             List<VotingData> votingDataList = this.votingDataEncoder.Decode(votingDataBytes);
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting.ConsensusRules
                 PoAConsensusErrors.VotingDataInvalidFormat.Throw();
             }
 
-            return Task.CompletedTask;
+            return;
         }
     }
 }

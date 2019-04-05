@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ValidBlock_SetsConsensusFlagsAsync()
+        public void RunAsync_ValidBlock_SetsConsensusFlagsAsync()
         {
             this.nodeDeployments = new NodeDeployments(this.network, this.ChainIndexer);
             this.consensusRules = this.InitializeConsensusRules();
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.BlockToValidate = block;
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = this.ChainIndexer.Tip;
 
-            await this.consensusRules.RegisterRule<SetActivationDeploymentsPartialValidationRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<SetActivationDeploymentsPartialValidationRule>().Run(this.ruleContext);
 
             Assert.NotNull(this.ruleContext.Flags);
             Assert.True(this.ruleContext.Flags.EnforceBIP30);

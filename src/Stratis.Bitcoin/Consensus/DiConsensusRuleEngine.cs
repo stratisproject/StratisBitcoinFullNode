@@ -70,12 +70,12 @@ namespace Stratis.Bitcoin.Consensus
             return this.implementation.IntegrityValidation(header, block);
         }
 
-        public Task<ValidationContext> PartialValidationAsync(ChainedHeader header, Block block)
+        public ValidationContext PartialValidationAsync(ChainedHeader header, Block block)
         {
             return this.implementation.PartialValidationAsync(header, block);
         }
 
-        public Task<ValidationContext> FullValidationAsync(ChainedHeader header, Block block)
+        public ValidationContext FullValidationAsync(ChainedHeader header, Block block)
         {
             return this.implementation.FullValidationAsync(header, block);
         }

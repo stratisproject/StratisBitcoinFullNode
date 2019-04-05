@@ -37,11 +37,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
         /// <inheritdoc />
         /// <summary>Compute and store the stake proofs.</summary>
-        public override async Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             this.CheckAndComputeStake(context);
 
-            await base.RunAsync(context).ConfigureAwait(false);
+            base.Run(context);
             var posRuleContext = context as PosRuleContext;
             this.stakeChain.Set(context.ValidationContext.ChainedHeaderToValidate, posRuleContext.BlockStake);
         }

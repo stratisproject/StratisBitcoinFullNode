@@ -11,18 +11,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErros.BadTransactionEmptyOutput">The transaction output is empty.</exception>
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             if (context.SkipValidation)
-                return Task.CompletedTask;
+                return;
 
             Block block = context.ValidationContext.BlockToValidate;
 
             // Check transactions
             foreach (Transaction tx in block.Transactions)
                 this.CheckTransaction(tx);
-
-            return Task.CompletedTask;
         }
 
         public virtual void CheckTransaction(Transaction transaction)

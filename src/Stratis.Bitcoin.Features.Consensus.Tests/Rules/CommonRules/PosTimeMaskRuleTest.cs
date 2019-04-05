@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfWorkTooHigh_ThrowsProofOfWorkTooHighConsensusErrorAsync()
+        public void RunAsync_ProofOfWorkTooHigh_ThrowsProofOfWorkTooHighConsensusErrorAsync()
         {
             var rule = this.CreateRule<PosTimeMaskRule>();
 
@@ -47,13 +47,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.BlockToValidate.Transactions[0].Time = (uint)(StratisBugFixPosFutureDriftRule.DriftingBugFixTimestamp);
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = this.ChainIndexer.GetHeader(3);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => rule.RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => rule.Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.ProofOfWorkTooHigh, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_StakeTimestampInvalid_BlockTimeNotTransactionTime_ThrowsStakeTimeViolationConsensusErrorAsync()
+        public void RunAsync_StakeTimestampInvalid_BlockTimeNotTransactionTime_ThrowsStakeTimeViolationConsensusErrorAsync()
         {
             var rule = this.CreateRule<PosTimeMaskRule>();
 
@@ -77,13 +77,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             rule.FutureDriftRule = new StratisBugFixPosFutureDriftRule();
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => rule.RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => rule.Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.StakeTimeViolation, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_StakeTimestampInvalid_TransactionTimeDoesNotIncludeStakeTimestampMask_ThrowsStakeTimeViolationConsensusErrorAsync()
+        public void RunAsync_StakeTimestampInvalid_TransactionTimeDoesNotIncludeStakeTimestampMask_ThrowsStakeTimeViolationConsensusErrorAsync()
         {
             var rule = this.CreateRule<PosTimeMaskRule>();
 
@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             rule.FutureDriftRule = new StratisBugFixPosFutureDriftRule();
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => rule.RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => rule.Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.StakeTimeViolation, exception.ConsensusError);
         }
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ValidRuleContext_DoesNotThrowExceptionAsync()
+        public void RunAsync_ValidRuleContext_DoesNotThrowExceptionAsync()
         {
             var rule = this.CreateRule<PosTimeMaskRule>();
 
@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             rule.FutureDriftRule = new StratisBugFixPosFutureDriftRule();
 
-            await rule.RunAsync(this.ruleContext);
+            rule.Run(this.ruleContext);
         }
 
         private void SetBlockStake(BlockFlag flg)

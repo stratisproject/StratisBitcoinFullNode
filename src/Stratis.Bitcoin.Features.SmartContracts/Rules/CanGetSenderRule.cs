@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.senderRetriever = senderRetriever;
         }
 
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;
             IList<Transaction> processedTxs = new List<Transaction>();
@@ -31,8 +31,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
                 this.CheckTransactionInsideBlock(transaction, this.PowParent.UtxoSet, processedTxs);
                 processedTxs.Add(transaction);
             }
-
-            return Task.CompletedTask;
         }
 
         private void CheckTransactionInsideBlock(Transaction transaction, ICoinView coinView, IList<Transaction> blockTxs)

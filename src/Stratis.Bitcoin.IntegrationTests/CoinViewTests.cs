@@ -344,7 +344,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             };
 
             this.network.Consensus.Options = new ConsensusOptions();
-            new WitnessCommitmentsRule().RunAsync(context).GetAwaiter().GetResult();
+            new WitnessCommitmentsRule().Run(context);
 
             var rule = new CheckPowTransactionRule();
             var options = this.network.Consensus.Options;

@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
                 rule.Initialize();
 
-                (rule as AsyncConsensusRule).RunAsync(ruleContext).GetAwaiter().GetResult();
+                rule.Run(ruleContext);
             }
             catch (Exception e)
             {

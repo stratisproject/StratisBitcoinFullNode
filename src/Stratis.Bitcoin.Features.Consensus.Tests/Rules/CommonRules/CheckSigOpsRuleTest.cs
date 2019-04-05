@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_SingleTransactionInputSigOpsCountAboveThresHold_ThrowsBadBlockSigOpsConsensusErrorExceptionAsync()
+        public void RunAsync_SingleTransactionInputSigOpsCountAboveThresHold_ThrowsBadBlockSigOpsConsensusErrorExceptionAsync()
         {
             this.options.MaxBlockSigopsCost = 7;
             this.options.WitnessScaleFactor = 2;
@@ -27,13 +27,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Inputs.Add(new TxIn(new Script(op, op, op, op)));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSigOps, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_MultipleTransactionInputSigOpsCountAboveThresHold_ThrowsBadBlockSigOpsConsensusErrorExceptionAsync()
+        public void RunAsync_MultipleTransactionInputSigOpsCountAboveThresHold_ThrowsBadBlockSigOpsConsensusErrorExceptionAsync()
         {
             this.options.MaxBlockSigopsCost = 7;
             this.options.WitnessScaleFactor = 2;
@@ -44,13 +44,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Inputs.Add(new TxIn(new Script(op, op)));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSigOps, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_SingleTransactionOutputSigOpsCountAboveThresHold_ThrowsBadBlockSigOpsConsensusErrorExceptionAsync()
+        public void RunAsync_SingleTransactionOutputSigOpsCountAboveThresHold_ThrowsBadBlockSigOpsConsensusErrorExceptionAsync()
         {
             this.options.MaxBlockSigopsCost = 7;
             this.options.WitnessScaleFactor = 2;
@@ -60,13 +60,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op, op, op)));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSigOps, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_MultipleTransactionOutputSigOpsCountAboveThresHold_ThrowsBadBlockSigOpsConsensusErrorExceptionAsync()
+        public void RunAsync_MultipleTransactionOutputSigOpsCountAboveThresHold_ThrowsBadBlockSigOpsConsensusErrorExceptionAsync()
         {
             this.options.MaxBlockSigopsCost = 7;
             this.options.WitnessScaleFactor = 2;
@@ -77,13 +77,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op)));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSigOps, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_CombinedTransactionInputOutputSigOpsCountAboveThresHold_ThrowsBadBlockSigOpsConsensusErrorExceptionAsync()
+        public void RunAsync_CombinedTransactionInputOutputSigOpsCountAboveThresHold_ThrowsBadBlockSigOpsConsensusErrorExceptionAsync()
         {
             this.options.MaxBlockSigopsCost = 7;
             this.options.WitnessScaleFactor = 2;
@@ -94,13 +94,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op)));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckSigOpsRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSigOps, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_SingleTransactionInputSigOpsCountAtThresHold_DoesNotThrowExceptionAsync()
+        public void RunAsync_SingleTransactionInputSigOpsCountAtThresHold_DoesNotThrowExceptionAsync()
         {
             this.options.MaxBlockSigopsCost = 8;
             this.options.WitnessScaleFactor = 2;
@@ -110,11 +110,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Inputs.Add(new TxIn(new Script(op, op, op, op)));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<CheckSigOpsRule>().Run(this.ruleContext);
         }
 
         [Fact]
-        public async Task RunAsync_MultipleTransactionInputSigOpsCountAtThresHold_DoesNotThrowExceptionAsync()
+        public void RunAsync_MultipleTransactionInputSigOpsCountAtThresHold_DoesNotThrowExceptionAsync()
         {
             this.options.MaxBlockSigopsCost = 8;
             this.options.WitnessScaleFactor = 2;
@@ -125,11 +125,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Inputs.Add(new TxIn(new Script(op, op)));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<CheckSigOpsRule>().Run(this.ruleContext);
         }
 
         [Fact]
-        public async Task RunAsync_SingleTransactionOutputSigOpsCountAtThresHold_DoesNotThrowExceptionAsync()
+        public void RunAsync_SingleTransactionOutputSigOpsCountAtThresHold_DoesNotThrowExceptionAsync()
         {
             this.options.MaxBlockSigopsCost = 8;
             this.options.WitnessScaleFactor = 2;
@@ -139,11 +139,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op, op, op)));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<CheckSigOpsRule>().Run(this.ruleContext);
         }
 
         [Fact]
-        public async Task RunAsync_MultipleTransactionOutputSigOpsCountAtThresHold_DoesNotThrowExceptionAsync()
+        public void RunAsync_MultipleTransactionOutputSigOpsCountAtThresHold_DoesNotThrowExceptionAsync()
         {
             this.options.MaxBlockSigopsCost = 8;
             this.options.WitnessScaleFactor = 2;
@@ -154,11 +154,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op)));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<CheckSigOpsRule>().Run(this.ruleContext);
         }
 
         [Fact]
-        public async Task RunAsync_CombinedTransactionInputOutputSigOpsCountAtThresHold_DoesNotThrowExceptionAsync()
+        public void RunAsync_CombinedTransactionInputOutputSigOpsCountAtThresHold_DoesNotThrowExceptionAsync()
         {
             this.options.MaxBlockSigopsCost = 8;
             this.options.WitnessScaleFactor = 2;
@@ -169,11 +169,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op)));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<CheckSigOpsRule>().Run(this.ruleContext);
         }
 
         [Fact]
-        public async Task RunAsync_SingleTransactionInputSigOpsCountBelowThreshold_DoesNotThrowExceptionAsync()
+        public void RunAsync_SingleTransactionInputSigOpsCountBelowThreshold_DoesNotThrowExceptionAsync()
         {
             this.options.MaxBlockSigopsCost = 9;
             this.options.WitnessScaleFactor = 2;
@@ -183,11 +183,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Inputs.Add(new TxIn(new Script(op, op, op, op)));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<CheckSigOpsRule>().Run(this.ruleContext);
         }
 
         [Fact]
-        public async Task RunAsync_MultipleTransactionInputSigOpsCountBelowThreshold_DoesNotThrowExceptionAsync()
+        public void RunAsync_MultipleTransactionInputSigOpsCountBelowThreshold_DoesNotThrowExceptionAsync()
         {
             this.options.MaxBlockSigopsCost = 9;
             this.options.WitnessScaleFactor = 2;
@@ -198,11 +198,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Inputs.Add(new TxIn(new Script(op, op)));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<CheckSigOpsRule>().Run(this.ruleContext);
         }
 
         [Fact]
-        public async Task RunAsync_SingleTransactionOutputSigOpsCountBelowThreshold_DoesNotThrowExceptionAsync()
+        public void RunAsync_SingleTransactionOutputSigOpsCountBelowThreshold_DoesNotThrowExceptionAsync()
         {
             this.options.MaxBlockSigopsCost = 9;
             this.options.WitnessScaleFactor = 2;
@@ -212,11 +212,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op, op, op)));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<CheckSigOpsRule>().Run(this.ruleContext);
         }
 
         [Fact]
-        public async Task RunAsync_MultipleTransactionOutputSigOpsCountBelowThreshold_DoesNotThrowExceptionAsync()
+        public void RunAsync_MultipleTransactionOutputSigOpsCountBelowThreshold_DoesNotThrowExceptionAsync()
         {
             this.options.MaxBlockSigopsCost = 9;
             this.options.WitnessScaleFactor = 2;
@@ -227,11 +227,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op)));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<CheckSigOpsRule>().Run(this.ruleContext);
         }
 
         [Fact]
-        public async Task RunAsync_CombinedTransactionInputOutputSigOpsCountBelowThreshold_DoesNotThrowExceptionAsync()
+        public void RunAsync_CombinedTransactionInputOutputSigOpsCountBelowThreshold_DoesNotThrowExceptionAsync()
         {
             this.options.MaxBlockSigopsCost = 9;
             this.options.WitnessScaleFactor = 2;
@@ -242,7 +242,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(1), new Script(op, op)));
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            await this.consensusRules.RegisterRule<CheckSigOpsRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<CheckSigOpsRule>().Run(this.ruleContext);
         }
     }
 }

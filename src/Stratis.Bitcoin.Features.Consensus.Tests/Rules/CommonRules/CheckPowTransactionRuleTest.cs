@@ -201,7 +201,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_BlockPassesCheckTransaction_DoesNotThrowExceptionAsync()
+        public void RunAsync_BlockPassesCheckTransaction_DoesNotThrowExceptionAsync()
         {
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 50).Select(c => (byte)c).ToArray())));
@@ -214,11 +214,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
 
-            await rule.RunAsync(this.ruleContext);
+            rule.Run(this.ruleContext);
         }
 
         [Fact]
-        public async Task RunAsync_BlockFailsCheckTransaction_ThrowsBadTransactionEmptyOutputConsensusErrorExceptionAsync()
+        public void RunAsync_BlockFailsCheckTransaction_ThrowsBadTransactionEmptyOutputConsensusErrorExceptionAsync()
         {
             var validTransaction = new Transaction();
             validTransaction.Inputs.Add(new TxIn(new OutPoint(), Script.FromBytesUnsafe(new string('A', 50).Select(c => (byte)c).ToArray())));
@@ -231,7 +231,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(validTransaction);
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(invalidTransaction);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadTransactionNoInput, exception.ConsensusError);
         }

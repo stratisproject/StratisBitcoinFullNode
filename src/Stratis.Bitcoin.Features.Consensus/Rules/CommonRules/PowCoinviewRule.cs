@@ -87,11 +87,5 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             base.UpdateUTXOSet(context, transaction);
         }
-
-        /// <inheritdoc />
-        public override Task RunAsync(RuleContext context)
-        {
-            return base.RunAsync(context);
-        }
     }
 }

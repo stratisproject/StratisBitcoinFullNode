@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_BlockPassesCheckTransaction_DoesNotThrowExceptionAsync()
+        public void RunAsync_BlockPassesCheckTransaction_DoesNotThrowExceptionAsync()
         {
             var transaction = this.network.CreateTransaction();
             transaction.Inputs.Add(new TxIn()
@@ -106,11 +106,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
             ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
-            await this.consensusRules.RegisterRule<CheckPosTransactionRule>().RunAsync(ruleContext);
+            this.consensusRules.RegisterRule<CheckPosTransactionRule>().Run(ruleContext);
         }
 
         [Fact]
-        public async Task RunAsync_BlockFailsCheckTransaction_ThrowsBadTransactionEmptyOutputConsensusErrorExceptionAsync()
+        public void RunAsync_BlockFailsCheckTransaction_ThrowsBadTransactionEmptyOutputConsensusErrorExceptionAsync()
         {
             var validTransaction = this.network.CreateTransaction();
             validTransaction.Inputs.Add(new TxIn()
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(validTransaction);
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(invalidTransaction);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPosTransactionRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPosTransactionRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadTransactionEmptyOutput, exception.ConsensusError);
         }

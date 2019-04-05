@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// </summary>
     public class TxOutSmartContractExecRule : FullValidationConsensusRule, ISmartContractMempoolRule
     {
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;
 
@@ -21,8 +21,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             {
                 this.CheckTransaction(transaction);
             }
-
-            return Task.CompletedTask;
         }
 
         public void CheckTransaction(MempoolValidationContext context)

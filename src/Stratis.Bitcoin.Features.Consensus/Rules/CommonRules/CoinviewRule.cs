@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
-        public override async Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;
             ChainedHeader index = context.ValidationContext.ChainedHeaderToValidate;
@@ -106,23 +106,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             {
                 this.CheckBlockReward(context, fees, index.Height, block);
 
-                // Start the Parallel loop on a thread so its result can be awaited rather than blocking
-                Task<ParallelLoopResult> checkInputsInParallel = Task.Run(() =>
+                ParallelLoopResult loopResult = Parallel.ForEach(inputsToCheck, (input, state) =>
                 {
-                    return Parallel.ForEach(inputsToCheck, (input, state) =>
+                    if (state.ShouldExitCurrentIteration)
+                        return;
+
+                    if (!this.CheckInput(input.tx, input.inputIndexCopy, input.txOut, input.txData, input.input, input.flags))
                     {
-                        if (state.ShouldExitCurrentIteration)
-                            return;
-
-                        if (!this.CheckInput(input.tx, input.inputIndexCopy, input.txOut, input.txData, input.input, input.flags))
-                        {
-                            state.Stop();
-                        }
-                    });
-
+                        state.Stop();
+                    }
                 });
-
-                ParallelLoopResult loopResult = await checkInputsInParallel.ConfigureAwait(false);
 
                 if (!loopResult.IsCompleted)
                 {

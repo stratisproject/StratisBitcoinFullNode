@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         private const int FlushRequiredThresholdSeconds = 2 * 24 * 60 * 60;
 
         /// <inheritdoc />
-        public override async Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             uint256 oldBlockHash = context.ValidationContext.ChainedHeaderToValidate.Previous.HashBlock;
             uint256 nextBlockHash = context.ValidationContext.ChainedHeaderToValidate.HashBlock;
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class LoadCoinviewRule : UtxoStoreConsensusRule
     {
         /// <inheritdoc />
-        public override async Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             // Check that the current block has not been reorged.
             // Catching a reorg at this point will not require a rewind.

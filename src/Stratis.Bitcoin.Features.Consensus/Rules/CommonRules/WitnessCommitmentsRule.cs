@@ -19,10 +19,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadWitnessNonceSize">The witness nonce size is invalid.</exception>
         /// <exception cref="ConsensusErrors.BadWitnessMerkleMatch">The witness merkle commitment does not match the computed commitment.</exception>
         /// <exception cref="ConsensusErrors.UnexpectedWitness">The block does not expect witness transactions but contains a witness transaction.</exception>
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             if (context.SkipValidation)
-                return Task.CompletedTask;
+                return;
 
             DeploymentFlags deploymentFlags = context.Flags;
             Block block = context.ValidationContext.BlockToValidate;
@@ -82,8 +82,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     }
                 }
             }
-
-            return Task.CompletedTask;
         }
 
         /// <summary>

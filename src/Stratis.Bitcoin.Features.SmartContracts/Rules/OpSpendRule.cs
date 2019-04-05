@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// </summary>
     public class OpSpendRule : FullValidationConsensusRule
     {
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;
 
@@ -39,8 +39,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
                     this.Throw();
                 }
             }
-
-            return Task.CompletedTask;
         }
 
         private void Throw()
