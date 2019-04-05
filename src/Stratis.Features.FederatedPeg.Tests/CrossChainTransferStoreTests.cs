@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using NBitcoin;
 using Newtonsoft.Json;
 using NSubstitute;
@@ -539,6 +540,82 @@ namespace Stratis.Features.FederatedPeg.Tests
             WalletSendTransactionModel model2 = Post<SendTransactionRequest, WalletSendTransactionModel>(
                 "http://127.0.0.1:38221/api/wallet/send-transaction", sendRequest);
 
+        }
+
+        /// <summary>
+        /// Attempt to get the federation to merge signatures on an invalid transaction that sends federation UTXOs to its own address.
+        /// Simulates the behaviour if someone were to come on the network and broadcast their own <see cref="RequestPartialTransactionPayload"/> message
+        /// with bogus information.
+        /// </summary>
+        [Fact]
+        public async Task AttemptFederationInvalidWithdrawal()
+        {
+            var dataFolder = new DataFolder(CreateTestDir(this));
+
+            this.Init(dataFolder);
+            this.AddFunding();
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
+
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
+            {
+                crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
+
+                Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
+                Assert.Equal(this.ChainIndexer.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
+
+                BitcoinAddress address = (new Key()).PubKey.Hash.GetAddress(this.network);
+
+                var deposit = new Deposit(0, new Money(160m, MoneyUnit.BTC), address.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+
+                MaturedBlockDepositsModel[] blockDeposits = new[] { new MaturedBlockDepositsModel(
+                    new MaturedBlockInfoModel() {
+                        BlockHash = 1,
+                        BlockHeight = crossChainTransferStore.NextMatureDepositHeight },
+                    new[] { deposit })
+                };
+
+                await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
+
+                ICrossChainTransfer[] crossChainTransfers = await crossChainTransferStore.GetAsync(new[] {deposit.Id});
+                ICrossChainTransfer crossChainTransfer = crossChainTransfers.SingleOrDefault();
+
+                Assert.NotNull(crossChainTransfer);
+
+                Transaction transaction = crossChainTransfer.PartialTransaction;
+
+                Assert.True(crossChainTransferStore.ValidateTransaction(transaction));
+
+                crossChainTransfers = await crossChainTransferStore.GetAsync(new[] { deposit.Id });
+                ICrossChainTransfer crossChainTransfer2 = crossChainTransfers.SingleOrDefault();
+
+                Assert.NotNull(crossChainTransfer2);
+
+                // Modify transaction 2 to send the funds to a new address.
+                BitcoinAddress bogusAddress = new Key().PubKey.Hash.GetAddress(this.network);
+
+                Transaction transaction2 = crossChainTransfer2.PartialTransaction;
+
+                transaction2.Outputs[1].ScriptPubKey = bogusAddress.ScriptPubKey;
+
+                // Merges the transaction signatures.
+                await crossChainTransferStore.MergeTransactionSignaturesAsync(deposit.Id, new[] { transaction2 });
+
+                // Test the outcome.
+                crossChainTransfers = await crossChainTransferStore.GetAsync(new[] { deposit.Id });
+                crossChainTransfer = crossChainTransfers.SingleOrDefault();
+
+                Assert.NotNull(crossChainTransfer);
+
+                // Expect signing to fail.
+                Assert.NotEqual(CrossChainTransferStatus.FullySigned, crossChainTransfer.Status);
+
+                // Should return null.
+                Dictionary<uint256, Transaction> signedTransactions = await crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned);
+                Transaction signedTransaction = signedTransactions.Values.SingleOrDefault();
+
+                Assert.Null(signedTransaction);
+            }
         }
 
         private Q Post<T,Q>(string url, T body)
