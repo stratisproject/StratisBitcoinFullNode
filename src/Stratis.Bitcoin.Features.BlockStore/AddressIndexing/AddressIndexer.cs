@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                 this.addressesIndex = new AddressIndexerData()
                 {
-                    TipHash = this.network.GenesisHash.ToString(),
+                    TipHashBytes = this.network.GenesisHash.ToBytes(),
                     AddressIndexDatas = new List<AddressIndexData>()
                 };
                 this.dataStore.Insert(this.addressesIndex);
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 400);
 
-            if ((this.consensusManager.Tip.HashBlock.ToString() != this.addressesIndex.TipHash))
+            if ((!this.consensusManager.Tip.HashBlock.ToBytes().SequenceEqual(this.addressesIndex.TipHashBytes)))
             {
                 const string message = "TransactionIndexer is in inconsistent state. This can happen if you've enabled txindex on an already synced or partially synced node. " +
                                        "Remove everything from the data folder and run the node with -txindex=true.";
@@ -228,7 +228,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 }
             }
 
-            this.addressesIndex.TipHash = item.Value.ChainedHeader.HashBlock.ToString();
+            this.addressesIndex.TipHashBytes = item.Value.ChainedHeader.HashBlock.ToBytes();
         }
 
         private AddressIndexData GetOrCreateAddressData(Script scriptPubKey)
