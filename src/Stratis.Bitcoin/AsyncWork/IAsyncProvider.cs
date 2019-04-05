@@ -26,7 +26,6 @@ namespace Stratis.Bitcoin.AsyncWork
         /// <summary>
         /// Creates an starts an application defined task inside a newly created async loop.
         /// </summary>
-        /// <typeparam name="T">Type of the queued items used in the loop.</typeparam>
         /// <param name="name">Name of the loop.</param>
         /// <param name="loop">The loop.</param>
         /// <param name="cancellation">Cancellation token that triggers when the task and the loop should be cancelled.</param>
@@ -35,6 +34,6 @@ namespace Stratis.Bitcoin.AsyncWork
         /// If this is null, the task is repeated every 1 second by default.</param>
         /// <param name="startAfter">Delay before the first run of the task, or null if no startup delay is required.</param>
         /// <returns></returns>
-        IAsyncLoop CreateAndRunAsyncLoop<T>(string name, Func<CancellationToken, Task> loop, CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
+        IAsyncLoop CreateAndRunAsyncLoop(string name, Func<CancellationToken, Task> loop, CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
     }
 }
