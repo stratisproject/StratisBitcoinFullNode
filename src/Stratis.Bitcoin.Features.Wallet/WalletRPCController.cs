@@ -7,9 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly IScriptAddressReader scriptAddressReader;
 
         /// <summary>Node related configuration.</summary>
-        private readonly NodeSettings nodeSettings;
+        private readonly StoreSettings storeSettings;
 
         /// <summary>Wallet manager.</summary>
         private readonly IWalletManager walletManager;
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             ILoggerFactory loggerFactory,
             Network network,
             IScriptAddressReader scriptAddressReader,
-            NodeSettings nodeSettings,
+            StoreSettings storeSettings,
             IWalletManager walletManager,
             WalletSettings walletSettings,
             IWalletTransactionHandler walletTransactionHandler) : base(fullNode: fullNode, consensusManager: consensusManager, chainIndexer: chainIndexer, network: network)
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.broadcasterManager = broadcasterManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.scriptAddressReader = scriptAddressReader;
-            this.nodeSettings = nodeSettings;
+            this.storeSettings = storeSettings;
             this.walletManager = walletManager;
             this.walletSettings = walletSettings;
             this.walletTransactionHandler = walletTransactionHandler;
@@ -342,7 +342,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         [ActionDescription("Returns a list of grouped addresses which have had their common ownership made public by common use as inputs or as the resulting change in past transactions.")]
         public AddressGroupingModel[] ListAddressGroupings()
         {
-            if (!this.nodeSettings.TxIndex)
+            if (!this.storeSettings.TxIndex)
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, $"{nameof(ListAddressGroupings)} is incompatible with transaction indexing turned off (i.e. -txIndex=0).");
 
             var walletReference = this.GetWalletAccountReference();
