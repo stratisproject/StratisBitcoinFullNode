@@ -25,7 +25,6 @@ namespace Stratis.Bitcoin.P2P.Protocol
     {
         /// <summary>Queue of the unprocessed incoming messages.</summary>
         private readonly IAsyncDelegateDequeuer<T> asyncQueue;
-        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>
         /// Initializes the instance of the object.
@@ -33,7 +32,6 @@ namespace Stratis.Bitcoin.P2P.Protocol
         /// <param name="processMessageAsync">User defined callback routine to be executed when a new message arrives to the listener.</param>
         public CallbackMessageListener(IAsyncProvider asyncProvider, ProcessMessageAsync<T> processMessageAsync)
         {
-            this.asyncProvider = Guard.NotNull(asyncProvider, nameof(asyncProvider));
             this.asyncQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<T>(this.GetType().Name, new Func<T, CancellationToken, Task>(processMessageAsync));
         }
 
