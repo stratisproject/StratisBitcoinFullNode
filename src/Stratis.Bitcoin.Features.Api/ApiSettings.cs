@@ -97,19 +97,15 @@ namespace Stratis.Bitcoin.Features.Api
         /// <param name="network">The network to use.</param>
         public static void PrintHelp(Network network)
         {
-            var settings = NodeSettings.Default(network);
-            var defaults = new ApiSettings(settings);
-            var keepAlive = (defaults.KeepaliveTimer?.Interval ?? 0) / 1000;
             var builder = new StringBuilder();
 
-            builder.AppendLine($"-apiuri=<string>                  URI to node's API interface. Defaults to '{ defaults.ApiUri }'.");
-            builder.AppendLine($"-apiport=<0-65535>                Port of node's API interface. Defaults to { defaults.ApiPort }.");
-            builder.AppendLine($"-keepalive=<seconds>              Keep Alive interval (set in seconds). Default: { keepAlive } (0 means no keep alive).");
-            builder.AppendLine($"-usehttps=<bool>                  Use https protocol on the API. Defaults to { defaults.UseHttps }.");
-            builder.AppendLine($"-certificatefilepath=<string>     Path to the certificate used for https traffic encryption. Defaults to { (defaults.HttpsCertificateFilePath ?? "<null>") }.");
-            builder.AppendLine($"                                  Password protected files are not supported. On MacOs, only p12 certificates can be used without password.");
+            builder.AppendLine($"-apiuri=<string>                  URI to node's API interface. Defaults to '{ DefaultApiHost }'.");
+            builder.AppendLine($"-apiport=<0-65535>                Port of node's API interface. Defaults to { network.DefaultAPIPort }.");
+            builder.AppendLine($"-keepalive=<seconds>              Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
+            builder.AppendLine($"-usehttps=<bool>                  Use https protocol on the API. Defaults to false.");
+            builder.AppendLine($"-certificatefilepath=<string>     Path to the certificate used for https traffic encryption. Defaults to <null>. Password protected files are not supported. On MacOs, only p12 certificates can be used without password.");
 
-            settings.Logger.LogInformation(builder.ToString());
+            NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
         }
 
         /// <summary>
@@ -119,23 +115,18 @@ namespace Stratis.Bitcoin.Features.Api
         /// <param name="network">The network to base the defaults off.</param>
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
-            var settings = NodeSettings.Default(network);
-            var defaults = new ApiSettings(settings);
-            var keepAlive = (defaults.KeepaliveTimer?.Interval ?? 0) / 1000;
-
             builder.AppendLine("####API Settings####");
-            builder.AppendLine($"#URI to node's API interface. Defaults to '{ defaults.ApiUri }'.");
-            builder.AppendLine($"#apiuri={ defaults.ApiUri }");
-            builder.AppendLine($"#Port of node's API interface. Defaults to { defaults.ApiPort }.");
-            builder.AppendLine($"#apiport={ defaults.ApiPort }");
-            builder.AppendLine($"#Keep Alive interval (set in seconds). Default: { keepAlive } (0 means no keep alive).");
-            builder.AppendLine($"#keepalive= { keepAlive }");
-            builder.AppendLine($"#Use HTTPS protocol on the API. Default is { defaults.UseHttps }.");
-            builder.AppendLine($"#usehttps={ defaults.UseHttps }");
+            builder.AppendLine($"#URI to node's API interface. Defaults to '{ DefaultApiHost }'.");
+            builder.AppendLine($"#apiuri={ DefaultApiHost }");
+            builder.AppendLine($"#Port of node's API interface. Defaults to { network.DefaultAPIPort }.");
+            builder.AppendLine($"#apiport={ network.DefaultAPIPort }");
+            builder.AppendLine($"#Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
+            builder.AppendLine($"#keepalive=0");
+            builder.AppendLine($"#Use HTTPS protocol on the API. Default is false.");
+            builder.AppendLine($"#usehttps=false");
             builder.AppendLine($"#Path to the file containing the certificate to use for https traffic encryption. Password protected files are not supported. On MacOs, only p12 certificates can be used without password.");
             builder.AppendLine(@"#Please refer to .Net Core documentation for usage: 'https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.x509certificates.x509certificate2.-ctor?view=netcore-2.1#System_Security_Cryptography_X509Certificates_X509Certificate2__ctor_System_Byte___'.");
-            builder.AppendLine($"#Default is { (defaults.HttpsCertificateFilePath ?? "<null>") }.");
-            builder.AppendLine($"#certificatefilepath={ defaults.HttpsCertificateFilePath }");
+            builder.AppendLine($"#certificatefilepath=");
         }
     }
 }
