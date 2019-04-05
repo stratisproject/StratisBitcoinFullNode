@@ -11,11 +11,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.EventBus;
-using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Primitives;
-using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Script = NBitcoin.Script;
 
@@ -49,7 +45,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private AddressIndexerData addressesIndex;
 
-        private CancellationTokenSource calcellation;
+        /// <summary>Protects access to <see cref="addressesIndex"/>.</summary>
+        private readonly object lockObject;
+
+        private readonly CancellationTokenSource calcellation;
 
         private Task indexingTask;
 
@@ -65,6 +64,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.dataFolder = dataFolder;
             this.consensusManager = consensusManager;
 
+            this.lockObject = new object();
             this.flushChangesInterval = TimeSpan.FromMinutes(5);
             this.calcellation = new CancellationTokenSource();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -85,26 +85,29 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             this.dataStore = this.db.GetCollection<AddressIndexerData>(DbKey);
 
-            this.addressesIndex = this.dataStore.FindAll().FirstOrDefault();
-
-            if (this.addressesIndex == null)
+            lock (this.lockObject)
             {
-                this.logger.LogDebug("Tip was not found, initializing with genesis.");
+                this.addressesIndex = this.dataStore.FindAll().FirstOrDefault();
 
-                this.addressesIndex = new AddressIndexerData()
+                if (this.addressesIndex == null)
                 {
-                    TipHashBytes = this.network.GenesisHash.ToBytes(),
-                    AddressIndexDatas = new List<AddressIndexData>()
-                };
-                this.dataStore.Insert(this.addressesIndex);
-            }
+                    this.logger.LogDebug("Tip was not found, initializing with genesis.");
 
-            this.chainedHeaderTip = this.consensusManager.Tip.FindAncestorOrSelf(new uint256(this.addressesIndex.TipHashBytes));
+                    this.addressesIndex = new AddressIndexerData()
+                    {
+                        TipHashBytes = this.network.GenesisHash.ToBytes(),
+                        AddressIndexDatas = new List<AddressIndexData>()
+                    };
+                    this.dataStore.Insert(this.addressesIndex);
+                }
+
+                this.chainedHeaderTip = this.consensusManager.Tip.FindAncestorOrSelf(new uint256(this.addressesIndex.TipHashBytes));
+            }
 
             if (this.chainedHeaderTip == null)
                 this.chainedHeaderTip = this.consensusManager.Tip.GetAncestor(0);
 
-            this.indexingTask = this.IndexAddressesContinuouslyAsync();
+            this.indexingTask = Task.Run(async () => await this.IndexAddressesContinuouslyAsync().ConfigureAwait(false));
 
             this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 400);
         }
@@ -122,7 +125,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     {
                         this.logger.LogDebug("Flushing changes.");
 
-                        this.dataStore.Update(this.addressesIndex);
+                        lock (this.lockObject)
+                        {
+                            this.dataStore.Update(this.addressesIndex);
+                        }
+
                         triggerFlush = false;
                         lastFlushTime = DateTime.Now;
 
@@ -133,11 +140,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     if (nextHeader == null)
                     {
+                        this.logger.LogDebug("Next header wasn't found. Waiting.");
                         triggerFlush = true;
 
                         try
                         {
-                            await Task.Delay(2_000, this.calcellation.Token).ConfigureAwait(false);
+                            await Task.Delay(5_000, this.calcellation.Token).ConfigureAwait(false);
                         }
                         catch (OperationCanceledException)
                         {
@@ -164,12 +172,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     if (blockToProcess == null)
                     {
+                        this.logger.LogDebug("Next block wasn't found. Waiting.");
+
                         // We are advancing too fast so the block is not ready yet.
                         triggerFlush = true;
 
                         try
                         {
-                            await Task.Delay(2_000, this.calcellation.Token).ConfigureAwait(false);
+                            await Task.Delay(5_000, this.calcellation.Token).ConfigureAwait(false);
                         }
                         catch (OperationCanceledException)
                         {
@@ -178,13 +188,33 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         continue;
                     }
 
-                    this.ProcessBlock(blockToProcess, nextHeader);
+                    bool success = this.ProcessBlock(blockToProcess, nextHeader);
+
+                    if (!success)
+                    {
+                        this.logger.LogDebug("Failed to process next block. Waiting.");
+
+                        triggerFlush = true;
+
+                        try
+                        {
+                            await Task.Delay(5_000, this.calcellation.Token).ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                        }
+
+                        continue;
+                    }
 
                     this.chainedHeaderTip = nextHeader;
                     this.addressesIndex.TipHashBytes = this.chainedHeaderTip.HashBlock.ToBytes();
                 }
 
-                this.dataStore.Update(this.addressesIndex);
+                lock (this.lockObject)
+                {
+                    this.dataStore.Update(this.addressesIndex);
+                }
             }
             catch (Exception e)
             {
@@ -201,7 +231,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
 
         /// <summary>Processes block that was added or removed from consensus chain.</summary>
-        private void ProcessBlock(Block block, ChainedHeader header)
+        /// <returns><c>true</c> if block was processed. <c>false</c> if reorg detected and we failed to process a block.</returns>
+        private bool ProcessBlock(Block block, ChainedHeader header)
         {
             // Process inputs
             var inputs = new List<TxIn>();
@@ -212,7 +243,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             Transaction[] transactions = this.blockStore.GetTransactionsByIds(inputs.Select(x => x.PrevOut.Hash).ToArray());
 
-            // TODO is it possible that transactions is null because block with requested ID was reorged away already?
+            if (transactions == null)
+            {
+                this.logger.LogTrace("(-)[TXES_NOT_FOUND]");
+                return false;
+            }
 
             for (int i = 0; i < inputs.Count; i++)
             {
@@ -251,6 +286,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     });
                 }
             }
+
+            return true;
         }
 
         private AddressIndexData GetOrCreateAddressData(Script scriptPubKey)
@@ -281,6 +318,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             if (this.addressesIndex == null)
                 throw new IndexerNotInitializedException();
 
+            // TODO access data while holding a lock
             throw new NotImplementedException();
         }
 
@@ -291,6 +329,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             if (this.addressesIndex == null)
                 throw new IndexerNotInitializedException();
 
+            // TODO access data while holding a lock
             throw new NotImplementedException();
         }
 
