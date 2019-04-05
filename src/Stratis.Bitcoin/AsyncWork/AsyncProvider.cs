@@ -33,10 +33,9 @@ namespace Stratis.Bitcoin.AsyncWork
 
         private (string Name, int Width)[] benchmarkColumnsDefinition = new[]
         {
-            (Name: "Name", Width: 30),
+            (Name: "Name", Width: 80),
             (Name: "Type", Width: 15),
-            (Name: "Health", Width: 15),
-            (Name: "Status", Width: 20)
+            (Name: "Health", Width: 15)
         };
 
         public AsyncProvider(ILoggerFactory loggerFactory, ISignals signals, INodeLifetime nodeLifetime)
@@ -176,20 +175,16 @@ namespace Stratis.Bitcoin.AsyncWork
         [NoTrace]
         public void AddBenchStats(StringBuilder log)
         {
-            List<AsyncTaskInfo> taskInformationsDump;
+            List<KeyValuePair<IAsyncDelegate, AsyncTaskInfo>> taskInformationsDump;
             lock (this.lockAsyncDelegates)
             {
                 // takes a snapshot of the informations.
-                taskInformationsDump = this.asyncDelegates.Values.ToList();
+                taskInformationsDump = this.asyncDelegates.ToList();
             }
 
-            log.AppendLine("====== Async loops ======");
-            log.AppendLine("Running".PadRight(20) + taskInformationsDump.Where(info => info.IsRunning).Count().ToString().PadRight(20));
-            log.Append("Faulted".PadRight(20) + taskInformationsDump.Where(info => !info.IsRunning).Count().ToString().PadRight(20));
-            log.AppendLine("------");
-
             var data =
-                from info in taskInformationsDump
+                from item in taskInformationsDump
+                let info = item.Value
                 orderby info.FriendlyName
                 select new
                 {
@@ -197,10 +192,14 @@ namespace Stratis.Bitcoin.AsyncWork
                         info.FriendlyName,
                         (info.IsLoop ? "Loop" : "Dequeuer"),
                         (info.IsRunning ? "Running" : "Faulted"),
-                        info.Status.ToString()
                     },
                     Exception = info.Exception?.Message
                 };
+
+            log.AppendLine("====== Async loops ======");
+            log.AppendLine("Running".PadRight(20) + taskInformationsDump.Where(info => info.Value.IsRunning).Count().ToString().PadRight(20));
+            log.Append("Faulted".PadRight(20) + taskInformationsDump.Where(info => !info.Value.IsRunning).Count().ToString().PadRight(20));
+            log.AppendLine("------");
 
             foreach (var item in this.benchmarkColumnsDefinition)
             {
@@ -216,17 +215,17 @@ namespace Stratis.Bitcoin.AsyncWork
                 {
                     log.Append(row.Columns[iColumn].PadRight(this.benchmarkColumnsDefinition[iColumn].Width));
 
-                    // if exception != null means the loop is faulted, so I show the reason in a row under it, starting from the 2nd column (after the name)
+                    // if exception != null means the loop is faulted, so I show the reason in a row under it, a little indented.
                     if (row.Exception != null)
                     {
                         log.AppendLine();
-                        log.Append(string.Empty.PadRight(this.benchmarkColumnsDefinition[0].Width));
-                        log.Append($"* Fault Reason: {row.Exception}");
+                        log.Append($"      * Fault Reason: {row.Exception}");
                     }
                 }
+
+                log.AppendLine();
             }
 
-            log.AppendLine();
             log.AppendLine("-".PadRight(this.benchmarkColumnsDefinition.Sum(column => column.Width), '-'));
         }
 
