@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.Utilities;
@@ -50,5 +51,49 @@ namespace Stratis.Bitcoin.AsyncWork
         /// <param name="startAfter">Delay before the first run of the task, or null if no startup delay is required.</param>
         /// <returns></returns>
         IAsyncLoop CreateAndRunAsyncLoopUntil(string name, CancellationToken cancellation, Func<bool> condition, Action action, Action<Exception> onException, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
+
+        /// <summary>
+        /// Determines whether an <see cref="IAsyncDelegateDequeuer{T}" /> with the specified name is running.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns>
+        ///   <c>true</c> if an <see cref="IAsyncDelegateDequeuer{T}" /> with the specified name is currently running, otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// Names are not unique, consider adding prefixes to names when <see cref="IAsyncDelegateDequeuer{T}" /> are transient and does not act like singletons. This method is mostly used for tests.
+        /// </remarks>
+        bool IsAsyncDelegateDequeuerRunning(string name);
+
+        /// <summary>
+        /// Determines whether an <see cref="IAsyncLoop" /> with the specified name is running.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns>
+        ///   <c>true</c> if an <see cref="IAsyncLoop" /> with the specified name is currently running, otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// Names are not unique, consider adding prefixes to names when <see cref="IAsyncLoop" /> are transient and does not act like singletons. This method is mostly used for tests.
+        /// </remarks>
+        bool IsAsyncLoopRunning(string name);
+
+        /// <summary>
+        /// Determines whether a specified <see cref="IAsyncDelegate" /> is running.
+        /// </summary>
+        /// <param name="asyncDelegate">The asynchronous delegate to check.</param>
+        /// <returns>
+        ///   <c>true</c> if the specified <see cref="IAsyncDelegate" /> is currently running, otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// Names are not unique, consider adding prefixes to names when loops are transient and does not act like singletons.
+        /// This method is mostly used for tests.
+        /// state can be either of type <see cref="IAsyncDelegateDequeuer{T}" /> or <see cref="IAsyncLoop" />
+        /// </remarks>
+        bool IsAsyncDelegateDequeuerRunning(IAsyncDelegate asyncDelegate);
+
+        /// <summary>
+        /// Append benchmark statistics to the <paramref name="log"/>.
+        /// </summary>
+        /// <param name="log">The log.</param>
+        void AddBenchStats(StringBuilder log);
     }
 }

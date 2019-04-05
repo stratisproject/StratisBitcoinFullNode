@@ -44,6 +44,8 @@ namespace Stratis.Bitcoin.AsyncWork
             /// </summary>
             public bool IsDelegateWorker { get; }
 
+            public bool IsRunning => this.Status != TaskStatus.Faulted;
+
             /// <summary>
             /// Initializes a new instance of the <see cref="AsyncTaskInfo"/> class.
             /// </summary>

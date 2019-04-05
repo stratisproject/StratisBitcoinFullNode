@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.AsyncWork
 {
@@ -28,6 +30,14 @@ namespace Stratis.Bitcoin.AsyncWork
         private ILogger logger;
         private ISignals signals;
         private readonly INodeLifetime nodeLifetime;
+
+        private (string Name, int Width)[] benchmarkColumnsDefinition = new[]
+        {
+            (Name: "Name", Width: 30),
+            (Name: "Type", Width: 15),
+            (Name: "Health", Width: 15),
+            (Name: "Status", Width: 20)
+        };
 
         public AsyncProvider(ILoggerFactory loggerFactory, ISignals signals, INodeLifetime nodeLifetime)
         {
@@ -61,61 +71,6 @@ namespace Stratis.Bitcoin.AsyncWork
             newDelegate.ConsumerTask.ContinueWith(this.onAsyncDelegateCompleted, newDelegate, TaskContinuationOptions.NotOnFaulted);
 
             return newDelegate;
-        }
-
-        /// <summary>
-        ///  This method is called when a Task running an <see cref="IAsyncDelegate"/> captured an unhandled exception.
-        /// </summary>
-        /// <param name="task">The delegate task.</param>
-        /// <param name="state">The <see cref="IAsyncDelegate"/> that's run by the delegateTask</param>
-        /// <remarks>state can be either of type <see cref="IAsyncDelegateDequeuer{T}"/> or <see cref="IAsyncLoop"/></remarks>
-        private void onAsyncDelegateUnhandledException(Task task, object state)
-        {
-            AsyncTaskInfo delegateInfo;
-            lock (this.lockAsyncDelegates)
-            {
-                if (this.asyncDelegates.TryGetValue((IAsyncDelegate)state, out delegateInfo))
-                {
-                    // casted to IAsyncTaskInfoSetter to be able to set properties
-                    IAsyncTaskInfoSetter infoSetter = delegateInfo;
-
-                    infoSetter.Exception = task.Exception.GetBaseException();
-                    infoSetter.Status = task.Status;
-                }
-                else
-                {
-                    // Should never happen.
-                    this.logger.LogError("Cannot find the AsyncDelegateInfo related to the faulted task with Id {0}.", task.Id);
-                    return;
-                }
-
-                this.logger.LogError(task.Exception.GetBaseException(), "Unhandled exception for async delegate worker {0}.", delegateInfo.FriendlyName);
-            }
-        }
-
-        /// <summary>
-        ///  This method is called when a Task running an <see cref="IAsyncDelegate"/> completed or was canceled.
-        ///  It removes the task information from the internal dictionary.
-        /// </summary>
-        /// <param name="task">The delegate task.</param>
-        /// <param name="state">The <see cref="IAsyncDelegate"/> that's run by the delegateTask</param>
-        private void onAsyncDelegateCompleted(Task task, object state)
-        {
-            bool removed;
-            lock (this.lockAsyncDelegates)
-            {
-                removed = this.asyncDelegates.Remove((IAsyncDelegate)state);
-            }
-
-            if (removed)
-            {
-                this.logger.LogTrace("IAsyncDelegate task Removed. Id: {0}.", task.Id);
-            }
-            else
-            {
-                // Should never happen.
-                this.logger.LogError("Cannot find the IAsyncDelegate task with Id {0}.", task.Id);
-            }
         }
 
         /// <inheritdoc />
@@ -179,18 +134,8 @@ namespace Stratis.Bitcoin.AsyncWork
             return new AsyncQueue<T>();
         }
 
-        /// <summary>
-        /// Determines whether a specified <see cref="IAsyncDelegate" /> is running.
-        /// </summary>
-        /// <param name="asyncDelegate">The asynchronous delegate to check.</param>
-        /// <returns>
-        ///   <c>true</c> if the specified <see cref="IAsyncDelegate" /> is currently running, otherwise, <c>false</c>.
-        /// </returns>
-        /// <remarks>
-        /// Names are not unique, consider adding prefixes to names when loops are transient and does not act like singletons.
-        /// This method is mostly used for tests.
-        /// state can be either of type <see cref="IAsyncDelegateDequeuer{T}" /> or <see cref="IAsyncLoop" />
-        /// </remarks>
+        /// <inheritdoc />
+
         public bool IsAsyncDelegateDequeuerRunning(IAsyncDelegate asyncDelegate)
         {
             lock (this.lockAsyncDelegates)
@@ -205,16 +150,8 @@ namespace Stratis.Bitcoin.AsyncWork
             }
         }
 
-        /// <summary>
-        /// Determines whether an <see cref="IAsyncDelegateDequeuer{T}" /> with the specified name is running.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <returns>
-        ///   <c>true</c> if an <see cref="IAsyncDelegateDequeuer{T}" /> with the specified name is currently running, otherwise, <c>false</c>.
-        /// </returns>
-        /// <remarks>
-        /// Names are not unique, consider adding prefixes to names when <see cref="IAsyncDelegateDequeuer{T}" /> are transient and does not act like singletons. This method is mostly used for tests.
-        /// </remarks>
+        /// <inheritdoc />
+
         public bool IsAsyncDelegateDequeuerRunning(string name)
         {
             lock (this.lockAsyncDelegates)
@@ -224,22 +161,127 @@ namespace Stratis.Bitcoin.AsyncWork
             }
         }
 
-        /// <summary>
-        /// Determines whether an <see cref="IAsyncLoop" /> with the specified name is running.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <returns>
-        ///   <c>true</c> if an <see cref="IAsyncLoop" /> with the specified name is currently running, otherwise, <c>false</c>.
-        /// </returns>
-        /// <remarks>
-        /// Names are not unique, consider adding prefixes to names when <see cref="IAsyncLoop" /> are transient and does not act like singletons. This method is mostly used for tests.
-        /// </remarks>
+        /// <inheritdoc />
+
         public bool IsAsyncLoopRunning(string name)
         {
             lock (this.lockAsyncDelegates)
             {
                 // task in the dictionaries are either running or faulted so we just look for a dequeuer with the given name and status not faulted.
                 return this.asyncDelegates.Values.Any(@delegate => @delegate.FriendlyName == name && @delegate.Status != TaskStatus.Faulted && @delegate.IsLoop == true);
+            }
+        }
+
+        /// <inheritdoc />
+        [NoTrace]
+        public void AddBenchStats(StringBuilder log)
+        {
+            List<AsyncTaskInfo> taskInformationsDump;
+            lock (this.lockAsyncDelegates)
+            {
+                // takes a snapshot of the informations.
+                taskInformationsDump = this.asyncDelegates.Values.ToList();
+            }
+
+            log.AppendLine("====== Async loops ======");
+            log.AppendLine("Running".PadRight(20) + taskInformationsDump.Where(info => info.IsRunning).Count().ToString().PadRight(20));
+            log.Append("Faulted".PadRight(20) + taskInformationsDump.Where(info => !info.IsRunning).Count().ToString().PadRight(20));
+            log.AppendLine("------");
+
+            var data =
+                from info in taskInformationsDump
+                orderby info.FriendlyName
+                select new
+                {
+                    Columns = new string[] {
+                        info.FriendlyName,
+                        (info.IsLoop ? "Loop" : "Dequeuer"),
+                        (info.IsRunning ? "Running" : "Faulted"),
+                        info.Status.ToString()
+                    },
+                    Exception = info.Exception?.Message
+                };
+
+            foreach (var item in this.benchmarkColumnsDefinition)
+            {
+                log.Append(item.Name.PadRight(item.Width));
+            }
+
+            log.AppendLine();
+            log.AppendLine("-".PadRight(this.benchmarkColumnsDefinition.Sum(column => column.Width), '-'));
+
+            foreach (var row in data)
+            {
+                for (int iColumn = 0; iColumn < this.benchmarkColumnsDefinition.Length; iColumn++)
+                {
+                    log.Append(row.Columns[iColumn].PadRight(this.benchmarkColumnsDefinition[iColumn].Width));
+
+                    // if exception != null means the loop is faulted, so I show the reason in a row under it, starting from the 2nd column (after the name)
+                    if (row.Exception != null)
+                    {
+                        log.AppendLine();
+                        log.Append(string.Empty.PadRight(this.benchmarkColumnsDefinition[0].Width));
+                        log.Append($"* Fault Reason: {row.Exception}");
+                    }
+                }
+            }
+
+            log.AppendLine();
+            log.AppendLine("-".PadRight(this.benchmarkColumnsDefinition.Sum(column => column.Width), '-'));
+        }
+
+        /// <summary>
+        ///  This method is called when a Task running an <see cref="IAsyncDelegate"/> captured an unhandled exception.
+        /// </summary>
+        /// <param name="task">The delegate task.</param>
+        /// <param name="state">The <see cref="IAsyncDelegate"/> that's run by the delegateTask</param>
+        /// <remarks>state can be either of type <see cref="IAsyncDelegateDequeuer{T}"/> or <see cref="IAsyncLoop"/></remarks>
+        private void onAsyncDelegateUnhandledException(Task task, object state)
+        {
+            AsyncTaskInfo delegateInfo;
+            lock (this.lockAsyncDelegates)
+            {
+                if (this.asyncDelegates.TryGetValue((IAsyncDelegate)state, out delegateInfo))
+                {
+                    // casted to IAsyncTaskInfoSetter to be able to set properties
+                    IAsyncTaskInfoSetter infoSetter = delegateInfo;
+
+                    infoSetter.Exception = task.Exception.GetBaseException();
+                    infoSetter.Status = task.Status;
+                }
+                else
+                {
+                    // Should never happen.
+                    this.logger.LogError("Cannot find the AsyncDelegateInfo related to the faulted task with Id {0}.", task.Id);
+                    return;
+                }
+
+                this.logger.LogError(task.Exception.GetBaseException(), "Unhandled exception for async delegate worker {0}.", delegateInfo.FriendlyName);
+            }
+        }
+
+        /// <summary>
+        ///  This method is called when a Task running an <see cref="IAsyncDelegate"/> completed or was canceled.
+        ///  It removes the task information from the internal dictionary.
+        /// </summary>
+        /// <param name="task">The delegate task.</param>
+        /// <param name="state">The <see cref="IAsyncDelegate"/> that's run by the delegateTask</param>
+        private void onAsyncDelegateCompleted(Task task, object state)
+        {
+            bool removed;
+            lock (this.lockAsyncDelegates)
+            {
+                removed = this.asyncDelegates.Remove((IAsyncDelegate)state);
+            }
+
+            if (removed)
+            {
+                this.logger.LogTrace("IAsyncDelegate task Removed. Id: {0}.", task.Id);
+            }
+            else
+            {
+                // Should never happen.
+                this.logger.LogError("Cannot find the IAsyncDelegate task with Id {0}.", task.Id);
             }
         }
     }

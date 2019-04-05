@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Base
 
         /// <inheritdoc cref="Network"/>
         private readonly Network network;
-
+        private readonly INodeStats nodeStats;
         private readonly IProvenBlockHeaderStore provenBlockHeaderStore;
 
         private readonly IConsensusManager consensusManager;
@@ -142,6 +142,7 @@ namespace Stratis.Bitcoin.Base
             Network network,
             ITipsManager tipsManager,
             IKeyValueRepository keyValueRepo,
+            INodeStats nodeStats,
             IProvenBlockHeaderStore provenBlockHeaderStore = null)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
@@ -157,6 +158,7 @@ namespace Stratis.Bitcoin.Base
             this.blockPuller = blockPuller;
             this.blockStore = blockStore;
             this.network = network;
+            this.nodeStats = nodeStats;
             this.provenBlockHeaderStore = provenBlockHeaderStore;
             this.partialValidator = partialValidator;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
@@ -226,6 +228,8 @@ namespace Stratis.Bitcoin.Base
             await this.consensusManager.InitializeAsync(this.chainIndexer.Tip).ConfigureAwait(false);
 
             this.chainState.ConsensusTip = this.consensusManager.Tip;
+
+            this.nodeStats.RegisterStats(this.asyncProvider.AddBenchStats, StatsType.Benchmark, 100);
         }
 
         /// <summary>
