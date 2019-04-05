@@ -146,6 +146,34 @@ namespace Stratis.Bitcoin.AsyncWork
         }
 
         /// <inheritdoc />
+        public IAsyncLoop CreateAndRunAsyncLoopUntil(string name, CancellationToken cancellation, Func<bool> condition, Action action, Action<Exception> onException, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null)
+        {
+            CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+            return this.CreateAndRunAsyncLoop(name, token =>
+            {
+                try
+                {
+                    // loop until the condition is met, then execute the action and finish.
+                    if (condition())
+                    {
+                        action();
+
+                        linkedTokenSource.Cancel();
+                    }
+                }
+                catch (Exception e)
+                {
+                    onException(e);
+                    linkedTokenSource.Cancel();
+                }
+
+                return Task.CompletedTask;
+            },
+            linkedTokenSource.Token,
+            repeatEvery: repeatEvery);
+        }
+
+        /// <inheritdoc />
         public IAsyncQueue<T> CreateAsyncQueue<T>()
         {
             return new AsyncQueue<T>();
