@@ -9,6 +9,8 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NLog;
 using NLog.Config;
+using NLog.Targets;
+using NLog.Targets.Wrappers;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -22,6 +24,7 @@ using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using LogLevel = NLog.LogLevel;
+using Target = NBitcoin.Target;
 
 namespace Stratis.Bitcoin.Controllers
 {
@@ -472,6 +475,65 @@ namespace Stratis.Bitcoin.Controllers
         }
 
         /// <summary>
+        /// Get the enabled log rules.
+        /// </summary>
+        /// <returns>A list of log rules.</returns>
+        [HttpGet]
+        [Route("logrules")]
+        public IActionResult GetLogRules()
+        {
+            // Checks the request is valid.
+            if (!this.ModelState.IsValid)
+            {
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                var rules = new List<LogRuleModel>();
+
+                foreach (LoggingRule rule in LogManager.Configuration.LoggingRules)
+                {
+                    string filename = string.Empty;
+
+                    if (!rule.Targets.Any())
+                    {
+                        continue;
+                    }
+
+                    // Retrieve the full path of the current rule's log file.
+                    if (rule.Targets.First().GetType().Name == "AsyncTargetWrapper")
+                    {
+                        WrapperTargetBase wrapper = (WrapperTargetBase) rule.Targets.First();
+
+                        if (wrapper.WrappedTarget != null && wrapper.WrappedTarget.GetType().Name == "FileTarget")
+                        {
+                            filename = ((FileTarget) wrapper.WrappedTarget).FileName.ToString();
+                        }
+                    }
+                    else if (rule.Targets.First().GetType().Name == "FileTarget")
+                    {
+                        filename = ((FileTarget)rule.Targets.First()).FileName.ToString();
+                    }
+
+                    rules.Add(new LogRuleModel
+                    {
+                        RuleName = rule.LoggerNamePattern,
+                        LogLevel = rule.Levels.First().Name,
+                        Filename = filename
+                    });
+                }
+
+                return this.Json(rules);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
         /// Retrieves a transaction block given a valid hash.
         /// This function is used by other methods in this class and not explicitly by RPC/API.
         /// </summary>
@@ -499,7 +561,7 @@ namespace Stratis.Bitcoin.Controllers
         /// Retrieves the difficulty target of the full node's network.
         /// </summary>
         /// <param name="networkDifficulty">The network difficulty interface.</param>
-        /// <returns>A network difficulty <see cref="Target"/>. Returns <c>null</c> if fails.</returns>
+        /// <returns>A network difficulty <see cref="NBitcoin.Target"/>. Returns <c>null</c> if fails.</returns>
         internal static Target GetNetworkDifficulty(INetworkDifficulty networkDifficulty = null)
         {
             return networkDifficulty?.GetNetworkDifficulty();
