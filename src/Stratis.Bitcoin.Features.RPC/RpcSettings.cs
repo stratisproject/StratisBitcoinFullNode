@@ -31,6 +31,9 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <summary>TCP port for RPC interface.</summary>
         public int RPCPort { get; set; }
 
+        /// <summary>Default bindings from config.</summary>
+        public List<IPEndPoint> DefaultBindings => DefaultBinding(this.AllowIp.Any(), this.RPCPort);
+
         /// <summary>List of network endpoints that the node will listen and provide RPC on.</summary>
         public List<IPEndPoint> Bind { get; set; }
 
@@ -39,8 +42,6 @@ namespace Stratis.Bitcoin.Features.RPC
 
         // TODO: Refactor static PrintHelp method.
         private static RpcSettings settingsHelp;
-
-        public List<IPEndPoint> DefaultBinding() => DefaultBinding(this.AllowIp.Any(), this.RPCPort);
 
         private static List<IPEndPoint> DefaultBinding(bool haveAllowIps, int rpcPort)
         {
@@ -138,7 +139,7 @@ namespace Stratis.Bitcoin.Features.RPC
                 }
 
                 if (this.Bind.Count == 0)
-                    this.Bind = this.DefaultBinding();
+                    this.Bind = this.DefaultBindings;
             }
             catch (FormatException)
             {
