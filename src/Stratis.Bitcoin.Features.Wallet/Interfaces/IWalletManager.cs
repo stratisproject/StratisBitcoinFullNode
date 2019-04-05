@@ -233,16 +233,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         int LastBlockHeight();
 
         /// <summary>
-        /// Returns a list of grouped addresses which have had their common ownership made public by common use as inputs or as the resulting change in past transactions.
-        /// </summary
-        /// <remarks>
-        /// Please see https://github.com/bitcoin/bitcoin/blob/726d0668ff780acb59ab0200359488ce700f6ae6/src/wallet/wallet.cpp#L3641
-        /// </remarks>
-        /// <param name="walletName">The wallet in question.</param>
-        /// <returns>The grouped list of base58 addresses.</returns>
-        List<List<string>> GetAddressGroupings(string walletName);
-
-        /// <summary>
         /// Remove all the transactions in the wallet that are above this block height
         /// </summary>
         void RemoveBlocks(ChainedHeader fork);
