@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Api
     /// </summary>
     public class ApiSettings
     {
-        /// <summary>The default api host.</summary>
+        /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
         public const string DefaultApiHost = "http://localhost";
 
         /// <summary>Instance logger.</summary>
@@ -27,9 +27,6 @@ namespace Stratis.Bitcoin.Features.Api
 
         /// <summary>URI to node's API interface.</summary>
         public Timer KeepaliveTimer { get; private set; }
-
-        // TODO: Refactor static PrintHelp method.
-        private static Action<ApiSettings> savedNodeDefaults;
 
         /// <summary>
         /// The HTTPS certificate file path.
@@ -47,48 +44,29 @@ namespace Stratis.Bitcoin.Features.Api
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
         /// <param name="nodeSettings">The node configuration.</param>
-        /// <param name="nodeDefaults">Allows overriding the default values before config and command line are applied.</param>
-        public ApiSettings(NodeSettings nodeSettings, Action<ApiSettings> nodeDefaults = null)
+        public ApiSettings(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
             this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ApiSettings).FullName);
 
-            // Constants.
-            this.UseHttps = false;
-            this.HttpsCertificateFilePath = (string)null;
-            this.ApiPort = nodeSettings.Network.DefaultAPIPort;
-            this.ApiUri = new Uri($"{DefaultApiHost}");
-            this.KeepaliveTimer = null;
-
-            // DefaultArgs.
-            nodeDefaults?.Invoke(this);
-
-            // For printing help.
-            // TODO: Refactor.
-            savedNodeDefaults = nodeDefaults;
-
-            // Config and Command Line.
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
-            this.UseHttps = config.GetOrDefault("usehttps", this.UseHttps);
-            this.HttpsCertificateFilePath = config.GetOrDefault("certificatefilepath", this.HttpsCertificateFilePath);
+            this.UseHttps = config.GetOrDefault("usehttps", false);
+            this.HttpsCertificateFilePath = config.GetOrDefault("certificatefilepath", (string)null);
 
             if (this.UseHttps && string.IsNullOrWhiteSpace(this.HttpsCertificateFilePath))
                 throw new ConfigurationException("The path to a certificate needs to be provided when using https. Please use the argument 'certificatefilepath' to provide it.");
 
-            string defaultApiHost = this.ApiUri.IsDefaultPort ? this.ApiUri.OriginalString : this.ApiUri.OriginalString.Split(':')[0];
-
-            if (this.UseHttps)
-                defaultApiHost = defaultApiHost.Replace(@"http://", @"https://");
-            else
-                defaultApiHost = defaultApiHost.Replace(@"https://", @"http://");
+            var defaultApiHost = this.UseHttps
+                ? DefaultApiHost.Replace(@"http://", @"https://")
+                : DefaultApiHost;
 
             string apiHost = config.GetOrDefault("apiuri", defaultApiHost, this.logger);
             var apiUri = new Uri(apiHost);
 
             // Find out which port should be used for the API.
-            int apiPort = config.GetOrDefault("apiport", this.ApiPort, this.logger);
+            int apiPort = config.GetOrDefault("apiport", nodeSettings.Network.DefaultAPIPort, this.logger);
 
             // If no port is set in the API URI.
             if (apiUri.IsDefaultPort)
@@ -104,29 +82,14 @@ namespace Stratis.Bitcoin.Features.Api
             }
 
             // Set the keepalive interval (set in seconds).
-            double keepAlive = config.GetOrDefault("keepalive", (double?)null, this.logger) * 1000 ?? this.KeepaliveTimer?.Interval ?? 0;
-            if (this.KeepaliveTimer != null)
+            int keepAlive = config.GetOrDefault("keepalive", 0, this.logger);
+            if (keepAlive > 0)
             {
-                if (keepAlive > 0)
+                this.KeepaliveTimer = new Timer
                 {
-                    this.KeepaliveTimer.Interval = keepAlive;
-                }
-                else
-                {
-                    this.KeepaliveTimer.Dispose();
-                    this.KeepaliveTimer = null;
-                }
-            }
-            else
-            {
-                if (keepAlive > 0)
-                {
-                    this.KeepaliveTimer = new Timer
-                    {
-                        AutoReset = false,
-                        Interval = keepAlive
-                    };
-                }
+                    AutoReset = false,
+                    Interval = keepAlive * 1000
+                };
             }
         }
 
@@ -134,9 +97,10 @@ namespace Stratis.Bitcoin.Features.Api
         /// <param name="network">The network to use.</param>
         public static void PrintHelp(Network network)
         {
-            var builder = new StringBuilder();
-            var defaults = new ApiSettings(NodeSettings.Default(network), savedNodeDefaults);
+            var settings = NodeSettings.Default(network);
+            var defaults = new ApiSettings(settings);
             var keepAlive = (defaults.KeepaliveTimer?.Interval ?? 0) / 1000;
+            var builder = new StringBuilder();
 
             builder.AppendLine($"-apiuri=<string>                  URI to node's API interface. Defaults to '{ defaults.ApiUri }'.");
             builder.AppendLine($"-apiport=<0-65535>                Port of node's API interface. Defaults to { defaults.ApiPort }.");
@@ -145,7 +109,7 @@ namespace Stratis.Bitcoin.Features.Api
             builder.AppendLine($"-certificatefilepath=<string>     Path to the certificate used for https traffic encryption. Defaults to { (defaults.HttpsCertificateFilePath ?? "<null>") }.");
             builder.AppendLine($"                                  Password protected files are not supported. On MacOs, only p12 certificates can be used without password.");
 
-            NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
+            settings.Logger.LogInformation(builder.ToString());
         }
 
         /// <summary>
@@ -155,7 +119,8 @@ namespace Stratis.Bitcoin.Features.Api
         /// <param name="network">The network to base the defaults off.</param>
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
-            var defaults = new ApiSettings(NodeSettings.Default(network), savedNodeDefaults);
+            var settings = NodeSettings.Default(network);
+            var defaults = new ApiSettings(settings);
             var keepAlive = (defaults.KeepaliveTimer?.Interval ?? 0) / 1000;
 
             builder.AppendLine("####API Settings####");
