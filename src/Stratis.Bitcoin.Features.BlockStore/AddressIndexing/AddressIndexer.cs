@@ -22,6 +22,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
     /// <remarks>Disabled by default. Node should be synced from scratch with txindexing enabled to build address index.</remarks>
     public interface IAddressIndexer : IDisposable
     {
+        ChainedHeader IndexerTip { get; }
+
         void Initialize();
 
         /// <summary>Returns balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
@@ -66,7 +68,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private Task indexingTask;
 
-        private ChainedHeader chainedHeaderTip;
+        public ChainedHeader IndexerTip { get; private set; }
 
         public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory,
             Network network, IBlockStore blockStore, INodeStats nodeStats, IConsensusManager consensusManager)
@@ -115,11 +117,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     this.dataStore.Insert(this.addressesIndex);
                 }
 
-                this.chainedHeaderTip = this.consensusManager.Tip.FindAncestorOrSelf(new uint256(this.addressesIndex.TipHashBytes));
+                this.IndexerTip = this.consensusManager.Tip.FindAncestorOrSelf(new uint256(this.addressesIndex.TipHashBytes));
             }
 
-            if (this.chainedHeaderTip == null)
-                this.chainedHeaderTip = this.consensusManager.Tip.GetAncestor(0);
+            if (this.IndexerTip == null)
+                this.IndexerTip = this.consensusManager.Tip.GetAncestor(0);
 
             this.indexingTask = Task.Run(async () => await this.IndexAddressesContinuouslyAsync().ConfigureAwait(false));
 
@@ -150,7 +152,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         this.logger.LogDebug("Flush completed.");
                     }
 
-                    ChainedHeader nextHeader = this.consensusManager.Tip.GetAncestor(this.chainedHeaderTip.Height + 1);
+                    ChainedHeader nextHeader = this.consensusManager.Tip.GetAncestor(this.IndexerTip.Height + 1);
 
                     if (nextHeader == null)
                     {
@@ -168,9 +170,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         continue;
                     }
 
-                    if (nextHeader.Previous.HashBlock != this.chainedHeaderTip.HashBlock)
+                    if (nextHeader.Previous.HashBlock != this.IndexerTip.HashBlock)
                     {
-                        ChainedHeader lastCommonHeader = nextHeader.FindFork(this.chainedHeaderTip);
+                        ChainedHeader lastCommonHeader = nextHeader.FindFork(this.IndexerTip);
 
                         this.logger.LogDebug("Reorg detected. Rewinding till '{0}'.", lastCommonHeader);
 
@@ -180,7 +182,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                                 addressIndexData.Changes.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
                         }
 
-                        this.chainedHeaderTip = lastCommonHeader;
+                        this.IndexerTip = lastCommonHeader;
                         continue;
                     }
 
@@ -224,11 +226,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         continue;
                     }
 
-                    this.chainedHeaderTip = nextHeader;
+                    this.IndexerTip = nextHeader;
 
                     lock (this.lockObject)
                     {
-                        this.addressesIndex.TipHashBytes = this.chainedHeaderTip.HashBlock.ToBytes();
+                        this.addressesIndex.TipHashBytes = this.IndexerTip.HashBlock.ToBytes();
                     }
                 }
 
@@ -246,8 +248,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         private void AddInlineStats(StringBuilder benchLog)
         {
             benchLog.AppendLine("AddressIndexer.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                           (this.chainedHeaderTip.Height.ToString().PadRight(8)) +
-                           ((" AddressIndexer.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.chainedHeaderTip.HashBlock) ));
+                           (this.IndexerTip.Height.ToString().PadRight(8)) +
+                           ((" AddressIndexer.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.IndexerTip.HashBlock) ));
         }
 
         /// <summary>Processes block that was added or removed from consensus chain.</summary>
