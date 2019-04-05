@@ -568,7 +568,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     }
 
                     transactionItems = transactionItems.Distinct(new SentTransactionItemModelComparer()).Select(e => e).ToList();
-                    
+
                     // Sort and filter the history items.
                     List<TransactionItemModel> itemsToInclude = transactionItems.OrderByDescending(t => t.Timestamp)
                         .Where(x => string.IsNullOrEmpty(request.SearchQuery) || (x.Id.ToString() == request.SearchQuery || x.ToAddress == request.SearchQuery || x.Payments.Any(p => p.DestinationAddress == request.SearchQuery)))
@@ -756,16 +756,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// and then building the transaction and retrieving the fee from the context.
         /// </summary>
         /// <param name="request">The transaction parameters.</param>
-        /// <remarks>
-        /// The OpenApi specification doesn't support arrays of objects as a query parameter so this method is not usable
-        /// by the Swagger UI.
-        /// Here is an example of how to call this endpoint:
-        /// /api/wallet/estimate-txfee?walletname=wallet1&accountname=account 0&recipients[0].destinationaddress=TMLvkmSsDJnBi8vfszHSaVQ67NxEjgsUw6&recipients[0].amount=1000255&feetype=low 
-        /// </remarks>
         /// <returns>The estimated fee for the transaction.</returns>
         [Route("estimate-txfee")]
-        [HttpGet]
-        public IActionResult GetTransactionFeeEstimate([FromQuery]TxFeeEstimateRequest request)
+        [HttpPost]
+        public IActionResult GetTransactionFeeEstimate([FromBody]TxFeeEstimateRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
