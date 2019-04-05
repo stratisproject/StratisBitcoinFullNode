@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Base
         private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -182,12 +182,12 @@ namespace Stratis.Bitcoin.Base
         /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="network">The network the node is running on.</param>
-        public TimeSyncBehaviorState(IDateTimeProvider dateTimeProvider, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory, ILoggerFactory loggerFactory, Network network)
+        public TimeSyncBehaviorState(IDateTimeProvider dateTimeProvider, INodeLifetime nodeLifetime, IAsyncProvider asyncLoopFactory, ILoggerFactory loggerFactory, Network network)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dateTimeProvider = dateTimeProvider;
             this.nodeLifetime = nodeLifetime;
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncLoopFactory;
             this.network = network;
 
             this.inboundTimestampOffsets = new CircularArray<TimestampOffsetSample>(MaxInboundSamples);
@@ -315,7 +315,7 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         private void StartWarningLoop()
         {
-            this.warningLoop = this.asyncLoopFactory.Run($"{nameof(TimeSyncBehavior)}.WarningLoop", token =>
+            this.warningLoop = this.asyncProvider.CreateAndRunAsyncLoop($"{nameof(TimeSyncBehavior)}.WarningLoop", token =>
             {
                 if (!this.SwitchedOffLimitReached)
                 {
