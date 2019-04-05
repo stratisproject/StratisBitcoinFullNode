@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         public void Initialize()
         {
-            if (!this.storeSettings.TxIndex || !this.storeSettings.IndexAddresses)
+            if (!this.storeSettings.TxIndex || !this.storeSettings.AddressIndex)
             {
                 this.logger.LogTrace("(-)[DISABLED]");
                 return;
@@ -275,7 +275,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <inheritdoc/>
         public void Dispose()
         {
-            if (this.storeSettings.TxIndex && this.storeSettings.IndexAddresses)
+            if (this.storeSettings.TxIndex && this.storeSettings.AddressIndex)
             {
                 this.signals.Unsubscribe(this.blockConnectedSubscription);
                 this.signals.Unsubscribe(this.blockDisconnectedSubscription);

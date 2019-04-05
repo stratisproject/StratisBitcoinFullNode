@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary><c>true</c> to maintain a full addresses index.</summary>
         /// <remarks><see cref="TxIndex"/> should be set to <c>true</c> in order to enable address indexing.</remarks>
-        public bool IndexAddresses { get; set; }
+        public bool AddressIndex { get; set; }
 
         /// <summary>Calculates minimum amount of blocks we need to keep during pruning.</summary>
         private int GetMinPruningAmount()
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.TxIndex = config.GetOrDefault<bool>("txindex", false, this.logger);
             this.ReIndex = config.GetOrDefault<bool>("reindex", false, this.logger);
-            this.IndexAddresses = config.GetOrDefault<bool>("indexaddresses", false, this.logger);
+            this.AddressIndex = config.GetOrDefault<bool>("addressindex ", false, this.logger);
 
             if (this.PruningEnabled && this.TxIndex)
                 throw new ConfigurationException("Prune mode is incompatible with -txindex");
