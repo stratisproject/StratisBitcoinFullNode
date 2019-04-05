@@ -10,6 +10,7 @@ using LiteDB;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -61,7 +62,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <summary>Protects access to <see cref="addressesIndex"/>.</summary>
         private readonly object lockObject;
 
-        private readonly CancellationTokenSource calcellation;
+        private readonly CancellationTokenSource cancellation;
 
         private Task indexingTask;
 
@@ -79,7 +80,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             this.lockObject = new object();
             this.flushChangesInterval = TimeSpan.FromMinutes(5);
-            this.calcellation = new CancellationTokenSource();
+            this.cancellation = new CancellationTokenSource();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -122,7 +123,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             this.indexingTask = Task.Run(async () => await this.IndexAddressesContinuouslyAsync().ConfigureAwait(false));
 
-            this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 400);
+            this.nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 400);
         }
 
         private async Task IndexAddressesContinuouslyAsync()
@@ -132,7 +133,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             try
             {
-                while (!this.calcellation.IsCancellationRequested)
+                while (!this.cancellation.IsCancellationRequested)
                 {
                     if (triggerFlush || (DateTime.Now - lastFlushTime > this.flushChangesInterval))
                     {
@@ -158,7 +159,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                         try
                         {
-                            await Task.Delay(5_000, this.calcellation.Token).ConfigureAwait(false);
+                            await Task.Delay(5_000, this.cancellation.Token).ConfigureAwait(false);
                         }
                         catch (OperationCanceledException)
                         {
@@ -195,7 +196,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                         try
                         {
-                            await Task.Delay(5_000, this.calcellation.Token).ConfigureAwait(false);
+                            await Task.Delay(5_000, this.cancellation.Token).ConfigureAwait(false);
                         }
                         catch (OperationCanceledException)
                         {
@@ -214,7 +215,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                         try
                         {
-                            await Task.Delay(5_000, this.calcellation.Token).ConfigureAwait(false);
+                            await Task.Delay(5_000, this.cancellation.Token).ConfigureAwait(false);
                         }
                         catch (OperationCanceledException)
                         {
@@ -242,12 +243,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             }
         }
 
-        private void AddComponentStats(StringBuilder benchLog)
+        private void AddInlineStats(StringBuilder benchLog)
         {
-            benchLog.AppendLine();
-            benchLog.AppendLine("======AddressIndexer======");
-
-            benchLog.AppendLine($"Tip: {this.chainedHeaderTip}");
+            benchLog.AppendLine("AddressIndexer.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
+                           (this.chainedHeaderTip.Height.ToString().PadRight(8)) +
+                           ((" AddressIndexer.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.chainedHeaderTip.HashBlock) ));
         }
 
         /// <summary>Processes block that was added or removed from consensus chain.</summary>
@@ -393,7 +393,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         {
             if (this.storeSettings.TxIndex && this.storeSettings.AddressIndex)
             {
-                this.calcellation.Cancel();
+                this.cancellation.Cancel();
 
                 this.indexingTask.GetAwaiter().GetResult();
 
