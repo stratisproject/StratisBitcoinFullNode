@@ -341,7 +341,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                 long balance = 0;
 
-                foreach (AddressBalanceChange change in addressIndexData.Changes)
+                int requiredHeight = this.consensusManager.Tip.Height - minConfirmations;
+
+                foreach (AddressBalanceChange change in addressIndexData.Changes.Where(x => x.BalanceChangedHeight >= requiredHeight))
                 {
                     if (change.Deposited)
                         balance += change.Satoshi;
@@ -367,7 +369,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     return null;
                 }
 
-                long deposited = addressIndexData.Changes.Where(x => x.Deposited).Sum(x => x.Satoshi);
+                int requiredHeight = this.consensusManager.Tip.Height - minConfirmations;
+
+                long deposited = addressIndexData.Changes.Where(x => x.Deposited && x.BalanceChangedHeight >= requiredHeight).Sum(x => x.Satoshi);
 
                 return new Money(deposited);
             }
