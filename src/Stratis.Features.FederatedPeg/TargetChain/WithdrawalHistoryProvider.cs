@@ -90,7 +90,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
             foreach (TxIn input in partialTransaction.Inputs)
             {
-                ret += input.PrevOut.Hash.ToString().Take(6) + "-" + input.PrevOut.N + ",";
+                ret += input.PrevOut.Hash.ToString().Substring(0, 6) + "-" + input.PrevOut.N + ",";
             }
 
             return ret;
