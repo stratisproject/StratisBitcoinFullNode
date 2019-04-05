@@ -372,6 +372,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <inheritdoc />
         public Money GetReceivedByAddress(BitcoinAddress address, int minConfirmations = 0)
         {
+            if (this.addressesIndex == null)
+                throw new IndexerNotInitializedException();
+
             lock (this.lockObject)
             {
                 AddressIndexData addressIndexData = this.addressesIndex.AddressIndexDatas.SingleOrDefault(x => x.ScriptPubKeyBytes.SequenceEqual(address.ScriptPubKey.ToBytes()));
@@ -393,7 +396,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <inheritdoc/>
         public void Dispose()
         {
-            if (this.storeSettings.TxIndex && this.storeSettings.AddressIndex)
+            if (this.addressesIndex != null)
             {
                 this.cancellation.Cancel();
 
