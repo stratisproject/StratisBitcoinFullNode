@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.AsyncWork
 {

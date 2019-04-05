@@ -20,5 +20,11 @@ namespace Stratis.Bitcoin.AsyncWork
         /// </summary>
         /// <param name="item">Item to be added to the queue.</param>
         void Enqueue(T item);
+
+        /// <summary>
+        /// The number of items in the queue.
+        /// This property should only be used for collecting statistics.
+        /// </summary>
+        int Count { get; }
     }
 }

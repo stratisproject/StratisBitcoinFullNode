@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         private readonly IPeerBanning peerBanning;
         private readonly IProvenBlockHeaderStore provenBlockHeaderStore;
         private readonly ISignals signals;
-        private readonly AsyncProvider asyncProvider;
+        private readonly IAsyncProvider asyncProvider;
 
         public ProvenHeaderConsenusManagerBehaviorTests() : base(new StratisTest())
         {

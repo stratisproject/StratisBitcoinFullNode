@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Interfaces;
@@ -29,13 +30,13 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
-
+        private readonly IAsyncProvider asyncProvider;
         protected ChainedHeader walletTip;
 
         public ChainedHeader WalletTip => this.walletTip;
 
         /// <summary>Queue which contains blocks that should be processed by <see cref="WalletManager"/>.</summary>
-        private readonly AsyncQueue<Block> blocksQueue;
+        private readonly IAsyncDelegateDequeuer<Block> blocksQueue;
 
         /// <summary>Current <see cref="blocksQueue"/> size in bytes.</summary>
         private long blocksQueueSize;
@@ -48,7 +49,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
 
         public FederationWalletSyncManager(ILoggerFactory loggerFactory, IFederationWalletManager walletManager, ChainIndexer chain,
-            Network network, IBlockStore blockStore, StoreSettings storeSettings, INodeLifetime nodeLifetime)
+            Network network, IBlockStore blockStore, StoreSettings storeSettings, INodeLifetime nodeLifetime, IAsyncProvider asyncProvider)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
@@ -57,6 +58,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(blockStore, nameof(blockStore));
             Guard.NotNull(storeSettings, nameof(storeSettings));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
+            Guard.NotNull(asyncProvider, nameof(asyncProvider));
 
             this.walletManager = walletManager;
             this.chain = chain;
@@ -64,8 +66,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.storeSettings = storeSettings;
             this.nodeLifetime = nodeLifetime;
+            this.asyncProvider = asyncProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.blocksQueue = new AsyncQueue<Block>(this.OnProcessBlockAsync);
+            this.blocksQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<Block>($"{nameof(FederationWalletSyncManager)}-{nameof(this.blocksQueue)}", this.OnProcessBlockAsync);
 
             this.blocksQueueSize = 0;
         }

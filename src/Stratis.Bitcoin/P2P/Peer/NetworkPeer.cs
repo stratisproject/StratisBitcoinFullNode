@@ -116,6 +116,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>Tracker for endpoints known to be self. </summary>
         private readonly ISelfEndpointTracker selfEndpointTracker;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -252,7 +253,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         private readonly Action<IPEndPoint, Payload> onSendingMessage;
 
         /// <summary>A queue for sending payload messages to peers.</summary>
-        private readonly AsyncQueue<Payload> asyncQueue;
+        private readonly IAsyncDelegateDequeuer<Payload> asyncPayloadsQueue;
 
         /// <summary>
         /// Initializes parts of the object that are common for both inbound and outbound peers.
@@ -272,6 +273,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ISelfEndpointTracker selfEndpointTracker,
+            IAsyncProvider asyncProvider,
             Action<INetworkPeer> onDisconnected = null,
             Action<IPEndPoint, Payload> onSendingMessage = null)
         {
@@ -290,7 +292,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Network = network;
             this.Behaviors = new List<INetworkPeerBehavior>();
             this.selfEndpointTracker = selfEndpointTracker;
-
+            this.asyncProvider = asyncProvider;
             this.onDisconnectedAsyncContext = new AsyncLocal<DisconnectedExecutionAsyncContext>();
 
             this.ConnectionParameters = parameters ?? new NetworkPeerConnectionParameters();
@@ -301,7 +303,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.onDisconnected = onDisconnected;
             this.onSendingMessage = onSendingMessage;
 
-            this.asyncQueue = new AsyncQueue<Payload>(this.SendMessageHandledAsync);
+            this.asyncPayloadsQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<Payload>($"{nameof(NetworkPeer)}-{nameof(this.asyncPayloadsQueue)}", this.SendMessageHandledAsync);
         }
 
         /// <summary>
@@ -322,10 +324,11 @@ namespace Stratis.Bitcoin.P2P.Peer
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ISelfEndpointTracker selfEndpointTracker,
+            IAsyncProvider asyncProvider,
             Action<INetworkPeer> onDisconnected = null,
             Action<IPEndPoint, Payload> onSendingMessage = null
             )
-            : this(false, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, selfEndpointTracker, onDisconnected, onSendingMessage)
+            : this(false, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, selfEndpointTracker, asyncProvider, onDisconnected, onSendingMessage)
         {
             var client = new TcpClient(AddressFamily.InterNetworkV6);
             client.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
@@ -357,9 +360,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             INetworkPeerFactory networkPeerFactory,
             ILoggerFactory loggerFactory,
             ISelfEndpointTracker selfEndpointTracker,
+            IAsyncProvider asyncProvider,
             Action<INetworkPeer> onDisconnected = null,
             Action<IPEndPoint, Payload> onSendingMessage = null)
-            : this(true, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, selfEndpointTracker, onDisconnected, onSendingMessage)
+            : this(true, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, selfEndpointTracker, asyncProvider, onDisconnected, onSendingMessage)
         {
             this.Connection = networkPeerFactory.CreateNetworkPeerConnection(this, client, this.ProcessMessageAsync);
 
@@ -653,11 +657,11 @@ namespace Stratis.Bitcoin.P2P.Peer
                 throw new OperationCanceledException("The peer has been disconnected");
             }
 
-            this.asyncQueue.Enqueue(payload);
+            this.asyncPayloadsQueue.Enqueue(payload);
         }
 
         /// <summary>
-        /// This is used by the asyncQueue to send payloads messages to peers under a separate thread.
+        /// This is used by the <see cref="asyncPayloadsQueue"/> to send payloads messages to peers under a separate thread.
         /// If a message is sent inside the state change even and the send fails this could cause a deadlock,
         /// to avoid that if there is any danger of a deadlock it better to use the SendMessage method and go via the queue.
         /// </summary>
@@ -704,7 +708,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public async Task VersionHandshakeAsync(NetworkPeerRequirement requirements, CancellationToken cancellationToken)
         {
             requirements = requirements ?? new NetworkPeerRequirement();
-            using (var listener = new NetworkPeerListener(this))
+            using (var listener = new NetworkPeerListener(this, this.asyncProvider))
             {
                 this.logger.LogTrace("Sending my version.");
                 await this.SendMessageAsync(this.MyVersion, cancellationToken).ConfigureAwait(false);
@@ -777,7 +781,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc/>
         public async Task RespondToHandShakeAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            using (var listener = new NetworkPeerListener(this))
+            using (var listener = new NetworkPeerListener(this, this.asyncProvider))
             {
                 this.logger.LogTrace("Responding to handshake with my version.");
                 await this.SendMessageAsync(this.MyVersion, cancellationToken).ConfigureAwait(false);
@@ -880,7 +884,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
             }
 
-            this.asyncQueue.Dispose();
+            this.asyncPayloadsQueue.Dispose();
             this.Connection.Dispose();
 
             this.MessageReceived.Dispose();

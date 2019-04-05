@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.P2P
             this.nodeLifetime = nodeLifetime;
             this.ConnectionSettings = connectionSettings;
             this.peerAddressManager = peerAddressManager;
-            this.networkPeerDisposer = new NetworkPeerDisposer(this.loggerFactory, this.OnPeerDisposed);
+            this.networkPeerDisposer = new NetworkPeerDisposer(this.loggerFactory, this.asyncProvider, this.OnPeerDisposed);
             this.selfEndpointTracker = selfEndpointTracker;
             this.Requirements = new NetworkPeerRequirement { MinVersion = nodeSettings.MinProtocolVersion ?? nodeSettings.ProtocolVersion };
 

@@ -140,12 +140,12 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             this.connectionManager = new ConnectionManager(this.dateTimeProvider, this.loggerFactory, this.Network, this.networkPeerFactory, this.nodeSettings,
                 this.nodeLifetime, new NetworkPeerConnectionParameters(), this.peerAddressManager, new IPeerConnector[] { },
-                peerDiscovery, this.selfEndpointTracker, connectionSettings, new VersionProvider(), this.nodeStats);
+                peerDiscovery, this.selfEndpointTracker, connectionSettings, new VersionProvider(), this.nodeStats, this.asyncProvider);
 
             this.deployments = new NodeDeployments(this.Network, this.chainIndexer);
 
             this.consensusRules = new PowConsensusRuleEngine(this.Network, this.loggerFactory, this.dateTimeProvider, this.chainIndexer, this.deployments, this.ConsensusSettings,
-                     this.checkpoints.Object, this.coinView, this.ChainState.Object, this.hashStore, this.nodeStats);
+                     this.checkpoints.Object, this.coinView, this.ChainState.Object, this.hashStore, this.nodeStats, this.asyncProvider);
 
             this.consensusRules.Register();
 

@@ -410,7 +410,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <returns>Latency.</returns>
         public async Task<TimeSpan> PingPongAsync(INetworkPeer peer, CancellationToken cancellation = default(CancellationToken))
         {
-            using (var listener = new NetworkPeerListener(peer))
+            using (var listener = new NetworkPeerListener(peer, this.FullNode.NodeService<IAsyncProvider>()))
             {
                 var ping = new PingPayload()
                 {
@@ -572,7 +572,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             this.AssertStateAsync(peer, NetworkPeerState.HandShaked, cancellationToken).GetAwaiter().GetResult();
 
-            using (var listener = new NetworkPeerListener(peer))
+            using (var listener = new NetworkPeerListener(peer, this.FullNode.NodeService<IAsyncProvider>()))
             {
                 int acceptMaxReorgDepth = 0;
                 while (true)

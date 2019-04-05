@@ -550,7 +550,8 @@ namespace Stratis.Bitcoin.Tests.P2P
                 selfEndpointTracker,
                 connectionSettings,
                 new VersionProvider(),
-                new Mock<INodeStats>().Object);
+                new Mock<INodeStats>().Object,
+                this.asyncProvider);
 
             networkPeerParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(connectionManager, this.extendedLoggerFactory));
 

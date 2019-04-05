@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -80,9 +81,11 @@ namespace Stratis.Bitcoin.Connection
 
         private readonly IVersionProvider versionProvider;
 
+        private readonly IAsyncProvider asyncProvider;
+
         private IConsensusManager consensusManager;
 
-        private readonly AsyncQueue<INetworkPeer> connectedPeersQueue;
+        private readonly IAsyncDelegateDequeuer<INetworkPeer> connectedPeersQueue;
 
         /// <summary>Traffic statistics from peers that have been disconnected.</summary>
         private readonly PerformanceCounter disconnectedPerfCounter;
@@ -100,7 +103,8 @@ namespace Stratis.Bitcoin.Connection
             ISelfEndpointTracker selfEndpointTracker,
             ConnectionManagerSettings connectionSettings,
             IVersionProvider versionProvider,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            IAsyncProvider asyncProvider)
         {
             this.connectedPeers = new NetworkPeerCollection();
             this.dateTimeProvider = dateTimeProvider;
@@ -110,18 +114,19 @@ namespace Stratis.Bitcoin.Connection
             this.NetworkPeerFactory = networkPeerFactory;
             this.NodeSettings = nodeSettings;
             this.nodeLifetime = nodeLifetime;
+            this.asyncProvider = asyncProvider;
             this.peerAddressManager = peerAddressManager;
             this.PeerConnectors = peerConnectors;
             this.peerDiscovery = peerDiscovery;
             this.ConnectionSettings = connectionSettings;
-            this.networkPeerDisposer = new NetworkPeerDisposer(this.loggerFactory);
+            this.networkPeerDisposer = new NetworkPeerDisposer(this.loggerFactory, this.asyncProvider);
             this.Servers = new List<NetworkPeerServer>();
 
             this.Parameters = parameters;
             this.Parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
             this.selfEndpointTracker = selfEndpointTracker;
             this.versionProvider = versionProvider;
-            this.connectedPeersQueue = new AsyncQueue<INetworkPeer>(this.OnPeerAdded);
+            this.connectedPeersQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<INetworkPeer>($"{nameof(ConnectionManager)}-{nameof(this.connectedPeersQueue)}", this.OnPeerAdded);
             this.disconnectedPerfCounter = new PerformanceCounter();
 
             this.Parameters.UserAgent = $"{this.ConnectionSettings.Agent}:{versionProvider.GetVersion()} ({(int)this.NodeSettings.ProtocolVersion})";

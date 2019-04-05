@@ -201,7 +201,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             var storeSettings = (StoreSettings)FormatterServices.GetUninitializedObject(typeof(StoreSettings));
 
             this.federationWalletSyncManager = new FederationWalletSyncManager(this.loggerFactory, this.federationWalletManager, this.ChainIndexer, this.network,
-                this.blockRepository, storeSettings, Substitute.For<INodeLifetime>());
+                this.blockRepository, storeSettings, Substitute.For<INodeLifetime>(), this.asyncProvider);
 
             this.federationWalletSyncManager.Initialize();
 

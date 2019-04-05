@@ -25,6 +25,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -51,6 +52,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
         private ColdStakingManager coldStakingManager;
         private ColdStakingController coldStakingController;
+        private IAsyncProvider asyncProvider;
         private NodeSettings nodeSettings;
         private IDateTimeProvider dateTimeProvider;
         private ILoggerFactory loggerFactory;
@@ -148,7 +150,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(this.Network.Consensus);
             ConsensusRuleEngine consensusRuleEngine = new PosConsensusRuleEngine(this.Network, this.loggerFactory, this.dateTimeProvider,
                 this.chainIndexer, this.nodeDeployments, this.consensusSettings, checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
-                this.stakeValidator.Object, chainState, new InvalidBlockHashStore(this.dateTimeProvider), new Mock<INodeStats>().Object, new Mock<IRewindDataIndexCache>().Object)
+                this.stakeValidator.Object, chainState, new InvalidBlockHashStore(this.dateTimeProvider), new Mock<INodeStats>().Object, new Mock<IRewindDataIndexCache>().Object, this.asyncProvider)
                 .Register();
 
             // Create mempool validator.
@@ -182,6 +184,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 new Mock<IWalletFeePolicy>().Object, this.Network, new StandardTransactionPolicy(this.Network));
 
             this.coldStakingController = new ColdStakingController(this.loggerFactory, this.coldStakingManager, walletTransactionHandler);
+
+            this.asyncProvider = new AsyncProvider(this.loggerFactory, new Mock<ISignals>().Object, new NodeLifetime());
         }
 
         /// <summary>

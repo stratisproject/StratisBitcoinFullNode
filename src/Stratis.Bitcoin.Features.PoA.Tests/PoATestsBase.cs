@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
@@ -36,11 +37,12 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         protected readonly ISignals signals;
         protected readonly DBreezeSerializer dBreezeSerializer;
         protected readonly ChainState chainState;
+        protected readonly IAsyncProvider asyncProvider;
 
         public PoATestsBase(TestPoANetwork network = null)
         {
             this.loggerFactory = new LoggerFactory();
-            this.signals = new Signals.Signals(loggerFactory, null);
+            this.signals = new Signals.Signals(this.loggerFactory, null);
             this.network = network == null ? new TestPoANetwork() : network;
             this.consensusOptions = this.network.ConsensusOptions;
             this.dBreezeSerializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
@@ -67,9 +69,11 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             this.chainState = new ChainState();
 
+            this.asyncProvider = new AsyncProvider(this.loggerFactory, this.signals, new Mock<INodeLifetime>().Object);
+
             this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, new DateTimeProvider(), this.ChainIndexer, new NodeDeployments(this.network, this.ChainIndexer),
                 this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object, this.chainState, new InvalidBlockHashStore(timeProvider),
-                new NodeStats(timeProvider), this.slotsManager, this.poaHeaderValidator, this.votingManager, this.federationManager);
+                new NodeStats(timeProvider), this.slotsManager, this.poaHeaderValidator, this.votingManager, this.federationManager, this.asyncProvider);
 
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(50, null, false, null, this.network);
 
