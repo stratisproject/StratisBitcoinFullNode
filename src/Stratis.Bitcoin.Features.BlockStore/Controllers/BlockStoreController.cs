@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         /// <summary>Current network for the active controller instance.</summary>
         private readonly Network network;
 
-        private readonly AddressIndexer addressIndexer;
+        private readonly IAddressIndexer addressIndexer;
 
         public BlockStoreController(
             Network network,
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             IBlockStore blockStore,
             IChainState chainState,
             ChainIndexer chainIndexer,
-            AddressIndexer addressIndexer)
+            IAddressIndexer addressIndexer)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));

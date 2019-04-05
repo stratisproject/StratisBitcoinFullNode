@@ -19,7 +19,20 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 {
     /// <summary>Component that builds an index of all addresses and deposits\withdrawals that happened to\from them.</summary>
     /// <remarks>Disabled by default. Node should be synced from scratch with txindexing enabled to build address index.</remarks>
-    public class AddressIndexer : IDisposable
+    public interface IAddressIndexer : IDisposable
+    {
+        void Initialize();
+
+        /// <summary>Returns balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
+        /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed or doesn't exists.</returns>
+        Money GetAddressBalance(BitcoinAddress address, int minConfirmations = 0);
+
+        /// <summary>Returns the total amount received by the given address in transactions with at least <paramref name="minConfirmations"/> confirmations.</summary>
+        /// <returns>Total amount received by a given address or <c>null</c> if address wasn't indexed.</returns>
+        Money GetReceivedByAddress(BitcoinAddress address, int minConfirmations = 0);
+    }
+
+    public class AddressIndexer : IAddressIndexer
     {
         private readonly StoreSettings storeSettings;
 
@@ -322,8 +335,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             return addrData;
         }
 
-        /// <summary>Returns balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
-        /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed or doesn't exists.</returns>
+        /// <inheritdoc />
         public Money GetAddressBalance(BitcoinAddress address, int minConfirmations = 0)
         {
             if (this.addressesIndex == null)
@@ -355,8 +367,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             }
         }
 
-        /// <summary>Returns the total amount received by the given address in transactions with at least <paramref name="minConfirmations"/> confirmations.</summary>
-        /// <returns>Total amount received by a given address or <c>null</c> if address wasn't indexed.</returns>
+        /// <inheritdoc />
         public Money GetReceivedByAddress(BitcoinAddress address, int minConfirmations = 0)
         {
             lock (this.lockObject)
