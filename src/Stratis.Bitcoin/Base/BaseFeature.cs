@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base.AsyncWork;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
@@ -336,6 +337,8 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogInformation("Disposing finalized block info repository.");
             this.finalizedBlockInfoRepository.Dispose();
 
+            this.logger.LogInformation("Disposing address indexer.");
+
             this.logger.LogInformation("Disposing block store.");
             this.blockStore.Dispose();
 
@@ -383,6 +386,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
                     services.AddSingleton<IKeyValueRepository, KeyValueRepository>();
                     services.AddSingleton<ITipsManager, TipsManager>();
+                    services.AddSingleton<IAsyncProvider, AsyncWork.AsyncProvider>();
 
                     // Consensus
                     services.AddSingleton<ConsensusSettings>();

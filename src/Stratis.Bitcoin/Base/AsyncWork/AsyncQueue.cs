@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Base.AsyncWork;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -17,7 +18,7 @@ namespace Stratis.Bitcoin.Utilities
     /// </para>
     /// </summary>
     /// <typeparam name="T">Type of items to be inserted in the queue.</typeparam>
-    public class AsyncQueue<T> : IDisposable
+    public class AsyncQueue<T> : IDisposable, IAsyncQueue<T>, IAsyncDelegateDequeuer<T>
     {
         /// <summary>
         /// Execution context holding information about the current status of the execution

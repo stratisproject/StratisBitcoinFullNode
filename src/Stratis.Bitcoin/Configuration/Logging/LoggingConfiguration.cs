@@ -81,12 +81,18 @@ namespace Stratis.Bitcoin.Configuration.Logging
 
         public static void RegisterFeatureNamespace<T>(string key)
         {
-            KeyCategories[key] = typeof(T).Namespace + ".*";
+            lock (KeyCategories)
+            {
+                KeyCategories[key] = typeof(T).Namespace + ".*";
+            }
         }
 
         public static void RegisterFeatureClass<T>(string key)
         {
-            KeyCategories[key] = typeof(T).Namespace + "." + typeof(T).Name;
+            lock (KeyCategories)
+            {
+                KeyCategories[key] = typeof(T).Namespace + "." + typeof(T).Name;
+            }
         }
 
         /// <summary>
@@ -171,22 +177,25 @@ namespace Stratis.Bitcoin.Configuration.Logging
 
             if (settings.DebugArgs.Any() && settings.DebugArgs[0] != "1")
             {
-                var usedCategories = new HashSet<string>(StringComparer.Ordinal);
-
-                // Increase selected categories to Debug.
-                foreach (string key in settings.DebugArgs)
+                lock (KeyCategories)
                 {
-                    if (!KeyCategories.TryGetValue(key.Trim(), out string category))
-                    {
-                        // Allow direct specification - e.g. "-debug=Stratis.Bitcoin.Miner".
-                        category = key.Trim();
-                    }
+                    var usedCategories = new HashSet<string>(StringComparer.Ordinal);
 
-                    if (!usedCategories.Contains(category))
+                    // Increase selected categories to Debug.
+                    foreach (string key in settings.DebugArgs)
                     {
-                        usedCategories.Add(category);
-                        var rule = new LoggingRule(category, settings.LogLevel, mainTarget);
-                        LogManager.Configuration.LoggingRules.Add(rule);
+                        if (!KeyCategories.TryGetValue(key.Trim(), out string category))
+                        {
+                            // Allow direct specification - e.g. "-debug=Stratis.Bitcoin.Miner".
+                            category = key.Trim();
+                        }
+
+                        if (!usedCategories.Contains(category))
+                        {
+                            usedCategories.Add(category);
+                            var rule = new LoggingRule(category, settings.LogLevel, mainTarget);
+                            LogManager.Configuration.LoggingRules.Add(rule);
+                        }
                     }
                 }
             }
@@ -253,21 +262,24 @@ namespace Stratis.Bitcoin.Configuration.Logging
                     }
                     else
                     {
-                        var usedCategories = new HashSet<string>(StringComparer.Ordinal);
-
-                        // Increase selected categories to Debug.
-                        foreach (string key in settings.DebugArgs)
+                        lock (KeyCategories)
                         {
-                            if (!KeyCategories.TryGetValue(key.Trim(), out string category))
-                            {
-                                // Allow direct specification - e.g. "-debug=Stratis.Bitcoin.Miner".
-                                category = key.Trim();
-                            }
+                            var usedCategories = new HashSet<string>(StringComparer.Ordinal);
 
-                            if (!usedCategories.Contains(category))
+                            // Increase selected categories to Debug.
+                            foreach (string key in settings.DebugArgs)
                             {
-                                usedCategories.Add(category);
-                                consoleLoggerSettings.Switches.Add(category.TrimEnd('*').TrimEnd('.'), Microsoft.Extensions.Logging.LogLevel.Debug);
+                                if (!KeyCategories.TryGetValue(key.Trim(), out string category))
+                                {
+                                    // Allow direct specification - e.g. "-debug=Stratis.Bitcoin.Miner".
+                                    category = key.Trim();
+                                }
+
+                                if (!usedCategories.Contains(category))
+                                {
+                                    usedCategories.Add(category);
+                                    consoleLoggerSettings.Switches.Add(category.TrimEnd('*').TrimEnd('.'), Microsoft.Extensions.Logging.LogLevel.Debug);
+                                }
                             }
                         }
                     }

@@ -26,12 +26,14 @@ namespace Stratis.Sidechains.Networks.CirrusV2
         internal CirrusRegTest()
         {
             this.Name = nameof(CirrusRegTest);
+            this.NetworkType = NetworkType.Regtest;
             this.CoinTicker = "TCRS";
             this.Magic = 0x522357C;
             this.DefaultPort = 26179;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
-            this.RPCPort = 26175;
+            this.DefaultRPCPort = 26175;
+            this.DefaultAPIPort = 38223;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
