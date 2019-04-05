@@ -199,7 +199,7 @@ namespace Stratis.Features.FederatedPeg
             bool isFederationActive = this.federationWalletManager.IsFederationActive();
             benchLog.AppendLine("Federation Wallet: ".PadRight(LoggingConfiguration.ColumnLength)
                                 + " Confirmed balance: " + balances.ConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)
-                                + " Unconfirmed balance: " + balances.UnConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)
+                                + " Reserved for withdrawals: " + balances.UnConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)
                                 + " Federation Status: " + (isFederationActive ? "Active" : "Inactive"));
             benchLog.AppendLine();
 
