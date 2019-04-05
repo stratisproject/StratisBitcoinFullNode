@@ -161,19 +161,7 @@ namespace Stratis.Bitcoin.Features.RPC
             }
         }
 
-
-        /// <summary>
-        /// Create a new RPCClient instance
-        /// </summary>
-        /// <param name="rpcSettings">The RPC settings.</param>
-        /// <param name="hostOrUri">The URI to use to connect with.</param>
-        /// <param name="network">The network.</param>
-        public RPCClient(RpcSettings rpcSettings, string hostOrUri, Network network)
-            : this($"{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}", BuildUri(hostOrUri, rpcSettings.RPCPort), network)
-        {
-        }
-
-        public RPCClient(RPCCredentialString credentials, Uri address, Network network)
+        private RPCClient(RPCCredentialString credentials, Uri address, Network network)
         {
             Guard.NotNull(credentials, nameof(credentials));
             Guard.NotNull(address, nameof(address));
@@ -317,10 +305,21 @@ namespace Stratis.Bitcoin.Features.RPC
         /// Create a new RPCClient instance
         /// </summary>
         /// <param name="authenticationString">username:password or the content of the .cookie file or null to auto configure</param>
-        /// <param name="address"></param>
-        /// <param name="network"></param>
+        /// <param name="address">The address to connect to.</param>
+        /// <param name="network">The network.</param>
         public RPCClient(string authenticationString, Uri address, Network network = null)
             : this(RPCCredentialString.Parse(authenticationString), address, network)
+        {
+        }
+
+        /// <summary>
+        /// Create a new RPCClient instance
+        /// </summary>
+        /// <param name="rpcSettings">The RPC settings.</param>
+        /// <param name="hostOrUri">The URI to use to connect with.</param>
+        /// <param name="network">The network.</param>
+        public RPCClient(RpcSettings rpcSettings, string hostOrUri, Network network)
+            : this($"{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}", BuildUri(hostOrUri, rpcSettings.RPCPort), network)
         {
         }
 

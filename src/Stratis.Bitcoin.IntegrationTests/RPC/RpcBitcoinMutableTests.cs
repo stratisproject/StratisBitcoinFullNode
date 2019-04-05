@@ -376,10 +376,14 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 rpcClient = node.CreateRPCClient();
                 rpcClient.GetBlockCount();
 
-                string invalidCookiePath = Path.Combine("Data","invalid.cookie");
+                string invalidCookiePath = Path.Combine("Data", "invalid.cookie");
                 string notFoundCookiePath = Path.Combine("Data", "not_found.cookie");
                 Assert.Throws<ArgumentException>(() => new RPCClient($"cookiefile={invalidCookiePath}", new Uri("http://localhost/"), this.regTest));
                 Assert.Throws<FileNotFoundException>(() => new RPCClient($"cookiefile={notFoundCookiePath}", new Uri("http://localhost/"), this.regTest));
+
+                var uri = new Uri("http://127.0.0.1:" + this.regTest.DefaultRPCPort + "/");
+                rpcClient = new RPCClient("bla:bla", uri, this.regTest);
+                Assert.Equal(uri.OriginalString, rpcClient.Address.AbsoluteUri);
 
                 rpcClient = node.CreateRPCClient();
                 rpcClient = rpcClient.PrepareBatch();

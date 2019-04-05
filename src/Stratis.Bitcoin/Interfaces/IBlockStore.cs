@@ -20,6 +20,7 @@ namespace Stratis.Bitcoin.Interfaces
 
         /// <summary>Retrieve transactions information asynchronously using transaction ids.</summary>
         /// <param name="trxids">Ids of transactions to find.</param>
+        /// <returns>List of transactions or <c>null</c> if txindexing is disabled.</returns>
         Transaction[] GetTransactionsByIds(uint256[] trxids);
 
         /// <summary>

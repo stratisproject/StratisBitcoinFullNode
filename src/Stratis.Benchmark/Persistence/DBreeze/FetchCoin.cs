@@ -9,25 +9,29 @@ using DBreeze.DataTypes;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Networks;
+using Transaction = DBreeze.Transactions.Transaction;
 
-namespace Stratis.Benchmark.Persistence
+namespace Stratis.Benchmark.Persistence.DBreeze
 {
     [RankColumn]
-    public class FetchCoin : NetworkBenchmarkBase
+    public class DBreezeFetchCoin : NetworkBenchmarkBase
     {
         [Params(10, 100)]
         public int N;
 
         private uint256[] data;
 
-        public FetchCoin() : base(new BitcoinMain()) { }
+        public DBreezeFetchCoin()
+            : base(new BitcoinMain())
+        {
+        }
 
         [GlobalSetup]
         public void GenerateData()
         {
             Random rnd = new Random();
-            this.data = new uint256[N];
-            for (int i = 0; i < N; i++)
+            this.data = new uint256[this.N];
+            for (int i = 0; i < this.N; i++)
             {
                 this.data[i] = new uint256((ulong)rnd.Next());
             }
@@ -38,7 +42,7 @@ namespace Stratis.Benchmark.Persistence
 
         private DBreezeEngine GetDBEngine()
         {
-            return this.CreateDBreezeEngine(N.ToString());
+            return this.CreateDBreezeEngine(this.N.ToString());
         }
 
         private void PopulateDB()
@@ -46,7 +50,7 @@ namespace Stratis.Benchmark.Persistence
             using (var engine = this.GetDBEngine())
             {
                 // Store data.
-                using (DBreeze.Transactions.Transaction tx = engine.GetTransaction())
+                using (Transaction tx = engine.GetTransaction())
                 {
                     tx.Insert("BlockHash", new byte[0], this.data[0].ToBytes());
 
@@ -60,13 +64,12 @@ namespace Stratis.Benchmark.Persistence
             }
         }
 
-
         [Benchmark(Baseline = true)]
-        public List<uint256> Current()
+        public List<uint256> FetchData()
         {
             using (var engine = this.GetDBEngine())
             {
-                using (DBreeze.Transactions.Transaction transaction = engine.GetTransaction())
+                using (Transaction transaction = engine.GetTransaction())
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
 
@@ -94,7 +97,7 @@ namespace Stratis.Benchmark.Persistence
                 var rangePartitioner = Partitioner.Create(0, this.data.Length);
                 Parallel.ForEach(rangePartitioner, (range, loopState) =>
                 {
-                    using (DBreeze.Transactions.Transaction transaction = engine.GetTransaction())
+                    using (Transaction transaction = engine.GetTransaction())
                     {
                         transaction.ValuesLazyLoadingIsOn = false;
 
@@ -117,7 +120,7 @@ namespace Stratis.Benchmark.Persistence
         {
             using (var engine = this.GetDBEngine())
             {
-                using (DBreeze.Transactions.Transaction transaction = engine.GetTransaction())
+                using (Transaction transaction = engine.GetTransaction())
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
 
@@ -141,7 +144,7 @@ namespace Stratis.Benchmark.Persistence
         {
             using (var engine = this.GetDBEngine())
             {
-                using (DBreeze.Transactions.Transaction transaction = engine.GetTransaction())
+                using (Transaction transaction = engine.GetTransaction())
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
 
