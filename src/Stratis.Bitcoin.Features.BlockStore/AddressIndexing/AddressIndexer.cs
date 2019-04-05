@@ -25,8 +25,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
     /// <remarks>Disabled by default. Node should be synced from scratch with txindexing enabled to build address index.</remarks>
     public class AddressIndexer : IDisposable
     {
-        private readonly ISignals signals;
-
         private readonly StoreSettings storeSettings;
 
         private readonly Network network;
@@ -41,13 +39,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly IConsensusManager consensusManager;
 
+        private readonly TimeSpan flushChangesInterval;
+
         private const string DbKey = "AddrData";
-
-        private SubscriptionToken blockConnectedSubscription, blockDisconnectedSubscription;
-
-        /// <summary>Queue that is populated when block is connected or disconnected.</summary>
-        /// <remarks><c>bool</c> key is <c>true</c> when block is connected.</remarks>
-        private AsyncQueue<KeyValuePair<bool, ChainedHeaderBlock>> blockReceivedQueue;
 
         private LiteDatabase db;
 
@@ -55,10 +49,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private AddressIndexerData addressesIndex;
 
-        public AddressIndexer(StoreSettings storeSettings, ISignals signals, DataFolder dataFolder, ILoggerFactory loggerFactory,
+        private CancellationTokenSource calcellation;
+
+        private Task indexingTask;
+
+        private ChainedHeader chainedHeaderTip;
+
+        public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory,
             Network network, IBlockStore blockStore, INodeStats nodeStats, IConsensusManager consensusManager)
         {
-            this.signals = signals;
             this.storeSettings = storeSettings;
             this.network = network;
             this.blockStore = blockStore;
@@ -66,6 +65,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.dataFolder = dataFolder;
             this.consensusManager = consensusManager;
 
+            this.flushChangesInterval = TimeSpan.FromMinutes(5);
+            this.calcellation = new CancellationTokenSource();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -98,52 +99,97 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 this.dataStore.Insert(this.addressesIndex);
             }
 
-            this.blockReceivedQueue = new AsyncQueue<KeyValuePair<bool, ChainedHeaderBlock>>(this.OnEnqueueAsync);
+            this.chainedHeaderTip = this.consensusManager.Tip.FindAncestorOrSelf(new uint256(this.addressesIndex.TipHashBytes));
 
-            // Subscribe to events.
-            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(blockConnectedData =>
-            {
-                while (this.blockReceivedQueue.Count > 100)
-                {
-                    this.logger.LogWarning("Address indexing is slowing down the consensus.");
-                    Thread.Sleep(5000);
-                }
+            if (this.chainedHeaderTip == null)
+                this.chainedHeaderTip = this.consensusManager.Tip.GetAncestor(0);
 
-                this.blockReceivedQueue.Enqueue(new KeyValuePair<bool, ChainedHeaderBlock>(true, blockConnectedData.ConnectedBlock));
-            });
-
-            this.blockDisconnectedSubscription = this.signals.Subscribe<BlockDisconnected>(blockDisconnectedData =>
-            {
-                this.blockReceivedQueue.Enqueue(new KeyValuePair<bool, ChainedHeaderBlock>(false, blockDisconnectedData.DisconnectedBlock));
-            });
+            this.indexingTask = this.IndexAddressesContinuouslyAsync();
 
             this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 400);
-
-            if ((!this.consensusManager.Tip.HashBlock.ToBytes().SequenceEqual(this.addressesIndex.TipHashBytes)))
-            {
-                const string message = "TransactionIndexer is in inconsistent state. This can happen if you've enabled txindex on an already synced or partially synced node. " +
-                                       "Remove everything from the data folder and run the node with -txindex=true.";
-
-                this.logger.LogCritical(message);
-                this.logger.LogTrace("(-)[INCONSISTENT_STATE]");
-                throw new Exception(message);
-            }
-
         }
 
-        private Task OnEnqueueAsync(KeyValuePair<bool, ChainedHeaderBlock> item, CancellationToken cancellationtoken)
+        private async Task IndexAddressesContinuouslyAsync()
         {
+            bool triggerFlush = false;
+            DateTime lastFlushTime = DateTime.Now;
+
             try
             {
-                this.ProcessBlockAddedOrRemoved(item);
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogError(ex.ToString());
-                throw;
-            }
+                while (!this.calcellation.IsCancellationRequested)
+                {
+                    if (triggerFlush || (DateTime.Now - lastFlushTime > this.flushChangesInterval))
+                    {
+                        this.logger.LogDebug("Flushing changes.");
 
-            return Task.CompletedTask;
+                        this.dataStore.Update(this.addressesIndex);
+                        triggerFlush = false;
+                        lastFlushTime = DateTime.Now;
+
+                        this.logger.LogDebug("Flush completed.");
+                    }
+
+                    ChainedHeader nextHeader = this.consensusManager.Tip.GetAncestor(this.chainedHeaderTip.Height + 1);
+
+                    if (nextHeader == null)
+                    {
+                        triggerFlush = true;
+
+                        try
+                        {
+                            await Task.Delay(2_000, this.calcellation.Token).ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                        }
+
+                        continue;
+                    }
+
+                    if (nextHeader.Previous.HashBlock != this.chainedHeaderTip.HashBlock)
+                    {
+                        ChainedHeader lastCommonHeader = nextHeader.FindFork(this.chainedHeaderTip);
+
+                        this.logger.LogDebug("Reorg detected. Rewinding till '{0}'.", lastCommonHeader);
+
+                        foreach (AddressIndexData addressIndexData in this.addressesIndex.AddressIndexDatas)
+                            addressIndexData.Changes.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
+
+                        this.chainedHeaderTip = lastCommonHeader;
+                        continue;
+                    }
+
+                    // Get next header block and process it.
+                    Block blockToProcess = this.blockStore.GetBlock(nextHeader.HashBlock);
+
+                    if (blockToProcess == null)
+                    {
+                        // We are advancing too fast so the block is not ready yet.
+                        triggerFlush = true;
+
+                        try
+                        {
+                            await Task.Delay(2_000, this.calcellation.Token).ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                        }
+
+                        continue;
+                    }
+
+                    this.ProcessBlock(blockToProcess, nextHeader);
+
+                    this.chainedHeaderTip = nextHeader;
+                    this.addressesIndex.TipHashBytes = this.chainedHeaderTip.HashBlock.ToBytes();
+                }
+
+                this.dataStore.Update(this.addressesIndex);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogCritical(e.ToString());
+            }
         }
 
         private void AddComponentStats(StringBuilder benchLog)
@@ -151,18 +197,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             benchLog.AppendLine();
             benchLog.AppendLine("======AddressIndexer======");
 
-            benchLog.AppendLine($"Unprocessed blocks: {this.blockReceivedQueue.Count}");
+            benchLog.AppendLine($"Tip: {this.chainedHeaderTip}");
         }
 
         /// <summary>Processes block that was added or removed from consensus chain.</summary>
-        private void ProcessBlockAddedOrRemoved(KeyValuePair<bool, ChainedHeaderBlock> item)
+        private void ProcessBlock(Block block, ChainedHeader header)
         {
-            // Make sure it's on top of the tip.
-            bool blockAdded = item.Key;
-
-            Block block = item.Value.Block;
-            int currentHeight = item.Value.ChainedHeader.Height;
-
             // Process inputs
             var inputs = new List<TxIn>();
 
@@ -184,21 +224,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                 AddressIndexData addrData = this.GetOrCreateAddressData(txOut.ScriptPubKey);
 
-                if (blockAdded)
+                // Record money being spent.
+                addrData.Changes.Add(new AddressBalanceChange()
                 {
-                    // Record money being spent.
-                    addrData.Changes.Add(new AddressBalanceChange()
-                    {
-                        BalanceChangedHeight = currentHeight,
-                        Satoshi = amountSpent.Satoshi,
-                        Deposited = false
-                    });
-                }
-                else
-                {
-                    // Remove changes.
-                    addrData.Changes.RemoveAll(x => x.BalanceChangedHeight == currentHeight);
-                }
+                    BalanceChangedHeight = header.Height,
+                    Satoshi = amountSpent.Satoshi,
+                    Deposited = false
+                });
             }
 
             // Process outputs.
@@ -210,25 +242,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     AddressIndexData addrData = this.GetOrCreateAddressData(txOut.ScriptPubKey);
 
-                    if (blockAdded)
+                    // Record money being sent.
+                    addrData.Changes.Add(new AddressBalanceChange()
                     {
-                        // Record money being sent.
-                        addrData.Changes.Add(new AddressBalanceChange()
-                        {
-                            BalanceChangedHeight = currentHeight,
-                            Satoshi = amountReceived.Satoshi,
-                            Deposited = true
-                        });
-                    }
-                    else
-                    {
-                        // Remove changes.
-                        addrData.Changes.RemoveAll(x => x.BalanceChangedHeight == currentHeight);
-                    }
+                        BalanceChangedHeight = header.Height,
+                        Satoshi = amountReceived.Satoshi,
+                        Deposited = true
+                    });
                 }
             }
-
-            this.addressesIndex.TipHashBytes = item.Value.ChainedHeader.HashBlock.ToBytes();
         }
 
         private AddressIndexData GetOrCreateAddressData(Script scriptPubKey)
@@ -277,12 +299,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         {
             if (this.storeSettings.TxIndex && this.storeSettings.AddressIndex)
             {
-                this.signals.Unsubscribe(this.blockConnectedSubscription);
-                this.signals.Unsubscribe(this.blockDisconnectedSubscription);
+                this.calcellation.Cancel();
 
-                this.blockReceivedQueue.Dispose();
-
-                this.dataStore.Update(this.addressesIndex);
+                this.indexingTask.GetAwaiter().GetResult();
 
                 this.db.Dispose();
             }

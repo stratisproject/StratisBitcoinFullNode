@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.TxIndex = config.GetOrDefault<bool>("txindex", false, this.logger);
             this.ReIndex = config.GetOrDefault<bool>("reindex", false, this.logger);
-            this.AddressIndex = config.GetOrDefault<bool>("addressindex ", false, this.logger);
+            this.AddressIndex = config.GetOrDefault<bool>("addressindex", false, this.logger);
 
             if (this.PruningEnabled && this.TxIndex)
                 throw new ConfigurationException("Prune mode is incompatible with -txindex");
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             builder.AppendLine($"-txindex=<0 or 1>              Enable to maintain a full transaction index.");
             builder.AppendLine($"-reindex=<0 or 1>              Rebuild chain state and block index from block data files on disk.");
-            builder.AppendLine($"-indexaddresses=<0 or 1>       Enable to maintain a full addresses index. Requires txindex to be enabled in order to work.");
+            builder.AppendLine($"-addressindex=<0 or 1>         Enable to maintain a full addresses index. Requires txindex to be enabled in order to work.");
 
             NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
         }
