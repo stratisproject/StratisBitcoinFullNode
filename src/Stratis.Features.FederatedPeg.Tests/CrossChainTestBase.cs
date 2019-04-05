@@ -10,12 +10,14 @@ using NBitcoin;
 using NBitcoin.Networks;
 using NSubstitute;
 using Stratis.Bitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
@@ -35,6 +37,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         protected ChainIndexer ChainIndexer;
         protected ILoggerFactory loggerFactory;
         protected ILogger logger;
+        protected ISignals signals;
         protected IDateTimeProvider dateTimeProvider;
         protected IOpReturnDataReader opReturnDataReader;
         protected IWithdrawalExtractor withdrawalExtractor;
@@ -47,7 +50,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         protected IWithdrawalTransactionBuilder withdrawalTransactionBuilder;
         protected DataFolder dataFolder;
         protected IWalletFeePolicy walletFeePolicy;
-        protected IAsyncLoopFactory asyncLoopFactory;
+        protected IAsyncProvider asyncProvider;
         protected INodeLifetime nodeLifetime;
         protected IConnectionManager connectionManager;
         protected DBreezeSerializer dBreezeSerializer;
@@ -77,8 +80,10 @@ namespace Stratis.Features.FederatedPeg.Tests
             NetworkRegistration.Register(this.network);
 
             this.loggerFactory = Substitute.For<ILoggerFactory>();
+            this.nodeLifetime = new NodeLifetime();
             this.logger = Substitute.For<ILogger>();
-            this.asyncLoopFactory = new AsyncLoopFactory(this.loggerFactory);
+            this.signals = Substitute.For<ISignals>();
+            this.asyncProvider = new AsyncProvider(this.loggerFactory, this.signals, this.nodeLifetime);
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.dateTimeProvider = DateTimeProvider.Default;
             this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions);
@@ -89,7 +94,6 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationWalletSyncManager = Substitute.For<IFederationWalletSyncManager>();
             this.FederationWalletTransactionHandler = Substitute.For<IFederationWalletTransactionHandler>();
             this.walletFeePolicy = Substitute.For<IWalletFeePolicy>();
-            this.nodeLifetime = new NodeLifetime();
             this.connectionManager = Substitute.For<IConnectionManager>();
             this.dBreezeSerializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
 
@@ -114,7 +118,8 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.blockDict = new Dictionary<uint256, Block>();
             this.blockDict[this.network.GenesisHash] = this.network.GetGenesis();
 
-            this.blockRepository.GetBlocks(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) => {
+            this.blockRepository.GetBlocks(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) =>
+            {
                 var hashes = x.ArgAt<List<uint256>>(0);
                 var blocks = new List<Block>();
                 for (int i = 0; i < hashes.Count; i++)
@@ -179,7 +184,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.ChainIndexer,
                 dataFolder,
                 this.walletFeePolicy,
-                this.asyncLoopFactory,
+                this.asyncProvider,
                 new NodeLifetime(),
                 this.dateTimeProvider,
                 this.federationGatewaySettings,

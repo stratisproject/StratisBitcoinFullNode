@@ -179,15 +179,15 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
-        /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
+        /// <param name="asyncProvider">Factory for creating background async loop tasks.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="network">The network the node is running on.</param>
-        public TimeSyncBehaviorState(IDateTimeProvider dateTimeProvider, INodeLifetime nodeLifetime, IAsyncProvider asyncLoopFactory, ILoggerFactory loggerFactory, Network network)
+        public TimeSyncBehaviorState(IDateTimeProvider dateTimeProvider, INodeLifetime nodeLifetime, IAsyncProvider asyncProvider, ILoggerFactory loggerFactory, Network network)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dateTimeProvider = dateTimeProvider;
             this.nodeLifetime = nodeLifetime;
-            this.asyncProvider = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.network = network;
 
             this.inboundTimestampOffsets = new CircularArray<TimestampOffsetSample>(MaxInboundSamples);

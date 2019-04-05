@@ -46,7 +46,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         private readonly ILogger logger;
         private readonly ICrossChainTransferStore crossChainTransferStore;
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
         private readonly INodeLifetime nodeLifetime;
         private readonly IConnectionManager connectionManager;
         private readonly IFederationGatewaySettings federationGatewaySettings;
@@ -56,20 +56,20 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         public PartialTransactionRequester(
             ILoggerFactory loggerFactory,
             ICrossChainTransferStore crossChainTransferStore,
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             INodeLifetime nodeLifetime,
             IConnectionManager connectionManager,
             IFederationGatewaySettings federationGatewaySettings)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(crossChainTransferStore, nameof(crossChainTransferStore));
-            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
+            Guard.NotNull(asyncProvider, nameof(asyncProvider));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(federationGatewaySettings, nameof(federationGatewaySettings));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.crossChainTransferStore = crossChainTransferStore;
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.nodeLifetime = nodeLifetime;
             this.connectionManager = connectionManager;
             this.federationGatewaySettings = federationGatewaySettings;
@@ -104,7 +104,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <inheritdoc />
         public void Start()
         {
-            this.asyncLoop = this.asyncLoopFactory.Run(nameof(PartialTransactionRequester), token =>
+            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop(nameof(PartialTransactionRequester), token =>
             {
                 // Broadcast the partial transaction with the earliest inputs.
                 KeyValuePair<uint256, Transaction> kv = this.crossChainTransferStore.GetTransactionsByStatusAsync(

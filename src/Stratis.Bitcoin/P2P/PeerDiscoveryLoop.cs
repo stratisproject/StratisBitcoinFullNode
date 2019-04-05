@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.P2P
         private IAsyncLoop asyncLoop;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncProvider asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>The parameters cloned from the connection manager.</summary>
         private NetworkPeerConnectionParameters currentParameters;
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.P2P
             NodeSettings nodeSettings,
             IPeerAddressManager peerAddressManager)
         {
-            this.asyncLoopFactory = asyncProvider;
+            this.asyncProvider = asyncProvider;
             this.loggerFactory = loggerFactory;
             this.logger = this.loggerFactory.CreateLogger(this.GetType().FullName);
             this.peerAddressManager = peerAddressManager;
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.P2P
 
             this.currentParameters = connectionManager.Parameters.Clone(); // TODO we shouldn't add all the behaviors, only those that we need.
 
-            this.asyncLoop = this.asyncLoopFactory.CreateAndRunAsyncLoop(nameof(this.DiscoverPeersAsync), async token =>
+            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop(nameof(this.DiscoverPeersAsync), async token =>
             {
                 if (this.peerAddressManager.Peers.Count < TargetAmountOfPeersToDiscover)
                     await this.DiscoverPeersAsync();

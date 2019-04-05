@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -26,7 +27,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly IFederationGatewaySettings federationGatewaySettings;
         private readonly IBroadcasterManager broadcasterManager;
 
-        private readonly IAsyncLoopFactory loopFactory;
+        private readonly IAsyncProvider asyncProvider;
         private readonly INodeLifetime nodeLifetime;
         private readonly MempoolManager mempoolManager;
         private readonly IDateTimeProvider dateTimeProvider;
@@ -49,7 +50,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.leaderReceiverSubscription = Substitute.For<IDisposable>();
             this.store = Substitute.For<ICrossChainTransferStore>();
             this.broadcasterManager = Substitute.For<IBroadcasterManager>();
-            this.loopFactory = Substitute.For<IAsyncLoopFactory>();
+            this.asyncProvider = Substitute.For<IAsyncProvider>();
             this.nodeLifetime = Substitute.For<INodeLifetime>();
 
             // Setup MempoolManager.
@@ -98,7 +99,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).Returns(emptyTransactionPair);
 
             var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
-                this.loopFactory,
+                this.asyncProvider,
                 this.loggerFactory,
                 this.store,
                 this.nodeLifetime,
@@ -131,7 +132,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).Returns(transactionPair);
 
             var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
-                this.loopFactory,
+                this.asyncProvider,
                 this.loggerFactory,
                 this.store,
                 this.nodeLifetime,

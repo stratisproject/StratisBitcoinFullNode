@@ -234,8 +234,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var loggerFactory = new LoggerFactory();
             var signals = new Signals.Signals(loggerFactory, null);
 
-            var asyncLoopFactory = new AsyncProvider(loggerFactory, signals, lifetime);
-            var state = new TimeSyncBehaviorState(dateTimeProvider, lifetime, asyncLoopFactory, loggerFactory, KnownNetworks.Main);
+            var asyncProvider = new AsyncProvider(loggerFactory, signals, lifetime);
+            var state = new TimeSyncBehaviorState(dateTimeProvider, lifetime, asyncProvider, loggerFactory, KnownNetworks.Main);
             return state;
         }
 
