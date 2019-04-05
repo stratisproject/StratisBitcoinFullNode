@@ -136,6 +136,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             {
                 var headersPayload = base.ConstructHeadersPayload(getHeadersPayload, out lastHeader) as HeadersPayload;
 
+                if (headersPayload == null)
+                {
+                    this.logger.LogTrace("(-)[INVALID_LOCATOR]:null");
+                    return null;
+                }
+
                 for (int i = 0; i < headersPayload.Headers.Count; i++)
                 {
                     if (headersPayload.Headers[i] is ProvenBlockHeader phHeader)

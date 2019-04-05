@@ -158,7 +158,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotNull(trxid, nameof(trxid));
 
             if (!this.TxIndex)
+            {
+                this.logger.LogTrace("(-)[TX_INDEXING_DISABLED]:null");
                 return default(Transaction);
+            }
 
             Transaction res = null;
             using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
@@ -187,7 +190,43 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc/>
         public Transaction[] GetTransactionsByIds(uint256[] trxids)
         {
-            throw new NotImplementedException();
+            if (!this.TxIndex)
+            {
+                this.logger.LogTrace("(-)[TX_INDEXING_DISABLED]:null");
+                return null;
+            }
+
+            Transaction[] txes = new Transaction[trxids.Length];
+
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
+            {
+                transaction.ValuesLazyLoadingIsOn = false;
+
+                for (int i = 0; i < trxids.Length; i++)
+                {
+                    Row<byte[], byte[]> transactionRow = transaction.Select<byte[], byte[]>(TransactionTableName, trxids[i].ToBytes());
+                    if (!transactionRow.Exists)
+                    {
+                        this.logger.LogTrace("(-)[NO_TX_ROW]:null");
+                        return null;
+                    }
+
+                    Row<byte[], byte[]> blockRow = transaction.Select<byte[], byte[]>(BlockTableName, transactionRow.Value);
+
+                    if (!blockRow.Exists)
+                    {
+                        this.logger.LogTrace("(-)[NO_BLOCK]:null");
+                        return null;
+                    }
+
+                    var block = this.dBreezeSerializer.Deserialize<Block>(blockRow.Value);
+                    Transaction tx = block.Transactions.FirstOrDefault(t => t.GetHash() == trxids[i]);
+
+                    txes[i] = tx;
+                }
+            }
+
+            return txes;
         }
 
         /// <inheritdoc />

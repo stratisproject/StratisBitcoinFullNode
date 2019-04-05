@@ -161,46 +161,13 @@ namespace Stratis.Bitcoin.Features.RPC
             }
         }
 
-        /// <summary>
-        /// Use default bitcoin parameters to configure a RPCClient.
-        /// </summary>
-        /// <param name="network">The network used by the node. Must not be null.</param>
-        public RPCClient(Network network) : this(null as string, BuildUri(null, network.DefaultRPCPort), network)
+        private RPCClient(RPCCredentialString credentials, Uri address, Network network)
         {
-        }
+            Guard.NotNull(credentials, nameof(credentials));
+            Guard.NotNull(address, nameof(address));
+            Guard.NotNull(network, nameof(network));
 
-        [Obsolete("Use RPCClient(ConnectionString, string, Network)")]
-        public RPCClient(NetworkCredential credentials, string host, Network network)
-            : this(credentials, BuildUri(host, network.DefaultRPCPort), network)
-        {
-        }
-
-        public RPCClient(RPCCredentialString credentials, string host, Network network)
-            : this(credentials, BuildUri(host, network.DefaultRPCPort), network)
-        {
-        }
-
-        public RPCClient(RPCCredentialString credentials, Uri address, Network network)
-        {
             this.RPCClientInit(network);
-
-            credentials = credentials ?? new RPCCredentialString();
-
-            if (address != null && network == null)
-            {
-                network = NetworkRegistration.GetNetworks().FirstOrDefault(n => n.DefaultRPCPort == address.Port);
-                if (network == null)
-                    throw new ArgumentNullException("network");
-            }
-
-            if (credentials.UseDefault && network == null)
-                throw new ArgumentException("network parameter is required if you use default credentials");
-
-            if (address == null && network == null)
-                throw new ArgumentException("network parameter is required if you use default uri");
-
-            if (address == null)
-                address = new Uri("http://127.0.0.1:" + network.DefaultRPCPort + "/");
 
             if (credentials.UseDefault)
             {
@@ -303,17 +270,6 @@ namespace Stratis.Bitcoin.Features.RPC
             return defaultPaths.TryGetValue(network, out string path) ? path : null;
         }
 
-        /// <summary>
-        /// Create a new RPCClient instance
-        /// </summary>
-        /// <param name="authenticationString">username:password, the content of the .cookie file, or cookiefile=pathToCookieFile</param>
-        /// <param name="hostOrUri"></param>
-        /// <param name="network"></param>
-        public RPCClient(string authenticationString, string hostOrUri, Network network)
-            : this(authenticationString, BuildUri(hostOrUri, network.DefaultRPCPort), network)
-        {
-        }
-
         private static Uri BuildUri(string hostOrUri, int port)
         {
             if (hostOrUri != null)
@@ -345,19 +301,25 @@ namespace Stratis.Bitcoin.Features.RPC
             return builder.Uri;
         }
 
-        public RPCClient(NetworkCredential credentials, Uri address, Network network = null)
-            : this(credentials == null ? null : (credentials.UserName + ":" + credentials.Password), address, network)
+        /// <summary>
+        /// Create a new RPCClient instance
+        /// </summary>
+        /// <param name="authenticationString">username:password or the content of the .cookie file or null to auto configure</param>
+        /// <param name="address">The address to connect to.</param>
+        /// <param name="network">The network.</param>
+        public RPCClient(string authenticationString, Uri address, Network network = null)
+            : this(RPCCredentialString.Parse(authenticationString), address, network)
         {
         }
 
         /// <summary>
         /// Create a new RPCClient instance
         /// </summary>
-        /// <param name="authenticationString">username:password or the content of the .cookie file or null to auto configure</param>
-        /// <param name="address"></param>
-        /// <param name="network"></param>
-        public RPCClient(string authenticationString, Uri address, Network network = null)
-            : this(authenticationString == null ? null as RPCCredentialString : RPCCredentialString.Parse(authenticationString), address, network)
+        /// <param name="rpcSettings">The RPC settings.</param>
+        /// <param name="hostOrUri">The URI to use to connect with.</param>
+        /// <param name="network">The network.</param>
+        public RPCClient(RpcSettings rpcSettings, string hostOrUri, Network network)
+            : this($"{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}", BuildUri(hostOrUri, rpcSettings.RPCPort), network)
         {
         }
 
