@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -28,11 +27,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         /// <summary>Returns balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
         /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed or doesn't exists.</returns>
-        Money GetAddressBalance(BitcoinAddress address, int minConfirmations = 0);
+        Money GetAddressBalance(string address, int minConfirmations = 0);
 
         /// <summary>Returns the total amount received by the given address in transactions with at least <paramref name="minConfirmations"/> confirmations.</summary>
         /// <returns>Total amount received by a given address or <c>null</c> if address wasn't indexed.</returns>
-        Money GetReceivedByAddress(BitcoinAddress address, int minConfirmations = 0);
+        Money GetReceivedByAddress(string address, int minConfirmations = 0);
     }
 
     public class AddressIndexer : IAddressIndexer
@@ -112,7 +111,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     this.addressesIndex = new AddressIndexerData()
                     {
                         TipHashBytes = this.network.GenesisHash.ToBytes(),
-                        AddressIndexDatas = new List<AddressIndexData>()
+                        AddressChanges = new Dictionary<string, List<AddressBalanceChange>>()
                     };
                     this.dataStore.Insert(this.addressesIndex);
                 }
@@ -178,8 +177,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                         lock (this.lockObject)
                         {
-                            foreach (AddressIndexData addressIndexData in this.addressesIndex.AddressIndexDatas)
-                                addressIndexData.Changes.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
+                            foreach (List<AddressBalanceChange> changes in this.addressesIndex.AddressChanges.Values)
+                                changes.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
                         }
 
                         this.IndexerTip = lastCommonHeader;
@@ -281,10 +280,18 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     Money amountSpent = txOut.Value;
 
-                    AddressIndexData addrData = this.GetOrCreateAddressDataLocked(txOut.ScriptPubKey);
+                    BitcoinAddress address = txOut.ScriptPubKey.GetDestinationAddress(this.network);
+
+                    if (address == null)
+                    {
+                        this.logger.LogDebug("Failed to extract an address from '{0}' while parsing inputs.", txOut.ScriptPubKey);
+                        continue;
+                    }
+
+                    List<AddressBalanceChange> changes = this.GetOrCreateAddressChangesCollectionLocked(address.ToString());
 
                     // Record money being spent.
-                    addrData.Changes.Add(new AddressBalanceChange()
+                    changes.Add(new AddressBalanceChange()
                     {
                         BalanceChangedHeight = header.Height,
                         Satoshi = amountSpent.Satoshi,
@@ -299,10 +306,18 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     {
                         Money amountReceived = txOut.Value;
 
-                        AddressIndexData addrData = this.GetOrCreateAddressDataLocked(txOut.ScriptPubKey);
+                        BitcoinAddress address = txOut.ScriptPubKey.GetDestinationAddress(this.network);
+
+                        if (address == null)
+                        {
+                            this.logger.LogDebug("Failed to extract an address from '{0}' while parsing outputs.", txOut.ScriptPubKey);
+                            continue;
+                        }
+
+                        List<AddressBalanceChange> changes = this.GetOrCreateAddressChangesCollectionLocked(address.ToString());
 
                         // Record money being sent.
-                        addrData.Changes.Add(new AddressBalanceChange()
+                        changes.Add(new AddressBalanceChange()
                         {
                             BalanceChangedHeight = header.Height,
                             Satoshi = amountReceived.Satoshi,
@@ -316,38 +331,28 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
 
         /// <remarks>Should be protected by <see cref="lockObject"/>.</remarks>
-        private AddressIndexData GetOrCreateAddressDataLocked(Script scriptPubKey)
+        private List<AddressBalanceChange> GetOrCreateAddressChangesCollectionLocked(string address)
         {
-            byte[] scriptPubKeyBytes = scriptPubKey.ToBytes();
-
-            AddressIndexData addrData = this.addressesIndex.AddressIndexDatas.SingleOrDefault(x => StructuralComparisons.StructuralEqualityComparer.Equals(scriptPubKeyBytes, x.ScriptPubKeyBytes));
-
-            if (addrData == null)
+            if (this.addressesIndex.AddressChanges.TryGetValue(address, out List<AddressBalanceChange> changes))
             {
-                addrData = new AddressIndexData()
-                {
-                    ScriptPubKeyBytes = scriptPubKeyBytes,
-                    Changes = new List<AddressBalanceChange>()
-                };
-
-                this.addressesIndex.AddressIndexDatas.Add(addrData);
-                return addrData;
+                return changes;
             }
 
-            return addrData;
+            changes = new List<AddressBalanceChange>();
+            this.addressesIndex.AddressChanges[address] = changes;
+
+            return changes;
         }
 
         /// <inheritdoc />
-        public Money GetAddressBalance(BitcoinAddress address, int minConfirmations = 0)
+        public Money GetAddressBalance(string address, int minConfirmations = 0)
         {
             if (this.addressesIndex == null)
                 throw new IndexerNotInitializedException();
 
             lock (this.lockObject)
             {
-                AddressIndexData addressIndexData = this.addressesIndex.AddressIndexDatas.SingleOrDefault(x => x.ScriptPubKeyBytes.SequenceEqual(address.ScriptPubKey.ToBytes()));
-
-                if (addressIndexData == null)
+                if (!this.addressesIndex.AddressChanges.TryGetValue(address, out List<AddressBalanceChange> changes))
                 {
                     this.logger.LogTrace("(-)[NOT_FOUND]");
                     return null;
@@ -357,7 +362,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                 int requiredHeight = this.consensusManager.Tip.Height - minConfirmations;
 
-                foreach (AddressBalanceChange change in addressIndexData.Changes.Where(x => x.BalanceChangedHeight >= requiredHeight))
+                foreach (AddressBalanceChange change in changes.Where(x => x.BalanceChangedHeight >= requiredHeight))
                 {
                     if (change.Deposited)
                         balance += change.Satoshi;
@@ -370,16 +375,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
 
         /// <inheritdoc />
-        public Money GetReceivedByAddress(BitcoinAddress address, int minConfirmations = 0)
+        public Money GetReceivedByAddress(string address, int minConfirmations = 0)
         {
             if (this.addressesIndex == null)
                 throw new IndexerNotInitializedException();
 
             lock (this.lockObject)
             {
-                AddressIndexData addressIndexData = this.addressesIndex.AddressIndexDatas.SingleOrDefault(x => x.ScriptPubKeyBytes.SequenceEqual(address.ScriptPubKey.ToBytes()));
-
-                if (addressIndexData == null)
+                if (!this.addressesIndex.AddressChanges.TryGetValue(address, out List<AddressBalanceChange> changes))
                 {
                     this.logger.LogTrace("(-)[NOT_FOUND]");
                     return null;
@@ -387,7 +390,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                 int requiredHeight = this.consensusManager.Tip.Height - minConfirmations;
 
-                long deposited = addressIndexData.Changes.Where(x => x.Deposited && x.BalanceChangedHeight >= requiredHeight).Sum(x => x.Satoshi);
+                long deposited = changes.Where(x => x.Deposited && x.BalanceChangedHeight >= requiredHeight).Sum(x => x.Satoshi);
 
                 return new Money(deposited);
             }

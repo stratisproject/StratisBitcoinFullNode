@@ -119,12 +119,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         /// <summary>Provides balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
         [Route("getaddressbalance")]
         [HttpGet]
-        public IActionResult GetAddressBalance([FromQuery] string addressString, int minConfirmations)
+        public IActionResult GetAddressBalance([FromQuery] string address, int minConfirmations)
         {
             try
             {
-                var address = BitcoinAddress.Create(addressString, this.network);
-
                 return this.Json(this.addressIndexer.GetAddressBalance(address, minConfirmations));
             }
             catch (Exception e)
@@ -137,12 +135,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         /// <summary>Returns the total amount received by the given address in transactions with at least<paramref name= "minConfirmations" /> confirmations.</ summary >
         [Route("getreceivedbyaddress")]
         [HttpGet]
-        public IActionResult GetReceivedByAddress([FromQuery] string addressString, int minConfirmations)
+        public IActionResult GetReceivedByAddress([FromQuery] string address, int minConfirmations)
         {
             try
             {
-                var address = BitcoinAddress.Create(addressString, this.network);
-
                 return this.Json(this.addressIndexer.GetReceivedByAddress(address, minConfirmations));
             }
             catch (Exception e)
