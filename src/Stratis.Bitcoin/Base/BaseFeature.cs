@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -229,7 +230,7 @@ namespace Stratis.Bitcoin.Base
 
             this.chainState.ConsensusTip = this.consensusManager.Tip;
 
-            this.nodeStats.RegisterStats(this.asyncProvider.AddBenchStats, StatsType.Benchmark, 100);
+            this.nodeStats.RegisterStats(sb => sb.Append(this.asyncProvider.GetStatistics(this.nodeSettings.Log.DebugArgs.Any())), StatsType.Benchmark, 100);
         }
 
         /// <summary>

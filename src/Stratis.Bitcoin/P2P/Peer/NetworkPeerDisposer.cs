@@ -66,7 +66,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.onPeerDisposed = onPeerDisposed;
             this.connectedPeers = new ConcurrentDictionary<int, INetworkPeer>();
 
-            this.peersToDispose = asyncProvider.CreateAndRunAsyncDelegateDequeuer<INetworkPeer>($"{nameof(NetworkPeerDisposer)}-{nameof(this.peersToDispose)}", this.OnEnqueueAsync);
+            string dequeuerName = $"{nameof(NetworkPeerDisposer)}-{nameof(this.peersToDispose)}";
+            this.peersToDispose = asyncProvider.CreateAndRunAsyncDelegateDequeuer<INetworkPeer>(dequeuerName, this.OnEnqueueAsync);
         }
 
         /// <summary>

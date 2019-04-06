@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.AsyncWork;
-using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.P2P.Peer;
 
 namespace Stratis.Bitcoin.P2P.Protocol
 {
@@ -30,9 +30,10 @@ namespace Stratis.Bitcoin.P2P.Protocol
         /// Initializes the instance of the object.
         /// </summary>
         /// <param name="processMessageAsync">User defined callback routine to be executed when a new message arrives to the listener.</param>
-        public CallbackMessageListener(IAsyncProvider asyncProvider, ProcessMessageAsync<T> processMessageAsync)
+        public CallbackMessageListener(IAsyncProvider asyncProvider, ProcessMessageAsync<T> processMessageAsync, INetworkPeer peer)
         {
-            this.asyncQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<T>(this.GetType().Name, new Func<T, CancellationToken, Task>(processMessageAsync));
+            string queuerName = $"{nameof(CallbackMessageListener<T>)}-{typeof(T).Name}-{peer.PeerEndPoint.ToString()}";
+            this.asyncQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<T>(queuerName, new Func<T, CancellationToken, Task>(processMessageAsync));
         }
 
         /// <inheritdoc/>

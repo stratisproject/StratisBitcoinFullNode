@@ -303,7 +303,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.onDisconnected = onDisconnected;
             this.onSendingMessage = onSendingMessage;
 
-            this.asyncPayloadsQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<Payload>($"{nameof(NetworkPeer)}-{nameof(this.asyncPayloadsQueue)}", this.SendMessageHandledAsync);
+            string dequeuerName = $"{nameof(NetworkPeer)}-{nameof(this.asyncPayloadsQueue)}-{this.PeerEndPoint.ToString()}";
+            this.asyncPayloadsQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<Payload>(dequeuerName, this.SendMessageHandledAsync);
         }
 
         /// <summary>

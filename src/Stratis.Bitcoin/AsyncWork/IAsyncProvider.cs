@@ -91,9 +91,9 @@ namespace Stratis.Bitcoin.AsyncWork
         bool IsAsyncDelegateDequeuerRunning(IAsyncDelegate asyncDelegate);
 
         /// <summary>
-        /// Append benchmark statistics to the <paramref name="log"/>.
+        /// returns statistics about running or faulted async loops.
         /// </summary>
-        /// <param name="log">The log.</param>
-        void AddBenchStats(StringBuilder log);
+        /// <param name="faultyOnly">if set to <c>true</c> dump information only for loops in faulty state.</param>
+        string GetStatistics(bool faultyOnly);
     }
 }

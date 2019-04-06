@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.CancellationSource = new CancellationTokenSource();
 
             this.MessageProducer = new MessageProducer<IncomingMessage>();
-            this.messageListener = new CallbackMessageListener<IncomingMessage>(asyncProvider, processMessageAsync);
+            this.messageListener = new CallbackMessageListener<IncomingMessage>(asyncProvider, processMessageAsync, peer);
             this.messageProducerRegistration = this.MessageProducer.AddMessageListener(this.messageListener);
         }
 

@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.AsyncWork
 
         /// <inheritdoc />
         [NoTrace]
-        public void AddBenchStats(StringBuilder log)
+        public string GetStatistics(bool faultyOnly)
         {
             List<KeyValuePair<IAsyncDelegate, AsyncTaskInfo>> taskInformationsDump;
             lock (this.lockAsyncDelegates)
@@ -196,37 +196,45 @@ namespace Stratis.Bitcoin.AsyncWork
                     Exception = info.Exception?.Message
                 };
 
-            log.AppendLine("====== Async loops ======");
-            log.AppendLine("Running".PadRight(20) + taskInformationsDump.Where(info => info.Value.IsRunning).Count().ToString().PadRight(20));
-            log.Append("Faulted".PadRight(20) + taskInformationsDump.Where(info => !info.Value.IsRunning).Count().ToString().PadRight(20));
-            log.AppendLine("------");
+            var sb = new StringBuilder("====== Async loops ======");
+            if (!faultyOnly)
+                sb.AppendLine("Running".PadRight(20) + taskInformationsDump.Where(info => info.Value.IsRunning).Count().ToString().PadRight(20));
+
+            sb.Append("Faulted".PadRight(20) + taskInformationsDump.Where(info => !info.Value.IsRunning).Count().ToString().PadRight(20));
+            sb.AppendLine("------");
 
             foreach (var item in this.benchmarkColumnsDefinition)
             {
-                log.Append(item.Name.PadRight(item.Width));
+                sb.Append(item.Name.PadRight(item.Width));
             }
 
-            log.AppendLine();
-            log.AppendLine("-".PadRight(this.benchmarkColumnsDefinition.Sum(column => column.Width), '-'));
+            sb.AppendLine();
+            sb.AppendLine("-".PadRight(this.benchmarkColumnsDefinition.Sum(column => column.Width), '-'));
 
             foreach (var row in data)
             {
+                // skip non faulty rows (Exception is null) if faultyOnly is set.
+                if (faultyOnly && row.Exception == null)
+                    continue;
+
                 for (int iColumn = 0; iColumn < this.benchmarkColumnsDefinition.Length; iColumn++)
                 {
-                    log.Append(row.Columns[iColumn].PadRight(this.benchmarkColumnsDefinition[iColumn].Width));
-
-                    // if exception != null means the loop is faulted, so I show the reason in a row under it, a little indented.
-                    if (row.Exception != null)
-                    {
-                        log.AppendLine();
-                        log.Append($"      * Fault Reason: {row.Exception}");
-                    }
+                    sb.Append(row.Columns[iColumn].PadRight(this.benchmarkColumnsDefinition[iColumn].Width));
                 }
 
-                log.AppendLine();
+                // if exception != null means the loop is faulted, so I show the reason in a row under it, a little indented.
+                if (row.Exception != null)
+                {
+                    sb.AppendLine();
+                    sb.Append($"      * Fault Reason: {row.Exception}");
+                }
+
+                sb.AppendLine();
             }
 
-            log.AppendLine("-".PadRight(this.benchmarkColumnsDefinition.Sum(column => column.Width), '-'));
+            sb.AppendLine("-".PadRight(this.benchmarkColumnsDefinition.Sum(column => column.Width), '-'));
+
+            return sb.ToString();
         }
 
         /// <summary>
@@ -267,15 +275,35 @@ namespace Stratis.Bitcoin.AsyncWork
         /// <param name="state">The <see cref="IAsyncDelegate"/> that's run by the delegateTask</param>
         private void onAsyncDelegateCompleted(Task task, object state)
         {
-            bool removed;
+            AsyncTaskInfo itemToRemove;
             lock (this.lockAsyncDelegates)
             {
-                removed = this.asyncDelegates.Remove((IAsyncDelegate)state);
+                if (this.asyncDelegates.TryGetValue((IAsyncDelegate)state, out itemToRemove))
+                {
+                    // When AsyncLoop fails with an uncaughtException, it handle it completing fine.
+                    // I want instead to keep its failed status visible on console so I handle this scenario as faulted task.
+                    // TODO: discuss about this decision.
+                    if (state is AsyncLoop asyncLoop && asyncLoop.UncaughtException != null)
+                    {
+                        // casted to IAsyncTaskInfoSetter to be able to set properties
+                        IAsyncTaskInfoSetter infoSetter = itemToRemove;
+
+                        infoSetter.Exception = asyncLoop.UncaughtException;
+                        infoSetter.Status = TaskStatus.Faulted;
+
+                        this.logger.LogTrace("Async Loop '{0}' completed with an UncaughtException, marking it as faulted. Task Id: {1}.", itemToRemove.FriendlyName, task.Id);
+                        return;
+                    }
+                    else
+                    {
+                        this.asyncDelegates.Remove((IAsyncDelegate)state);
+                    }
+                }
             }
 
-            if (removed)
+            if (itemToRemove != null)
             {
-                this.logger.LogTrace("IAsyncDelegate task Removed. Id: {0}.", task.Id);
+                this.logger.LogTrace("IAsyncDelegate task '{0}' Removed. Id: {1}.", itemToRemove.FriendlyName, task.Id);
             }
             else
             {

@@ -35,6 +35,14 @@ namespace Stratis.Bitcoin.Utilities
         public TimeSpan RepeatEvery { get; set; }
 
         /// <summary>
+        /// Gets the uncaught exception, if available.
+        /// </summary>
+        /// <value>
+        /// The uncaught exception.
+        /// </value>
+        internal Exception UncaughtException{ get; private set; }
+
+        /// <summary>
         /// Initializes a named instance of the object.
         /// </summary>
         /// <param name="name">Name of the loop.</param>
@@ -79,7 +87,6 @@ namespace Stratis.Bitcoin.Utilities
         {
             return Task.Run(async () =>
             {
-                Exception uncaughtException = null;
                 try
                 {
                     if (delayStart != null)
@@ -110,25 +117,25 @@ namespace Stratis.Bitcoin.Utilities
                 catch (OperationCanceledException ex)
                 {
                     if (!cancellation.IsCancellationRequested)
-                        uncaughtException = ex;
+                        this.UncaughtException = ex;
                 }
                 catch (Exception ex)
                 {
-                    uncaughtException = ex;
+                    this.UncaughtException = ex;
                 }
                 finally
                 {
                     this.logger.LogInformation(this.Name + " stopping.");
                 }
 
-                if (uncaughtException != null)
+                if (this.UncaughtException != null)
                 {
                     // WARNING: Do NOT touch this line unless you want to fix weird AsyncLoop tests.
                     // The following line has to be called EXACTLY as it is.
-                    this.logger.LogCritical(new EventId(0), uncaughtException, this.Name + " threw an unhandled exception");
+                    this.logger.LogCritical(new EventId(0), this.UncaughtException, this.Name + " threw an unhandled exception");
 
                     // You can touch this one.
-                    this.logger.LogError("{0} threw an unhandled exception: {1}", this.Name, uncaughtException.ToString());
+                    this.logger.LogError("{0} threw an unhandled exception: {1}", this.Name, this.UncaughtException.ToString());
                 }
             }, cancellation);
         }
