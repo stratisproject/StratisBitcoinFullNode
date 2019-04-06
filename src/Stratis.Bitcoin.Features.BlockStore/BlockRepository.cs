@@ -204,6 +204,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 for (int i = 0; i < trxids.Length; i++)
                 {
+                    bool alreadyFetched = trxids.Take(i).Any(x => x == trxids[i]);
+
+                    if (alreadyFetched)
+                    {
+                        this.logger.LogDebug("Duplicated transaction encountered. Tx id: '{0}'.", trxids[i]);
+
+                        txes[i] = txes.First(x => x.GetHash() == trxids[i]);
+                        continue;
+                    }
+
                     Row<byte[], byte[]> transactionRow = transaction.Select<byte[], byte[]>(TransactionTableName, trxids[i].ToBytes());
                     if (!transactionRow.Exists)
                     {

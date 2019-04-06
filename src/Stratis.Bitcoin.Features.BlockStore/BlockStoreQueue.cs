@@ -250,6 +250,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             Transaction[] fetchedTxes = this.blockRepository.GetTransactionsByIds(notFoundIds.ToArray());
+
+            if (fetchedTxes == null)
+            {
+                this.logger.LogTrace("(-)[NOT_FOUND_IN_REPOSITORY]:null");
+                return null;
+            }
+
             int fetchedIndex = 0;
 
             for (int i = 0; i < txes.Length; i++)
