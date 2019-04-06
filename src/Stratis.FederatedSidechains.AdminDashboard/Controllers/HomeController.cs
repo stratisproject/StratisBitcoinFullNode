@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -8,7 +9,7 @@ using Newtonsoft.Json;
 using Stratis.FederatedSidechains.AdminDashboard.Filters;
 using Stratis.FederatedSidechains.AdminDashboard.Hubs;
 using Stratis.FederatedSidechains.AdminDashboard.Models;
-using Stratis.FederatedSidechains.AdminDashboard.Rest;
+using Stratis.FederatedSidechains.AdminDashboard.Services;
 using Stratis.FederatedSidechains.AdminDashboard.Settings;
 
 namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
@@ -55,7 +56,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
                 return View("Initialization");
             }
 
-            var dashboardModel = JsonConvert.DeserializeObject<DashboardModel>(this.distributedCache.GetString("DashboardData"));
+            DashboardModel dashboardModel = JsonConvert.DeserializeObject<DashboardModel>(this.distributedCache.GetString("DashboardData"));
             this.ViewBag.DisplayLoader = true;
             this.ViewBag.History = new[] {
                 dashboardModel.StratisNode.History,
@@ -80,7 +81,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
         {
             if (!string.IsNullOrEmpty(this.distributedCache.GetString("DashboardData")))
             {
-                var dashboardModel = JsonConvert.DeserializeObject<DashboardModel>(this.distributedCache.GetString("DashboardData"));
+                DashboardModel dashboardModel = JsonConvert.DeserializeObject<DashboardModel>(this.distributedCache.GetString("DashboardData"));
                 this.ViewBag.History = new[] {
                     dashboardModel.StratisNode.History,
                     dashboardModel.SidechainNode.History

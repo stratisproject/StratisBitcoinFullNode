@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 using RestSharp;
 using Stratis.FederatedSidechains.AdminDashboard.Helpers;
 
-namespace Stratis.FederatedSidechains.AdminDashboard.Rest
+namespace Stratis.FederatedSidechains.AdminDashboard.Services
 {
     public static class ApiRequester
     {

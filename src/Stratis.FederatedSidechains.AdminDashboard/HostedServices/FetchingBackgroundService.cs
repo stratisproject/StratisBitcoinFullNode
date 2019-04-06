@@ -15,10 +15,10 @@ using Newtonsoft.Json.Linq;
 using Stratis.FederatedSidechains.AdminDashboard.Helpers;
 using Stratis.FederatedSidechains.AdminDashboard.Hubs;
 using Stratis.FederatedSidechains.AdminDashboard.Models;
-using Stratis.FederatedSidechains.AdminDashboard.Rest;
+using Stratis.FederatedSidechains.AdminDashboard.Services;
 using Stratis.FederatedSidechains.AdminDashboard.Settings;
 
-namespace Stratis.FederatedSidechains.AdminDashboard.Services
+namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
 {
     public class FetchingBackgroundService : IHostedService, IDisposable
     {

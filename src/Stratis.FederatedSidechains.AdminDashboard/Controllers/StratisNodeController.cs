@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Stratis.FederatedSidechains.AdminDashboard.Filters;
-using Stratis.FederatedSidechains.AdminDashboard.Rest;
+using Stratis.FederatedSidechains.AdminDashboard.Services;
 using Stratis.FederatedSidechains.AdminDashboard.Settings;
 
 namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
@@ -22,7 +22,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
         [Route("resync")]
         public async Task<IActionResult> ResyncAsync(string value)
         {
-            bool isHeight = int.TryParse(value, out int height);
+            bool isHeight = int.TryParse(value, out _);
             if (isHeight)
             {
                 ApiResponse getblockhashRequest = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, $"/api/Consensus/getblockhash?height={value}");
