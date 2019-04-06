@@ -108,9 +108,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                var minerB = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
-                var syncer = builder.CreateStratisPowNode(this.powNetwork).Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cm-1-minerA").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                var minerB = builder.CreateStratisPowNode(this.powNetwork, "cm-1-minerB").WithDummyWallet().Start();
+                var syncer = builder.CreateStratisPowNode(this.powNetwork, "cm-1-syncer").Start();
 
                 // Sync the network to height 10.
                 TestHelper.ConnectAndSync(syncer, minerA);
@@ -151,8 +151,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var network = new StratisConsensusOptionsOverrideTest();
 
                 // MinerA requires a physical wallet to stake with.
-                var minerA = builder.CreateStratisPosNode(network, "minerA").OverrideDateTimeProvider().WithWallet().Start();
-                var minerB = builder.CreateStratisPosNode(network, "minerB").OverrideDateTimeProvider().Start();
+                var minerA = builder.CreateStratisPosNode(network, "cm-2-minerA").OverrideDateTimeProvider().WithWallet().Start();
+                var minerB = builder.CreateStratisPosNode(network, "cm-2-minerB").OverrideDateTimeProvider().Start();
 
                 // MinerA mines to height 55.
                 TestHelper.MineBlocks(minerA, 55);
@@ -197,8 +197,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var network = new BitcoinMaxReorgOverrideTest();
 
-                var minerA = builder.CreateStratisPowNode(network).WithDummyWallet().Start();
-                var minerB = builder.CreateStratisPowNode(network).WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(network, "cm-3-minerA").WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPowNode(network, "cm-3-minerB").WithDummyWallet().Start();
 
                 // MinerA mines height 10.
                 TestHelper.MineBlocks(minerA, 10);
@@ -236,9 +236,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                var minerB = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
-                var syncer = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cm-4-minerA").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                var minerB = builder.CreateStratisPowNode(this.powNetwork, "cm-4-minerB").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
+                var syncer = builder.CreateStratisPowNode(this.powNetwork, "cm-4-syncer").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
 
                 // Sync the network to height 10.
                 TestHelper.ConnectAndSync(syncer, minerA, minerB);
@@ -281,9 +281,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var syncerNetwork = new BitcoinOverrideRegTest();
 
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                var minerB = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
-                var syncer = builder.CreateStratisPowNode(syncerNetwork).Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cm-5-minerA").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                var minerB = builder.CreateStratisPowNode(this.powNetwork, "cm-5-minerB").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
+                var syncer = builder.CreateStratisPowNode(syncerNetwork, "cm-5-syncer").Start();
 
                 // Sync the network to height 10.
                 TestHelper.ConnectAndSync(syncer, minerA, minerB);
@@ -328,9 +328,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var syncerNetwork = new BitcoinOverrideRegTest();
 
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                var minerB = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
-                var syncer = builder.CreateStratisPowNode(syncerNetwork).Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cm-6-minerA").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                var minerB = builder.CreateStratisPowNode(this.powNetwork, "cm-6-minerB").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
+                var syncer = builder.CreateStratisPowNode(syncerNetwork, "cm-6-syncer").Start();
 
                 // Sync the network to height 10.
                 TestHelper.ConnectAndSync(syncer, minerA, minerB);
@@ -369,9 +369,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                var minerB = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
-                var syncer = builder.CreateStratisPowNode(this.powNetwork);
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cm-7-minerA").WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                var minerB = builder.CreateStratisPowNode(this.powNetwork, "cm-7-minerB").WithDummyWallet().Start();
+                var syncer = builder.CreateStratisPowNode(this.powNetwork, "cm-7-syncer");
 
                 void flushCondition(IServiceCollection services)
                 {
@@ -422,8 +422,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var syncerNetwork = new BitcoinOverrideRegTest();
 
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                var syncer = builder.CreateStratisPowNode(syncerNetwork).Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cm-8-minerA").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                var syncer = builder.CreateStratisPowNode(syncerNetwork, "cm-8-syncer").Start();
 
                 // Miner A mines to height 11.
                 TestHelper.MineBlocks(minerA, 1);
@@ -449,9 +449,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest100Miner).Start();
-                var minerB = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest100Listener).Start();
-                var syncer = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest100Listener).Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cm-9-minerA").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest100Miner).Start();
+                var minerB = builder.CreateStratisPowNode(this.powNetwork, "cm-9-minerB").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest100Listener).Start();
+                var syncer = builder.CreateStratisPowNode(this.powNetwork, "cm-9-syncer").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest100Listener).Start();
 
                 // Sync the network to height 100.
                 TestHelper.ConnectAndSync(syncer, minerA, minerB);
@@ -486,8 +486,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var network = new StratisRegTest();
 
                 // MinerA requires an physical wallet to stake with.
-                var minerA = builder.CreateStratisPosNode(network, "minerA").OverrideDateTimeProvider().WithWallet().Start();
-                var minerB = builder.CreateStratisPosNode(network, "minerB").OverrideDateTimeProvider().WithWallet().Start();
+                var minerA = builder.CreateStratisPosNode(network, "cm-10-minerA").OverrideDateTimeProvider().WithWallet().Start();
+                var minerB = builder.CreateStratisPosNode(network, "cm-10-minerB").OverrideDateTimeProvider().WithWallet().Start();
 
                 // MinerA mines 2 blocks to get the big premine coin.
                 TestHelper.MineBlocks(minerA, 2);
@@ -567,8 +567,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var network = new StratisRegTest();
 
-                var minerA = builder.CreateStratisPosNode(network, "minerA").OverrideDateTimeProvider().WithWallet().Start();
-                var minerB = builder.CreateStratisPosNode(network, "minerB").OverrideDateTimeProvider().Start();
+                var minerA = builder.CreateStratisPosNode(network, "cm-11-minerA").OverrideDateTimeProvider().WithWallet().Start();
+                var minerB = builder.CreateStratisPosNode(network, "cm-11-minerB").OverrideDateTimeProvider().Start();
 
                 minerB.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase, minerA.Mnemonic);
 

@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
 using Xunit;
@@ -21,9 +20,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var network = new BitcoinRegTest();
 
-                var minerA = builder.CreateStratisPowNode(network).WithDummyWallet();
-                var minerB = builder.CreateStratisPowNode(network).NoValidation().WithDummyWallet();
-                var syncer = builder.CreateStratisPowNode(network).WithDummyWallet();
+                var minerA = builder.CreateStratisPowNode(network, "cmi-1-minerA").WithDummyWallet();
+                var minerB = builder.CreateStratisPowNode(network, "cmi-1-minerB").NoValidation().WithDummyWallet();
+                var syncer = builder.CreateStratisPowNode(network, "cmi-1-syncer").WithDummyWallet();
 
                 bool minerADisconnectedFromSyncer = false;
 
@@ -100,9 +99,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var network = new BitcoinRegTest();
 
-                var minerA = builder.CreateStratisPowNode(network).WithDummyWallet();
-                var minerB = builder.CreateStratisPowNode(network).WithDummyWallet();
-                var syncer = builder.CreateStratisPowNode(network).WithDummyWallet();
+                var minerA = builder.CreateStratisPowNode(network, "cmi-2-minerA").WithDummyWallet();
+                var minerB = builder.CreateStratisPowNode(network, "cmi-2-minerB").WithDummyWallet();
+                var syncer = builder.CreateStratisPowNode(network, "cmi-2-syncer").WithDummyWallet();
 
                 bool minerADisconnectedFromMinerB = false;
 

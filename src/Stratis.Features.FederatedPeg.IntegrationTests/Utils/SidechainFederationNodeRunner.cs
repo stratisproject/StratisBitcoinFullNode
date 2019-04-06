@@ -22,10 +22,14 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 
         private readonly IDateTimeProvider timeProvider;
 
-        public SidechainFederationNodeRunner(string dataDir, string agent, Network network, bool testingFederation, IDateTimeProvider dateTimeProvider)
+        private readonly Network counterChainNetwork;
+
+        public SidechainFederationNodeRunner(string dataDir, string agent, Network network, Network counterChainNetwork, bool testingFederation, IDateTimeProvider dateTimeProvider)
             : base(dataDir, agent)
         {
             this.Network = network;
+
+            this.counterChainNetwork = counterChainNetwork;
 
             this.testingFederation = testingFederation;
 
@@ -43,8 +47,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                 {
                     options.UseReflectionExecutor();
                 })
-                .UseSmartContractWallet()                
-                .AddFederationGateway()
+                .UseSmartContractWallet()
+                .AddFederationGateway(new FederatedPegOptions(this.counterChainNetwork))
                 .UseFederatedPegPoAMining()
                 .UseMempool()
                 .UseTransactionNotification()
