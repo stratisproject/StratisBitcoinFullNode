@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.RPC
         public List<IPAddressBlock> AllowIp { get; set; }
 
         // TODO: Refactor static PrintHelp method.
-        private static RpcSettings settingsHelp;
+        private static Action<RpcSettings> appDefaults = null;
 
         private static List<IPEndPoint> DefaultBinding(bool haveAllowIps, int rpcPort)
         {
@@ -72,6 +72,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
             this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(RpcSettings).FullName);
 
+            // Set up default values.
             this.RPCPort = nodeSettings.Network.DefaultRPCPort;
             this.Bind = new List<IPEndPoint>();
             this.AllowIp = new List<IPAddressBlock>();
@@ -79,11 +80,9 @@ namespace Stratis.Bitcoin.Features.RPC
             this.RpcUser = null;
             this.RpcPassword = null;
 
+            // Allow application to override default values.
             defaultArgs?.Invoke(this);
-
-            // For printing help.
-            // TODO: Refactor.
-            settingsHelp = (RpcSettings)this.MemberwiseClone();
+            appDefaults = defaultArgs;
 
             // Get values from config and command line.
             this.LoadSettingsFromConfig(nodeSettings);
@@ -169,19 +168,20 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <param name="network">The network to use.</param>
         public static void PrintHelp(Network network)
         {
-            NodeSettings defaults = NodeSettings.Default(network);
+            NodeSettings nodeDefaults = NodeSettings.Default(network);
+            var defaults = new RpcSettings(nodeDefaults, appDefaults);
             var builder = new StringBuilder();
-            var allowIp = string.Join(" and ", settingsHelp.AllowIp.Select(ipab => $"'{ipab}'"));
-            var bind = string.Join(" and ", DefaultBinding(settingsHelp.AllowIp.Any(), settingsHelp.RPCPort).Select(ep => $"'{ep}'"));
+            var allowIp = string.Join(" and ", defaults.AllowIp.Select(ipab => $"'{ipab}'"));
+            var bind = string.Join(" and ", DefaultBinding(defaults.AllowIp.Any(), defaults.RPCPort).Select(ep => $"'{ep}'"));
 
-            builder.AppendLine($"-server=<0 or 1>          Accept command line and JSON-RPC commands. Default: {settingsHelp.Server}.");
-            builder.AppendLine($"-rpcuser=<string>         Username for JSON-RPC connections. Default: '{settingsHelp.RpcUser}'.");
+            builder.AppendLine($"-server=<0 or 1>          Accept command line and JSON-RPC commands. Default: {defaults.Server}.");
+            builder.AppendLine($"-rpcuser=<string>         Username for JSON-RPC connections. Default: '{defaults.RpcUser}'.");
             builder.AppendLine($"-rpcpassword=<string>     Password for JSON-RPC connections");
-            builder.AppendLine($"-rpcport=<0-65535>        Listen for JSON-RPC connections on <port>. Default: {settingsHelp.RPCPort}");
+            builder.AppendLine($"-rpcport=<0-65535>        Listen for JSON-RPC connections on <port>. Default: {defaults.RPCPort}");
             builder.AppendLine($"-rpcbind=<ip:port>        Bind to given address to listen for JSON-RPC connections. This option can be specified multiple times. Default: {bind}");
             builder.AppendLine($"-rpcallowip=<ip>          Allow JSON-RPC connections from specified source. This option can be specified multiple times. Default: {allowIp}");
 
-            defaults.Logger.LogInformation(builder.ToString());
+            nodeDefaults.Logger.LogInformation(builder.ToString());
         }
 
         /// <summary>
@@ -191,15 +191,17 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <param name="network">The network to base the defaults off.</param>
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
-            var allowIp = settingsHelp.AllowIp.Select(ipab => ipab.ToString());
-            var bind = DefaultBinding(settingsHelp.AllowIp.Any(), settingsHelp.RPCPort).Select(ep => ep.ToString());
+            NodeSettings nodeDefaults = NodeSettings.Default(network);
+            var defaults = new RpcSettings(nodeDefaults, appDefaults);
+            var allowIp = defaults.AllowIp.Select(ipab => ipab.ToString());
+            var bind = DefaultBinding(defaults.AllowIp.Any(), defaults.RPCPort).Select(ep => ep.ToString());
 
             var allowIpStr = string.Join(" and ", $"'{allowIp}'");
             var bindStr = string.Join(" and ", $"'{bind}'");
 
             builder.AppendLine($"####RPC Settings####");
-            builder.AppendLine($"#Activate RPC Server (default: {settingsHelp.Server})");
-            builder.AppendLine($"#server={(settingsHelp.Server ? 1 : 0)}");
+            builder.AppendLine($"#Activate RPC Server (default: {defaults.Server})");
+            builder.AppendLine($"#server={(defaults.Server ? 1 : 0)}");
             builder.AppendLine($"#Where the RPC Server binds (default: {bindStr})");
             foreach (var str in bind)
                 builder.AppendLine($"#rpcbind={str}");
