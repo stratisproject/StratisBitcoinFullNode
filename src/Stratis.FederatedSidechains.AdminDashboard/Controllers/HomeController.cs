@@ -67,6 +67,15 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
             this.ViewBag.MainchainMultisigAddress = dashboardModel.MainchainWalletAddress;
             this.ViewBag.SidechainMultisigAddress = dashboardModel.SidechainWalletAddress;
             this.ViewBag.MiningPubKeys = dashboardModel.MiningPublicKeys;
+            this.ViewBag.LogLevels = new List<LogRule>()
+            {
+                new LogRule()
+                {
+                    Name = "Stratis.Bitcoin.Features.Api.*",
+                    MinLevel = LogLevel.Error,
+                    Filename = ""
+                }
+            };
             this.ViewBag.Status = "OK";
 
             return View("Dashboard", dashboardModel);

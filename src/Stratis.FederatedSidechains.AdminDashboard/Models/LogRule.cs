@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Stratis.FederatedSidechains.AdminDashboard.Models
 {
-    public class LogItem
+    public class LogRule
     {
         public string Name { get; set; }
         public LogLevel MinLevel { get; set; }
