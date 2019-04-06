@@ -182,6 +182,16 @@ namespace Stratis.Bitcoin.AsyncWork
                 taskInformationsDump = this.asyncDelegates.ToList();
             }
 
+            int running = taskInformationsDump.Where(info => info.Value.IsRunning).Count();
+            int faulted = taskInformationsDump.Where(info => !info.Value.IsRunning).Count();
+
+            var sb = new StringBuilder();
+            sb.AppendLine();
+            sb.AppendLine($"====== Async loops ======   [Running: {running.ToString()}] [Faulted: {faulted.ToString()}]");
+
+            if (faultyOnly && faulted == 0)
+                return sb.ToString(); // If there are no faulty tasks and faultOnly is set to true, return just the header.
+
             var data =
                 from item in taskInformationsDump
                 let info = item.Value
@@ -191,17 +201,10 @@ namespace Stratis.Bitcoin.AsyncWork
                     Columns = new string[] {
                         info.FriendlyName,
                         (info.IsLoop ? "Loop" : "Dequeuer"),
-                        (info.IsRunning ? "Running" : "Faulted"),
+                        (info.IsRunning ? "Running" : "Faulted")
                     },
                     Exception = info.Exception?.Message
                 };
-
-            var sb = new StringBuilder("====== Async loops ======");
-            if (!faultyOnly)
-                sb.AppendLine("Running".PadRight(20) + taskInformationsDump.Where(info => info.Value.IsRunning).Count().ToString().PadRight(20));
-
-            sb.Append("Faulted".PadRight(20) + taskInformationsDump.Where(info => !info.Value.IsRunning).Count().ToString().PadRight(20));
-            sb.AppendLine("------");
 
             foreach (var item in this.benchmarkColumnsDefinition)
             {
