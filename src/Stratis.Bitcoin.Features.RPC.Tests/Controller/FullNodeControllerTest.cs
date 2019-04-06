@@ -641,7 +641,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             ValidatedAddress result = this.controller.ValidateAddress(address.ToString());
 
             bool isValid = result.IsValid;
-            Assert.False(isValid);
+            Assert.True(isValid);
         }
 
         private Transaction CreateTransaction()

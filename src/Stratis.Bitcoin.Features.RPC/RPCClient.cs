@@ -357,7 +357,15 @@ namespace Stratis.Bitcoin.Features.RPC
 
         private static async Task CheckSegwitCapabilitiesAsync(RPCClient rpc, Action<bool> setResult)
         {
-            var address = new Key().ScriptPubKey.WitHash.ScriptPubKey.GetDestinationAddress(rpc.Network);
+            BitcoinAddress address = null;
+            try
+            {
+                address = new Key().ScriptPubKey.WitHash.ScriptPubKey.GetDestinationAddress(rpc.Network);
+            }
+            catch (NotImplementedException)
+            {
+            }
+  
             if (address == null)
             {
                 setResult(false);

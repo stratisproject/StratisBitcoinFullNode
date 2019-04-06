@@ -408,7 +408,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 capabilities.SupportGetNetworkInfo.Should().BeTrue();
                 capabilities.SupportScanUTXOSet.Should().BeFalse();
                 capabilities.SupportSignRawTransactionWith.Should().BeFalse();
-                capabilities.SupportSegwit.Should().BeFalse();
+                capabilities.SupportSegwit.Should().BeTrue();
                 capabilities.SupportGenerateToAddress.Should().BeFalse();
             }
         }
