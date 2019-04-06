@@ -44,30 +44,5 @@ namespace Stratis.Bitcoin.Controllers
         {
             return this.Content(this.asyncProvider.GetStatistics(false));
         }
-
-        /// <summary>
-        /// Returns a web page with Async Loops statistics
-        /// </summary>
-        /// <returns>text/html content</returns>
-        [HttpGet]
-        [Route("CreateFaultyLoops")]
-        public void CreateFaultyLoops()
-        {
-            var cts = CancellationTokenSource.CreateLinkedTokenSource(this.fullNode.NodeLifetime.ApplicationStopping);
-            cts.CancelAfter(10000); // cancel the loops after 10 seconds
-
-            var dequeuer = this.asyncProvider.CreateAndRunAsyncDelegateDequeuer<int>("Example of Faulty Dequeuer", (item, ct) =>
-            {
-                throw new System.Exception("Ouch! What an error! Fix that please (joking).");
-            });
-
-            //this will trigger the exception
-            dequeuer.Enqueue(0);
-
-            this.asyncProvider.CreateAndRunAsyncLoop("Example of Faulty Loop", (ct) =>
-            {
-                throw new System.Exception("Ouch! What an error! Fix that please (joking).");
-            }, CancellationToken.None);
-        }
     }
 }
