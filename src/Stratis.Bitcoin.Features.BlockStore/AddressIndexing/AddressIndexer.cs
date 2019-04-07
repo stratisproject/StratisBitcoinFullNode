@@ -129,14 +129,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private async Task IndexAddressesContinuouslyAsync()
         {
-            bool triggerFlush = false;
             DateTime lastFlushTime = DateTime.Now;
 
             try
             {
                 while (!this.cancellation.IsCancellationRequested)
                 {
-                    if (triggerFlush || (DateTime.Now - lastFlushTime > this.flushChangesInterval))
+                    if (DateTime.Now - lastFlushTime > this.flushChangesInterval)
                     {
                         this.logger.LogDebug("Flushing changes.");
 
@@ -145,7 +144,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                             this.dataStore.Update(this.addressesIndex);
                         }
 
-                        triggerFlush = false;
                         lastFlushTime = DateTime.Now;
 
                         this.logger.LogDebug("Flush completed.");
@@ -156,11 +154,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     if (nextHeader == null)
                     {
                         this.logger.LogDebug("Next header wasn't found. Waiting.");
-                        triggerFlush = true;
 
                         try
                         {
-                            await Task.Delay(5_000, this.cancellation.Token).ConfigureAwait(false);
+                            await Task.Delay(2_000, this.cancellation.Token).ConfigureAwait(false);
                         }
                         catch (OperationCanceledException)
                         {
@@ -192,12 +189,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     {
                         this.logger.LogDebug("Next block wasn't found. Waiting.");
 
-                        // We are advancing too fast so the block is not ready yet.
-                        triggerFlush = true;
-
                         try
                         {
-                            await Task.Delay(5_000, this.cancellation.Token).ConfigureAwait(false);
+                            await Task.Delay(2_000, this.cancellation.Token).ConfigureAwait(false);
                         }
                         catch (OperationCanceledException)
                         {
@@ -211,8 +205,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     if (!success)
                     {
                         this.logger.LogDebug("Failed to process next block. Waiting.");
-
-                        triggerFlush = true;
 
                         try
                         {
@@ -345,7 +337,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
 
         /// <inheritdoc />
-        public Money GetAddressBalance(string address, int minConfirmations = 0)
+        public Money GetAddressBalance(string address, int minConfirmations = 1)
         {
             if (this.addressesIndex == null)
                 throw new IndexerNotInitializedException();
@@ -360,9 +352,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                 long balance = 0;
 
-                int requiredHeight = this.consensusManager.Tip.Height - minConfirmations;
+                int maxAllowedHeight = this.consensusManager.Tip.Height - minConfirmations + 1;
 
-                foreach (AddressBalanceChange change in changes.Where(x => x.BalanceChangedHeight >= requiredHeight))
+                foreach (AddressBalanceChange change in changes.Where(x => x.BalanceChangedHeight <= maxAllowedHeight))
                 {
                     if (change.Deposited)
                         balance += change.Satoshi;
@@ -375,7 +367,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
 
         /// <inheritdoc />
-        public Money GetReceivedByAddress(string address, int minConfirmations = 0)
+        public Money GetReceivedByAddress(string address, int minConfirmations = 1)
         {
             if (this.addressesIndex == null)
                 throw new IndexerNotInitializedException();
@@ -388,9 +380,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     return null;
                 }
 
-                int requiredHeight = this.consensusManager.Tip.Height - minConfirmations;
+                int maxAllowedHeight = this.consensusManager.Tip.Height - minConfirmations + 1;
 
-                long deposited = changes.Where(x => x.Deposited && x.BalanceChangedHeight >= requiredHeight).Sum(x => x.Satoshi);
+                long deposited = changes.Where(x => x.Deposited && x.BalanceChangedHeight <= maxAllowedHeight).Sum(x => x.Satoshi);
 
                 return new Money(deposited);
             }
