@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     Money amountSpent = txOut.Value;
 
-                    BitcoinAddress address = txOut.ScriptPubKey.GetDestinationAddress(this.network);
+                    BitcoinAddress address = this.GetAddressFromScriptPubKey(txOut.ScriptPubKey);
 
                     if (address == null)
                     {
@@ -298,7 +298,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     {
                         Money amountReceived = txOut.Value;
 
-                        BitcoinAddress address = txOut.ScriptPubKey.GetDestinationAddress(this.network);
+                        BitcoinAddress address = this.GetAddressFromScriptPubKey(txOut.ScriptPubKey);
 
                         if (address == null)
                         {
@@ -320,6 +320,22 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             }
 
             return true;
+        }
+
+        private BitcoinAddress GetAddressFromScriptPubKey(Script scriptPubKey)
+        {
+            BitcoinAddress address = scriptPubKey.GetDestinationAddress(this.network);
+
+            if (address == null)
+            {
+                // Handle P2PK
+                PubKey[] destinationKeys = scriptPubKey.GetDestinationPublicKeys(this.network);
+
+                if (destinationKeys.Length == 1)
+                    address = destinationKeys[0].GetAddress(this.network);
+            }
+
+            return address;
         }
 
         /// <remarks>Should be protected by <see cref="lockObject"/>.</remarks>
