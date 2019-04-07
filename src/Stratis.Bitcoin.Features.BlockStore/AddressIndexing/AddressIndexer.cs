@@ -149,6 +149,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         this.logger.LogDebug("Flush completed.");
                     }
 
+                    if (this.cancellation.IsCancellationRequested)
+                        break;
+
                     ChainedHeader nextHeader = this.consensusManager.Tip.GetAncestor(this.IndexerTip.Height + 1);
 
                     if (nextHeader == null)

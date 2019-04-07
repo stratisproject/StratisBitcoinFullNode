@@ -164,10 +164,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.prunedBlockRepository.PruneAndCompactDatabase(this.chainState.BlockStoreTip, this.network, false);
             }
 
-            this.logger.LogInformation("Stopping BlockStore.");
-
+            this.logger.LogInformation("Stopping BlockStoreSignaled.");
             this.blockStoreSignaled.Dispose();
 
+            this.logger.LogInformation("Stopping AddressIndexer.");
             this.addressIndexer.Dispose();
         }
     }
