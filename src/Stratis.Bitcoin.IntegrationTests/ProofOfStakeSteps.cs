@@ -41,19 +41,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.nodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, displayName));
         }
 
-        public void GenerateCoins()
+        public void PremineNodeWithWallet(string testId)
         {
-            PremineNodeWithWallet();
-            MineGenesisAndPremineBlocks();
-            MineCoinsToMaturity();
-            PremineNodeMinesTenBlocksMoreEnsuringTheyCanBeStaked();
-            PremineNodeStartsStaking();
-            PremineNodeWalletHasEarnedCoinsThroughStaking();
-        }
-
-        public void PremineNodeWithWallet()
-        {
-            this.PremineNodeWithCoins = this.nodeBuilder.CreateStratisPosNode(new StratisRegTest()).WithWallet().Start();
+            this.PremineNodeWithCoins = this.nodeBuilder.CreateStratisPosNode(new StratisRegTest(), testId).WithWallet().Start();
         }
 
         public void PremineNodeWithWalletWithOverrides()
@@ -71,7 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 .UseTestChainedHeaderTree()
                 .OverrideDateTimeProviderFor<MiningFeature>());
 
-            this.PremineNodeWithCoins = this.nodeBuilder.CreateCustomNode(callback, new StratisRegTest(), ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
+            this.PremineNodeWithCoins = this.nodeBuilder.CreateCustomNode(callback, new StratisRegTest(), ProtocolVersion.PROTOCOL_VERSION, agent: "mint-pmnode", configParameters: configParameters);
             this.PremineNodeWithCoins.WithWallet().Start();
         }
 
@@ -188,11 +178,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         private List<TransactionData> GetTransactionsSnapshot()
         {
             // Enumerate to a list otherwise the enumerable can change during enumeration as new transactions are added to the wallet.
-            return this.PremineNodeWithCoins.FullNode.WalletManager().Wallets
-                .First()
-                .GetAllTransactionsByCoinType((CoinType)this.PremineNodeWithCoins.FullNode.Network.Consensus
-                    .CoinType)
-                .ToList();
+            return this.PremineNodeWithCoins.FullNode.WalletManager().Wallets.First().GetAllTransactions().ToList();
         }
     }
 }

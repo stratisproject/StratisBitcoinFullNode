@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly IBlockProvider blockProvider;
 
         /// <summary>Thread safe chain of block headers from genesis.</summary>
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly IConsensusManager consensusManager;
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Miner
             IAsyncLoopFactory asyncLoopFactory,
             IBlockProvider blockProvider,
             IConsensusManager consensusManager,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             IDateTimeProvider dateTimeProvider,
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.blockProvider = blockProvider;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.consensusManager = consensusManager;
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <inheritdoc/>
         public List<uint256> GenerateBlocks(ReserveScript reserveScript, ulong amountOfBlocksToMine, ulong maxTries)
         {
-            var context = new MineBlockContext(amountOfBlocksToMine, (ulong)this.chain.Height, maxTries, reserveScript);
+            var context = new MineBlockContext(amountOfBlocksToMine, (ulong)this.chainIndexer.Height, maxTries, reserveScript);
 
             while (context.MiningCanContinue)
             {

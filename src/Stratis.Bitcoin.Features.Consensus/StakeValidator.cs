@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly IStakeChain stakeChain;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Consensus' view of UTXO set.</summary>
         private readonly ICoinView coinView;
@@ -73,14 +73,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="stakeChain">Database of stake related data for the current blockchain.</param>
-        /// <param name="chain">Chain of headers.</param>
+        /// <param name="chainIndexer">Chain of headers.</param>
         /// <param name="coinView">Used for getting UTXOs.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public StakeValidator(Network network, IStakeChain stakeChain, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory)
+        public StakeValidator(Network network, IStakeChain stakeChain, ChainIndexer chainIndexer, ICoinView coinView, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeChain = stakeChain;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.coinView = coinView;
             this.network = network;
         }
@@ -263,7 +263,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.ReadTxPrevFailed.Throw();
             }
 
-            ChainedHeader prevBlock = this.chain.GetBlock(coins.BlockHash);
+            ChainedHeader prevBlock = this.chainIndexer.GetHeader(coins.BlockHash);
             if (prevBlock == null)
             {
                 this.logger.LogTrace("(-)[REORG]");
@@ -382,7 +382,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             var txData = new PrecomputedTransactionData(txTo);
             var checker = new TransactionChecker(txTo, txToInN, output.Value, txData);
-            var ctx = new ScriptEvaluationContext(this.chain.Network) { ScriptVerify = flagScriptVerify };
+            var ctx = new ScriptEvaluationContext(this.chainIndexer.Network) { ScriptVerify = flagScriptVerify };
 
             bool res = ctx.VerifyScript(input.ScriptSig, output.ScriptPubKey, checker);
             return res;

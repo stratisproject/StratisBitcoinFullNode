@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     public class PowMiningTest : LogsTestBase, IClassFixture<PowMiningTestFixture>
     {
         private readonly Mock<IAsyncLoopFactory> asyncLoopFactory;
-        private ConcurrentChain chain;
+        private ChainIndexer chainIndexer;
         private readonly Mock<IConsensusManager> consensusManager;
         private readonly Mock<IConsensusRuleEngine> consensusRules;
         private readonly Mock<IInitialBlockDownloadState> initialBlockDownloadState;
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
 
             this.consensusManager = new Mock<IConsensusManager>();
-            this.consensusManager.SetupGet(c => c.Tip).Returns(() => this.chain.Tip);
+            this.consensusManager.SetupGet(c => c.Tip).Returns(() => this.chainIndexer.Tip);
             this.consensusRules = new Mock<IConsensusRuleEngine>();
 
             this.mempool = new Mock<ITxMempool>();
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             this.minerSettings = new MinerSettings(NodeSettings.Default(this.network));
 
-            this.chain = fixture.Chain;
+            this.chainIndexer = fixture.ChainIndexer;
 
             this.nodeLifetime = new Mock<INodeLifetime>();
             this.nodeLifetime.Setup(n => n.ApplicationStopping).Returns(new CancellationToken()).Verifiable();
@@ -149,10 +149,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             block.Transactions.Add(transaction);
             block.Header.HashMerkleRoot = new uint256(0);
             block.Header.HashPrevBlock = new uint256(14);
-            this.chain = GenerateChainWithHeight(2, this.network);
+            this.chainIndexer = GenerateChainWithHeight(2, this.network);
 
             int nExtraNonce = 15;
-            nExtraNonce = miner.IncrementExtraNonce(block, this.chain.Tip, nExtraNonce);
+            nExtraNonce = miner.IncrementExtraNonce(block, this.chainIndexer.Tip, nExtraNonce);
 
             Assert.Equal(new uint256(14), hashPrevBlockFieldSelector.GetValue(miner) as uint256);
             Assert.Equal(block.Transactions[0].Inputs[0].ScriptSig, TxIn.CreateCoinbase(3).ScriptSig);
@@ -176,10 +176,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             block.Transactions.Add(transaction);
             block.Header.HashMerkleRoot = new uint256(0);
             block.Header.HashPrevBlock = new uint256(15);
-            this.chain = GenerateChainWithHeight(2, this.network);
+            this.chainIndexer = GenerateChainWithHeight(2, this.network);
 
             int nExtraNonce = 15;
-            nExtraNonce = miner.IncrementExtraNonce(block, this.chain.Tip, nExtraNonce);
+            nExtraNonce = miner.IncrementExtraNonce(block, this.chainIndexer.Tip, nExtraNonce);
 
             Assert.Equal(block.Transactions[0].Inputs[0].ScriptSig, TxIn.CreateCoinbase(3).ScriptSig);
             Assert.NotEqual(new uint256(0), block.Header.HashMerkleRoot);
@@ -192,11 +192,11 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
 
             Block callbackBlock = null;
-            this.chain.SetTip(this.chain.GetBlock(0));
+            this.chainIndexer.SetTip(this.chainIndexer.GetHeader(0));
 
             this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>()))
                 .Callback<Block>((block) => { callbackBlock = block; })
-                .ReturnsAsync(new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip));
+                .ReturnsAsync(new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chainIndexer.Tip));
 
             Mock<PowBlockDefinition> blockBuilder = this.CreateProofOfWorkBlockBuilder();
             blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
@@ -213,8 +213,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public void GenerateBlocks_SingleBlock_MaxTriesReached_StopsGeneratingBlocks_ReturnsEmptyList()
         {
             BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
-            this.chain.SetTip(this.chain.GetBlock(0));
-            var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip);
+            this.chainIndexer.SetTip(this.chainIndexer.GetHeader(0));
+            var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chainIndexer.Tip);
 
             this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).ReturnsAsync(chainedHeader);
             blockTemplate.Block.Header.Nonce = 0;
@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             var blocksToValidate = new List<uint256>();
             ChainedHeader lastChainedHeader = null;
             BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
-            var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip);
+            var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chainIndexer.Tip);
 
             this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>()))
                 .Callback<Block>((context) =>
@@ -260,13 +260,13 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                         blocksToValidate.Add(this.fixture.ChainedHeader2.HashBlock);
                     }
 
-                    this.chain.SetTip(lastChainedHeader);
+                    this.chainIndexer.SetTip(lastChainedHeader);
                 })
                 .ReturnsAsync(chainedHeader);
 
             BlockTemplate blockTemplate2 = this.CreateBlockTemplate(this.fixture.Block2);
 
-            this.chain.SetTip(this.chain.GetBlock(0));
+            this.chainIndexer.SetTip(this.chainIndexer.GetHeader(0));
 
             int attempts = 0;
 
@@ -279,8 +279,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                         if (attempts == 10)
                         {
                             // sometimes the PoW nonce we generate in the fixture is not accepted resulting in an infinite loop. Retry.
-                            this.fixture.Block1 = this.fixture.PrepareValidBlock(this.chain.Tip, 1, this.fixture.Key.ScriptPubKey);
-                            this.fixture.ChainedHeader1 = new ChainedHeader(this.fixture.Block1.Header, this.fixture.Block1.GetHash(), this.chain.Tip);
+                            this.fixture.Block1 = this.fixture.PrepareValidBlock(this.chainIndexer.Tip, 1, this.fixture.Key.ScriptPubKey);
+                            this.fixture.ChainedHeader1 = new ChainedHeader(this.fixture.Block1.Header, this.fixture.Block1.GetHash(), this.chainIndexer.Tip);
                             this.fixture.Block2 = this.fixture.PrepareValidBlock(this.fixture.ChainedHeader1, 2, this.fixture.Key.ScriptPubKey);
                             this.fixture.ChainedHeader2 = new ChainedHeader(this.fixture.Block2.Header, this.fixture.Block2.GetHash(), this.fixture.ChainedHeader1);
 
@@ -310,9 +310,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             BlockTemplate block1 = this.CreateBlockTemplate(this.fixture.Block1);
 
-            this.chain.SetTip(this.chain.GetBlock(0));
+            this.chainIndexer.SetTip(this.chainIndexer.GetHeader(0));
 
-            var chainedHeader = new ChainedHeader(block1.Block.Header, block1.Block.GetHash(), this.chain.Tip);
+            var chainedHeader = new ChainedHeader(block1.Block.Header, block1.Block.GetHash(), this.chainIndexer.Tip);
 
             int blockHeight = 0;
             this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>()))
@@ -324,7 +324,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     if (blockHeight == 2)
                         return null;
 
-                    this.chain.SetTip(chainedHeader);
+                    this.chainIndexer.SetTip(chainedHeader);
 
                     return chainedHeader;
                 });
@@ -367,12 +367,12 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private PowMining CreateProofOfWorkMiner(PowBlockDefinition blockDefinition)
         {
             var blockBuilder = new MockPowBlockProvider(blockDefinition);
-            return new PowMining(this.asyncLoopFactory.Object, blockBuilder, this.consensusManager.Object, this.chain, DateTimeProvider.Default, this.mempool.Object, this.mempoolLock, this.network, this.nodeLifetime.Object, this.LoggerFactory.Object, this.initialBlockDownloadState.Object);
+            return new PowMining(this.asyncLoopFactory.Object, blockBuilder, this.consensusManager.Object, this.chainIndexer, DateTimeProvider.Default, this.mempool.Object, this.mempoolLock, this.network, this.nodeLifetime.Object, this.LoggerFactory.Object, this.initialBlockDownloadState.Object);
         }
 
-        private static ConcurrentChain GenerateChainWithHeight(int blockAmount, Network network)
+        private static ChainIndexer GenerateChainWithHeight(int blockAmount, Network network)
         {
-            var chain = new ConcurrentChain(network);
+            var chain = new ChainIndexer(network);
             uint nonce = RandomUtils.GetUInt32();
             uint256 prevBlockHash = chain.Genesis.HashBlock;
             for (int i = 0; i < blockAmount; i++)
@@ -432,7 +432,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     /// </summary>
     public class PowMiningTestFixture
     {
-        public readonly ConcurrentChain Chain;
+        public readonly ChainIndexer ChainIndexer;
         public readonly Key Key;
         public readonly Network Network;
 
@@ -447,12 +447,12 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public PowMiningTestFixture()
         {
             this.Network = KnownNetworks.RegTest; // fast mining so use regtest
-            this.Chain = new ConcurrentChain(this.Network);
+            this.ChainIndexer = new ChainIndexer(this.Network);
             this.Key = new Key();
             this.ReserveScript = new ReserveScript(this.Key.ScriptPubKey);
 
-            this.Block1 = this.PrepareValidBlock(this.Chain.Tip, 1, this.Key.ScriptPubKey);
-            this.ChainedHeader1 = new ChainedHeader(this.Block1.Header, this.Block1.GetHash(), this.Chain.Tip);
+            this.Block1 = this.PrepareValidBlock(this.ChainIndexer.Tip, 1, this.Key.ScriptPubKey);
+            this.ChainedHeader1 = new ChainedHeader(this.Block1.Header, this.Block1.GetHash(), this.ChainIndexer.Tip);
 
             this.Block2 = this.PrepareValidBlock(this.ChainedHeader1, 2, this.Key.ScriptPubKey);
             this.ChainedHeader2 = new ChainedHeader(this.Block2.Header, this.Block2.GetHash(), this.ChainedHeader1);

@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <remarks>All access should be protected by <see cref="peerLock"/>.</remarks>
         private readonly Dictionary<uint256, long> expectedBlockSizes;
 
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly ConsensusManagerPerformanceCounter performanceCounter;
 
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Consensus
             ISignals signals,
             IPeerBanning peerBanning,
             IInitialBlockDownloadState ibdState,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             IBlockPuller blockPuller,
             IBlockStore blockStore,
             IConnectionManager connectionManager,
@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Consensus
             Guard.NotNull(signals, nameof(signals));
             Guard.NotNull(peerBanning, nameof(peerBanning));
             Guard.NotNull(ibdState, nameof(ibdState));
-            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chainIndexer, nameof(chainIndexer));
             Guard.NotNull(blockPuller, nameof(blockPuller));
             Guard.NotNull(blockStore, nameof(blockStore));
             Guard.NotNull(connectionManager, nameof(connectionManager));
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Consensus
             this.peerBanning = peerBanning;
             this.blockStore = blockStore;
             this.finalizedBlockInfo = finalizedBlockInfo;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.connectionManager = connectionManager;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -237,6 +237,9 @@ namespace Stratis.Bitcoin.Consensus
             this.chainedHeaderTree.Initialize(pendingTip);
 
             this.SetConsensusTip(pendingTip);
+
+            if (this.chainIndexer.Tip != pendingTip)
+                this.chainIndexer.Initialize(pendingTip);
 
             this.blockPuller.Initialize(this.BlockDownloaded);
 
@@ -691,7 +694,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (block == null)
                 {
                     this.logger.LogTrace("Block '{0}' wasn't cached. Loading it from the database.", current.HashBlock);
-                    block = await this.blockStore.GetBlockAsync(current.HashBlock).ConfigureAwait(false);
+                    block = this.blockStore.GetBlock(current.HashBlock);
 
                     if (block == null)
                     {
@@ -706,6 +709,7 @@ namespace Stratis.Bitcoin.Consensus
                 lock (this.peerLock)
                 {
                     this.SetConsensusTipInternalLocked(current.Previous);
+                    this.chainIndexer.Remove(current);
                 }
 
                 var disconnectedBlock = new ChainedHeaderBlock(block, current);
@@ -755,6 +759,7 @@ namespace Stratis.Bitcoin.Consensus
                     lock (this.peerLock)
                     {
                         this.SetConsensusTipInternalLocked(lastValidatedBlockHeader);
+                        this.chainIndexer.Add(lastValidatedBlockHeader);
                     }
 
                     if (this.network.Consensus.MaxReorgLength != 0)
@@ -946,7 +951,6 @@ namespace Stratis.Bitcoin.Consensus
             this.Tip = newTip;
 
             this.chainState.ConsensusTip = this.Tip;
-            this.chain.SetTip(this.Tip);
         }
 
         /// <summary>
@@ -1211,7 +1215,7 @@ namespace Stratis.Bitcoin.Consensus
                 return chainedHeaderBlock;
             }
 
-            Block block = await this.blockStore.GetBlockAsync(blockHash).ConfigureAwait(false);
+            Block block = this.blockStore.GetBlock(blockHash);
             if (block != null)
             {
                 var newBlockPair = new ChainedHeaderBlock(block, chainedHeaderBlock.ChainedHeader);

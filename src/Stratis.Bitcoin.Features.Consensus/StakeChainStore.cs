@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly Network network;
 
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly DBreezeCoinView dBreezeCoinView;
 
@@ -34,11 +34,11 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly BlockStake genesis;
 
-        public StakeChainStore(Network network, ConcurrentChain chain, DBreezeCoinView dBreezeCoinView, ILoggerFactory loggerFactory)
+        public StakeChainStore(Network network, ChainIndexer chainIndexer, DBreezeCoinView dBreezeCoinView, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.dBreezeCoinView = dBreezeCoinView;
             this.threshold = 5000; // Count of items in memory.
             this.thresholdWindow = Convert.ToInt32(this.threshold * 0.4); // A window threshold.
@@ -50,17 +50,17 @@ namespace Stratis.Bitcoin.Features.Consensus
         public void Load()
         {
             uint256 hash = this.dBreezeCoinView.GetTipHash();
-            ChainedHeader currentHeader = this.chain.GetBlock(hash);
+            ChainedHeader currentHeader = this.chainIndexer.GetHeader(hash);
 
             while (currentHeader == null)
             {
                 hash = this.dBreezeCoinView.Rewind();
-                currentHeader = this.chain.GetBlock(hash);
+                currentHeader = this.chainIndexer.GetHeader(hash);
             }
 
             var load = new List<StakeItem>();
 
-            while (currentHeader != this.chain.Genesis)
+            while (currentHeader != this.chainIndexer.Genesis)
             {
                 load.Add(new StakeItem { BlockId = currentHeader.HashBlock, Height = currentHeader.Height });
                 if ((load.Count >= this.threshold) || (currentHeader.Previous == null))

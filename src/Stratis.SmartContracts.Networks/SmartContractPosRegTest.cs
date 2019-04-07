@@ -17,14 +17,16 @@ namespace Stratis.SmartContracts.Networks
         public SmartContractPosRegTest()
         {
             this.Name = "SmartContractsPosRegTest";
-            this.RootFolderName = SmartContractNetwork.StratisRootFolderName;
-            this.DefaultConfigFilename = SmartContractNetwork.StratisDefaultConfigFilename;
+            this.NetworkType = NetworkType.Regtest;
+            this.RootFolderName = SmartContractNetworkUtils.StratisRootFolderName;
+            this.DefaultConfigFilename = SmartContractNetworkUtils.StratisDefaultConfigFilename;
             this.Magic = 0xDAB5BFFA;
             this.DefaultPort = 18444;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
-            this.RPCPort = 18332;
-            this.MaxTipAge = SmartContractNetwork.BitcoinDefaultMaxTipAgeInSeconds;
+            this.DefaultRPCPort = 18332;
+            this.DefaultAPIPort = 38221;
+            this.MaxTipAge = SmartContractNetworkUtils.BitcoinDefaultMaxTipAgeInSeconds;
             this.MinTxFee = 1000;
             this.FallbackFee = 20000;
             this.MinRelayTxFee = 1000;
@@ -32,7 +34,7 @@ namespace Stratis.SmartContracts.Networks
 
             var consensusFactory = new SmartContractPosConsensusFactory();
 
-            this.Genesis = SmartContractNetwork.CreateGenesis(consensusFactory, 1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
+            this.Genesis = SmartContractNetworkUtils.CreateGenesis(consensusFactory, 1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
 
             // Taken from StratisX.
             var consensusOptions = new PosConsensusOptions(

@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using NBitcoin;
-using Stratis.Features.FederatedPeg.NetworkHelpers;
 
 namespace Stratis.Features.FederatedPeg.Tests.Utils
 {
@@ -10,10 +9,10 @@ namespace Stratis.Features.FederatedPeg.Tests.Utils
 
         public Network SourceChainNetwork { get; }
 
-        public AddressHelper(Network targetChainNetwork)
+        public AddressHelper(Network targetChainNetwork, Network sourceChainNetwork)
         {
             this.TargetChainNetwork = targetChainNetwork;
-            this.SourceChainNetwork = this.TargetChainNetwork.ToCounterChainNetwork();
+            this.SourceChainNetwork = sourceChainNetwork;
         }
 
         public BitcoinPubKeyAddress GetNewSourceChainPubKeyAddress()
@@ -63,8 +62,8 @@ namespace Stratis.Features.FederatedPeg.Tests.Utils
 
         public BitcoinAddress TargetChainMultisigAddress { get; }
 
-        public MultisigAddressHelper(Network targetChainNetwork, int quorum = 2, int sigCount = 3)
-            : base(targetChainNetwork)
+        public MultisigAddressHelper(Network targetChainNetwork, Network sourceChainNetwork, int quorum = 2, int sigCount = 3)
+            : base(targetChainNetwork, sourceChainNetwork)
         {
             this.MultisigMnemonics = Enumerable.Range(0, sigCount)
                 .Select(i => new Mnemonic(Wordlist.English, WordCount.Twelve))

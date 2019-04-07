@@ -19,6 +19,7 @@ namespace Stratis.SmartContracts.Networks
         public SmartContractsPoARegTest()
         {
             this.Name = "SmartContractsPoARegTest";
+            this.NetworkType = NetworkType.Regtest;
             this.CoinTicker = "SCPOA";
 
             var consensusFactory = new SmartContractPoAConsensusFactory();
@@ -58,7 +59,8 @@ namespace Stratis.SmartContracts.Networks
                 maxStandardTxSigopsCost: 20_000 / 5,
                 federationPublicKeys: federationPubKeys,
                 targetSpacingSeconds: 60,
-                votingEnabled: true
+                votingEnabled: true,
+                autoKickIdleMembers: false
             );
 
             var buriedDeployments = new BuriedDeploymentsArray

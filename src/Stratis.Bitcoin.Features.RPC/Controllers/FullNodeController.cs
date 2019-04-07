@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
             Network network = null,
-            ConcurrentChain chain = null,
+            ChainIndexer chainIndexer = null,
             IChainState chainState = null,
             Connection.IConnectionManager connectionManager = null,
             IConsensusManager consensusManager = null,
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                   fullNode: fullNode,
                   nodeSettings: nodeSettings,
                   network: network,
-                  chain: chain,
+                  chainIndexer: chainIndexer,
                   chainState: chainState,
                   connectionManager: connectionManager,
                   consensusManager: consensusManager)
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 // Look for the transaction in the mempool, and if not found, look in the indexed transactions.
                 trx = (this.pooledTransaction == null ? null : await this.pooledTransaction.GetTransaction(trxid)) ??
-                      await this.blockStore.GetTransactionByIdAsync(trxid).ConfigureAwait(false);
+                      this.blockStore.GetTransactionById(trxid);
 
                 if (trx == null)
                 {
@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (unspentOutputs == null)
                 return null;
 
-            return new GetTxOutModel(unspentOutputs, vout, this.Network, this.Chain.Tip);
+            return new GetTxOutModel(unspentOutputs, vout, this.Network, this.ChainIndexer.Tip);
         }
 
         /// <summary>
@@ -277,10 +277,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             Guard.NotNull(hash, nameof(hash));
 
             this.logger.LogDebug("RPC GetBlockHeader {0}", hash);
-            
-            if (this.Chain != null)
+
+            BlockHeaderModel model = null;
+            if (this.ChainIndexer != null)
             {
-                BlockHeader blockHeader = this.Chain.GetBlock(uint256.Parse(hash))?.Header;
+                BlockHeader blockHeader = this.ChainIndexer.GetHeader(uint256.Parse(hash))?.Header;
                 if (blockHeader != null)
                 {
                     if (isJsonFormat)
@@ -360,12 +361,12 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionDescription("Returns the block in hex, given a block hash.")]
         public async Task<object> GetBlockAsync(string blockHash, int verbosity = 0)
         {
-            Block block = this.blockStore != null ? await this.blockStore.GetBlockAsync(uint256.Parse(blockHash)).ConfigureAwait(false) : null;
+            Block block = this.blockStore != null ? this.blockStore.GetBlock(uint256.Parse(blockHash)) : null;
 
             if (verbosity == 0)
                 return new HexModel(block?.ToHex(this.Network));
 
-            return new BlockModel(block, this.Chain.GetBlock(block.GetHash()), this.Chain.Tip, this.Network, verbosity);
+            return new BlockModel(block, this.ChainIndexer.GetHeader(block.GetHash()), this.ChainIndexer.Tip, this.Network, verbosity);
         }
 
         [ActionName("getnetworkinfo")]
@@ -402,7 +403,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 Chain = this.Network?.Name,
                 Blocks = (uint)(this.ChainState?.ConsensusTip?.Height ?? 0),
-                Headers = (uint)(this.Chain?.Height ?? 0),
+                Headers = (uint)(this.ChainIndexer?.Height ?? 0),
                 BestBlockHash = this.ChainState?.ConsensusTip?.HashBlock,
                 Difficulty = this.GetNetworkDifficulty()?.Difficulty ?? 0.0,
                 MedianTime = this.ChainState?.ConsensusTip?.GetMedianTimePast().ToUnixTimeSeconds() ?? 0,
@@ -424,9 +425,9 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             ChainedHeader block = null;
 
-            uint256 blockid = this.blockStore != null ? await this.blockStore.GetBlockIdByTransactionIdAsync(trxid) : null;
+            uint256 blockid = this.blockStore != null ? this.blockStore.GetBlockIdByTransactionId(trxid) : null;
             if (blockid != null)
-                block = this.Chain?.GetBlock(blockid);
+                block = this.ChainIndexer?.GetHeader(blockid);
 
             return block;
         }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -15,12 +16,12 @@ namespace Stratis.Bitcoin.IntegrationTests
             Guard.NotNull(network, nameof(network));
 
             this.network = network;
-            this.Chain = new ConcurrentChain(this.network);
+            this.ChainIndexer = new ChainIndexer(this.network);
             this.MinerKey = new Key();
             this.MinerScriptPubKey = this.MinerKey.PubKey.Hash.ScriptPubKey;
         }
 
-        public ConcurrentChain Chain { get; private set; }
+        public ChainIndexer ChainIndexer { get; private set; }
 
         public Key MinerKey
         {
@@ -55,7 +56,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     Tx = t,
                     Block = b
                 }))
-                .Where(b => !b.Tx.IsCoinBase || (this.Chain.Height + 1) - this.Chain.GetBlock(b.Block.GetHash()).Height >= 100)
+                .Where(b => !b.Tx.IsCoinBase || (this.ChainIndexer.Height + 1) - this.ChainIndexer.GetHeader(b.Block.GetHash()).Height >= 100)
                 .Select(b => b.Tx)
                 .SelectMany(b => b.Outputs.AsIndexedOutputs())
                 .Where(o => o.TxOut.ScriptPubKey == this.MinerScriptPubKey)
@@ -71,13 +72,13 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 uint nonce = 0;
                 var block = this.network.CreateBlock();
-                block.Header.HashPrevBlock = this.Chain.Tip.HashBlock;
-                block.Header.Bits = block.Header.GetWorkRequired(this.network, this.Chain.Tip);
-                block.Header.UpdateTime(now, this.network, this.Chain.Tip);
+                block.Header.HashPrevBlock = this.ChainIndexer.Tip.HashBlock;
+                block.Header.Bits = block.Header.GetWorkRequired(this.network, this.ChainIndexer.Tip);
+                block.Header.UpdateTime(now, this.network, this.ChainIndexer.Tip);
 
                 var coinbase = this.network.CreateTransaction();
-                coinbase.AddInput(TxIn.CreateCoinbase(this.Chain.Height + 1));
-                coinbase.AddOutput(new TxOut(this.network.GetReward(this.Chain.Height + 1), this.MinerScriptPubKey));
+                coinbase.AddInput(TxIn.CreateCoinbase(this.ChainIndexer.Height + 1));
+                coinbase.AddOutput(new TxOut(this.network.GetReward(this.ChainIndexer.Height + 1), this.MinerScriptPubKey));
                 block.AddTransaction(coinbase);
                 foreach (Transaction tx in this.transactions)
                 {
@@ -89,7 +90,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 block.Header.PrecomputeHash();
                 blocks.Add(block);
                 this.transactions.Clear();
-                this.Chain.SetTip(block.Header);
+                this.ChainIndexer.SetTip(block.Header);
             }
 
             foreach (Block b in blocks)

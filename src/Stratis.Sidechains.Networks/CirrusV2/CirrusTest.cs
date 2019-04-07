@@ -5,12 +5,11 @@ using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
-using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.SmartContracts.Networks.Policies;
 
 namespace Stratis.Sidechains.Networks.CirrusV2
 {
-    public class CirrusTest : PoANetwork, ISignedCodePubKeyHolder
+    public class CirrusTest : PoANetwork
     {
         /// <summary> The name of the root folder containing the different federated peg blockchains.</summary>
         private const string NetworkRootFolderName = "cirrus";
@@ -18,20 +17,17 @@ namespace Stratis.Sidechains.Networks.CirrusV2
         /// <summary> The default name used for the federated peg configuration file. </summary>
         private const string NetworkDefaultConfigFilename = "cirrus.conf";
 
-        public PubKey SigningContractPubKey { get; }
-
         internal CirrusTest()
         {
-            // TODO: Replace with real secret key.
-            this.SigningContractPubKey = new Mnemonic("lava frown leave wedding virtual ghost sibling able mammal liar wide wisdom").DeriveExtKey().PrivateKey.PubKey;
-
             this.Name = nameof(CirrusTest);
+            this.NetworkType = NetworkType.Testnet;
             this.CoinTicker = "TCRS";
             this.Magic = 0x522357B;
             this.DefaultPort = 26179;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
-            this.RPCPort = 26175;
+            this.DefaultRPCPort = 26175;
+            this.DefaultAPIPort = 38223;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
@@ -74,7 +70,8 @@ namespace Stratis.Sidechains.Networks.CirrusV2
                 maxStandardTxSigopsCost: 20_000 / 5,
                 federationPublicKeys: federationPubKeys,
                 targetSpacingSeconds: 16,
-                votingEnabled: false
+                votingEnabled: false,
+                autoKickIdleMembers: false
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -100,7 +97,7 @@ namespace Stratis.Sidechains.Networks.CirrusV2
                 bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
-                maxReorgLength: 0, // No max reorg limit on PoA networks.
+                maxReorgLength: 240, // 2 loops of PoA members.
                 defaultAssumeValid: null,
                 maxMoney: Money.Coins(20_000_000),
                 coinbaseMaturity: 1,

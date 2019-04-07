@@ -471,7 +471,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             {
                 await peer.VersionHandshakeAsync().ConfigureAwait(false);
 
-                var chain = bestBlock == this.runner.Network.GenesisHash ? new ConcurrentChain(this.runner.Network) : this.GetChain(peer);
+                var chain = bestBlock == this.runner.Network.GenesisHash ? new ChainIndexer(this.runner.Network) : this.GetChain(peer);
 
                 for (int i = 0; i < blockCount; i++)
                 {
@@ -517,9 +517,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <param name="hashStop">The highest block wanted.</param>
         /// <param name="cancellationToken"></param>
         /// <returns>The chain of headers.</returns>
-        private ConcurrentChain GetChain(INetworkPeer peer, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
+        private ChainIndexer GetChain(INetworkPeer peer, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var chain = new ConcurrentChain(peer.Network);
+            var chain = new ChainIndexer(peer.Network);
             this.SynchronizeChain(peer, chain, hashStop, cancellationToken);
             return chain;
         }
@@ -532,7 +532,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <param name="hashStop">The location until which it synchronize.</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private IEnumerable<ChainedHeader> SynchronizeChain(INetworkPeer peer, ChainBase chain, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
+        private IEnumerable<ChainedHeader> SynchronizeChain(INetworkPeer peer, ChainIndexer chain, uint256 hashStop = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             ChainedHeader oldTip = chain.Tip;
             List<ChainedHeader> headers = this.GetHeadersFromFork(peer, oldTip, hashStop, cancellationToken).ToList();

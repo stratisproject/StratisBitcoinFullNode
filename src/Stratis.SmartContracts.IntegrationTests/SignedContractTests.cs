@@ -39,7 +39,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         {
             this.builder.Dispose();
         }
-        
+
         [Retry]
         public void Create_Signed_Contract()
         {

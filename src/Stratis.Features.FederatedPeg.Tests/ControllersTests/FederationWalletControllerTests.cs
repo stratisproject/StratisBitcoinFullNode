@@ -28,7 +28,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         private readonly IFederationWalletSyncManager walletSyncManager;
         private readonly IConnectionManager connectionManager;
         private readonly Network network;
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly IWithdrawalHistoryProvider withdrawalHistoryProvider;
 
@@ -43,17 +43,17 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             this.connectionManager = Substitute.For<IConnectionManager>();
             this.network = new StratisTest();
 
-            this.chain = new ConcurrentChain(this.network);
+            this.chainIndexer = new ChainIndexer(this.network);
 
             ChainedHeader tip = ChainedHeadersHelper.CreateConsecutiveHeaders(100, ChainedHeadersHelper.CreateGenesisChainedHeader(this.network), true, null, this.network).Last();
-            this.chain.SetTip(tip);
+            this.chainIndexer.SetTip(tip);
 
 
             this.dateTimeProvider = Substitute.For<IDateTimeProvider>();
             this.withdrawalHistoryProvider = Substitute.For<IWithdrawalHistoryProvider>();
 
             this.controller = new FederationWalletController(this.loggerFactory, this.walletManager, this.walletSyncManager,
-                this.connectionManager, this.network, this.chain, this.dateTimeProvider, this.withdrawalHistoryProvider);
+                this.connectionManager, this.network, this.chainIndexer, this.dateTimeProvider, this.withdrawalHistoryProvider);
 
             this.fedWallet = new FederationWallet();
             this.fedWallet.Network = this.network;
@@ -105,7 +105,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         [Fact]
         public void Sync()
         {
-            ChainedHeader header = this.chain.Tip;
+            ChainedHeader header = this.chainIndexer.Tip;
 
             bool called = false;
             this.walletSyncManager.When(x => x.SyncFromHeight(header.Height)).Do(info => called = true);

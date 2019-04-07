@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="BenchmarkDotNet.Artifacts\**" />
+    <EmbeddedResource Remove="BenchmarkDotNet.Artifacts\**" />
+    <None Remove="BenchmarkDotNet.Artifacts\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.11.4" />
+    <PackageReference Include="FASTER" Version="2019.3.16.1" />
+    <PackageReference Include="LiteDB" Version="4.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.Api\Stratis.Bitcoin.Features.Api.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.Apps\Stratis.Bitcoin.Features.Apps.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.BlockStore\Stratis.Bitcoin.Features.BlockStore.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.ColdStaking\Stratis.Bitcoin.Features.ColdStaking.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.Consensus\Stratis.Bitcoin.Features.Consensus.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.Dns\Stratis.Bitcoin.Features.Dns.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.LightWallet\Stratis.Bitcoin.Features.LightWallet.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.MemoryPool\Stratis.Bitcoin.Features.MemoryPool.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.Miner\Stratis.Bitcoin.Features.Miner.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.Notifications\Stratis.Bitcoin.Features.Notifications.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.PoA\Stratis.Bitcoin.Features.PoA.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.RPC\Stratis.Bitcoin.Features.RPC.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.SmartContracts\Stratis.Bitcoin.Features.SmartContracts.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.Wallet\Stratis.Bitcoin.Features.Wallet.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Networks\Stratis.Bitcoin.Networks.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
+    <ProjectReference Include="..\Stratis.Features.FederatedPeg\Stratis.Features.FederatedPeg.csproj" />
+    <ProjectReference Include="..\Stratis.PoAChainD\Stratis.PoAChainD.csproj" />
+    <ProjectReference Include="..\Stratis.Sidechains.Networks\Stratis.Sidechains.Networks.csproj" />
+    <ProjectReference Include="..\Stratis.SmartContracts.CLR.Validation\Stratis.SmartContracts.CLR.Validation.csproj" />
+    <ProjectReference Include="..\Stratis.SmartContracts.CLR\Stratis.SmartContracts.CLR.csproj" />
+    <ProjectReference Include="..\Stratis.SmartContracts.Core\Stratis.SmartContracts.Core.csproj" />
+    <ProjectReference Include="..\Stratis.SmartContracts.Networks\Stratis.SmartContracts.Networks.csproj" />
+    <ProjectReference Include="..\Stratis.SmartContracts.RuntimeObserver\Stratis.SmartContracts.RuntimeObserver.csproj" />
+  </ItemGroup>
+
+</Project>

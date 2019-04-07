@@ -61,7 +61,7 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly IFederationWalletSyncManager walletSyncManager;
 
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly Network network;
 
@@ -85,7 +85,7 @@ namespace Stratis.Features.FederatedPeg
             IFederationWalletManager federationWalletManager,
             IFederationWalletSyncManager walletSyncManager,
             Network network,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             INodeStats nodeStats,
             ICrossChainTransferStore crossChainTransferStore,
             IPartialTransactionRequester partialTransactionRequester,
@@ -97,7 +97,7 @@ namespace Stratis.Features.FederatedPeg
             this.connectionManager = connectionManager;
             this.federationGatewaySettings = federationGatewaySettings;
             this.fullNode = fullNode;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.federationWalletManager = federationWalletManager;
             this.walletSyncManager = walletSyncManager;
             this.network = network;
@@ -166,7 +166,7 @@ namespace Stratis.Features.FederatedPeg
                 return;
 
             int height = this.federationWalletManager.LastBlockHeight();
-            ChainedHeader block = this.chain.GetBlock(height);
+            ChainedHeader block = this.chainIndexer.GetHeader(height);
             uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
             FederationWallet federationWallet = this.federationWalletManager.GetWallet();
@@ -274,7 +274,7 @@ namespace Stratis.Features.FederatedPeg
     /// </summary>
     public static class FullNodeBuilderSidechainRuntimeFeatureExtension
     {
-        public static IFullNodeBuilder AddFederationGateway(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder AddFederationGateway(this IFullNodeBuilder fullNodeBuilder, FederatedPegOptions options)
         {
             LoggingConfiguration.RegisterFeatureNamespace<FederationGatewayFeature>(
                 FederationGatewayFeature.FederationGatewayFeatureNamespace);
@@ -292,7 +292,7 @@ namespace Stratis.Features.FederatedPeg
                         services.AddSingleton<IWithdrawalExtractor, WithdrawalExtractor>();
                         services.AddSingleton<FederationGatewayController>();
                         services.AddSingleton<IFederationWalletSyncManager, FederationWalletSyncManager>();
-                        services.AddSingleton<IFederationWalletTransactionBuilder, FederationWalletTransactionBuilder>();
+                        services.AddSingleton<IFederationWalletTransactionHandler, FederationWalletTransactionHandler>();
                         services.AddSingleton<IFederationWalletManager, FederationWalletManager>();
                         services.AddSingleton<IWithdrawalTransactionBuilder, WithdrawalTransactionBuilder>();
                         services.AddSingleton<FederationWalletController>();
@@ -306,6 +306,9 @@ namespace Stratis.Features.FederatedPeg
                         // Set up events.
                         services.AddSingleton<TransactionObserver>();
                         services.AddSingleton<BlockObserver>();
+
+                        // Inject our options
+                        services.AddSingleton(options);
                     });
             });
             return fullNodeBuilder;
@@ -347,6 +350,7 @@ namespace Stratis.Features.FederatedPeg
                     services.AddSingleton<VotingManager>();
                     services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
                     services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
+                    services.AddSingleton<IdleFederationMembersKicker>();
                     services.AddSingleton<PoAMinerSettings>();
                     services.AddSingleton<MinerSettings>();
 
