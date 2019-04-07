@@ -12,6 +12,7 @@ using NBitcoin.BuilderExtensions;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Shell;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -91,11 +92,17 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public uint256 WalletTipHash { get; set; }
 
-        // In order to allow faster look-ups of transactions affecting the wallets' addresses,
-        // we keep a couple of objects in memory:
-        // 1. the list of unspent outputs for checking whether inputs from a transaction are being spent by our wallet and
-        // 2. the list of addresses contained in our wallet for checking whether a transaction is being paid to the wallet.
-        private Dictionary<OutPoint, TransactionData> outpointLookup;
+		/// <summary>The shell command to execute.</summary>
+		private string shellCommand;
+
+		/// <summary>The shell arguments to send to the shell command.</summary>
+		private string shellArguments;
+
+		// In order to allow faster look-ups of transactions affecting the wallets' addresses,
+		// we keep a couple of objects in memory:
+		// 1. the list of unspent outputs for checking whether inputs from a transaction are being spent by our wallet and
+		// 2. the list of addresses contained in our wallet for checking whether a transaction is being paid to the wallet.
+		private Dictionary<OutPoint, TransactionData> outpointLookup;
         internal ScriptToAddressLookup scriptToAddressLookup;
 
         public WalletManager(
@@ -147,7 +154,15 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
 
             this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
-        }
+
+			if (!string.IsNullOrWhiteSpace(this.walletSettings.WalletNotify))
+			{
+				var cmdArray = this.walletSettings.WalletNotify.Split(' ');
+
+				this.shellCommand = cmdArray.First();
+				this.shellArguments = string.Join(" ", cmdArray.Skip(1));
+			}
+		}
 
         /// <summary>
         /// Creates the <see cref="ScriptToAddressLookup"/> object to use.
@@ -1011,7 +1026,23 @@ namespace Stratis.Bitcoin.Features.Wallet
                         this.AddTransactionToWallet(transaction, utxo, blockHeight, block, isPropagated);
                         foundReceivingTrx = true;
                         this.logger.LogDebug("Transaction '{0}' contained funds received by the user's wallet(s).", hash);
-                    }
+
+						try
+						{
+							// Whenever a new receiving transaction is found, trigger the -walletnotify.
+							if (!string.IsNullOrWhiteSpace(this.shellCommand))
+							{
+								var arguments = this.shellArguments.Replace("%s", transaction.ToString());
+								this.logger.LogInformation($"-walletnotify running command: {this.shellCommand} {arguments}");
+
+								ShellHelper.RunCommand(this.shellCommand, arguments);
+							}
+						}
+						catch (Exception ex)
+						{
+							this.logger.LogError(ex, "Failed to parse and execute on -walletnotify.");
+						}
+					}
                 }
 
                 // Check the inputs - include those that have a reference to a transaction containing one of our scripts and the same index.
