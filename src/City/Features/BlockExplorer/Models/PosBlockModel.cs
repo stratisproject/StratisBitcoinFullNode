@@ -9,7 +9,7 @@ namespace City.Features.BlockExplorer.Models
 {
     public class PosBlockModel
     {
-        public PosBlockModel(Block block, ChainBase chain)
+        public PosBlockModel(Block block, ChainIndexer chain)
         {
             this.Hash = block.GetHash().ToString();
             this.Size = block.ToBytes().Length;
@@ -21,7 +21,7 @@ namespace City.Features.BlockExplorer.Models
             this.MerkleRoot = block.Header.HashMerkleRoot.ToString();
             this.Difficulty = block.Header.Bits.Difficulty;
             this.Transactions = block.Transactions.Select(trx => new TransactionVerboseModel(trx, chain.Network)).ToArray();
-            this.Height = chain.GetBlock(block.GetHash()).Height;
+            this.Height = chain.GetHeader(block.GetHash()).Height;
         }
 
         /// <summary>

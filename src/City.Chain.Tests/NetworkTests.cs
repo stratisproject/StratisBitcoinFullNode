@@ -61,8 +61,9 @@ namespace City.Chain.Tests
             Assert.Equal(CityMain.CityDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0x43545901.ToString(), network.Magic.ToString());
             Assert.Equal(4333, network.DefaultPort);
-            Assert.Equal(4334, network.RPCPort);
-            Assert.Equal(CityMain.CityMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
+            Assert.Equal(4334, network.DefaultRPCPort);
+			Assert.Equal(4335, network.DefaultAPIPort);
+			Assert.Equal(CityMain.CityMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
             Assert.Equal(CityMain.CityDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(10000, network.MinTxFee);
             Assert.Equal(10000, network.FallbackFee);
@@ -230,8 +231,9 @@ namespace City.Chain.Tests
             Assert.Equal(CityMain.CityDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0x43545401.ToString(), network.Magic.ToString());
             Assert.Equal(24333, network.DefaultPort);
-            Assert.Equal(24334, network.RPCPort);
-            Assert.Equal(CityMain.CityMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
+            Assert.Equal(24334, network.DefaultRPCPort);
+			Assert.Equal(24335, network.DefaultAPIPort);
+			Assert.Equal(CityMain.CityMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
             Assert.Equal(CityMain.CityDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(10000, network.MinTxFee);
             Assert.Equal(10000, network.FallbackFee);
@@ -307,8 +309,9 @@ namespace City.Chain.Tests
             Assert.Equal(CityMain.CityDefaultConfigFilename, network.DefaultConfigFilename);
             Assert.Equal(0x43525901.ToString(), network.Magic.ToString());
             Assert.Equal(14333, network.DefaultPort);
-            Assert.Equal(14334, network.RPCPort);
-            Assert.Equal(CityMain.CityMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
+            Assert.Equal(14334, network.DefaultRPCPort);
+			Assert.Equal(14335, network.DefaultAPIPort);
+			Assert.Equal(CityMain.CityMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
             Assert.Equal(CityMain.CityDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(0, network.MinTxFee);
             Assert.Equal(0, network.FallbackFee);

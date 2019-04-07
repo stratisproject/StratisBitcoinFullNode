@@ -13,10 +13,12 @@ namespace City.Networks
         public CityRegTest()
         {
             this.Name = "CityRegTest";
-            this.Magic = 0x43525901; // .CRT
+			this.NetworkType = NetworkType.Regtest;
+			this.Magic = 0x43525901; // .CRT
             this.DefaultPort = 14333;
-            this.RPCPort = 14334;
-            this.MinTxFee = 0;
+            this.DefaultRPCPort = 14334;
+			this.DefaultAPIPort = 14335;
+			this.MinTxFee = 0;
             this.FallbackFee = 0;
             this.MinRelayTxFee = 0;
             this.CoinTicker = "TCITY";

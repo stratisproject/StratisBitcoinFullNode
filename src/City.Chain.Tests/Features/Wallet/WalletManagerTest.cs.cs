@@ -92,7 +92,7 @@ namespace City.Chain.Tests.Features.Wallet
 			};
 
 			//Generate a spendable transaction
-			(ConcurrentChain chain, uint256 blockhash, Block block) chainInfo = WalletTestsHelpers.CreateChainAndCreateFirstBlockWithPaymentToAddress(wallet.Network, spendingAddress);
+			(ChainIndexer chain, uint256 blockhash, Block block) chainInfo = WalletTestsHelpers.CreateChainAndCreateFirstBlockWithPaymentToAddress(wallet.Network, spendingAddress);
 
 			TransactionData spendingTransaction = WalletTestsHelpers.CreateTransactionDataFromFirstBlock(chainInfo);
 			spendingAddress.Transactions.Add(spendingTransaction);
@@ -124,7 +124,7 @@ namespace City.Chain.Tests.Features.Wallet
 			walletManager.LoadKeysLookupLock();
 			walletManager.WalletTipHash = block.Header.GetHash();
 
-			ChainedHeader chainedBlock = chainInfo.chain.GetBlock(block.GetHash());
+			ChainedHeader chainedBlock = chainInfo.chain.GetHeader(block.GetHash());
 			walletManager.ProcessBlock(block, chainedBlock);
 
 			HdAddress spentAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);
@@ -174,7 +174,7 @@ namespace City.Chain.Tests.Features.Wallet
             var nodeSettings = new NodeSettings(KnownNetworks.RegTest, ProtocolVersion.PROTOCOL_VERSION, network.Name, cmdLineArgs);
             var walletSettings = new WalletSettings(nodeSettings);
 
-            return new WalletManager(this.LoggerFactory.Object, network, new ConcurrentChain(network),
+            return new WalletManager(this.LoggerFactory.Object, network, new ChainIndexer(network),
                 walletSettings, dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
         }
     }

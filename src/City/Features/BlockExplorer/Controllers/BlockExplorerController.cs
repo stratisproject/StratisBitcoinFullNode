@@ -39,14 +39,14 @@ namespace City.Features.BlockExplorer.Controllers
         /// </summary>
         private readonly Network network;
 
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chain;
 
         public BlockExplorerController(
             Network network,
             ILoggerFactory loggerFactory,
             IBlockStore blockStoreCache,
             IStakeChain stakeChain,
-            ConcurrentChain chain,
+			ChainIndexer chain,
             IChainState chainState)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -84,7 +84,7 @@ namespace City.Features.BlockExplorer.Controllers
 
                 while (chainHeader != null && blocks.Count < pageSize)
                 {
-                    var block = await this.blockStoreCache.GetBlockAsync(chainHeader.HashBlock).ConfigureAwait(false);
+                    var block = this.blockStoreCache.GetBlock(chainHeader.HashBlock);
 
                     var blockModel = new PosBlockModel(block, this.chain);
                     blocks.Add(blockModel);
@@ -128,21 +128,21 @@ namespace City.Features.BlockExplorer.Controllers
             // If the id is more than 50 characters, it is likely hash and not height.
             if (id.Length < 50)
             {
-                chainHeader = this.chain.GetBlock(int.Parse(id));
+				chainHeader = this.chain.GetHeader(int.Parse(id));
             }
             else
             {
-                chainHeader = this.chain.GetBlock(new uint256(id));
+                chainHeader = this.chain.GetHeader(new uint256(id));
             }
 
             try
             {
                 BlockStake blockStake = this.stakeChain.Get(chainHeader.HashBlock);
-                Block block = await this.blockStoreCache.GetBlockAsync(chainHeader.Header.GetHash()).ConfigureAwait(false);
+				Block block = this.blockStoreCache.GetBlock(chainHeader.Header.GetHash());
 
                 if (block == null) return new NotFoundObjectResult("Block not found");
 
-                PosBlockModel blockModel = new PosBlockModel(block, (ChainBase)this.chain);
+                PosBlockModel blockModel = new PosBlockModel(block, this.chain);
 
                 if (blockStake != null)
                 {

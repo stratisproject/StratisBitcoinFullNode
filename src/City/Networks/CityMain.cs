@@ -25,11 +25,13 @@ namespace City.Networks
         public CityMain()
         {
             this.Name = "CityMain";
-            this.Magic = 0x43545901; // .CTY
+			this.NetworkType = NetworkType.Mainnet;
+			this.Magic = 0x43545901; // .CTY
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
             this.DefaultPort = 4333;
-            this.RPCPort = 4334;
+            this.DefaultRPCPort = 4334;
+			this.DefaultAPIPort = 4335;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;

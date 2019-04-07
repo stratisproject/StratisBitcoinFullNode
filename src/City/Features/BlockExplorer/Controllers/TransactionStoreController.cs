@@ -49,7 +49,7 @@ namespace City.Features.BlockExplorer.Controllers
 
         private readonly IBlockRepository blockRepository;
 
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chain;
 
         private readonly IBroadcasterManager broadcasterManager;
 
@@ -60,7 +60,7 @@ namespace City.Features.BlockExplorer.Controllers
             IWalletManager walletManager,
             ILoggerFactory loggerFactory,
             IBlockStore blockStoreCache,
-            ConcurrentChain chain,
+			ChainIndexer chain,
             IBroadcasterManager broadcasterManager,
             IBlockRepository blockRepository,
             IConnectionManager connectionManager,
@@ -106,7 +106,7 @@ namespace City.Features.BlockExplorer.Controllers
 
                 while (chainHeader != null && transactions.Count < pageSize)
                 {
-                    Block block = await this.blockStoreCache.GetBlockAsync(chainHeader.HashBlock).ConfigureAwait(false);
+                    Block block = this.blockStoreCache.GetBlock(chainHeader.HashBlock);
 
                     var blockModel = new PosBlockModel(block, this.chain);
 
@@ -151,7 +151,7 @@ namespace City.Features.BlockExplorer.Controllers
 
             try
             {
-                Transaction trx = await this.blockRepository.GetTransactionByIdAsync(new uint256(id));
+                Transaction trx = this.blockRepository.GetTransactionById(new uint256(id));
                 var model = new TransactionVerboseModel(trx, this.network);
                 return Json(model);
             }

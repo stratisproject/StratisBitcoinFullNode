@@ -25,7 +25,7 @@ namespace City.Features.BlockExplorer
 {
     public class BlockExplorerFeature : FullNodeFeature
     {
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chain;
 
         //private readonly Signals signals;
 
@@ -48,7 +48,7 @@ namespace City.Features.BlockExplorer
         private readonly IConsensusManager consensusManager;
 
         public BlockExplorerFeature(
-            ConcurrentChain chain,
+			ChainIndexer chain,
             IConnectionManager connectionManager,
             //Signals signals,
             BlockStoreSignaled blockStoreSignaled,

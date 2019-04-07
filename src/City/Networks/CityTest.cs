@@ -12,10 +12,12 @@ namespace City.Networks
         public CityTest()
         {
             this.Name = "CityTest";
-            this.Magic = 0x43545401; // .CTT
+			this.NetworkType = NetworkType.Testnet;
+			this.Magic = 0x43545401; // .CTT
             this.DefaultPort = 24333;
-            this.RPCPort = 24334;
-            this.CoinTicker = "TCITY";
+            this.DefaultRPCPort = 24334;
+			this.DefaultAPIPort = 24335;
+			this.CoinTicker = "TCITY";
 
             var powLimit = new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000"));
 
