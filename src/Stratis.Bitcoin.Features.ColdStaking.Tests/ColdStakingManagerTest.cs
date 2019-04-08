@@ -189,14 +189,14 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             var walletSettings = new WalletSettings(new NodeSettings(network: this.Network));
 
-            var coldWalletManager = new ColdStakingManager(this.blockStore, this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
+            var coldWalletManager = new ColdStakingManager(this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
                 new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), new ScriptAddressReader(), this.LoggerFactory.Object, DateTimeProvider.Default, new Mock<IBroadcasterManager>().Object);
             coldWalletManager.Wallets.Add(wallet);
             coldWalletManager.Wallets.Add(coldWallet);
             coldWalletManager.LoadKeysLookupLock();
 
             // Create another instance for the hot wallet as it is not allowed to have both wallets on the same instance.
-            var hotWalletManager = new ColdStakingManager(this.blockStore, this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
+            var hotWalletManager = new ColdStakingManager(this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
                 new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), new ScriptAddressReader(), this.LoggerFactory.Object, DateTimeProvider.Default, new Mock<IBroadcasterManager>().Object);
             hotWalletManager.Wallets.Add(hotWallet);
             hotWalletManager.LoadKeysLookupLock();
@@ -268,7 +268,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 new Money(750), new Money(262));
 
             // Wallet manager for the wallet receiving the funds.
-            var receivingWalletManager = new ColdStakingManager(this.blockStore, this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
+            var receivingWalletManager = new ColdStakingManager(this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
                 new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), new ScriptAddressReader(), this.LoggerFactory.Object, DateTimeProvider.Default, new Mock<IBroadcasterManager>().Object);
             receivingWalletManager.Wallets.Add(withdrawalWallet);
             receivingWalletManager.LoadKeysLookupLock();

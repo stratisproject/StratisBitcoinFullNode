@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             var walletSettings = new WalletSettings(this.nodeSettings);
             this.loggerFactory = this.nodeSettings.LoggerFactory;
 
-            this.coldStakingManager = new ColdStakingManager(blockStore, this.Network, new ChainIndexer(this.Network), walletSettings, this.nodeSettings.DataFolder,
+            this.coldStakingManager = new ColdStakingManager(this.Network, new ChainIndexer(this.Network), walletSettings, this.nodeSettings.DataFolder,
                 new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), new ScriptAddressReader(),
                 this.loggerFactory, DateTimeProvider.Default);
 

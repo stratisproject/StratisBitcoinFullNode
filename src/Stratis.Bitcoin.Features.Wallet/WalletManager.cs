@@ -53,9 +53,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
-        /// <summary>Access to the block and transaction database on disk.</summary>
-        private readonly IBlockStore blockStore;
-
         /// <summary>Gets the list of wallets.</summary>
         public ConcurrentBag<Wallet> Wallets { get; }
 
@@ -102,7 +99,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         internal ScriptToAddressLookup scriptToAddressLookup;
 
         public WalletManager(
-            IBlockStore blockStore,
             ILoggerFactory loggerFactory,
             Network network,
             ChainIndexer chainIndexer,
@@ -132,7 +128,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.Wallets = new ConcurrentBag<Wallet>();
 
             this.network = network;
-            this.blockStore = blockStore;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.ChainIndexer = chainIndexer;
             this.asyncLoopFactory = asyncLoopFactory;

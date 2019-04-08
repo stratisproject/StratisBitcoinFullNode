@@ -54,7 +54,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         private readonly IDateTimeProvider dateTimeProvider;
 
         public ColdStakingManager(
-            IBlockStore blockStore,
             Network network,
             ChainIndexer chainIndexer,
             WalletSettings walletSettings,
@@ -66,7 +65,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             ILoggerFactory loggerFactory,
             IDateTimeProvider dateTimeProvider,
             IBroadcasterManager broadcasterManager = null) : base(
-                blockStore,
                 loggerFactory,
                 network,
                 chainIndexer,
