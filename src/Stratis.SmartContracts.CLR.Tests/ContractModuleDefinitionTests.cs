@@ -1,4 +1,8 @@
-﻿using Stratis.SmartContracts.CLR.Compilation;
+﻿using System;
+using Mono.Cecil;
+using Moq;
+using Stratis.SmartContracts.CLR.Compilation;
+using Stratis.SmartContracts.CLR.Validation;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Tests
@@ -48,6 +52,21 @@ public class ModuleDefinitionTest : SmartContract
             var contractModule = readResult.Value;
             var methodName = contractModule.GetPropertyGetterMethodName("ModuleDefinitionTest", "DoesntExist");
             Assert.Null(methodName);
+        }
+
+        [Fact]
+        public void Validate_Invalid_ModuleDefinition_Catches_Exceptions()
+        {
+            var contractModule = new ContractModuleDefinition(null, null);
+
+            var validator = new Mock<ISmartContractValidator>();
+            validator
+                .Setup(v => v.Validate(It.IsAny<ModuleDefinition>()))
+                .Throws(new Exception("Invalid operation"));
+
+            var result = contractModule.Validate(validator.Object);
+
+            Assert.False(result.IsValid);
         }
     }
 }

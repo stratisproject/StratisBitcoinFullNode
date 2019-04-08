@@ -72,7 +72,7 @@
         public static ConsensusError BlockTimestampTooEarly => new ConsensusError("block-timestamp-to-early", "block timestamp too early");
         public static ConsensusError BadBlockSignature => new ConsensusError("bad-block-signature", "bad block signature");
         public static ConsensusError BlockTimeBeforeTrx => new ConsensusError("block-time-before-trx", "block timestamp earlier than transaction timestamp");
-        public static ConsensusError ProofOfWorkTooHigh => new ConsensusError("proof-of-work-too-heigh", "proof of work too high");
+        public static ConsensusError ProofOfWorkTooHigh => new ConsensusError("proof-of-work-too-high", "proof of work too high");
 
         public static ConsensusError CheckpointViolation => new ConsensusError("checkpoint-violation", "block header hash does not match the checkpointed value");
 
@@ -83,7 +83,7 @@
         public static ConsensusError BadTransactionCoinstakeSpending => new ConsensusError("bad-txns-spend-of-coinstake", "coinstake is already spent");
         public static ConsensusError UtxoNotFoundInRewindData => new ConsensusError("utxo-not-found-in-rewind-data", "utxo not found in rewind data");
         public static ConsensusError InvalidPreviousProvenHeader => new ConsensusError("proven-header-invalid-previous-header", "previous header in chain is expected to be of proven header type");
-        public static ConsensusError InvalidPreviousProvenHeaderStakeModifier => new ConsensusError("proven-header-invalid-previous-header-stack-modifier", "previous proven header's StackModifier is null");
+        public static ConsensusError InvalidPreviousProvenHeaderStakeModifier => new ConsensusError("proven-header-invalid-previous-header-stake-modifier", "previous proven header's StakeModifier is null");
 
         public static ConsensusError BadColdstakeAmount => new ConsensusError("bad-coldstake-amount", "coldstake is negative");
         public static ConsensusError BadColdstakeInputs => new ConsensusError("bad-coldstake-inputs", "coldstake inputs contain mismatching scriptpubkeys");

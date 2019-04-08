@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -282,7 +283,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             this.send_api_get_request($"{BalanceUri}?walletname={walletName}&AccountName=account {accountIndex}");
 
-            this.responseText.Should().Be("{\"balances\":[{\"accountName\":\"account " + accountIndex + "\",\"accountHdPath\":\"m/44'/105'/" + accountIndex + "'\",\"coinType\":105,\"amountConfirmed\":0,\"amountUnconfirmed\":0}]}");
+            this.responseText.Should().Be("{\"balances\":[{\"accountName\":\"account " + accountIndex + "\",\"accountHdPath\":\"m/44'/105'/" + accountIndex + "'\",\"coinType\":105,\"amountConfirmed\":0,\"amountUnconfirmed\":0,\"spendableAmount\":0}]}");
         }
 
         private void calling_general_info()
@@ -422,9 +423,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             var commands = JsonDataSerializer.Instance.Deserialize<List<RpcCommandModel>>(this.responseText);
 
-            commands.Count.Should().Be(27);
+            commands.Count.Should().Be(29);
             commands.Should().Contain(x => x.Command == "stop");
-            commands.Should().Contain(x => x.Command == "getrawtransaction <txid> [<verbose>]");
+            commands.Should().Contain(x => x.Command == "getrawtransaction <txid> [<verbose>] [<blockhash>]");
             commands.Should().Contain(x => x.Command == "gettxout <txid> <vout> [<includemempool>]");
             commands.Should().Contain(x => x.Command == "getblockcount");
             commands.Should().Contain(x => x.Command == "getinfo");
@@ -442,11 +443,13 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             commands.Should().Contain(x => x.Command == "getnewaddress <account> <addresstype>");
             commands.Should().Contain(x => x.Command == "sendrawtransaction <hex>");
             commands.Should().Contain(x => x.Command == "decoderawtransaction <hex>");
-            commands.Should().Contain(x => x.Command == "getblock <blockhash> [<isjsonformat>]");
+            commands.Should().Contain(x => x.Command == "getblock <blockhash> [<verbosity>]");
             commands.Should().Contain(x => x.Command == "walletlock");
             commands.Should().Contain(x => x.Command == "walletpassphrase <passphrase> <timeout>");
             commands.Should().Contain(x => x.Command == "listunspent [<minconfirmations>] [<maxconfirmations>] [<addressesjson>]");
             commands.Should().Contain(x => x.Command == "sendmany <fromaccount> <addressesjson> [<minconf>] [<comment>] [<subtractfeefromjson>] [<isreplaceable>] [<conftarget>] [<estimatemode>]");
+            commands.Should().Contain(x => x.Command == "getblockchaininfo");
+            commands.Should().Contain(x => x.Command == "getnetworkinfo");
         }
 
         private void status_information_is_returned()
@@ -461,14 +464,18 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             statusResponse.ProtocolVersion.Should().Be((uint)(statusNode.Settings.ProtocolVersion));
             statusResponse.RelayFee.Should().Be(statusNode.Settings.MinRelayTxFeeRate.FeePerK.ToUnit(MoneyUnit.BTC));
             statusResponse.DataDirectoryPath.Should().Be(statusNode.Settings.DataDir);
-            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Base.BaseFeature");
-            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.Api.ApiFeature");
-            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.BlockStore.BlockStoreFeature");
-            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.Consensus.PowConsensusFeature");
-            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.MemoryPool.MempoolFeature");
-            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.Miner.MiningFeature");
-            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.RPC.RPCFeature");
-            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.Wallet.WalletFeature");
+
+            List<string> featuresNamespaces = statusResponse.FeaturesData.Select(f => f.Namespace).ToList();
+            featuresNamespaces.Should().Contain("Stratis.Bitcoin.Base.BaseFeature");
+            featuresNamespaces.Should().Contain("Stratis.Bitcoin.Features.Api.ApiFeature");
+            featuresNamespaces.Should().Contain("Stratis.Bitcoin.Features.BlockStore.BlockStoreFeature");
+            featuresNamespaces.Should().Contain("Stratis.Bitcoin.Features.Consensus.PowConsensusFeature");
+            featuresNamespaces.Should().Contain("Stratis.Bitcoin.Features.MemoryPool.MempoolFeature");
+            featuresNamespaces.Should().Contain("Stratis.Bitcoin.Features.Miner.MiningFeature");
+            featuresNamespaces.Should().Contain("Stratis.Bitcoin.Features.RPC.RPCFeature");
+            featuresNamespaces.Should().Contain("Stratis.Bitcoin.Features.Wallet.WalletFeature");
+
+            statusResponse.FeaturesData.All(f => f.State == "Initialized").Should().BeTrue();
         }
 
         private void general_information_about_the_wallet_and_node_is_returned()

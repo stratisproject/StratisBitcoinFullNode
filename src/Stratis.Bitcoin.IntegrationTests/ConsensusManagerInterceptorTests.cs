@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
 using Xunit;
@@ -21,9 +20,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var network = new BitcoinRegTest();
 
-                var minerA = builder.CreateStratisPowNode(network).WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner);
-                var minerB = builder.CreateStratisPowNode(network).NoValidation().WithDummyWallet();
-                var syncer = builder.CreateStratisPowNode(network).WithDummyWallet();
+                var minerA = builder.CreateStratisPowNode(network, "cmi-1-minerA").WithDummyWallet();
+                var minerB = builder.CreateStratisPowNode(network, "cmi-1-minerB").NoValidation().WithDummyWallet();
+                var syncer = builder.CreateStratisPowNode(network, "cmi-1-syncer").WithDummyWallet();
 
                 bool minerADisconnectedFromSyncer = false;
 
@@ -44,12 +43,16 @@ namespace Stratis.Bitcoin.IntegrationTests
                     }
                 }
 
-                minerA.SetDisconnectInterceptor(interceptor);
+                // Start minerA and mine 10 blocks. We cannot use a premade chain as it adversely affects the max tip age calculation, causing sporadic sync errors.
+                minerA.Start();
+                TestHelper.MineBlocks(minerA, 10);
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 10);
 
                 // Start the nodes.
-                minerA.Start();
                 minerB.Start();
                 syncer.Start();
+
+                minerA.SetDisconnectInterceptor(interceptor);
 
                 // minerB and syncer syncs with minerA.
                 TestHelper.ConnectAndSync(minerA, minerB, syncer);
@@ -70,7 +73,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 await TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(13, (node, block) => BlockBuilder.InvalidCoinbaseReward(node, block)).BuildAsync();
 
                 // Reconnect minerA to minerB.
-                TestHelper.Connect(minerA, minerB);
+                TestHelper.ConnectNoCheck(minerA, minerB);
 
                 // minerB should be disconnected from minerA.
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerB));
@@ -96,9 +99,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var network = new BitcoinRegTest();
 
-                var minerA = builder.CreateStratisPowNode(network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).WithDummyWallet();
-                var minerB = builder.CreateStratisPowNode(network).WithDummyWallet();
-                var syncer = builder.CreateStratisPowNode(network).WithDummyWallet();
+                var minerA = builder.CreateStratisPowNode(network, "cmi-2-minerA").WithDummyWallet();
+                var minerB = builder.CreateStratisPowNode(network, "cmi-2-minerB").WithDummyWallet();
+                var syncer = builder.CreateStratisPowNode(network, "cmi-2-syncer").WithDummyWallet();
 
                 bool minerADisconnectedFromMinerB = false;
 
@@ -114,17 +117,19 @@ namespace Stratis.Bitcoin.IntegrationTests
                         TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 10));
                         TestHelper.Disconnect(minerA, minerB);
                         minerADisconnectedFromMinerB = true;
-
-                        return;
                     }
                 }
 
-                minerA.SetDisconnectInterceptor(interceptor);
-
-                // Start the nodes.
+                // Start minerA and mine 10 blocks. We cannot use a premade chain as it adversely affects the max tip age calculation, causing sporadic sync errors.
                 minerA.Start();
+                TestHelper.MineBlocks(minerA, 10);
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 10);
+
+                // Start the other nodes.
                 minerB.Start();
                 syncer.Start();
+
+                minerA.SetDisconnectInterceptor(interceptor);
 
                 // MinerB/Syncer syncs with MinerA.
                 TestHelper.ConnectAndSync(minerA, minerB, syncer);

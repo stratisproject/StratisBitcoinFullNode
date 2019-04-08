@@ -33,11 +33,13 @@ namespace Stratis.StratisSmartContractsD
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()
                     .AddRPC()
-                        .AddSmartContracts()
+                        .AddSmartContracts(options =>
+                        {
+                            options.UseReflectionExecutor();
+                        })
                         .UseSmartContractPoAConsensus()
                         .UseSmartContractPoAMining()
                         .UseSmartContractWallet()
-                        .UseReflectionExecutor()
                     .UseApi()
                     .UseMempool()
                     .Build();

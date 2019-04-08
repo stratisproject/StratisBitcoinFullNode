@@ -167,6 +167,8 @@ namespace Stratis.Bitcoin.P2P
                     inboundPeerEndPoint = new IPEndPoint(peer.PeerEndPoint.Address, peer.PeerVersion.AddressFrom.Port);
                 }
 
+                this.logger.LogTrace("{0}", inboundPeerEndPoint);
+
                 this.peerAddressManager.AddPeer(inboundPeerEndPoint, IPAddress.Loopback);
             }
 

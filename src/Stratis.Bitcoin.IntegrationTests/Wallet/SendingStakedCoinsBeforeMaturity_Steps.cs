@@ -41,10 +41,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void two_pos_nodes_with_one_node_having_a_wallet_with_premined_coins()
         {
-            this.proofOfStakeSteps.PremineNodeWithWallet();
+            this.proofOfStakeSteps.PremineNodeWithWallet("ssc-pmnode");
             this.proofOfStakeSteps.MineGenesisAndPremineBlocks();
 
-            this.receiverNode = this.proofOfStakeSteps.nodeBuilder.CreateStratisPosNode(new StratisRegTest()).WithWallet().Start();
+            this.receiverNode = this.proofOfStakeSteps.nodeBuilder.CreateStratisPosNode(new StratisRegTest(), "ssc-receiver").WithWallet().Start();
 
             TestHelper.ConnectAndSync(this.proofOfStakeSteps.PremineNodeWithCoins, this.receiverNode);
         }

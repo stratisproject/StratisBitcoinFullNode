@@ -62,10 +62,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Pruning
 
             if (nodeInitializing)
             {
-                if (IsDatabasePruned())
+                if (this.IsDatabasePruned())
                     return;
 
-                await this.PrepareDatabaseForCompactingAsync(blockRepositoryTip).ConfigureAwait(false);
+                this.PrepareDatabaseForCompacting(blockRepositoryTip);
             }
 
             this.CompactDataBase();
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Pruning
         /// Compacts the block and transaction database by recreating the tables without the deleted references.
         /// </summary>
         /// <param name="blockRepositoryTip">The last fully validated block of the node.</param>
-        private async Task PrepareDatabaseForCompactingAsync(ChainedHeader blockRepositoryTip)
+        private void PrepareDatabaseForCompacting(ChainedHeader blockRepositoryTip)
         {
             int upperHeight = this.blockRepository.TipHashAndHeight.Height - this.storeSettings.AmountOfBlocksToKeep;
 
@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Pruning
                 startFromHeader = startFromHeader.Previous;
             }
 
-            await this.blockRepository.DeleteBlocksAsync(toDelete.Select(cb => cb.HashBlock).ToList()).ConfigureAwait(false);
+            this.blockRepository.DeleteBlocks(toDelete.Select(cb => cb.HashBlock).ToList());
 
             this.UpdatePrunedTip(blockRepositoryTip.GetAncestor(upperHeight));
         }

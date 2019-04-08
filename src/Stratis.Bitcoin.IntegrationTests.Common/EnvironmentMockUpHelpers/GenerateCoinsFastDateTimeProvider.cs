@@ -1,4 +1,6 @@
 ﻿using System;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
@@ -10,10 +12,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
     /// This date time provider substitutes the node's usual DTP when running certain
     /// integration tests so that we can generate coins faster.
     /// </summary>
-    public sealed class GenerateCoinsFastDateTimeProvider : SignalObserver<ChainedHeaderBlock>, IDateTimeProvider
+    public sealed class GenerateCoinsFastDateTimeProvider : IDateTimeProvider
     {
         private static TimeSpan adjustedTimeOffset;
         private static DateTime startFrom;
+
+        private SubscriptionToken blockConnectedSubscription;
 
         static GenerateCoinsFastDateTimeProvider()
         {
@@ -21,9 +25,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             startFrom = new DateTime(2018, 1, 1);
         }
 
-        public GenerateCoinsFastDateTimeProvider(Signals.Signals signals)
+        public GenerateCoinsFastDateTimeProvider(ISignals signals)
         {
-            signals.SubscribeForBlocksConnected(this);
+            this.blockConnectedSubscription =  signals.Subscribe<BlockConnected>(this.OnBlockConnected);
         }
 
         public long GetTime()
@@ -83,7 +87,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// Every time a new block gets generated, this date time provider will be signaled,
         /// updating the last block time by 65 seconds.
         /// </summary>
-        protected override void OnNextCore(ChainedHeaderBlock value)
+        private void OnBlockConnected(BlockConnected blockConnected)
         {
             startFrom = startFrom.AddSeconds(65);
         }

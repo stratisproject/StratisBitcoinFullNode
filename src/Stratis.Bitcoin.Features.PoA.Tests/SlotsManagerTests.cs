@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
     public class SlotsManagerTests
     {
         private SlotsManager slotsManager;
-        private PoANetwork network;
+        private TestPoANetwork network;
         private PoAConsensusOptions consensusOptions;
         private FederationManager federationManager;
 
@@ -43,14 +43,17 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             List<PubKey> fedKeys = this.federationManager.GetFederationMembers();
             uint roundStart = this.consensusOptions.TargetSpacingSeconds * (uint)fedKeys.Count * 5;
 
-            Assert.Equal(fedKeys[0], this.slotsManager.GetPubKeyForTimestamp(roundStart));
-            Assert.Equal(fedKeys[1], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 1));
-            Assert.Equal(fedKeys[2], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 2));
-            Assert.Equal(fedKeys[0], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 3));
-            Assert.Equal(fedKeys[1], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 4));
-            Assert.Equal(fedKeys[2], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 5));
-            Assert.Equal(fedKeys[0], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 6));
-            Assert.Equal(fedKeys[1], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 7));
+
+            int currentFedIndex = -1;
+
+            for (int i = 0; i < 20; i++)
+            {
+                currentFedIndex++;
+                if (currentFedIndex > fedKeys.Count - 1)
+                    currentFedIndex = 0;
+
+                Assert.Equal(fedKeys[currentFedIndex], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * (uint)i));
+            }
         }
 
         [Fact]
@@ -58,21 +61,21 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         {
             var tool = new KeyTool(new DataFolder(string.Empty));
             Key key = tool.GeneratePrivateKey();
-            this.network = new TestPoANetwork(new List<PubKey>() { tool.GeneratePrivateKey().PubKey, key.PubKey, tool.GeneratePrivateKey().PubKey});
+            this.network = new TestPoANetwork(new List<PubKey>() { tool.GeneratePrivateKey().PubKey, key.PubKey, tool.GeneratePrivateKey().PubKey });
 
-            FederationManager fedManager = PoATestsBase.CreateFederationManager(this, this.network, new ExtendedLoggerFactory());
+            FederationManager fedManager = PoATestsBase.CreateFederationManager(this, this.network, new ExtendedLoggerFactory(), new Signals.Signals(new LoggerFactory(), null));
             this.slotsManager = new SlotsManager(this.network, fedManager, new LoggerFactory());
 
             List<PubKey> fedKeys = this.federationManager.GetFederationMembers();
             uint roundStart = this.consensusOptions.TargetSpacingSeconds * (uint)fedKeys.Count * 5;
 
-            fedManager.SetPrivatePropertyValue(nameof(FederationManager.IsFederationMember), true);
             fedManager.SetPrivatePropertyValue(nameof(FederationManager.FederationMemberKey), key);
+            fedManager.SetPrivatePropertyValue(nameof(this.federationManager.IsFederationMember), true);
 
             Assert.Equal(roundStart + this.consensusOptions.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart));
             Assert.Equal(roundStart + this.consensusOptions.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart + 4));
 
-            roundStart += this.consensusOptions.TargetSpacingSeconds * (uint) fedKeys.Count;
+            roundStart += this.consensusOptions.TargetSpacingSeconds * (uint)fedKeys.Count;
             Assert.Equal(roundStart + this.consensusOptions.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart - 5));
             Assert.Equal(roundStart + this.consensusOptions.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart - this.consensusOptions.TargetSpacingSeconds + 1));
 

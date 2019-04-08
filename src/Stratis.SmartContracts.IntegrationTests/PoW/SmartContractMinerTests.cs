@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
@@ -26,20 +27,17 @@ using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Patricia;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
-using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.Util;
-using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Loader;
 using Stratis.SmartContracts.CLR.ResultProcessors;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.CLR.Validation;
+using Stratis.SmartContracts.Core.Receipts;
+using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 using Stratis.SmartContracts.Networks;
 using Xunit;
-using Key = NBitcoin.Key;
-
 
 namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
@@ -130,7 +128,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             public Script script;
             public uint256 hash;
             public TestMemPoolEntryHelper entry;
-            public ConcurrentChain chain;
+            public ChainIndexer ChainIndexer;
             public ConsensusManager consensusManager;
             public ConsensusRuleEngine consensusRules;
             public TxMempool mempool;
@@ -163,10 +161,12 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             private ReflectionVirtualMachine reflectionVirtualMachine;
             private IContractRefundProcessor refundProcessor;
             internal StateRepositoryRoot StateRoot { get; private set; }
+
             private IContractTransferProcessor transferProcessor;
             private SmartContractValidator validator;
             private StateProcessor stateProcessor;
             private SmartContractStateFactory smartContractStateFactory;
+            public SmartContractPowConsensusFactory ConsensusFactory { get; private set; }
 
             #endregion
 
@@ -179,15 +179,16 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 // Note that by default, these tests run with size accounting enabled.
                 this.network = new SmartContractsRegTest();
+                this.ConsensusFactory = new SmartContractPowConsensusFactory();
                 this.PrivateKey = new Key();
                 this.scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(this.PrivateKey.PubKey);
 
                 this.entry = new TestMemPoolEntryHelper();
-                this.chain = new ConcurrentChain(this.network);
+                this.ChainIndexer = new ChainIndexer(this.network);
                 this.network.Consensus.Options = new ConsensusOptions();
 
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
-                var inMemoryCoinView = new InMemoryCoinView(this.chain.Tip.HashBlock);
+                var inMemoryCoinView = new InMemoryCoinView(this.ChainIndexer.Tip.HashBlock);
                 this.cachedCoinView = new CachedCoinView(inMemoryCoinView, dateTimeProvider, new LoggerFactory(), new NodeStats(new DateTimeProvider()));
 
                 this.loggerFactory = new ExtendedLoggerFactory();
@@ -196,7 +197,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 this.NodeSettings = new NodeSettings(this.network, args: new string[] { "-checkpoints" });
                 var consensusSettings = new ConsensusSettings(this.NodeSettings);
 
-                var nodeDeployments = new NodeDeployments(this.network, this.chain);
+                var nodeDeployments = new NodeDeployments(this.network, this.ChainIndexer);
 
                 var senderRetriever = new SenderRetriever();
 
@@ -209,26 +210,25 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 InitializeSmartContractComponents(callingMethod);
 
-                this.consensusRules = new SmartContractPowConsensusRuleEngine(
-                    this.callDataSerializer,
-                    this.chain,
-                    new Checkpoints(),
-                    consensusSettings,
-                    DateTimeProvider.Default,
-                    this.ExecutorFactory,
-                    this.loggerFactory,
-                    this.network,
-                    nodeDeployments,
-                    this.StateRoot,
-                    new PersistentReceiptRepository(new DataFolder(this.Folder)),
-                    senderRetriever,
-                    this.cachedCoinView,
-                    chainState,
-                    new InvalidBlockHashStore(DateTimeProvider.Default),
-                    new NodeStats(new DateTimeProvider()))
+                var receiptRepository = new PersistentReceiptRepository(new DataFolder(this.Folder));
+
+                this.consensusRules = new PowConsensusRuleEngine(
+                        this.network,
+                        this.loggerFactory,
+                        DateTimeProvider.Default,
+                        this.ChainIndexer,
+                        nodeDeployments,
+                        consensusSettings,
+                        new Checkpoints(),
+                        this.cachedCoinView,
+                        chainState,
+                        new InvalidBlockHashStore(DateTimeProvider.Default),
+                        new NodeStats(new DateTimeProvider()))
                     .Register();
 
-                this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chain: this.chain, ruleRegistration: new SmartContractPowRuleRegistration(this.network), consensusRules: this.consensusRules);
+                var ruleRegistration = new SmartContractPowRuleRegistration(this.network, this.StateRoot,
+                    this.ExecutorFactory, this.callDataSerializer, senderRetriever, receiptRepository, this.cachedCoinView);
+                this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chainIndexer: this.ChainIndexer, ruleRegistration: ruleRegistration, consensusRules: this.consensusRules);
 
                 await this.consensusManager.InitializeAsync(chainState.BlockStoreTip);
 
@@ -255,11 +255,11 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                     block.Header.HashPrevBlock = this.consensusManager.Tip.HashBlock;
                     ((SmartContractBlockHeader)block.Header).HashStateRoot = ((SmartContractBlockHeader)genesis.Header).HashStateRoot;
                     block.Header.Version = 1;
-                    block.Header.Time = Utils.DateTimeToUnixTime(this.chain.Tip.GetMedianTimePast()) + 1;
+                    block.Header.Time = Utils.DateTimeToUnixTime(this.ChainIndexer.Tip.GetMedianTimePast()) + 1;
 
                     Transaction coinbaseTx = this.network.CreateTransaction();
                     coinbaseTx.Version = 1;
-                    coinbaseTx.AddInput(new TxIn(new Script(new[] { Op.GetPushOp(this.blockinfo[i].extranonce), Op.GetPushOp(this.chain.Height) })));
+                    coinbaseTx.AddInput(new TxIn(new Script(new[] { Op.GetPushOp(this.blockinfo[i].extranonce), Op.GetPushOp(this.ChainIndexer.Height) })));
                     coinbaseTx.AddOutput(new TxOut(Money.Coins(50), this.scriptPubKey));
                     coinbaseTx.AddOutput(new TxOut(Money.Zero, new Script()));
                     block.AddTransaction(coinbaseTx);
@@ -267,7 +267,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                     if (this.txFirst.Count < 4)
                         this.txFirst.Add(block.Transactions[0]);
 
-                    block.Header.Bits = block.Header.GetWorkRequired(this.network, this.chain.Tip);
+                    block.Header.Bits = block.Header.GetWorkRequired(this.network, this.ChainIndexer.Tip);
 
                     block.UpdateMerkleRoot();
 
@@ -275,7 +275,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                         block.Header.Nonce = ++this.Nonce;
 
                     // Serialization sets the BlockSize property.
-                    block = NBitcoin.Block.Load(block.ToBytes(), this.network);
+                    block = NBitcoin.Block.Load(block.ToBytes(), this.network.Consensus.ConsensusFactory);
 
                     var res = await this.consensusManager.BlockMinedAsync(block);
                     if (res == null)
@@ -285,7 +285,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 }
 
                 // Just to make sure we can still make simple blocks
-                this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
+                this.newBlock = AssemblerForTest(this).Build(this.ChainIndexer.Tip, this.scriptPubKey);
                 Assert.NotNull(this.newBlock);
             }
 
@@ -330,7 +330,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             await context.InitializeAsync();
 
             ulong gasPrice = 1;
-            var gasLimit = (RuntimeObserver.Gas) SmartContractFormatRule.GasLimitMaximum;
+            var gasLimit = (RuntimeObserver.Gas) SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Token.cs");
@@ -357,7 +357,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             await context.InitializeAsync();
 
             ulong gasPrice = 1;
-            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatRule.GasLimitMaximum;
+            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
@@ -419,7 +419,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             await context.InitializeAsync();
 
             ulong gasPrice = 1;
-            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatRule.GasLimitMaximum;
+            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
@@ -471,7 +471,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             await context.InitializeAsync();
 
             ulong gasPrice = 1;
-            var gasLimit = (RuntimeObserver.Gas) SmartContractFormatRule.GasLimitMaximum;
+            var gasLimit = (RuntimeObserver.Gas) SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
@@ -497,7 +497,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             await context.InitializeAsync();
 
             ulong gasPrice = 1;
-            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatRule.GasLimitMaximum;
+            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
@@ -551,7 +551,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             await context.InitializeAsync();
 
             ulong gasPrice = 1;
-            var gasLimit = (RuntimeObserver.Gas) SmartContractFormatRule.GasLimitMaximum;
+            var gasLimit = (RuntimeObserver.Gas) SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
@@ -581,7 +581,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             await context.InitializeAsync();
 
             ulong gasPrice = 1;
-            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatRule.GasLimitMaximum;
+            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
@@ -626,7 +626,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             ulong gasPrice = 1;
             // This uses a lot of gas
-            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatRule.GasLimitMaximum;
+            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
@@ -662,7 +662,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             ulong gasPrice = 1;
             // This uses a lot of gas
-            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatRule.GasLimitMaximum;
+            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/InterContract1.cs");
@@ -719,7 +719,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             ulong gasPrice = 1;
             // This uses a lot of gas
-            var gasLimit = (RuntimeObserver.Gas) SmartContractFormatRule.GasLimitMaximum;
+            var gasLimit = (RuntimeObserver.Gas) SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
 
             var compilationResult = ContractCompiler.CompileFile("SmartContracts/CountContract.cs");
@@ -760,7 +760,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             ulong gasPrice = 1;
             // This uses a lot of gas
-            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatRule.GasLimitMaximum;
+            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/InterContract1.cs");
@@ -810,7 +810,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             await context.InitializeAsync();
 
             // Create the transaction to be used as the input and add to mempool
-            var preTransaction = context.network.Consensus.ConsensusFactory.CreateTransaction();
+            var preTransaction = context.ConsensusFactory.CreateTransaction();
             var txIn = new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0))
             {
                 ScriptSig = context.PrivateKey.ScriptPubKey
@@ -824,7 +824,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             // Add the smart contract transaction to the mempool and mine as normal.
             ulong gasPrice = 1;
-            var gasLimit = (RuntimeObserver.Gas)1000000;
+            var gasLimit = (RuntimeObserver.Gas) SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/InterContract1.cs");
             Assert.True(compilationResult.Success);
@@ -847,7 +847,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             await context.InitializeAsync();
 
             ulong gasPrice = 1;
-            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatRule.GasLimitMaximum;
+            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
 
             var receiveContract = Path.Combine("SmartContracts", "ReceiveHandlerContract.cs");
@@ -910,7 +910,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
         private async Task<BlockTemplate> BuildBlockAsync(TestContext context)
         {
-            BlockTemplate blockTemplate = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
+            BlockTemplate blockTemplate = AssemblerForTest(context).Build(context.ChainIndexer.Tip, context.scriptPubKey);
 
             while (!blockTemplate.Block.CheckProofOfWork())
                 blockTemplate.Block.Header.Nonce = ++context.Nonce;

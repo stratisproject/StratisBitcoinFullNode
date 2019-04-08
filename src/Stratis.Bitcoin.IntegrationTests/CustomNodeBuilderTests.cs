@@ -27,83 +27,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.network = new BitcoinRegTest();
         }
 
-        [Retry(1)]
-        public void CanOverrideOnlyApiPort()
-        {
-            var extraParams = new NodeConfigParameters { { "apiport", "12345" } };
-
-            using (var nodeBuilder = NodeBuilder.Create(this))
-            {
-                var buildAction = new Action<IFullNodeBuilder>(builder =>
-                    builder.UseBlockStore()
-                        .UsePowConsensus()
-                        .UseMempool()
-                        .AddMining()
-                        .UseWallet()
-                        .AddRPC()
-                        .UseApi()
-                        .MockIBD());
-
-                var coreNode = nodeBuilder.CreateCustomNode(buildAction, this.network,
-                    ProtocolVersion.PROVEN_HEADER_VERSION, configParameters: extraParams);
-
-                coreNode.Start();
-
-                coreNode.ApiPort.Should().Be(12345);
-                coreNode.FullNode.NodeService<ApiSettings>().ApiPort.Should().Be(12345);
-
-                coreNode.RpcPort.Should().NotBe(0);
-                coreNode.FullNode.NodeService<RpcSettings>().RPCPort.Should().NotBe(0);
-
-                coreNode.ProtocolPort.Should().NotBe(0);
-                coreNode.FullNode.ConnectionManager.ConnectionSettings.ExternalEndpoint.Port.Should().NotBe(0);
-            }
-        }
-
-        [Retry(1)]
-        public void CanOverrideAllPorts()
-        {
-            // On MacOS ports below 1024 are privileged, and cannot be bound to by anyone other than root.
-            const int port = 1024 + 123;
-            const int rpcPort = 1024 + 456;
-            const int apiPort = 1024 + 567;
-
-            var extraParams = new NodeConfigParameters
-            {
-                { "port", port.ToString() },
-                { "rpcport", rpcPort.ToString() },
-                { "apiport", apiPort.ToString() }
-            };
-
-            using (var nodeBuilder = NodeBuilder.Create(this))
-            {
-                var buildAction = new Action<IFullNodeBuilder>(builder =>
-                    builder.UseBlockStore()
-                        .UsePowConsensus()
-                        .UseMempool()
-                        .AddMining()
-                        .UseWallet()
-                        .AddRPC()
-                        .UseApi()
-                        .MockIBD());
-
-                var coreNode = nodeBuilder.CreateCustomNode(buildAction, this.network,
-                    ProtocolVersion.PROVEN_HEADER_VERSION, configParameters: extraParams);
-
-                coreNode.Start();
-
-                coreNode.ApiPort.Should().Be(apiPort);
-                coreNode.FullNode.NodeService<ApiSettings>().ApiPort.Should().Be(apiPort);
-
-                coreNode.RpcPort.Should().Be(rpcPort);
-                coreNode.FullNode.NodeService<RpcSettings>().RPCPort.Should().Be(rpcPort);
-
-                coreNode.ProtocolPort.Should().Be(port);
-                coreNode.FullNode.ConnectionManager.ConnectionSettings.ExternalEndpoint.Port.Should().Be(port);
-            }
-        }
-
-        [Retry(1)]
+        [Fact(Skip = "Investigate PeerConnector shutdown timeout issue")]
         public void CanUnderstandUnknownParams()
         {
             var extraParams = new NodeConfigParameters
@@ -132,7 +56,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Retry(1)]
+        [Fact(Skip = "Investigate PeerConnector shutdown timeout issue")]
         public void CanUseCustomConfigFileFromParams()
         {
             var specialConf = "special.conf";
@@ -154,8 +78,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .UseApi()
                         .MockIBD());
 
-                var coreNode = nodeBuilder.CreateCustomNode(buildAction, this.network,
-                    ProtocolVersion.PROTOCOL_VERSION, configParameters: extraParams);
+                var coreNode = nodeBuilder.CreateCustomNode(buildAction, this.network, ProtocolVersion.PROTOCOL_VERSION, configParameters: extraParams);
 
                 coreNode.Start();
 

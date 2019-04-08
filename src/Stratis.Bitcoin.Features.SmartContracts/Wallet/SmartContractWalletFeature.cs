@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,20 +12,16 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
     public sealed class SmartContractWalletFeature : FullNodeFeature
     {
-        private IDisposable blockSubscriberDisposable;
         private readonly BroadcasterBehavior broadcasterBehavior;
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
         private readonly IConnectionManager connectionManager;
         private readonly ILogger logger;
-        private readonly Signals.Signals signals;
-        private IDisposable transactionSubscriberDisposable;
         private readonly IWalletManager walletManager;
         private readonly IWalletSyncManager walletSyncManager;
 
@@ -34,25 +29,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// Initializes a new instance of the <see cref="WalletFeature"/> class.
         /// </summary>
         /// <param name="broadcasterBehavior">The broadcaster behavior.</param>
-        /// <param name="chain">The chain of blocks.</param>
+        /// <param name="chainIndexer">The chain of blocks.</param>
         /// <param name="connectionManager">The connection manager.</param>
         /// <param name="signals">The signals responsible for receiving blocks and transactions from the network.</param>
         /// <param name="walletManager">The wallet manager.</param>
         /// <param name="walletSyncManager">The synchronization manager for the wallet, tasked with keeping the wallet synced with the network.</param>
         public SmartContractWalletFeature(
             BroadcasterBehavior broadcasterBehavior,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             IConnectionManager connectionManager,
             ILoggerFactory loggerFactory,
-            Signals.Signals signals,
             IWalletManager walletManager,
             IWalletSyncManager walletSyncManager,
             INodeStats nodeStats)
         {
             this.broadcasterBehavior = broadcasterBehavior;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.connectionManager = connectionManager;
-            this.signals = signals;
             this.logger = loggerFactory.CreateLogger(this.GetType().Name);
             this.walletManager = walletManager;
             this.walletSyncManager = walletSyncManager;
@@ -83,7 +76,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             if (this.walletManager is WalletManager walletManager)
             {
                 int height = walletManager.LastBlockHeight();
-                ChainedHeader block = this.chain.GetBlock(height);
+                ChainedHeader block = this.chainIndexer.GetHeader(height);
                 uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
                 log.AppendLine("Wallet[SC].Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
@@ -95,9 +88,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
-            this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletSyncManager));
-            this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
-
             this.walletManager.Start();
             this.walletSyncManager.Start();
 
@@ -110,9 +100,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// <inheritdoc />
         public override void Dispose()
         {
-            this.blockSubscriberDisposable.Dispose();
-            this.transactionSubscriberDisposable.Dispose();
-
             this.walletManager.Stop();
             this.walletSyncManager.Stop();
         }

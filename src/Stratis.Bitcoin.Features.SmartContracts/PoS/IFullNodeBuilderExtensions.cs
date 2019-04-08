@@ -2,9 +2,11 @@
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Controllers;
@@ -37,9 +39,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
                         services.AddSingleton<StakeChainStore>().AddSingleton<IStakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<IStakeValidator, StakeValidator>();
                         services.AddSingleton<ConsensusController>();
-                        services.AddSingleton<IConsensusRuleEngine, SmartContractPosConsensusRuleEngine>();
 
-                        new SmartContractPosRuleRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
+                        services.AddSingleton<PosConsensusRuleEngine>();
+                        services.AddSingleton<IConsensusRuleEngine>(f =>
+                        {
+                            var concreteRuleEngine = f.GetService<PosConsensusRuleEngine>();
+                            var ruleRegistration = f.GetService<IRuleRegistration>();
+
+                            return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
+                        });
                     });
             });
 

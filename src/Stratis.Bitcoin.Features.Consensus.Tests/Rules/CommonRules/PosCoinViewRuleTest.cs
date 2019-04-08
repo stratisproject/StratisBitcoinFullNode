@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             // Register POS consensus rules.
             new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(this.network.Consensus);
             ConsensusRuleEngine consensusRuleEngine = new PosConsensusRuleEngine(this.network, this.loggerFactory.Object, DateTimeProvider.Default,
-                this.concurrentChain, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
+                this.ChainIndexer, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
                 this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new Mock<INodeStats>().Object, this.rewindDataIndexStore.Object)
                 .Register();
 
@@ -54,33 +54,35 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             // Create consensus manager.
             var consensus = new ConsensusManager(chainedHeaderTree, this.network, this.loggerFactory.Object, this.chainState.Object, integrityValidator,
-                partialValidator, fullValidator, consensusRuleEngine, new Mock<IFinalizedBlockInfoRepository>().Object, new Signals.Signals(),
-                new Mock<IPeerBanning>().Object, initialBlockDownloadState, this.concurrentChain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object,
+                partialValidator, fullValidator, consensusRuleEngine, new Mock<IFinalizedBlockInfoRepository>().Object, new Signals.Signals(this.loggerFactory.Object, null),
+                new Mock<IPeerBanning>().Object, initialBlockDownloadState, this.ChainIndexer, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object,
                 new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object, new Mock<INodeLifetime>().Object, this.consensusSettings);
 
             // Mock the coinviews "FetchCoinsAsync" method. We will use the "unspentOutputs" dictionary to track spendable outputs.
-            this.coinView.Setup(d => d.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .Returns((uint256[] txIds, CancellationToken cancel) => Task.Run(() => {
+            this.coinView.Setup(d => d.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .Returns((uint256[] txIds, CancellationToken cancel) =>
+                {
 
                     var result = new UnspentOutputs[txIds.Length];
 
                     for (int i = 0; i < txIds.Length; i++)
                         result[i] = unspentOutputs.TryGetValue(txIds[i], out UnspentOutputs unspent) ? unspent : null;
 
-                    return new FetchCoinsResponse(result, this.concurrentChain.Tip.HashBlock);
-                }));
+                    return new FetchCoinsResponse(result, this.ChainIndexer.Tip.HashBlock);
+                });
 
             // Mock the coinviews "GetTipHashAsync" method.
-            this.coinView.Setup(d => d.GetTipHashAsync(It.IsAny<CancellationToken>())).Returns(() => Task.Run(() => {
-                return this.concurrentChain.Tip.HashBlock;
-            }));
+            this.coinView.Setup(d => d.GetTipHash(It.IsAny<CancellationToken>())).Returns(() =>
+            {
+                return this.ChainIndexer.Tip.HashBlock;
+            });
 
             // Since we are mocking the stake validator ensure that GetNextTargetRequired returns something sensible. Otherwise we get the "bad-diffbits" error.
             this.stakeValidator.Setup(s => s.GetNextTargetRequired(It.IsAny<IStakeChain>(), It.IsAny<ChainedHeader>(), It.IsAny<IConsensus>(), It.IsAny<bool>()))
                 .Returns(this.network.Consensus.PowLimit);
 
             // Skip validation of signature in the proven header
-            this.stakeValidator.Setup(s => s.VerifySignature(It.IsAny<UnspentOutputs>(), It.IsAny<Transaction>(),0, It.IsAny<ScriptVerify>()))
+            this.stakeValidator.Setup(s => s.VerifySignature(It.IsAny<UnspentOutputs>(), It.IsAny<Transaction>(), 0, It.IsAny<ScriptVerify>()))
                 .Returns(true);
 
             // Skip validation of stake kernel
@@ -92,17 +94,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             {
                 Flags = BlockFlag.BLOCK_PROOF_OF_STAKE,
                 StakeModifierV2 = 0,
-                StakeTime = (this.concurrentChain.Tip.Header.Time + 60) & ~PosConsensusOptions.StakeTimestampMask
+                StakeTime = (this.ChainIndexer.Tip.Header.Time + 60) & ~PosConsensusOptions.StakeTimestampMask
             });
 
             // Since we are mocking the chainState ensure that the BlockStoreTip returns a usable value.
-            this.chainState.Setup(d => d.BlockStoreTip).Returns(this.concurrentChain.Tip);
+            this.chainState.Setup(d => d.BlockStoreTip).Returns(this.ChainIndexer.Tip);
 
             // Since we are mocking the chainState ensure that the ConsensusTip returns a usable value.
-            this.chainState.Setup(d => d.ConsensusTip).Returns(this.concurrentChain.Tip);
+            this.chainState.Setup(d => d.ConsensusTip).Returns(this.ChainIndexer.Tip);
 
             // Initialize the consensus manager.
-            await consensus.InitializeAsync(this.concurrentChain.Tip);
+            await consensus.InitializeAsync(this.ChainIndexer.Tip);
 
             return consensus;
         }
@@ -141,7 +143,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             // Add dummy first transaction.
             Transaction transaction = this.network.CreateTransaction();
-            transaction.Inputs.Add(TxIn.CreateCoinbase(this.concurrentChain.Tip.Height + 1));
+            transaction.Inputs.Add(TxIn.CreateCoinbase(this.ChainIndexer.Tip.Height + 1));
             transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
             Assert.True(transaction.IsCoinBase);
 
@@ -151,7 +153,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             // Create a previous transaction with scriptPubKey outputs.
             Transaction prevTransaction = this.network.CreateTransaction();
 
-            uint blockTime = (this.concurrentChain.Tip.Header.Time + 60) & ~PosConsensusOptions.StakeTimestampMask;
+            uint blockTime = (this.ChainIndexer.Tip.Header.Time + 60) & ~PosConsensusOptions.StakeTimestampMask;
 
             // To avoid violating the transaction timestamp consensus rule
             // we need to ensure that the transaction used for the coinstake's
@@ -192,9 +194,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Transactions.Add(coinstakeTransaction);
 
             // Finalize the block and add it to the chain.
-            block.Header.HashPrevBlock = this.concurrentChain.Tip.HashBlock;
+            block.Header.HashPrevBlock = this.ChainIndexer.Tip.HashBlock;
             block.Header.Time = blockTime;
-            block.Header.Bits = block.Header.GetWorkRequired(this.network, this.concurrentChain.Tip);
+            block.Header.Bits = block.Header.GetWorkRequired(this.network, this.ChainIndexer.Tip);
             block.SetPrivatePropertyValue("BlockSize", 1L);
             block.Transactions[0].Time = block.Header.Time;
             block.Transactions[1].Time = block.Header.Time;

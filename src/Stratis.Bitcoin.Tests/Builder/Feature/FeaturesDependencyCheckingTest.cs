@@ -22,6 +22,10 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         private class FeatureBase : IFullNodeFeature
         {
             /// <inheritdoc />
+            public bool InitializeBeforeBase { get; set; }
+
+            public string State { get; set; }
+
             public void LoadConfiguration()
             {
                 throw new NotImplementedException();

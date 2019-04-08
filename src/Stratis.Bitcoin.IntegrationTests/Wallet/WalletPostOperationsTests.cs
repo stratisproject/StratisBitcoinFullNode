@@ -729,5 +729,89 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Encoders.Hex.DecodeData(ops[1]).Should().BeEquivalentTo("some data to send".ToBytes());
             }
         }
+
+        [Fact]
+        public async Task GetBalancesAsync()
+        {
+            int sendingAccountBalanceOnStart = 98000596;
+            int receivingAccountBalanceOnStart = 0;
+
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                // Create a sending and a receiving node.
+                CoreNode node1 = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest10Miner).Start();
+                
+                // Act.
+                WalletBalanceModel node1Balances = await $"http://localhost:{node1.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                // Assert.
+                AccountBalanceModel node1Balance = node1Balances.AccountsBalances.Single();
+                node1Balance.AmountConfirmed.Should().Be(new Money(98000036, MoneyUnit.BTC)); // premine is 98M + 9 blocks * 4.
+                node1Balance.AmountUnconfirmed.Should().Be(Money.Zero);
+                node1Balance.SpendableAmount.Should().Be(Money.Zero); // Maturity for StratisregTest is 10, so at block 10, no coin is spendable.
+
+                // Arrange.
+                // Create a sending and a receiving node.
+                CoreNode node2 = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest100Miner).Start();
+
+                // Act.
+                WalletBalanceModel node2Balances = await $"http://localhost:{node2.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                // Assert.
+                AccountBalanceModel node2Balance = node2Balances.AccountsBalances.Single();
+                node2Balance.AmountConfirmed.Should().Be(new Money(98000396, MoneyUnit.BTC)); // premine is 98M + 99 blocks * 4.
+                node2Balance.AmountUnconfirmed.Should().Be(Money.Zero);
+                node2Balance.SpendableAmount.Should().Be(new Money(98000396 - 40, MoneyUnit.BTC)); // Maturity for StratisregTest is 10, so at block 100, the coins in the last 10 blocks (10*4) are not spendable.
+            }
+        }
+
+        [Fact]
+        public async Task GetHistoryFromMiningNode()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                // Create a mining node.
+                CoreNode miningNode = builder.CreateStratisPosNode(this.network).WithWallet().Start();
+
+                TestHelper.MineBlocks(miningNode, 5);
+
+                // Check balances.
+                WalletBalanceModel sendingNodeBalances = await $"http://localhost:{miningNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                AccountBalanceModel sendingAccountBalance = sendingNodeBalances.AccountsBalances.Single();
+                (sendingAccountBalance.AmountConfirmed + sendingAccountBalance.AmountUnconfirmed).Should().Be(new Money(98000000 + (4 * 4), MoneyUnit.BTC));
+
+                // Act.
+                WalletHistoryModel firstAccountHistory = await $"http://localhost:{miningNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/history")
+                    .SetQueryParams(new { walletName = "mywallet", accountName = "account 0" })
+                    .GetJsonAsync<WalletHistoryModel>();
+
+                // Assert.
+                firstAccountHistory.AccountsHistoryModel.Should().NotBeEmpty();
+
+                ICollection<TransactionItemModel> history = firstAccountHistory.AccountsHistoryModel.First().TransactionsHistory;
+                history.Should().NotBeEmpty();
+                history.Count.Should().Be(5);
+
+                TransactionItemModel firstItem = history.First(); // First item in the list but last item to have occurred.
+                firstItem.Amount.Should().Be(new Money(4, MoneyUnit.BTC));
+                firstItem.BlockIndex.Should().Be(0);
+                firstItem.ConfirmedInBlock.Should().Be(5);
+                firstItem.ToAddress.Should().NotBeNullOrEmpty();
+                firstItem.Fee.Should().BeNull();
+            }
+        }
     }
 }

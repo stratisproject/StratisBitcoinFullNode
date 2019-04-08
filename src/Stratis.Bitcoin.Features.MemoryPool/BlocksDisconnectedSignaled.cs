@@ -1,6 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 
@@ -9,23 +12,31 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// <summary>
     /// Mempool observer on disconnected block notifications.
     /// </summary>
-    public class BlocksDisconnectedSignaled : SignalObserver<ChainedHeaderBlock>
+    public class BlocksDisconnectedSignaled : IDisposable
     {
         private readonly IMempoolValidator mempoolValidator;
         private readonly MempoolSchedulerLock mempoolLock;
+        private readonly ISignals signals;
         private readonly ILogger logger;
 
-        public BlocksDisconnectedSignaled(IMempoolValidator mempoolValidator,
-            MempoolSchedulerLock mempoolLock, ILoggerFactory loggerFactory)
+        private SubscriptionToken blockDisconnectedSubscription;
+
+        public BlocksDisconnectedSignaled(IMempoolValidator mempoolValidator, MempoolSchedulerLock mempoolLock, ILoggerFactory loggerFactory, ISignals signals)
         {
             this.mempoolValidator = mempoolValidator;
             this.mempoolLock = mempoolLock;
+            this.signals = signals;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        protected override void OnNextCore(ChainedHeaderBlock chainedHeaderBlock)
+        public void Initialize()
         {
-            this.AddBackToMempoolAsync(chainedHeaderBlock.Block).ConfigureAwait(false).GetAwaiter().GetResult();
+            this.blockDisconnectedSubscription = this.signals.Subscribe<BlockDisconnected>(this.OnBlockDisconnected);
+        }
+
+        private void OnBlockDisconnected(BlockDisconnected blockDisconnected)
+        {
+            this.AddBackToMempoolAsync(blockDisconnected.DisconnectedBlock.Block).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -51,8 +62,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     else
                         this.logger.LogTrace("Transaction with hash '{0}' accepted back to mempool.", transaction.GetHash());
                 }
-                
+
             }).ConfigureAwait(false);
+        }
+
+        public void Dispose()
+        {
+            this.signals.Unsubscribe(this.blockDisconnectedSubscription);
         }
     }
 }

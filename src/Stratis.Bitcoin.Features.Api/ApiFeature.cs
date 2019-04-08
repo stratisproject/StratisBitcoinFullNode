@@ -46,6 +46,8 @@ namespace Stratis.Bitcoin.Features.Api
             this.apiSettings = apiSettings;
             this.certificateStore = certificateStore;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            this.InitializeBeforeBase = true;
         }
 
         public override Task InitializeAsync()
@@ -71,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Api
             };
 
             this.apiSettings.KeepaliveTimer.Start();
-            
+
             return Task.CompletedTask;
         }
 

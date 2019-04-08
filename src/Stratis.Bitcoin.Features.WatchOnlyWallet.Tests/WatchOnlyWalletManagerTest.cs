@@ -2,10 +2,12 @@
 using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -16,10 +18,12 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
     public class WatchOnlyWalletManagerTest : LogsTestBase
     {
         private readonly Network networkTestNet;
+        private readonly ISignals signals;
 
         public WatchOnlyWalletManagerTest()
         {
             this.networkTestNet = KnownNetworks.TestNet;
+            this.signals = new Signals.Signals(new LoggerFactory(), null);
         }
 
         [Fact]
@@ -29,7 +33,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             DataFolder dataFolder = CreateDataFolder(this);
             WatchOnlyWallet wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
 
-            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder);
+            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder, this.signals);
             walletManager.Initialize();
 
             // Retrieve the wallet.
@@ -46,7 +50,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             DataFolder dataFolder = CreateDataFolder(this);
             WatchOnlyWallet wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
 
-            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder);
+            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder, this.signals);
             walletManager.Initialize();
 
             // create the wallet
@@ -78,7 +82,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             Transaction transaction = this.networkTestNet.CreateTransaction(transactionHex);
 
             // Act.
-            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder);
+            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder, this.signals);
             walletManager.Initialize();
             walletManager.WatchAddress("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE");
             walletManager.ProcessTransaction(transaction);
@@ -120,7 +124,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             block.UpdateMerkleRoot();
 
             // Act.
-            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder);
+            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder, this.signals);
             walletManager.Initialize();
             walletManager.WatchAddress("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE");
             walletManager.ProcessBlock(block);
@@ -162,7 +166,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             block.UpdateMerkleRoot();
 
             // Act.
-            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder);
+            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder, this.signals);
             walletManager.Initialize();
             walletManager.WatchAddress("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE");
             walletManager.ProcessBlock(block);
@@ -177,7 +181,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
         public void Given_AWatchedAddress_ThenCanCalculateComplexRelativeBalance()
         {
             DataFolder dataFolder = CreateDataFolder(this);
-            
+
             // Create transactions to be received.
             var transactionsHex = new[]
             {
@@ -197,7 +201,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
 
             block.UpdateMerkleRoot();
 
-            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder);
+            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder, this.signals);
             walletManager.Initialize();
             walletManager.WatchAddress("moFoZk1figjfEe1Z49GUePXy2KqYr6DioL");
             walletManager.ProcessBlock(block);
@@ -231,8 +235,8 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             Block block = this.networkTestNet.Consensus.ConsensusFactory.CreateBlock();
             block.AddTransaction(transaction);
             block.UpdateMerkleRoot();
-            
-            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder);
+
+            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder, this.signals);
             walletManager.Initialize();
             walletManager.WatchAddress("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE");
             walletManager.StoreTransaction(new TransactionData()

@@ -18,7 +18,6 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -41,23 +40,13 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly IWalletManager walletManager;
 
-        private readonly Signals.Signals signals;
-
-        private IDisposable blockSubscriberDisposable;
-
-        private IDisposable transactionSubscriberDisposable;
-
-        private ConcurrentChain chain;
+        private readonly Signals.ISignals signals;
 
         private readonly IConnectionManager connectionManager;
 
         private readonly IAddressBookManager addressBookManager;
 
         private readonly BroadcasterBehavior broadcasterBehavior;
-
-        private readonly NodeSettings nodeSettings;
-
-        private readonly WalletSettings walletSettings;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WalletFeature"/> class.
@@ -66,32 +55,23 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="walletManager">The wallet manager.</param>
         /// <param name="addressBookManager">The address book manager.</param>
         /// <param name="signals">The signals responsible for receiving blocks and transactions from the network.</param>
-        /// <param name="chain">The chain of blocks.</param>
         /// <param name="connectionManager">The connection manager.</param>
         /// <param name="broadcasterBehavior">The broadcaster behavior.</param>
-        /// <param name="nodeSettings">The settings for the node.</param>
-        /// <param name="walletSettings">The settings for the wallet.</param>
         public WalletFeature(
             IWalletSyncManager walletSyncManager,
             IWalletManager walletManager,
             IAddressBookManager addressBookManager,
-            Signals.Signals signals,
-            ConcurrentChain chain,
+            Signals.ISignals signals,
             IConnectionManager connectionManager,
             BroadcasterBehavior broadcasterBehavior,
-            NodeSettings nodeSettings,
-            WalletSettings walletSettings,
             INodeStats nodeStats)
         {
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
             this.addressBookManager = addressBookManager;
             this.signals = signals;
-            this.chain = chain;
             this.connectionManager = connectionManager;
             this.broadcasterBehavior = broadcasterBehavior;
-            this.nodeSettings = nodeSettings;
-            this.walletSettings = walletSettings;
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 800);
@@ -145,7 +125,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     foreach (HdAccount account in this.walletManager.GetAccounts(walletName))
                     {
                         AccountBalance accountBalance = this.walletManager.GetBalances(walletName, account.Name).Single();
-                        log.AppendLine(($"{walletName}/{account.Name}" + ",").PadRight(LoggingConfiguration.ColumnLength + 10) 
+                        log.AppendLine(($"{walletName}/{account.Name}" + ",").PadRight(LoggingConfiguration.ColumnLength + 10)
                                                   + (" Confirmed balance: " + accountBalance.AmountConfirmed.ToString()).PadRight(LoggingConfiguration.ColumnLength + 20)
                                                   + " Unconfirmed balance: " + accountBalance.AmountUnconfirmed.ToString());
                     }
@@ -156,10 +136,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
-            // subscribe to receiving blocks and transactions
-            this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletSyncManager));
-            this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
-
             this.walletManager.Start();
             this.walletSyncManager.Start();
             this.addressBookManager.Initialize();
@@ -172,9 +148,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public override void Dispose()
         {
-            this.blockSubscriberDisposable.Dispose();
-            this.transactionSubscriberDisposable.Dispose();
-
             this.walletManager.Stop();
             this.walletSyncManager.Stop();
         }

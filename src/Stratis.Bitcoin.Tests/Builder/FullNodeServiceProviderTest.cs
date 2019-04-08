@@ -57,6 +57,10 @@ namespace Stratis.Bitcoin.Tests.Builder
         private class TestFeatureStub : IFullNodeFeature
         {
             /// <inheritdoc />
+            public bool InitializeBeforeBase { get; set; }
+
+            public string State { get; set; }
+
             public void LoadConfiguration()
             {
                 throw new NotImplementedException();
@@ -83,6 +87,10 @@ namespace Stratis.Bitcoin.Tests.Builder
         private class TestFeatureStub2 : IFullNodeFeature
         {
             /// <inheritdoc />
+            public bool InitializeBeforeBase { get; set; }
+
+            public string State { get; set; }
+
             public void LoadConfiguration()
             {
                 throw new NotImplementedException();

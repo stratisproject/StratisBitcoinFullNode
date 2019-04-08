@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     {
         public CalculateStakeRuleTest()
         {
-            this.concurrentChain = GenerateChainWithHeight(5, this.network);
+            this.ChainIndexer = GenerateChainWithHeight(5, this.network);
             this.consensusRules = this.InitializeConsensusRules();
         }
 
@@ -21,11 +21,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             Block block = this.network.CreateBlock();
             Transaction transaction = this.network.CreateTransaction();
             block.AddTransaction(transaction);
-            block.AddTransaction(CreateCoinStakeTransaction(this.network, new Key(), 6, this.concurrentChain.GetBlock(5).HashBlock));
+            block.AddTransaction(CreateCoinStakeTransaction(this.network, new Key(), 6, this.ChainIndexer.GetHeader(5).HashBlock));
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 BlockToValidate = block,
-                ChainedHeaderToValidate = this.concurrentChain.GetBlock(4)
+                ChainedHeaderToValidate = this.ChainIndexer.GetHeader(4)
             };
 
             var target = new Target(0x1f111115);
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.stakeValidator.Setup(s => s.GetNextTargetRequired(
                 this.stakeChain.Object,
-                this.concurrentChain.GetBlock(3),
+                this.ChainIndexer.GetHeader(3),
                 this.network.Consensus,
                 true))
                 .Returns(target)
@@ -47,27 +47,27 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             Assert.Equal(uint256.Zero, (this.ruleContext as PosRuleContext).BlockStake.StakeModifierV2);
             Assert.Equal(uint256.Zero, (this.ruleContext as PosRuleContext).BlockStake.HashProof);
             Assert.Equal((uint)18276127, (this.ruleContext as PosRuleContext).BlockStake.StakeTime);
-            Assert.Equal(this.concurrentChain.GetBlock(5).HashBlock, (this.ruleContext as PosRuleContext).BlockStake.PrevoutStake.Hash);
+            Assert.Equal(this.ChainIndexer.GetHeader(5).HashBlock, (this.ruleContext as PosRuleContext).BlockStake.PrevoutStake.Hash);
         }
 
         [Fact]
         public async Task RunAsync_ProofOfWorkBlock_CheckPow_ValidPow_SetsStake_SetsNextWorkRequiredAsync()
         {
             this.network = KnownNetworks.RegTest;
-            this.concurrentChain = MineChainWithHeight(2, this.network);
+            this.ChainIndexer = MineChainWithHeight(2, this.network);
             this.consensusRules = this.InitializeConsensusRules();
 
             this.ruleContext.ValidationContext = new ValidationContext()
             {
-                BlockToValidate = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain),
-                ChainedHeaderToValidate = this.concurrentChain.Tip
+                BlockToValidate = TestRulesContextFactory.MineBlock(this.network, this.ChainIndexer),
+                ChainedHeaderToValidate = this.ChainIndexer.Tip
             };
 
             var target = this.ruleContext.ValidationContext.BlockToValidate.Header.Bits;
 
             this.stakeValidator.Setup(s => s.GetNextTargetRequired(
                 this.stakeChain.Object,
-                this.concurrentChain.GetBlock(1),
+                this.ChainIndexer.GetHeader(1),
                 this.network.Consensus,
                 false))
                 .Returns(target)
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 BlockToValidate = block,
-                ChainedHeaderToValidate = this.concurrentChain.GetBlock(4)
+                ChainedHeaderToValidate = this.ChainIndexer.GetHeader(4)
             };
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultyHybridRule>().RunAsync(this.ruleContext));

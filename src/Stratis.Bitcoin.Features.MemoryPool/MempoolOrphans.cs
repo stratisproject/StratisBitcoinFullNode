@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
@@ -25,10 +26,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public const int OrphanTxExpireInterval = 5 * 60;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Node notifications available to subscribe to.</summary>
-        private readonly Signals.Signals signals;
+        private readonly Signals.ISignals signals;
 
         /// <summary>Coin view of the memory pool.</summary>
         private readonly ICoinView coinView;
@@ -67,8 +68,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly object lockObject;
 
         public MempoolOrphans(
-            ConcurrentChain chain,
-            Signals.Signals signals,
+            ChainIndexer chainIndexer,
+            Signals.ISignals signals,
             IMempoolValidator validator,
             ICoinView coinView,
             IDateTimeProvider dateTimeProvider,
@@ -76,7 +77,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             ILoggerFactory loggerFactory,
             MempoolManager mempoolManager)
         {
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.signals = signals;
             this.coinView = coinView;
             this.dateTimeProvider = dateTimeProvider;
@@ -122,7 +123,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 result = this.mapOrphanTransactions.Values.ToList();
             }
-            
+
             return result;
         }
 
@@ -136,7 +137,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 result = this.mapOrphanTransactions.Count;
             }
-            
+
             return result;
         }
 
@@ -166,14 +167,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             bool isTxPresent = false;
             lock(this.lockObject)
             {
-                if (this.chain.Tip.HashBlock != this.hashRecentRejectsChainTip)
+                if (this.chainIndexer.Tip.HashBlock != this.hashRecentRejectsChainTip)
                 {
                     // If the chain tip has changed previously rejected transactions
                     // might be now valid, e.g. due to a nLockTime'd tx becoming valid,
                     // or a double-spend. Reset the rejects filter and give those
                     // txs a second chance.
                     this.logger.LogTrace("Executing task to clear rejected transactions.");
-                    this.hashRecentRejectsChainTip = this.chain.Tip.HashBlock;
+                    this.hashRecentRejectsChainTip = this.chainIndexer.Tip.HashBlock;
                     this.recentRejects.Clear();
                 }
 
@@ -184,7 +185,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 isTxPresent = await this.mempoolManager.ExistsAsync(trxid).ConfigureAwait(false);
             }
-            
+
             return isTxPresent;
         }
 
@@ -241,7 +242,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                         behavior.RelayTransaction(orphanTx.GetHash());
 
-                        this.signals.SignalTransaction(orphanTx);
+                        this.signals.Publish(new TransactionReceived(orphanTx));
 
                         for (int index = 0; index < orphanTx.Outputs.Count; index++)
                             workQueue.Enqueue(new OutPoint(orphanHash, index));
@@ -343,7 +344,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             int nEvicted = this.LimitOrphanTxSize(nMaxOrphanTx);
             if (nEvicted > 0)
                 this.logger.LogInformation("mapOrphan overflow, removed {0} tx", nEvicted);
-            
+
             return ret;
         }
 
@@ -404,7 +405,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     ++nEvicted;
                 }
             }
-            
+
             return nEvicted;
         }
 
@@ -433,7 +434,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 // 100 orphans, each of which is at most 99,999 bytes big is
                 // at most 10 megabytes of orphans and somewhat more byprev index (in the worst case):
                 int sz = MempoolValidator.GetTransactionWeight(tx, this.Validator.ConsensusOptions);
-                if (sz >= this.chain.Network.Consensus.Options.MaxStandardTxWeight)
+                if (sz >= this.chainIndexer.Network.Consensus.Options.MaxStandardTxWeight)
                 {
                     this.logger.LogInformation("ignoring large orphan tx (size: {0}, hash: {1})", sz, hash);
                     this.logger.LogTrace("(-)[LARGE_ORPH]:false");
@@ -465,7 +466,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.logger.LogInformation("stored orphan tx {0} (mapsz {1} outsz {2})", hash, orphanSize, this.mapOrphanTransactionsByPrev.Count);
                 this.Validator.PerformanceCounter.SetMempoolOrphanSize(orphanSize);
             }
-            
+
             return true;
         }
 
@@ -501,7 +502,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             int orphanSize = this.mapOrphanTransactions.Count;
             this.Validator.PerformanceCounter.SetMempoolOrphanSize(orphanSize);
-            
+
             return true;
         }
 
