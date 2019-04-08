@@ -199,7 +199,7 @@ namespace Stratis.Features.FederatedPeg
             bool isFederationActive = this.federationWalletManager.IsFederationActive();
             benchLog.AppendLine("Federation Wallet: ".PadRight(LoggingConfiguration.ColumnLength)
                                 + " Confirmed balance: " + balances.ConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)
-                                + " Unconfirmed balance: " + balances.UnConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)
+                                + " Reserved for withdrawals: " + balances.UnConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)
                                 + " Federation Status: " + (isFederationActive ? "Active" : "Inactive"));
             benchLog.AppendLine();
 
@@ -274,7 +274,7 @@ namespace Stratis.Features.FederatedPeg
     /// </summary>
     public static class FullNodeBuilderSidechainRuntimeFeatureExtension
     {
-        public static IFullNodeBuilder AddFederationGateway(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder AddFederationGateway(this IFullNodeBuilder fullNodeBuilder, FederatedPegOptions options)
         {
             LoggingConfiguration.RegisterFeatureNamespace<FederationGatewayFeature>(
                 FederationGatewayFeature.FederationGatewayFeatureNamespace);
@@ -306,6 +306,9 @@ namespace Stratis.Features.FederatedPeg
                         // Set up events.
                         services.AddSingleton<TransactionObserver>();
                         services.AddSingleton<BlockObserver>();
+
+                        // Inject our options
+                        services.AddSingleton(options);
                     });
             });
             return fullNodeBuilder;

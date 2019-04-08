@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.SmartContracts.Networks.Policies;
@@ -31,7 +30,7 @@ namespace Stratis.Sidechains.Networks
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
             this.DefaultRPCPort = 16175;
-            this.DefaultAPIPort = 37221; // TODO: Confirm
+            this.DefaultAPIPort = 37223;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;

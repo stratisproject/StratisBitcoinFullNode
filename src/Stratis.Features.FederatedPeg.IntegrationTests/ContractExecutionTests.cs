@@ -43,12 +43,13 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
             {
                 // Much setup - TODO: move into fixture for more tests.
                 FederatedPegRegTest network = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();
+                Network counterChainNetwork = Networks.Stratis.Regtest();
                 IList<Mnemonic> mnemonics = network.FederationMnemonics;
                 var pubKeysByMnemonic = mnemonics.ToDictionary(m => m, m => m.DeriveExtKey().PrivateKey.PubKey);
                 this.scriptAndAddresses = FederatedPegTestHelper.GenerateScriptAndAddresses(new StratisMain(), network, 2, pubKeysByMnemonic);
 
                 CoreNode user1 = nodeBuilder.CreateSidechainNode(network).WithWallet();
-                CoreNode fed1 = nodeBuilder.CreateSidechainFederationNode(network, network.FederationKeys[0], testingFederation: false).WithWallet();
+                CoreNode fed1 = nodeBuilder.CreateSidechainFederationNode(network, counterChainNetwork, network.FederationKeys[0], testingFederation: false).WithWallet();
                 fed1.AppendToConfig("sidechain=1");
                 fed1.AppendToConfig($"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
                 fed1.AppendToConfig($"{FederationGatewaySettings.PublicKeyParam}={pubKeysByMnemonic[mnemonics[0]].ToString()}");
