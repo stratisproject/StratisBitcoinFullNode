@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
+    <DebugType>Full</DebugType>
+    <IsPackable>false</IsPackable>
+    <ApplicationIcon />
+    <OutputType>Library</OutputType>
+    <StartupObject />
+    <CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Flurl" Version="2.8.0" />
+    <PackageReference Include="Flurl.Http" Version="2.4.0" />
+    <PackageReference Include="FluentAssertions" Version="5.5.3" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.PoA.IntegrationTests.Common\Stratis.Bitcoin.Features.PoA.IntegrationTests.Common.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.IntegrationTests.Common\Stratis.Bitcoin.IntegrationTests.Common.csproj" />
+    <ProjectReference Include="..\Stratis.Features.FederatedPeg.Tests\Stratis.Features.FederatedPeg.Tests.csproj" />
+    <ProjectReference Include="..\Stratis.Features.FederatedPeg\Stratis.Features.FederatedPeg.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="SmartContracts\BasicTransfer.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

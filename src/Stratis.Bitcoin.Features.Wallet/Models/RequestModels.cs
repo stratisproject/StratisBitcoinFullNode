@@ -296,9 +296,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [MinLength(1)]
         public List<RecipientModel> Recipients { get; set; }
 
+        public string OpReturnData { get; set; }
+
+        [MoneyFormat(isRequired: false, ErrorMessage = "The op return amount is not in the correct format.")]
+        public string OpReturnAmount { get; set; }
+
         /// <summary>
         /// The type of fee to use when working out the fee for the transaction. Specify "low", "medium", or "high".
-        /// </summary>   
+        /// </summary>  
         public string FeeType { get; set; }
 
         /// <summary>
@@ -366,18 +371,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
 
-        /// <summary>
-        /// A string containing any OP_RETURN output data to store as part of the transaction.
-        /// </summary>       
-        public string OpReturnData { get; set; }
-
-        /// <summary>
-        /// The funds in STRAT (or a sidechain coin) to include with the OP_RETURN output. Currently, specifying
-        /// some funds helps OP_RETURN outputs be relayed around the network.
-        /// </summary>   
-        [MoneyFormat(isRequired: false, ErrorMessage = "The op return amount is not in the correct format.")]
-        public string OpReturnAmount { get; set; }
-
         /// <inheritdoc />
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
@@ -419,6 +412,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// A string containing the transaction in hexadecimal format.
         /// </summary>
         [Required(ErrorMessage = "A transaction in hexadecimal format is required.")]
+
+        /// <summary>
+        /// The transaction as a hexadecimal string.
+        /// </summary>
         public string Hex { get; set; }
     }
 
@@ -672,5 +669,38 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
         [Required]
         public int UtxosCount { get; set; }
+    }
+
+    /// <summary>
+    /// Object to sign a message.
+    /// </summary>
+    public class SignMessageRequest : RequestModel
+    {
+        [Required(ErrorMessage = "The name of the wallet is missing.")]
+        public string WalletName { get; set; }
+
+        [Required(ErrorMessage = "A password is required.")]
+        public string Password { get; set; }
+
+        [Required(ErrorMessage = "An address is required.")]
+        public string ExternalAddress { get; set; }
+
+        [Required(ErrorMessage = "A message is required.")]
+        public string Message { get; set; }
+    }
+
+    /// <summary>
+    /// Object to verify a signed message.
+    /// </summary>
+    public class VerifyRequest : RequestModel
+    {
+        [Required(ErrorMessage = "A signature is required.")]
+        public string Signature { get; set; }
+
+        [Required(ErrorMessage = "An address is required.")]
+        public string ExternalAddress { get; set; }
+
+        [Required(ErrorMessage = "A message is required.")]
+        public string Message { get; set; }
     }
 }

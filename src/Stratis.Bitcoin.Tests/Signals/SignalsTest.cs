@@ -1,7 +1,8 @@
-﻿using Moq;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Primitives;
-using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -9,17 +10,11 @@ namespace Stratis.Bitcoin.Tests.Signals
 {
     public class SignalsTest
     {
-        private readonly Mock<ISignaler<ChainedHeaderBlock>> blockConnectedSignaler;
-        private readonly Mock<ISignaler<ChainedHeaderBlock>> blockDisconnectedSignaler;
-        private readonly Bitcoin.Signals.Signals signals;
-        private readonly Mock<ISignaler<Transaction>> transactionSignaler;
+        private readonly Bitcoin.Signals.ISignals signals;
 
         public SignalsTest()
         {
-            this.blockConnectedSignaler = new Mock<ISignaler<ChainedHeaderBlock>>();
-            this.blockDisconnectedSignaler = new Mock<ISignaler<ChainedHeaderBlock>>();
-            this.transactionSignaler = new Mock<ISignaler<Transaction>>();
-            this.signals = new Bitcoin.Signals.Signals(this.blockConnectedSignaler.Object, this.blockDisconnectedSignaler.Object, this.transactionSignaler.Object);
+            this.signals = new Bitcoin.Signals.Signals(new LoggerFactory(), null);
         }
 
         [Fact]
@@ -28,10 +23,14 @@ namespace Stratis.Bitcoin.Tests.Signals
             Block block = KnownNetworks.StratisMain.CreateBlock();
             ChainedHeader header = ChainedHeadersHelper.CreateGenesisChainedHeader();
             var chainedHeaderBlock = new ChainedHeaderBlock(block, header);
-            
-            this.signals.SignalBlockConnected(chainedHeaderBlock);
 
-            this.blockConnectedSignaler.Verify(b => b.Broadcast(chainedHeaderBlock), Times.Exactly(1));
+            bool signaled = false;
+            using (SubscriptionToken sub = this.signals.Subscribe<BlockConnected>(headerBlock => signaled = true))
+            {
+                this.signals.Publish(new BlockConnected(chainedHeaderBlock));
+            }
+
+            Assert.True(signaled);
         }
 
         [Fact]
@@ -41,9 +40,13 @@ namespace Stratis.Bitcoin.Tests.Signals
             ChainedHeader header = ChainedHeadersHelper.CreateGenesisChainedHeader();
             var chainedHeaderBlock = new ChainedHeaderBlock(block, header);
 
-            this.signals.SignalBlockDisconnected(chainedHeaderBlock);
+            bool signaled = false;
+            using (SubscriptionToken sub = this.signals.Subscribe<BlockDisconnected>(headerBlock => signaled = true))
+            {
+                this.signals.Publish(new BlockDisconnected(chainedHeaderBlock));
+            }
 
-            this.blockDisconnectedSignaler.Verify(b => b.Broadcast(chainedHeaderBlock), Times.Exactly(1));
+            Assert.True(signaled);
         }
 
         [Fact]
@@ -51,9 +54,54 @@ namespace Stratis.Bitcoin.Tests.Signals
         {
             Transaction transaction = KnownNetworks.StratisMain.CreateTransaction();
 
-            this.signals.SignalTransaction(transaction);
+            bool signaled = false;
+            using (SubscriptionToken sub = this.signals.Subscribe<TransactionReceived>(transaction1 => signaled = true))
+            {
+                this.signals.Publish(new TransactionReceived(transaction));
+            }
 
-            this.transactionSignaler.Verify(b => b.Broadcast(transaction), Times.Exactly(1));
+            Assert.True(signaled);
+        }
+
+        [Fact]
+        public void SignalUnsubscribingPreventTriggeringPreviouslySubscribedAction()
+        {
+            Transaction transaction = KnownNetworks.StratisMain.CreateTransaction();
+
+            bool signaled = false;
+            using (SubscriptionToken sub = this.signals.Subscribe<TransactionReceived>(transaction1 => signaled = true))
+            {
+                this.signals.Publish(new TransactionReceived(transaction));
+            }
+
+            Assert.True(signaled);
+
+            signaled = false; // reset the flag
+            this.signals.Publish(new TransactionReceived(transaction));
+            //expect signaled be false
+            Assert.True(!signaled);
+
+        }
+
+        [Fact]
+        public void SignalSubscrerThrowExceptionDefaultSubscriptionErrorHandlerRethrow()
+        {
+            try
+            {
+                using (SubscriptionToken sub = this.signals.Subscribe<TestEvent>(transaction1 => throw new System.Exception("TestingException")))
+                {
+                    this.signals.Publish(new TestEvent());
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Assert.True(ex.Message == "TestingException");
+            }
+        }
+
+        class TestEvent : EventBase
+        {
+            public TestEvent() { }
         }
     }
 }

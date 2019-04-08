@@ -2,6 +2,7 @@
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Miner;
@@ -29,10 +30,26 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<ICoinView, CachedCoinView>();
                         services.AddSingleton<ConsensusController>();
-                        services.AddSingleton<IConsensusRuleEngine, SmartContractPoARuleEngine>();
                         services.AddSingleton<VotingManager>();
+                        services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
+                        services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
 
-                        new SmartContractPoARuleRegistration(fullNodeBuilder.Network).RegisterRules(fullNodeBuilder.Network.Consensus);
+                        services.AddSingleton<PoAConsensusRuleEngine>();
+                        services.AddSingleton<IRuleRegistration, SmartContractPoARuleRegistration>();
+                        services.AddSingleton<IConsensusRuleEngine>(f =>
+                        {
+                            var concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
+                            var ruleRegistration = f.GetService<IRuleRegistration>();
+
+                            return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
+                        });
+
+                        // Voting.
+                        services.AddSingleton<VotingManager>();
+                        services.AddSingleton<VotingController>();
+                        services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
+                        services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
+                        services.AddSingleton<IdleFederationMembersKicker>();
                     });
             });
 
@@ -53,6 +70,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         services.AddSingleton<FederationManager>();
                         services.AddSingleton<PoABlockHeaderValidator>();
                         services.AddSingleton<IPoAMiner, PoAMiner>();
+                        services.AddSingleton<PoAMinerSettings>();
+                        services.AddSingleton<MinerSettings>();
                         services.AddSingleton<SlotsManager>();
                         services.AddSingleton<BlockDefinition, SmartContractPoABlockDefinition>();
                         services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -12,6 +13,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
@@ -34,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
         public NodeSettings NodeSettings { get; set; }
 
-        public ConcurrentChain Chain { get; set; }
+        public ChainIndexer ChainIndexer { get; set; }
 
         public Network Network { get; set; }
 
@@ -53,12 +55,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             return rule;
         }
 
-        public SmartContractFormatRule CreateSmartContractFormatRule()
+        public ContractTransactionPartialValidationRule CreateContractValidationRule()
         {
-            var rule = new SmartContractFormatRule(this.CallDataSerializer);
-            rule.Parent = this.Consensus;
-            rule.Logger = this.LoggerFactory.CreateLogger(rule.GetType().FullName);
-            rule.Initialize();
+            var rule = new ContractTransactionPartialValidationRule(this.CallDataSerializer, new List<IContractTransactionPartialValidationRule>
+            {
+                new SmartContractFormatLogic()
+            });
+
             return rule;
         }
     }
@@ -84,37 +87,36 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             testRulesContext.LoggerFactory.AddConsoleWithFilters();
             testRulesContext.DateTimeProvider = DateTimeProvider.Default;
 
-            network.Consensus.Options = new ConsensusOptions();
             new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(network.Consensus);
 
             ConsensusSettings consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
-            testRulesContext.Chain = new ConcurrentChain(network);
+            testRulesContext.ChainIndexer = new ChainIndexer(network);
             testRulesContext.ChainState = new ChainState();
 
-            NodeDeployments deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.Chain);
+            NodeDeployments deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.ChainIndexer);
             testRulesContext.Consensus = new PowConsensusRuleEngine(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider,
-                testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, null, testRulesContext.ChainState,
+                testRulesContext.ChainIndexer, deployments, consensusSettings, testRulesContext.Checkpoints, null, testRulesContext.ChainState,
                 new InvalidBlockHashStore(new DateTimeProvider()), new NodeStats(new DateTimeProvider())).Register();
 
             testRulesContext.CallDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(network));
             return testRulesContext;
         }
 
-        public static Block MineBlock(Network network, ConcurrentChain chain)
+        public static Block MineBlock(Network network, ChainIndexer chainIndexer)
         {
             Block block = network.Consensus.ConsensusFactory.CreateBlock();
 
             var coinbase = new Transaction();
-            coinbase.AddInput(TxIn.CreateCoinbase(chain.Height + 1));
+            coinbase.AddInput(TxIn.CreateCoinbase(chainIndexer.Height + 1));
             coinbase.AddOutput(new TxOut(Money.Zero, new Key()));
             block.AddTransaction(coinbase);
 
             block.Header.Version = (int)ThresholdConditionCache.VersionbitsTopBits;
 
-            block.Header.HashPrevBlock = chain.Tip.HashBlock;
-            block.Header.UpdateTime(DateTimeProvider.Default.GetTimeOffset(), network, chain.Tip);
-            block.Header.Bits = block.Header.GetWorkRequired(network, chain.Tip);
+            block.Header.HashPrevBlock = chainIndexer.Tip.HashBlock;
+            block.Header.UpdateTime(DateTimeProvider.Default.GetTimeOffset(), network, chainIndexer.Tip);
+            block.Header.Bits = block.Header.GetWorkRequired(network, chainIndexer.Tip);
             block.Header.Nonce = 0;
 
             var maxTries = int.MaxValue;

@@ -55,22 +55,26 @@ namespace Stratis.Bitcoin.Tests.Models
         [Fact]
         public void TransactionModelVerboseRenderTest()
         {
-            var expectedPropertyNameOrder = new string[] { "hex", "txid", "size", "version", "locktime", "vin", "vout" };
+            var expectedPropertyNameOrder = new string[] { "hex", "txid", "hash", "version", "size", "vsize", "locktime", "vin", "vout" };
             JObject obj = ModelToJObject(this.txBlock460373CoinbaseModelVerbose);
             Assert.True(obj.HasValues);
 
             int actualElements = obj.Children().Count();
             string actualHex = obj.Value<string>("hex");
             string actualTxid = obj.Value<string>("txid");
+            string actualHash = obj.Value<string>("hash");
             int? actualSize = obj.Value<int>("size");
+            int? actualVSize = obj.Value<int>("vsize");
             var actualVersion = obj.Value<int?>("version");
             var actualLocktime = obj.Value<int?>("locktime");
             IEnumerable<string> actualPropertyNameOrder = obj.Children().Select(o => (o as JProperty)?.Name);
 
-            Assert.Equal(7, actualElements);
+            Assert.Equal(9, actualElements);
             Assert.Equal(TxBlock460373CoinbaseHex, actualHex);
             Assert.Equal(TxBlock460373CoinbaseHash, actualTxid);
+            Assert.Equal(TxBlock460373CoinbaseHash, actualHash);
             Assert.Equal(160, actualSize);
+            Assert.Equal(160, actualVSize);
             Assert.Equal(1, actualVersion);
             Assert.Equal(0, actualLocktime);
             Assert.Equal(expectedPropertyNameOrder, actualPropertyNameOrder);

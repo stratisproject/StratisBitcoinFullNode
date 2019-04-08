@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
             set
             {
-                this.addressReceiver.Endpoint = value;
+                this.addressReceiver.Endpoint = value ?? throw new InvalidOperationException("Can't set 'AddressReceiver' to null.");
             }
         }
 
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
             set
             {
-                this.addressFrom.Endpoint = value;
+                this.addressFrom.Endpoint = value ?? throw new InvalidOperationException("Can't set 'AddressFrom' to null.");
             }
         }
 

@@ -3,6 +3,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Primitives;
@@ -11,10 +13,8 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
-    /// <summary>
-    /// Mempool observer on chained header block notifications.
-    /// </summary>
-    public class MempoolSignaled : SignalObserver<ChainedHeaderBlock>
+    /// <summary>Mempool observer on chained header block notifications.</summary>
+    public class MempoolSignaled
     {
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Concurrent chain injected dependency.
         /// </summary>
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>
         /// Connection manager injected dependency.
@@ -45,12 +45,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
+        private readonly ISignals signals;
+
+        private SubscriptionToken blockConnectedSubscription;
+
         /// <summary>
         /// Constructs an instance of a MempoolSignaled object.
         /// Starts the block notification loop to memory pool behaviors for connected nodes.
         /// </summary>
         /// <param name="manager">Memory pool manager injected dependency.</param>
-        /// <param name="chain">Concurrent chain injected dependency.</param>
+        /// <param name="chainIndexer">Concurrent chain injected dependency.</param>
         /// <param name="connection">Connection manager injected dependency.</param>
         /// <param name="nodeLifetime">Node lifetime injected dependency.</param>
         /// <param name="asyncLoopFactory">Asynchronous loop factory injected dependency.</param>
@@ -59,18 +63,19 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="validator">The mempool validator.</param>
         /// <param name="mempoolOrphans">The mempool orphan list.</param>
         public MempoolSignaled(
-            MempoolManager manager, 
-            ConcurrentChain chain, 
+            MempoolManager manager,
+            ChainIndexer chainIndexer,
             IConnectionManager connection,
-            INodeLifetime nodeLifetime, 
+            INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory,
             MempoolSchedulerLock mempoolLock,
             ITxMempool memPool,
             IMempoolValidator validator,
-            MempoolOrphans mempoolOrphans)
+            MempoolOrphans mempoolOrphans,
+            ISignals signals)
         {
             this.manager = manager;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.connection = connection;
             this.nodeLifetime = nodeLifetime;
             this.asyncLoopFactory = asyncLoopFactory;
@@ -78,18 +83,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.memPool = memPool;
             this.validator = validator;
             this.mempoolOrphans = mempoolOrphans;
-        }
-
-        /// <inheritdoc />
-        protected override void OnNextCore(ChainedHeaderBlock chainedHeaderBlock)
-        {
-            ChainedHeader blockHeader = chainedHeaderBlock.ChainedHeader;
-
-            Task task = this.RemoveForBlock(chainedHeaderBlock.Block, blockHeader?.Height ?? -1);
-
-            // wait for the mempool code to complete
-            // until the signaler becomes async
-            task.GetAwaiter().GetResult();
+            this.signals = signals;
         }
 
         /// <summary>
@@ -118,6 +112,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         public void Start()
         {
+            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
+
             this.asyncLoop = this.asyncLoopFactory.Run("MemoryPool.RelayWorker", async token =>
             {
                 IReadOnlyNetworkPeerCollection peers = this.connection.ConnectedPeers;
@@ -125,7 +121,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     return;
 
                 // Announce the blocks on each nodes behavior which supports relaying.
-                IEnumerable<MempoolBehavior> behaviors = peers.Where(x => x.PeerVersion?.Relay ?? false).Select(x => x.Behavior<MempoolBehavior>());               
+                IEnumerable<MempoolBehavior> behaviors = peers.Where(x => x.PeerVersion?.Relay ?? false).Select(x => x.Behavior<MempoolBehavior>());
                 foreach (MempoolBehavior behavior in behaviors)
                     await behavior.SendTrickleAsync().ConfigureAwait(false);
             },
@@ -134,8 +130,21 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             startAfter: TimeSpans.TenSeconds);
         }
 
+        private void OnBlockConnected(BlockConnected blockConnected)
+        {
+            ChainedHeaderBlock chainedHeaderBlock = blockConnected.ConnectedBlock;
+            ChainedHeader blockHeader = chainedHeaderBlock.ChainedHeader;
+
+            Task task = this.RemoveForBlock(chainedHeaderBlock.Block, blockHeader?.Height ?? -1);
+
+            // wait for the mempool code to complete
+            // until the signaler becomes async
+            task.GetAwaiter().GetResult();
+        }
+
         public void Stop()
         {
+            this.signals.Unsubscribe(this.blockConnectedSubscription);
             this.asyncLoop?.Dispose();
         }
     }

@@ -1,19 +1,25 @@
 ﻿using System;
 using NBitcoin;
-using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.SmartContracts.Networks;
 
 namespace Stratis.SmartContracts.Tests.Common.MockChain
 {
     public class PoAMockChainFixture : IMockChainFixture, IDisposable
     {
+        private readonly SmartContractNodeBuilder builder;
         public IMockChain Chain { get; }
 
         public PoAMockChainFixture()
         {
-            PoAMockChain mockChain = new PoAMockChain(2).Build();
+            var network = new SmartContractsPoARegTest();
+            this.builder = SmartContractNodeBuilder.Create(this);
+
+            Func<int, CoreNode> factory = (nodeIndex) => builder.CreateSmartContractPoANode(network, nodeIndex).Start();
+            PoAMockChain mockChain = new PoAMockChain(2, factory).Build();
             this.Chain = mockChain;
-            var node1 = this.Chain.Nodes[0];
-            var node2 = this.Chain.Nodes[1];
+            MockChainNode node1 = this.Chain.Nodes[0];
+            MockChainNode node2 = this.Chain.Nodes[1];
 
             // Get premine
             mockChain.MineBlocks(10);
@@ -21,11 +27,11 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             // Send half to other from whoever received premine
             if ((long)node1.WalletSpendableBalance == node1.CoreNode.FullNode.Network.Consensus.PremineReward.Satoshi)
             {
-                PayHalfPremine(node1, node2);
+                this.PayHalfPremine(node1, node2);
             }
             else
             {
-                PayHalfPremine(node2, node1);
+                this.PayHalfPremine(node2, node1);
             }
         }
 
@@ -38,6 +44,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
 
         public void Dispose()
         {
+            this.builder.Dispose();
             this.Chain.Dispose();
         }
     }

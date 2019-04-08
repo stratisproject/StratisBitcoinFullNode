@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <DebugType>Full</DebugType>
+    <CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Stratis.SmartContracts.Networks\Stratis.SmartContracts.Networks.csproj" />
+  </ItemGroup>
+
+</Project>

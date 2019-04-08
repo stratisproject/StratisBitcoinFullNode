@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         public ConnectionManagerSettings ConnectionSettings { get; set; }
 
-        public ConcurrentChain Chain { get; set; }
+        public ChainIndexer ChainIndexer { get; set; }
 
         public Network Network { get; set; }
 
@@ -103,17 +103,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             var consensusSettings = new ConsensusSettings(testChainContext.NodeSettings);
             testChainContext.Checkpoints = new Checkpoints();
-            testChainContext.Chain = new ConcurrentChain(network);
+            testChainContext.ChainIndexer = new ChainIndexer(network);
             testChainContext.ChainState = new ChainState();
             testChainContext.InitialBlockDownloadState = new InitialBlockDownloadState(testChainContext.ChainState, testChainContext.Network, consensusSettings, new Checkpoints());
 
-            var inMemoryCoinView = new InMemoryCoinView(testChainContext.Chain.Tip.HashBlock);
+            var inMemoryCoinView = new InMemoryCoinView(testChainContext.ChainIndexer.Tip.HashBlock);
             var cachedCoinView = new CachedCoinView(inMemoryCoinView, DateTimeProvider.Default, testChainContext.LoggerFactory, new NodeStats(new DateTimeProvider()));
 
             var dataFolder = new DataFolder(TestBase.AssureEmptyDir(dataDir));
             testChainContext.PeerAddressManager =
                 mockPeerAddressManager == null ?
-                    new PeerAddressManager(DateTimeProvider.Default, dataFolder, testChainContext.LoggerFactory, new SelfEndpointTracker(testChainContext.LoggerFactory))
+                    new PeerAddressManager(DateTimeProvider.Default, dataFolder, testChainContext.LoggerFactory, new SelfEndpointTracker(testChainContext.LoggerFactory, testChainContext.ConnectionSettings))
                     : mockPeerAddressManager.Object;
 
             testChainContext.MockConnectionManager = new Mock<IConnectionManager>();
@@ -126,9 +126,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var dateTimeProvider = new DateTimeProvider();
 
             testChainContext.PeerBanning = new PeerBanning(testChainContext.ConnectionManager, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.PeerAddressManager);
-            var deployments = new NodeDeployments(testChainContext.Network, testChainContext.Chain);
+            var deployments = new NodeDeployments(testChainContext.Network, testChainContext.ChainIndexer);
             testChainContext.ConsensusRules = new PowConsensusRuleEngine(testChainContext.Network, testChainContext.LoggerFactory, testChainContext.DateTimeProvider,
-                testChainContext.Chain, deployments, consensusSettings, testChainContext.Checkpoints, cachedCoinView, testChainContext.ChainState,
+                testChainContext.ChainIndexer, deployments, consensusSettings, testChainContext.Checkpoints, cachedCoinView, testChainContext.ChainState,
                     new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider)).Register();
 
             testChainContext.HeaderValidator = new HeaderValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
@@ -136,20 +136,20 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.PartialValidator = new PartialValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
             testChainContext.FullValidator = new FullValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
 
-            var dBreezeSerializer = new DBreezeSerializer(network);
+            var dBreezeSerializer = new DBreezeSerializer(network.Consensus.ConsensusFactory);
 
             var blockRepository = new BlockRepository(testChainContext.Network, dataFolder, testChainContext.LoggerFactory, dBreezeSerializer);
 
             var blockStoreFlushCondition = new BlockStoreQueueFlushCondition(testChainContext.ChainState, testChainContext.InitialBlockDownloadState);
 
-            var blockStore = new BlockStoreQueue(testChainContext.Chain, testChainContext.ChainState, blockStoreFlushCondition, new Mock<StoreSettings>().Object,
+            var blockStore = new BlockStoreQueue(testChainContext.ChainIndexer, testChainContext.ChainState, blockStoreFlushCondition, new Mock<StoreSettings>().Object,
                 blockRepository, testChainContext.LoggerFactory, new Mock<INodeStats>().Object);
 
-            await blockStore.InitializeAsync();
+            blockStore.Initialize();
 
             testChainContext.Consensus = ConsensusManagerHelper.CreateConsensusManager(network, dataDir);
 
-            await testChainContext.Consensus.InitializeAsync(testChainContext.Chain.Tip);
+            await testChainContext.Consensus.InitializeAsync(testChainContext.ChainIndexer.Tip);
 
             return testChainContext;
         }
@@ -211,9 +211,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 testChainContext.DateTimeProvider, testChainContext.LoggerFactory as LoggerFactory, mempool, mempoolLock,
                 new MinerSettings(testChainContext.NodeSettings), testChainContext.Network, testChainContext.ConsensusRules);
 
-            BlockTemplate newBlock = blockAssembler.Build(testChainContext.Chain.Tip, scriptPubKey);
+            BlockTemplate newBlock = blockAssembler.Build(testChainContext.ChainIndexer.Tip, scriptPubKey);
 
-            int nHeight = testChainContext.Chain.Tip.Height + 1; // Height first in coinbase required for block.version=2
+            int nHeight = testChainContext.ChainIndexer.Tip.Height + 1; // Height first in coinbase required for block.version=2
             Transaction txCoinbase = newBlock.Block.Transactions[0];
             txCoinbase.Inputs[0] = TxIn.CreateCoinbase(nHeight);
             return newBlock;

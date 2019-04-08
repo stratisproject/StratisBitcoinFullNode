@@ -26,8 +26,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var bitcoinNoValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner);
-                var minerB = builder.CreateStratisPowNode(bitcoinNoValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cmfr-1-minerA").WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner);
+                var minerB = builder.CreateStratisPowNode(bitcoinNoValidationRulesNetwork, "cmfr-1-minerB").NoValidation().WithDummyWallet().Start();
 
                 ChainedHeader minerBChainTip = null;
                 bool interceptorsEnabled = false;
@@ -82,9 +82,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                     }
                 }
 
+                minerA.Start();
                 minerA.SetConnectInterceptor(interceptorConnect);
                 minerA.SetDisconnectInterceptor(interceptorDisconnect);
-                minerA.Start();
 
                 // Miner B syncs with Miner A
                 TestHelper.ConnectAndSync(minerB, minerA);
@@ -129,8 +129,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var bitcoinNoValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                var minerB = builder.CreateStratisPowNode(bitcoinNoValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cmfr-2-minerA").WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                var minerB = builder.CreateStratisPowNode(bitcoinNoValidationRulesNetwork, "cmfr-2-minerB").NoValidation().WithDummyWallet().Start();
 
                 // Miner B syncs with Miner A
                 TestHelper.ConnectAndSync(minerB, minerA);
@@ -199,11 +199,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                     }
                 }
 
+                minerA.Restart();
                 minerA.SetConnectInterceptor(interceptorConnect);
                 minerA.SetDisconnectInterceptor(interceptorDisconnect);
-                minerA.Restart();
 
-                TestHelper.Connect(minerA, minerB);
+                TestHelper.ConnectNoCheck(minerA, minerB);
 
                 // Wait until Miner A disconnected its own chain so that it can connect to
                 // Miner B's longer chain.
@@ -227,9 +227,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var noValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
-                var syncer = builder.CreateStratisPowNode(this.powNetwork).Start();
-                var minerB = builder.CreateStratisPowNode(noValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cmfr-3-minerA").WithDummyWallet().Start();
+                var syncer = builder.CreateStratisPowNode(this.powNetwork, "cmfr-3-syncer").Start();
+                var minerB = builder.CreateStratisPowNode(noValidationRulesNetwork, "cmfr-3-minerB").NoValidation().WithDummyWallet().Start();
 
                 // MinerA mines 5 blocks
                 TestHelper.MineBlocks(minerA, 5);
@@ -257,13 +257,13 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Block 8 = invalid
                 await TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(8, (coreNode, block) => BlockBuilder.InvalidCoinbaseReward(coreNode, block)).BuildAsync();
 
-                // Reconnect syncer to minerB causing the following to happen: 
+                // Reconnect syncer to minerB causing the following to happen:
                 // Reorg from blocks 9 to 5.
                 // Connect blocks 5 to 10
                 // Block 8 fails.
                 // Reorg from 7 to 5
                 // Reconnect blocks 6 to 9
-                TestHelper.Connect(syncer, minerB);
+                TestHelper.ConnectNoCheck(syncer, minerB);
 
                 TestHelper.AreNodesSynced(minerA, syncer);
 
@@ -280,8 +280,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var noValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                var minerB = builder.CreateStratisPowNode(noValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cmfr-4-minerA").WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                var minerB = builder.CreateStratisPowNode(noValidationRulesNetwork, "cmfr-4-minerB").NoValidation().WithDummyWallet().Start();
 
                 // Miner B syncs with Miner A
                 TestHelper.ConnectAndSync(minerB, minerA);
@@ -316,8 +316,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var noValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                var minerB = builder.CreateStratisPowNode(noValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cmfr-5-minerA").WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                var minerB = builder.CreateStratisPowNode(noValidationRulesNetwork, "cmfr-5-minerB").NoValidation().WithDummyWallet().Start();
 
                 // Miner B syncs with Miner A
                 TestHelper.ConnectAndSync(minerB, minerA);
@@ -335,7 +335,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var minerBTip = await TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(14, (coreNode, block) => BlockBuilder.InvalidDuplicateCoinbase(coreNode, block)).BuildAsync();
 
                 // Reconnect Miner A to Miner B.
-                TestHelper.Connect(minerA, minerB);
+                TestHelper.ConnectNoCheck(minerA, minerB);
 
                 // Miner A will disconnect Miner B
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerB));
@@ -351,7 +351,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         /// <summary>
         /// The chain that will be reconnected to has 4 blocks and 4 headers from fork point:
-        /// 
+        ///
         /// 6 -> Full Block
         /// 7 -> Full Block
         /// 8 -> Full Block
@@ -368,9 +368,13 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var noValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                var minerB = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
-                var minerC = builder.CreateStratisPowNode(noValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cmfr-6-minerA").WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPowNode(this.powNetwork, "cmfr-6-minerB").WithDummyWallet().Start();
+                var minerC = builder.CreateStratisPowNode(noValidationRulesNetwork, "cmfr-6-minerC").NoValidation().WithDummyWallet().Start();
+
+                // Mine 10 blocks with minerA. We cannot use a premade chain as it adversely affects the max tip age calculation, causing sporadic sync errors.
+                TestHelper.MineBlocks(minerA, 10);
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 10);
 
                 // MinerB and MinerC syncs with MinerA
                 TestHelper.ConnectAndSync(minerA, minerB, minerC);
@@ -397,7 +401,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 await TestHelper.BuildBlocks.OnNode(minerC).Amount(5).Invalid(13, (coreNode, block) => BlockBuilder.InvalidCoinbaseReward(coreNode, block)).BuildAsync();
 
                 // Reconnect MinerA to MinerC.
-                TestHelper.Connect(minerA, minerC);
+                TestHelper.ConnectNoCheck(minerA, minerC);
 
                 // MinerC should be disconnected from MinerA
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerC));

@@ -181,7 +181,7 @@ namespace Stratis.Bitcoin.Features.Dns
                 else
                 {
                     // Seed with SOA and NS resource records when this is a new masterfile.
-                    this.SeedMasterFile();
+                    this.SeedMasterFile(this.MasterFile);
                 }
             }
 
@@ -255,17 +255,18 @@ namespace Stratis.Bitcoin.Features.Dns
         /// masterfile is swapped for efficiency, rather than applying a merge operation to the existing masterfile, or clearing the existing
         /// masterfile and re-adding the peer entries (which could cause some interim DNS resolve requests to fail).
         /// </remarks>
-        /// <param name="masterFile">The new masterfile to swap in.</param>
-        public void SwapMasterfile(IMasterFile masterFile)
+        /// <param name="newMasterFile">The new masterfile to swap in.</param>
+        public void SwapMasterfile(IMasterFile newMasterFile)
         {
-            Guard.NotNull(masterFile, nameof(masterFile));
+            Guard.NotNull(newMasterFile, nameof(newMasterFile));
+
+            // Seed the new masterfile with SOA and NS resource records.
+            this.SeedMasterFile(newMasterFile);
 
             lock (this.masterFileLock)
             {
-                this.masterFile = masterFile;
-
-                // Seed with SOA and NS resource records when this is a new masterfile.
-                this.SeedMasterFile();
+                // Perform the swap after seeding to avoid modifying the current masterfile.
+                this.masterFile = newMasterFile;
             }
         }
 
@@ -425,27 +426,14 @@ namespace Stratis.Bitcoin.Features.Dns
         }
 
         /// <summary>
-        /// Seeds the masterfile with the SOA and NS DNS records with the DNS specific settings.
+        /// Seeds the given masterfile with the SOA and NS DNS records with the DNS specific settings.
         /// </summary>
-        private void SeedMasterFile()
+        /// <param name="masterFile"></param>
+        private void SeedMasterFile(IMasterFile masterFile)
         {
             this.logger.LogInformation("Seeding DNS masterfile with SOA and NS resource records: Host = {0}, Nameserver = {1}, Mailbox = {2}", this.dnsSettings.DnsHostName, this.dnsSettings.DnsNameServer, this.dnsSettings.DnsMailBox);
 
-            // Check if SOA record exists for host.
-            int count = this.MasterFile.Get(new Question(new Domain(this.dnsSettings.DnsHostName), RecordType.SOA)).Count;
-            if (count == 0)
-            {
-                // Add SOA record for host.
-                this.MasterFile.Add(new StartOfAuthorityResourceRecord(new Domain(this.dnsSettings.DnsHostName), new Domain(this.dnsSettings.DnsNameServer), new Domain(this.dnsSettings.DnsMailBox.Replace('@', '.'))));
-            }
-
-            // Check if NS record exists for host.
-            count = this.MasterFile.Get(new Question(new Domain(this.dnsSettings.DnsHostName), RecordType.NS)).Count;
-            if (count == 0)
-            {
-                // Add NS record for host.
-                this.MasterFile.Add(new NameServerResourceRecord(new Domain(this.dnsSettings.DnsHostName), new Domain(this.dnsSettings.DnsNameServer)));
-            }
+            masterFile.Seed(this.dnsSettings);
         }
 
         /// <summary>

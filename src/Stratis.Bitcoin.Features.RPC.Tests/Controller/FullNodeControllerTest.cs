@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.RPC.Controllers;
+using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
@@ -25,7 +26,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 {
     public class FullNodeControllerTest : LogsTestBase
     {
-        private ConcurrentChain chain;
+        private ChainIndexer chain;
         private readonly Mock<INodeLifetime> nodeLifeTime;
         private readonly Mock<IFullNode> fullNode;
         private readonly Mock<IChainState> chainState;
@@ -80,20 +81,26 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         }
 
         [Fact]
-        public async Task GetRawTransactionAsync_TransactionCannotBeFound_ReturnsNullAsync()
+        public async Task GetRawTransactionAsync_TransactionCannotBeFound_ThrowsExceptionAsync()
         {
             var txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync((Transaction)null)
                 .Verifiable();
 
-            this.blockStore.Setup(b => b.GetTransactionByIdAsync(txId))
-                .ReturnsAsync((Transaction)null)
+            this.blockStore.Setup(b => b.GetTransactionById(txId))
+                .Returns((Transaction)null)
                 .Verifiable();
 
-            TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
+            RPCServerException exception = await Assert.ThrowsAsync<RPCServerException>(async () =>
+            {
+                TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
+            });
 
-            Assert.Null(result);
+            Assert.NotNull(exception);
+            Assert.Equal("No such mempool transaction. Use -txindex to enable blockchain transaction queries.", exception.Message);
+            this.blockStore.Verify();
+
             this.pooledTransaction.Verify();
             this.blockStore.Verify();
         }
@@ -106,8 +113,8 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 .ReturnsAsync((Transaction)null);
 
             Transaction transaction = this.CreateTransaction();
-            this.blockStore.Setup(b => b.GetTransactionByIdAsync(txId))
-                .ReturnsAsync(transaction);
+            this.blockStore.Setup(b => b.GetTransactionById(txId))
+                .Returns(transaction);
 
             TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
 
@@ -122,8 +129,8 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             var txId = new uint256(12142124);
 
             Transaction transaction = this.CreateTransaction();
-            this.blockStore.Setup(b => b.GetTransactionByIdAsync(txId))
-                .ReturnsAsync(transaction);
+            this.blockStore.Setup(b => b.GetTransactionById(txId))
+                .Returns(transaction);
             this.controller = new FullNodeController(this.LoggerFactory.Object, null, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object, this.consensusManager.Object, this.blockStore.Object);
 
@@ -139,33 +146,39 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         {
             var txId = new uint256(12142124);
 
-            this.blockStore.Setup(f => f.GetTransactionByIdAsync(txId))
-                .ReturnsAsync((Transaction)null)
+            this.blockStore.Setup(f => f.GetTransactionById(txId))
+                .Returns((Transaction)null)
                 .Verifiable();
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, null, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object, this.consensusManager.Object, this.blockStore.Object);
 
-            TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
+            RPCServerException exception = await Assert.ThrowsAsync<RPCServerException>(async () =>
+            {
+                TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
+            });
 
-            Assert.Null(result);
+            Assert.NotNull(exception);
+            Assert.Equal("No such mempool transaction. Use -txindex to enable blockchain transaction queries.", exception.Message);
             this.blockStore.Verify();
         }
 
         [Fact]
         public async Task GetTaskAsync_Verbose_ReturnsTransactionVerboseModelAsync()
         {
+            // Add the 'txindex' setting, otherwise the transactions won't be found.
+            this.nodeSettings.ConfigReader.MergeInto(new TextFileConfiguration("-txindex=1"));
             this.chainState.Setup(c => c.ConsensusTip)
                 .Returns(this.chain.Tip);
-            ChainedHeader block = this.chain.GetBlock(1);
+            ChainedHeader block = this.chain.GetHeader(1);
 
             Transaction transaction = this.CreateTransaction();
             var txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync(transaction);
 
-            this.blockStore.Setup(b => b.GetBlockIdByTransactionIdAsync(txId))
-                .ReturnsAsync(block.HashBlock);
+            this.blockStore.Setup(b => b.GetBlockIdByTransactionId(txId))
+                .Returns(block.HashBlock);
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object, this.consensusManager.Object, this.blockStore.Object);
@@ -205,14 +218,14 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public async Task GetTaskAsync_Verbose_ChainStateTipNull_DoesNotCalulateConfirmationsAsync()
         {
-            ChainedHeader block = this.chain.GetBlock(1);
+            ChainedHeader block = this.chain.GetHeader(1);
             Transaction transaction = this.CreateTransaction();
             var txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync(transaction);
 
-            this.blockStore.Setup(b => b.GetBlockIdByTransactionIdAsync(txId))
-                .ReturnsAsync(block.HashBlock);
+            this.blockStore.Setup(b => b.GetBlockIdByTransactionId(txId))
+                .Returns(block.HashBlock);
 
             TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 1).ConfigureAwait(false);
 
@@ -224,14 +237,14 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public async Task GetTaskAsync_Verbose_BlockNotFoundOnChain_ReturnsTransactionVerboseModelWithoutBlockInformationAsync()
         {
-            ChainedHeader block = this.chain.GetBlock(1);
+            ChainedHeader block = this.chain.GetHeader(1);
             Transaction transaction = this.CreateTransaction();
             var txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync(transaction);
 
-            this.blockStore.Setup(b => b.GetBlockIdByTransactionIdAsync(txId))
-                .ReturnsAsync((uint256)null);
+            this.blockStore.Setup(b => b.GetBlockIdByTransactionId(txId))
+                .Returns((uint256)null);
 
             TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 1).ConfigureAwait(false);
 
@@ -386,7 +399,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         public void GetBlockCount_ReturnsHeightFromConsensusLoopTip()
         {
             this.consensusManager.Setup(c => c.Tip)
-                .Returns(this.chain.GetBlock(2));
+                .Returns(this.chain.GetHeader(2));
 
             var serviceProvider = new Mock<IServiceProvider>();
             serviceProvider.Setup(s => s.GetService(typeof(IConsensusManager)))
@@ -525,22 +538,13 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         }
 
         [Fact]
-        public void GetBlockHeader_NotUsingJsonFormat_ThrowsNotImplementedException()
-        {
-            Assert.Throws<NotImplementedException>(() =>
-            {
-                this.controller.GetBlockHeader("", false);
-            });
-        }
-
-        [Fact]
         public void GetBlockHeader_ChainNull_ReturnsNull()
         {
             this.chain = null;
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
-            BlockHeaderModel result = this.controller.GetBlockHeader("", true);
+            BlockHeaderModel result = (BlockHeaderModel)this.controller.GetBlockHeader("", true);
 
             Assert.Null(result);
         }
@@ -549,10 +553,10 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void GetBlockHeader_BlockHeaderFound_ReturnsBlockHeaderModel()
         {
-            ChainedHeader block = this.chain.GetBlock(2);
+            ChainedHeader block = this.chain.GetHeader(2);
             string bits = GetBlockHeaderBits(block.Header);
 
-            BlockHeaderModel result = this.controller.GetBlockHeader(block.HashBlock.ToString(), true);
+            BlockHeaderModel result = (BlockHeaderModel)this.controller.GetBlockHeader(block.HashBlock.ToString(), true);
 
             Assert.NotNull(result);
             Assert.Equal((uint)block.Header.Version, result.Version);
@@ -566,7 +570,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void GetBlockHeader_BlockHeaderNotFound_ReturnsNull()
         {
-            BlockHeaderModel result = this.controller.GetBlockHeader(new uint256(2562).ToString(), true);
+            BlockHeaderModel result = (BlockHeaderModel)this.controller.GetBlockHeader(new uint256(2562).ToString(), true);
 
             Assert.Null(result);
         }

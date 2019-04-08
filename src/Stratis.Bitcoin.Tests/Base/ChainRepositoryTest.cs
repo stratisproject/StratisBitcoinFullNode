@@ -17,14 +17,14 @@ namespace Stratis.Bitcoin.Tests.Base
 
         public ChainRepositoryTest() : base(KnownNetworks.StratisRegTest)
         {
-            this.dBreezeSerializer = new DBreezeSerializer(this.Network);
+            this.dBreezeSerializer = new DBreezeSerializer(this.Network.Consensus.ConsensusFactory);
         }
 
         [Fact]
         public void SaveWritesChainToDisk()
         {
             string dir = CreateTestDir(this);
-            var chain = new ConcurrentChain(KnownNetworks.StratisRegTest);
+            var chain = new ChainIndexer(KnownNetworks.StratisRegTest);
             this.AppendBlock(chain);
 
             using (var repo = new ChainRepository(dir, new LoggerFactory(), this.dBreezeSerializer))
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Tests.Base
         public void GetChainReturnsConcurrentChainFromDisk()
         {
             string dir = CreateTestDir(this);
-            var chain = new ConcurrentChain(KnownNetworks.StratisRegTest);
+            var chain = new ChainIndexer(KnownNetworks.StratisRegTest);
             ChainedHeader tip = this.AppendBlock(chain);
 
             using (var engine = new DBreezeEngine(dir))
@@ -76,17 +76,17 @@ namespace Stratis.Bitcoin.Tests.Base
             }
             using (var repo = new ChainRepository(dir, new LoggerFactory(), this.dBreezeSerializer))
             {
-                var testChain = new ConcurrentChain(KnownNetworks.StratisRegTest);
+                var testChain = new ChainIndexer(KnownNetworks.StratisRegTest);
                 testChain.SetTip(repo.LoadAsync(testChain.Genesis).GetAwaiter().GetResult());
                 Assert.Equal(tip, testChain.Tip);
             }
         }
 
-        public ChainedHeader AppendBlock(ChainedHeader previous, params ConcurrentChain[] chains)
+        public ChainedHeader AppendBlock(ChainedHeader previous, params ChainIndexer[] chainsIndexer)
         {
             ChainedHeader last = null;
             uint nonce = RandomUtils.GetUInt32();
-            foreach (ConcurrentChain chain in chains)
+            foreach (ChainIndexer chain in chainsIndexer)
             {
                 Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
                 block.AddTransaction(this.Network.CreateTransaction());
@@ -99,10 +99,10 @@ namespace Stratis.Bitcoin.Tests.Base
             return last;
         }
 
-        private ChainedHeader AppendBlock(params ConcurrentChain[] chains)
+        private ChainedHeader AppendBlock(params ChainIndexer[] chainsIndexer)
         {
             ChainedHeader index = null;
-            return this.AppendBlock(index, chains);
+            return this.AppendBlock(index, chainsIndexer);
         }
     }
 }

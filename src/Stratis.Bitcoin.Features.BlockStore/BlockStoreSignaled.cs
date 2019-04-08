@@ -6,6 +6,8 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Primitives;
@@ -14,7 +16,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    public class BlockStoreSignaled : SignalObserver<ChainedHeaderBlock>
+    public class BlockStoreSignaled : IDisposable
     {
         private readonly IBlockStoreQueue blockStoreQueue;
 
@@ -42,6 +44,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Task that runs <see cref="DequeueContinuouslyAsync"/>.</summary>
         private readonly Task dequeueLoopTask;
 
+        private readonly ISignals signals;
+
+        private SubscriptionToken blockConnectedSubscription;
+
         public BlockStoreSignaled(
             IBlockStoreQueue blockStoreQueue,
             StoreSettings storeSettings,
@@ -49,7 +55,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IConnectionManager connection,
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
-            IInitialBlockDownloadState initialBlockDownloadState)
+            IInitialBlockDownloadState initialBlockDownloadState,
+            ISignals signals)
         {
             this.blockStoreQueue = blockStoreQueue;
             this.chainState = chainState;
@@ -58,13 +65,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.storeSettings = storeSettings;
             this.initialBlockDownloadState = initialBlockDownloadState;
+            this.signals = signals;
 
             this.blocksToAnnounce = new AsyncQueue<ChainedHeader>();
             this.dequeueLoopTask = this.DequeueContinuouslyAsync();
         }
 
-        protected override void OnNextCore(ChainedHeaderBlock blockPair)
+        public void Initialize()
         {
+            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
+        }
+
+        private void OnBlockConnected(BlockConnected blockConnected)
+        {
+            ChainedHeaderBlock blockPair = blockConnected.ConnectedBlock;
+
             ChainedHeader chainedHeader = blockPair.ChainedHeader;
             if (chainedHeader == null)
             {
@@ -231,13 +246,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        protected override void Dispose(bool disposing)
+        public void Dispose()
         {
             // Let current batch sending task finish.
             this.blocksToAnnounce.Dispose();
             this.dequeueLoopTask.GetAwaiter().GetResult();
 
-            base.Dispose(disposing);
+            this.signals.Unsubscribe(this.blockConnectedSubscription);
         }
     }
 }

@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Minimum number of 'votes' required within the conformation window to reach 'LockedIn' state.
                 network.Consensus.RuleChangeActivationThreshold = 8;
 
-                CoreNode stratisNode = builder.CreateStratisPosNode(network).WithWallet();
+                CoreNode stratisNode = builder.CreateStratisPosNode(network, "cs-1-stratisNode").WithWallet();
                 stratisNode.Start();
 
                 // ColdStaking activation:
@@ -63,19 +63,19 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Check that coldstaking states got updated as expected.
                 ThresholdConditionCache cache = (stratisNode.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine).NodeDeployments.BIP9;
-                Assert.Equal(ThresholdState.Defined, cache.GetState(stratisNode.FullNode.Chain.GetBlock(startedHeight - 1), StratisBIP9Deployments.ColdStaking));
-                Assert.Equal(ThresholdState.Started, cache.GetState(stratisNode.FullNode.Chain.GetBlock(startedHeight), StratisBIP9Deployments.ColdStaking));
-                Assert.Equal(ThresholdState.LockedIn, cache.GetState(stratisNode.FullNode.Chain.GetBlock(lockedInHeight), StratisBIP9Deployments.ColdStaking));
-                Assert.Equal(ThresholdState.Active, cache.GetState(stratisNode.FullNode.Chain.GetBlock(activeHeight), StratisBIP9Deployments.ColdStaking));
+                Assert.Equal(ThresholdState.Defined, cache.GetState(stratisNode.FullNode.ChainIndexer.GetHeader(startedHeight - 1), StratisBIP9Deployments.ColdStaking));
+                Assert.Equal(ThresholdState.Started, cache.GetState(stratisNode.FullNode.ChainIndexer.GetHeader(startedHeight), StratisBIP9Deployments.ColdStaking));
+                Assert.Equal(ThresholdState.LockedIn, cache.GetState(stratisNode.FullNode.ChainIndexer.GetHeader(lockedInHeight), StratisBIP9Deployments.ColdStaking));
+                Assert.Equal(ThresholdState.Active, cache.GetState(stratisNode.FullNode.ChainIndexer.GetHeader(activeHeight), StratisBIP9Deployments.ColdStaking));
 
                 // Verify that the block created before activation does not have the 'CheckColdStakeVerify' flag set.
                 var rulesEngine = stratisNode.FullNode.NodeService<IConsensusRuleEngine>();
-                ChainedHeader prevHeader = stratisNode.FullNode.Chain.GetBlock(activeHeight - 1);
+                ChainedHeader prevHeader = stratisNode.FullNode.ChainIndexer.GetHeader(activeHeight - 1);
                 DeploymentFlags flags1 = (rulesEngine as ConsensusRuleEngine).NodeDeployments.GetFlags(prevHeader);
                 Assert.Equal(0, (int)(flags1.ScriptFlags & ScriptVerify.CheckColdStakeVerify));
 
                 // Verify that the block created after activation has the 'CheckColdStakeVerify' flag set.
-                DeploymentFlags flags2 = (rulesEngine as ConsensusRuleEngine).NodeDeployments.GetFlags(stratisNode.FullNode.Chain.Tip);
+                DeploymentFlags flags2 = (rulesEngine as ConsensusRuleEngine).NodeDeployments.GetFlags(stratisNode.FullNode.ChainIndexer.Tip);
                 Assert.NotEqual(0, (int)(flags2.ScriptFlags & ScriptVerify.CheckColdStakeVerify));
             }
         }

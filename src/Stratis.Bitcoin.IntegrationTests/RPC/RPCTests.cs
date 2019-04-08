@@ -1,5 +1,7 @@
 using System;
 using System.Net;
+using System.Threading.Tasks;
+using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.RPC;
@@ -142,7 +144,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         [Fact]
         public void CanGetGetBestBlockHashFromRPC()
         {
-            uint256 expected = this.rpcTestFixture.Node.FullNode.Chain.Tip.Header.GetHash();
+            uint256 expected = this.rpcTestFixture.Node.FullNode.ChainIndexer.Tip.Header.GetHash();
 
             uint256 response = this.rpcTestFixture.RpcClient.GetBestBlockHash();
 
@@ -156,7 +158,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         public void CanGetBlockHeaderFromRPC()
         {
             uint256 hash = this.rpcTestFixture.RpcClient.GetBlockHash(0);
-            BlockHeader expectedHeader = this.rpcTestFixture.Node.FullNode.Chain?.GetBlock(hash)?.Header;
+            BlockHeader expectedHeader = this.rpcTestFixture.Node.FullNode.ChainIndexer?.GetHeader(hash)?.Header;
             BlockHeader actualHeader = this.rpcTestFixture.RpcClient.GetBlockHeader(0);
 
             // Assert block header fields match.
@@ -253,7 +255,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         }
 
         [Fact]
-        public async void TestRpcBatchAsync()
+        public async Task TestRpcBatchAsync()
         {
             var rpcBatch = this.rpcTestFixture.RpcClient.PrepareBatch();
             var rpc1 = rpcBatch.SendCommandAsync("getpeerinfo");
@@ -265,6 +267,25 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             var response2 = await rpc2;
             var response2AsString = response2.ResultString;
             Assert.False(string.IsNullOrEmpty(response2AsString));
+        }
+
+        [Fact]
+        public async Task TestRpcBatchWithUnknownMethodsReturnsArrayAsync()
+        {
+            var rpcBatch = this.rpcTestFixture.RpcClient.PrepareBatch();
+            var unknownRpc = rpcBatch.SendCommandAsync("unknownmethod", "random");
+            var address = new Key().ScriptPubKey.WitHash.ScriptPubKey.GetDestinationAddress(rpcBatch.Network);
+            var knownRpc = rpcBatch.SendCommandAsync("validateaddress",address.ToString());
+
+            await rpcBatch.SendBatchAsync();
+
+            Func<Task> unknownRpcMethod = async () => { await unknownRpc; };
+
+            unknownRpcMethod.Should().Throw<RPCException>().Which.RPCCode.Should().Be(RPCErrorCode.RPC_METHOD_NOT_FOUND);
+
+            var knownRpcResponse = await knownRpc;
+            var knownRpcResponseAsString = knownRpcResponse.ResultString;
+            Assert.False(string.IsNullOrEmpty(knownRpcResponseAsString));
         }
 
         // TODO: implement the RPC methods used below

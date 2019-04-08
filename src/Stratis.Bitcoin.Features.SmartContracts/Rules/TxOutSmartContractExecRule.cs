@@ -4,7 +4,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
-using SmartContractScript = Stratis.SmartContracts.Core.SmartContractScript;
+using Stratis.SmartContracts.Core;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             foreach (Transaction transaction in block.Transactions)
             {
-                CheckTransaction(transaction);
+                this.CheckTransaction(transaction);
             }
 
             return Task.CompletedTask;
@@ -27,12 +27,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
         public void CheckTransaction(MempoolValidationContext context)
         {
-            CheckTransaction(context.Transaction);
+            this.CheckTransaction(context.Transaction);
         }
 
         private void CheckTransaction(Transaction transaction)
         {
-            var smartContractExecCount = transaction.Outputs.Count(o => SmartContractScript.IsSmartContractExec(o.ScriptPubKey));
+            int smartContractExecCount = transaction.Outputs.Count(o => o.ScriptPubKey.IsSmartContractExec());
+
+            if ((transaction.IsCoinBase)  && smartContractExecCount > 0)
+                new ConsensusError("smartcontractexec-in-coinbase", "coinbase contains smartcontractexec output").Throw();
+
             if (smartContractExecCount > 1)
                 new ConsensusError("multiple-smartcontractexec-outputs", "transaction contains multiple smartcontractexec outputs").Throw();
         }

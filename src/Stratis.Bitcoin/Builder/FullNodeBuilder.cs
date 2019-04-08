@@ -165,6 +165,8 @@ namespace Stratis.Bitcoin.Builder
             // Print command-line help
             if (this.NodeSettings?.PrintHelpAndExit ?? false)
             {
+                NodeSettings.PrintHelp(this.Network);
+
                 foreach (IFeatureRegistration featureRegistration in this.Features.FeatureRegistrations)
                 {
                     MethodInfo printHelp = featureRegistration.FeatureType.GetMethod("PrintHelp", BindingFlags.Public | BindingFlags.Static);

@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         private readonly bool isGateway;
 
         public ProvenHeadersConsensusManagerBehavior(
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             IInitialBlockDownloadState initialBlockDownloadState,
             IConsensusManager consensusManager,
             IPeerBanning peerBanning,
@@ -54,9 +54,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             IChainState chainState,
             ICheckpoints checkpoints,
             IProvenBlockHeaderStore provenBlockHeaderStore,
-            ConnectionManagerSettings connectionManagerSettings) : base(chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
+            ConnectionManagerSettings connectionManagerSettings) : base(chainIndexer, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
         {
-            this.chain = chain;
+            this.ChainIndexer = chainIndexer;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.consensusManager = consensusManager;
             this.peerBanning = peerBanning;
@@ -81,6 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// </summary>
         /// <param name="peer">Peer from which the message was received.</param>
         /// <param name="message">Received message to process.</param>
+        [NoTrace]
         protected override async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             switch (message.Message.Payload)
@@ -135,11 +136,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             {
                 var headersPayload = base.ConstructHeadersPayload(getHeadersPayload, out lastHeader) as HeadersPayload;
 
+                if (headersPayload == null)
+                {
+                    this.logger.LogTrace("(-)[INVALID_LOCATOR]:null");
+                    return null;
+                }
+
                 for (int i = 0; i < headersPayload.Headers.Count; i++)
                 {
                     if (headersPayload.Headers[i] is ProvenBlockHeader phHeader)
                     {
-                        BlockHeader newHeader = this.chain.Network.Consensus.ConsensusFactory.CreateBlockHeader();
+                        BlockHeader newHeader = this.ChainIndexer.Network.Consensus.ConsensusFactory.CreateBlockHeader();
                         newHeader.Bits = phHeader.Bits;
                         newHeader.Time = phHeader.Time;
                         newHeader.Nonce = phHeader.Nonce;
@@ -154,7 +161,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 return headersPayload;
             }
 
-            ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
+            ChainedHeader fork = this.ChainIndexer.FindFork(getHeadersPayload.BlockLocator);
             lastHeader = null;
 
             if (fork == null)
@@ -211,7 +218,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         public override object Clone()
         {
             return new ProvenHeadersConsensusManagerBehavior(
-                this.chain,
+                this.ChainIndexer,
                 this.initialBlockDownloadState,
                 this.consensusManager,
                 this.peerBanning,
