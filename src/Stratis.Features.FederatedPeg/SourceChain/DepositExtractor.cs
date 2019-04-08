@@ -39,6 +39,11 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         public IReadOnlyList<IDeposit> ExtractDepositsFromBlock(Block block, int blockHeight)
         {
             var deposits = new List<IDeposit>();
+
+            // If it's an empty block, there's no deposits inside.
+            if (block.Transactions.Count <= 1)
+                return deposits;
+
             uint256 blockHash = block.GetHash();
 
             foreach (Transaction transaction in block.Transactions)
@@ -56,6 +61,10 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         /// <inheritdoc />
         public IDeposit ExtractDepositFromTransaction(Transaction transaction, int blockHeight, uint256 blockHash)
         {
+            // We don't need to go into all the outputs for coinbases.
+            if (transaction.IsCoinBase)
+                return null;
+
             List<TxOut> depositsToMultisig = transaction.Outputs.Where(output =>
                 output.ScriptPubKey == this.depositScript
                 && output.Value > this.settings.TransactionFee).ToList();
