@@ -109,13 +109,12 @@ namespace Stratis.Bitcoin.Connection
             List<PeerAddress> peerAddresses = this.peerAddressManager.FindPeersByIp(endpoint);
             if (peerAddresses.Count == 0)
             {
-                this.peerAddressManager.AddPeer(endpoint, IPAddress.Loopback);
-                PeerAddress address = this.peerAddressManager.FindPeer(endpoint);
+                PeerAddress address = this.peerAddressManager.AddPeer(endpoint, IPAddress.Loopback);
 
+                // The address could not have been added to the address manager due to it being routable.
                 if (address != null)
                 {
                     peerAddresses.Add(address);
-
                     this.logger.LogTrace("{0} added to the address manager.");
                 }
             }

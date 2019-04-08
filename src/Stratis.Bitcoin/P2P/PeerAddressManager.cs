@@ -91,22 +91,24 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void AddPeer(IPEndPoint endPoint, IPAddress source)
+        public PeerAddress AddPeer(IPEndPoint endPoint, IPAddress source)
         {
-            this.AddPeerWithoutCleanup(endPoint, source);
+            PeerAddress peerAddress = this.AddPeerWithoutCleanup(endPoint, source);
 
             this.EnsureMaxItemsPerSource(source);
+
+            return peerAddress;
         }
 
-        private void AddPeerWithoutCleanup(IPEndPoint endPoint, IPAddress source)
+        private PeerAddress AddPeerWithoutCleanup(IPEndPoint endPoint, IPAddress source)
         {
             if (!endPoint.Address.IsRoutable(true))
-                return;
+                return null;
 
             IPEndPoint ipv6EndPoint = endPoint.MapToIpv6();
 
             PeerAddress peerToAdd = PeerAddress.Create(ipv6EndPoint, source.MapToIPv6());
-            this.peerInfoByPeerAddress.TryAdd(ipv6EndPoint, peerToAdd);
+            return this.peerInfoByPeerAddress.TryAdd(ipv6EndPoint, peerToAdd) ? peerToAdd : null;
         }
 
         /// <inheritdoc/>
