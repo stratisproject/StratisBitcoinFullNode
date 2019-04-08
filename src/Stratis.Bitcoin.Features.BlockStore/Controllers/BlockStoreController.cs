@@ -57,9 +57,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         }
 
         /// <summary>
-        /// Retrieves a given block given a block hash.
+        /// Retrieves the block which matches the supplied block hash.
         /// </summary>
-        /// <param name="query">A <see cref="SearchByHashRequest"/> model with a specific hash.</param>
+        /// <param name="query">An object containing the necessary parameters to search for a block.</param>
         /// <returns><see cref="BlockModel"/> if block is found, <see cref="NotFoundObjectResult"/> if not found. Returns <see cref="IActionResult"/> with error information if exception thrown.</returns>
         [Route("block")]
         [HttpGet]
@@ -97,8 +97,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
         /// <summary>
         /// Gets the current consensus tip height.
-        /// API implementation of RPC call.
         /// </summary>
+        /// <remarks>This is an API implementation of an RPC call.</remarks>
         /// <returns>The current tip height. Returns <c>null</c> if fails. Returns <see cref="IActionResult"/> with error information if exception thrown.</returns>
         [Route("getblockcount")]
         [HttpGet]

@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         /// <summary>
-        /// Processes a RPCRequest.
+        /// Processes a Remote Procedural Call.
         /// </summary>
         /// <param name="request">The request to process.</param>
         /// <returns></returns>
@@ -88,9 +88,9 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         /// <summary>
-        /// Call an RPC method by name.
+        /// Makes a Remote Procedural Call method by name.
         /// </summary>
-        /// <param name="body">The request to process.</param>
+        /// <param name="body">A JObject containing the name of the method to process.</param>
         /// <returns>A JSON result that varies depending on the RPC method.</returns>
         [Route("callbyname")]
         [HttpPost]
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         /// <summary>
-        /// Lists the available RPC methods.
+        /// Lists the available Remote Procedural Call methods on this node.
         /// </summary>
         /// <returns>A JSON result that lists the RPC methods.</returns>
         [Route("listmethods")]
