@@ -257,11 +257,21 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             foreach (TxInList inputsCollection in block.Transactions.Where(x => !x.IsCoinBase).Select(x => x.Inputs))
                 inputs.AddRange(inputsCollection);
 
-            Transaction[] transactions = this.blockStore.GetTransactionsByIds(inputs.Select(x => x.PrevOut.Hash).ToArray());
+            Transaction[] transactions;
+
+            try
+            {
+                transactions = this.blockStore.GetTransactionsByIds(inputs.Select(x => x.PrevOut.Hash).ToArray(), this.cancellation.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                this.logger.LogTrace("(-)[CANCELLED]:false");
+                return false;
+            }
 
             if (transactions == null)
             {
-                this.logger.LogTrace("(-)[TXES_NOT_FOUND]");
+                this.logger.LogTrace("(-)[TXES_NOT_FOUND]:false");
                 return false;
             }
 

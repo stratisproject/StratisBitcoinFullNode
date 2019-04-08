@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -212,7 +214,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc/>
-        public Transaction[] GetTransactionsByIds(uint256[] trxids)
+        public Transaction[] GetTransactionsByIds(uint256[] trxids, CancellationToken cancellation)
         {
             // Only look for transactions if they're indexed.
             if (!this.storeSettings.TxIndex)
@@ -249,7 +251,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
             }
 
-            Transaction[] fetchedTxes = this.blockRepository.GetTransactionsByIds(notFoundIds.ToArray());
+            Transaction[] fetchedTxes = this.blockRepository.GetTransactionsByIds(notFoundIds.ToArray(), cancellation);
 
             if (fetchedTxes == null)
             {
