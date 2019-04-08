@@ -61,8 +61,12 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         /// <inheritdoc />
         public IDeposit ExtractDepositFromTransaction(Transaction transaction, int blockHeight, uint256 blockHash)
         {
-            // We don't need to go into all the outputs for coinbases.
+            // Coinbases can't have deposits.
             if (transaction.IsCoinBase)
+                return null;
+
+            // Deposits have a certain structure with 2 outputs. 
+            if (transaction.Outputs.Count != 2)
                 return null;
 
             List<TxOut> depositsToMultisig = transaction.Outputs.Where(output =>
