@@ -25,6 +25,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         void Initialize();
 
+        /// <summary>Provides a collection of all indexed addresses and their changes.</summary>
+        Dictionary<string, List<AddressBalanceChange>> GetAddressIndexCopy();
+
         /// <summary>Returns balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
         /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed or doesn't exists.</returns>
         Money GetAddressBalance(string address, int minConfirmations = 0);
@@ -269,7 +272,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 return false;
             }
 
-            if (transactions == null)
+            if ((transactions == null) && (inputs.Count != 0))
             {
                 this.logger.LogTrace("(-)[TXES_NOT_FOUND]:false");
                 return false;
@@ -414,6 +417,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 long deposited = changes.Where(x => x.Deposited && x.BalanceChangedHeight <= maxAllowedHeight).Sum(x => x.Satoshi);
 
                 return new Money(deposited);
+            }
+        }
+
+        /// <inheritdoc/>
+        public Dictionary<string, List<AddressBalanceChange>> GetAddressIndexCopy()
+        {
+            lock (this.lockObject)
+            {
+                return new Dictionary<string, List<AddressBalanceChange>>(this.addressesIndex.AddressChanges);
             }
         }
 

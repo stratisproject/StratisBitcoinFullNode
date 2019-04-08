@@ -1,9 +1,13 @@
-﻿using Moq;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
@@ -14,7 +18,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
     public class AddressIndexerTests
     {
-        private readonly AddressIndexer addressIndexer;
+        private readonly IAddressIndexer addressIndexer;
 
         private readonly Mock<IBlockStore> blockStoreMock;
 
@@ -55,13 +59,111 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void CanIndexAddresses()
         {
-            // TODO implement test
+            List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(100, null, false, null, this.network);
+            this.consensusManagerMock.Setup(x => x.Tip).Returns(() => headers.Last());
+
+            Script p2pk1 = this.GetRandomP2PKScript(out string address1);
+            Script p2pk2 = this.GetRandomP2PKScript(out string address2);
+
+            var block1 = new Block()
+            {
+                Transactions = new List<Transaction>()
+                {
+                    new Transaction()
+                    {
+                        Outputs =
+                        {
+                            new TxOut(new Money(10_000), p2pk1),
+                            new TxOut(new Money(20_000), p2pk1),
+                            new TxOut(new Money(30_000), p2pk1)
+                        }
+                    }
+                }
+            };
+
+            var block5 = new Block()
+            {
+                Transactions = new List<Transaction>()
+                {
+                    new Transaction()
+                    {
+                        Outputs =
+                        {
+                            new TxOut(new Money(10_000), p2pk1),
+                            new TxOut(new Money(1_000), p2pk2),
+                            new TxOut(new Money(1_000), p2pk2)
+                        }
+                    }
+                }
+            };
+
+            var tx = new Transaction();
+            tx.Inputs.Add(new TxIn(new OutPoint(block5.Transactions.First().GetHash(), 0)));
+            var block10 = new Block() { Transactions = new List<Transaction>() { tx } };
+
+            this.blockStoreMock.Setup(x => x.GetTransactionsByIds(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>())).Returns((uint256[] hashes, CancellationToken token) =>
+            {
+                if (hashes.Length == 1 && hashes[0] == block5.Transactions.First().GetHash())
+                    return new Transaction[] { block5.Transactions.First() };
+
+                return null;
+            });
+
+            this.blockStoreMock.Setup(x => x.GetBlock(It.IsAny<uint256>())).Returns((uint256 hash) =>
+            {
+                ChainedHeader header = headers.SingleOrDefault(x => x.HashBlock == hash);
+
+                switch (header?.Height)
+                {
+                    case 1:
+                        return block1;
+
+                    case 5:
+                        return block5;
+
+                    case 10:
+                        return block10;
+                }
+
+                return new Block();
+            });
+
+            this.addressIndexer.Initialize();
+
+            TestHelper.WaitLoop(() => this.addressIndexer.IndexerTip == headers.Last());
+
+            Dictionary<string, List<AddressBalanceChange>> index = this.addressIndexer.GetAddressIndexCopy();
+            Assert.Equal(2, index.Keys.Count);
+
+            Assert.Equal(60_000, this.addressIndexer.GetAddressBalance(address1).Satoshi);
+            Assert.Equal(2_000, this.addressIndexer.GetAddressBalance(address2).Satoshi);
+
+            Assert.Equal(70_000, this.addressIndexer.GetAddressBalance(address1, 93).Satoshi);
+
+            // Now trigger rewind to see if indexer can handle reorgs.
+            ChainedHeader forkPoint = headers.Single(x => x.Height == 8);
+
+            List<ChainedHeader> headersFork = ChainedHeadersHelper.CreateConsecutiveHeaders(100, forkPoint, false, null, this.network);
+
+            this.consensusManagerMock.Setup(x => x.Tip).Returns(() => headersFork.Last());
+            TestHelper.WaitLoop(() => this.addressIndexer.IndexerTip == headersFork.Last());
+
+            Assert.Equal(70_000, this.addressIndexer.GetAddressBalance(address1).Satoshi);
+
+            this.addressIndexer.Dispose();
         }
 
-        [Fact]
-        public void CanHandleForks()
+        private Script GetRandomP2PKScript(out string address)
         {
-            // TODO implement test
+            var bytes = RandomUtils.GetBytes(33);
+            bytes[0] = 0x02;
+
+            Script script = new Script() + Op.GetPushOp(bytes) + OpcodeType.OP_CHECKSIG;
+
+            PubKey[] destinationKeys = script.GetDestinationPublicKeys(this.network);
+            address = destinationKeys[0].GetAddress(this.network).ToString();
+
+            return script;
         }
     }
 }
