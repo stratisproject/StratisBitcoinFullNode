@@ -8,7 +8,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Models
     public class LogRule
     {
         public string Name { get; set; }
-        public LogLevel MinLevel { get; set; }
+        public LogLevel MinLevel { get; set; } = LogLevel.Trace;
         public string Filename { get; set; }
     }
 
