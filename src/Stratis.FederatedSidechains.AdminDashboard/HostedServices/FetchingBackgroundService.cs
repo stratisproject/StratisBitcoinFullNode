@@ -60,6 +60,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
 
             #region Stratis Node
             ApiResponse stratisStatus = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Node/status");
+            ApiResponse stratisLogRules = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Node/logrules");
             ApiResponse stratisRawmempool = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Mempool/getrawmempool");
             ApiResponse stratisBestBlock = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Consensus/getbestblockhash");
             ApiResponse stratisWalletBalances = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/FederationWallet/balance");
@@ -69,6 +70,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
 
             #region Sidechain Node
             ApiResponse sidechainStatus = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Node/status");
+            ApiResponse sidechainLogRules = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Node/logrules");
             ApiResponse sidechainRawmempool = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Mempool/getrawmempool");
             ApiResponse sidechainBestBlock = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Consensus/getbestblockhash");
             ApiResponse sidechainWalletBalances = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/FederationWallet/balance");
@@ -114,7 +116,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                         History = stratisWalletHistory.Content,
                         ConfirmedBalance = (double)stratisWalletBalances.Content.balances[0].amountConfirmed / 100000000,
                         UnconfirmedBalance = (double)stratisWalletBalances.Content.balances[0].amountUnconfirmed / 100000000,
-                        CoinTicker = stratisStatus.Content.coinTicker ?? "STRAT"
+                        CoinTicker = stratisStatus.Content.coinTicker ?? "STRAT",
+                        LogRules = stratisLogRules.Content
                     },
                     SidechainNode = new SidechainNodelModel
                     {
@@ -129,7 +132,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                         History = sidechainWalletHistory.Content,
                         ConfirmedBalance = (double)sidechainWalletBalances.Content.balances[0].amountConfirmed / 100000000,
                         UnconfirmedBalance = (double)sidechainWalletBalances.Content.balances[0].amountUnconfirmed / 100000000,
-                        CoinTicker = sidechainStatus.Content.coinTicker ?? "STRAT"
+                        CoinTicker = sidechainStatus.Content.coinTicker ?? "STRAT",
+                        LogRules = sidechainLogRules.Content
                     }
                 };
             }
