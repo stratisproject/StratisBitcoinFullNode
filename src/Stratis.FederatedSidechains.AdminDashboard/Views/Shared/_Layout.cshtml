@@ -31,13 +31,33 @@
         <div class="navbar-text d-inline">
             <ul class="list-inline mb-0 d-flex align-items-center">
                 <li class="list-inline-item text-dark">Mainchain wallet address</li>
-                <li class="list-inline-item text-truncate">@(ViewBag.MainchainMultisigAddress ?? "Not running")</li>
+                <li class="list-inline-item text-truncate">
+                    @if (ViewBag.MainchainMultisigAddress != null)
+                    {
+                        <span id="mainchainMultisigAddress">@ViewBag.MainchainMultisigAddress</span>
+                        <i role="copy" data-id="mainchainMultisigAddress" data-message="Mainchain Multisig Address successfully copied to clipboard" class="far fa-copy"></i>
+                    }
+                    else
+                    {
+                        @("Not Running")
+                    }
+                </li>
             </ul>
         </div>
         <div class="navbar-text d-inline">
             <ul class="list-inline mb-0 ml-5 ml-md-2 d-flex align-items-center">
                 <li class="list-inline-item text-dark">Sidechain wallet address</li>
-                <li class="list-inline-item text-truncate">@(ViewBag.SidechainMultisigAddress ?? "Not Running")</li>
+                <li class="list-inline-item text-truncate">
+                    @if (ViewBag.SidechainMultisigAddress != null)
+                    {
+                        <span id="sidechainMultisigAddress">@ViewBag.SidechainMultisigAddress</span>
+                        <i role="copy" data-id="sidechainMultisigAddress" data-message="Sidechain Multisig Address successfully copied to clipboard" class="far fa-copy"></i>
+                    }
+                    else
+                    {
+                        @("Not Running")
+                    }
+                </li>
             </ul>
         </div>
         <div class="navbar-text p-0 d-inline ml-auto">
