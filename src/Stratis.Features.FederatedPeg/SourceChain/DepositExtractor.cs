@@ -10,6 +10,12 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 {
     public class DepositExtractor : IDepositExtractor
     {
+        /// <summary>
+        /// This deposit extractor implementation only looks for a very specific deposit format.
+        /// The deposits must have 2 outputs.
+        /// </summary>
+        private const int ExpectedNumberOfOutputs = 2;
+
         private readonly IOpReturnDataReader opReturnDataReader;
 
         private readonly ILogger logger;
@@ -66,7 +72,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                 return null;
 
             // Deposits have a certain structure with 2 outputs. 
-            if (transaction.Outputs.Count != 2)
+            if (transaction.Outputs.Count != ExpectedNumberOfOutputs)
                 return null;
 
             List<TxOut> depositsToMultisig = transaction.Outputs.Where(output =>
