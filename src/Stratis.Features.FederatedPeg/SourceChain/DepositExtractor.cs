@@ -61,7 +61,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                 }
             }
 
-            return deposits.AsReadOnly();
+            return deposits;
         }
 
         /// <inheritdoc />

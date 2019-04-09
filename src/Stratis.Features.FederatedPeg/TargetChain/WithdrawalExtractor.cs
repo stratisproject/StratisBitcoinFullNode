@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -50,15 +49,19 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         public IReadOnlyList<IWithdrawal> ExtractWithdrawalsFromBlock(Block block, int blockHeight)
         {
             var withdrawals = new List<IWithdrawal>();
+
+            if (block.Transactions.Count <= 1)
+                return withdrawals;
+
             foreach (Transaction transaction in block.Transactions)
             {
                 IWithdrawal withdrawal = this.ExtractWithdrawalFromTransaction(transaction, block.GetHash(), blockHeight);
-                if (withdrawal != null) withdrawals.Add(withdrawal);
+
+                if (withdrawal != null)
+                    withdrawals.Add(withdrawal);
             }
 
-            ReadOnlyCollection<IWithdrawal> withdrawalsFromBlock = withdrawals.AsReadOnly();
-
-            return withdrawalsFromBlock;
+            return withdrawals;
         }
 
         public IWithdrawal ExtractWithdrawalFromTransaction(Transaction transaction, uint256 blockHash, int blockHeight)
