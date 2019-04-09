@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                         try
                         {
-                            await Task.Delay(2_000, this.cancellation.Token).ConfigureAwait(false);
+                            await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
                         }
                         catch (OperationCanceledException)
                         {
