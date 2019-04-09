@@ -20,8 +20,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             BlockDefinitionOptions optionsFromNetwork = new MinerSettings(new NodeSettings(new SmartContractsRegTest())).BlockDefinitionOptions;
             BlockDefinitionOptions newOptions = this.bufferGenerator.GetOptionsWithBuffer(optionsFromNetwork);
 
-            Assert.Equal((uint) 950_000, newOptions.BlockMaxWeight);
-            Assert.Equal((uint) 950_000, newOptions.BlockMaxSize);
+            Assert.Equal((uint)950_000, newOptions.BlockMaxWeight);
+            Assert.Equal((uint)950_000, newOptions.BlockMaxSize);
         }
     }
 }

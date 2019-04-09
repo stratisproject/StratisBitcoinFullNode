@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             {
                 var network = new StratisRegTest();
 
-                var nodeA = builder.CreateStratisPosNode(network).Start();
+                var nodeA = builder.CreateStratisPosNode(network, "nc-1-nodeA").Start();
 
                 var nodeBIp = "127.0.0.2";
                 var nodeBIpAddress = IPAddress.Parse(nodeBIp);
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                     { "-externalip", nodeBIp }
                 };
 
-                var nodeB = builder.CreateStratisPosNode(network, configParameters: nodeBConfig).Start();
+                var nodeB = builder.CreateStratisPosNode(network, agent: "nc-1-nodeB", configParameters: nodeBConfig).Start();
 
                 var nodeAaddressManager = nodeA.FullNode.NodeService<IPeerAddressManager>();
                 nodeAaddressManager.AddPeer(new IPEndPoint(nodeBIpAddress, nodeB.Endpoint.Port), IPAddress.Loopback);
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             {
                 var network = new StratisRegTest();
 
-                var nodeA = builder.CreateStratisPosNode(network).Start();
+                var nodeA = builder.CreateStratisPosNode(network, "nc-2-nodeA").Start();
 
                 var nodeB_Ip = "127.0.0.2";
                 var nodeB_IpAddress = IPAddress.Parse(nodeB_Ip);
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             {
                 var network = new StratisRegTest();
 
-                var nodeA = builder.CreateStratisPosNode(network).Start();
+                var nodeA = builder.CreateStratisPosNode(network, "nc-3-nodeA").Start();
 
                 var nodeB_Ip = "127.0.0.2";
                 var nodeB_IpAddress = IPAddress.Parse(nodeB_Ip);

@@ -67,9 +67,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                         case CrossChainTransferStatus.FullySigned:
                             if (this.mempoolManager.InfoAsync(model.withdrawal.Id).GetAwaiter().GetResult() != null)
                                 status += "+InMempool";
+
+                            model.SpendingOutputDetails = this.GetSpendingInfo(transfer.PartialTransaction);
                             break;
                         case CrossChainTransferStatus.Partial:
                             status += " (" + transfer.GetSignatureCount(this.network) + "/" + this.federationGatewaySettings.MultiSigM + ")";
+                            model.SpendingOutputDetails = this.GetSpendingInfo(transfer.PartialTransaction);
                             break;
                     }
 
@@ -79,6 +82,18 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
 
             return result;
+        }
+
+        private string GetSpendingInfo(Transaction partialTransaction)
+        {
+            string ret = "";
+
+            foreach (TxIn input in partialTransaction.Inputs)
+            {
+                ret += input.PrevOut.Hash.ToString().Substring(0, 6) + "-" + input.PrevOut.N + ",";
+            }
+
+            return ret;
         }
     }
 }
