@@ -70,7 +70,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             if (transaction.IsCoinBase)
                 return null;
 
-            // Coinbase has a specific structure.
+            // Withdrawal has a specific structure.
             if (transaction.Outputs.Count != ExpectedNumberOfOutputs)
                 return null;
 
