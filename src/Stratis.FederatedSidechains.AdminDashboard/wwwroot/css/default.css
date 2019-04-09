@@ -5152,7 +5152,7 @@ button.close {
     bottom: 0;
     left: 0;
     z-index: 1040;
-    background-color: #0d2f42;
+    background-color: #020c13;
 }
 
     .modal-backdrop.fade {
@@ -5160,7 +5160,7 @@ button.close {
     }
 
     .modal-backdrop.show {
-        opacity: 0.35;
+        opacity: 0.5;
     }
 
 .modal-header {
