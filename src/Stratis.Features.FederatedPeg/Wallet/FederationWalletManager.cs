@@ -913,8 +913,17 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 throw new WalletException("A federation wallet already exists.");
             }
 
-            ChainedHeader walletLastBlockSynced = this.chainIndexer.GetHeader(
-                Math.Min(this.federationGatewaySettings.WalletSyncFromHeight, this.chainIndexer.Height)).Previous;
+            ChainedHeader walletLastBlockSynced;
+
+            if (this.federationGatewaySettings.WalletSyncFromHeight <= this.chainIndexer.Height)
+            {
+                walletLastBlockSynced = this.chainIndexer.GetHeader(this.federationGatewaySettings.WalletSyncFromHeight);
+                walletLastBlockSynced = walletLastBlockSynced.Previous ?? walletLastBlockSynced;
+            }
+            else
+            {
+                walletLastBlockSynced = this.chainIndexer.Tip;
+            }
 
             var wallet = new FederationWallet
             {
