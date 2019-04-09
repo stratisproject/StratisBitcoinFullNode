@@ -109,6 +109,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <returns>True if all inputs are from the federation multisig.</returns>
         private bool IsOnlyFromMultisig(Transaction transaction)
         {
+            if (!transaction.Inputs.Any())
+                return false;
+
             return transaction.Inputs.All(i => i.ScriptSig?.GetSignerAddress(this.network) == this.multisigAddress);
         }
     }
