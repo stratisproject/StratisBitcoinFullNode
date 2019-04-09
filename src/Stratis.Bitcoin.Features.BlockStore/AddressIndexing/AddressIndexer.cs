@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     }
 
                     // Get next header block and process it.
-                    Block blockToProcess = this.blockStore.GetBlock(nextHeader.HashBlock);
+                    Block blockToProcess = this.consensusManager.GetBlockData(nextHeader.HashBlock).Block;
 
                     if (blockToProcess == null)
                     {
