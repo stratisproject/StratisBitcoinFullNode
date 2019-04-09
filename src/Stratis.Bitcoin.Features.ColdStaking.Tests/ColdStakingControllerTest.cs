@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Net;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -21,11 +20,11 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Features.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -169,6 +168,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         /// <param name="callingMethod">The test method being executed.</param>
         private void Initialize([System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
         {
+            var blockStore = new Mock<IBlockStore>().Object;
             DataFolder dataFolder = CreateDataFolder(this, callingMethod);
             this.nodeSettings = new NodeSettings(this.Network, ProtocolVersion.ALT_PROTOCOL_VERSION);
             this.dateTimeProvider = DateTimeProvider.Default;

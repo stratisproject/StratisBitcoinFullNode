@@ -53,20 +53,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>
-        /// Constructs the cold staking manager which is used by the cold staking controller.
-        /// </summary>
-        /// <param name="network">The network that the manager is running on.</param>
-        /// <param name="chainIndexer">Thread safe class representing a chain of headers from genesis.</param>
-        /// <param name="walletSettings">The wallet settings.</param>
-        /// <param name="dataFolder">Contains path locations to folders and files on disk.</param>
-        /// <param name="walletFeePolicy">The wallet fee policy.</param>
-        /// <param name="asyncLoopFactory">Factory for creating and also possibly starting application defined tasks inside async loop.</param>
-        /// <param name="nodeLifeTime">Allows consumers to perform cleanup during a graceful shutdown.</param>
-        /// <param name="scriptAddressReader">A reader for extracting an address from a <see cref="Script"/>.</param>
-        /// <param name="loggerFactory">The logger factory to use to create the custom logger.</param>
-        /// <param name="dateTimeProvider">Provider of time functions.</param>
-        /// <param name="broadcasterManager">The broadcaster manager.</param>
         public ColdStakingManager(
             Network network,
             ChainIndexer chainIndexer,
