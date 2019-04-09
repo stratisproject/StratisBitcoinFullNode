@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace Stratis.FederatedSidechains.AdminDashboard.Models
+namespace Stratis.FederatedSidechains.AdminDashboard.Entities
 {
-    public class LogRule
+    public class GenericLogRule
     {
         [JsonProperty("ruleName")]
         public string Name { get; set; }

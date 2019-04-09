@@ -19,6 +19,6 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Models
         public List<Peer> FederationMembers { get; set; }
         public object History { get; set; }
         public string CoinTicker { get; set; }
-        public List<LogRule> LogRules { get; set; }
+        public List<GenericLogRule> LogRules { get; set; }
     }
 }
