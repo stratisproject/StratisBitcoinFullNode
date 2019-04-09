@@ -52,5 +52,13 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
             ApiResponse stopNodeRequest = await ApiRequester.PostRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Node/stop", true);
             return stopNodeRequest.IsSuccess ? (IActionResult)Ok() : BadRequest();
         }
+
+        [Ajax]
+        [Route("change-log-level/{level}")]
+        public async Task<IActionResult> ChangeLogLevelAsync(string rule, string level)
+        {
+            ApiResponse changeLogLevelRequest = await ApiRequester.PostRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Node/loglevels", new { logRules = new[] { new { ruleName = rule, logLevel = level } } });
+            return changeLogLevelRequest.IsSuccess ? (IActionResult)Ok() : BadRequest();
+        }
     }
 }
