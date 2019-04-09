@@ -1044,10 +1044,11 @@ namespace Stratis.Bitcoin.Consensus
 
             ChainedHeader chainedHeader = null;
             bool reassignDownload = false;
+            long expectedSize;
 
             lock (this.peerLock)
             {
-                if (this.expectedBlockSizes.TryGetValue(blockHash, out long expectedSize))
+                if (this.expectedBlockSizes.TryGetValue(blockHash, out expectedSize))
                 {
                     this.expectedBlockDataBytes -= expectedSize;
                     this.expectedBlockSizes.Remove(blockHash);
@@ -1116,6 +1117,8 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         // Ask block puller to deliver this block again. Do it with high priority and avoid normal queue.
                         this.blockPuller.RequestBlocksDownload(new List<ChainedHeader>() { chainedHeader }, true);
+                        this.expectedBlockSizes.Add(chainedHeader.HashBlock, expectedSize);
+                        this.expectedBlockDataBytes += expectedSize;
                     }
 
                     this.logger.LogTrace("(-)[INTEGRITY_VERIFICATION_FAILED]");
