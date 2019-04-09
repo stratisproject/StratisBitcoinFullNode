@@ -7,6 +7,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Stratis.FederatedSidechains.AdminDashboard.Filters;
+using Stratis.FederatedSidechains.AdminDashboard.Helpers;
 using Stratis.FederatedSidechains.AdminDashboard.Hubs;
 using Stratis.FederatedSidechains.AdminDashboard.Models;
 using Stratis.FederatedSidechains.AdminDashboard.Services;
@@ -67,15 +68,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
             this.ViewBag.MainchainMultisigAddress = dashboardModel.MainchainWalletAddress;
             this.ViewBag.SidechainMultisigAddress = dashboardModel.SidechainWalletAddress;
             this.ViewBag.MiningPubKeys = dashboardModel.MiningPublicKeys;
-            this.ViewBag.LogLevels = new List<LogRule>()
-            {
-                new LogRule()
-                {
-                    Name = "Stratis.Bitcoin.Features.Api.*",
-                    MinLevel = LogLevel.Error,
-                    Filename = ""
-                }
-            };
+            this.ViewBag.LogRules = new LogRulesModel().LoadRules(dashboardModel.StratisNode.LogRules, dashboardModel.SidechainNode.LogRules);
             this.ViewBag.Status = "OK";
 
             return View("Dashboard", dashboardModel);
