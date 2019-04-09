@@ -103,12 +103,23 @@ namespace Stratis.Bitcoin.P2P
         private PeerAddress AddPeerWithoutCleanup(IPEndPoint endPoint, IPAddress source)
         {
             if (!endPoint.Address.IsRoutable(true))
+            {
+                this.logger.LogTrace("(-)[PEER_NOT_ADDED_ISROUTABLE]:{0}", endPoint);
                 return null;
+            }
 
             IPEndPoint ipv6EndPoint = endPoint.MapToIpv6();
 
             PeerAddress peerToAdd = PeerAddress.Create(ipv6EndPoint, source.MapToIPv6());
-            return this.peerInfoByPeerAddress.TryAdd(ipv6EndPoint, peerToAdd) ? peerToAdd : null;
+            var added = this.peerInfoByPeerAddress.TryAdd(ipv6EndPoint, peerToAdd);
+            if (added)
+            {
+                this.logger.LogTrace("(-)[PEER_ADDED]:{0}", endPoint);
+                return peerToAdd;
+            }
+
+            this.logger.LogTrace("(-)[PEER_NOT_ADDED_ALREADY_EXISTS]:{0}", endPoint);
+            return null;
         }
 
         /// <inheritdoc/>
