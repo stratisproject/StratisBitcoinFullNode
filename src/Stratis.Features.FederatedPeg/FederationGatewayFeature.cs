@@ -47,6 +47,11 @@ namespace Stratis.Features.FederatedPeg
 {
     internal class FederationGatewayFeature : FullNodeFeature
     {
+        /// <summary>
+        /// Given that we can have up to 10 UTXOs going at once.
+        /// </summary>
+        private const int TransfersToDisplay = 10;
+
         public const string FederationGatewayFeatureNamespace = "federationgateway";
 
         private readonly IConnectionManager connectionManager;
@@ -217,7 +222,8 @@ namespace Stratis.Features.FederatedPeg
             }
 
             // Display recent withdrawals (if any).
-            List<WithdrawalModel> withdrawals = this.withdrawalHistoryProvider.GetHistory(5);
+            // TODO: What order do these come out in?
+            List<WithdrawalModel> withdrawals = this.withdrawalHistoryProvider.GetHistory(TransfersToDisplay);
             if (withdrawals.Count > 0)
             {
                 benchLog.AppendLine("--- Recent Withdrawals ---");
