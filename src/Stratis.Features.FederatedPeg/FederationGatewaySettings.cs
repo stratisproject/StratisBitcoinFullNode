@@ -34,7 +34,7 @@ namespace Stratis.Features.FederatedPeg
         /// Changing <see cref="TransactionFee"/> affects both the deposit threshold on this chain and the withdrawal transaction fee on this chain.
         /// This value shouldn't be different for the 2 pegged chain nodes or deposits could be extracted that don't have the amount required to
         /// cover the withdrawal fee on the other chain.
-        /// 
+        ///
         /// TODO: This should be configurable on the Network level in the future, but individual nodes shouldn't be tweaking it.
         /// </remarks>
         public static readonly Money DefaultTransactionFee = Money.Coins(0.01m);
@@ -46,7 +46,7 @@ namespace Stratis.Features.FederatedPeg
         /// </summary>
         public const int StratisMainDepositStartBlock = 1_100_000;
 
-        public FederationGatewaySettings(NodeSettings nodeSettings)
+        public FederationGatewaySettings(NodeSettings nodeSettings, FederatedPegOptions federatedPegOptions = null)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
