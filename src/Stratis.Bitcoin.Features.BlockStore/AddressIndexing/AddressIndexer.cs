@@ -39,6 +39,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
     public class AddressIndexer : IAddressIndexer
     {
+        public ChainedHeader IndexerTip { get; private set; }
+
         private readonly StoreSettings storeSettings;
 
         private readonly Network network;
@@ -57,6 +59,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private const string DbKey = "AddrData";
 
+        /// <summary>
+        /// Time to wait before attempting to index the next block.
+        /// Waiting happens after a failure to get next block to index.
+        /// </summary>
+        private const int DelayTimeMs = 2000;
+
         private LiteDatabase db;
 
         private LiteCollection<AddressIndexerData> dataStore;
@@ -69,8 +77,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         private readonly CancellationTokenSource cancellation;
 
         private Task indexingTask;
-
-        public ChainedHeader IndexerTip { get; private set; }
 
         public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory,
             Network network, IBlockStore blockStore, INodeStats nodeStats, IConsensusManager consensusManager)
@@ -197,7 +203,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                         try
                         {
-                            await Task.Delay(2_000, this.cancellation.Token).ConfigureAwait(false);
+                            await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
                         }
                         catch (OperationCanceledException)
                         {
@@ -214,7 +220,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                         try
                         {
-                            await Task.Delay(5_000, this.cancellation.Token).ConfigureAwait(false);
+                            await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
                         }
                         catch (OperationCanceledException)
                         {
