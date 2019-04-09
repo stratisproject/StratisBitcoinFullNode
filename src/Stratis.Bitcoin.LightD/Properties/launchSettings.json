@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "Stratis.Bitcoin.LightD": {
+      "commandName": "Project"
+    },
+    "Stratis.Bitcoin.LightD Test": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet"
+    },
+    "Stratis.Bitcoin.LightD Test with RPC": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet -server -rpcpassword=rpcpassword -rpcuser=rpcuser"
+    }
+  }
+}
