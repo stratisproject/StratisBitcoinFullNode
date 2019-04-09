@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Apps;
+using Stratis.Bitcoin.Features.LightWallet;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Utilities;
 using Network = Stratis.Bitcoin.Networks.Networks;
@@ -27,10 +28,9 @@ namespace Stratis.Bitcoin.LightD
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()
                     .UseLightPowConsensus()
-                    .UseMempool()
                     .AddMining()
                     .AddRPC()
-                    .UseWallet()
+                    .UseLightWallet()
                     .UseApi()
                     .UseApps()
                     .Build();
