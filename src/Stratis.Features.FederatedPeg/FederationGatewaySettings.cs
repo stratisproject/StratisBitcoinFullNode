@@ -13,6 +13,8 @@ namespace Stratis.Features.FederatedPeg
     /// <inheritdoc />
     public sealed class FederationGatewaySettings : IFederationGatewaySettings
     {
+        public const string WalletSyncFromHeightParam = "walletsyncfromheight";
+
         public const string CounterChainApiPortParam = "counterchainapiport";
 
         public const string RedeemScriptParam = "redeemscript";
@@ -89,6 +91,7 @@ namespace Stratis.Features.FederatedPeg
             // These values are only configurable for tests at the moment. Fed members on live networks shouldn't play with them.
             this.CounterChainDepositStartBlock = configReader.GetOrDefault<int>(CounterChainDepositBlock, this.IsMainChain ? 1 : StratisMainDepositStartBlock);
             this.MinimumDepositConfirmations = (uint)configReader.GetOrDefault<int>(MinimumDepositConfirmationsParam, (int)nodeSettings.Network.Consensus.MaxReorgLength + 1);
+            this.WalletSyncFromHeight = configReader.GetOrDefault(WalletSyncFromHeightParam, federatedPegOptions?.WalletSyncFromHeight ?? 0);
         }
 
         /// <inheritdoc/>
@@ -105,6 +108,9 @@ namespace Stratis.Features.FederatedPeg
 
         /// <inheritdoc/>
         public int CounterChainApiPort { get; }
+
+        /// <inheritdoc/>
+        public int WalletSyncFromHeight { get; }
 
         /// <inheritdoc/>
         public int MultiSigM { get; }

@@ -78,8 +78,11 @@ namespace Stratis.CirrusPegD
                 MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
             };
 
+            NetworkType networkType = nodeSettings.Network.NetworkType;
+
             var fedPegOptions = new FederatedPegOptions(
-                counterChainNetwork: SidechainNetworks[nodeSettings.Network.NetworkType]()
+                counterChainNetwork: SidechainNetworks[networkType](),
+                walletSyncFromHeight: new int[] { 1, 1, 1 }[(int)networkType] // TODO
             );
 
             IFullNode node = new FullNodeBuilder()
@@ -99,8 +102,11 @@ namespace Stratis.CirrusPegD
                 MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
             };
 
+            NetworkType networkType = nodeSettings.Network.NetworkType;
+
             var fedPegOptions = new FederatedPegOptions(
-                counterChainNetwork: MainChainNetworks[nodeSettings.Network.NetworkType]()
+                counterChainNetwork: MainChainNetworks[networkType](),
+                walletSyncFromHeight: new int[] { 1, 1, 1 }[(int)networkType] // TODO
             );
 
             IFullNode node = new FullNodeBuilder()
