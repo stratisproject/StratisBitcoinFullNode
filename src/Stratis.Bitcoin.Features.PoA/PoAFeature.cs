@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -126,46 +127,46 @@ namespace Stratis.Bitcoin.Features.PoA
     {
         public void RegisterRules(IConsensus consensus)
         {
-            consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
+            consensus.ConsensusRules.HeaderValidationRules = new List<Type>()
             {
-                new HeaderTimeChecksPoARule(),
-                new StratisHeaderVersionRule(),
-                new PoAHeaderDifficultyRule(),
-                new PoAHeaderSignatureRule()
+                typeof(HeaderTimeChecksPoARule),
+                typeof(StratisHeaderVersionRule),
+                typeof(PoAHeaderDifficultyRule),
+                typeof(PoAHeaderSignatureRule)
             };
 
-            consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+            consensus.ConsensusRules.IntegrityValidationRules = new List<Type>()
             {
-                new BlockMerkleRootRule(),
-                new PoAIntegritySignatureRule()
+                typeof(BlockMerkleRootRule),
+                typeof(PoAIntegritySignatureRule)
             };
 
-            consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
+            consensus.ConsensusRules.PartialValidationRules = new List<Type>()
             {
-                new SetActivationDeploymentsPartialValidationRule(),
+                typeof(SetActivationDeploymentsPartialValidationRule),
 
                 // rules that are inside the method ContextualCheckBlock
-                new TransactionLocktimeActivationRule(), // implements BIP113
-                new CoinbaseHeightActivationRule(), // implements BIP34
-                new BlockSizeRule(),
+                typeof(TransactionLocktimeActivationRule), // implements BIP113
+                typeof(CoinbaseHeightActivationRule), // implements BIP34
+                typeof(BlockSizeRule),
 
                 // rules that are inside the method CheckBlock
-                new EnsureCoinbaseRule(),
-                new CheckPowTransactionRule(),
-                new CheckSigOpsRule(),
+                typeof(EnsureCoinbaseRule),
+                typeof(CheckPowTransactionRule),
+                typeof(CheckSigOpsRule),
 
-                new PoAVotingCoinbaseOutputFormatRule(),
+                typeof(PoAVotingCoinbaseOutputFormatRule),
             };
 
-            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+            consensus.ConsensusRules.FullValidationRules = new List<Type>()
             {
-                new SetActivationDeploymentsFullValidationRule(),
+                typeof(SetActivationDeploymentsFullValidationRule),
 
                 // rules that require the store to be loaded (coinview)
-                new LoadCoinviewRule(),
-                new TransactionDuplicationActivationRule(), // implements BIP30
-                new PoACoinviewRule(),
-                new SaveCoinviewRule()
+                typeof(LoadCoinviewRule),
+                typeof(TransactionDuplicationActivationRule), // implements BIP30
+                typeof(PoACoinviewRule),
+                typeof(SaveCoinviewRule)
             };
         }
     }

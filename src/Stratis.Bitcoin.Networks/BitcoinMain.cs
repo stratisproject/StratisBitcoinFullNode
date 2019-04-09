@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using NBitcoin.Rules;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Networks.Deployments;
 using Stratis.Bitcoin.Networks.Policies;
 
@@ -153,6 +155,50 @@ namespace Stratis.Bitcoin.Networks
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+
+            this.RegisterRules(this.Consensus);
+        }
+
+        protected void RegisterRules(IConsensus consensus)
+        {
+            consensus.ConsensusRules.HeaderValidationRules = new List<Type>()
+            {
+                typeof(HeaderTimeChecksRule),
+                typeof(CheckDifficultyPowRule),
+                typeof(BitcoinActivationRule),
+                typeof(BitcoinHeaderVersionRule)
+            };
+
+            consensus.ConsensusRules.IntegrityValidationRules = new List<Type>()
+            {
+                typeof(BlockMerkleRootRule)
+            };
+
+            consensus.ConsensusRules.PartialValidationRules = new List<Type>()
+            {
+                typeof(SetActivationDeploymentsPartialValidationRule),
+
+                typeof(TransactionLocktimeActivationRule), // implements BIP113
+                typeof(CoinbaseHeightActivationRule), // implements BIP34
+                typeof(WitnessCommitmentsRule), // BIP141, BIP144
+                typeof(BlockSizeRule),
+
+                // rules that are inside the method CheckBlock
+                typeof(EnsureCoinbaseRule),
+                typeof(CheckPowTransactionRule),
+                typeof(CheckSigOpsRule),
+            };
+
+            consensus.ConsensusRules.FullValidationRules = new List<Type>()
+            {
+                typeof(SetActivationDeploymentsFullValidationRule),
+
+                // rules that require the store to be loaded (coinview)
+                typeof(LoadCoinviewRule),
+                typeof(TransactionDuplicationActivationRule), // implements BIP30
+                typeof(PowCoinviewRule), // implements BIP68, MaxSigOps and BlockReward calculation
+                typeof(SaveCoinviewRule)
+            };
         }
 
         /// <summary> Bitcoin maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>

@@ -6,6 +6,9 @@ using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
+using NBitcoin.Rules;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules;
 using Stratis.Bitcoin.Networks.Deployments;
 using Stratis.Bitcoin.Networks.Policies;
 
@@ -204,6 +207,65 @@ namespace Stratis.Bitcoin.Networks
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x65a26bc20b0351aebf05829daefa8f7db2f800623439f3c114257c91447f1518"));
+
+            this.RegisterRules(this.Consensus);
+        }
+
+        protected void RegisterRules(IConsensus consensus)
+        {
+            consensus.ConsensusRules.HeaderValidationRules = new List<Type>()
+            {
+                typeof(HeaderTimeChecksRule),
+                typeof(HeaderTimeChecksPosRule),
+                typeof(StratisBugFixPosFutureDriftRule),
+                typeof(CheckDifficultyPosRule),
+                typeof(StratisHeaderVersionRule),
+                typeof(ProvenHeaderSizeRule),
+                typeof(ProvenHeaderCoinstakeRule)
+            };
+
+            consensus.ConsensusRules.IntegrityValidationRules = new List<Type>()
+            {
+                typeof(BlockMerkleRootRule),
+                typeof(PosBlockSignatureRepresentationRule),
+                typeof(PosBlockSignatureRule),
+            };
+
+            consensus.ConsensusRules.PartialValidationRules = new List<Type>()
+            {
+                typeof(SetActivationDeploymentsPartialValidationRule),
+
+                typeof(PosTimeMaskRule),
+
+                // rules that are inside the method ContextualCheckBlock
+                typeof(TransactionLocktimeActivationRule), // implements BIP113
+                typeof(CoinbaseHeightActivationRule), // implements BIP34
+                typeof(WitnessCommitmentsRule), // BIP141, BIP144
+                typeof(BlockSizeRule),
+
+                // rules that are inside the method CheckBlock
+                typeof(EnsureCoinbaseRule),
+                typeof(CheckPowTransactionRule),
+                typeof(CheckPosTransactionRule),
+                typeof(CheckSigOpsRule),
+                typeof(PosCoinstakeRule),
+            };
+
+            consensus.ConsensusRules.FullValidationRules = new List<Type>()
+            {
+                typeof(SetActivationDeploymentsFullValidationRule),
+
+                typeof(CheckDifficultyHybridRule),
+
+                // rules that require the store to be loaded (coinview)
+                typeof(LoadCoinviewRule),
+                typeof(TransactionDuplicationActivationRule), // implements BIP30
+                typeof(PosCoinviewRule), // implements BIP68, MaxSigOps and BlockReward calculation
+                // Place the PosColdStakingRule after the PosCoinviewRule to ensure that all input scripts have been evaluated
+                // and that the "IsColdCoinStake" flag would have been set by the OP_CHECKCOLDSTAKEVERIFY opcode if applicable.
+                typeof(PosColdStakingRule),
+                typeof(SaveCoinviewRule)
+            };
         }
 
         protected static Block CreateStratisGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)

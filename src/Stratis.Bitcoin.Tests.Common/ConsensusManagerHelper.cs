@@ -42,13 +42,13 @@ namespace Stratis.Bitcoin.Tests.Common
 
             network.Consensus.Options = new ConsensusOptions();
 
-            if (ruleRegistration == null)
-                ruleRegistration = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration();
+            //if (ruleRegistration == null)
+            //    ruleRegistration = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration();
 
-            ruleRegistration.RegisterRules(network.Consensus);
+            //ruleRegistration.RegisterRules(network.Consensus);
 
             // Dont check PoW of a header in this test.
-            network.Consensus.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));
+            network.Consensus.ConsensusRules.HeaderValidationRules.RemoveAll(x => x == typeof(CheckDifficultyPowRule));
 
             var consensusSettings = new ConsensusSettings(nodeSettings);
 
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Tests.Common
             if (consensusRules == null)
             {
                 consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chainIndexer, deployments, consensusSettings,
-                    new Checkpoints(), inMemoryCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider)).Register();
+                    new Checkpoints(), inMemoryCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), new ConsensusRulesContainer()).Register();
             }
 
             consensusRules.Register();

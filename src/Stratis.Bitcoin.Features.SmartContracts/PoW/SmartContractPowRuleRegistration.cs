@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -44,51 +45,51 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
 
         public void RegisterRules(IConsensus consensus)
         {
-            consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
+            consensus.ConsensusRules.HeaderValidationRules = new List<Type>()
             {
-                new HeaderTimeChecksRule(),
-                new CheckDifficultyPowRule(),
-                new BitcoinActivationRule(),
-                new BitcoinHeaderVersionRule()
+                typeof(HeaderTimeChecksRule),
+                typeof(CheckDifficultyPowRule),
+                typeof(BitcoinActivationRule),
+                typeof(BitcoinHeaderVersionRule)
             };
 
-            consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+            consensus.ConsensusRules.IntegrityValidationRules = new List<Type>()
             {
-                new BlockMerkleRootRule()
+                typeof(BlockMerkleRootRule)
             };
 
-            consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
+            consensus.ConsensusRules.PartialValidationRules = new List<Type>()
             {
-                new SetActivationDeploymentsPartialValidationRule(),
+                typeof(SetActivationDeploymentsPartialValidationRule),
 
-                new TransactionLocktimeActivationRule(), // implements BIP113
-                new CoinbaseHeightActivationRule(), // implements BIP34
-                new WitnessCommitmentsRule(), // BIP141, BIP144
-                new BlockSizeRule(),
+                typeof(TransactionLocktimeActivationRule), // implements BIP113
+                typeof(CoinbaseHeightActivationRule), // implements BIP34
+                typeof(WitnessCommitmentsRule), // BIP141, BIP144
+                typeof(BlockSizeRule),
 
                 // rules that are inside the method CheckBlock
-                new EnsureCoinbaseRule(),
-                new CheckPowTransactionRule(),
-                new CheckSigOpsRule(),
-                new AllowedScriptTypeRule(this.network),
-                new ContractTransactionPartialValidationRule(this.callDataSerializer, new List<IContractTransactionPartialValidationRule>
-                {
-                    new SmartContractFormatLogic()
-                })
+                typeof(EnsureCoinbaseRule),
+                typeof(CheckPowTransactionRule),
+                typeof(CheckSigOpsRule),
+                typeof(AllowedScriptTypeRule),
+                typeof(ContractTransactionPartialValidationRule)
+                //{
+                //    new SmartContractFormatLogic() // TODO: fix this
+                //})
             };
 
-            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+            consensus.ConsensusRules.FullValidationRules = new List<Type>()
             {
-                new SetActivationDeploymentsFullValidationRule(),
+                typeof(SetActivationDeploymentsFullValidationRule),
 
-                new LoadCoinviewRule(),
-                new TransactionDuplicationActivationRule(), // implements BIP30
-                new TxOutSmartContractExecRule(),
-                new OpSpendRule(),
-                new CanGetSenderRule(this.senderRetriever),
-                new P2PKHNotContractRule(this.stateRepositoryRoot),
-                new SmartContractPowCoinviewRule(this.network, this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView), // implements BIP68, MaxSigOps and BlockReward 
-                new SaveCoinviewRule()
+                typeof(LoadCoinviewRule),
+                typeof(TransactionDuplicationActivationRule), // implements BIP30
+                typeof(TxOutSmartContractExecRule),
+                typeof(OpSpendRule),
+                typeof(CanGetSenderRule),
+                typeof(P2PKHNotContractRule),
+                typeof(SmartContractPowCoinviewRule), // implements BIP68, MaxSigOps and BlockReward 
+                typeof(SaveCoinviewRule)
             };
         }
     }
