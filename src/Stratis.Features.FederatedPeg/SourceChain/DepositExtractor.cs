@@ -10,6 +10,12 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 {
     public class DepositExtractor : IDepositExtractor
     {
+        /// <summary>
+        /// This deposit extractor implementation only looks for a very specific deposit format.
+        /// The deposits must have 2 outputs.
+        /// </summary>
+        private const int ExpectedNumberOfOutputs = 2;
+
         private readonly IOpReturnDataReader opReturnDataReader;
 
         private readonly ILogger logger;
@@ -39,6 +45,11 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         public IReadOnlyList<IDeposit> ExtractDepositsFromBlock(Block block, int blockHeight)
         {
             var deposits = new List<IDeposit>();
+
+            // If it's an empty block, there's no deposits inside.
+            if (block.Transactions.Count <= 1)
+                return deposits;
+
             uint256 blockHash = block.GetHash();
 
             foreach (Transaction transaction in block.Transactions)
@@ -50,12 +61,20 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                 }
             }
 
-            return deposits.AsReadOnly();
+            return deposits;
         }
 
         /// <inheritdoc />
         public IDeposit ExtractDepositFromTransaction(Transaction transaction, int blockHeight, uint256 blockHash)
         {
+            // Coinbases can't have deposits.
+            if (transaction.IsCoinBase)
+                return null;
+
+            // Deposits have a certain structure with 2 outputs. 
+            if (transaction.Outputs.Count != ExpectedNumberOfOutputs)
+                return null;
+
             List<TxOut> depositsToMultisig = transaction.Outputs.Where(output =>
                 output.ScriptPubKey == this.depositScript
                 && output.Value > this.settings.TransactionFee).ToList();

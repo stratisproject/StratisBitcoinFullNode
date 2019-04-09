@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Tests;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities;
@@ -18,10 +19,12 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 {
     public class ColdStakingManagerTest : LogsTestBase, IClassFixture<WalletFixture>
     {
+        private readonly IBlockStore blockStore;
         private readonly WalletFixture walletFixture;
 
         public ColdStakingManagerTest(WalletFixture walletFixture)
         {
+            this.blockStore = new Mock<IBlockStore>().Object;
             this.walletFixture = walletFixture;
             this.Network.StandardScriptsRegistry.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
         }
