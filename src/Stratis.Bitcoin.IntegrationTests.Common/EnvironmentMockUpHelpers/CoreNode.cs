@@ -16,7 +16,6 @@ using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.EventBus.CoreEvents;
@@ -258,9 +257,17 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 selfEndPointTracker,
                 ibdState.Object,
                 connectionManagerSettings,
-                this.runner.FullNode.NodeService<IAsyncProvider>());
+                this.GetOrCreateAsyncProvider()
+                );
 
             return networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ProtocolPort).GetAwaiter().GetResult();
+        }
+
+        private IAsyncProvider GetOrCreateAsyncProvider() {
+            if (this.runner.FullNode == null)
+                return new AsyncProvider(this.loggerFactory, new Signals.Signals(this.loggerFactory, null), new NodeLifetime());
+            else
+                return this.runner.FullNode.NodeService<IAsyncProvider>();
         }
 
         public CoreNode Start()
@@ -410,7 +417,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <returns>Latency.</returns>
         public async Task<TimeSpan> PingPongAsync(INetworkPeer peer, CancellationToken cancellation = default(CancellationToken))
         {
-            using (var listener = new NetworkPeerListener(peer, this.FullNode.NodeService<IAsyncProvider>()))
+            using (var listener = new NetworkPeerListener(peer, this.GetOrCreateAsyncProvider()))
             {
                 var ping = new PingPayload()
                 {
@@ -572,7 +579,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             this.AssertStateAsync(peer, NetworkPeerState.HandShaked, cancellationToken).GetAwaiter().GetResult();
 
-            using (var listener = new NetworkPeerListener(peer, this.FullNode.NodeService<IAsyncProvider>()))
+            using (var listener = new NetworkPeerListener(peer, this.GetOrCreateAsyncProvider()))
             {
                 int acceptMaxReorgDepth = 0;
                 while (true)
