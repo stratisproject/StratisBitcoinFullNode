@@ -508,6 +508,32 @@ namespace Stratis.Bitcoin.Connection
 
             this.peerAddressManager.RemovePeer(ipEndpoint);
 
+            // There appears to be a race condition that causes the endpoint or endpoint's address property to be null when
+            // trying to remove it from the connection manager's add node collection.
+            if (ipEndpoint == null)
+            {
+                this.logger.LogTrace("(-)[IPENDPOINT_NULL]");
+                return;
+            }
+
+            if (ipEndpoint.Address == null)
+            {
+                this.logger.LogTrace("(-)[IPENDPOINT_ADDRESS_NULL]");
+                return;
+            }
+
+            if (this.ConnectionSettings.AddNode.Any(ip => ip == null))
+            {
+                this.logger.LogTrace("(-)[ADDNODE_CONTAINS_NULLS]");
+                return;
+            }
+
+            foreach (var endpoint in this.ConnectionSettings.AddNode.Where(a => a.Address == null))
+            {
+                this.logger.LogTrace("(-)[IPENDPOINT_ADDRESS_NULL]:{0}", endpoint);
+                return;
+            }
+
             // Create a copy of the nodes to remove. This avoids errors due to both modifying the collection and iterating it.
             List<IPEndPoint> matchingAddNodes = this.ConnectionSettings.AddNode.Where(p => p.Match(ipEndpoint)).ToList();
             foreach (IPEndPoint m in matchingAddNodes)
