@@ -18,7 +18,7 @@ namespace Stratis.Features.FederatedPeg
         /// </summary>
         public int WalletSyncFromHeight { get; }
 
-        public FederatedPegOptions(Network counterChainNetwork, int walletSyncFromHeight)
+        public FederatedPegOptions(Network counterChainNetwork, int walletSyncFromHeight = 1)
         {
             this.CounterChainNetwork = counterChainNetwork;
             this.WalletSyncFromHeight = walletSyncFromHeight;
