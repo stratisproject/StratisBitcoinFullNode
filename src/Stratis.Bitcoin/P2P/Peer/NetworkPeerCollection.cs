@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                                      && (!port.HasValue || port == peer.RemoteSocketPort);
 
             bool isPeerVersionAddressMatching = peer.PeerVersion?.AddressFrom != null
-                                                && !peer.PeerVersion.AddressFrom.Address.IsLocal()
+                                                && ip.IsLocal() == peer.RemoteSocketAddress.IsLocal()
                                                 && peer.PeerVersion.AddressFrom.Address.Equals(ip)
                                                 && (!port.HasValue || port == peer.PeerVersion.AddressFrom.Port);
 
