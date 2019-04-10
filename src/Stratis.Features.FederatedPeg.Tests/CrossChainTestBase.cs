@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
@@ -42,6 +43,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         protected IOpReturnDataReader opReturnDataReader;
         protected IWithdrawalExtractor withdrawalExtractor;
         protected IBlockRepository blockRepository;
+        protected IInitialBlockDownloadState ibdState;
         protected IFullNode fullNode;
         protected IFederationWalletManager federationWalletManager;
         protected IFederationGatewaySettings federationGatewaySettings;
@@ -96,7 +98,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.walletFeePolicy = Substitute.For<IWalletFeePolicy>();
             this.connectionManager = Substitute.For<IConnectionManager>();
             this.dBreezeSerializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
-
+            this.ibdState = Substitute.For<IInitialBlockDownloadState>();
             this.wallet = null;
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
             this.ChainIndexer = new ChainIndexer(this.network);

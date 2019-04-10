@@ -448,7 +448,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 var requester = new PartialTransactionRequester(this.loggerFactory, crossChainTransferStore, this.asyncProvider,
                     this.nodeLifetime, this.connectionManager, this.federationGatewaySettings);
 
-                var peerEndPoint = new System.Net.IPEndPoint(System.Net.IPAddress.Parse("1.2.3.4"), 5);
+                var peerEndPoint = new IPEndPoint(System.Net.IPAddress.Parse("1.2.3.4"), 5);
                 var peer = Substitute.For<INetworkPeer>();
                 peer.RemoteSocketAddress.Returns(peerEndPoint.Address);
                 peer.RemoteSocketPort.Returns(peerEndPoint.Port);
