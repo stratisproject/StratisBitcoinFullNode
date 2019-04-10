@@ -103,7 +103,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
 
                 var model = new FederationGatewayInfoModel
                 {
-                    IsActive = this.federationWalletManager.IsFederationActive(),
+                    IsActive = this.federationWalletManager.IsFederationWalletActive(),
                     IsMainChain = isMainchain,
                     FederationNodeIpEndPoints = this.federationGatewaySettings.FederationNodeIpEndPoints.Select(i => $"{i.Address}:{i.Port}"),
                     MultisigPublicKey = this.federationGatewaySettings.PublicKey,

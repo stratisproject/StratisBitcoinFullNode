@@ -395,7 +395,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                             continue;
                         }
 
-                        if (!this.federationWalletManager.IsFederationActive())
+                        if (!this.federationWalletManager.IsFederationWalletActive())
                         {
                             this.logger.LogError("The store can't persist mature deposits while the federation is inactive.");
                             continue;

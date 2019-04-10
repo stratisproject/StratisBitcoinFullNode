@@ -128,7 +128,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// Determines if federation has been activated.
         /// </summary>
         /// <returns><c>True</c> if federation is active and <c>false</c> otherwise.</returns>
-        bool IsFederationActive();
+        bool IsFederationWalletActive();
 
         /// <summary>
         /// Enables federation.
@@ -136,7 +136,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// <param name="password">The federation wallet password.</param>
         /// <param name="mnemonic">The user's mnemonic.</param>
         /// <param name="passphrase">A passphrase used to derive the private key from the mnemonic.</param>
-        void EnableFederation(string password, string mnemonic = null, string passphrase = null);
+        void EnableFederationWallet(string password, string mnemonic = null, string passphrase = null);
 
         /// <summary>
         /// Removes all the transactions from the federation wallet.
