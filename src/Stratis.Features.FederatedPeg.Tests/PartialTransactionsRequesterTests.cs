@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -16,7 +17,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly ILoggerFactory loggerFactory;
         private readonly ICrossChainTransferStore store;
         private readonly IFederationGatewaySettings federationGatewaySettings;
-        private readonly IAsyncLoopFactory loopFactory;
+        private readonly IAsyncProvider asyncProvider;
         private readonly INodeLifetime nodeLifetime;
         private readonly IConnectionManager connectionManager;
 
@@ -30,7 +31,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.store = Substitute.For<ICrossChainTransferStore>();
-            this.loopFactory = Substitute.For<IAsyncLoopFactory>();
+            this.asyncProvider = Substitute.For<IAsyncProvider>();
             this.nodeLifetime = Substitute.For<INodeLifetime>();
 
             this.ibdState = Substitute.For<IInitialBlockDownloadState>();
@@ -47,7 +48,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             var partialRequester = new PartialTransactionRequester(
                 this.loggerFactory,
                 this.store,
-                this.loopFactory,
+                this.asyncProvider,
                 this.nodeLifetime,
                 this.connectionManager,
                 this.federationGatewaySettings,
@@ -67,7 +68,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             var partialRequester = new PartialTransactionRequester(
                 this.loggerFactory,
                 this.store,
-                this.loopFactory,
+                this.asyncProvider,
                 this.nodeLifetime,
                 this.connectionManager,
                 this.federationGatewaySettings,

@@ -162,7 +162,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.ibdState.IsInitialBlockDownload().Returns(true);
 
             var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
-                this.loopFactory,
+                this.asyncProvider,
                 this.loggerFactory,
                 this.store,
                 this.nodeLifetime,
@@ -182,7 +182,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationWalletManager.IsFederationWalletActive().Returns(false);
 
             var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
-                this.loopFactory,
+                this.asyncProvider,
                 this.loggerFactory,
                 this.store,
                 this.nodeLifetime,
