@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -109,23 +110,23 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 return null;
             });
 
-            this.blockStoreMock.Setup(x => x.GetBlock(It.IsAny<uint256>())).Returns((uint256 hash) =>
+            this.consensusManagerMock.Setup(x => x.GetBlockData(It.IsAny<uint256>())).Returns((uint256 hash) =>
             {
                 ChainedHeader header = headers.SingleOrDefault(x => x.HashBlock == hash);
 
                 switch (header?.Height)
                 {
                     case 1:
-                        return block1;
+                        return new ChainedHeaderBlock(block1, header);
 
                     case 5:
-                        return block5;
+                        return new ChainedHeaderBlock(block5, header); ;
 
                     case 10:
-                        return block10;
+                        return new ChainedHeaderBlock(block10, header); ;
                 }
 
-                return new Block();
+                return  new ChainedHeaderBlock(new Block(), header);;
             });
 
             this.addressIndexer.Initialize();
@@ -144,6 +145,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             ChainedHeader forkPoint = headers.Single(x => x.Height == 8);
 
             List<ChainedHeader> headersFork = ChainedHeadersHelper.CreateConsecutiveHeaders(100, forkPoint, false, null, this.network);
+
+            this.consensusManagerMock.Setup(x => x.GetBlockData(It.IsAny<uint256>())).Returns((uint256 hash) =>
+            {
+                ChainedHeader header = headersFork.SingleOrDefault(x => x.HashBlock == hash);
+                return new ChainedHeaderBlock(new Block(), header); ;
+            });
 
             this.consensusManagerMock.Setup(x => x.Tip).Returns(() => headersFork.Last());
             TestHelper.WaitLoop(() => this.addressIndexer.IndexerTip == headersFork.Last());
