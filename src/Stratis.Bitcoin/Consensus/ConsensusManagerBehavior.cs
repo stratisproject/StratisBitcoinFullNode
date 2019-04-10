@@ -372,6 +372,14 @@ namespace Stratis.Bitcoin.Consensus
                     return;
                 }
 
+                if (result.Consumed == this.BestReceivedTip)
+                {
+                    this.logger.LogDebug("No new headers were presented");
+                    this.logger.LogTrace("(-)[NO_NEW_HEADERS_PRESENTED]");
+
+                    return;
+                }
+
                 this.BestReceivedTip = result.Consumed;
                 this.UpdateBestSentHeader(this.BestReceivedTip);
 
@@ -575,9 +583,6 @@ namespace Stratis.Bitcoin.Consensus
                     this.logger.LogDebug("Ignoring sync request, headersPayload is null.");
                     return;
                 }
-
-                if (this.lastGetHeaderPayloadLocatorSent == getHeadersPayload.BlockLocator.Blocks.First())
-                    throw new ConsensusException("The same locator has been requested.");
 
                 try
                 {
