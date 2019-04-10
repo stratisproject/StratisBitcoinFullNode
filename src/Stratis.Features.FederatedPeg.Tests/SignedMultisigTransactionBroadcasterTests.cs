@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
@@ -38,6 +39,9 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly IMempoolPersistence mempoolPersistence;
         private readonly ICoinView coinView;
 
+        private readonly IInitialBlockDownloadState ibdState;
+        private readonly IFederationWalletManager federationWalletManager;
+
         private const string PublicKey = "026ebcbf6bfe7ce1d957adbef8ab2b66c788656f35896a170257d6838bda70b95c";
 
         public SignedMultisigTransactionBroadcasterTests()
@@ -51,6 +55,10 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.broadcasterManager = Substitute.For<IBroadcasterManager>();
             this.loopFactory = Substitute.For<IAsyncLoopFactory>();
             this.nodeLifetime = Substitute.For<INodeLifetime>();
+
+            this.ibdState = Substitute.For<IInitialBlockDownloadState>();
+            this.federationWalletManager = Substitute.For<IFederationWalletManager>();
+            this.federationWalletManager.IsFederationWalletActive().Returns(true);
 
             // Setup MempoolManager.
             this.dateTimeProvider = Substitute.For<IDateTimeProvider>();
@@ -103,7 +111,9 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.store,
                 this.nodeLifetime,
                 this.mempoolManager,
-                this.broadcasterManager);
+                this.broadcasterManager,
+                this.ibdState,
+                this.federationWalletManager);
 
             await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
 
@@ -136,7 +146,9 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.store,
                 this.nodeLifetime,
                 this.mempoolManager,
-                this.broadcasterManager);
+                this.broadcasterManager,
+                this.ibdState,
+                this.federationWalletManager);
 
             await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
             await this.store.Received().GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).ConfigureAwait(false);

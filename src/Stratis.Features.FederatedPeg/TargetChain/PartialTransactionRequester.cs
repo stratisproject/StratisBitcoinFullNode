@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
@@ -50,6 +51,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly IConnectionManager connectionManager;
         private readonly IFederationGatewaySettings federationGatewaySettings;
 
+        private readonly IInitialBlockDownloadState ibdState;
+        private readonly IFederationWalletManager federationWalletManager;
+
         private IAsyncLoop asyncLoop;
 
         public PartialTransactionRequester(
@@ -58,7 +62,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
             IConnectionManager connectionManager,
-            IFederationGatewaySettings federationGatewaySettings)
+            IFederationGatewaySettings federationGatewaySettings,
+            IInitialBlockDownloadState ibdState,
+            IFederationWalletManager federationWalletManager)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(crossChainTransferStore, nameof(crossChainTransferStore));
@@ -72,6 +78,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.nodeLifetime = nodeLifetime;
             this.connectionManager = connectionManager;
             this.federationGatewaySettings = federationGatewaySettings;
+            this.ibdState = ibdState;
+            this.federationWalletManager = federationWalletManager;
         }
 
         /// <inheritdoc />
@@ -105,6 +113,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             this.asyncLoop = this.asyncLoopFactory.Run(nameof(PartialTransactionRequester), token =>
             {
+                if (this.ibdState.IsInitialBlockDownload() || !this.federationWalletManager.IsFederationWalletActive())
+                {
+                    this.logger.LogTrace("Federation wallet isn't active or in IBD. Not attempting to request transaction signatures.");
+                    return Task.CompletedTask;
+                }
+
+
                 // Broadcast the partial transaction with the earliest inputs.
                 KeyValuePair<uint256, Transaction> kv = this.crossChainTransferStore.GetTransactionsByStatusAsync(
                     CrossChainTransferStatus.Partial, true).GetAwaiter().GetResult().FirstOrDefault();
