@@ -263,7 +263,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
 
             long sum = 0;
-            int index = 0;
             var coins = new List<Coin>();
 
             // Note that the coins are ordered and selected by the CoinSelector later on.
@@ -274,7 +273,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
             {
                 coins.Add(ScriptCoin.Create(this.network, item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, this.walletManager.GetWallet().MultiSigAddress.RedeemScript));
                 sum += item.Transaction.Amount;
-                index++;
 
                 // Sufficient UTXOs are selected to cover the value of the outputs + fee.
                 if (sum >= (totalToSend + context.TransactionFee))
