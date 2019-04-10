@@ -155,6 +155,46 @@ namespace Stratis.Features.FederatedPeg.Tests
             await this.broadcasterManager.Received(1).BroadcastTransactionAsync(Arg.Any<Transaction>());
         }
 
+        [Fact]
+        public async Task Dont_Do_Work_In_IBD()
+        {
+            this.ibdState.IsInitialBlockDownload().Returns(true);
+
+            var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+                this.loopFactory,
+                this.loggerFactory,
+                this.store,
+                this.nodeLifetime,
+                this.mempoolManager,
+                this.broadcasterManager,
+                this.ibdState,
+                this.federationWalletManager);
+
+            await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
+
+            await this.store.Received(0).GetTransactionsByStatusAsync(Arg.Any<CrossChainTransferStatus>());
+        }
+
+        [Fact]
+        public async Task Dont_Do_Work_Inactive_Federation()
+        {
+            this.federationWalletManager.IsFederationWalletActive().Returns(false);
+
+            var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+                this.loopFactory,
+                this.loggerFactory,
+                this.store,
+                this.nodeLifetime,
+                this.mempoolManager,
+                this.broadcasterManager,
+                this.ibdState,
+                this.federationWalletManager);
+
+            await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
+
+            await this.store.Received(0).GetTransactionsByStatusAsync(Arg.Any<CrossChainTransferStatus>());
+        }
+
         public void Dispose()
         {
             this.leaderReceiverSubscription?.Dispose();
