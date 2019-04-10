@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using FileMode = LiteDB.FileMode;
 using Script = NBitcoin.Script;
 
 namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
@@ -103,7 +105,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             }
 
             string dbPath = Path.Combine(this.dataFolder.RootPath, "addressindex.litedb");
-            this.db = new LiteDatabase(new ConnectionString() {Filename = dbPath});
+
+            FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
+            this.db = new LiteDatabase(new ConnectionString() {Filename = dbPath, Mode = fileMode });
 
             this.logger.LogDebug("TxIndexing is enabled.");
 
