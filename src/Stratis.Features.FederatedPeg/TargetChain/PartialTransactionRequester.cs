@@ -108,29 +108,31 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
         }
 
+        public async Task BroadcastPartialTransactionsAsync()
+        {
+            if (this.ibdState.IsInitialBlockDownload() || !this.federationWalletManager.IsFederationWalletActive())
+            {
+                this.logger.LogTrace("Federation wallet isn't active or in IBD. Not attempting to request transaction signatures.");
+                return;
+            }
+
+            // Broadcast the partial transaction with the earliest inputs.
+            KeyValuePair<uint256, Transaction> kv = (await this.crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.Partial, true))
+                .FirstOrDefault();
+
+            if (kv.Key != null)
+            {
+                await this.BroadcastAsync(new RequestPartialTransactionPayload(kv.Key).AddPartial(kv.Value));
+                this.logger.LogInformation("Partial template requested");
+            }
+        }
+
         /// <inheritdoc />
         public void Start()
         {
-            this.asyncLoop = this.asyncLoopFactory.Run(nameof(PartialTransactionRequester), token =>
+            this.asyncLoop = this.asyncLoopFactory.Run(nameof(PartialTransactionRequester), _ =>
             {
-                if (this.ibdState.IsInitialBlockDownload() || !this.federationWalletManager.IsFederationWalletActive())
-                {
-                    this.logger.LogTrace("Federation wallet isn't active or in IBD. Not attempting to request transaction signatures.");
-                    return Task.CompletedTask;
-                }
-
-
-                // Broadcast the partial transaction with the earliest inputs.
-                KeyValuePair<uint256, Transaction> kv = this.crossChainTransferStore.GetTransactionsByStatusAsync(
-                    CrossChainTransferStatus.Partial, true).GetAwaiter().GetResult().FirstOrDefault();
-
-                if (kv.Key != null)
-                {
-                    this.BroadcastAsync(new RequestPartialTransactionPayload(kv.Key).AddPartial(kv.Value)).GetAwaiter().GetResult();
-                    this.logger.LogInformation("Partial template requested");
-                }
-
-                this.logger.LogTrace("(-)[PARTIAL_TEMPLATES_JOB]");
+                this.BroadcastPartialTransactionsAsync().GetAwaiter().GetResult();
                 return Task.CompletedTask;
             },
             this.nodeLifetime.ApplicationStopping,
