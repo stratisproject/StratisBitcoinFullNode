@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
@@ -28,9 +29,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     /// </summary>
     public class PosCoinViewRuleTests : TestPosConsensusRulesUnitTestBase
     {
-        private ConsensusRulesContainer consensusRulesContainer;
-        private ConsensusRuleEngine consensusRuleEngine;
-
         /// <summary>
         /// Creates the consensus manager used by <see cref="PosCoinViewRuleFailsAsync"/>.
         /// </summary>
@@ -41,13 +39,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.consensusSettings = new ConsensusSettings(Configuration.NodeSettings.Default(this.network));
             var initialBlockDownloadState = new InitialBlockDownloadState(this.chainState.Object, this.network, this.consensusSettings, new Checkpoints());
 
-            this.consensusRulesContainer = new ConsensusRulesContainer();
+            var consensusRulesContainer = new ConsensusRulesContainer();
+            foreach (var ruleType in this.network.Consensus.ConsensusRules.FullValidationRules)
+                consensusRulesContainer.FullValidationRules.Add(Activator.CreateInstance(ruleType) as FullValidationConsensusRule);
 
             // Register POS consensus rules.
             // new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(this.network.Consensus);
-            this.consensusRuleEngine = new PosConsensusRuleEngine(this.network, this.loggerFactory.Object, DateTimeProvider.Default,
+            var consensusRuleEngine = new PosConsensusRuleEngine(this.network, this.loggerFactory.Object, DateTimeProvider.Default,
                 this.ChainIndexer, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
-                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new Mock<INodeStats>().Object, this.rewindDataIndexStore.Object, this.consensusRulesContainer)
+                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new Mock<INodeStats>().Object, this.rewindDataIndexStore.Object, consensusRulesContainer)
                 .SetupRulesEngineParent();
 
             var headerValidator = new HeaderValidator(consensusRuleEngine, this.loggerFactory.Object);
@@ -137,8 +137,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             ConsensusManager consensusManager = await this.CreateConsensusManagerAsync(unspentOutputs);
 
-            this.consensusRulesContainer.IntegrityValidationRules = new List<IntegrityValidationConsensusRule>(){ new PosBlockSignatureRule() };
-            this.consensusRuleEngine.SetupRulesEngineParent();
 
             // The keys used by miner 1 and miner 2.
             var minerKey1 = new Key();
