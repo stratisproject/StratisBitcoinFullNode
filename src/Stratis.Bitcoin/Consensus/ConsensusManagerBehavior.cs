@@ -73,6 +73,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Protects write access to the <see cref="BestSentHeader"/>.</summary>
         private readonly object bestSentHeaderLock;
 
+        /// <summary>The hash of the last header that was sent.</summary>
+        private uint256 lastGetHeaderPayloadLocatorSent;
+
         public ConsensusManagerBehavior(ChainIndexer chainIndexer, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
@@ -573,6 +576,9 @@ namespace Stratis.Bitcoin.Consensus
                     return;
                 }
 
+                if (this.lastGetHeaderPayloadLocatorSent == getHeadersPayload.BlockLocator.Blocks.First())
+                    throw new ConsensusException("The same locator has been requested.");
+
                 try
                 {
                     this.logger.LogDebug("Sending getheaders payload with first hash: '{0}'.", getHeadersPayload.BlockLocator.Blocks.First());
@@ -583,6 +589,8 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     this.logger.LogDebug("Unable to send getheaders ({0}) message to peer '{1}'.", getHeadersPayload.GetType().Name, peer.RemoteSocketEndpoint);
                 }
+
+                this.lastGetHeaderPayloadLocatorSent = getHeadersPayload.BlockLocator.Blocks.First();
             }
             else
                 this.logger.LogDebug("Can't sync. Peer's state is not handshaked or peer was not attached.");
