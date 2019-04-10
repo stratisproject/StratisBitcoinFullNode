@@ -265,8 +265,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
             long sum = 0;
             var coins = new List<Coin>();
 
-            // Note that the coins are ordered and selected by the CoinSelector later on.
-            // TODO: Move GetOrderedUnspentOutputs to happen inside the DeterministicCoinSelector.
+            // TODO: Pass all coins in, and order the coins in the DeterministicCoinSelector instead of here.
+            // Note that order is important after this so we need to use the DeterministicCoinSelector.
             IEnumerable<UnspentOutputReference> orderedUnspentOutputs = this.GetOrderedUnspentOutputs(context);
 
             foreach (UnspentOutputReference item in orderedUnspentOutputs)
