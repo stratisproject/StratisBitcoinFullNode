@@ -513,25 +513,25 @@ namespace Stratis.Bitcoin.Connection
             if (ipEndpoint == null)
             {
                 this.logger.LogTrace("(-)[IPENDPOINT_NULL]");
-                return;
+                throw new ArgumentNullException(nameof(ipEndpoint));
             }
 
             if (ipEndpoint.Address == null)
             {
                 this.logger.LogTrace("(-)[IPENDPOINT_ADDRESS_NULL]");
-                return;
+                throw new ArgumentNullException(nameof(ipEndpoint.Address));
             }
 
             if (this.ConnectionSettings.AddNode.Any(ip => ip == null))
             {
                 this.logger.LogTrace("(-)[ADDNODE_CONTAINS_NULLS]");
-                return;
+                throw new ArgumentNullException("The addnode collection contains null entries.");
             }
 
             foreach (var endpoint in this.ConnectionSettings.AddNode.Where(a => a.Address == null))
             {
                 this.logger.LogTrace("(-)[IPENDPOINT_ADDRESS_NULL]:{0}", endpoint);
-                return;
+                throw new ArgumentNullException("The addnode collection contains endpoints with null addresses.");
             }
 
             // Create a copy of the nodes to remove. This avoids errors due to both modifying the collection and iterating it.
