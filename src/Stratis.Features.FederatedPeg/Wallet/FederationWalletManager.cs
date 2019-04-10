@@ -935,7 +935,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <inheritdoc />
-        public void EnableFederation(string password, string mnemonic = null, string passphrase = null)
+        public void EnableFederationWallet(string password, string mnemonic = null, string passphrase = null)
         {
             Guard.NotEmpty(password, nameof(password));
 
@@ -997,7 +997,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
-        public bool IsFederationActive()
+        public bool IsFederationWalletActive()
         {
             return this.isFederationActive;
         }

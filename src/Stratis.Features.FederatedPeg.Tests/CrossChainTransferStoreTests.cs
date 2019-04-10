@@ -446,9 +446,9 @@ namespace Stratis.Features.FederatedPeg.Tests
                     CrossChainTransferStatus.Partial).GetAwaiter().GetResult();
 
                 var requester = new PartialTransactionRequester(this.loggerFactory, crossChainTransferStore, this.asyncLoopFactory,
-                    this.nodeLifetime, this.connectionManager, this.federationGatewaySettings);
+                    this.nodeLifetime, this.connectionManager, this.federationGatewaySettings, this.ibdState, this.federationWalletManager);
 
-                var peerEndPoint = new System.Net.IPEndPoint(System.Net.IPAddress.Parse("1.2.3.4"), 5);
+                var peerEndPoint = new IPEndPoint(System.Net.IPAddress.Parse("1.2.3.4"), 5);
                 var peer = Substitute.For<INetworkPeer>();
                 peer.RemoteSocketAddress.Returns(peerEndPoint.Address);
                 peer.RemoteSocketPort.Returns(peerEndPoint.Port);
