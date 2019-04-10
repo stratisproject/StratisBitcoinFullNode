@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Base.AsyncWork;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -114,7 +115,7 @@ namespace Stratis.Features.FederatedPeg
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            // add our payload 
+            // add our payload
             var payloadProvider = (PayloadProvider)this.fullNode.Services.ServiceProvider.GetService(typeof(PayloadProvider));
             payloadProvider.AddPayload(typeof(RequestPartialTransactionPayload));
 
@@ -290,6 +291,7 @@ namespace Stratis.Features.FederatedPeg
                 features.AddFeature<FederationGatewayFeature>().DependOn<BlockNotificationFeature>().FeatureServices(
                     services =>
                     {
+                        services.AddSingleton<IAsyncProvider, AsyncProvider>();
                         services.AddSingleton<IHttpClientFactory, HttpClientFactory>();
                         services.AddSingleton<IMaturedBlocksProvider, MaturedBlocksProvider>();
                         services.AddSingleton<IFederationGatewaySettings, FederationGatewaySettings>();
