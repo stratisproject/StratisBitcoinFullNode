@@ -10,6 +10,7 @@ using NBitcoin;
 using NBitcoin.Networks;
 using NSubstitute;
 using Stratis.Bitcoin;
+using Stratis.Bitcoin.Base.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -47,7 +48,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         protected IWithdrawalTransactionBuilder withdrawalTransactionBuilder;
         protected DataFolder dataFolder;
         protected IWalletFeePolicy walletFeePolicy;
-        protected IAsyncLoopFactory asyncLoopFactory;
+        protected IAsyncProvider asyncProvider;
         protected INodeLifetime nodeLifetime;
         protected IConnectionManager connectionManager;
         protected DBreezeSerializer dBreezeSerializer;
@@ -78,7 +79,6 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.logger = Substitute.For<ILogger>();
-            this.asyncLoopFactory = new AsyncLoopFactory(this.loggerFactory);
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.dateTimeProvider = DateTimeProvider.Default;
             this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions);
@@ -90,6 +90,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.FederationWalletTransactionHandler = Substitute.For<IFederationWalletTransactionHandler>();
             this.walletFeePolicy = Substitute.For<IWalletFeePolicy>();
             this.nodeLifetime = new NodeLifetime();
+            this.asyncProvider = new AsyncProvider(this.loggerFactory, Substitute.For<Bitcoin.Signals.ISignals>(), this.nodeLifetime);
             this.connectionManager = Substitute.For<IConnectionManager>();
             this.dBreezeSerializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
 
@@ -179,7 +180,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.ChainIndexer,
                 dataFolder,
                 this.walletFeePolicy,
-                this.asyncLoopFactory,
+                this.asyncProvider,
                 new NodeLifetime(),
                 this.dateTimeProvider,
                 this.federationGatewaySettings,
