@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.stakeValidator = new Mock<IStakeValidator>();
             this.stakeChain = new Mock<IStakeChain>();
             this.stratisTest = KnownNetworks.StratisTest;
-            new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(this.stratisTest.Consensus);
+            //new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(this.stratisTest.Consensus);
             this.key = new Key();
             this.minerSettings = new MinerSettings(NodeSettings.Default(this.Network));
             SetupConsensusManager();
@@ -457,7 +457,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 new Mock<IChainState>().Object,
                 new InvalidBlockHashStore(dateTimeProvider),
                 new NodeStats(dateTimeProvider),
-                new Mock<IRewindDataIndexCache>().Object);
+                new Mock<IRewindDataIndexCache>().Object,
+                new ConsensusRulesContainer());
 
             posConsensusRules.Register();
 

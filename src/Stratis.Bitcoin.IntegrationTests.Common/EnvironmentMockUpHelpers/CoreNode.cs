@@ -381,10 +381,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// </summary>
         public void DisableValidation()
         {
-            this.FullNode.Network.Consensus.FullValidationRules.Clear();
-            this.FullNode.Network.Consensus.HeaderValidationRules.Clear();
-            this.FullNode.Network.Consensus.IntegrityValidationRules.Clear();
-            this.FullNode.Network.Consensus.PartialValidationRules.Clear();
+            this.FullNode.Network.Consensus.ConsensusRules.FullValidationRules.Clear();
+            this.FullNode.Network.Consensus.ConsensusRules.HeaderValidationRules.Clear();
+            this.FullNode.Network.Consensus.ConsensusRules.IntegrityValidationRules.Clear();
+            this.FullNode.Network.Consensus.ConsensusRules.PartialValidationRules.Clear();
 
             this.FullNode.NodeService<IConsensusRuleEngine>().Register();
         }

@@ -60,13 +60,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var rule = new T();
 
             if (rule is IHeaderValidationConsensusRule validationConsensusRule)
-                ruleEngine.Network.Consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>() { validationConsensusRule };
+                ruleEngine.Network.Consensus.ConsensusRules.HeaderValidationRules = new List<Type>() { validationConsensusRule.GetType() };
             else if (rule is IIntegrityValidationConsensusRule consensusRule)
-                ruleEngine.Network.Consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>() { consensusRule };
+                ruleEngine.Network.Consensus.ConsensusRules.IntegrityValidationRules = new List<Type>() { consensusRule.GetType() };
             else if (rule is IPartialValidationConsensusRule partialValidationConsensusRule)
-                ruleEngine.Network.Consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>() { partialValidationConsensusRule };
+                ruleEngine.Network.Consensus.ConsensusRules.PartialValidationRules = new List<Type>() { partialValidationConsensusRule.GetType() };
             else if (rule is IFullValidationConsensusRule fullValidationConsensusRule)
-                ruleEngine.Network.Consensus.FullValidationRules = new List<IFullValidationConsensusRule>() { fullValidationConsensusRule };
+                ruleEngine.Network.Consensus.ConsensusRules.FullValidationRules = new List<Type>() { fullValidationConsensusRule.GetType() };
             else
                 throw new Exception("Rule type wasn't recognized.");
 
@@ -85,8 +85,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         private RuleRegistrationHelper ruleRegistrationHelper;
 
         public TestConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ChainIndexer chainIndexer, NodeDeployments nodeDeployments,
-            ConsensusSettings consensusSettings, ICheckpoints checkpoints, IChainState chainState, IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats)
-            : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, chainState, invalidBlockHashStore, nodeStats)
+            ConsensusSettings consensusSettings, ICheckpoints checkpoints, IChainState chainState, IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, ConsensusRulesContainer consensusRulesContainer)
+            : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, chainState, invalidBlockHashStore, nodeStats, consensusRulesContainer)
         {
             this.ruleRegistrationHelper = new RuleRegistrationHelper();
         }
@@ -121,8 +121,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         public TestPosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ChainIndexer chainIndexer,
             NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView uxtoSet, IStakeChain stakeChain,
-            IStakeValidator stakeValidator, IChainState chainState, IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IRewindDataIndexCache rewindDataIndexCache)
-            : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, uxtoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore, nodeStats, rewindDataIndexCache)
+            IStakeValidator stakeValidator, IChainState chainState, IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IRewindDataIndexCache rewindDataIndexCache, ConsensusRulesContainer consensusRulesContainer)
+            : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, uxtoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore, nodeStats, rewindDataIndexCache, consensusRulesContainer)
         {
             this.ruleRegistrationHelper = new RuleRegistrationHelper();
         }
@@ -154,7 +154,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             testRulesContext.LoggerFactory.AddConsoleWithFilters();
             testRulesContext.DateTimeProvider = DateTimeProvider.Default;
             network.Consensus.Options = new ConsensusOptions();
-            new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(network.Consensus);
 
             var consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
@@ -164,7 +163,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.ChainIndexer);
             testRulesContext.ConsensusRuleEngine = new PowConsensusRuleEngine(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider,
                 testRulesContext.ChainIndexer, deployments, consensusSettings, testRulesContext.Checkpoints, new InMemoryCoinView(new uint256()), testRulesContext.ChainState,
-                new InvalidBlockHashStore(DateTimeProvider.Default), new NodeStats(DateTimeProvider.Default)).Register();
+                new InvalidBlockHashStore(DateTimeProvider.Default), new NodeStats(DateTimeProvider.Default), new ConsensusRulesContainer()).Register();
 
             return testRulesContext;
         }

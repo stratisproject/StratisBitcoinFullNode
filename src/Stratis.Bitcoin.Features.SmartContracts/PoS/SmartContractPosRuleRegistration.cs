@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -48,54 +49,54 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
             this.stakeValidator = stakeValidator;
         }
 
-        public void RegisterRules(IConsensus consensus)
+        public void RegisterRules_(IConsensus consensus)
         {
-            consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
+            consensus.ConsensusRules.HeaderValidationRules = new List<Type>()
             {
-                new HeaderTimeChecksRule(),
-                new HeaderTimeChecksPosRule(),
-                new StratisBugFixPosFutureDriftRule(),
-                new CheckDifficultyPosRule(),
-                new StratisHeaderVersionRule(),
+                typeof(HeaderTimeChecksRule),
+                typeof(HeaderTimeChecksPosRule),
+                typeof(StratisBugFixPosFutureDriftRule),
+                typeof(CheckDifficultyPosRule),
+                typeof(StratisHeaderVersionRule),
             };
 
-            consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+            consensus.ConsensusRules.IntegrityValidationRules = new List<Type>()
             {
-                new BlockMerkleRootRule(),
-                new PosBlockSignatureRepresentationRule(),
-                new SmartContractPosBlockSignatureRule(),
+                typeof(BlockMerkleRootRule),
+                typeof(PosBlockSignatureRepresentationRule),
+                typeof(SmartContractPosBlockSignatureRule),
             };
 
-            consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
+            consensus.ConsensusRules.PartialValidationRules = new List<Type>()
             {
-                new SetActivationDeploymentsPartialValidationRule(),
+                typeof(SetActivationDeploymentsPartialValidationRule),
 
-                new PosTimeMaskRule(),
+                typeof(PosTimeMaskRule),
 
                 // rules that are inside the method ContextualCheckBlock
-                new TransactionLocktimeActivationRule(), // implements BIP113
-                new CoinbaseHeightActivationRule(), // implements BIP34
-                new WitnessCommitmentsRule(), // BIP141, BIP144
-                new BlockSizeRule(),
+                typeof(TransactionLocktimeActivationRule), // implements BIP113
+                typeof(CoinbaseHeightActivationRule), // implements BIP34
+                typeof(WitnessCommitmentsRule), // BIP141, BIP144
+                typeof(BlockSizeRule),
 
                 // rules that are inside the method CheckBlock
-                new EnsureCoinbaseRule(),
-                new CheckPowTransactionRule(),
-                new CheckPosTransactionRule(),
-                new CheckSigOpsRule(),
-                new PosCoinstakeRule()
+                typeof(EnsureCoinbaseRule),
+                typeof(CheckPowTransactionRule),
+                typeof(CheckPosTransactionRule),
+                typeof(CheckSigOpsRule),
+                typeof(PosCoinstakeRule)
             };
 
             // TODO: When looking to make PoS work again, will need to add several of the smart contract consensus rules below (see PoA and PoW implementations)
-            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+            consensus.ConsensusRules.FullValidationRules = new List<Type>()
             {
-                new SetActivationDeploymentsFullValidationRule(),
+                typeof(SetActivationDeploymentsFullValidationRule),
 
-                new CheckDifficultyHybridRule(),
-                new LoadCoinviewRule(),
-                new TransactionDuplicationActivationRule(), // implements BIP30
-                new SmartContractPosCoinviewRule(this.network, this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView, this.stakeChain, this.stakeValidator), // implements BIP68, MaxSigOps and BlockReward 
-                new SaveCoinviewRule()
+                typeof(CheckDifficultyHybridRule),
+                typeof(LoadCoinviewRule),
+                typeof(TransactionDuplicationActivationRule), // implements BIP30
+                typeof(SmartContractPosCoinviewRule), // implements BIP68, MaxSigOps and BlockReward 
+                typeof(SaveCoinviewRule)
             };
         }
     }

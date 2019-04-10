@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -223,7 +224,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                         this.cachedCoinView,
                         chainState,
                         new InvalidBlockHashStore(DateTimeProvider.Default),
-                        new NodeStats(new DateTimeProvider()))
+                        new NodeStats(new DateTimeProvider()),
+                        new ConsensusRulesContainer())
                     .Register();
 
                 var ruleRegistration = new SmartContractPowRuleRegistration(this.network, this.StateRoot,

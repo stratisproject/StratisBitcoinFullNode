@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using NBitcoin;
 using NBitcoin.Rules;
@@ -15,9 +16,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public void BitcoinConsensusRulesRegistrationTest()
         {
             Network network = new BitcoinTest();
-            new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(network.Consensus);
+            //new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(network.Consensus);
 
-            List<IHeaderValidationConsensusRule> headerValidationRules = network.Consensus.HeaderValidationRules;
+            List<Type> headerValidationRules = network.Consensus.ConsensusRules.HeaderValidationRules;
 
             headerValidationRules.Count.Should().Be(4);
 
@@ -26,12 +27,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             headerValidationRules[2].Should().BeOfType<BitcoinActivationRule>();
             headerValidationRules[3].Should().BeOfType<BitcoinHeaderVersionRule>();
 
-            List<IIntegrityValidationConsensusRule> integrityValidationRules = network.Consensus.IntegrityValidationRules;
+            List<Type> integrityValidationRules = network.Consensus.ConsensusRules.IntegrityValidationRules;
 
             integrityValidationRules.Count.Should().Be(1);
             integrityValidationRules[0].Should().BeOfType<BlockMerkleRootRule>();
 
-            List<IPartialValidationConsensusRule> partialValidationRules = network.Consensus.PartialValidationRules;
+            List<Type> partialValidationRules = network.Consensus.ConsensusRules.PartialValidationRules;
 
             partialValidationRules.Count.Should().Be(8);
 
@@ -44,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             partialValidationRules[6].Should().BeOfType<CheckPowTransactionRule>();
             partialValidationRules[7].Should().BeOfType<CheckSigOpsRule>();
 
-            List<IFullValidationConsensusRule> fullValidationRules = network.Consensus.FullValidationRules;
+            List<Type> fullValidationRules = network.Consensus.ConsensusRules.FullValidationRules;
 
             fullValidationRules.Count.Should().Be(5);
 
@@ -59,9 +60,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public void StratisConsensusRulesRegistrationTest()
         {
             Network network = new StratisTest();
-            new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(network.Consensus);
+            //new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(network.Consensus);
 
-            List<IHeaderValidationConsensusRule> headerValidationRules = network.Consensus.HeaderValidationRules;
+            List<Type> headerValidationRules = network.Consensus.ConsensusRules.HeaderValidationRules;
 
             headerValidationRules.Count.Should().Be(7);
             headerValidationRules[0].Should().BeOfType<HeaderTimeChecksRule>();
@@ -72,14 +73,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             headerValidationRules[5].Should().BeOfType<ProvenHeaderSizeRule>();
             headerValidationRules[6].Should().BeOfType<ProvenHeaderCoinstakeRule>();
 
-            List<IIntegrityValidationConsensusRule> integrityValidationRules = network.Consensus.IntegrityValidationRules;
+            List<Type> integrityValidationRules = network.Consensus.ConsensusRules.IntegrityValidationRules;
 
             integrityValidationRules.Count.Should().Be(3);
             integrityValidationRules[0].Should().BeOfType<BlockMerkleRootRule>();
             integrityValidationRules[1].Should().BeOfType<PosBlockSignatureRepresentationRule>();
             integrityValidationRules[2].Should().BeOfType<PosBlockSignatureRule>();
 
-            List<IPartialValidationConsensusRule> partialValidationRules = network.Consensus.PartialValidationRules;
+            List<Type> partialValidationRules = network.Consensus.ConsensusRules.PartialValidationRules;
 
             partialValidationRules.Count.Should().Be(11);
 
@@ -95,7 +96,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             partialValidationRules[9].Should().BeOfType<CheckSigOpsRule>();
             partialValidationRules[10].Should().BeOfType<PosCoinstakeRule>();
 
-            List<IFullValidationConsensusRule> fullValidationRules = network.Consensus.FullValidationRules;
+            List<Type> fullValidationRules = network.Consensus.ConsensusRules.FullValidationRules;
 
             fullValidationRules.Count.Should().Be(7);
 

@@ -45,7 +45,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 new NodeDeployments(KnownNetworks.RegTest, new ChainIndexer(this.network)),
                 new ConsensusSettings(NodeSettings.Default(this.network)), new Mock<ICheckpoints>().Object, new Mock<ICoinView>().Object, new Mock<IChainState>().Object,
                 new InvalidBlockHashStore(null),
-                new NodeStats(null));
+                new NodeStats(null),
+                new ConsensusRulesContainer());
 
             this.rule.Initialize();
         }

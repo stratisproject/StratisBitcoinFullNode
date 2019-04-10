@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             this.coinView = coinView;
         }
 
-        public void RegisterRules(IConsensus consensus)
+        public void RegisterRules_(IConsensus consensus)
         {
             consensus.ConsensusRules.HeaderValidationRules = new List<Type>()
             {

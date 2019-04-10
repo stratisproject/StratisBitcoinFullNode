@@ -77,6 +77,20 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
+        public class FailValidation15 : FailValidation
+        {
+            public FailValidation15() : base(15)
+            {
+            }
+        }
+
+        public class FailValidation11 : FailValidation
+        {
+            public FailValidation11() : base(11)
+            {
+            }
+        }
+
         public class FailValidation : FullValidationConsensusRule
         {
             private readonly int failheight;
@@ -301,7 +315,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Inject a rule that will fail at block 15 of the new chain.
                 var engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
-                syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidation(15));
+                syncerNetwork.Consensus.ConsensusRules.FullValidationRules.Insert(1, typeof(FailValidation15));
                 engine.Register();
 
                 // Miner B continues to mine to height 30 on a new and longer chain.
@@ -344,7 +358,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Inject a rule that will fail at block 11 of the new chain
                 ConsensusRuleEngine engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
-                syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidation(11));
+                syncerNetwork.Consensus.ConsensusRules.FullValidationRules.Insert(1, typeof(FailValidation11));
                 engine.Register();
 
                 // Miner B continues to mine to height 30 on a new and longer chain.
@@ -430,7 +444,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Inject a rule that will fail at block 11 of the new chain
                 ConsensusRuleEngine engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
-                syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidation(11));
+                syncerNetwork.Consensus.ConsensusRules.FullValidationRules.Insert(1, typeof(FailValidation11));
                 engine.Register();
 
                 // Connect syncer to Miner A, reorg should fail.

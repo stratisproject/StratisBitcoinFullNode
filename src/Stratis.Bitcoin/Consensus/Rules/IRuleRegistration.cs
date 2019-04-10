@@ -14,6 +14,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
     /// </remarks>
     public interface IRuleRegistration
     {
-        void RegisterRules(IConsensus consensus);
+        //void RegisterRules(IConsensus consensus);
     }
 }

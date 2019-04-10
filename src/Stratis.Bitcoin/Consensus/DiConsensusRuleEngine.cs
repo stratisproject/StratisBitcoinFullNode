@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Consensus
         public ConsensusRuleEngine Register()
         {
             // Hack the rules onto Consensus
-            this.ruleRegistration.RegisterRules(this.implementation.Network.Consensus);
+            //this.ruleRegistration.RegisterRules(this.implementation.Network.Consensus);
 
             // Call the implementation to register the rules on the Network.
             this.implementation.Register();
