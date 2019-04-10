@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
@@ -214,7 +211,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc/>
-        public Transaction[] GetTransactionsByIds(uint256[] trxids, CancellationToken cancellation)
+        public Transaction[] GetTransactionsByIds(uint256[] trxids, CancellationToken cancellation = default(CancellationToken))
         {
             // Only look for transactions if they're indexed.
             if (!this.storeSettings.TxIndex)

@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc/>
-        public Transaction[] GetTransactionsByIds(uint256[] trxids, CancellationToken cancellation)
+        public Transaction[] GetTransactionsByIds(uint256[] trxids, CancellationToken cancellation = default(CancellationToken))
         {
             if (!this.TxIndex)
             {
