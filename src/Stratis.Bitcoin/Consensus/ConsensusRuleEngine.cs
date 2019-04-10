@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public virtual void Initialize(ChainedHeader chainTip)
         {
-            this.Register();
+            this.SetupRulesEngineParent();
         }
 
         /// <inheritdoc />
@@ -110,10 +110,10 @@ namespace Stratis.Bitcoin.Consensus
         {
         }
 
+        /// TODO: this method needs to be deleted once all rules use dependency injection
         /// <inheritdoc />
-        public ConsensusRuleEngine Register()
+        public ConsensusRuleEngine SetupRulesEngineParent()
         {
-            throw new Exception();
             this.SetupConsensusRules(this.consensusRules.HeaderValidationRules.Select(x => x as ConsensusRuleBase));
             this.SetupConsensusRules(this.consensusRules.IntegrityValidationRules.Select(x => x as ConsensusRuleBase));
             this.SetupConsensusRules(this.consensusRules.PartialValidationRules.Select(x => x as ConsensusRuleBase));

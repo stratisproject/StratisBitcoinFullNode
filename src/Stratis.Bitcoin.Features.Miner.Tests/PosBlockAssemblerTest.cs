@@ -460,7 +460,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 new Mock<IRewindDataIndexCache>().Object,
                 new ConsensusRulesContainer());
 
-            posConsensusRules.Register();
+            posConsensusRules.SetupRulesEngineParent();
 
             this.consensusManager.SetupGet(x => x.ConsensusRules)
                 .Returns(posConsensusRules);

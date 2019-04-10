@@ -384,7 +384,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     new NodeDeployments(this.testNet, chainIndexer), new ConsensusSettings(new NodeSettings(this.testNet)), new Checkpoints(),
                     new Mock<ICoinView>().Object, new Mock<IChainState>().Object, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), new ConsensusRulesContainer());
 
-            powConsensusRules.Register();
+            powConsensusRules.SetupRulesEngineParent();
             this.consensusManager.SetupGet(x => x.ConsensusRules).Returns(powConsensusRules);
         }
 

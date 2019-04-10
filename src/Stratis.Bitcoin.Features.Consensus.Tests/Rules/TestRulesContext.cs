@@ -55,22 +55,31 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
     public class RuleRegistrationHelper
     {
-        public T RegisterRule<T>(ConsensusRuleEngine ruleEngine) where T : ConsensusRuleBase, new()
+        private readonly ConsensusRuleEngine ruleEngine;
+        private readonly ConsensusRulesContainer consensusRulesContainer;
+
+        public RuleRegistrationHelper(ConsensusRuleEngine ruleEngine, ConsensusRulesContainer consensusRulesContainer)
+        {
+            this.ruleEngine = ruleEngine;
+            this.consensusRulesContainer = consensusRulesContainer;
+        }
+
+        public T RegisterRule<T>() where T : ConsensusRuleBase, new()
         {
             var rule = new T();
 
             if (rule is IHeaderValidationConsensusRule validationConsensusRule)
-                ruleEngine.Network.Consensus.ConsensusRules.HeaderValidationRules = new List<Type>() { validationConsensusRule.GetType() };
+                this.consensusRulesContainer.HeaderValidationRules = new List<HeaderValidationConsensusRule>() { validationConsensusRule as HeaderValidationConsensusRule };
             else if (rule is IIntegrityValidationConsensusRule consensusRule)
-                ruleEngine.Network.Consensus.ConsensusRules.IntegrityValidationRules = new List<Type>() { consensusRule.GetType() };
+                this.consensusRulesContainer.IntegrityValidationRules = new List<IntegrityValidationConsensusRule>() { consensusRule as IntegrityValidationConsensusRule };
             else if (rule is IPartialValidationConsensusRule partialValidationConsensusRule)
-                ruleEngine.Network.Consensus.ConsensusRules.PartialValidationRules = new List<Type>() { partialValidationConsensusRule.GetType() };
+                this.consensusRulesContainer.PartialValidationRules = new List<PartialValidationConsensusRule>() { partialValidationConsensusRule as PartialValidationConsensusRule };
             else if (rule is IFullValidationConsensusRule fullValidationConsensusRule)
-                ruleEngine.Network.Consensus.ConsensusRules.FullValidationRules = new List<Type>() { fullValidationConsensusRule.GetType() };
+                this.consensusRulesContainer.FullValidationRules = new List<FullValidationConsensusRule>() { fullValidationConsensusRule as FullValidationConsensusRule };
             else
                 throw new Exception("Rule type wasn't recognized.");
 
-            ruleEngine.Register();
+            this.ruleEngine.SetupRulesEngineParent();
             return rule;
         }
     }
@@ -88,12 +97,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             ConsensusSettings consensusSettings, ICheckpoints checkpoints, IChainState chainState, IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, ConsensusRulesContainer consensusRulesContainer)
             : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, chainState, invalidBlockHashStore, nodeStats, consensusRulesContainer)
         {
-            this.ruleRegistrationHelper = new RuleRegistrationHelper();
+            this.ruleRegistrationHelper = new RuleRegistrationHelper(this, consensusRulesContainer);
         }
 
         public T RegisterRule<T>() where T : ConsensusRuleBase, new()
         {
-            return this.ruleRegistrationHelper.RegisterRule<T>(this);
+            return this.ruleRegistrationHelper.RegisterRule<T>();
         }
 
         public override RuleContext CreateRuleContext(ValidationContext validationContext)
@@ -124,12 +133,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             IStakeValidator stakeValidator, IChainState chainState, IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IRewindDataIndexCache rewindDataIndexCache, ConsensusRulesContainer consensusRulesContainer)
             : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, uxtoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore, nodeStats, rewindDataIndexCache, consensusRulesContainer)
         {
-            this.ruleRegistrationHelper = new RuleRegistrationHelper();
+            this.ruleRegistrationHelper = new RuleRegistrationHelper(this, consensusRulesContainer);
         }
 
         public T RegisterRule<T>() where T : ConsensusRuleBase, new()
         {
-            return this.ruleRegistrationHelper.RegisterRule<T>(this);
+            return this.ruleRegistrationHelper.RegisterRule<T>();
         }
     }
 
@@ -163,7 +172,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.ChainIndexer);
             testRulesContext.ConsensusRuleEngine = new PowConsensusRuleEngine(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider,
                 testRulesContext.ChainIndexer, deployments, consensusSettings, testRulesContext.Checkpoints, new InMemoryCoinView(new uint256()), testRulesContext.ChainState,
-                new InvalidBlockHashStore(DateTimeProvider.Default), new NodeStats(DateTimeProvider.Default), new ConsensusRulesContainer()).Register();
+                new InvalidBlockHashStore(DateTimeProvider.Default), new NodeStats(DateTimeProvider.Default), new ConsensusRulesContainer()).SetupRulesEngineParent();
 
             return testRulesContext;
         }

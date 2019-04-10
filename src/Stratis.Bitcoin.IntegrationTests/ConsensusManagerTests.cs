@@ -316,7 +316,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Inject a rule that will fail at block 15 of the new chain.
                 var engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
                 syncerNetwork.Consensus.ConsensusRules.FullValidationRules.Insert(1, typeof(FailValidation15));
-                engine.Register();
+                engine.SetupRulesEngineParent();
 
                 // Miner B continues to mine to height 30 on a new and longer chain.
                 TestHelper.MineBlocks(minerB, 20);
@@ -359,7 +359,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Inject a rule that will fail at block 11 of the new chain
                 ConsensusRuleEngine engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
                 syncerNetwork.Consensus.ConsensusRules.FullValidationRules.Insert(1, typeof(FailValidation11));
-                engine.Register();
+                engine.SetupRulesEngineParent();
 
                 // Miner B continues to mine to height 30 on a new and longer chain.
                 TestHelper.MineBlocks(minerB, 20);
@@ -445,7 +445,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Inject a rule that will fail at block 11 of the new chain
                 ConsensusRuleEngine engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
                 syncerNetwork.Consensus.ConsensusRules.FullValidationRules.Insert(1, typeof(FailValidation11));
-                engine.Register();
+                engine.SetupRulesEngineParent();
 
                 // Connect syncer to Miner A, reorg should fail.
                 TestHelper.ConnectNoCheck(syncer, minerA);

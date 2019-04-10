@@ -226,7 +226,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                         new InvalidBlockHashStore(DateTimeProvider.Default),
                         new NodeStats(new DateTimeProvider()),
                         new ConsensusRulesContainer())
-                    .Register();
+                    .SetupRulesEngineParent();
 
                 var ruleRegistration = new SmartContractPowRuleRegistration(this.network, this.StateRoot,
                     this.ExecutorFactory, this.callDataSerializer, senderRetriever, receiptRepository, this.cachedCoinView);

@@ -29,13 +29,13 @@ namespace Stratis.Bitcoin.Consensus
             this.implementation.Initialize(chainTip);
         }
 
-        public ConsensusRuleEngine Register()
+        public ConsensusRuleEngine SetupRulesEngineParent()
         {
             // Hack the rules onto Consensus
             //this.ruleRegistration.RegisterRules(this.implementation.Network.Consensus);
 
             // Call the implementation to register the rules on the Network.
-            this.implementation.Register();
+            this.implementation.SetupRulesEngineParent();
 
             return this.implementation;
         }

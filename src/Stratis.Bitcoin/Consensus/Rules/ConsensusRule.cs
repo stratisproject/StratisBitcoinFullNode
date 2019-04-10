@@ -9,16 +9,16 @@ namespace Stratis.Bitcoin.Consensus.Rules
     public class ConsensusRulesContainer
     {
         /// <summary>Group of rules that are used during block header validation.</summary>
-        public List<HeaderValidationConsensusRule> HeaderValidationRules { get; }
+        public List<HeaderValidationConsensusRule> HeaderValidationRules { get; set; }
 
         /// <summary>Group of rules that are used during block integrity validation.</summary>
-        public List<IntegrityValidationConsensusRule> IntegrityValidationRules { get; }
+        public List<IntegrityValidationConsensusRule> IntegrityValidationRules { get; set; }
 
         /// <summary>Group of rules that are used during partial block validation.</summary>
-        public List<PartialValidationConsensusRule> PartialValidationRules { get; }
+        public List<PartialValidationConsensusRule> PartialValidationRules { get; set; }
 
         /// <summary>Group of rules that are used during full validation (connection of a new block).</summary>
-        public List<FullValidationConsensusRule> FullValidationRules { get; }
+        public List<FullValidationConsensusRule> FullValidationRules { get; set; }
 
         public ConsensusRulesContainer()
         {

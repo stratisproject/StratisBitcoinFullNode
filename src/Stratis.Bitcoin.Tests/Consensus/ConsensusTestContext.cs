@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.consensusRules = new PowConsensusRuleEngine(this.Network, this.loggerFactory, this.dateTimeProvider, this.chainIndexer, this.deployments, this.ConsensusSettings,
                      this.checkpoints.Object, this.coinView, this.ChainState.Object, this.hashStore, this.nodeStats, new ConsensusRulesContainer());
 
-            this.consensusRules.Register();
+            this.consensusRules.SetupRulesEngineParent();
 
             var tree = new ChainedHeaderTree(this.Network, this.loggerFactory, this.HeaderValidator.Object, this.checkpoints.Object,
                 this.ChainState.Object, this.FinalizedBlockMock.Object, this.ConsensusSettings, this.hashStore);

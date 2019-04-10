@@ -386,7 +386,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.FullNode.Network.Consensus.ConsensusRules.IntegrityValidationRules.Clear();
             this.FullNode.Network.Consensus.ConsensusRules.PartialValidationRules.Clear();
 
-            this.FullNode.NodeService<IConsensusRuleEngine>().Register();
+            this.FullNode.NodeService<IConsensusRuleEngine>().SetupRulesEngineParent();
         }
 
         public void Broadcast(Transaction transaction)
