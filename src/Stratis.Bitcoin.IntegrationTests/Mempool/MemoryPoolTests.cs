@@ -117,14 +117,17 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                     tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
                     trxs.Add(tx);
                 }
-                var options = new ParallelOptions { MaxDegreeOfParallelism = 10 };
+
+                var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(2)).Token;
+                var options = new ParallelOptions { MaxDegreeOfParallelism = 10, CancellationToken = cancellationToken };
+
+                cancellationToken.Register(() => throw new Exception("Parallel ForEach stuck, aborting."));
                 Parallel.ForEach(trxs, options, transaction =>
                 {
                     stratisNodeSync.Broadcast(transaction);
                 });
 
-                var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(3)).Token;
-                TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 100, cancellationToken: cancellationToken);
+                TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 100);
             }
         }
 

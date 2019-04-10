@@ -402,10 +402,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             using (INetworkPeer peer = this.CreateNetworkPeerClient())
             {
-                peer.VersionHandshakeAsync().GetAwaiter().GetResult();
-                peer.SendMessageAsync(new InvPayload(transaction)).GetAwaiter().GetResult();
-                peer.SendMessageAsync(new TxPayload(transaction)).GetAwaiter().GetResult();
-                this.PingPongAsync(peer).GetAwaiter().GetResult();
+                peer.VersionHandshakeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+                peer.SendMessageAsync(new InvPayload(transaction)).ConfigureAwait(false).GetAwaiter().GetResult();
+                peer.SendMessageAsync(new TxPayload(transaction)).ConfigureAwait(false).GetAwaiter().GetResult();
+                this.PingPongAsync(peer).ConfigureAwait(false).GetAwaiter().GetResult();
             }
         }
 
