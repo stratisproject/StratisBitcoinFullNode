@@ -400,14 +400,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public void Broadcast(Transaction transaction)
         {
-            Guid broadcastGuid = Guid.NewGuid();
             using (INetworkPeer peer = this.CreateNetworkPeerClient())
             {
-                peer.VersionHandshakeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-                peer.SendMessageAsync(new InvPayload(transaction)).ConfigureAwait(false).GetAwaiter().GetResult();
-                peer.SendMessageAsync(new TxPayload(transaction)).ConfigureAwait(false).GetAwaiter().GetResult();
-                //this.PingPongAsync(peer).ConfigureAwait(false).GetAwaiter().GetResult();
-                Thread.Sleep(100);
+                peer.VersionHandshakeAsync().GetAwaiter().GetResult();
+                peer.SendMessageAsync(new InvPayload(transaction)).GetAwaiter().GetResult();
+                peer.SendMessageAsync(new TxPayload(transaction)).GetAwaiter().GetResult();
+                this.PingPongAsync(peer).GetAwaiter().GetResult();
             }
         }
 
@@ -429,7 +427,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 DateTimeOffset before = DateTimeOffset.UtcNow;
                 await peer.SendMessageAsync(ping, cancellation).ConfigureAwait(false);
 
-                while ((await listener.ReceivePayloadAsync<PongPayload>(cancellation).ConfigureAwait(false)).Nonce != ping.Nonce)
+                while ((await listener.ReceivePayloadAsync<PongPayload>(cancellation)).Nonce != ping.Nonce)
                 {
                 }
 
