@@ -73,7 +73,7 @@ namespace Stratis.Features.FederatedPeg.Networks.CirrusV2
                 maxStandardTxSigopsCost: 20_000 / 5,
                 genesisFederationMembers: genesisFederation,
                 targetSpacingSeconds: 16,
-                votingEnabled: false, // Does not work on sidechains yet. Sidechains need to handle removval of fed member and recreation of multisig first.
+                votingEnabled: false, // Does not work on sidechains yet. Sidechains need to handle removal of fed member and recreation of multisig first.
                 autoKickIdleMembers: false
             );
 
