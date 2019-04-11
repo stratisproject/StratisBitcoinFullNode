@@ -1,4 +1,4 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using NBitcoin;
@@ -7,6 +7,9 @@ namespace Stratis.Bitcoin.Utilities
 {
     public static class IpHelper
     {
+        // Don't re-use ports.
+        private static HashSet<uint> usedPorts = new HashSet<uint>();
+
         /// <summary>
         /// Find ports that are free to use.
         /// </summary>
@@ -14,23 +17,27 @@ namespace Stratis.Bitcoin.Utilities
         public static void FindPorts(int[] ports)
         {
             int i = 0;
-            while (i < ports.Length)
+            lock (usedPorts)
             {
-                uint port = RandomUtils.GetUInt32() % 4000;
-                port = port + 10000;
-                if (ports.Any(p => p == port))
-                    continue;
+                while (i < ports.Length)
+                {
+                    uint port = RandomUtils.GetUInt32() % 4000;
+                    port = port + 10000;
+                    if (usedPorts.Contains(port))
+                        continue;
 
-                try
-                {
-                    var l = new TcpListener(IPAddress.Loopback, (int)port);
-                    l.Start();
-                    l.Stop();
-                    ports[i] = (int)port;
-                    i++;
-                }
-                catch (SocketException)
-                {
+                    try
+                    {
+                        var l = new TcpListener(IPAddress.Loopback, (int)port);
+                        l.Start();
+                        l.Stop();
+                        ports[i] = (int)port;
+                        usedPorts.Add(port);
+                        i++;
+                    }
+                    catch (SocketException)
+                    {
+                    }
                 }
             }
         }
