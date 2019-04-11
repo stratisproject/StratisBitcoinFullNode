@@ -387,6 +387,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IKeyValueRepository, KeyValueRepository>();
                     services.AddSingleton<ITipsManager, TipsManager>();
                     services.AddSingleton<IAsyncProvider, AsyncWork.AsyncProvider>();
+                    services.AddSingleton<IShellHelper, ShellHelper>();
 
                     // Consensus
                     services.AddSingleton<ConsensusSettings>();

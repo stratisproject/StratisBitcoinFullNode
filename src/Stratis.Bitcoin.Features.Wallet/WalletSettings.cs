@@ -42,11 +42,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Size of the buffer of unused addresses maintained in an account.</summary>
         public int UnusedAddressesBuffer { get; set; }
 
-        /// <summary>
-        /// Initializes an instance of the object from the node configuration.
-        /// </summary>
-        /// <param name="nodeSettings">The node configuration.</param>
-        public WalletSettings(NodeSettings nodeSettings)
+		/// <summary>
+		/// Runs the specified shell script when new transactions is discovered in the wallet, also triggers when they are confirmed. Single argument is provided, which contains the transaction ID. The transaction ID is replaced with %s in the command.
+		/// </summary>
+		public string WalletNotify { get; set; }
+
+		/// <summary>
+		/// Initializes an instance of the object from the node configuration.
+		/// </summary>
+		/// <param name="nodeSettings">The node configuration.</param>
+		public WalletSettings(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
@@ -63,7 +68,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.DefaultWalletPassword = config.GetOrDefault<string>("defaultwalletpassword", "default", null); // No logging!
                 this.UnlockDefaultWallet = config.GetOrDefault<bool>("unlockdefaultwallet", false, this.logger);
             }
-        }
+
+			this.WalletNotify = config.GetOrDefault<string>("walletnotify", null, this.logger);
+		}
 
         /// <summary>
         /// Check if the default wallet is specified.
@@ -88,7 +95,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             builder.AppendLine("-defaultwalletpassword=<string> Overrides the default wallet password. Default: default.");
             builder.AppendLine("-unlockdefaultwallet=<0 or 1>   Unlocks the specified default wallet. Default: 0.");
             builder.AppendLine("-walletaddressbuffer=<number>   Size of the buffer of unused addresses maintained in an account. Default: 20.");
-            defaults.Logger.LogInformation(builder.ToString());
+			builder.AppendLine("-walletnotify=<string>          Execute this command when a transaction is first seen and when it is confirmed.");
+			defaults.Logger.LogInformation(builder.ToString());
         }
 
         /// <summary>
@@ -109,6 +117,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             builder.AppendLine("#unlockdefaultwallet=0");
             builder.AppendLine("#Size of the buffer of unused addresses maintained in an account. Default: 20.");
             builder.AppendLine("#walletaddressbuffer=20");
-        }
+			builder.AppendLine("#Execute this command when a transaction is first seen and when it is confirmed.");
+			builder.AppendLine("#walletnotify=<string>");
+		}
     }
 }
