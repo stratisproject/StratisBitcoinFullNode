@@ -181,7 +181,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 Services = NetworkPeerServices.Nothing,
             };
 
-            return await this.CreateConnectedNetworkPeerAsync(ipEndPoint, parameters, networkPeerDisposer);
+            return await this.CreateConnectedNetworkPeerAsync(ipEndPoint, parameters, networkPeerDisposer).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
