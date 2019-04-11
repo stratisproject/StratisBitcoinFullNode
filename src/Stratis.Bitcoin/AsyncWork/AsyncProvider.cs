@@ -64,10 +64,22 @@ namespace Stratis.Bitcoin.AsyncWork
             }
 
             // task will continue with onAsyncDelegateUnhandledException if @delegate had unhandled exceptions
-            newDelegate.ConsumerTask.ContinueWith(this.onAsyncDelegateUnhandledException, newDelegate, TaskContinuationOptions.OnlyOnFaulted);
+            newDelegate.ConsumerTask.ContinueWith(
+                this.onAsyncDelegateUnhandledException,
+                newDelegate,
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default
+                );
 
             // task will continue with onAsyncDelegateCompleted if @delegate completed or was canceled
-            newDelegate.ConsumerTask.ContinueWith(this.onAsyncDelegateCompleted, newDelegate, TaskContinuationOptions.NotOnFaulted);
+            newDelegate.ConsumerTask.ContinueWith(
+                this.onAsyncDelegateCompleted,
+                newDelegate,
+                CancellationToken.None,
+                TaskContinuationOptions.NotOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default
+                );
 
             return newDelegate;
         }
@@ -91,10 +103,22 @@ namespace Stratis.Bitcoin.AsyncWork
             loopTask = loopInstance.Run(cancellation, repeatEvery ?? TimeSpan.FromMilliseconds(DefaultLoopRepeatInterval), startAfter).RunningTask;
 
             // task will continue with onAsyncDelegateUnhandledException if @delegate had unhandled exceptions
-            loopTask.ContinueWith(this.onAsyncDelegateUnhandledException, loopInstance, TaskContinuationOptions.OnlyOnFaulted);
+            loopTask.ContinueWith(
+                this.onAsyncDelegateUnhandledException,
+                loopInstance,
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default
+                );
 
             // task will continue with onAsyncDelegateCompleted if @delegate completed or was canceled
-            loopTask.ContinueWith(this.onAsyncDelegateCompleted, loopInstance, TaskContinuationOptions.NotOnFaulted);
+            loopTask.ContinueWith(
+                this.onAsyncDelegateCompleted,
+                loopInstance,
+                CancellationToken.None,
+                TaskContinuationOptions.NotOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default
+                );
 
             return loopInstance;
         }
