@@ -84,9 +84,10 @@ namespace Stratis.Bitcoin.Tests.Common
             {
                 consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chainIndexer, deployments, consensusSettings,
                     new Checkpoints(), inMemoryCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), new ConsensusRulesContainer()).SetupRulesEngineParent();
+
+                consensusRules.SetupRulesEngineParent();
             }
 
-            consensusRules.SetupRulesEngineParent();
 
             var tree = new ChainedHeaderTree(network, loggerFactory, new HeaderValidator(consensusRules, loggerFactory), new Checkpoints(),
                 new ChainState(), new Mock<IFinalizedBlockInfoRepository>().Object, consensusSettings, new InvalidBlockHashStore(new DateTimeProvider()));

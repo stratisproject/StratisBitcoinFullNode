@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private readonly Mock<IStakeChain> stakeChain;
         private readonly Mock<IStakeValidator> stakeValidator;
 
-        public PosBlockAssemblerTest()
+        public PosBlockAssemblerTest() : base(KnownNetworks.StratisTest)
         {
             this.consensusManager = new Mock<IConsensusManager>();
             this.mempool = new Mock<ITxMempool>();
@@ -47,7 +48,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.stakeValidator = new Mock<IStakeValidator>();
             this.stakeChain = new Mock<IStakeChain>();
             this.stratisTest = KnownNetworks.StratisTest;
-            //new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(this.stratisTest.Consensus);
             this.key = new Key();
             this.minerSettings = new MinerSettings(NodeSettings.Default(this.Network));
             SetupConsensusManager();
@@ -443,6 +443,15 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             var dateTimeProvider = new DateTimeProvider();
 
+            var consensusRulesContainer = new ConsensusRulesContainer();
+
+            foreach (var ruleType in this.Network.Consensus.ConsensusRules.HeaderValidationRules)
+                consensusRulesContainer.HeaderValidationRules.Add(Activator.CreateInstance(ruleType) as HeaderValidationConsensusRule);
+            foreach (var ruleType in this.Network.Consensus.ConsensusRules.PartialValidationRules)
+                consensusRulesContainer.PartialValidationRules.Add(Activator.CreateInstance(ruleType) as PartialValidationConsensusRule);
+            foreach (var ruleType in this.Network.Consensus.ConsensusRules.FullValidationRules)
+                consensusRulesContainer.FullValidationRules.Add(Activator.CreateInstance(ruleType) as FullValidationConsensusRule);
+
             var posConsensusRules = new PosConsensusRuleEngine(
                 this.stratisTest,
                 this.LoggerFactory.Object,
@@ -458,7 +467,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 new InvalidBlockHashStore(dateTimeProvider),
                 new NodeStats(dateTimeProvider),
                 new Mock<IRewindDataIndexCache>().Object,
-                new ConsensusRulesContainer());
+                consensusRulesContainer);
 
             posConsensusRules.SetupRulesEngineParent();
 
