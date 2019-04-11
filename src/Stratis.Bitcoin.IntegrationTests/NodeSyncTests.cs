@@ -126,9 +126,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var stratisRegTestMaxReorg = new StratisRegTestMaxReorg();
 
-                CoreNode miner = builder.CreateStratisPosNode(stratisRegTestMaxReorg, nameof(miner)).WithDummyWallet().Start();
-                CoreNode syncer = builder.CreateStratisPosNode(stratisRegTestMaxReorg, nameof(syncer)).Start();
-                CoreNode reorg = builder.CreateStratisPosNode(stratisRegTestMaxReorg, nameof(reorg)).WithDummyWallet().Start();
+                CoreNode miner = builder.CreateStratisPosNode(stratisRegTestMaxReorg, "ns-5-miner").WithDummyWallet().Start();
+                CoreNode syncer = builder.CreateStratisPosNode(stratisRegTestMaxReorg, "ns-5-syncer").Start();
+                CoreNode reorg = builder.CreateStratisPosNode(stratisRegTestMaxReorg, "ns-5-reorg").WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(miner, 1);
 

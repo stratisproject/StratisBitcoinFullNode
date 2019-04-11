@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 
@@ -50,6 +51,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly INodeLifetime nodeLifetime;
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
+        private readonly IInitialBlockDownloadState ibdState;
+        private readonly IFederationWalletManager federationWalletManager;
+
         private IAsyncLoop asyncLoop;
 
         public SignedMultisigTransactionBroadcaster(
@@ -57,7 +61,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             ILoggerFactory loggerFactory,
             ICrossChainTransferStore store,
             INodeLifetime nodeLifetime,
-            MempoolManager mempoolManager, IBroadcasterManager broadcasterManager)
+            MempoolManager mempoolManager,
+            IBroadcasterManager broadcasterManager,
+            IInitialBlockDownloadState ibdState,
+            IFederationWalletManager federationWalletManager)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(store, nameof(store));
@@ -71,6 +78,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.nodeLifetime = nodeLifetime;
             this.mempoolManager = mempoolManager;
             this.broadcasterManager = broadcasterManager;
+
+            this.ibdState = ibdState;
+            this.federationWalletManager = federationWalletManager;
         }
 
         /// <inheritdoc />
@@ -88,6 +98,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <inheritdoc />
         public async Task BroadcastTransactionsAsync()
         {
+            if (this.ibdState.IsInitialBlockDownload() || !this.federationWalletManager.IsFederationWalletActive())
+            {
+                this.logger.LogTrace("Federation wallet isn't active or in IBD. Not attempting to broadcast signed transactions.");
+                return;
+            }
+
             Dictionary<uint256, Transaction> transactions = await this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).ConfigureAwait(false);
 
             if (!transactions.Any())

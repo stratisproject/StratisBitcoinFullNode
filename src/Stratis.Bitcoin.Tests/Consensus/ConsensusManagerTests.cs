@@ -283,7 +283,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // expect the setup callback is not called.
             Assert.False(callbackCalled);
             builder.AssertPeerBanned(peer.Object);
-            builder.AssertExpectedBlockSizesEmpty();
+            builder.AssertExpectedBlockSizes(builder.Network.Consensus.Options.MaxBlockBaseSize);
         }
 
         [Fact]
