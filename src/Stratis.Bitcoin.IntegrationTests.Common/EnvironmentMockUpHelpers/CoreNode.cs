@@ -400,12 +400,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public void Broadcast(Transaction transaction)
         {
+            Guid broadcastGuid = Guid.NewGuid();
             using (INetworkPeer peer = this.CreateNetworkPeerClient())
             {
                 peer.VersionHandshakeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
                 peer.SendMessageAsync(new InvPayload(transaction)).ConfigureAwait(false).GetAwaiter().GetResult();
                 peer.SendMessageAsync(new TxPayload(transaction)).ConfigureAwait(false).GetAwaiter().GetResult();
-                this.PingPongAsync(peer).ConfigureAwait(false).GetAwaiter().GetResult();
+                //this.PingPongAsync(peer).ConfigureAwait(false).GetAwaiter().GetResult();
             }
         }
 
