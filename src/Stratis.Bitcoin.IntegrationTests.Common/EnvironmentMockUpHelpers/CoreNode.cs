@@ -407,6 +407,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 peer.SendMessageAsync(new InvPayload(transaction)).ConfigureAwait(false).GetAwaiter().GetResult();
                 peer.SendMessageAsync(new TxPayload(transaction)).ConfigureAwait(false).GetAwaiter().GetResult();
                 //this.PingPongAsync(peer).ConfigureAwait(false).GetAwaiter().GetResult();
+                Thread.Sleep(100);
             }
         }
 
