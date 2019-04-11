@@ -60,7 +60,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 
         public SidechainTestContext()
         {
-            this.MainChainNetwork = Networks.Stratis.Regtest();
+            this.MainChainNetwork = Bitcoin.Networks.Networks.Stratis.Regtest();
             this.SideChainNetwork = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();
 
             this.mnemonics = this.SideChainNetwork.FederationMnemonics;

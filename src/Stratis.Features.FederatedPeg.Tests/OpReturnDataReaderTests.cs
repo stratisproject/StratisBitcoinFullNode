@@ -28,7 +28,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.network = FederatedPegNetwork.NetworksSelector.Regtest();
-            this.counterChainNetwork = Networks.Stratis.Regtest();
+            this.counterChainNetwork = Bitcoin.Networks.Networks.Stratis.Regtest();
             this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, new FederatedPegOptions(this.counterChainNetwork));
 
             this.transactionBuilder = new TestTransactionBuilder();

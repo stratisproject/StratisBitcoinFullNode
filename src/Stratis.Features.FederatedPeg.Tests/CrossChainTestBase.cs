@@ -73,7 +73,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         public CrossChainTestBase(Network network = null, Network counterChainNetwork = null)
         {
             this.network = network ?? FederatedPegNetwork.NetworksSelector.Regtest();
-            this.counterChainNetwork = counterChainNetwork ?? Networks.Stratis.Regtest();
+            this.counterChainNetwork = counterChainNetwork ?? Bitcoin.Networks.Networks.Stratis.Regtest();
             this.federatedPegOptions = new FederatedPegOptions(counterChainNetwork);
 
             NetworkRegistration.Register(this.network);

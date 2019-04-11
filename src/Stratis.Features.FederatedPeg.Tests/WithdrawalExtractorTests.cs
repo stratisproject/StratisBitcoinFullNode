@@ -32,7 +32,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         public WithdrawalExtractorTests()
         {
             this.network = FederatedPegNetwork.NetworksSelector.Regtest();
-            this.counterChainNetwork = Networks.Stratis.Regtest();
+            this.counterChainNetwork = Bitcoin.Networks.Networks.Stratis.Regtest();
 
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.settings = Substitute.For<IFederationGatewaySettings>();
