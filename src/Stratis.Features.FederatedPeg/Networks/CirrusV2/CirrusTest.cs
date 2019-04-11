@@ -54,15 +54,6 @@ namespace Stratis.Features.FederatedPeg.Networks.CirrusV2
             // Configure federation public keys used to sign blocks.
             // Keep in mind that order in which keys are added to this list is important
             // and should be the same for all nodes operating on this network.
-            var federationPubKeys = new List<PubKey>()
-            {
-                new PubKey(" "), // I
-                new PubKey(" "), // J
-                new PubKey(" "), // L
-                new PubKey(" "), // M
-                new PubKey(" ")  // P
-            };
-
             var genesisFederation = new List<FederationMember>()
             {
                 new FederationMember(new PubKey("03e89abd3c9e791f4fb13ced638457c85beb4aff74d37b3fe031cd888f0f92989e"), new Money(0), null),
