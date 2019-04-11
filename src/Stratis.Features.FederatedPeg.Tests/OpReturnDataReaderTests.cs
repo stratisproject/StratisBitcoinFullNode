@@ -5,7 +5,7 @@ using NBitcoin;
 using NSubstitute;
 using Stratis.Bitcoin.Networks;
 using Stratis.Features.FederatedPeg.Tests.Utils;
-using Stratis.Sidechains.Networks;
+using Stratis.Features.FederatedPeg.Networks;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests

@@ -12,7 +12,7 @@ using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Sidechains.Networks;
+using Stratis.Features.FederatedPeg.Networks;
 
 namespace Stratis.CirrusD
 {

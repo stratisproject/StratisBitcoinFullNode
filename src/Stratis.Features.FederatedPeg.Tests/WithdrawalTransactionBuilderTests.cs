@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
-using Stratis.Sidechains.Networks;
+using Stratis.Features.FederatedPeg.Networks;
 using Xunit;
 using Recipient = Stratis.Features.FederatedPeg.Wallet.Recipient;
 using TransactionBuildContext = Stratis.Features.FederatedPeg.Wallet.TransactionBuildContext;

@@ -22,7 +22,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
-using Stratis.Sidechains.Networks;
+using Stratis.Features.FederatedPeg.Networks;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests

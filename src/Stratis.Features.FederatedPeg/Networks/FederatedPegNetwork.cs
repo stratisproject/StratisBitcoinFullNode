@@ -2,7 +2,7 @@
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 
-namespace Stratis.Sidechains.Networks
+namespace Stratis.Features.FederatedPeg.Networks
 {
     public static class FederatedPegNetwork
     {

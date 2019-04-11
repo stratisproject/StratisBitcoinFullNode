@@ -20,7 +20,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg;
-using Stratis.Sidechains.Networks;
+using Stratis.Features.FederatedPeg.Networks;
 
 namespace Stratis.CirrusPegD
 {

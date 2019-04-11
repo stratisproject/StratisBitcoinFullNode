@@ -6,7 +6,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Features.FederatedPeg.Tests.Utils;
-using Stratis.Sidechains.Networks;
+using Stratis.Features.FederatedPeg.Networks;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.IntegrationTests

@@ -2,7 +2,7 @@
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 
-namespace Stratis.Sidechains.Networks.CirrusV2
+namespace Stratis.Features.FederatedPeg.Networks.CirrusV2
 {
     public static class CirrusNetwork
     {

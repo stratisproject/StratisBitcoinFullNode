@@ -2,6 +2,7 @@
   "profiles": {
     "Stratis.StratisD": {
       "commandName": "Project",
+      "commandLineArgs": "-txindex=1 -addressindex=1"
     },
     "Stratis.StratisD Test": {
       "commandName": "Project",

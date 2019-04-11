@@ -1,6 +1,6 @@
 ﻿using System;
 using NBitcoin;
-using Stratis.Sidechains.Networks;
+using Stratis.Features.FederatedPeg.Networks;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests

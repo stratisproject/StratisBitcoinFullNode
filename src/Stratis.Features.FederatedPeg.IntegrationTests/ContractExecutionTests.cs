@@ -20,7 +20,7 @@ using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Features.FederatedPeg.IntegrationTests.Utils;
 using Stratis.Features.FederatedPeg.Tests.Utils;
-using Stratis.Sidechains.Networks;
+using Stratis.Features.FederatedPeg.Networks;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.Core;
 using Xunit;

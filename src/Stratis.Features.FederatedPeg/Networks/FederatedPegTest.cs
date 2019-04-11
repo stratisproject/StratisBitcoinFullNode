@@ -7,21 +7,24 @@ using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.SmartContracts.Networks.Policies;
 
-namespace Stratis.Sidechains.Networks.CirrusV2
+namespace Stratis.Features.FederatedPeg.Networks
 {
-    public class CirrusTest : PoANetwork
+    /// <summary>
+    /// Right now, ripped nearly straight from <see cref="PoANetwork"/>.
+    /// </summary>
+    public class FederatedPegTest : PoANetwork
     {
         /// <summary> The name of the root folder containing the different federated peg blockchains.</summary>
-        private const string NetworkRootFolderName = "cirrus";
+        private const string NetworkRootFolderName = "fedpeg";
 
         /// <summary> The default name used for the federated peg configuration file. </summary>
-        private const string NetworkDefaultConfigFilename = "cirrus.conf";
+        private const string NetworkDefaultConfigFilename = "fedpeg.conf";
 
-        internal CirrusTest()
+        internal FederatedPegTest()
         {
-            this.Name = nameof(CirrusTest);
+            this.Name = "FederatedPegTest";
             this.NetworkType = NetworkType.Testnet;
-            this.CoinTicker = "TCRS";
+            this.CoinTicker = "TFPG";
             this.Magic = 0x522357B;
             this.DefaultPort = 26179;
             this.DefaultMaxOutboundConnections = 16;
@@ -46,7 +49,7 @@ namespace Stratis.Sidechains.Networks.CirrusV2
             this.GenesisReward = Money.Zero;
 
             string coinbaseText = "https://news.bitcoin.com/markets-update-cryptocurrencies-shed-billions-in-bloody-sell-off/";
-            Block genesisBlock = CirrusNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward, coinbaseText);
+            Block genesisBlock = FederatedPegNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward, coinbaseText);
 
             this.Genesis = genesisBlock;
 
@@ -97,7 +100,7 @@ namespace Stratis.Sidechains.Networks.CirrusV2
                 bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
-                maxReorgLength: 240, // 2 loops of PoA members.
+                maxReorgLength: 0, // No max reorg limit on PoA networks.
                 defaultAssumeValid: null,
                 maxMoney: Money.Coins(20_000_000),
                 coinbaseMaturity: 1,

@@ -7,12 +7,9 @@ using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.SmartContracts.Networks.Policies;
 
-namespace Stratis.Sidechains.Networks
+namespace Stratis.Features.FederatedPeg.Networks.CirrusV2
 {
-    /// <summary>
-    /// Right now, ripped nearly straight from <see cref="PoANetwork"/>.
-    /// </summary>
-    public class FederatedPegMain : PoANetwork
+    public class CirrusMain : PoANetwork
     {
         /// <summary> The name of the root folder containing the different federated peg blockchains.</summary>
         private const string NetworkRootFolderName = "cirrus";
@@ -20,9 +17,9 @@ namespace Stratis.Sidechains.Networks
         /// <summary> The default name used for the federated peg configuration file. </summary>
         private const string NetworkDefaultConfigFilename = "cirrus.conf";
 
-        internal FederatedPegMain()
+        internal CirrusMain()
         {
-            this.Name = "CirrusMain";
+            this.Name = nameof(CirrusMain);
             this.NetworkType = NetworkType.Mainnet;
             this.CoinTicker = "CRS";
             this.Magic = 0x522357A0;
@@ -42,14 +39,14 @@ namespace Stratis.Sidechains.Networks
             var consensusFactory = new SmartContractPoAConsensusFactory();
 
             // Create the genesis block.
-            this.GenesisTime = 1545310504;
+            this.GenesisTime = 1545310504; // TODO: Update depending on when we launch.
             this.GenesisNonce = 761900;
             this.GenesisBits = new Target(new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
 
             string coinbaseText = "https://www.abc.net.au/news/science/2018-12-07/encryption-bill-australian-technology-industry-fuming-mad/10589962";
-            Block genesisBlock = FederatedPegNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward, coinbaseText);
+            Block genesisBlock = CirrusNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward, coinbaseText);
 
             this.Genesis = genesisBlock;
 
@@ -67,6 +64,8 @@ namespace Stratis.Sidechains.Networks
                 new PubKey("03dad9bf0493560203ed6a1089749d140fa33d83aa15fcc8b22a108511389bdcef")
             };
 
+            //List<FederationMember> genesisFederation TODO
+
             var consensusOptions = new PoAConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
@@ -75,7 +74,7 @@ namespace Stratis.Sidechains.Networks
                 maxStandardTxSigopsCost: 20_000 / 5,
                 federationPublicKeys: federationPubKeys,
                 targetSpacingSeconds: 16,
-                votingEnabled: false,
+                votingEnabled: false, // Does not work on sidechains yet. Sidechains need to handle removval of fed member and recreation of multisig first.
                 autoKickIdleMembers: false
             );
 
@@ -102,7 +101,7 @@ namespace Stratis.Sidechains.Networks
                 bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
-                maxReorgLength: 0, // No max reorg limit on PoA networks.
+                maxReorgLength: 240, // 2 loops of PoA members
                 defaultAssumeValid: null,
                 maxMoney: Money.Coins(100_000_000),
                 coinbaseMaturity: 1,

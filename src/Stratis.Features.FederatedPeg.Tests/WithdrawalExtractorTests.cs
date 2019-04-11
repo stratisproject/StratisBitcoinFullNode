@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Networks;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Tests.Utils;
-using Stratis.Sidechains.Networks;
+using Stratis.Features.FederatedPeg.Networks;
 
 namespace Stratis.Features.FederatedPeg.Tests
 {
