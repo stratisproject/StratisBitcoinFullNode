@@ -5,6 +5,7 @@ using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
+using Stratis.Features.FederatedPeg.Collateral;
 using Stratis.SmartContracts.Networks.Policies;
 
 namespace Stratis.Features.FederatedPeg.Networks.CirrusV2
@@ -55,20 +56,29 @@ namespace Stratis.Features.FederatedPeg.Networks.CirrusV2
             // and should be the same for all nodes operating on this network.
             var federationPubKeys = new List<PubKey>()
             {
-                new PubKey("03e89abd3c9e791f4fb13ced638457c85beb4aff74d37b3fe031cd888f0f92989e"), // I
-                new PubKey("026b7b9092828f3bf9e73995bfa3547c3bcd3814f8101fac626b8349d9a6f0e534"), // J
-                new PubKey("02a8a565bf3c675aee4eb8585771c7517e358708faee4f9db2ed7502d7f9dae740"), // L
-                new PubKey("0248de019680c6f18e434547c8c9d48965b656b8e5e70c5a5564cfb1270db79a11"), // M
-                new PubKey("034bd1a94b0ae315f584ecd22b2ad8fa35056cc70862f33e3e08286f3bbe2207c4")  // P
+                new PubKey(" "), // I
+                new PubKey(" "), // J
+                new PubKey(" "), // L
+                new PubKey(" "), // M
+                new PubKey(" ")  // P
             };
 
-            var consensusOptions = new PoAConsensusOptions(
+            var genesisFederation = new List<FederationMember>()
+            {
+                new FederationMember(new PubKey("03e89abd3c9e791f4fb13ced638457c85beb4aff74d37b3fe031cd888f0f92989e"), new Money(0), null),
+                new FederationMember(new PubKey("026b7b9092828f3bf9e73995bfa3547c3bcd3814f8101fac626b8349d9a6f0e534"), new Money(0), null),
+                new FederationMember(new PubKey("02a8a565bf3c675aee4eb8585771c7517e358708faee4f9db2ed7502d7f9dae740"), new Money(0), null),
+                new FederationMember(new PubKey("0248de019680c6f18e434547c8c9d48965b656b8e5e70c5a5564cfb1270db79a11"), new Money(0), null),
+                new FederationMember(new PubKey("034bd1a94b0ae315f584ecd22b2ad8fa35056cc70862f33e3e08286f3bbe2207c4"), new Money(0), null),
+            };
+
+            var consensusOptions = new FederatedPegPoAConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
-                federationPublicKeys: federationPubKeys,
+                genesisFederationMembers: genesisFederation,
                 targetSpacingSeconds: 16,
                 votingEnabled: false,
                 autoKickIdleMembers: false
