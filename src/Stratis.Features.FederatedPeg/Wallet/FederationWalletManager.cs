@@ -182,7 +182,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
             {
                 // Create the multisig wallet file if it doesn't exist
                 this.Wallet = this.GenerateWallet();
-                this.IsWalletActive();
                 this.SaveWallet();
             }
 
@@ -941,13 +940,16 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 throw new WalletException("A federation wallet already exists.");
             }
 
+            int lastBlockSyncedHeight = Math.Max(0, this.federationGatewaySettings.WalletSyncFromHeight - 1);
+            uint256 lastBlockSyncedHash = (lastBlockSyncedHeight <= this.chainIndexer.Height) ? this.chainIndexer[lastBlockSyncedHeight].HashBlock : null;
+
             var wallet = new FederationWallet
             {
                 CreationTime = this.dateTimeProvider.GetTimeOffset(),
                 Network = this.network,
                 CoinType = this.coinType,
-                LastBlockSyncedHeight = Math.Max(0, this.federationGatewaySettings.WalletSyncFromHeight - 1),
-                LastBlockSyncedHash = null,
+                LastBlockSyncedHeight = lastBlockSyncedHeight,
+                LastBlockSyncedHash = lastBlockSyncedHash,
                 MultiSigAddress = new MultiSigAddress
                 {
                     Address = this.federationGatewaySettings.MultiSigAddress.ToString(),
