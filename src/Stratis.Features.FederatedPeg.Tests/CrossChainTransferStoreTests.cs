@@ -250,7 +250,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 // Transaction[0] outputs.
                 Assert.Equal(3, transactions[0].Outputs.Count);
 
-                // Transaction[0] output value - change. 
+                // Transaction[0] output value - change.
                 Assert.Equal(new Money(10m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[0].Outputs[0].ScriptPubKey);
 
@@ -615,6 +615,33 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Transaction signedTransaction = signedTransactions.Values.SingleOrDefault();
 
                 Assert.Null(signedTransaction);
+            }
+        }
+
+        [Fact]
+        public async Task WalletSyncFromHeightOverridesWalletLastBlockSyncedHeight()
+        {
+            // Only sync the wallet from the second funding block.
+            this.federationGatewaySettings.WalletSyncFromHeight.Returns(2);
+
+            var dataFolder = new DataFolder(CreateTestDir(this));
+
+            this.Init(dataFolder);
+
+            FederationWallet wallet = this.federationWalletManager.GetWallet();
+
+            // LastBlockSyncedHeight = WalletSyncFromHeight - 1.
+            Assert.Equal(1, wallet.LastBlockSyncedHeight);
+
+            // Add 2 blocks with 2 and 1 transactions respectively.
+            this.AddFunding();
+
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
+            {
+                crossChainTransferStore.Initialize();
+
+                // Only the second block containing 1 transaction should be processed.
+                Assert.Equal(1, wallet.MultiSigAddress.Transactions.Count);
             }
         }
 
