@@ -137,12 +137,12 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 Assert.Equal(2, transactions.Length);
 
-                // Transactions[0] inputs.
+                // Transactions[0] inputs. Ordered by time.
                 Assert.Equal(2, transactions[0].Inputs.Count);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[0].PrevOut.Hash);
-                Assert.Equal((uint)1, transactions[0].Inputs[0].PrevOut.N);
+                Assert.Equal((uint)0, transactions[0].Inputs[0].PrevOut.N);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[1].PrevOut.Hash);
-                Assert.Equal((uint)0, transactions[0].Inputs[1].PrevOut.N);
+                Assert.Equal((uint)1, transactions[0].Inputs[1].PrevOut.N);
 
                 // Transaction[0] outputs.
                 Assert.Equal(3, transactions[0].Outputs.Count);
@@ -240,12 +240,12 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 Assert.Equal(2, transactions.Length);
 
-                // Transactions[0] inputs. Note that inputs are ordered by amount.
+                // Transactions[0] inputs. Note that inputs are ordered by time.
                 Assert.Equal(2, transactions[0].Inputs.Count);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[0].PrevOut.Hash);
-                Assert.Equal((uint)1, transactions[0].Inputs[0].PrevOut.N);
+                Assert.Equal((uint)0, transactions[0].Inputs[0].PrevOut.N);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[1].PrevOut.Hash);
-                Assert.Equal((uint)0, transactions[0].Inputs[1].PrevOut.N);
+                Assert.Equal((uint)1, transactions[0].Inputs[1].PrevOut.N);
 
                 // Transaction[0] outputs.
                 Assert.Equal(3, transactions[0].Outputs.Count);
