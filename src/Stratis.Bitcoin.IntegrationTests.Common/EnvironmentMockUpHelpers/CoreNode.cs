@@ -260,7 +260,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 this.GetOrCreateAsyncProvider()
                 );
 
-            return networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ProtocolPort).GetAwaiter().GetResult();
+            return networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ProtocolPort).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         private IAsyncProvider GetOrCreateAsyncProvider() {
@@ -425,7 +425,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 };
 
                 DateTimeOffset before = DateTimeOffset.UtcNow;
-                await peer.SendMessageAsync(ping, cancellation);
+                await peer.SendMessageAsync(ping, cancellation).ConfigureAwait(false);
 
                 while ((await listener.ReceivePayloadAsync<PongPayload>(cancellation).ConfigureAwait(false)).Nonce != ping.Nonce)
                 {
