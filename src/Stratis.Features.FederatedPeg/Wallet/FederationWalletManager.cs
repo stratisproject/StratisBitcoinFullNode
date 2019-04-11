@@ -182,6 +182,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             {
                 // Create the multisig wallet file if it doesn't exist
                 this.Wallet = this.GenerateWallet();
+                this.IsWalletActive();
                 this.SaveWallet();
             }
 
@@ -230,7 +231,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public int LastBlockHeight()
         {
-            if (this.Wallet == null)
+            if (!this.IsWalletActive())
             {
                 int height = this.chainIndexer.Tip.Height;
                 this.logger.LogTrace("(-)[NO_WALLET]:{0}", height);
@@ -247,7 +248,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <returns>Hash of the last block received by the wallets.</returns>
         public uint256 LastReceivedBlockHash()
         {
-            if (this.Wallet == null)
+            if (!this.IsWalletActive())
             {
                 uint256 hash = this.chainIndexer.Tip.HashBlock;
                 this.logger.LogTrace("(-)[NO_WALLET]:'{0}'", hash);
@@ -302,6 +303,27 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
+        /// <summary>
+        /// Determines if the wallet is active.
+        /// The wallet will only become active after <see cref="FederationWallet.LastBlockSyncedHeight"/>.
+        /// </summary>
+        /// <param name="height">The height at which to test if the wallet should be active. Defaults to the chain indexer height.</param>
+        /// <returns></returns>
+        private bool IsWalletActive(int? height = null)
+        {
+            if (this.Wallet == null)
+                return false;
+
+            if (this.Wallet.LastBlockSyncedHash != null)
+                return true;
+
+            if (this.Wallet.LastBlockSyncedHeight >= (height ?? this.chainIndexer.Height))
+                return false;
+
+            this.Wallet.LastBlockSyncedHash = this.chainIndexer[(int)this.Wallet.LastBlockSyncedHeight].HashBlock;
+
+            return true;
+        }
 
         /// <inheritdoc />
         public void ProcessBlock(Block block, ChainedHeader chainedHeader)
@@ -310,7 +332,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
 
             // If there is no wallet yet, update the wallet tip hash and do nothing else.
-            if (this.Wallet == null)
+            if (!IsWalletActive(chainedHeader.Height))
             {
                 this.WalletTipHash = chainedHeader.HashBlock;
                 this.logger.LogTrace("(-)[NO_WALLET]");
@@ -369,7 +391,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(transaction, nameof(transaction));
             uint256 hash = transaction.GetHash();
 
-            if (this.Wallet == null)
+            if (!IsWalletActive())
             {
                 this.logger.LogTrace("(-)");
                 return false;
@@ -503,6 +525,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public HashSet<(uint256, DateTimeOffset)> RemoveAllTransactions()
         {
             var removedTransactions = new HashSet<(uint256, DateTimeOffset)>();
+
+            if (!this.IsWalletActive())
+                return removedTransactions;
 
             lock (this.lockObject)
             {
@@ -883,15 +908,18 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
 
-            lock (this.lockObject)
+            if (this.IsWalletActive())
             {
-                // The block locator will help when the wallet
-                // needs to rewind this will be used to find the fork.
-                this.Wallet.BlockLocator = chainedHeader.GetLocator().Blocks;
+                lock (this.lockObject)
+                {
+                    // The block locator will help when the wallet
+                    // needs to rewind this will be used to find the fork.
+                    this.Wallet.BlockLocator = chainedHeader.GetLocator().Blocks;
 
-                // Update the wallets with the last processed block height.
-                this.Wallet.LastBlockSyncedHeight = chainedHeader.Height;
-                this.Wallet.LastBlockSyncedHash = chainedHeader.HashBlock;
+                    // Update the wallets with the last processed block height.
+                    this.Wallet.LastBlockSyncedHeight = chainedHeader.Height;
+                    this.Wallet.LastBlockSyncedHash = chainedHeader.HashBlock;
+                }
             }
 
             this.WalletTipHash = chainedHeader.HashBlock;
@@ -902,7 +930,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// </summary>
         /// <returns>The wallet object that was saved into the file system.</returns>
         /// <exception cref="WalletException">Thrown if wallet cannot be created.</exception>
-        public FederationWallet GenerateWallet()
+        private FederationWallet GenerateWallet()
         {
             this.logger.LogTrace("Generating the federation wallet file.");
 
@@ -913,25 +941,13 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 throw new WalletException("A federation wallet already exists.");
             }
 
-            ChainedHeader walletLastBlockSynced;
-
-            if (this.federationGatewaySettings.WalletSyncFromHeight <= this.chainIndexer.Height)
-            {
-                walletLastBlockSynced = this.chainIndexer.GetHeader(this.federationGatewaySettings.WalletSyncFromHeight);
-                walletLastBlockSynced = walletLastBlockSynced.Previous ?? walletLastBlockSynced;
-            }
-            else
-            {
-                walletLastBlockSynced = this.chainIndexer.Tip;
-            }
-
             var wallet = new FederationWallet
             {
                 CreationTime = this.dateTimeProvider.GetTimeOffset(),
                 Network = this.network,
                 CoinType = this.coinType,
-                LastBlockSyncedHeight = walletLastBlockSynced.Height,
-                LastBlockSyncedHash = walletLastBlockSynced.HashBlock,
+                LastBlockSyncedHeight = Math.Max(0, this.federationGatewaySettings.WalletSyncFromHeight - 1),
+                LastBlockSyncedHash = null,
                 MultiSigAddress = new MultiSigAddress
                 {
                     Address = this.federationGatewaySettings.MultiSigAddress.ToString(),
