@@ -40,6 +40,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
     public class PartialTransactionRequester : IPartialTransactionRequester
     {
         /// <summary>
+        /// How many transactions we want to pass around to sign at a time.
+        /// </summary>
+        private const int NumberToSignAtATime = 3;
+
+        /// <summary>
         /// How often to trigger the query for and broadcasting of partial transactions.
         /// </summary>
         private static readonly TimeSpan TimeBetweenQueries = TimeSpans.TenSeconds;
@@ -117,10 +122,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
 
             // Broadcast the partial transaction with the earliest inputs.
-            KeyValuePair<uint256, Transaction> kv = (await this.crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.Partial, true))
-                .FirstOrDefault();
+            IEnumerable<KeyValuePair<uint256, Transaction>> kvs =
+                (await this.crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.Partial, true))
+                .Take(NumberToSignAtATime);
 
-            if (kv.Key != null)
+            foreach (KeyValuePair<uint256, Transaction> kv in kvs)
             {
                 await this.BroadcastAsync(new RequestPartialTransactionPayload(kv.Key).AddPartial(kv.Value));
                 this.logger.LogInformation("Partial template requested");
