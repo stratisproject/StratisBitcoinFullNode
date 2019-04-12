@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                         this.logger.LogDebug("Fed member '{0}' already voted for this poll. Ignoring his vote. Poll: '{1}'.", fedMemberKeyHex, poll);
                     }
 
-                    List<string> fedMembersHex = this.federationManager.GetFederationMembers().Select(x => x.ToHex()).ToList();
+                    List<string> fedMembersHex = this.federationManager.GetFederationMembers().Select(x => x.PubKey.ToHex()).ToList();
 
                     // It is possible that there is a vote from a federation member that was deleted from the federation.
                     // Do not count votes from entities that are not active fed members.

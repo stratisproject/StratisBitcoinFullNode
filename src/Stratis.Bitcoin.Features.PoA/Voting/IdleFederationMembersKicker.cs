@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         private SubscriptionToken blockConnectedToken, fedMemberAddedToken, fedMemberKickedToken;
 
         /// <remarks>Active time is updated when member is added or produced a new block.</remarks>
-        private Dictionary<PubKey, uint> fedMembersByLastActiveTime;
+        private Dictionary<IFederationMember, uint> fedMembersByLastActiveTime;
 
         private const string fedMembersByLastActiveTimeKey = "fedMembersByLastActiveTime";
 

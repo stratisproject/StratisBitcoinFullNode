@@ -19,12 +19,15 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private readonly IWhitelistedHashesRepository whitelistedHashesRepository;
 
+        private readonly PoAConsensusFactory consensusFactory;
+
         private readonly ILogger logger;
 
-        public PollResultExecutor(FederationManager federationManager, ILoggerFactory loggerFactory, IWhitelistedHashesRepository whitelistedHashesRepository)
+        public PollResultExecutor(FederationManager federationManager, ILoggerFactory loggerFactory, IWhitelistedHashesRepository whitelistedHashesRepository, Network network)
         {
             this.federationManager = federationManager;
             this.whitelistedHashesRepository = whitelistedHashesRepository;
+            this.consensusFactory = network.Consensus.ConsensusFactory as PoAConsensusFactory;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -75,21 +78,17 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        protected virtual void AddFederationMember(byte[] federationMemberBytes)
+        public void AddFederationMember(byte[] federationMemberBytes)
         {
-            var key = new PubKey(federationMemberBytes);
-
-            IFederationMember federationMember = new FederationMember(key);
+            IFederationMember federationMember = this.consensusFactory.CreateFederationMemberFromBytes(federationMemberBytes);
 
             this.logger.LogInformation("Adding new fed member: '{0}'.", federationMember);
             this.federationManager.AddFederationMember(federationMember);
         }
 
-        protected virtual void RemoveFederationMember(byte[] federationMemberBytes)
+        public void RemoveFederationMember(byte[] federationMemberBytes)
         {
-            var key = new PubKey(federationMemberBytes);
-
-            IFederationMember federationMember = new FederationMember(key);
+            IFederationMember federationMember = this.consensusFactory.CreateFederationMemberFromBytes(federationMemberBytes);
 
             this.logger.LogInformation("Kicking fed member: '{0}'.", federationMember);
             this.federationManager.RemoveFederationMember(federationMember);

@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             try
             {
-                List<string> hexList = this.fedManager.GetFederationMembers().Select(x => x.ToHex()).ToList();
+                List<string> hexList = this.fedManager.GetFederationMembers().Select(x => x.PubKey.ToHex()).ToList();
 
                 return this.Json(hexList);
             }
