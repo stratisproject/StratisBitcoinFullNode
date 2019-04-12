@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             var outHeader = await this.provenBlockHeaderStore.GetAsync(1).ConfigureAwait(false);
             outHeader.GetHash().Should().Be(inHeader.GetHash());
 
-            // Check if it has been saved to disk.  It shouldn't as the asyncLoopFactory() would not have been called yet.
+            // Check if it has been saved to disk.  It shouldn't as the asyncProvider would not have been called yet.
             var outHeaderRepo = await this.provenBlockHeaderRepository.GetAsync(1).ConfigureAwait(false);
             outHeaderRepo.Should().BeNull();
         }
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             var cacheCount = this.PendingBatch.Count;
             cacheCount.Should().Be(2_000);
 
-            // Check if it has been saved to disk.  It shouldn't as the asyncLoopFactory() would not have been called yet.
+            // Check if it has been saved to disk.  It shouldn't as the asyncProvider would not have been called yet.
             var outHeaderRepo = await this.provenBlockHeaderRepository.GetAsync(1).ConfigureAwait(false);
             outHeaderRepo.Should().BeNull();
         }
@@ -322,7 +322,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             var newChainWithHeaders = this.BuildProvenHeaderChain(11, chainedHeaders[10]);
 
             var newChainedHeaders = newChainWithHeaders.EnumerateToGenesis().Reverse().ToList();
-             
+
             // all items 1-20 are on main chain after a fork
             foreach (ChainedHeader chainedHeader in newChainedHeaders.Skip(10).Take(11))
             {
@@ -356,7 +356,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             Assert.Equal(15, this.PendingBatch.Count);
             this.CompareCollections(chainedHeaders.Skip(1).Take(15).ToList(), this.PendingBatch);
 
-            // Save items 1-15 
+            // Save items 1-15
             this.provenBlockHeaderStore.InvokeMethod("SaveAsync");
             var error = this.provenBlockHeaderStore.GetMemberValue("saveAsyncLoopException") as Exception;
             Assert.Null(error);

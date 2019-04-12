@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus.Validators
@@ -123,16 +124,18 @@ namespace Stratis.Bitcoin.Consensus.Validators
     /// <inheritdoc />
     public class PartialValidator : IPartialValidator
     {
+        private readonly IAsyncProvider asyncProvider;
         private readonly IConsensusRuleEngine consensusRules;
-        private readonly AsyncQueue<PartialValidationItem> asyncQueue;
+        private readonly IAsyncDelegateDequeuer<PartialValidationItem> asyncQueue;
         private readonly ILogger logger;
 
-        public PartialValidator(IConsensusRuleEngine consensusRules, ILoggerFactory loggerFactory)
+        public PartialValidator(IAsyncProvider asyncProvider, IConsensusRuleEngine consensusRules, ILoggerFactory loggerFactory)
         {
+            this.asyncProvider = Guard.NotNull(asyncProvider, nameof(asyncProvider));
             this.consensusRules = consensusRules;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.asyncQueue = new AsyncQueue<PartialValidationItem>(this.OnEnqueueAsync);
+            this.asyncQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<PartialValidationItem>(this.GetType().Name, this.OnEnqueueAsync);
         }
 
         /// <inheritdoc />

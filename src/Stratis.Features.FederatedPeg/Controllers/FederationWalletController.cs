@@ -202,7 +202,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
                 }
 
-                this.walletManager.EnableFederation(request.Password, request.Mnemonic, request.Passphrase);
+                this.walletManager.EnableFederationWallet(request.Password, request.Mnemonic, request.Passphrase);
 
                 return this.Ok();
             }

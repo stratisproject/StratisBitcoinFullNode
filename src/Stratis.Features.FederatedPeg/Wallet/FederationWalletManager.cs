@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
@@ -62,7 +63,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         private IAsyncLoop asyncLoop;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>Gets the wallet.</summary>
         public FederationWallet Wallet { get; set; }
@@ -127,7 +128,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             ChainIndexer chainIndexer,
             DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
             IFederationGatewaySettings federationGatewaySettings,
@@ -139,7 +140,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(chainIndexer, nameof(chainIndexer));
             Guard.NotNull(dataFolder, nameof(dataFolder));
             Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));
-            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
+            Guard.NotNull(asyncProvider, nameof(asyncProvider));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(federationGatewaySettings, nameof(federationGatewaySettings));
             Guard.NotNull(withdrawalExtractor, nameof(withdrawalExtractor));
@@ -151,7 +152,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chainIndexer = chainIndexer;
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<FederationWallet>(dataFolder.WalletPath);
             this.broadcasterManager = broadcasterManager;
@@ -192,7 +193,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.WalletTipHash = this.LastReceivedBlockHash();
 
             // save the wallets file every 5 minutes to help against crashes.
-            this.asyncLoop = this.asyncLoopFactory.Run("wallet persist job", token =>
+            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop("wallet persist job", token =>
             {
                 this.SaveWallet();
                 this.logger.LogInformation("Wallets saved to file at {0}.", this.dateTimeProvider.GetUtcNow());
@@ -844,7 +845,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 TransactionData transactionData1 = this.outpointLookup[outPoint1];
                 TransactionData transactionData2 = this.outpointLookup[outPoint2];
 
-                return FederationWalletTransactionHandler.CompareTransactionData(transactionData1, transactionData2);
+                return DeterministicCoinOrdering.CompareTransactionData(transactionData1, transactionData2);
             }
         }
 
@@ -858,6 +859,16 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 // Verify that the transaction has valid UTXOs.
                 if (!this.TransactionHasValidUTXOs(transaction, coins))
                     return false;
+
+                // Verify that there are no earlier unspent UTXOs.
+                Comparer<TransactionData> comparer = Comparer<TransactionData>.Create(DeterministicCoinOrdering.CompareTransactionData);
+                TransactionData earliestUnspent = this.Wallet.MultiSigAddress.Transactions.Where(t => t.SpendingDetails == null).OrderBy(t => t, comparer).FirstOrDefault();
+                if (earliestUnspent != null)
+                {
+                    TransactionData oldestInput = transaction.Inputs.Select(i => this.outpointLookup[i.PrevOut]).OrderByDescending(t => t, comparer).FirstOrDefault();
+                    if (oldestInput != null && DeterministicCoinOrdering.CompareTransactionData(earliestUnspent, oldestInput) < 0)
+                        return false;
+                }
 
                 // Verify that all inputs are signed.
                 if (checkSignature)
@@ -935,7 +946,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <inheritdoc />
-        public void EnableFederation(string password, string mnemonic = null, string passphrase = null)
+        public void EnableFederationWallet(string password, string mnemonic = null, string passphrase = null)
         {
             Guard.NotEmpty(password, nameof(password));
 
@@ -997,7 +1008,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
-        public bool IsFederationActive()
+        public bool IsFederationWalletActive()
         {
             return this.isFederationActive;
         }

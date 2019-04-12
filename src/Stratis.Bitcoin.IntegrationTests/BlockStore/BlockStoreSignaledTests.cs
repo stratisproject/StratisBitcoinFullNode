@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.IntegrationTests.Common;
@@ -113,7 +114,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 // Check current state of announce queue
                 BlockStoreSignaled blockStoreSignaled = stratisNodeSync.FullNode.NodeService<BlockStoreSignaled>();
 
-                AsyncQueue<ChainedHeader> blocksToAnnounce = (AsyncQueue<ChainedHeader>)blockStoreSignaled.GetMemberValue("blocksToAnnounce");
+                IAsyncQueue<ChainedHeader> blocksToAnnounce = (IAsyncQueue<ChainedHeader>)blockStoreSignaled.GetMemberValue("blocksToAnnounce");
                 Queue<ChainedHeader> queueItems = (Queue<ChainedHeader>)blocksToAnnounce.GetMemberValue("items");
 
                 TestHelper.WaitLoop(() => queueItems.Count == 0);
@@ -193,7 +194,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 // Check current state of announce queue.
                 BlockStoreSignaled blockStoreSignaled = stratisNodeSync.FullNode.NodeService<BlockStoreSignaled>();
 
-                AsyncQueue<ChainedHeader> blocksToAnnounce = (AsyncQueue<ChainedHeader>)blockStoreSignaled.GetMemberValue("blocksToAnnounce");
+                IAsyncQueue<ChainedHeader> blocksToAnnounce = (IAsyncQueue<ChainedHeader>)blockStoreSignaled.GetMemberValue("blocksToAnnounce");
                 Queue<ChainedHeader> queueItems = (Queue<ChainedHeader>)blocksToAnnounce.GetMemberValue("items");
 
                 // It should still eventually empty despite not being able to communicate with node3.
@@ -271,7 +272,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 // Insert block 1 from chain0 into node1's announce queue
                 BlockStoreSignaled node1BlockStoreSignaled = stratisNode1.FullNode.NodeService<BlockStoreSignaled>();
 
-                AsyncQueue<ChainedHeader> node1BlocksToAnnounce = (AsyncQueue<ChainedHeader>)node1BlockStoreSignaled.GetMemberValue("blocksToAnnounce");
+                IAsyncQueue<ChainedHeader> node1BlocksToAnnounce = (IAsyncQueue<ChainedHeader>)node1BlockStoreSignaled.GetMemberValue("blocksToAnnounce");
 
                 Queue<ChainedHeader> node1QueueItems = (Queue<ChainedHeader>)node1BlocksToAnnounce.GetMemberValue("items");
 

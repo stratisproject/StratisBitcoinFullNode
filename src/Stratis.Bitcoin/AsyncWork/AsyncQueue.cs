@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Stratis.Bitcoin.Base.AsyncWork;
+using Stratis.Bitcoin.AsyncWork;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Utilities
     /// </para>
     /// </summary>
     /// <typeparam name="T">Type of items to be inserted in the queue.</typeparam>
-    public class AsyncQueue<T> : IDisposable, IAsyncQueue<T>, IAsyncDelegateDequeuer<T>
+    internal class AsyncQueue<T> : IDisposable, IAsyncQueue<T>, IAsyncDelegateDequeuer<T>
     {
         /// <summary>
         /// Execution context holding information about the current status of the execution
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Utilities
         /// Initializes the queue either in blocking dequeue mode or in callback mode.
         /// </summary>
         /// <param name="onEnqueueAsync">Callback routine to be called when a new item is added to the queue, or <c>null</c> to operate in blocking dequeue mode.</param>
-        public AsyncQueue(OnEnqueueAsync onEnqueueAsync = null)
+        internal AsyncQueue(OnEnqueueAsync onEnqueueAsync = null)
         {
             this.callbackMode = onEnqueueAsync != null;
             this.lockObject = new object();

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
@@ -65,8 +66,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc cref="IBlockRepository"/>
         private readonly IBlockRepository blockRepository;
 
+        private readonly IAsyncProvider asyncProvider;
+
         /// <summary>Queue which contains blocks that should be saved to the database.</summary>
-        private readonly AsyncQueue<ChainedHeaderBlock> blocksQueue;
+        private readonly IAsyncQueue<ChainedHeaderBlock> blocksQueue;
 
         /// <summary>Batch of blocks which should be saved in the database.</summary>
         /// <remarks>Write access should be protected by <see cref="blocksCacheLock"/>.</remarks>
@@ -96,7 +99,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             StoreSettings storeSettings,
             IBlockRepository blockRepository,
             ILoggerFactory loggerFactory,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            IAsyncProvider asyncProvider)
         {
             Guard.NotNull(blockStoreQueueFlushCondition, nameof(blockStoreQueueFlushCondition));
             Guard.NotNull(chainIndexer, nameof(chainIndexer));
@@ -111,9 +115,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.chainState = chainState;
             this.storeSettings = storeSettings;
             this.blockRepository = blockRepository;
+            this.asyncProvider = asyncProvider;
             this.batch = new List<ChainedHeaderBlock>();
             this.blocksCacheLock = new object();
-            this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>();
+            this.blocksQueue = asyncProvider.CreateAsyncQueue<ChainedHeaderBlock>();
             this.pendingBlocksCache = new Dictionary<uint256, ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.cancellation = new CancellationTokenSource();

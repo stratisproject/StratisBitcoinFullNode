@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Stratis.Bitcoin.Base.AsyncWork
+namespace Stratis.Bitcoin.AsyncWork
 {
     /// <summary>
     /// Defines a queue that can be dequeued asynchronously by multiple threads.

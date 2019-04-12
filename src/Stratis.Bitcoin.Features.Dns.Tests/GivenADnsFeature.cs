@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
@@ -15,6 +16,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -35,7 +37,8 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             public DnsSettings dnsSettings;
             public NodeSettings nodeSettings;
             public DataFolder dataFolder;
-            public IAsyncLoopFactory asyncLoopFactory;
+            public IAsyncProvider asyncProvider;
+            public ISignals signals;
             public Mock<IConnectionManager> connectionManager;
             public UnreliablePeerBehavior unreliablePeerBehavior;
 
@@ -52,9 +55,10 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 this.nodeSettings = new NodeSettings(network, args: new string[] { $"-datadir={Directory.GetCurrentDirectory()}" });
                 this.dnsSettings = new DnsSettings(this.nodeSettings);
                 this.dataFolder = CreateDataFolder(this);
-                this.asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
+                this.asyncProvider = new Mock<IAsyncProvider>().Object;
                 this.connectionManager = this.BuildConnectionManager();
                 this.unreliablePeerBehavior = this.BuildUnreliablePeerBehavior();
+                this.signals = new Signals.Signals(this.loggerFactory.Object, null);
             }
 
             private Mock<IConnectionManager> BuildConnectionManager()
@@ -96,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 this.defaultConstructorParameters.dnsSettings,
                 this.defaultConstructorParameters.nodeSettings,
                 this.defaultConstructorParameters.dataFolder,
-                this.defaultConstructorParameters.asyncLoopFactory,
+                this.defaultConstructorParameters.asyncProvider,
                 this.defaultConstructorParameters.connectionManager?.Object,
                 this.defaultConstructorParameters.unreliablePeerBehavior
             );
@@ -283,7 +287,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             this.defaultConstructorParameters.nodeLifetime.Setup(n => n.StopApplication()).Callback(() => source.Cancel());
             this.defaultConstructorParameters.nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
 
-            this.defaultConstructorParameters.asyncLoopFactory = new AsyncLoopFactory(this.defaultConstructorParameters.loggerFactory.Object);
+            this.defaultConstructorParameters.asyncProvider = new AsyncProvider(this.defaultConstructorParameters.loggerFactory.Object, this.defaultConstructorParameters.signals, this.defaultConstructorParameters.nodeLifetime.Object);
 
             using (var feature = this.BuildDefaultDnsFeature())
             {
