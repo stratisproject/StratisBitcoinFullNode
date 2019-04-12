@@ -90,10 +90,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             if (configParameters != null)
                 this.ConfigParameters.Import(configParameters);
 
-            // Set ports to be dynamically allocated.
-            this.ConfigParameters.SetDefaultValueIfUndefined("port", "0");
-            this.ConfigParameters.SetDefaultValueIfUndefined("rpcport", "0");
-            this.ConfigParameters.SetDefaultValueIfUndefined("apiport", "0");
+            var randomFoundPorts = new int[3];
+            if (this.runner is BitcoinCoreRunner || this.runner is StratisXRunner)
+                IpHelper.FindPorts(randomFoundPorts);
+
+            this.ConfigParameters.SetDefaultValueIfUndefined("port", randomFoundPorts[0].ToString());
+            this.ConfigParameters.SetDefaultValueIfUndefined("rpcport", randomFoundPorts[1].ToString());
+            this.ConfigParameters.SetDefaultValueIfUndefined("apiport", randomFoundPorts[2].ToString());
 
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
@@ -274,20 +277,24 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             }
 
             if ((this.runner is BitcoinCoreRunner) || (this.runner is StratisXRunner))
+            {
                 WaitForExternalNodeStartup();
+            }
             else
+            {
                 StartStratisRunner();
 
+                var apiSettings = this.FullNode.NodeService<ApiSettings>();
+                var rpcSettings = this.FullNode.NodeService<RpcSettings>();
+
+                this.ConfigParameters["rpcport"] = rpcSettings.RPCPort.ToString();
+                this.ConfigParameters["apiport"] = apiSettings.ApiPort.ToString();
+                this.ConfigParameters["port"] = this.FullNode.ConnectionManager.ConnectionSettings.Port.ToString();
+                if (this.ConfigParameters["agentprefix"] == "node0")
+                    this.ConfigParameters["agentprefix"] = "node" + this.ProtocolPort;
+            }
+
             this.State = CoreNodeState.Running;
-
-            var apiSettings = this.FullNode.NodeService<ApiSettings>();
-            var rpcSettings = this.FullNode.NodeService<RpcSettings>();
-
-            this.ConfigParameters["rpcport"] = rpcSettings.RPCPort.ToString();
-            this.ConfigParameters["apiport"] = apiSettings.ApiPort.ToString();
-            this.ConfigParameters["port"] = this.FullNode.ConnectionManager.ConnectionSettings.Port.ToString();
-            if (this.ConfigParameters["agentprefix"] == "node0")
-                this.ConfigParameters["agentprefix"] = "node" + this.ProtocolPort;
 
             return this;
         }
