@@ -1,4 +1,5 @@
 ﻿using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -14,11 +15,18 @@ namespace Stratis.Bitcoin.Features.PoA
     {
         public FederationMember(PubKey pubKey)
         {
+            Guard.NotNull(pubKey, nameof(pubKey));
+
             this.PubKey = pubKey;
         }
 
         /// <inheritdoc />
         public PubKey PubKey { get; }
+
+        public override string ToString()
+        {
+            return $"{nameof(this.PubKey)}:{this.PubKey.ToHex()}";
+        }
     }
 
     /// <summary>Class that contains data that defines a federation member on federated peg sidechain.</summary>

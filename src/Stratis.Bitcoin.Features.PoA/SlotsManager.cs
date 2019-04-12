@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.PoA
             uint roundTime = this.GetRoundLengthSeconds(federationMembers.Count);
 
             // Index of a slot that current node can take in each round.
-            uint slotIndex = (uint)federationMembers.IndexOf(this.federationManager.FederationMemberKey.PubKey);
+            uint slotIndex = (uint)federationMembers.IndexOf(this.federationManager.CurrentFederationKey.PubKey);
 
             // Time when current round started.
             uint roundStartTimestamp = (currentTime / roundTime) * roundTime;

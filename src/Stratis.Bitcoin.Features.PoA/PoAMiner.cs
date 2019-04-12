@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
             // Sign block with our private key.
             var header = blockTemplate.Block.Header as PoABlockHeader;
-            this.poaHeaderValidator.Sign(this.federationManager.FederationMemberKey, header);
+            this.poaHeaderValidator.Sign(this.federationManager.CurrentFederationKey, header);
 
             ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false);
 

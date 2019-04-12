@@ -75,20 +75,24 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        private void AddFederationMember(byte[] pubKeyBytes)
+        protected virtual void AddFederationMember(byte[] federationMemberBytes)
         {
-            var key = new PubKey(pubKeyBytes);
+            var key = new PubKey(federationMemberBytes);
 
-            this.logger.LogInformation("Adding new fed member: '{0}'.", key.ToHex());
-            this.federationManager.AddFederationMember(key);
+            IFederationMember federationMember = new FederationMember(key);
+
+            this.logger.LogInformation("Adding new fed member: '{0}'.", federationMember);
+            this.federationManager.AddFederationMember(federationMember);
         }
 
-        private void RemoveFederationMember(byte[] pubKeyBytes)
+        protected virtual void RemoveFederationMember(byte[] federationMemberBytes)
         {
-            var key = new PubKey(pubKeyBytes);
+            var key = new PubKey(federationMemberBytes);
 
-            this.logger.LogInformation("Kicking fed member: '{0}'.", key.ToHex());
-            this.federationManager.RemoveFederationMember(key);
+            IFederationMember federationMember = new FederationMember(key);
+
+            this.logger.LogInformation("Kicking fed member: '{0}'.", federationMember);
+            this.federationManager.RemoveFederationMember(federationMember);
         }
 
         private void AddHash(byte[] hashBytes)

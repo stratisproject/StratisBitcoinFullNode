@@ -15,8 +15,8 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary><c>true</c> in case current node is a federation member.</summary>
         public bool IsFederationMember { get; private set; }
 
-        /// <summary>Key of current federation member. <c>null</c> if <see cref="IsFederationMember"/> is <c>false</c>.</summary>
-        public Key FederationMemberKey { get; private set; }
+        /// <summary>Current federation member's private key. <c>null</c> if <see cref="IsFederationMember"/> is <c>false</c>.</summary>
+        public Key CurrentFederationKey { get; private set; }
 
         private readonly NodeSettings settings;
 
@@ -31,8 +31,9 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Key for accessing list of public keys that represent federation members from <see cref="IKeyValueRepository"/>.</summary>
         private const string federationMembersDbKey = "fedmemberskeys";
 
-        /// <summary>All access should be protected by <see cref="locker"/>.</summary>
-        private List<PubKey> federationMembers;
+        /// <summary>Collection of all active federation members.</summary>
+        /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
+        private List<IFederationMember> federationMembers;
 
         /// <summary>Protects access to <see cref="federationMembers"/>.</summary>
         private readonly object locker;
@@ -51,15 +52,15 @@ namespace Stratis.Bitcoin.Features.PoA
         public void Initialize()
         {
             // Load federation from the db.
-            this.federationMembers = this.LoadFederationKeys();
+            this.federationMembers = this.LoadFederation();
 
             if (this.federationMembers == null)
             {
                 this.logger.LogDebug("Federation members are not stored in the db. Loading genesis federation members.");
 
-                this.federationMembers = new List<PubKey>(this.network.ConsensusOptions.GenesisFederation);
+                this.federationMembers = new List<IFederationMember>(this.network.ConsensusOptions.GenesisFederation);
 
-                this.SaveFederationKeys(this.federationMembers);
+                this.SaveFederation(this.federationMembers);
             }
 
             // Display federation.
@@ -69,29 +70,29 @@ namespace Stratis.Bitcoin.Features.PoA
             // Load key.
             Key key = new KeyTool(this.settings.DataFolder).LoadPrivateKey();
 
-            this.FederationMemberKey = key;
+            this.CurrentFederationKey = key;
             this.SetIsFederationMember();
 
-            if (this.FederationMemberKey == null)
+            if (this.CurrentFederationKey == null)
             {
                 this.logger.LogTrace("(-)[NOT_FED_MEMBER]");
                 return;
             }
 
             // Loaded key has to be a key for current federation.
-            if (!this.federationMembers.Contains(this.FederationMemberKey.PubKey))
+            if (!this.federationMembers.Any(x => x.PubKey == this.CurrentFederationKey.PubKey))
             {
                 string message = "Key provided is not registered on the network!";
 
                 this.logger.LogWarning(message);
             }
 
-            this.logger.LogInformation("Federation key pair was successfully loaded. Your public key is: '{0}'.", this.FederationMemberKey.PubKey);
+            this.logger.LogInformation("Federation key pair was successfully loaded. Your public key is: '{0}'.", this.CurrentFederationKey.PubKey);
         }
 
         private void SetIsFederationMember()
         {
-            this.IsFederationMember = this.federationMembers.Contains(this.FederationMemberKey?.PubKey);
+            this.IsFederationMember = this.federationMembers.Any(x => x.PubKey == this.CurrentFederationKey?.PubKey);
         }
 
         /// <summary>Provides up to date list of federation members.</summary>
@@ -99,62 +100,76 @@ namespace Stratis.Bitcoin.Features.PoA
         /// Blocks that are not signed with private keys that correspond
         /// to public keys from this list are considered to be invalid.
         /// </remarks>
-        public List<PubKey> GetFederationMembers()
+        public List<IFederationMember> GetFederationMembers()
         {
             lock (this.locker)
             {
-                return new List<PubKey>(this.federationMembers);
+                return new List<IFederationMember>(this.federationMembers);
             }
         }
 
-        public void AddFederationMember(PubKey pubKey)
+        public virtual void AddFederationMember(IFederationMember federationMember)
         {
             lock (this.locker)
             {
-                if (this.federationMembers.Contains(pubKey))
+                if (this.federationMembers.Contains(federationMember))
                 {
                     this.logger.LogTrace("(-)[ALREADY_EXISTS]");
                     return;
                 }
 
-                this.federationMembers.Add(pubKey);
+                this.federationMembers.Add(federationMember);
 
-                this.SaveFederationKeys(this.federationMembers);
+                this.SaveFederation(this.federationMembers);
                 this.SetIsFederationMember();
 
-                this.logger.LogInformation("Federation member '{0}' was added!", pubKey.ToHex());
+                this.logger.LogInformation("Federation member '{0}' was added!", federationMember);
             }
 
-            this.signals.Publish(new FedMemberAdded(pubKey));
+            this.signals.Publish(new FedMemberAdded(federationMember));
         }
 
-        public void RemoveFederationMember(PubKey pubKey)
+        public void RemoveFederationMember(IFederationMember federationMember)
         {
             lock (this.locker)
             {
-                this.federationMembers.Remove(pubKey);
+                this.federationMembers.Remove(federationMember);
 
-                this.SaveFederationKeys(this.federationMembers);
+                this.SaveFederation(this.federationMembers);
                 this.SetIsFederationMember();
 
-                this.logger.LogInformation("Federation member '{0}' was removed!", pubKey.ToHex());
+                this.logger.LogInformation("Federation member '{0}' was removed!", federationMember);
             }
 
-            this.signals.Publish(new FedMemberKicked(pubKey));
+            this.signals.Publish(new FedMemberKicked(federationMember));
         }
 
-        private void SaveFederationKeys(List<PubKey> pubKeys)
+        protected virtual void SaveFederation(List<IFederationMember> pubKeys)
         {
-            List<string> hexList = pubKeys.Select(x => x.ToHex()).ToList();
+            List<string> hexList = pubKeys.Select(x => x.PubKey.ToHex()).ToList();
 
             this.keyValueRepo.SaveValueJson(federationMembersDbKey, hexList);
         }
 
-        private List<PubKey> LoadFederationKeys()
+        /// <summary>Loads saved collection of federation members from the database.</summary>
+        protected virtual List<IFederationMember> LoadFederation()
         {
             List<string> hexList = this.keyValueRepo.LoadValueJson<List<string>>(federationMembersDbKey);
 
-            return hexList?.Select(x => new PubKey(x)).ToList();
+            List<PubKey> keys = hexList?.Select(x => new PubKey(x)).ToList();
+
+            if (keys == null)
+            {
+                this.logger.LogTrace("(-)[NOT_FOUND]:null");
+                return null;
+            }
+
+            var loadedFederation = new List<IFederationMember>(keys.Count);
+
+            foreach (PubKey key in keys)
+                loadedFederation.Add(new FederationMember(key));
+
+            return loadedFederation;
         }
     }
 }

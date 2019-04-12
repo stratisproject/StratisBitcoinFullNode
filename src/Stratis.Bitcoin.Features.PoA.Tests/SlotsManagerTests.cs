@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             List<PubKey> fedKeys = this.federationManager.GetFederationMembers();
             uint roundStart = this.consensusOptions.TargetSpacingSeconds * (uint)fedKeys.Count * 5;
 
-            fedManager.SetPrivatePropertyValue(nameof(FederationManager.FederationMemberKey), key);
+            fedManager.SetPrivatePropertyValue(nameof(FederationManager.CurrentFederationKey), key);
             fedManager.SetPrivatePropertyValue(nameof(this.federationManager.IsFederationMember), true);
 
             Assert.Equal(roundStart + this.consensusOptions.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart));

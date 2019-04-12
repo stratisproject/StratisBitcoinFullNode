@@ -25,14 +25,14 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 CoreNode node = builder.CreatePoANode(network, key).Start();
 
                 Assert.True(node.FullNode.NodeService<FederationManager>().IsFederationMember);
-                Assert.Equal(node.FullNode.NodeService<FederationManager>().FederationMemberKey, key);
+                Assert.Equal(node.FullNode.NodeService<FederationManager>().CurrentFederationKey, key);
                 // Assert.True(node.FullNode.NodeService<IPoAMiner>().IsMining()); Old method 
 
                 // Create second node as normal node.
                 CoreNode node2 = builder.CreatePoANode(network).Start();
 
                 Assert.False(node2.FullNode.NodeService<FederationManager>().IsFederationMember);
-                Assert.Equal(node2.FullNode.NodeService<FederationManager>().FederationMemberKey, null);
+                Assert.Equal(node2.FullNode.NodeService<FederationManager>().CurrentFederationKey, null);
                 // Assert.False(node2.FullNode.NodeService<IPoAMiner>().IsMining()); Old method
             }
         }
