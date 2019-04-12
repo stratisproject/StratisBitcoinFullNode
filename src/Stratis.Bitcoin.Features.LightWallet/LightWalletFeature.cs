@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -43,7 +44,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         private IAsyncLoop asyncLoop;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         private readonly IWalletSyncManager walletSyncManager;
 
@@ -74,7 +75,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             IConnectionManager connectionManager,
             ChainIndexer chainIndexer,
             NodeDeployments nodeDeployments,
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             INodeLifetime nodeLifetime,
             IWalletFeePolicy walletFeePolicy,
             BroadcasterBehavior broadcasterBehavior,
@@ -89,7 +90,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.connectionManager = connectionManager;
             this.chainIndexer = chainIndexer;
             this.nodeDeployments = nodeDeployments;
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.nodeLifetime = nodeLifetime;
             this.walletFeePolicy = walletFeePolicy;
             this.broadcasterBehavior = broadcasterBehavior;
@@ -136,7 +137,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public IAsyncLoop StartDeploymentsChecksLoop()
         {
             CancellationTokenSource loopToken = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping);
-            return this.asyncLoopFactory.Run("LightWalletFeature.CheckDeployments", token =>
+            return this.asyncProvider.CreateAndRunAsyncLoop("LightWalletFeature.CheckDeployments", token =>
             {
                 if (!this.chainIndexer.IsDownloaded())
                     return Task.CompletedTask;
