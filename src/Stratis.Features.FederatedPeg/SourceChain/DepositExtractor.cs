@@ -14,12 +14,12 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         /// This deposit extractor implementation only looks for a very specific deposit format.
         /// Deposits will have 2 outputs when there is no change.
         /// </summary>
-        private const int ExpectedNumberOfOutputsMin = 2;
+        private const int ExpectedNumberOfOutputsNoChange = 2;
 
         /// <summary>
         /// Deposits will have 3 outputs when there is change.
         /// </summary>
-        private const int ExpectedNumberOfOutputsMax = 3;
+        private const int ExpectedNumberOfOutputsChange = 3;
 
         private readonly IOpReturnDataReader opReturnDataReader;
 
@@ -77,8 +77,8 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                 return null;
 
             // Deposits have a certain structure.
-            if (transaction.Outputs.Count != ExpectedNumberOfOutputsMin 
-                && transaction.Outputs.Count != ExpectedNumberOfOutputsMax)
+            if (transaction.Outputs.Count != ExpectedNumberOfOutputsNoChange 
+                && transaction.Outputs.Count != ExpectedNumberOfOutputsChange)
                 return null;
 
             List<TxOut> depositsToMultisig = transaction.Outputs.Where(output =>
