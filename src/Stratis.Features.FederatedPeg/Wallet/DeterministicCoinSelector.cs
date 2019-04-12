@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using NBitcoin;
 
 namespace Stratis.Features.FederatedPeg.Wallet
@@ -18,19 +17,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
             if (target.CompareTo(Money.Zero) == 0)
                 return result;
 
-            // TODO: This can be simpler, remove GroupBy
-            var orderedCoinGroups = coins.GroupBy(c => new Key().ScriptPubKey)
-                .Select(scriptPubKeyCoins => new
-                {
-                    Amount = scriptPubKeyCoins.Select(c => c.Amount).Sum(Money.Zero),
-                    Coins = scriptPubKeyCoins.ToList()
-                });
-
-            foreach (var coinGroup in orderedCoinGroups)
+            foreach (ICoin coin in coins)
             {
                 // Build up our ongoing total
-                total = total.Add(coinGroup.Amount);
-                result.AddRange(coinGroup.Coins);
+                total = total.Add(coin.Amount);
+                result.Add(coin);
 
                 // If we make the target, return the current set.
                 if (total.CompareTo(target) >= 0)
