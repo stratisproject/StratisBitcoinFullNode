@@ -137,12 +137,12 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 Assert.Equal(2, transactions.Length);
 
-                // Transactions[0] inputs.
+                // Transactions[0] inputs. Ordered deterministically, roughly a mixture of time and canonical ordering.
                 Assert.Equal(2, transactions[0].Inputs.Count);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[0].PrevOut.Hash);
-                Assert.Equal((uint)1, transactions[0].Inputs[0].PrevOut.N);
+                Assert.Equal((uint)0, transactions[0].Inputs[0].PrevOut.N);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[1].PrevOut.Hash);
-                Assert.Equal((uint)0, transactions[0].Inputs[1].PrevOut.N);
+                Assert.Equal((uint)1, transactions[0].Inputs[1].PrevOut.N);
 
                 // Transaction[0] outputs.
                 Assert.Equal(3, transactions[0].Outputs.Count);
@@ -240,12 +240,12 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 Assert.Equal(2, transactions.Length);
 
-                // Transactions[0] inputs. Note that inputs are ordered by amount.
+                // Transactions[0] inputs. Ordered deterministically.
                 Assert.Equal(2, transactions[0].Inputs.Count);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[0].PrevOut.Hash);
-                Assert.Equal((uint)1, transactions[0].Inputs[0].PrevOut.N);
+                Assert.Equal((uint)0, transactions[0].Inputs[0].PrevOut.N);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[1].PrevOut.Hash);
-                Assert.Equal((uint)0, transactions[0].Inputs[1].PrevOut.N);
+                Assert.Equal((uint)1, transactions[0].Inputs[1].PrevOut.N);
 
                 // Transaction[0] outputs.
                 Assert.Equal(3, transactions[0].Outputs.Count);
@@ -278,15 +278,15 @@ namespace Stratis.Features.FederatedPeg.Tests
                 transactions = transfers.Select(t => t.PartialTransaction).ToArray();
 
                 // Transactions[1] inputs.
-                Assert.Equal(1, transactions[1].Inputs.Count);
-                Assert.Equal(this.fundingTransactions[2].GetHash(), transactions[1].Inputs[0].PrevOut.Hash);
+                Assert.Equal(2, transactions[1].Inputs.Count);
+                Assert.Equal(this.fundingTransactions[1].GetHash(), transactions[1].Inputs[0].PrevOut.Hash);
                 Assert.Equal((uint)0, transactions[1].Inputs[0].PrevOut.N);
 
                 // Transaction[1] outputs.
                 Assert.Equal(3, transactions[1].Outputs.Count);
 
                 // Transaction[1] output value - change.
-                Assert.Equal(new Money(900m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
+                Assert.Equal(new Money(970m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[1].Outputs[0].ScriptPubKey);
 
                 // Transaction[1] output value - recipient 2, but minus 0.01 for the tx fee.
@@ -305,7 +305,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 (Money confirmed, Money unconfirmed) spendable = this.wallet.GetSpendableAmount();
 
-                Assert.Equal(new Money(910m, MoneyUnit.BTC), spendable.unconfirmed);
+                Assert.Equal(new Money(980m, MoneyUnit.BTC), spendable.unconfirmed);
             }
         }
 
