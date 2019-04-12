@@ -20,10 +20,10 @@ namespace Stratis.Bitcoin.Features.Api
         private readonly ILogger logger;
 
         /// <summary>URI to node's API interface.</summary>
-        public Uri ApiUri { get; set; }
+        public Uri ApiUri { get; private set; }
 
         /// <summary>Port of node's API interface.</summary>
-        public int ApiPort { get; set; }
+        public int ApiPort { get; private set; }
 
         /// <summary>URI to node's API interface.</summary>
         public Timer KeepaliveTimer { get; private set; }
@@ -91,6 +91,12 @@ namespace Stratis.Bitcoin.Features.Api
                     Interval = keepAlive * 1000
                 };
             }
+        }
+
+        public void SetPort(int port)
+        {
+            this.ApiPort = port;
+            this.ApiUri = new Uri($"{this.ApiUri.Scheme}://{this.ApiUri.Host}:{this.ApiPort}{this.ApiUri.PathAndQuery}");
         }
 
         /// <summary>Prints the help information on how to configure the API settings to the logger.</summary>

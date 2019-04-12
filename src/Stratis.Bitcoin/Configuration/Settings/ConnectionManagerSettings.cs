@@ -161,6 +161,20 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.IsGateway = config.GetOrDefault<bool>("gateway", false, this.logger);
         }
 
+        public void SetPort(int port)
+        {
+            foreach (var ip in this.Bind)
+            {
+                if (ip.Endpoint.Port == this.Port)
+                    ip.Endpoint.Port = port;
+            }
+
+            if (this.ExternalEndpoint.Port == this.Port)
+                this.ExternalEndpoint.Port = port;
+
+            this.Port = port;
+        }
+
         /// <summary>
         /// Get the default configuration.
         /// </summary>

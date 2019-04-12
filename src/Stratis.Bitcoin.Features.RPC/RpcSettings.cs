@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.RPC
         public string RpcPassword { get; set; }
 
         /// <summary>TCP port for RPC interface.</summary>
-        public int RPCPort { get; set; }
+        public int RPCPort { get; private set; }
 
         /// <summary>Default bindings from config.</summary>
         public List<IPEndPoint> DefaultBindings { get; set; }
@@ -101,6 +101,23 @@ namespace Stratis.Bitcoin.Features.RPC
                     throw new ConfigurationException("Invalid rpcbind value");
                 }
             }
+        }
+
+        public void SetPort(int port)
+        {
+            foreach (var ip in this.DefaultBindings)
+            {
+                if (ip.Port == this.RPCPort)
+                    ip.Port = port;
+            }
+
+            foreach (var ip in this.Bind)
+            {
+                if (ip.Port == this.RPCPort)
+                    ip.Port = port;
+            }
+
+            this.RPCPort = port;
         }
 
         /// <summary>
