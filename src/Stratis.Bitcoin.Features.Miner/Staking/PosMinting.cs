@@ -8,6 +8,7 @@ using NBitcoin;
 using NBitcoin.BuilderExtensions;
 using NBitcoin.Crypto;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
@@ -125,7 +126,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         private readonly IStakeValidator stakeValidator;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>A manager providing operations on wallets.</summary>
         private readonly IWalletManager walletManager;
@@ -229,7 +230,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             MempoolSchedulerLock mempoolLock,
             ITxMempool mempool,
             IWalletManager walletManager,
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             ITimeSyncBehaviorState timeSyncBehaviorState,
             ILoggerFactory loggerFactory,
             MinerSettings minerSettings)
@@ -246,7 +247,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             this.stakeValidator = stakeValidator;
             this.mempoolLock = mempoolLock;
             this.mempool = mempool;
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.walletManager = walletManager;
             this.timeSyncBehaviorState = timeSyncBehaviorState;
             this.loggerFactory = loggerFactory;
@@ -281,7 +282,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             this.rpcGetStakingInfoModel.Enabled = true;
             this.stakeCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(new[] { this.nodeLifetime.ApplicationStopping });
 
-            this.stakingLoop = this.asyncLoopFactory.Run("PosMining.Stake", async token =>
+            this.stakingLoop = this.asyncProvider.CreateAndRunAsyncLoop("PosMining.Stake", async token =>
             {
                 try
                 {

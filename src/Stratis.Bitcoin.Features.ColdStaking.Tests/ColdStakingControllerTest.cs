@@ -9,6 +9,7 @@ using Moq;
 using NBitcoin;
 using NBitcoin.Policy;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
@@ -26,7 +27,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -53,6 +54,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
         private ColdStakingManager coldStakingManager;
         private ColdStakingController coldStakingController;
+        private IAsyncProvider asyncProvider;
         private NodeSettings nodeSettings;
         private IDateTimeProvider dateTimeProvider;
         private ILoggerFactory loggerFactory;
@@ -156,7 +158,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             ConsensusRuleEngine consensusRuleEngine = new PosConsensusRuleEngine(this.Network, this.loggerFactory, this.dateTimeProvider,
                 this.chainIndexer, this.nodeDeployments, this.consensusSettings, checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
-                this.stakeValidator.Object, chainState, new InvalidBlockHashStore(this.dateTimeProvider), new Mock<INodeStats>().Object, new Mock<IRewindDataIndexCache>().Object, consensusRulesContainer)
+                this.stakeValidator.Object, chainState, new InvalidBlockHashStore(this.dateTimeProvider), new Mock<INodeStats>().Object, new Mock<IRewindDataIndexCache>().Object, this.asyncProvider, consensusRulesContainer)
                 .SetupRulesEngineParent();
 
             // Create mempool validator.
@@ -176,7 +178,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         /// <param name="callingMethod">The test method being executed.</param>
         private void Initialize([System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
         {
-            var blockStore = new Mock<IBlockStore>().Object;
             DataFolder dataFolder = CreateDataFolder(this, callingMethod);
             this.nodeSettings = new NodeSettings(this.Network, ProtocolVersion.ALT_PROTOCOL_VERSION);
             this.dateTimeProvider = DateTimeProvider.Default;
@@ -184,13 +185,15 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             this.loggerFactory = this.nodeSettings.LoggerFactory;
 
             this.coldStakingManager = new ColdStakingManager(this.Network, new ChainIndexer(this.Network), walletSettings, this.nodeSettings.DataFolder,
-                new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), new ScriptAddressReader(),
+                new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), new ScriptAddressReader(),
                 this.loggerFactory, DateTimeProvider.Default);
 
             var walletTransactionHandler = new WalletTransactionHandler(this.loggerFactory, this.coldStakingManager,
                 new Mock<IWalletFeePolicy>().Object, this.Network, new StandardTransactionPolicy(this.Network));
 
             this.coldStakingController = new ColdStakingController(this.loggerFactory, this.coldStakingManager, walletTransactionHandler);
+
+            this.asyncProvider = new AsyncProvider(this.loggerFactory, new Mock<ISignals>().Object, new NodeLifetime());
         }
 
         /// <summary>

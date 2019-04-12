@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
@@ -467,6 +468,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 new InvalidBlockHashStore(dateTimeProvider),
                 new NodeStats(dateTimeProvider),
                 new Mock<IRewindDataIndexCache>().Object,
+                this.CreateAsyncProvider(),
                 consensusRulesContainer);
 
             posConsensusRules.SetupRulesEngineParent();

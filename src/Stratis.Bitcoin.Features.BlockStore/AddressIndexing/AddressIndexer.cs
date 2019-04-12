@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using LiteDB;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.EventBus;
@@ -41,13 +42,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly IConsensusManager consensusManager;
 
+        private readonly IAsyncProvider asyncProvider;
+
         private const string DbKey = "AddrData";
 
         private SubscriptionToken blockConnectedSubscription, blockDisconnectedSubscription;
 
         /// <summary>Queue that is populated when block is connected or disconnected.</summary>
         /// <remarks><c>bool</c> key is <c>true</c> when block is connected.</remarks>
-        private AsyncQueue<KeyValuePair<bool, ChainedHeaderBlock>> blockReceivedQueue;
+        private IAsyncDelegateDequeuer<KeyValuePair<bool, ChainedHeaderBlock>> blockReceivedQueue;
 
         private LiteDatabase db;
 
@@ -56,7 +59,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         private AddressIndexerData addressesIndex;
 
         public AddressIndexer(StoreSettings storeSettings, ISignals signals, DataFolder dataFolder, ILoggerFactory loggerFactory,
-            Network network, IBlockStore blockStore, INodeStats nodeStats, IConsensusManager consensusManager)
+            Network network, IBlockStore blockStore, INodeStats nodeStats, IConsensusManager consensusManager, IAsyncProvider asyncProvider)
         {
             this.signals = signals;
             this.storeSettings = storeSettings;
@@ -65,6 +68,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.nodeStats = nodeStats;
             this.dataFolder = dataFolder;
             this.consensusManager = consensusManager;
+            this.asyncProvider = asyncProvider;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -78,7 +82,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             }
 
             string dbPath = Path.Combine(this.dataFolder.RootPath, "addressindex.litedb");
-            this.db = new LiteDatabase(new ConnectionString() {Filename = dbPath});
+            this.db = new LiteDatabase(new ConnectionString() { Filename = dbPath });
 
             this.logger.LogDebug("TxIndexing is enabled.");
 
@@ -98,7 +102,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 this.dataStore.Insert(this.addressesIndex);
             }
 
-            this.blockReceivedQueue = new AsyncQueue<KeyValuePair<bool, ChainedHeaderBlock>>(this.OnEnqueueAsync);
+            this.blockReceivedQueue = this.asyncProvider.CreateAndRunAsyncDelegateDequeuer<KeyValuePair<bool, ChainedHeaderBlock>>($"{nameof(AddressIndexer)}-{nameof(this.blockReceivedQueue)}", this.OnEnqueueAsync);
 
             // Subscribe to events.
             this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(blockConnectedData =>

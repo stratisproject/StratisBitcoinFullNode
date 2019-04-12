@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -24,6 +25,9 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>A provider of network payload messages.</summary>
         private readonly PayloadProvider payloadProvider;
+
+        /// <summary>The provider used to create an async loop to listen incoming messages.</summary>
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>Instance logger.</summary>
         private ILogger logger;
@@ -88,10 +92,11 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="payloadProvider">A provider of network payload messages.</param>
-        public NetworkPeerConnection(Network network, INetworkPeer peer, TcpClient client, int clientId, ProcessMessageAsync<IncomingMessage> processMessageAsync, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, PayloadProvider payloadProvider)
+        public NetworkPeerConnection(Network network, INetworkPeer peer, TcpClient client, int clientId, ProcessMessageAsync<IncomingMessage> processMessageAsync, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, PayloadProvider payloadProvider, IAsyncProvider asyncProvider)
         {
             this.loggerFactory = loggerFactory;
             this.payloadProvider = payloadProvider;
+            this.asyncProvider = Guard.NotNull(asyncProvider, nameof(asyncProvider));
             this.logger = this.loggerFactory.CreateLogger(this.GetType().FullName, $"[{clientId}-{peer.PeerEndPoint}] ");
 
             this.network = network;
@@ -108,7 +113,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.CancellationSource = new CancellationTokenSource();
 
             this.MessageProducer = new MessageProducer<IncomingMessage>();
-            this.messageListener = new CallbackMessageListener<IncomingMessage>(processMessageAsync);
+            this.messageListener = new CallbackMessageListener<IncomingMessage>(asyncProvider, processMessageAsync, peer);
             this.messageProducerRegistration = this.MessageProducer.AddMessageListener(this.messageListener);
         }
 

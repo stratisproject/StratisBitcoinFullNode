@@ -9,6 +9,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BuilderExtensions;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -51,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private IAsyncLoop asyncLoop;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>Gets the list of wallets.</summary>
         public ConcurrentBag<Wallet> Wallets { get; }
@@ -105,7 +106,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             WalletSettings walletSettings,
             DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
             IScriptAddressReader scriptAddressReader,
@@ -117,7 +118,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(walletSettings, nameof(walletSettings));
             Guard.NotNull(dataFolder, nameof(dataFolder));
             Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));
-            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
+            Guard.NotNull(asyncProvider, nameof(asyncProvider));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(scriptAddressReader, nameof(scriptAddressReader));
 
@@ -130,7 +131,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.ChainIndexer = chainIndexer;
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
             this.broadcasterManager = broadcasterManager;
@@ -226,7 +227,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.WalletTipHash = this.LastReceivedBlockHash();
 
             // Save the wallets file every 5 minutes to help against crashes.
-            this.asyncLoop = this.asyncLoopFactory.Run("Wallet persist job", token =>
+            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop("Wallet persist job", token =>
             {
                 this.SaveWallets();
                 this.logger.LogInformation("Wallets saved to file at {0}.", this.dateTimeProvider.GetUtcNow());
@@ -1688,7 +1689,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="date">The creation date of the block with which to update the wallet.</param>
         private void UpdateWhenChainDownloaded(IEnumerable<Wallet> wallets, DateTime date)
         {
-            this.asyncLoopFactory.RunUntil("WalletManager.DownloadChain", this.nodeLifetime.ApplicationStopping,
+            this.asyncProvider.CreateAndRunAsyncLoopUntil("WalletManager.DownloadChain", this.nodeLifetime.ApplicationStopping,
                 () => this.ChainIndexer.IsDownloaded(),
                 () =>
                 {
