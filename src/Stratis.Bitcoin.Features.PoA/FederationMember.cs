@@ -28,6 +28,32 @@ namespace Stratis.Bitcoin.Features.PoA
         {
             return $"{nameof(this.PubKey)}:'{this.PubKey.ToHex()}'";
         }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            var item = obj as FederationMember;
+            if (item == null)
+                return false;
+
+            return this.PubKey.Equals(item.PubKey);
+        }
+
+        public static bool operator ==(FederationMember a, FederationMember b)
+        {
+            if (ReferenceEquals(a, b))
+                return true;
+
+            if (((object)a == null) || ((object)b == null))
+                return false;
+
+            return a.PubKey == b.PubKey;
+        }
+
+        public static bool operator !=(FederationMember a, FederationMember b)
+        {
+            return !(a == b);
+        }
     }
 
     /// <summary>Class that contains data that defines a federation member on federated peg sidechain.</summary>
