@@ -8,20 +8,15 @@ namespace Stratis.Bitcoin.Utilities
     public static class IpHelper
     {
         // Don't re-use ports.
-        private static HashSet<uint> usedPorts = new HashSet<uint>();
+        private static HashSet<int> usedPorts = new HashSet<int>();
 
-        /// <summary>
-        /// Find ports that are free to use.
-        /// </summary>
-        /// <param name="ports">A list of ports to checked or fill/replace as necessary.</param>
-        public static void FindPorts(int[] ports)
+        public static int FindPort()
         {
-            int i = 0;
             lock (usedPorts)
             {
-                while (i < ports.Length)
+                while (true)
                 {
-                    uint port = RandomUtils.GetUInt32() % 4000;
+                    int port = (int)(RandomUtils.GetUInt32() % 4000);
                     port = port + 10000;
                     if (usedPorts.Contains(port))
                         continue;
@@ -31,15 +26,24 @@ namespace Stratis.Bitcoin.Utilities
                         var l = new TcpListener(IPAddress.Loopback, (int)port);
                         l.Start();
                         l.Stop();
-                        ports[i] = (int)port;
                         usedPorts.Add(port);
-                        i++;
+                        return port;
                     }
                     catch (SocketException)
                     {
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Find ports that are free to use.
+        /// </summary>
+        /// <param name="ports">A list of ports to checked or fill/replace as necessary.</param>
+        public static void FindPorts(int[] ports)
+        {
+            for (int i = 0; i < ports.Length; i++)
+                ports[i] = FindPort();
         }
     }
 }
