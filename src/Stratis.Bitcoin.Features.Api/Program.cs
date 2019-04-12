@@ -40,7 +40,6 @@ namespace Stratis.Bitcoin.Features.Api
                     })
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseIISIntegration()
-                //.UseUrls(apiUri.ToString())
                 .ConfigureServices(collection =>
                 {
                     if (services == null)
