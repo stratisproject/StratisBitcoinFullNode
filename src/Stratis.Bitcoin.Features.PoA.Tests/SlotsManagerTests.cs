@@ -40,19 +40,18 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         [Fact]
         public void ValidSlotAssigned()
         {
-            List<PubKey> fedKeys = this.federationManager.GetFederationMembers();
-            uint roundStart = this.consensusOptions.TargetSpacingSeconds * (uint)fedKeys.Count * 5;
-
+            List<IFederationMember> federationMembers = this.federationManager.GetFederationMembers();
+            uint roundStart = this.consensusOptions.TargetSpacingSeconds * (uint)federationMembers.Count * 5;
 
             int currentFedIndex = -1;
 
             for (int i = 0; i < 20; i++)
             {
                 currentFedIndex++;
-                if (currentFedIndex > fedKeys.Count - 1)
+                if (currentFedIndex > federationMembers.Count - 1)
                     currentFedIndex = 0;
 
-                Assert.Equal(fedKeys[currentFedIndex], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * (uint)i));
+                Assert.Equal(federationMembers[currentFedIndex].PubKey, this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * (uint)i));
             }
         }
 
@@ -66,8 +65,8 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             FederationManager fedManager = PoATestsBase.CreateFederationManager(this, this.network, new ExtendedLoggerFactory(), new Signals.Signals(new LoggerFactory(), null));
             this.slotsManager = new SlotsManager(this.network, fedManager, new LoggerFactory());
 
-            List<PubKey> fedKeys = this.federationManager.GetFederationMembers();
-            uint roundStart = this.consensusOptions.TargetSpacingSeconds * (uint)fedKeys.Count * 5;
+            List<IFederationMember> federationMembers = this.federationManager.GetFederationMembers();
+            uint roundStart = this.consensusOptions.TargetSpacingSeconds * (uint)federationMembers.Count * 5;
 
             fedManager.SetPrivatePropertyValue(nameof(FederationManager.CurrentFederationKey), key);
             fedManager.SetPrivatePropertyValue(nameof(this.federationManager.IsFederationMember), true);
@@ -75,7 +74,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             Assert.Equal(roundStart + this.consensusOptions.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart));
             Assert.Equal(roundStart + this.consensusOptions.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart + 4));
 
-            roundStart += this.consensusOptions.TargetSpacingSeconds * (uint)fedKeys.Count;
+            roundStart += this.consensusOptions.TargetSpacingSeconds * (uint)federationMembers.Count;
             Assert.Equal(roundStart + this.consensusOptions.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart - 5));
             Assert.Equal(roundStart + this.consensusOptions.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart - this.consensusOptions.TargetSpacingSeconds + 1));
 
