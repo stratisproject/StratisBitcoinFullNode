@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,6 +15,7 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.RPC.Controllers;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
@@ -68,10 +71,9 @@ namespace Stratis.Bitcoin.Features.RPC
             {
                 // TODO: The web host wants to create IServiceProvider, so build (but not start)
                 // earlier, if you want to use dependency injection elsewhere
-                this.fullNode.RPCHost = new WebHostBuilder()
+                var webHostBuilder = new WebHostBuilder()
                 .UseKestrel()
                 .ForFullNode(this.fullNode)
-                .UseUrls(this.rpcSettings.GetUrls())
                 .UseIISIntegration()
                 .ConfigureServices(collection =>
                 {
@@ -101,17 +103,39 @@ namespace Stratis.Bitcoin.Features.RPC
                         }
                     }
                 })
-                .UseStartup<Startup>()
-                .Build();
+                .UseStartup<Startup>();
 
-                this.fullNode.RPCHost.Start();
+                bool retry = this.rpcSettings.RPCPort == 0;
+                int retryCnt = retry ? 10 : 1;
+
+                while (retryCnt-- >= 0)
+                {
+                    try
+                    {
+                        if (retry)
+                            this.rpcSettings.SetPort(IpHelper.FindPort());
+
+                        IWebHost host = webHostBuilder.UseUrls(this.rpcSettings.GetUrls()).Build();
+
+                        host.Start();
+
+                        this.fullNode.RPCHost = host;
+
+                        break;
+                    }
+                    catch (IOException err) when (retryCnt != 0 && err.InnerException.GetType() == typeof(AddressInUseException))
+                    {
+                        continue;
+                    }
+                }
+
                 this.logger.LogInformation("RPC Server listening on: " + Environment.NewLine + string.Join(Environment.NewLine, this.rpcSettings.GetUrls()));
             }
             else
             {
                 this.logger.LogInformation("RPC Server is off based on configuration.");
             }
-            
+
             return Task.CompletedTask;
         }
     }

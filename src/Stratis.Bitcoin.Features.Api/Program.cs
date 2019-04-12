@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,8 +21,8 @@ namespace Stratis.Bitcoin.Features.Api
 
             Uri apiUri = apiSettings.ApiUri;
 
-            X509Certificate2 certificate = apiSettings.UseHttps 
-                ? GetHttpsCertificate(apiSettings.HttpsCertificateFilePath, store) 
+            X509Certificate2 certificate = apiSettings.UseHttps
+                ? GetHttpsCertificate(apiSettings.HttpsCertificateFilePath, store)
                 : null;
 
             webHostBuilder
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Api
                     })
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseIISIntegration()
-                .UseUrls(apiUri.ToString())
+                //.UseUrls(apiUri.ToString())
                 .ConfigureServices(collection =>
                 {
                     if (services == null)
@@ -71,11 +72,30 @@ namespace Stratis.Bitcoin.Features.Api
                 })
                 .UseStartup<Startup>();
 
-            IWebHost host = webHostBuilder.Build();
-                
-            host.Start();
+            bool retry = apiSettings.ApiPort == 0;
+            int retryCnt = retry ? 10 : 1;
 
-            return host;
+            while (retryCnt-- >= 0)
+            {
+                try
+                {
+                    if (retry)
+                        apiSettings.SetPort(IpHelper.FindPort());
+
+                    IWebHost host = webHostBuilder.UseUrls(apiSettings.ApiUri.ToString()).Build();
+
+                    host.Start();
+
+                    return host;
+                }
+                catch (IOException err) when (retryCnt != 0 && err.InnerException.GetType() == typeof(AddressInUseException))
+                {
+                    continue;
+                }
+            }
+
+            // Should never reach here.
+            return null;
         }
 
         private static X509Certificate2 GetHttpsCertificate(string certificateFilePath, ICertificateStore store)

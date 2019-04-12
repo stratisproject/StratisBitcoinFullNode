@@ -147,7 +147,27 @@ namespace Stratis.Bitcoin.Connection
             }
 
             if (this.ConnectionSettings.Listen)
-                this.StartNodeServer();
+            {
+                bool retry = this.ConnectionSettings.Port == 0;
+                int retryCnt = retry ? 10 : 1;
+
+                while (retryCnt-- >= 0)
+                {
+                    try
+                    {
+                        if (retry)
+                            this.ConnectionSettings.SetPort(IpHelper.FindPort());
+
+                        this.StartNodeServer();
+
+                        break;
+                    }
+                    catch (SocketException) when (retryCnt != 0)
+                    {
+                        continue;
+                    }
+                }
+            }
 
             // If external IP address supplied this overrides all.
             if (this.ConnectionSettings.ExternalEndpoint != null)
