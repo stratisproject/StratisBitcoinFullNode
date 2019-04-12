@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.PoA
             {
                 this.logger.LogDebug("Federation members are not stored in the db. Loading genesis federation members.");
 
-                this.federationMembers = new List<PubKey>(this.network.ConsensusOptions.GenesisFederationPublicKeys);
+                this.federationMembers = new List<PubKey>(this.network.ConsensusOptions.GenesisFederation);
 
                 this.SaveFederationKeys(this.federationMembers);
             }
