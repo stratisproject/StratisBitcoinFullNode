@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Consensus
                     break;
 
                 case InvPayload inv:
-                    await this.ProcessInvAsync(peer, inv.Inventory).ConfigureAwait(false);
+                    this.ProcessInv(peer, inv.Inventory);
                     break;
             }
         }
@@ -628,7 +628,7 @@ namespace Stratis.Bitcoin.Consensus
         /// normal. We do not request the block directly as the peer may be attempting a DoS
         /// attack by spamming fake inv messages.
         /// </remarks>
-        protected async Task ProcessInvAsync(INetworkPeer peer, List<InventoryVector> inventory)
+        protected void ProcessInv(INetworkPeer peer, List<InventoryVector> inventory)
         {
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
