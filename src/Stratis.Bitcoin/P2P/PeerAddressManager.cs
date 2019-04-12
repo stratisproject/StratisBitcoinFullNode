@@ -68,9 +68,7 @@ namespace Stratis.Bitcoin.P2P
                 // If no longer banned reset ban details.
                 if (peer.BanUntil.HasValue && peer.BanUntil < this.dateTimeProvider.GetUtcNow())
                 {
-                    peer.BanTimeStamp = null;
-                    peer.BanUntil = null;
-                    peer.BanReason = string.Empty;
+                    peer.UnBan();
 
                     this.logger.LogTrace("{0} no longer banned.", peer.Endpoint);
                 }

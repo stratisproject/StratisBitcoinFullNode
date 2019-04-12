@@ -123,60 +123,65 @@ namespace Stratis.Bitcoin.Tests.P2P
             DataFolder peerFolder = CreateDataFolder(this);
 
             var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker(this.LoggerFactory.Object, this.connectionManagerSettings));
-            addressManager.AddPeer(endpoint, IPAddress.Loopback);
+            var addedPeer = addressManager.AddPeer(endpoint, IPAddress.Loopback);
 
-            DateTime applicableDate = DateTime.UtcNow.Date;
-
-            addressManager.PeerAttempted(endpoint, applicableDate);
-            addressManager.PeerConnected(endpoint, applicableDate);
-            addressManager.PeerHandshaked(endpoint, applicableDate);
-            addressManager.PeerSeen(endpoint, applicableDate);
+            addedPeer.BanReason = "test";
+            addedPeer.BanScore = 0;
+            addedPeer.BanTimeStamp = DateTime.UtcNow.AddHours(-2);
+            addedPeer.BanUntil = DateTime.UtcNow.AddHours(-1);
 
             addressManager.SavePeers();
+
+            addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker(this.LoggerFactory.Object, this.connectionManagerSettings));
             addressManager.LoadPeers();
 
             PeerAddress savedPeer = addressManager.FindPeer(endpoint);
 
-            Assert.Equal("::ffff:192.168.0.1", savedPeer.Endpoint.Address.ToString());
-            Assert.Equal(80, savedPeer.Endpoint.Port);
-            Assert.Equal(0, savedPeer.ConnectionAttempts);
-            Assert.Equal(applicableDate, savedPeer.LastConnectionSuccess.Value.Date);
-            Assert.Equal(applicableDate, savedPeer.LastConnectionHandshake.Value.Date);
-            Assert.Equal(applicableDate, savedPeer.LastSeen.Value.Date);
-            Assert.Equal("::ffff:127.0.0.1", savedPeer.Loopback.ToString());
+            Assert.Null(savedPeer.BanReason);
+            Assert.Null(savedPeer.BanScore);
+            Assert.Null(savedPeer.BanTimeStamp);
+            Assert.Null(savedPeer.BanUntil);
         }
 
         [Fact]
-        public void PeerFile_CanSaveAndLoadPeers_ResetAttemptThreasholdReachedPeers()
+        public void PeerFile_CanSaveAndLoadPeers_ResetAttemptThresholdReachedPeers()
         {
             IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
 
             DataFolder peerFolder = CreateDataFolder(this);
 
-            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object,
-                new SelfEndpointTracker(this.LoggerFactory.Object, this.connectionManagerSettings));
+            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker(this.LoggerFactory.Object, this.connectionManagerSettings));
             addressManager.AddPeer(endpoint, IPAddress.Loopback);
 
-            DateTime applicableDate = DateTime.UtcNow.Date;
+            DateTime applicableDate = DateTimeProvider.Default.GetUtcNow();
 
-            addressManager.PeerAttempted(endpoint, applicableDate);
-            addressManager.PeerConnected(endpoint, applicableDate);
-            addressManager.PeerHandshaked(endpoint, applicableDate);
-            addressManager.PeerSeen(endpoint, applicableDate);
+            // Set the peer's failed attempts count to 4.
+            for (int i = 0; i < 4; i++)
+            {
+                addressManager.PeerAttempted(endpoint, applicableDate.AddHours(-i));
+            }
 
+            // Ensure that the last attempt (5) was more than 12 hours ago.
+            addressManager.PeerAttempted(endpoint, applicableDate.AddHours(-13));
+
+            // Ensure that the peer is still returned from the selector.
+            var peer = addressManager.PeerSelector.SelectPeer();
+            Assert.Equal(peer.Endpoint, endpoint);
+
+            // Persist the peers to the json file.
             addressManager.SavePeers();
+
+            // Creat a new address manager instance and load the peers from file.
+            addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker(this.LoggerFactory.Object, this.connectionManagerSettings));
             addressManager.LoadPeers();
 
             PeerAddress savedPeer = addressManager.FindPeer(endpoint);
 
-            Assert.Equal("::ffff:192.168.0.1", savedPeer.Endpoint.Address.ToString());
-            Assert.Equal(80, savedPeer.Endpoint.Port);
+            // The peer's attempt thresholds should now be reset.
+            Assert.False(savedPeer.Attempted);
             Assert.Equal(0, savedPeer.ConnectionAttempts);
-            Assert.Equal(applicableDate, savedPeer.LastConnectionSuccess.Value.Date);
-            Assert.Equal(applicableDate, savedPeer.LastConnectionHandshake.Value.Date);
-            Assert.Equal(applicableDate, savedPeer.LastSeen.Value.Date);
-            Assert.Equal("::ffff:127.0.0.1", savedPeer.Loopback.ToString());
+            Assert.Null(savedPeer.LastAttempt);
         }
 
         [Fact]
