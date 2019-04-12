@@ -23,9 +23,10 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <inheritdoc />
         public PubKey PubKey { get; }
 
+        /// <inheritdoc />
         public override string ToString()
         {
-            return $"{nameof(this.PubKey)}:{this.PubKey.ToHex()}";
+            return $"{nameof(this.PubKey)}:'{this.PubKey.ToHex()}'";
         }
     }
 
@@ -43,5 +44,11 @@ namespace Stratis.Bitcoin.Features.PoA
 
         /// <summary>Mainchain address that should have the collateral.</summary>
         public string CollateralMainchainAddress { get; set; }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return base.ToString() + $",{nameof(this.CollateralAmount)}:{this.CollateralAmount},{nameof(this.CollateralMainchainAddress)}:{this.CollateralMainchainAddress ?? "null"}";
+        }
     }
 }
