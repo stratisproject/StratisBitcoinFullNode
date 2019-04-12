@@ -31,6 +31,11 @@ namespace Stratis.SmartContracts.Core.Receipts
         public ulong GasUsed { get; }
 
         /// <summary>
+        /// The amount sent with this transaction.
+        /// </summary>
+        public ulong Amount { get; }
+
+        /// <summary>
         /// Bloom data representing all of the indexed logs contained inside this receipt.
         /// </summary>
         public Bloom Bloom { get; }
@@ -100,8 +105,9 @@ namespace Stratis.SmartContracts.Core.Receipts
             bool success,
             string result,
             string errorMessage,
-            ulong gasPrice) 
-            : this(postState, gasUsed, logs, BuildBloom(logs), transactionHash, null, @from, to, newContractAddress, success, result, errorMessage, gasPrice)
+            ulong gasPrice,
+            ulong amount) 
+            : this(postState, gasUsed, logs, BuildBloom(logs), transactionHash, null, @from, to, newContractAddress, success, result, errorMessage, gasPrice, amount)
         { }
 
         /// <summary>
@@ -110,7 +116,7 @@ namespace Stratis.SmartContracts.Core.Receipts
         public Receipt(uint256 postState,
             ulong gasUsed,
             Log[] logs)
-            : this(postState, gasUsed, logs, BuildBloom(logs), null, null, null, null, null, false, null, null, 0)
+            : this(postState, gasUsed, logs, BuildBloom(logs), null, null, null, null, null, false, null, null, 0, 0)
         { }
 
         /// <summary>
@@ -121,7 +127,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             ulong gasUsed,
             Log[] logs,
             Bloom bloom) 
-            : this(postState, gasUsed, logs, bloom, null, null, null, null, null, false, null, null, 0)
+            : this(postState, gasUsed, logs, bloom, null, null, null, null, null, false, null, null, 0, 0)
         { }
 
         private Receipt(uint256 postState,
@@ -136,7 +142,8 @@ namespace Stratis.SmartContracts.Core.Receipts
             bool success,
             string result,
             string errorMessage,
-            ulong gasPrice)
+            ulong gasPrice,
+            ulong amount)
         {
             this.PostState = postState;
             this.GasPrice = gasPrice;
@@ -151,6 +158,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             this.Success = success;
             this.Result = result;
             this.ErrorMessage = errorMessage;
+            this.Amount = amount;
         }
 
         /// <summary>
@@ -240,7 +248,8 @@ namespace Stratis.SmartContracts.Core.Receipts
                 BitConverter.ToBoolean(innerList[9].RLPData),
                 innerList[10].RLPData != null ? Encoding.UTF8.GetString(innerList[10].RLPData) : null,
                 innerList[11].RLPData != null ? Encoding.UTF8.GetString(innerList[11].RLPData) : null,
-                BitConverter.ToUInt64(innerList[12].RLPData));
+                BitConverter.ToUInt64(innerList[12].RLPData),
+                BitConverter.ToUInt64(innerList[13].RLPData));
 
             return receipt;
         }
@@ -265,7 +274,8 @@ namespace Stratis.SmartContracts.Core.Receipts
                 RLP.EncodeElement(BitConverter.GetBytes(this.Success)),
                 RLP.EncodeElement(Encoding.UTF8.GetBytes(this.Result ?? "")),
                 RLP.EncodeElement(Encoding.UTF8.GetBytes(this.ErrorMessage ?? "")),
-                RLP.EncodeElement(BitConverter.GetBytes(this.GasPrice))
+                RLP.EncodeElement(BitConverter.GetBytes(this.GasPrice)),
+                RLP.EncodeElement(BitConverter.GetBytes(this.Amount))
             );
         }
 
