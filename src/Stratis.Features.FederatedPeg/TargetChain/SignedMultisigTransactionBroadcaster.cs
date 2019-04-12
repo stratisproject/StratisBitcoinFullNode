@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base.AsyncWork;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
@@ -58,7 +57,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private IAsyncLoop asyncLoop;
 
         public SignedMultisigTransactionBroadcaster(
-            IAsyncProvider asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             ILoggerFactory loggerFactory,
             ICrossChainTransferStore store,
             INodeLifetime nodeLifetime,
@@ -73,7 +72,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             Guard.NotNull(broadcasterManager, nameof(broadcasterManager));
 
 
-            this.asyncProvider = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.store = store;
             this.nodeLifetime = nodeLifetime;
