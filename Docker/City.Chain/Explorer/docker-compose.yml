@@ -2,6 +2,7 @@ version: '2'
 services:
   nako:
     container_name: city-nako
+    restart: always
     networks: 
         nakonet:
             ipv4_address: 172.16.10.100
@@ -16,6 +17,7 @@ services:
         - client
   client:
     container_name: city-client
+    restart: always
     networks: 
         nakonet:
             ipv4_address: 172.16.10.101
@@ -26,6 +28,7 @@ services:
         - 4333:4333
   mongo:
     container_name: city-mongo
+    restart: always
     networks: 
         nakonet:
             ipv4_address: 172.16.10.102
