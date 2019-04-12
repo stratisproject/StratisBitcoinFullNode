@@ -51,9 +51,9 @@ namespace Stratis.Bitcoin.Consensus
         public ChainedHeader BestSentHeader { get; protected set; }
 
         /// <summary>Timer that periodically tries to sync.</summary>
-        private Timer autosyncTimer;
+        private Timer autoSyncTimer;
 
-        /// <summary>Interval in minutes for the <see cref="autosyncTimer"/>.</summary>
+        /// <summary>Interval in minutes for the <see cref="autoSyncTimer"/>.</summary>
         private const int AutosyncIntervalMinutes = 10;
 
         /// <summary>Amount of headers that should be cached until we stop syncing from the peer.</summary>
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 if (this.cachedHeaders.Count != 0 && this.CanConsumeCache())
                 {
-                    result = await this.PresentHeadersLockedAsync(this.cachedHeaders, false).ConfigureAwait(false);
+                    result = this.PresentHeadersLocked(this.cachedHeaders, false);
 
                     if ((result == null) || (result.Consumed == null))
                     {
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             if (syncRequired)
-                await this.ResyncAsync().ConfigureAwait(false);
+                this.Resync();
 
             return result;
         }
@@ -344,14 +344,14 @@ namespace Stratis.Bitcoin.Consensus
 
                     // The header(s) could not be connected and were not an unsolicited block advertisement.
                     this.cachedHeaders.Clear();
-                    await this.ResyncAsync().ConfigureAwait(false);
+                    this.Resync();
 
                     this.logger.LogDebug("Header {0} could not be connected to last cached header {1}, clear cache and resync.", headers[0].GetHash(), cachedHeader);
                     this.logger.LogTrace("(-)[FAILED_TO_ATTACH_TO_CACHE]");
                     return;
                 }
 
-                ConnectNewHeadersResult result = await this.PresentHeadersLockedAsync(headers).ConfigureAwait(false);
+                ConnectNewHeadersResult result = this.PresentHeadersLocked(headers);
 
                 if (result == null)
                 {
@@ -390,7 +390,7 @@ namespace Stratis.Bitcoin.Consensus
                 }
 
                 if (this.cachedHeaders.Count == 0)
-                    await this.ResyncAsync().ConfigureAwait(false);
+                    this.Resync();
             }
         }
 
@@ -439,7 +439,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <remarks>Have to be locked by <see cref="asyncLock"/>.</remarks>
         /// <param name="headers">List of headers that the peer presented.</param>
         /// <param name="triggerDownload">Specifies if the download should be scheduled for interesting blocks.</param>
-        protected async Task<ConnectNewHeadersResult> PresentHeadersLockedAsync(List<BlockHeader> headers, bool triggerDownload = true)
+        protected ConnectNewHeadersResult PresentHeadersLocked(List<BlockHeader> headers, bool triggerDownload = true)
         {
             ConnectNewHeadersResult result = null;
 
@@ -472,10 +472,9 @@ namespace Stratis.Bitcoin.Consensus
                 }
                 else
                 {
-                    this.cachedHeaders.Clear();
-
                     // Resync in case we can't connect the header.
-                    await this.ResyncAsync().ConfigureAwait(false);
+                    this.cachedHeaders.Clear();
+                    this.Resync();
                 }
             }
             catch (ConsensusRuleException exception)
@@ -524,19 +523,24 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>Sync when handshake is finished.</summary>
-        private async Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
+        private Task OnStateChanged(INetworkPeer peer, NetworkPeerState oldState)
         {
-            if (peer.State == NetworkPeerState.HandShaked)
-                await this.ResyncAsync().ConfigureAwait(false);
+            if (peer.State == NetworkPeerState.HandShaked && this.cachedHeaders.Count == 0)
+                this.Resync();
+
+            return Task.CompletedTask;
         }
 
         /// <summary>Resets the expected peer tip and last sent tip and triggers synchronization.</summary>
-        public async Task ResetPeerTipInformationAndSyncAsync()
+        public Task ResetPeerTipInformationAndSync()
         {
             this.BestReceivedTip = null;
             this.BestSentHeader = null;
 
-            await this.ResyncAsync().ConfigureAwait(false);
+            if (this.cachedHeaders.Count == 0)
+                this.Resync();
+
+            return Task.CompletedTask;
         }
 
         /// <summary>Updates the best sent header but only if the new value is better or is on a different chain.</summary>
@@ -568,8 +572,11 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>Tries to sync the chain with the peer by sending it <see cref="GetHeadersPayload"/> in case peer's state is <see cref="NetworkPeerState.HandShaked"/>.</summary>
-        public async Task ResyncAsync()
+        public void Resync()
         {
+            if (this.cachedHeaders.Any())
+                throw new ConsensusException($"Resync is only allowed to be called when the cache is empty. The current cache count is {this.cachedHeaders.Count}.");
+
             INetworkPeer peer = this.AttachedPeer;
 
             if ((peer != null) && (peer.State == NetworkPeerState.HandShaked))
@@ -656,8 +663,11 @@ namespace Stratis.Bitcoin.Consensus
 
             if (blockHashAnnounced)
             {
-                this.logger.LogDebug("Block was announced, sending getheaders.");
-                await this.ResyncAsync().ConfigureAwait(false);
+                if (this.cachedHeaders.Count == 0)
+                {
+                    this.logger.LogDebug("Block was announced, sending getheaders.");
+                    this.Resync();
+                }
             }
         }
 
@@ -666,15 +676,15 @@ namespace Stratis.Bitcoin.Consensus
         {
             // Initialize auto sync timer.
             int interval = (int)TimeSpan.FromMinutes(AutosyncIntervalMinutes).TotalMilliseconds;
-            this.autosyncTimer = new Timer(async (o) =>
+            this.autoSyncTimer = new Timer((o) =>
             {
-                await this.ResyncAsync().ConfigureAwait(false);
+                this.Resync();
             }, null, interval, interval);
 
             if (this.AttachedPeer.State == NetworkPeerState.Connected)
                 this.AttachedPeer.MyVersion.StartHeight = this.consensusManager.Tip.Height;
 
-            this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
+            this.AttachedPeer.StateChanged.Register(this.OnStateChanged);
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
         }
 
@@ -682,13 +692,13 @@ namespace Stratis.Bitcoin.Consensus
         protected override void DetachCore()
         {
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-            this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
+            this.AttachedPeer.StateChanged.Unregister(this.OnStateChanged);
         }
 
         /// <inheritdoc />
         public override void Dispose()
         {
-            this.autosyncTimer?.Dispose();
+            this.autoSyncTimer?.Dispose();
 
             base.Dispose();
         }

@@ -517,7 +517,7 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// Initialize <see cref="ConsensusManagerBehavior.BestReceivedTip"/> to be header 5. Call <see cref="ConsensusManagerBehavior.ResetPeerTipInformationAndSyncAsync"/>.
+        /// Initialize <see cref="ConsensusManagerBehavior.BestReceivedTip"/> to be header 5. Call <see cref="ConsensusManagerBehavior.ResetPeerTipInformationAndSync"/>.
         /// Make sure <see cref="ConsensusManagerBehavior.BestReceivedTip"/> became <c>null</c> and <see cref="GetHeadersPayload"/> was sent.
         /// </summary>
         [Fact]
@@ -525,7 +525,7 @@ namespace Stratis.Bitcoin.Tests.Base
         {
             ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[5], null, this.headers[5]);
 
-            await behavior.ResetPeerTipInformationAndSyncAsync();
+            await behavior.ResetPeerTipInformationAndSync();
 
             Assert.Null(behavior.BestReceivedTip);
             Assert.Null(behavior.BestSentHeader);
