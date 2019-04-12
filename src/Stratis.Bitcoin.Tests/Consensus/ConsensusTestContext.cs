@@ -331,6 +331,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.Empty(this.TestConsensusManager.GetExpectedBlockSizes());
         }
 
+        internal void AssertExpectedBlockSizes(uint expectedSize)
+        {
+            Assert.Equal(expectedSize, this.TestConsensusManager.GetExpectedBlockSizes().Sum(s => s.Value));
+        }
 
         internal Mock<INetworkPeer> GetNetworkPeerWithConnection()
         {

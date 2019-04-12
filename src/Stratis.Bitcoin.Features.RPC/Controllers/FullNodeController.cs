@@ -62,8 +62,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             IInitialBlockDownloadState ibdState = null)
             : base(
                   fullNode: fullNode,
-                  nodeSettings: nodeSettings,
                   network: network,
+                  nodeSettings: nodeSettings,
                   chainIndexer: chainIndexer,
                   chainState: chainState,
                   connectionManager: connectionManager,
