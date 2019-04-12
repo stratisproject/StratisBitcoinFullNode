@@ -412,6 +412,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <param name="connectToNode">The node that will be connected to.</param>
         public static void Connect(CoreNode thisNode, CoreNode connectToNode)
         {
+            if (!(thisNode.runner is BitcoinCoreRunner))
+                WaitForNodeToPassIBD(thisNode);
+
+            if (!(connectToNode.runner is BitcoinCoreRunner))
+                WaitForNodeToPassIBD(connectToNode);
+
             var cancellation = new CancellationTokenSource((int)TimeSpan.FromSeconds(30).TotalMilliseconds);
 
             var isConnecting = false;
@@ -451,6 +457,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <param name="connectToNode">The node that will be connected to.</param>
         public static void ConnectNoCheck(CoreNode thisNode, CoreNode connectToNode)
         {
+            if (!(thisNode.runner is BitcoinCoreRunner))
+                WaitForNodeToPassIBD(thisNode);
+
+            if (!(connectToNode.runner is BitcoinCoreRunner))
+                WaitForNodeToPassIBD(connectToNode);
+
             var cancellation = new CancellationTokenSource((int)TimeSpan.FromSeconds(30).TotalMilliseconds);
 
             WaitLoop(() =>
@@ -493,7 +505,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 Connect(thisNode, coreNode);
 
             foreach (CoreNode coreNode in to)
-                WaitLoop(() => AreNodesSynced(thisNode, coreNode, ignoreMempool), waitTimeSeconds: 120);
+                WaitLoopMessage(() => AreNodesSyncedMessage(thisNode, coreNode, ignoreMempool), waitTimeSeconds: 120);
+        }
+
+        private static void WaitForNodeToPassIBD(CoreNode node)
+        {
+            WaitLoopMessage(() => (node.FullNode.InitialBlockDownloadState.IsInitialBlockDownload() == false, $"Could not connect: {node.FullNode.ConnectionManager.ConnectionSettings.Agent} failed to get out of IBD."));
         }
 
         /// <summary>

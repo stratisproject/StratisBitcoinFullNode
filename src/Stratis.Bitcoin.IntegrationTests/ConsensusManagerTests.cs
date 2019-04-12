@@ -640,7 +640,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Wait for the nodes to disconnect due to invalid block.
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerB, minerC));
-                
+
                 Assert.True(minerC.FullNode.NodeService<IPeerBanning>().IsBanned(minerB.Endpoint));
 
                 minerC.FullNode.NodeService<IPeerBanning>().UnBanPeer(minerA.Endpoint);
