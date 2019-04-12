@@ -324,6 +324,7 @@ namespace Stratis.Bitcoin.P2P
             return this.peerAddresses.Values.Where(p =>
                 p.Attempted &&
                 p.ConnectionAttempts <= PeerAddress.AttemptThreshold &&
+                p.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-PeerAddress.AttempThresholdHours) &&
                 !this.IsBanned(p));
         }
 

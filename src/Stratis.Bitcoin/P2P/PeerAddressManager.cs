@@ -75,6 +75,10 @@ namespace Stratis.Bitcoin.P2P
                     this.logger.LogTrace("{0} no longer banned.", peer.Endpoint);
                 }
 
+                // Reset the peer if the attempt threshold has been reached and the attempt window has lapsed.
+                if (peer.CanResetAttempts)
+                    peer.ResetAttempts();
+
                 this.peerInfoByPeerAddress.TryAdd(peer.Endpoint, peer);
             }
         }
@@ -141,15 +145,8 @@ namespace Stratis.Bitcoin.P2P
             if (peer == null)
                 return;
 
-            // Reset the attempted count if:
-            // 1: The last attempt was more than the threshold time ago.
-            // 2: More than the threshold attempts was made.
-            if (peer.Attempted &&
-                peer.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-PeerAddress.AttemptResetThresholdHours) &&
-                peer.ConnectionAttempts >= PeerAddress.AttemptThreshold)
-            {
+            if (peer.CanResetAttempts)
                 peer.ResetAttempts();
-            }
 
             peer.SetAttempted(peerAttemptedAt);
         }
