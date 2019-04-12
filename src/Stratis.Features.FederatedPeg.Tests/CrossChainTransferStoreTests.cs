@@ -137,7 +137,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 Assert.Equal(2, transactions.Length);
 
-                // Transactions[0] inputs. Ordered by time.
+                // Transactions[0] inputs. Ordered deterministically, roughly a mixture of time and canonical ordering.
                 Assert.Equal(2, transactions[0].Inputs.Count);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[0].PrevOut.Hash);
                 Assert.Equal((uint)0, transactions[0].Inputs[0].PrevOut.N);
@@ -240,7 +240,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 Assert.Equal(2, transactions.Length);
 
-                // Transactions[0] inputs. Note that inputs are ordered by time.
+                // Transactions[0] inputs. Ordered deterministically.
                 Assert.Equal(2, transactions[0].Inputs.Count);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[0].PrevOut.Hash);
                 Assert.Equal((uint)0, transactions[0].Inputs[0].PrevOut.N);
