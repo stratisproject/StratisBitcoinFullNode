@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
@@ -17,6 +18,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -288,9 +290,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var chainState = new ChainState();
             var mempoolPersistence = new MempoolPersistence(settings, loggerFactory);
             this.network.Consensus.Options = new PosConsensusOptions();
+            var asyncProvider = new AsyncProvider(nodeSettings.LoggerFactory, new Mock<ISignals>().Object, new NodeLifetime());
+
             new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(this.network.Consensus);
             ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, chain, new NodeDeployments(this.network, chain),
-                consensusSettings, new Checkpoints(), coins, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider)).Register();
+                consensusSettings, new Checkpoints(), coins, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), asyncProvider).Register();
             var mempoolValidator = new MempoolValidator(txMemPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coins, loggerFactory, settings, consensusRules);
             return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, loggerFactory, settings.Network);
         }

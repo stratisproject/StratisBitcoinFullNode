@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
@@ -62,7 +63,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         private IAsyncLoop asyncLoop;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>Gets the wallet.</summary>
         public FederationWallet Wallet { get; set; }
@@ -127,7 +128,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             ChainIndexer chainIndexer,
             DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
             IFederationGatewaySettings federationGatewaySettings,
@@ -139,7 +140,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(chainIndexer, nameof(chainIndexer));
             Guard.NotNull(dataFolder, nameof(dataFolder));
             Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));
-            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
+            Guard.NotNull(asyncProvider, nameof(asyncProvider));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(federationGatewaySettings, nameof(federationGatewaySettings));
             Guard.NotNull(withdrawalExtractor, nameof(withdrawalExtractor));
@@ -151,7 +152,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chainIndexer = chainIndexer;
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<FederationWallet>(dataFolder.WalletPath);
             this.broadcasterManager = broadcasterManager;
@@ -192,7 +193,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.WalletTipHash = this.LastReceivedBlockHash();
 
             // save the wallets file every 5 minutes to help against crashes.
-            this.asyncLoop = this.asyncLoopFactory.Run("wallet persist job", token =>
+            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop("wallet persist job", token =>
             {
                 this.SaveWallet();
                 this.logger.LogInformation("Wallets saved to file at {0}.", this.dateTimeProvider.GetUtcNow());

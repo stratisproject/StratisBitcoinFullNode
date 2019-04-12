@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
@@ -49,7 +50,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly MempoolManager mempoolManager;
         private readonly IBroadcasterManager broadcasterManager;
         private readonly INodeLifetime nodeLifetime;
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         private readonly IInitialBlockDownloadState ibdState;
         private readonly IFederationWalletManager federationWalletManager;
@@ -57,7 +58,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private IAsyncLoop asyncLoop;
 
         public SignedMultisigTransactionBroadcaster(
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             ILoggerFactory loggerFactory,
             ICrossChainTransferStore store,
             INodeLifetime nodeLifetime,
@@ -72,7 +73,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             Guard.NotNull(broadcasterManager, nameof(broadcasterManager));
 
 
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.store = store;
             this.nodeLifetime = nodeLifetime;
@@ -86,7 +87,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <inheritdoc />
         public void Start()
         {
-            this.asyncLoop = this.asyncLoopFactory.Run(nameof(PartialTransactionRequester), _ =>
+            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop(nameof(PartialTransactionRequester), _ =>
                 {
                     this.BroadcastTransactionsAsync().GetAwaiter().GetResult();
                     return Task.CompletedTask;

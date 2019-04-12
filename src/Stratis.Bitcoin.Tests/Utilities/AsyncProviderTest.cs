@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Stratis.Bitcoin.Base.AsyncWork;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
