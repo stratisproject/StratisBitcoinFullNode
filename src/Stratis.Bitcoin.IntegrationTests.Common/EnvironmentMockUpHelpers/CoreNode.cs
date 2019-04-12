@@ -284,11 +284,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             {
                 StartStratisRunner();
 
-                var apiSettings = this.FullNode.NodeService<ApiSettings>();
-                var rpcSettings = this.FullNode.NodeService<RpcSettings>();
+                var apiSettings = this.FullNode.NodeService<ApiSettings>(true);
+                var rpcSettings = this.FullNode.NodeService<RpcSettings>(true);
 
-                this.ConfigParameters["rpcport"] = rpcSettings.RPCPort.ToString();
-                this.ConfigParameters["apiport"] = apiSettings.ApiPort.ToString();
+                if (rpcSettings != null)
+                    this.ConfigParameters["rpcport"] = rpcSettings.RPCPort.ToString();
+
+                if (apiSettings != null)
+                    this.ConfigParameters["apiport"] = apiSettings.ApiPort.ToString();
+
                 this.ConfigParameters["port"] = this.FullNode.ConnectionManager.ConnectionSettings.Port.ToString();
                 if (this.ConfigParameters["agentprefix"] == "node0")
                     this.ConfigParameters["agentprefix"] = "node" + this.ProtocolPort;
