@@ -24,12 +24,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// Withdrawals have a particular format we look for.
         /// They will have 2 outputs when there is no change to be sent.
         /// </summary>
-        private const int ExpectedNumberOfOutputsMin = 2;
+        private const int ExpectedNumberOfOutputsNoChange = 2;
 
         /// <summary>
         /// Withdrawals will have 3 outputs when there is change to be sent.
         /// </summary>
-        private const int ExpectedNumberOfOutputsMax = 2;
+        private const int ExpectedNumberOfOutputsChange = 3;
 
         private readonly IOpReturnDataReader opReturnDataReader;
 
@@ -77,8 +77,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 return null;
 
             // Withdrawal has a specific structure.
-            if (transaction.Outputs.Count < ExpectedNumberOfOutputsMin
-                || transaction.Outputs.Count > ExpectedNumberOfOutputsMax)
+            if (transaction.Outputs.Count != ExpectedNumberOfOutputsNoChange
+                && transaction.Outputs.Count != ExpectedNumberOfOutputsChange)
                 return null;
 
             if (!this.IsOnlyFromMultisig(transaction))

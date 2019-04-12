@@ -77,8 +77,8 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                 return null;
 
             // Deposits have a certain structure.
-            if (transaction.Outputs.Count < ExpectedNumberOfOutputsMin 
-                || transaction.Outputs.Count > ExpectedNumberOfOutputsMax)
+            if (transaction.Outputs.Count != ExpectedNumberOfOutputsMin 
+                && transaction.Outputs.Count != ExpectedNumberOfOutputsMax)
                 return null;
 
             List<TxOut> depositsToMultisig = transaction.Outputs.Where(output =>
