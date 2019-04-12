@@ -298,7 +298,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
 
                 stratisXRpc.SendCommand(RPCOperations.generate, 11);
 
-                var shortCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+                var shortCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(2)).Token;
 
                 // Without this there seems to be a race condition between the blocks all getting generated and SBFN syncing high enough to fall through the getbestblockhash check.
                 TestHelper.WaitLoop(() => stratisXRpc.GetBlockCount() >= 11, cancellationToken: shortCancellationToken);

@@ -31,12 +31,13 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Gets the public key for specified timestamp.</summary>
         /// <param name="headerUnixTimestamp">Timestamp of a header.</param>
         /// <exception cref="ConsensusErrorException">In case timestamp is invalid.</exception>
-        public PubKey GetPubKeyForTimestamp(uint headerUnixTimestamp)
+        public PubKey GetPubKeyForTimestamp(uint headerUnixTimestamp, List<PubKey> federationMembers = null)
         {
             if (!this.IsValidTimestamp(headerUnixTimestamp))
                 PoAConsensusErrors.InvalidHeaderTimestamp.Throw();
 
-            List<PubKey> federationMembers = this.federationManager.GetFederationMembers();
+            if (federationMembers == null)
+                federationMembers = this.federationManager.GetFederationMembers();
 
             uint roundTime = this.GetRoundLengthSeconds(federationMembers.Count);
 
@@ -54,7 +55,7 @@ namespace Stratis.Bitcoin.Features.PoA
         public uint GetMiningTimestamp(uint currentTime)
         {
             if (!this.federationManager.IsFederationMember)
-                throw new Exception("Not a federation member!");
+                throw new NotAFederationMemberException();
 
             List<PubKey> federationMembers = this.federationManager.GetFederationMembers();
 

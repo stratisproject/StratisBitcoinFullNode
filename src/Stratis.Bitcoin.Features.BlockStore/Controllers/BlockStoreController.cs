@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         /// <summary>
         /// The chain.
         /// </summary>
-        private readonly ChainBase chain;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>
         /// Current network for the active controller instance.
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             ILoggerFactory loggerFactory,
             IBlockStore blockStore,
             IChainState chainState,
-            ConcurrentChain chain)
+            ChainIndexer chainIndexer)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -52,14 +52,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             this.network = network;
             this.blockStore = blockStore;
             this.chainState = chainState;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <summary>
-        /// Retrieves a given block given a block hash.
+        /// Retrieves the block which matches the supplied block hash.
         /// </summary>
-        /// <param name="query">A <see cref="SearchByHashRequest"/> model with a specific hash.</param>
+        /// <param name="query">An object containing the necessary parameters to search for a block.</param>
         /// <returns><see cref="BlockModel"/> if block is found, <see cref="NotFoundObjectResult"/> if not found. Returns <see cref="IActionResult"/> with error information if exception thrown.</returns>
         [Route("block")]
         [HttpGet]
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
             try
             {
-                Block block = await this.blockStore.GetBlockAsync(uint256.Parse(query.Hash)).ConfigureAwait(false);
+                Block block = this.blockStore.GetBlock(uint256.Parse(query.Hash));
 
                 if (block == null)
                 {
@@ -85,8 +85,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                 }
 
                 return query.ShowTransactionDetails
-                    ? this.Json(new BlockTransactionDetailsModel(block, this.network, this.chain))
-                    : this.Json(new BlockModel(block, this.chain));
+                    ? this.Json(new BlockTransactionDetailsModel(block, this.chainIndexer.GetHeader(block.GetHash()), this.chainIndexer.Tip, this.network))
+                    : this.Json(new BlockModel(block, this.chainIndexer.GetHeader(block.GetHash()), this.chainIndexer.Tip, this.network));
             }
             catch (Exception e)
             {
@@ -97,8 +97,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
         /// <summary>
         /// Gets the current consensus tip height.
-        /// API implementation of RPC call.
         /// </summary>
+        /// <remarks>This is an API implementation of an RPC call.</remarks>
         /// <returns>The current tip height. Returns <c>null</c> if fails. Returns <see cref="IActionResult"/> with error information if exception thrown.</returns>
         [Route("getblockcount")]
         [HttpGet]

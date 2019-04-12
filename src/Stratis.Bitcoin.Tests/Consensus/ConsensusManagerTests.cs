@@ -283,7 +283,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // expect the setup callback is not called.
             Assert.False(callbackCalled);
             builder.AssertPeerBanned(peer.Object);
-            builder.AssertExpectedBlockSizesEmpty();
+            builder.AssertExpectedBlockSizes(builder.Network.Consensus.Options.MaxBlockBaseSize);
         }
 
         [Fact]
@@ -404,8 +404,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             builder.InitialChainTip.Block = null;
             builder.TestConsensusManager.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
 
-            builder.BlockStore.Setup(g => g.GetBlockAsync(builder.InitialChainTip.HashBlock))
-             .ReturnsAsync(() =>
+            builder.BlockStore.Setup(g => g.GetBlock(builder.InitialChainTip.HashBlock))
+             .Returns(() =>
              {
                  return initialChainTipBlock;
              });
@@ -426,8 +426,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             builder.InitialChainTip.Block = null;
             builder.TestConsensusManager.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
 
-            builder.BlockStore.Setup(g => g.GetBlockAsync(builder.InitialChainTip.HashBlock))
-                .ReturnsAsync(() =>
+            builder.BlockStore.Setup(g => g.GetBlock(builder.InitialChainTip.HashBlock))
+                .Returns(() =>
                 {
                     return null;
                 });

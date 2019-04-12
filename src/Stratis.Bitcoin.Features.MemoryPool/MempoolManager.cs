@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {
-            TxMempoolInfo txInfo = await this.InfoAsync(trxid);
+            TxMempoolInfo txInfo = this.Info(trxid);
             if (txInfo == null)
             {
                 this.logger.LogTrace("(-):[TX_IS_NULL]");
@@ -227,9 +227,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
 
             var memPoolCoinView = new MempoolCoinView(this.coinView, this.memPool, this.MempoolLock, this.Validator);
-            await memPoolCoinView.LoadViewAsync(txInfo.Trx);
+            await memPoolCoinView.LoadViewAsync(txInfo.Trx).ConfigureAwait(false);
             UnspentOutputs unspentOutputs = memPoolCoinView.GetCoins(trxid);
-            
+
             return unspentOutputs;
         }
 

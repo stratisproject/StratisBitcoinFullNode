@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
     {
         private BlockStoreBehavior behavior;
         private Mock<IChainState> chainState;
-        private ConcurrentChain chain;
+        private ChainIndexer chainIndexer;
         private readonly ILoggerFactory loggerFactory;
         private Mock<IConsensusManager> consensusManager;
         private Mock<IBlockStoreQueue> blockStore;
@@ -23,12 +23,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public BlockStoreBehaviorTest()
         {
             this.loggerFactory = new LoggerFactory();
-            this.chain = new ConcurrentChain(KnownNetworks.StratisMain);
+            this.chainIndexer = new ChainIndexer(KnownNetworks.StratisMain);
             this.chainState = new Mock<IChainState>();
             this.consensusManager = new Mock<IConsensusManager>();
             this.blockStore = new Mock<IBlockStoreQueue>();
 
-            this.behavior = new BlockStoreBehavior(this.chain, this.chainState.Object, this.loggerFactory, this.consensusManager.Object, this.blockStore.Object);
+            this.behavior = new BlockStoreBehavior(this.chainIndexer, this.chainState.Object, this.loggerFactory, this.consensusManager.Object, this.blockStore.Object);
         }
 
         [Fact]

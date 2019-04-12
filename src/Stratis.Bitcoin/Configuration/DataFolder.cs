@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Configuration
             this.IndexPath = Path.Combine(path, "index");
             this.RpcCookieFile = Path.Combine(path, ".cookie");
             this.WalletPath = Path.Combine(path);
-            this.LogPath = Path.Combine(path, "Logs");
+            this.LogPath = Path.Combine(path, "logs");
             this.ApplicationsPath = Path.Combine(path, "apps");
             this.DnsMasterFilePath = path;
             this.SmartContractStatePath = Path.Combine(path, "contracts");

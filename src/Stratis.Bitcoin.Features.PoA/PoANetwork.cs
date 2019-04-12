@@ -39,11 +39,13 @@ namespace Stratis.Bitcoin.Features.PoA
             uint magic = BitConverter.ToUInt32(messageStart, 0);
 
             this.Name = "PoAMain";
+            this.NetworkType = NetworkType.Mainnet;
             this.Magic = magic;
             this.DefaultPort = 16438;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
-            this.RPCPort = 16474;
+            this.DefaultRPCPort = 16474;
+            this.DefaultAPIPort = 37221; // TODO: Confirm
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
@@ -84,7 +86,8 @@ namespace Stratis.Bitcoin.Features.PoA
                 maxStandardTxSigopsCost: 20_000 / 5,
                 federationPublicKeys: federationPublicKeys,
                 targetSpacingSeconds: 16,
-                votingEnabled: true
+                votingEnabled: true,
+                autoKickIdleMembers: false
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -110,7 +113,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
-                maxReorgLength: 0, // No max reorg limit on PoA networks.
+                maxReorgLength: 500,
                 defaultAssumeValid: null,
                 maxMoney: long.MaxValue,
                 coinbaseMaturity: 2,
@@ -120,6 +123,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(60),
                 powAllowMinDifficultyBlocks: false,
+                posNoRetargeting: true,
                 powNoRetargeting: true,
                 powLimit: null,
                 minimumChainWork: null,

@@ -1,10 +1,7 @@
 ﻿using System;
-using System.IO;
-using System.Linq;
 using Mono.Cecil;
 using Moq;
 using Stratis.SmartContracts.CLR.Compilation;
-using Stratis.SmartContracts.CLR.ILRewrite;
 using Stratis.SmartContracts.CLR.Validation;
 using Xunit;
 

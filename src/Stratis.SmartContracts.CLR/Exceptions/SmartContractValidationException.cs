@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.CLR.Validation;
+using Stratis.SmartContracts.Core.Exceptions;
 
 namespace Stratis.SmartContracts.CLR.Exceptions
 {

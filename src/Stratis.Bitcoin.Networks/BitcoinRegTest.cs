@@ -13,12 +13,14 @@ namespace Stratis.Bitcoin.Networks
         public BitcoinRegTest()
         {
             this.Name = "RegTest";
-            this.AdditionalNames = new List<string> {"reg"};
+            this.AdditionalNames = new List<string> { "reg" };
+            this.NetworkType = NetworkType.Regtest;
             this.Magic = 0xDAB5BFFA;
             this.DefaultPort = 18444;
             this.DefaultMaxOutboundConnections = 8;
             this.DefaultMaxInboundConnections = 117;
-            this.RPCPort = 18332;
+            this.DefaultRPCPort = 18332;
+            this.DefaultAPIPort = 38220;
             this.CoinTicker = "TBTC";
 
             // Create the genesis block.
@@ -71,6 +73,7 @@ namespace Stratis.Bitcoin.Networks
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
                 powAllowMinDifficultyBlocks: true,
+                posNoRetargeting: false,
                 powNoRetargeting: true,
                 powLimit: new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
                 minimumChainWork: uint256.Zero,

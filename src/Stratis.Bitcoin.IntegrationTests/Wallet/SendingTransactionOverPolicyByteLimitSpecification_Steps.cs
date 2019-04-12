@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
@@ -24,7 +25,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private Transaction transaction;
 
-        private int CoinBaseMaturity;
         private Exception caughtException;
         private const string WalletName = "mywallet";
         private const string WalletPassword = "password";
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void two_connected_nodes()
         {
-            this.firstNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
+            this.firstNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest100Miner).Start();
             this.secondNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
 
             TestHelper.Connect(this.firstNode, this.secondNode);
@@ -84,9 +84,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void Node1BuildsTransactionToSendToNode2(int txoutputs)
         {
-            this.CoinBaseMaturity = (int)this.firstNode.FullNode.Network.Consensus.CoinbaseMaturity;
-
-            this.MineBlocks(this.firstNode);
+            TestHelper.MineBlocks(this.firstNode, 100);
 
             var nodeTwoAddresses = this.secondNode.FullNode.WalletManager().GetUnusedAddresses(new WalletAccountReference(WalletName, WalletAccountName), txoutputs);
 
@@ -117,11 +115,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private void node1_wallet_throws_no_exceptions()
         {
             this.caughtException.Should().BeNull();
-        }
-
-        private void MineBlocks(CoreNode node)
-        {
-            TestHelper.MineBlocks(this.firstNode, this.CoinBaseMaturity * 2);
         }
     }
 }

@@ -17,8 +17,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly Network network;
         private readonly ICheckpoints checkpoints;
 
-        public ProvenHeadersBlockStoreBehavior(Network network, ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager, ICheckpoints checkpoints, IBlockStoreQueue blockStoreQueue)
-            : base(chain, chainState, loggerFactory, consensusManager, blockStoreQueue)
+        public ProvenHeadersBlockStoreBehavior(Network network, ChainIndexer chainIndexer, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager, ICheckpoints checkpoints, IBlockStoreQueue blockStoreQueue)
+            : base(chainIndexer, chainState, loggerFactory, consensusManager, blockStoreQueue)
         {
             this.network = Guard.NotNull(network, nameof(network));
             this.checkpoints = Guard.NotNull(checkpoints, nameof(checkpoints));
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         [NoTrace]
         public override object Clone()
         {
-            var res = new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.checkpoints, this.blockStoreQueue)
+            var res = new ProvenHeadersBlockStoreBehavior(this.network, this.ChainIndexer, this.chainState, this.loggerFactory, this.consensusManager, this.checkpoints, this.blockStoreQueue)
             {
                 CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
                 CanRespondToGetDataPayload = this.CanRespondToGetDataPayload

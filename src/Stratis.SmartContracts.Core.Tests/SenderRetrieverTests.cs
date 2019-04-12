@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading;
 using Moq;
 using NBitcoin;
@@ -34,8 +32,8 @@ namespace Stratis.SmartContracts.Core.Tests
 
             // Setup coinview to return as if the PrevOut does not exist.
             var unspentOutputArray = new UnspentOutputs[0];
-            this.coinView.Setup(x => x.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
-                .ReturnsAsync(new FetchCoinsResponse(unspentOutputArray, uint256.Zero));
+            this.coinView.Setup(x => x.FetchCoins(It.IsAny<uint256[]>(), default(CancellationToken)))
+                .Returns(new FetchCoinsResponse(unspentOutputArray, uint256.Zero));
 
             var blockTxs = new List<Transaction>();
 
@@ -62,8 +60,8 @@ namespace Stratis.SmartContracts.Core.Tests
             {
                 unspentOutputs
             };
-            this.coinView.Setup(x => x.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
-                .ReturnsAsync(new FetchCoinsResponse(unspentOutputArray, uint256.Zero));
+            this.coinView.Setup(x => x.FetchCoins(It.IsAny<uint256[]>(), default(CancellationToken)))
+                .Returns(new FetchCoinsResponse(unspentOutputArray, uint256.Zero));
 
             var blockTxs = new List<Transaction>();
 
@@ -90,8 +88,8 @@ namespace Stratis.SmartContracts.Core.Tests
             {
                 unspentOutputs
             };
-            this.coinView.Setup(x => x.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
-                .ReturnsAsync(new FetchCoinsResponse(unspentOutputArray, uint256.Zero));
+            this.coinView.Setup(x => x.FetchCoins(It.IsAny<uint256[]>(), default(CancellationToken)))
+                .Returns(new FetchCoinsResponse(unspentOutputArray, uint256.Zero));
 
             var blockTxs = new List<Transaction>();
 

@@ -1,10 +1,5 @@
-using System.Linq;
-using System.Threading.Tasks;
-using CSharpFunctionalExtensions;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.SmartContracts.CLR;
 
@@ -14,7 +9,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
     /// Validates that a smart contract transaction can be deserialized correctly, and that it conforms to gas
     /// price and gas limit rules.
     /// </summary>
-    public class SmartContractFormatLogic : IContractTransactionValidationLogic
+    public class SmartContractFormatLogic : IContractTransactionPartialValidationRule
     {
         public const ulong GasLimitMaximum = 100_000;
 

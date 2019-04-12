@@ -23,7 +23,6 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -33,7 +32,7 @@ namespace Stratis.Bitcoin.Features.PoA
         private readonly IConnectionManager connectionManager;
 
         /// <summary>Thread safe chain of block headers from genesis.</summary>
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         private readonly FederationManager federationManager;
 
@@ -54,20 +53,27 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly Network network;
 
-        public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ConcurrentChain chain,
+        private readonly IWhitelistedHashesRepository whitelistedHashesRepository;
+
+        private readonly IdleFederationMembersKicker idleFederationMembersKicker;
+
+        public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ChainIndexer chainIndexer,
             IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory,
-            IPoAMiner miner, VotingManager votingManager, Network network)
+            IPoAMiner miner, VotingManager votingManager, Network network, IWhitelistedHashesRepository whitelistedHashesRepository,
+            IdleFederationMembersKicker idleFederationMembersKicker)
         {
             this.federationManager = federationManager;
             this.connectionManager = connectionManager;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.consensusManager = consensusManager;
             this.peerBanning = peerBanning;
             this.loggerFactory = loggerFactory;
             this.miner = miner;
             this.votingManager = votingManager;
+            this.whitelistedHashesRepository = whitelistedHashesRepository;
             this.network = network;
+            this.idleFederationMembersKicker = idleFederationMembersKicker;
 
             payloadProvider.DiscoverPayloads(this.GetType().Assembly);
         }
@@ -85,20 +91,22 @@ namespace Stratis.Bitcoin.Features.PoA
 
             // Replace default ConsensusManagerBehavior with ProvenHeadersConsensusManagerBehavior
             connectionParameters.TemplateBehaviors.Remove(defaultConsensusManagerBehavior);
-            connectionParameters.TemplateBehaviors.Add(new PoAConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
+            connectionParameters.TemplateBehaviors.Add(new PoAConsensusManagerBehavior(this.chainIndexer, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
 
             this.federationManager.Initialize();
+            this.whitelistedHashesRepository.Initialize();
 
-            if (((PoAConsensusOptions)this.network.Consensus.Options).VotingEnabled)
+            var options = (PoAConsensusOptions) this.network.Consensus.Options;
+
+            if (options.VotingEnabled)
             {
                 this.votingManager.Initialize();
+
+                if (options.AutoKickIdleMembers)
+                    this.idleFederationMembersKicker.Initialize();
             }
 
-            if (this.federationManager.IsFederationMember)
-            {
-                // Enable mining because we are a federation member.
-                this.miner.InitializeMining();
-            }
+            this.miner.InitializeMining();
 
             return Task.CompletedTask;
         }
@@ -109,6 +117,8 @@ namespace Stratis.Bitcoin.Features.PoA
             this.miner.Dispose();
 
             this.votingManager.Dispose();
+
+            this.idleFederationMembersKicker.Dispose();
         }
     }
 
@@ -178,6 +188,8 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<FederationManager>();
                         services.AddSingleton<PoABlockHeaderValidator>();
                         services.AddSingleton<IPoAMiner, PoAMiner>();
+                        services.AddSingleton<MinerSettings>();
+                        services.AddSingleton<PoAMinerSettings>();
                         services.AddSingleton<SlotsManager>();
                         services.AddSingleton<BlockDefinition, PoABlockDefinition>();
                     });
@@ -205,6 +217,8 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<VotingManager>();
                         services.AddSingleton<VotingController>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
+                        services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
+                        services.AddSingleton<IdleFederationMembersKicker>();
                     });
             });
 

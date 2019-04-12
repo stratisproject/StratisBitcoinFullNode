@@ -126,12 +126,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Set up cold staking account on cold wallet.
                 coldWalletManager.GetOrCreateColdStakingAccount(WalletName, true, Password);
                 HdAddress coldWalletAddress = coldWalletManager.GetFirstUnusedColdStakingAddress(WalletName, true);
-                coldWalletManager.UpdateKeysLookupLocked(new[] { coldWalletAddress });
 
                 // Set up cold staking account on hot wallet.
                 hotWalletManager.GetOrCreateColdStakingAccount(WalletName, false, Password);
                 HdAddress hotWalletAddress = hotWalletManager.GetFirstUnusedColdStakingAddress(WalletName, false);
-                hotWalletManager.UpdateKeysLookupLocked(new[] { hotWalletAddress });
 
                 int maturity = (int)stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 TestHelper.MineBlocks(stratisSender, maturity + 16, true);
@@ -161,7 +159,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // Wait for the transaction to arrive
                 TestHelper.WaitLoop(() => stratisHotStake.CreateRPCClient().GetRawMempool().Length > 0);
-                Assert.NotNull(stratisHotStake.CreateRPCClient().GetRawTransaction(transaction1.GetHash(), false));
+                Assert.NotNull(stratisHotStake.CreateRPCClient().GetRawTransaction(transaction1.GetHash(), null, false));
                 TestHelper.WaitLoop(() => stratisHotStake.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Any());
 
                 long receivetotal = stratisHotStake.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);

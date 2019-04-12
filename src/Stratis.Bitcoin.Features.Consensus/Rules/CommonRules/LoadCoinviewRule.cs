@@ -27,11 +27,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // unless the coinview treashold is reached.
             this.Logger.LogTrace("Saving coinview changes.");
             var utxoRuleContext = context as UtxoRuleContext;
-            await this.PowParent.UtxoSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(), null, oldBlockHash, nextBlockHash, height).ConfigureAwait(false);
+            this.PowParent.UtxoSet.SaveChanges(utxoRuleContext.UnspentOutputSet.GetCoins(), null, oldBlockHash, nextBlockHash, height);
 
             // Use the default flush condition to decide if flush is required (currently set to every 60 seconds)
             if (this.PowParent.UtxoSet is CachedCoinView cachedCoinView)
-                await cachedCoinView.FlushAsync(false).ConfigureAwait(false);
+                cachedCoinView.Flush(false);
         }
     }
 
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             utxoRuleContext.UnspentOutputSet = new UnspentOutputSet();
 
             uint256[] ids = this.coinviewHelper.GetIdsToFetch(context.ValidationContext.BlockToValidate, context.Flags.EnforceBIP30);
-            FetchCoinsResponse coins = await this.PowParent.UtxoSet.FetchCoinsAsync(ids).ConfigureAwait(false);
+            FetchCoinsResponse coins = this.PowParent.UtxoSet.FetchCoins(ids);
             utxoRuleContext.UnspentOutputSet.SetCoins(coins.UnspentOutputs);
         }
     }
