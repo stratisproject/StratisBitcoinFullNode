@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Api
             this.RelativePathToApiDocXmlFile =  config.GetOrDefault("apidocxml", DefaultApiDocXmlFileRelativePath);
 
             // Find out which port should be used for the API.
-            int apiPort = config.GetOrDefault("apidoc", nodeSettings.Network.DefaultAPIPort, this.logger);
+            int apiPort = config.GetOrDefault("apiport", nodeSettings.Network.DefaultAPIPort, this.logger);
 
             // If no port is set in the API URI.
             if (apiUri.IsDefaultPort)
