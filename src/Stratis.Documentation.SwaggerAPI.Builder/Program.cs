@@ -29,16 +29,16 @@ namespace Stratis.Documentation.SwaggerAPI.Builder
 {
     class Program
     {
-        private const string consolidatedXmlFilename = "Stratis.Bitcoin.Api.xml";
-        private const string relativeXmlDirPath = "../../../../Stratis.Documentation.SwaggerAPI.Builder/XML";
-        private const string relativeComsolidatedXmlDirPath = "../../../../Stratis.Documentation.SwaggerAPI.Builder/ConsolidatedXml";
+        private const string ConsolidatedXmlFilename = "Stratis.Bitcoin.Api.xml";
+        private const string RelativeXmlDirPath = "../../../XML";
+        private const string RelativeConsolidatedXmlDirPath = "../../../ConsolidatedXml";
 
         static void Main(string[] args)
         {
             string basePath = PlatformServices.Default.Application.ApplicationBasePath;
-            string xmlDirPath = Path.Combine(basePath, relativeXmlDirPath);
+            string xmlDirPath = Path.Combine(basePath, RelativeXmlDirPath);
             
-            string consolidatedXmlFile = Path.Combine(basePath, relativeComsolidatedXmlDirPath + "/" + consolidatedXmlFilename);
+            string consolidatedXmlFile = Path.Combine(basePath, RelativeConsolidatedXmlDirPath + "/" + ConsolidatedXmlFilename);
 
             DirectoryInfo xmlDir;
             try
@@ -140,7 +140,7 @@ namespace Stratis.Documentation.SwaggerAPI.Builder
             consolidatedXmlWriter.WriteEndElement();
             consolidatedXmlWriter.Close();
             
-            Console.WriteLine(consolidatedXmlFilename + " finalized and ready for use!");
+            Console.WriteLine(ConsolidatedXmlFilename + " finalized and ready for use!");
         }
     }
 }

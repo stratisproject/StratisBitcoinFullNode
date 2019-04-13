@@ -11,10 +11,8 @@ namespace Stratis.Bitcoin.Features.Api
 {
     public class Startup
     {
-        private const string consolidatedXmlFilename = "Stratis.Bitcoin.Api.xml";
-        private const string relativeComsolidatedXmlDirPath = "../../../../Stratis.Documentation.SwaggerAPI.Builder/ConsolidatedXml";
         
-        public Startup(IHostingEnvironment env)
+        public Startup(IHostingEnvironment env, ApiSettings apiSettings)
         {
             IConfigurationBuilder builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
@@ -23,9 +21,11 @@ namespace Stratis.Bitcoin.Features.Api
                 .AddEnvironmentVariables();
 
             this.Configuration = builder.Build();
+            this.apiSettings = apiSettings;
         }
 
         public IConfigurationRoot Configuration { get; }
+        private readonly ApiSettings apiSettings;
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -76,12 +76,13 @@ namespace Stratis.Bitcoin.Features.Api
                 //Set the comments path for the swagger json and ui.
                 string basePath = PlatformServices.Default.Application.ApplicationBasePath;
 
-                string apiXmlPath = RetrievePathToConsolidatedApiXMLFile(basePath);
-                if (apiXmlPath != "") // Empty string indicates the file does not exist in the attempted paths
+                string apiXmlPath = Path.Combine(basePath, this.apiSettings.RelativePathToApiDocXmlFile);
+                
+                if (File.Exists(apiXmlPath))
                 {
                     setup.IncludeXmlComments(apiXmlPath);
                 }
-
+                
                 string walletXmlPath = Path.Combine(basePath, "Stratis.Bitcoin.LightWallet.xml");
 
                 if (File.Exists(walletXmlPath))
@@ -91,28 +92,6 @@ namespace Stratis.Bitcoin.Features.Api
 
                 setup.DescribeAllEnumsAsStrings();
             });
-        }
-
-        private string RetrievePathToConsolidatedApiXMLFile(string basePath)
-        {
-            string path;
-
-            // See if the combined XML file exists in the combined XML subfolder
-            // belonging to the Stratis,Documentation.SwaggerAPI.Builder project.
-            path = Path.Combine(basePath, relativeComsolidatedXmlDirPath + "/" + consolidatedXmlFilename);
-            if (File.Exists(path))
-            {
-                return path;
-            }
-            
-            // See if the combined XML file exists in the same directory as the daemon exe.
-            path = Path.Combine(basePath, consolidatedXmlFilename);
-            if (File.Exists(path))
-            {
-                return path;
-            }
-
-            return "";
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

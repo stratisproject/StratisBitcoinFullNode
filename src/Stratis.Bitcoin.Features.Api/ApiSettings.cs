@@ -15,6 +15,19 @@ namespace Stratis.Bitcoin.Features.Api
     {
         /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
         public const string DefaultApiHost = "http://localhost";
+        
+        /// <summary>The default relative path from a daemon executable to the XML file containing the consolidated 
+        /// documentation for all projects providing API endpoints. This assumes the daemon executable
+        /// is being created in the default output path:
+        /// 
+        /// {Project_Directory}/bin/$(Configuration)/netcoreapp2.1
+        /// 
+        /// and that the XML file is named:
+        /// 
+        /// Stratis.Bitcoin.Api.xml
+        /// 
+        /// </summary> 
+        private const string DefaultApiDocXmlFileRelativePath = "../../../../Stratis.Documentation.SwaggerAPI.Builder/ConsolidatedXml/Stratis.Bitcoin.Api.xml";
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -27,6 +40,11 @@ namespace Stratis.Bitcoin.Features.Api
 
         /// <summary>URI to node's API interface.</summary>
         public Timer KeepaliveTimer { get; private set; }
+        
+        /// <summary>The relative path from a daemon executable to the XML file containing the consolidated documentation
+        /// for all projects providing API endpoints. The file is created by Stratis.Documentation.Swagger.API.Builder
+        /// console app, which is part of the Full Node solution.</summary>
+        public string RelativePathToApiDocXmlFile { get; private set; }
 
         /// <summary>
         /// The HTTPS certificate file path.
@@ -64,9 +82,11 @@ namespace Stratis.Bitcoin.Features.Api
 
             string apiHost = config.GetOrDefault("apiuri", defaultApiHost, this.logger);
             var apiUri = new Uri(apiHost);
+            
+            this.RelativePathToApiDocXmlFile =  config.GetOrDefault("apidocxml", DefaultApiDocXmlFileRelativePath);
 
             // Find out which port should be used for the API.
-            int apiPort = config.GetOrDefault("apiport", nodeSettings.Network.DefaultAPIPort, this.logger);
+            int apiPort = config.GetOrDefault("apidoc", nodeSettings.Network.DefaultAPIPort, this.logger);
 
             // If no port is set in the API URI.
             if (apiUri.IsDefaultPort)
@@ -104,6 +124,7 @@ namespace Stratis.Bitcoin.Features.Api
             builder.AppendLine($"-keepalive=<seconds>              Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
             builder.AppendLine($"-usehttps=<bool>                  Use https protocol on the API. Defaults to false.");
             builder.AppendLine($"-certificatefilepath=<string>     Path to the certificate used for https traffic encryption. Defaults to <null>. Password protected files are not supported. On MacOs, only p12 certificates can be used without password.");
+            builder.AppendLine($"-apidocxml=<string>               Relative path to the XMl file containing the documentation for the Swagger API. The file is produced by the Stratis.Documentation.Swagger.API.Builder console app. Defaults to '{ DefaultApiDocXmlFileRelativePath }'.");
 
             NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
         }
@@ -127,6 +148,8 @@ namespace Stratis.Bitcoin.Features.Api
             builder.AppendLine($"#Path to the file containing the certificate to use for https traffic encryption. Password protected files are not supported. On MacOs, only p12 certificates can be used without password.");
             builder.AppendLine(@"#Please refer to .Net Core documentation for usage: 'https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.x509certificates.x509certificate2.-ctor?view=netcore-2.1#System_Security_Cryptography_X509Certificates_X509Certificate2__ctor_System_Byte___'.");
             builder.AppendLine($"#certificatefilepath=");
+            builder.AppendLine($"#Relative path to the XMl file containing the documentation for the Swagger API. The file is produced by the Stratis.Documentation.Swagger.API.Builder console app. Defaults to '{ DefaultApiDocXmlFileRelativePath }'.");
+            builder.AppendLine($"#apidocxml={ DefaultApiDocXmlFileRelativePath }");
         }
     }
 }
