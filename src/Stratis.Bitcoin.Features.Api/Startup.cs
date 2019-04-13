@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Xml;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -11,6 +13,8 @@ namespace Stratis.Bitcoin.Features.Api
 {
     public class Startup
     {
+        private const string consolidatedXmlFilename = "Stratis.Bitcoin.Api.xml";
+        
         public Startup(IHostingEnvironment env)
         {
             IConfigurationBuilder builder = new ConfigurationBuilder()
@@ -72,7 +76,10 @@ namespace Stratis.Bitcoin.Features.Api
 
                 //Set the comments path for the swagger json and ui.
                 string basePath = PlatformServices.Default.Application.ApplicationBasePath;
-                string apiXmlPath = Path.Combine(basePath, "Stratis.Bitcoin.Api.xml");
+
+                BuildConsolidatedXmlFile(basePath);
+                
+                string apiXmlPath = Path.Combine(basePath, consolidatedXmlFilename);
                 string walletXmlPath = Path.Combine(basePath, "Stratis.Bitcoin.LightWallet.xml");
 
                 if (File.Exists(apiXmlPath))
@@ -88,6 +95,125 @@ namespace Stratis.Bitcoin.Features.Api
                 setup.DescribeAllEnumsAsStrings();
             });
         }
+
+	    // Individual C# projects can output their documentation in an XML format, which can be picked up and then
+	    // displayed by Swagger. However, this presents a problem in multi-project solutions, which generate
+	    // multiple XML files. The following four functions consolidate XML produced for the Full Node projects
+	    // containing documentation relevant for the Swagger API.
+	    //
+	    // Usefully, building the Full Node solution will result in the project XML files also being produced
+	    // in the binary folder of any project that references them. Each time a daemon that uses the API feature
+	    // runs, the code below consolidates XML files (from projects the daemon references) into a single file.
+	    //
+	    // Projects by default do not produce XML documentation, and the option must be explicitly set in the project options.
+	    //
+	    // If you find a project with documentation you need to see in the Swagger API, make the change in the project
+	    // options, and the documentation will appear in the Swagger API.
+        private void BuildConsolidatedXmlFile(string basePath)
+        {
+            DirectoryInfo xmlDir;
+            
+            try
+            {
+                xmlDir = new DirectoryInfo(basePath);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Exception occurred: {0}", e.ToString());
+                return;
+            }
+	
+            Console.WriteLine("Searching for XML files created by Full Node projects...");
+            FileInfo[] xmlFiles = xmlDir.GetFiles("*.xml");
+            foreach (FileInfo file in xmlFiles)
+            {
+                Console.WriteLine("\tFound " + file.Name);
+            }
+	
+            // Note: No need to delete any existing instance of the consolidated Xml file as the
+            // XML writer overwrites it anyway.
+	
+            XmlWriter consolidatedXmlWriter = BeginConsildatedXmlFile(basePath + "/" + consolidatedXmlFilename);
+            if (consolidatedXmlWriter != null)
+            {
+                Console.WriteLine("Consolidating XML files created by Full Node projects...");
+                if (ReadAndAddMemberElementsFromGeneratedXml(basePath, xmlFiles, consolidatedXmlWriter))
+                {
+                    FinalizeConsolidatedXmlFile(consolidatedXmlWriter);
+                }
+            }
+        }
+        
+        private XmlWriter BeginConsildatedXmlFile(string consolidatedXmlFileFullPath)
+		{
+			XmlWriterSettings settings = new XmlWriterSettings();
+			settings.Indent = true;
+			settings.OmitXmlDeclaration = false;
+			try
+			{
+				XmlWriter consolidatedXmlWriter = XmlWriter.Create(consolidatedXmlFileFullPath, settings);
+
+				consolidatedXmlWriter.WriteStartElement("doc");
+				consolidatedXmlWriter.WriteStartElement("assembly");
+				consolidatedXmlWriter.WriteStartElement("name");
+				consolidatedXmlWriter.WriteString("Stratis.Bitcoin");
+				consolidatedXmlWriter.WriteEndElement();
+				consolidatedXmlWriter.WriteEndElement();
+				consolidatedXmlWriter.WriteStartElement("members");
+
+				return consolidatedXmlWriter;
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine("Exception occurred: {0}", e.ToString());
+				return null;
+			}
+		}
+	
+		private bool ReadAndAddMemberElementsFromGeneratedXml(string xmlDirPath, FileInfo[] generatedXmlFiles, XmlWriter consolidatedXmlWriter)
+		{            
+			foreach (FileInfo file in generatedXmlFiles)
+			{
+				XmlReaderSettings settings = new XmlReaderSettings();
+				string xmlFileFullPath = xmlDirPath + "/" + file.Name;
+				try
+				{
+					XmlReader reader = XmlReader.Create(xmlFileFullPath, settings);
+					bool alreadyInPosition = false; 
+
+					reader.MoveToContent(); // positions the XML reader at the doc element.
+
+					while (alreadyInPosition || reader.Read()) // if not in position, read the next node.
+					{
+						alreadyInPosition = false;
+						if (reader.NodeType == XmlNodeType.Element && reader.Name == "member")
+						{
+							consolidatedXmlWriter.WriteNode(reader, false); 
+							// Calling WriteNode() moves the position to the next member element,
+							// which is exactly what is required.
+							alreadyInPosition = true;  
+						}
+					}
+					Console.WriteLine("\tConsolidated " + file.Name);
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine("Exception occurred: {0}", e.ToString());
+					return false;
+				}
+			}
+
+			return true;
+		}
+	
+		private void FinalizeConsolidatedXmlFile(XmlWriter consolidatedXmlWriter)
+		{
+			consolidatedXmlWriter.WriteEndElement();
+			consolidatedXmlWriter.WriteEndElement();
+			consolidatedXmlWriter.Close();
+
+			Console.WriteLine(consolidatedXmlFilename + " finalized and ready for use!");
+		}      
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
