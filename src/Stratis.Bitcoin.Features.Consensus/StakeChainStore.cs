@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             while (currentHeader == null)
             {
-                hash = this.dBreezeCoinView.Rewind();
+                hash = this.dBreezeCoinView.Rewind(this.chainIndexer.Height);
                 currentHeader = this.chainIndexer.GetHeader(hash);
             }
 

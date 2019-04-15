@@ -492,7 +492,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 this.innerBlockHash = hash;
                 this.blockHash = hash;
-                this.blockHeight -= 1;
+                this.blockHeight = targetHeight ?? (this.blockHeight - 1);
 
                 if (this.rewindDataIndexCache != null)
                     this.rewindDataIndexCache.Initialize(this.blockHeight, this);
