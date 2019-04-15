@@ -289,7 +289,7 @@ namespace Stratis.Features.FederatedPeg
                 features.AddFeature<FederationGatewayFeature>().DependOn<BlockNotificationFeature>().FeatureServices(
                     services =>
                     {
-                        services.AddSingleton<IHttpClientFactory, HttpClientFactory>();
+                        services.AddSingleton<IHttpClientFactory, Bitcoin.Controllers.HttpClientFactory>();
                         services.AddSingleton<IMaturedBlocksProvider, MaturedBlocksProvider>();
                         services.AddSingleton<IFederationGatewaySettings, FederationGatewaySettings>();
                         services.AddSingleton<IOpReturnDataReader, OpReturnDataReader>();

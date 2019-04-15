@@ -25,7 +25,7 @@ namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.logger = Substitute.For<ILogger>();
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
-            this.httpClientFactory = new HttpClientFactory();
+            this.httpClientFactory = new Bitcoin.Controllers.HttpClientFactory();
         }
 
         [Fact]
