@@ -377,6 +377,8 @@ namespace Stratis.Bitcoin.Consensus
                     return;
                 }
 
+                this.logger.LogTrace("{0} is {1} and {2} is {3}", nameof(this.BestReceivedTip), this.BestReceivedTip, nameof(result.Consumed), result.Consumed);
+
                 this.BestReceivedTip = result.Consumed;
                 this.UpdateBestSentHeader(this.BestReceivedTip);
 
