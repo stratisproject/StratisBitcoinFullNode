@@ -15,6 +15,14 @@ using Stratis.Bitcoin.Utilities.ModelStateErrors;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 {
+    public static class BlockStoreRouteEndPoint
+    {
+        public const string GetBlock = "block";
+        public const string GetBlockCount = "GetBlockCount";
+        public const string GetAddressBalance = "getaddressbalance";
+        public const string GetReceivedByAddress = "getreceivedbyaddress";
+    }
+
     /// <summary>Controller providing operations on a blockstore.</summary>
     [Route("api/[controller]")]
     public class BlockStoreController : Controller
@@ -62,7 +70,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         /// </summary>
         /// <param name="query">An object containing the necessary parameters to search for a block.</param>
         /// <returns><see cref="BlockModel"/> if block is found, <see cref="NotFoundObjectResult"/> if not found. Returns <see cref="IActionResult"/> with error information if exception thrown.</returns>
-        [Route("block")]
+        [Route(BlockStoreRouteEndPoint.GetBlock)]
         [HttpGet]
         public async Task<IActionResult> GetBlockAsync([FromQuery] SearchByHashRequest query)
         {
@@ -101,7 +109,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         /// </summary>
         /// <remarks>This is an API implementation of an RPC call.</remarks>
         /// <returns>The current tip height. Returns <c>null</c> if fails. Returns <see cref="IActionResult"/> with error information if exception thrown.</returns>
-        [Route("getblockcount")]
+        [Route(BlockStoreRouteEndPoint.GetBlockCount)]
         [HttpGet]
         public IActionResult GetBlockCount()
         {
@@ -117,7 +125,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         }
 
         /// <summary>Provides balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
-        [Route("getaddressbalance")]
+        [Route(BlockStoreRouteEndPoint.GetAddressBalance)]
         [HttpGet]
         public IActionResult GetAddressBalance([FromQuery] string address, int minConfirmations)
         {
@@ -133,7 +141,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         }
 
         /// <summary>Returns the total amount received by the given address in transactions with at least<paramref name= "minConfirmations" /> confirmations.</ summary >
-        [Route("getreceivedbyaddress")]
+        [Route(BlockStoreRouteEndPoint.GetReceivedByAddress)]
         [HttpGet]
         public IActionResult GetReceivedByAddress([FromQuery] string address, int minConfirmations)
         {
