@@ -37,6 +37,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
     {
         public const string NoSpendableTransactionsMessage = "No spendable transactions found.";
 
+        public const string NotEnoughFundsMessage = "Not enough funds.";
+
         /// <summary>A threshold that if possible will limit the amount of UTXO sent to the <see cref="ICoinSelector"/>.</summary>
         /// <remarks>
         /// 500 is a safe number that if reached ensures the coin selector will not take too long to complete,
@@ -190,7 +192,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             long balance = context.UnspentOutputs.Sum(t => t.Transaction.Amount);
             long totalToSend = context.Recipients.Sum(s => s.Amount);
             if (balance < totalToSend)
-                throw new WalletException("Not enough funds.");
+                throw new WalletException(NotEnoughFundsMessage);
 
             if (context.SelectedInputs.Any())
             {
