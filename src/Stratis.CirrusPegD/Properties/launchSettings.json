@@ -2,7 +2,7 @@
   "profiles": {
     "Stratis.CirrusPegD": {
       "commandName": "Project",
-      "commandLineArgs": " -mainchain -apiport=37221 -counterchainapiport=37223 -redeemscript=\"4 03025fcadedd28b12665de0542c8096f4cd5af8e01791a4d057f67e2866ca66ba7 02b598d2c3f50abc5d16101b73317f70c19d63c63a5e1ab6909526b678d5b1cb3d 02d422ff4730a97d22240105a726949bc69d45bf901e6f7d465dc550a9e88e32be 02f6b4a29361cb5b34d9cd658899049f873839e69940a77dc8e154a110a147222e 031a82c2e799527f0f29f491313e56d0dbdbc01ccb140fe533b9dd3dcc592ab1ef 03763c01514cc4c749b2ca15187f86d87445496a0d570bd1e57aa5662db9b4a01e 02e1c628e18117e63872c73c856147574f43967e49531401d3c086538c65fa4ee4 7 OP_CHECKMULTISIG\" -publickey=03025fcadedd28b12665de0542c8096f4cd5af8e01791a4d057f67e2866ca66ba7 -federationips=\"13.66.214.36,23.101.147.254\""
+      "commandLineArgs": " -mainchain"
     }
   }
 }
