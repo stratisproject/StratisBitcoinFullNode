@@ -64,7 +64,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
             {
                 ChainedHeader currentHeader = consensusTip.GetAncestor(i);
 
-                ChainedHeaderBlock block = await this.consensusManager.GetBlockDataAsync(currentHeader.HashBlock).ConfigureAwait(false);
+                ChainedHeaderBlock block = this.consensusManager.GetBlockData(currentHeader.HashBlock);
 
                 MaturedBlockDepositsModel maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(block);
 

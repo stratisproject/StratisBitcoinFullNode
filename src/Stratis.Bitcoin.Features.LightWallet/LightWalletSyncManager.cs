@@ -237,7 +237,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         {
                             token.ThrowIfCancellationRequested();
 
-                            nextblock = this.consensusManager.GetBlockDataAsync(next.HashBlock).GetAwaiter().GetResult();
+                            nextblock = this.consensusManager.GetBlockData(next.HashBlock);
                             if (nextblock != null && nextblock.Block != null)
                                 break;
 

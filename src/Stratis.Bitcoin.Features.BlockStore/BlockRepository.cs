@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
@@ -188,7 +189,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc/>
-        public Transaction[] GetTransactionsByIds(uint256[] trxids)
+        public Transaction[] GetTransactionsByIds(uint256[] trxids, CancellationToken cancellation = default(CancellationToken))
         {
             if (!this.TxIndex)
             {
@@ -204,6 +205,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 for (int i = 0; i < trxids.Length; i++)
                 {
+                    cancellation.ThrowIfCancellationRequested();
+
+                    bool alreadyFetched = trxids.Take(i).Any(x => x == trxids[i]);
+
+                    if (alreadyFetched)
+                    {
+                        this.logger.LogDebug("Duplicated transaction encountered. Tx id: '{0}'.", trxids[i]);
+
+                        txes[i] = txes.First(x => x.GetHash() == trxids[i]);
+                        continue;
+                    }
+
                     Row<byte[], byte[]> transactionRow = transaction.Select<byte[], byte[]>(TransactionTableName, trxids[i].ToBytes());
                     if (!transactionRow.Exists)
                     {
