@@ -319,8 +319,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 else
                 {
                     var keysToRemove = new List<int>();
-                    var transactionsToRemove = new List<uint256>();
-                    var outputsToRestore = new List<UnspentOutputs>();
+                    var changes = new Dictionary<uint256, Coins>();
 
                     while (currentHeight > targetHeight)
                     {
@@ -333,13 +332,13 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         foreach (uint256 txId in rewindData.TransactionsToRemove)
                         {
                             this.logger.LogTrace("Outputs of transaction ID '{0}' will be removed.", txId);
-                            transactionsToRemove.Add(txId);
+                            changes[txId] = null;
                         }
 
                         foreach (UnspentOutputs coin in rewindData.OutputsToRestore)
                         {
                             this.logger.LogTrace("Outputs of transaction ID '{0}' will be restored.", coin.TransactionId);
-                            outputsToRestore.Add(coin);
+                            changes[coin.TransactionId] = coin.ToCoins();
                         }
 
                         res = rewindData.PreviousBlockHash;
@@ -352,11 +351,11 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     foreach (int key in keysToRemove.OrderBy(k => k))
                         transaction.RemoveKey("Rewind", key);
 
-                    foreach (uint256 txId in transactionsToRemove.OrderBy(t => t.ToBytes(false), byteListComparer))
+                    foreach (uint256 txId in changes.Where(x => x.Value == null).Select(x => x.Key).OrderBy(t => t.ToBytes(false), byteListComparer))
                         transaction.RemoveKey("Coins", txId.ToBytes(false));
 
-                    foreach (UnspentOutputs coin in outputsToRestore.OrderBy(c => c.TransactionId.ToBytes(false), byteListComparer))
-                        transaction.Insert("Coins", coin.TransactionId.ToBytes(false), this.dBreezeSerializer.Serialize(coin.ToCoins()));
+                    foreach (KeyValuePair<uint256, Coins> kv in changes.Where(x => x.Value != null).OrderBy(c => c.Key.ToBytes(false), byteListComparer))
+                        transaction.Insert("Coins", kv.Key.ToBytes(false), this.dBreezeSerializer.Serialize(kv.Value));
                 }
 
                 this.SetBlockHash(transaction, res);
