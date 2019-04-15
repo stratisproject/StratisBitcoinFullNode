@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;

@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Controllers;
 using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
@@ -20,7 +21,7 @@ namespace Stratis.Features.FederatedPeg.RestClients
     public class FederationGatewayClient : RestApiClientBase, IFederationGatewayClient
     {
         public FederationGatewayClient(ILoggerFactory loggerFactory, IFederationGatewaySettings settings, IHttpClientFactory httpClientFactory)
-            : base(loggerFactory, settings, httpClientFactory)
+            : base(loggerFactory, settings.CounterChainApiPort, "FederationGateway", httpClientFactory)
         {
         }
 

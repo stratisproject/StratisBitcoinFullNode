@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Polly;
 using Polly.Retry;
-using Stratis.Features.FederatedPeg.Interfaces;
-using Stratis.Features.FederatedPeg.Models;
 
-namespace Stratis.Features.FederatedPeg.RestClients
+namespace Stratis.Bitcoin.Controllers
 {
     /// <summary>Client for making API calls for methods provided by controllers.</summary>
     public abstract class RestApiClientBase
@@ -31,12 +30,12 @@ namespace Stratis.Features.FederatedPeg.RestClients
 
         private readonly RetryPolicy policy;
 
-        public RestApiClientBase(ILoggerFactory loggerFactory, IFederationGatewaySettings settings, IHttpClientFactory httpClientFactory)
+        public RestApiClientBase(ILoggerFactory loggerFactory, int port, string controllerName, IHttpClientFactory httpClientFactory)
         {
             this.httpClientFactory = httpClientFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.endpointUrl = $"http://localhost:{settings.CounterChainApiPort}/api/FederationGateway";
+            this.endpointUrl = $"http://localhost:{port}/api/{controllerName}";
 
             this.policy = Policy.Handle<HttpRequestException>().WaitAndRetryAsync(retryCount: RetryCount, sleepDurationProvider:
                 attemptNumber =>
@@ -121,6 +120,18 @@ namespace Stratis.Features.FederatedPeg.RestClients
         protected virtual void OnRetry(Exception exception, TimeSpan delay)
         {
             this.logger.LogDebug("Exception while calling API method: {0}.", exception.ToString());
+        }
+    }
+
+    /// <summary>
+    /// Helper class to interpret a string as json.
+    /// </summary>
+    public class JsonContent : StringContent
+    {
+        public JsonContent(object obj) :
+            base(JsonConvert.SerializeObject(obj), Encoding.UTF8, "application/json")
+        {
+
         }
     }
 }
