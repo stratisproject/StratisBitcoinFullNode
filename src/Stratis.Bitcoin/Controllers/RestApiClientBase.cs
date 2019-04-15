@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Controllers
                 }
                 catch (HttpRequestException ex)
                 {
-                    this.logger.LogError("The counter-chain daemon is not ready to receive API calls at this time ({0})", publicationUri);
+                    this.logger.LogError("Target node is not ready to receive API calls at this time ({0})", publicationUri);
                     this.logger.LogError("Failed to send a message. Exception: '{0}'.", ex);
                     return new HttpResponseMessage() { ReasonPhrase = ex.Message, StatusCode = HttpStatusCode.InternalServerError };
                 }
@@ -115,6 +115,74 @@ namespace Stratis.Bitcoin.Controllers
 
             this.logger.LogTrace("(-)[NO_CONTENT]:null");
             return null;
+        }
+
+        public async Task<Response> SendGetRequestAsync<Response>(string apiMethodName, string arguments = null,
+            CancellationToken cancellation = default(CancellationToken)) where Response : class
+        {
+            HttpResponseMessage response = await this.SendGetRequestAsync(apiMethodName, arguments, cancellation).ConfigureAwait(false);
+
+            // Parse response.
+            if ((response != null) && response.IsSuccessStatusCode && (response.Content != null))
+            {
+                string successJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                if (successJson != null)
+                {
+                    Response responseModel = JsonConvert.DeserializeObject<Response>(successJson);
+
+                    this.logger.LogTrace("(-)[SUCCESS]");
+                    return responseModel;
+                }
+            }
+
+            this.logger.LogTrace("(-)[NO_CONTENT]:null");
+            return null;
+        }
+
+        protected async Task<HttpResponseMessage> SendGetRequestAsync(string apiMethodName, string arguments = null,
+            CancellationToken cancellation = default(CancellationToken))
+        {
+            string url = $"{this.endpointUrl}/{apiMethodName}";
+
+            if (!string.IsNullOrEmpty(arguments))
+            {
+                url += "/?" + arguments;
+            }
+
+            HttpResponseMessage response = null;
+
+            using (HttpClient client = this.httpClientFactory.CreateClient())
+            {
+                client.Timeout = TimeSpan.FromMilliseconds(TimeoutMs);
+
+                try
+                {
+                    // Retry the following call according to the policy.
+                    await this.policy.ExecuteAsync(async token =>
+                    {
+                        this.logger.LogDebug("Sending request to Url '{1}'.", url);
+
+                        response = await client.GetAsync(url, cancellation).ConfigureAwait(false);
+                        this.logger.LogDebug("Response received: {0}", response);
+
+                    }, cancellation);
+                }
+                catch (OperationCanceledException)
+                {
+                    this.logger.LogDebug("Operation canceled.");
+                    this.logger.LogTrace("(-)[CANCELLED]:null");
+                    return null;
+                }
+                catch (HttpRequestException ex)
+                {
+                    this.logger.LogError("Target node is not ready to receive API calls at this time ({0})", url);
+                    this.logger.LogError("Failed to send a message. Exception: '{0}'.", ex);
+                    return new HttpResponseMessage() { ReasonPhrase = ex.Message, StatusCode = HttpStatusCode.InternalServerError };
+                }
+            }
+
+            this.logger.LogTrace("(-)[SUCCESS]");
+            return response;
         }
 
         protected virtual void OnRetry(Exception exception, TimeSpan delay)
