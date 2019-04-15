@@ -21,7 +21,7 @@ namespace Stratis.Features.FederatedPeg.ControllersAndClients
     public class FederationGatewayClient : RestApiClientBase, IFederationGatewayClient
     {
         public FederationGatewayClient(ILoggerFactory loggerFactory, IFederationGatewaySettings settings, IHttpClientFactory httpClientFactory)
-            : base(loggerFactory, settings.CounterChainApiPort, "FederationGateway", httpClientFactory)
+            : base(loggerFactory, httpClientFactory, settings.CounterChainApiPort, "FederationGateway")
         {
         }
 

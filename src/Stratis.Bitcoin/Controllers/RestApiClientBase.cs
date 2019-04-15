@@ -30,12 +30,12 @@ namespace Stratis.Bitcoin.Controllers
 
         private readonly RetryPolicy policy;
 
-        public RestApiClientBase(ILoggerFactory loggerFactory, int port, string controllerName, IHttpClientFactory httpClientFactory)
+        public RestApiClientBase(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, int port, string controllerName, string url = "http://localhost")
         {
             this.httpClientFactory = httpClientFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.endpointUrl = $"http://localhost:{port}/api/{controllerName}";
+            this.endpointUrl = $"{url}:{port}/api/{controllerName}";
 
             this.policy = Policy.Handle<HttpRequestException>().WaitAndRetryAsync(retryCount: RetryCount, sleepDurationProvider:
                 attemptNumber =>
