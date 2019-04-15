@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using Stratis.Bitcoin.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.RestClients;
 using Xunit;
@@ -46,7 +47,7 @@ namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
         public int RetriesCount { get; private set; }
 
         public TestRestApiClient(ILoggerFactory loggerFactory, IFederationGatewaySettings settings, IHttpClientFactory httpClientFactory)
-            : base(loggerFactory, settings, httpClientFactory)
+            : base(loggerFactory, settings.CounterChainApiPort, "FederationGateway", httpClientFactory)
         {
             this.RetriesCount = 0;
         }
