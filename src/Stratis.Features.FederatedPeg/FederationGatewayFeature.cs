@@ -375,19 +375,5 @@ namespace Stratis.Features.FederatedPeg
             return fullNodeBuilder;
         }
     }
-
-    //todo: this should be removed when compatible with full node API, instead, we should use
-    //services.AddHttpClient from Microsoft.Extensions.Http
-    public class HttpClientFactory : IHttpClientFactory
-    {
-        /// <inheritdoc />
-        public HttpClient CreateClient(string name)
-        {
-            var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Accept.Clear();
-            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            return httpClient;
-        }
-    }
 }
 

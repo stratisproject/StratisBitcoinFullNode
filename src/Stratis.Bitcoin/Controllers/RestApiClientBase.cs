@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -200,6 +201,20 @@ namespace Stratis.Bitcoin.Controllers
             base(JsonConvert.SerializeObject(obj), Encoding.UTF8, "application/json")
         {
 
+        }
+    }
+
+    //todo: this should be removed when compatible with full node API, instead, we should use
+    //services.AddHttpClient from Microsoft.Extensions.Http
+    public class HttpClientFactory : IHttpClientFactory
+    {
+        /// <inheritdoc />
+        public HttpClient CreateClient(string name)
+        {
+            var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Accept.Clear();
+            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            return httpClient;
         }
     }
 }
