@@ -14,7 +14,7 @@ using TracerAttributes;
 namespace Stratis.Bitcoin.Consensus
 {
     /// <summary>
-    /// Bans and disconnects peers that sends a <see cref="GetHeadersPayload"/> request, more than <see cref="GetHeaderRequestCountThreshold"/> times,
+    /// Bans and disconnects peers that sends a <see cref="GetHeadersPayload"/> request, more than <see cref="GetHeaderRequestCountThresholdSeconds"/> times,
     /// within a certain time frame.
     /// </summary>
     /// <remarks>
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Consensus
         private int getHeaderRequestCount;
 
         /// <summary>The threshold after which the node will be banned and disconnected.</summary>
-        private const int GetHeaderRequestCountThreshold = 10;
+        private const int GetHeaderRequestCountThresholdSeconds = 10;
 
         /// <summary>The threshold time span in which header requests are invalid and tracked.</summary>
         private const int GetHeaderRequestTimestampThreshold = 10;
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Determines whether or not a peer asked for the same set of headers within 60 seconds.
         /// <para>
-        /// If the same set of headers was requested more than <see cref="GetHeaderRequestCountThreshold"/>, it will be banned
+        /// If the same set of headers was requested more than <see cref="GetHeaderRequestCountThresholdSeconds"/>, it will be banned
         /// and disconnected.
         /// </para>
         /// </summary>
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 // If the same header was requested more than 10 times in the last 10 seconds,
                 // ban and disconnect the peer for 1 hour.
-                if (this.getHeaderRequestCount >= GetHeaderRequestCountThreshold)
+                if (this.getHeaderRequestCount >= GetHeaderRequestCountThresholdSeconds)
                 {
                     this.peerBanning.BanAndDisconnectPeer(this.AttachedPeer.PeerEndPoint, BanDurationSeconds, $"Banned via rate limiting for {BanDurationSeconds} seconds.");
                     this.logger.LogDebug("{0} banned via rate limiting for {1} seconds.", this.AttachedPeer.PeerEndPoint, BanDurationSeconds);

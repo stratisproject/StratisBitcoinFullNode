@@ -474,7 +474,7 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     // Resync in case we can't connect the header.
                     this.cachedHeaders.Clear();
-                    this.ResyncAsync();
+                    await this.ResyncAsync().ConfigureAwait(false);
                 }
             }
             catch (ConsensusRuleException exception)
@@ -525,7 +525,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Sync when handshake is finished.</summary>
         private async Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
         {
-            if (peer.State == NetworkPeerState.HandShaked && this.cachedHeaders.Count == 0)
+            if (peer.State == NetworkPeerState.HandShaked)
                 await this.ResyncAsync().ConfigureAwait(false);
         }
 
@@ -571,7 +571,10 @@ namespace Stratis.Bitcoin.Consensus
         public async Task ResyncAsync()
         {
             if (this.cachedHeaders.Any())
+            {
+                this.logger.LogTrace("(-)[CACHE_NOT_EMPTY]");
                 throw new ConsensusException($"Resync is only allowed to be called when the cache is empty. The current cache count is {this.cachedHeaders.Count}.");
+            }
 
             INetworkPeer peer = this.AttachedPeer;
 
