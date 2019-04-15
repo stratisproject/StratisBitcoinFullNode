@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +21,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.ControllersAndClients
         public const string GetBlock = "block";
         public const string GetBlockCount = "GetBlockCount";
         public const string GetAddressBalance = "getaddressbalance";
+        public const string GetAddressesBalances = "getaddressesbalances";
         public const string GetReceivedByAddress = "getreceivedbyaddress";
     }
 
@@ -132,6 +134,29 @@ namespace Stratis.Bitcoin.Features.BlockStore.ControllersAndClients
             try
             {
                 return this.Json(this.addressIndexer.GetAddressBalance(address, minConfirmations));
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>Provides balance of the given addresses confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
+        [Route(BlockStoreRouteEndPoint.GetAddressesBalances)]
+        [HttpGet]
+        public IActionResult GetAddressesBalances(string addresses, int minConfirmations)
+        {
+            try
+            {
+                string[] addressesArray = addresses.Split(',');
+
+                var balances = new Dictionary<string, Money>(addresses.Length);
+
+                foreach (string address in addressesArray)
+                    balances[address] = this.addressIndexer.GetAddressBalance(address, minConfirmations);
+
+                return this.Json(balances);
             }
             catch (Exception e)
             {
