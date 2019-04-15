@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.ControllersAndClients
     public interface IBlockStoreClient
     {
         /// <summary><see cref="BlockStoreController.GetReceivedByAddress"/></summary>
-        Task<Money> GetAddressBalance(string address, int minConfirmations, CancellationToken cancellation = default(CancellationToken));
+        Task<Money> GetAddressBalanceAsync(string address, int minConfirmations, CancellationToken cancellation = default(CancellationToken));
     }
 
     /// <inheritdoc cref="IBlockStoreClient"/>
@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.ControllersAndClients
         }
 
         /// <inheritdoc />
-        public Task<Money> GetAddressBalance(string address, int minConfirmations, CancellationToken cancellation = default(CancellationToken))
+        public Task<Money> GetAddressBalanceAsync(string address, int minConfirmations, CancellationToken cancellation = default(CancellationToken))
         {
             string arguments = $"{nameof(address)}={address},{nameof(minConfirmations)}={minConfirmations}";
 
