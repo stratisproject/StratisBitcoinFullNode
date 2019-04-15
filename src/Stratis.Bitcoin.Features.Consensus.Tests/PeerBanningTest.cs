@@ -435,7 +435,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             PeerAddress peer = peerAddressManager.FindPeer(endpoint);
             Assert.Null(peer.BanTimeStamp);
             Assert.Null(peer.BanUntil);
-            Assert.Empty(peer.BanReason);
+            Assert.Null(peer.BanReason);
         }
     }
 }
