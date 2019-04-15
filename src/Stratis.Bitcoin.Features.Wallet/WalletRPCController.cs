@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// RPC method that returns the total available balance.
         /// The available balance is what the wallet considers currently spendable.
-        /// 
+        ///
         /// Uses the first wallet and account.
         /// </summary>
         /// <param name="accountName">Remains for backward compatibility. Must be excluded or set to "*" or "". Deprecated in latest bitcoin core (0.17.0).</param>
@@ -242,9 +242,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Get the block containing the transaction (if it has  been confirmed).
             ChainedHeaderBlock chainedHeaderBlock = null;
             if (blockHash != null)
-            {
-                await this.ConsensusManager.GetOrDownloadBlocksAsync(new List<uint256> { blockHash }, b => { chainedHeaderBlock = b; });
-            }
+                this.ConsensusManager.GetOrDownloadBlocks(new List<uint256> { blockHash }, b => { chainedHeaderBlock = b; });
 
             Block block = null;
             Transaction transactionFromStore = null;
