@@ -29,11 +29,11 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="peer">Connected network peer that we receive messages from.</param>
         public NetworkPeerListener(INetworkPeer peer, IAsyncProvider asyncProvider)
         {
-            this.messageProducerRegistration = peer.MessageProducer.AddMessageListener(this);
             this.peer = peer;
             this.asyncProvider = asyncProvider;
-
             this.asyncIncomingMessagesQueue = asyncProvider.CreateAsyncQueue<IncomingMessage>();
+
+            this.messageProducerRegistration = peer.MessageProducer.AddMessageListener(this);
         }
 
         /// <inheritdoc/>
