@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
-using Stratis.Features.FederatedPeg.RestClients;
 
 namespace Stratis.Features.FederatedPeg.SourceChain
 {

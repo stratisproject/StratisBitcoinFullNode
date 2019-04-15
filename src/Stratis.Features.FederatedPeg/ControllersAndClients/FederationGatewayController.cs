@@ -13,7 +13,7 @@ using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.SourceChain;
 
-namespace Stratis.Features.FederatedPeg.Controllers
+namespace Stratis.Features.FederatedPeg.ControllersAndClients
 {
     public static class FederationGatewayRouteEndPoint
     {

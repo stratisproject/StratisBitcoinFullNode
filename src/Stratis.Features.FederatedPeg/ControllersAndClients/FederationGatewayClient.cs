@@ -4,11 +4,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Controllers;
-using Stratis.Features.FederatedPeg.Controllers;
+using Stratis.Features.FederatedPeg.ControllersAndClients;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 
-namespace Stratis.Features.FederatedPeg.RestClients
+namespace Stratis.Features.FederatedPeg.ControllersAndClients
 {
     /// <summary>Rest client for <see cref="FederationGatewayController"/>.</summary>
     public interface IFederationGatewayClient

@@ -17,7 +17,7 @@ using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
 
-namespace Stratis.Features.FederatedPeg.Controllers
+namespace Stratis.Features.FederatedPeg.ControllersAndClients
 {
     public static class FederationWalletRouteEndPoint
     {
