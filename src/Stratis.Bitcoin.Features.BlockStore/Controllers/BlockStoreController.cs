@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Controllers.Models;
+using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
 using Stratis.Bitcoin.Features.BlockStore.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -14,9 +15,7 @@ using Stratis.Bitcoin.Utilities.ModelStateErrors;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 {
-    /// <summary>
-    /// Controller providing operations on a blockstore.
-    /// </summary>
+    /// <summary>Controller providing operations on a blockstore.</summary>
     [Route("api/[controller]")]
     public class BlockStoreController : Controller
     {
@@ -29,26 +28,28 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         /// <summary>An interface that provides information about the chain and validation.</summary>
         private readonly IChainState chainState;
 
-        /// <summary>
-        /// The chain.
-        /// </summary>
+        /// <summary>The chain.</summary>
         private readonly ChainIndexer chainIndexer;
 
-        /// <summary>
-        /// Current network for the active controller instance.
-        /// </summary>
+        /// <summary>Current network for the active controller instance.</summary>
         private readonly Network network;
 
-        public BlockStoreController(Network network,
+        private readonly IAddressIndexer addressIndexer;
+
+        public BlockStoreController(
+            Network network,
             ILoggerFactory loggerFactory,
             IBlockStore blockStore,
             IChainState chainState,
-            ChainIndexer chainIndexer)
+            ChainIndexer chainIndexer,
+            IAddressIndexer addressIndexer)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(chainState, nameof(chainState));
+            Guard.NotNull(addressIndexer, nameof(addressIndexer));
 
+            this.addressIndexer = addressIndexer;
             this.network = network;
             this.blockStore = blockStore;
             this.chainState = chainState;
@@ -107,6 +108,38 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             try
             {
                 return this.Json(this.chainState.ConsensusTip.Height);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>Provides balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
+        [Route("getaddressbalance")]
+        [HttpGet]
+        public IActionResult GetAddressBalance([FromQuery] string address, int minConfirmations)
+        {
+            try
+            {
+                return this.Json(this.addressIndexer.GetAddressBalance(address, minConfirmations));
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>Returns the total amount received by the given address in transactions with at least<paramref name= "minConfirmations" /> confirmations.</ summary >
+        [Route("getreceivedbyaddress")]
+        [HttpGet]
+        public IActionResult GetReceivedByAddress([FromQuery] string address, int minConfirmations)
+        {
+            try
+            {
+                return this.Json(this.addressIndexer.GetReceivedByAddress(address, minConfirmations));
             }
             catch (Exception e)
             {

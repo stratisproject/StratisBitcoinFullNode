@@ -2,45 +2,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.AsyncWork;
 
 namespace Stratis.Bitcoin.Utilities
 {
-    /// <summary>
-    /// Allows running application defined in a loop with specific timing.
-    /// </summary>
-    public interface IAsyncLoop : IDisposable
-    {
-        /// <summary>Name of the loop. It is used for logging.</summary>
-        string Name { get; }
-
-        /// <summary>Interval between each execution of the task.</summary>
-        TimeSpan RepeatEvery { get; set; }
-
-        /// <summary>
-        /// Starts an application defined task inside the async loop.
-        /// </summary>
-        /// <param name="repeatEvery">Interval between each execution of the task.
-        /// If this is <see cref="TimeSpans.RunOnce"/>, the task is only run once and there is no loop.
-        /// If this is null, the task is repeated every 1 second by default.</param>
-        /// <param name="startAfter">Delay before the first run of the task, or null if no startup delay is required.</param>
-        IAsyncLoop Run(TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
-
-        /// <summary>
-        /// Starts an application defined task inside the async loop.
-        /// </summary>
-        /// <param name="cancellation">Cancellation token that triggers when the task and the loop should be cancelled.</param>
-        /// <param name="repeatEvery">Interval between each execution of the task.
-        /// If this is <see cref="TimeSpans.RunOnce"/>, the task is only run once and there is no loop.
-        /// If this is null, the task is repeated every 1 second by default.</param>
-        /// <param name="startAfter">Delay before the first run of the task, or null if no startup delay is required.</param>
-        IAsyncLoop Run(CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
-
-        /// <summary>
-        /// The task representing the loop being executed.
-        /// </summary>
-        Task RunningTask { get; }
-    }
-
     /// <summary>
     /// Allows running application defined in a loop with specific timing.
     /// <para>
@@ -68,6 +33,14 @@ namespace Stratis.Bitcoin.Utilities
 
         /// <inheritdoc />
         public TimeSpan RepeatEvery { get; set; }
+
+        /// <summary>
+        /// Gets the uncaught exception, if available.
+        /// </summary>
+        /// <value>
+        /// The uncaught exception.
+        /// </value>
+        internal Exception UncaughtException{ get; private set; }
 
         /// <summary>
         /// Initializes a named instance of the object.
@@ -114,7 +87,6 @@ namespace Stratis.Bitcoin.Utilities
         {
             return Task.Run(async () =>
             {
-                Exception uncaughtException = null;
                 try
                 {
                     if (delayStart != null)
@@ -145,25 +117,25 @@ namespace Stratis.Bitcoin.Utilities
                 catch (OperationCanceledException ex)
                 {
                     if (!cancellation.IsCancellationRequested)
-                        uncaughtException = ex;
+                        this.UncaughtException = ex;
                 }
                 catch (Exception ex)
                 {
-                    uncaughtException = ex;
+                    this.UncaughtException = ex;
                 }
                 finally
                 {
                     this.logger.LogInformation(this.Name + " stopping.");
                 }
 
-                if (uncaughtException != null)
+                if (this.UncaughtException != null)
                 {
                     // WARNING: Do NOT touch this line unless you want to fix weird AsyncLoop tests.
                     // The following line has to be called EXACTLY as it is.
-                    this.logger.LogCritical(new EventId(0), uncaughtException, this.Name + " threw an unhandled exception");
+                    this.logger.LogCritical(new EventId(0), this.UncaughtException, this.Name + " threw an unhandled exception");
 
                     // You can touch this one.
-                    this.logger.LogError("{0} threw an unhandled exception: {1}", this.Name, uncaughtException.ToString());
+                    this.logger.LogError("{0} threw an unhandled exception: {1}", this.Name, this.UncaughtException.ToString());
                 }
             }, cancellation);
         }

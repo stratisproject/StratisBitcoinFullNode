@@ -12,10 +12,10 @@ using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.EventBus.CoreEvents;
@@ -256,9 +256,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 new PayloadProvider().DiscoverPayloads(),
                 selfEndPointTracker,
                 ibdState.Object,
-                connectionManagerSettings);
+                connectionManagerSettings,
+                this.GetOrCreateAsyncProvider()
+                );
 
-            return networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ProtocolPort).GetAwaiter().GetResult();
+            return networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ProtocolPort).ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+
+        private IAsyncProvider GetOrCreateAsyncProvider() {
+            if (this.runner.FullNode == null)
+                return new AsyncProvider(this.loggerFactory, new Signals.Signals(this.loggerFactory, null), new NodeLifetime());
+            else
+                return this.runner.FullNode.NodeService<IAsyncProvider>();
         }
 
         public CoreNode Start()
@@ -408,7 +417,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <returns>Latency.</returns>
         public async Task<TimeSpan> PingPongAsync(INetworkPeer peer, CancellationToken cancellation = default(CancellationToken))
         {
-            using (var listener = new NetworkPeerListener(peer))
+            using (var listener = new NetworkPeerListener(peer, this.GetOrCreateAsyncProvider()))
             {
                 var ping = new PingPayload()
                 {
@@ -416,7 +425,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 };
 
                 DateTimeOffset before = DateTimeOffset.UtcNow;
-                await peer.SendMessageAsync(ping, cancellation);
+                await peer.SendMessageAsync(ping, cancellation).ConfigureAwait(false);
 
                 while ((await listener.ReceivePayloadAsync<PongPayload>(cancellation).ConfigureAwait(false)).Nonce != ping.Nonce)
                 {
@@ -570,7 +579,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             this.AssertStateAsync(peer, NetworkPeerState.HandShaked, cancellationToken).GetAwaiter().GetResult();
 
-            using (var listener = new NetworkPeerListener(peer))
+            using (var listener = new NetworkPeerListener(peer, this.GetOrCreateAsyncProvider()))
             {
                 int acceptMaxReorgDepth = 0;
                 while (true)

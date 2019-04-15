@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Primitives;
@@ -42,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         [Fact]
         public void Notify_Completes_StartHashNotSet()
         {
-            var notification = new BlockNotification(this.LoggerFactory.Object, this.chainIndexer, this.consensusManager.Object, this.signals.Object, new AsyncLoopFactory(new LoggerFactory()), this.lifetime);
+            var notification = new BlockNotification(this.LoggerFactory.Object, this.chainIndexer, this.consensusManager.Object, this.signals.Object, new AsyncProvider(new LoggerFactory(), this.signals.Object, this.lifetime), this.lifetime);
             notification.Notify(this.lifetime.ApplicationStopping);
 
             this.signals.Verify(s => s.Publish(It.IsAny<BlockConnected>()), Times.Exactly(0));
@@ -56,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         public void Notify_Completes_StartHashNotOnChain()
         {
             var startBlockId = new uint256(156);
-            var notification = new BlockNotification(this.LoggerFactory.Object, this.chainIndexer, this.consensusManager.Object, this.signals.Object, new AsyncLoopFactory(new LoggerFactory()), this.lifetime);
+            var notification = new BlockNotification(this.LoggerFactory.Object, this.chainIndexer, this.consensusManager.Object, this.signals.Object, new AsyncProvider(new LoggerFactory(), this.signals.Object, this.lifetime), this.lifetime);
             notification.SyncFrom(startBlockId);
             notification.Notify(this.lifetime.ApplicationStopping);
 
@@ -75,7 +76,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             this.chainIndexer = new ChainIndexer(this.Network, new ChainedHeader(blocks[0].Header, blocks[0].GetHash(), 0));
             this.AppendBlocksToChain(this.chainIndexer, blocks.Skip(1).Take(1));
 
-            var notification = new Mock<BlockNotification>(this.LoggerFactory.Object, this.chainIndexer, this.signals.Object, new AsyncLoopFactory(new LoggerFactory()), this.lifetime);
+            var notification = new Mock<BlockNotification>(this.LoggerFactory.Object, this.chainIndexer, this.signals.Object, new AsyncProvider(new LoggerFactory(), this.signals.Object, this.lifetime), this.lifetime);
             notification.SetupGet(s => s.StartHash).Returns(blocks[0].GetHash());
 
             notification.SetupSequence(s => s.ReSync)
@@ -105,7 +106,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
                 }).Verifiable();
 
             var notification = new BlockNotification(this.LoggerFactory.Object, this.chainIndexer, this.consensusManager.Object,
-                this.signals.Object, new AsyncLoopFactory(new LoggerFactory()), this.lifetime);
+                this.signals.Object, new AsyncProvider(new LoggerFactory(), this.signals.Object, this.lifetime), this.lifetime);
 
             try
             {
@@ -127,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         public void CallingSyncFromUpdatesStartHashAccordingly()
         {
             var notification = new BlockNotification(this.LoggerFactory.Object, this.chainIndexer, this.consensusManager.Object,
-                this.signals.Object, new AsyncLoopFactory(new LoggerFactory()), this.lifetime);
+                this.signals.Object, new AsyncProvider(new LoggerFactory(), this.signals.Object, this.lifetime), this.lifetime);
 
             var blockId1 = new uint256(150);
             var blockId2 = new uint256(151);
@@ -146,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         public void SyncFrom_StartHashIsNull_SetsStartHashToBlockNotification()
         {
             var notification = new BlockNotification(this.LoggerFactory.Object, this.chainIndexer, this.consensusManager.Object,
-                this.signals.Object, new AsyncLoopFactory(new LoggerFactory()), this.lifetime);
+                this.signals.Object, new AsyncProvider(new LoggerFactory(), this.signals.Object, this.lifetime), this.lifetime);
 
             notification.SyncFrom(null);
 
@@ -161,7 +162,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             this.chainIndexer = new ChainIndexer(this.Network);
             this.AppendBlocksToChain(this.chainIndexer, blocks.Skip(1));
 
-            var notification = new BlockNotification(this.LoggerFactory.Object, this.chainIndexer, this.consensusManager.Object, this.signals.Object, new AsyncLoopFactory(new LoggerFactory()), this.lifetime);
+            var notification = new BlockNotification(this.LoggerFactory.Object, this.chainIndexer, this.consensusManager.Object, this.signals.Object, new AsyncProvider(new LoggerFactory(), this.signals.Object, this.lifetime), this.lifetime);
 
             notification.SyncFrom(blocks[0].GetHash());
             notification.SyncFrom(blocks[2].GetHash());
@@ -172,24 +173,24 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         [Fact]
         public void Start_RunsAsyncLoop()
         {
-            var asyncLoopFactory = new Mock<IAsyncLoopFactory>();
+            var asyncProvider = new Mock<IAsyncProvider>();
 
-            var notification = new BlockNotification(this.LoggerFactory.Object, this.chainIndexer, this.consensusManager.Object, this.signals.Object, asyncLoopFactory.Object, this.lifetime);
+            var notification = new BlockNotification(this.LoggerFactory.Object, this.chainIndexer, this.consensusManager.Object, this.signals.Object, asyncProvider.Object, this.lifetime);
 
             notification.Start();
 
-            asyncLoopFactory.Verify(a => a.Run("Notify", It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(), null, null));
+            asyncProvider.Verify(a => a.CreateAndRunAsyncLoop("Notify", It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(), null, null));
         }
 
         [Fact]
         public void Stop_DisposesAsyncLoop()
         {
             var asyncLoop = new Mock<IAsyncLoop>();
-            var asyncLoopFactory = new Mock<IAsyncLoopFactory>();
-            asyncLoopFactory.Setup(a => a.Run("Notify", It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(), null, null))
+            var asyncProvider = new Mock<IAsyncProvider>();
+            asyncProvider.Setup(a => a.CreateAndRunAsyncLoop("Notify", It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(), null, null))
                 .Returns(asyncLoop.Object);
 
-            var notification = new BlockNotification(this.LoggerFactory.Object, this.chainIndexer, this.consensusManager.Object, this.signals.Object, asyncLoopFactory.Object, this.lifetime);
+            var notification = new BlockNotification(this.LoggerFactory.Object, this.chainIndexer, this.consensusManager.Object, this.signals.Object, asyncProvider.Object, this.lifetime);
 
             notification.Start();
             notification.Stop();

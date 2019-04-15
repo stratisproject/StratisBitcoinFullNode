@@ -4,6 +4,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
@@ -13,6 +14,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -99,7 +101,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                     new NodeDeployments(KnownNetworks.RegTest, new ChainIndexer(this.network)),
                     new ConsensusSettings(NodeSettings.Default(KnownNetworks.RegTest)), new Mock<ICheckpoints>().Object, new Mock<ICoinView>().Object, new Mock<IChainState>().Object,
                     new InvalidBlockHashStore(dateTimeProvider),
-                    new NodeStats(dateTimeProvider));
+                    new NodeStats(dateTimeProvider),
+                    new AsyncProvider(new LoggerFactory(), new Mock<ISignals>().Object, new Mock<NodeLifetime>().Object));
 
                 rule.Initialize();
 

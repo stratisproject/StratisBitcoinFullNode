@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -93,7 +94,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
             }
         }
 
-        [Fact]
+        [Fact] //(Skip = "Working on fixing this after AsyncProvider PR gives intermittent results.")]
         public void MempoolReceiveFromManyNodes()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -116,6 +117,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                     tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
                     trxs.Add(tx);
                 }
+
                 var options = new ParallelOptions { MaxDegreeOfParallelism = 10 };
                 Parallel.ForEach(trxs, options, transaction =>
                 {

@@ -410,7 +410,7 @@ namespace Stratis.Bitcoin.Controllers
         /// </remarks>
         /// <returns><see cref="OkResult"/></returns>
         [HttpPost]
-        [Route("shutdown-node")]
+        [Route("shutdown")]
         [Route("stop")]
         public IActionResult Shutdown([FromBody] bool corsProtection = true)
         {

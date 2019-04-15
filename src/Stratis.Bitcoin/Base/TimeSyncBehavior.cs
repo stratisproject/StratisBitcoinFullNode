@@ -5,6 +5,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -125,7 +126,7 @@ namespace Stratis.Bitcoin.Base
         private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -178,15 +179,15 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
-        /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
+        /// <param name="asyncProvider">Factory for creating background async loop tasks.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="network">The network the node is running on.</param>
-        public TimeSyncBehaviorState(IDateTimeProvider dateTimeProvider, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory, ILoggerFactory loggerFactory, Network network)
+        public TimeSyncBehaviorState(IDateTimeProvider dateTimeProvider, INodeLifetime nodeLifetime, IAsyncProvider asyncProvider, ILoggerFactory loggerFactory, Network network)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dateTimeProvider = dateTimeProvider;
             this.nodeLifetime = nodeLifetime;
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.network = network;
 
             this.inboundTimestampOffsets = new CircularArray<TimestampOffsetSample>(MaxInboundSamples);
@@ -314,7 +315,7 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         private void StartWarningLoop()
         {
-            this.warningLoop = this.asyncLoopFactory.Run($"{nameof(TimeSyncBehavior)}.WarningLoop", token =>
+            this.warningLoop = this.asyncProvider.CreateAndRunAsyncLoop($"{nameof(TimeSyncBehavior)}.WarningLoop", token =>
             {
                 if (!this.SwitchedOffLimitReached)
                 {
