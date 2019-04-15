@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 if (this.cachedHeaders.Count != 0 && this.CanConsumeCache())
                 {
-                    result = await this.PresentHeadersLockedAsync(this.cachedHeaders, false);
+                    result = await this.PresentHeadersLockedAsync(this.cachedHeaders, false).ConfigureAwait(false);
 
                     if ((result == null) || (result.Consumed == null))
                     {
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             if (syncRequired)
-                this.ResyncAsync();
+                await this.ResyncAsync().ConfigureAwait(false);
 
             return result;
         }
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Consensus
                     break;
 
                 case InvPayload inv:
-                    this.ProcessInvAsync(peer, inv.Inventory);
+                    await this.ProcessInvAsync(peer, inv.Inventory).ConfigureAwait(false);
                     break;
             }
         }
@@ -351,7 +351,7 @@ namespace Stratis.Bitcoin.Consensus
                     return;
                 }
 
-                ConnectNewHeadersResult result = await this.PresentHeadersLockedAsync(headers);
+                ConnectNewHeadersResult result = await this.PresentHeadersLockedAsync(headers).ConfigureAwait(false);
 
                 if (result == null)
                 {
@@ -390,7 +390,7 @@ namespace Stratis.Bitcoin.Consensus
                 }
 
                 if (this.cachedHeaders.Count == 0)
-                    this.ResyncAsync();
+                    await this.ResyncAsync().ConfigureAwait(false);
             }
         }
 
