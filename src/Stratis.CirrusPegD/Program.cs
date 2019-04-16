@@ -82,7 +82,7 @@ namespace Stratis.CirrusPegD
 
             var fedPegOptions = new FederatedPegOptions(
                 counterChainNetwork: SidechainNetworks[networkType](),
-                walletSyncFromHeight: new int[] { 1, 1, 1 }[(int)networkType]
+                walletSyncFromHeight: new int[] { 1, 1, FederationGatewaySettings.StratisMainDepositStartBlock }[(int)networkType]
             );
 
             IFullNode node = new FullNodeBuilder()
