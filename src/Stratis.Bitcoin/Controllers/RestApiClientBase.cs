@@ -101,21 +101,7 @@ namespace Stratis.Bitcoin.Controllers
         {
             HttpResponseMessage response = await this.SendPostRequestAsync(requestModel, apiMethodName, cancellation).ConfigureAwait(false);
 
-            // Parse response.
-            if ((response != null) && response.IsSuccessStatusCode && (response.Content != null))
-            {
-                string successJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                if (successJson != null)
-                {
-                    Response responseModel = JsonConvert.DeserializeObject<Response>(successJson);
-
-                    this.logger.LogTrace("(-)[SUCCESS]");
-                    return responseModel;
-                }
-            }
-
-            this.logger.LogTrace("(-)[NO_CONTENT]:null");
-            return null;
+            return await this.ParseHttpResponseMessageAsync<Response>(response).ConfigureAwait(false);
         }
 
         public async Task<Response> SendGetRequestAsync<Response>(string apiMethodName, string arguments = null,
@@ -123,21 +109,42 @@ namespace Stratis.Bitcoin.Controllers
         {
             HttpResponseMessage response = await this.SendGetRequestAsync(apiMethodName, arguments, cancellation).ConfigureAwait(false);
 
-            // Parse response.
-            if ((response != null) && response.IsSuccessStatusCode && (response.Content != null))
-            {
-                string successJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                if (successJson != null)
-                {
-                    Response responseModel = JsonConvert.DeserializeObject<Response>(successJson);
+            return await this.ParseHttpResponseMessageAsync<Response>(response).ConfigureAwait(false);
+        }
 
-                    this.logger.LogTrace("(-)[SUCCESS]");
-                    return responseModel;
-                }
+        private async Task<Response> ParseHttpResponseMessageAsync<Response>(HttpResponseMessage httpResponse) where Response : class
+        {
+            if (httpResponse == null)
+            {
+                this.logger.LogTrace("(-)[NO_RESPONSE]:null");
+                return null;
             }
 
-            this.logger.LogTrace("(-)[NO_CONTENT]:null");
-            return null;
+            if (!httpResponse.IsSuccessStatusCode)
+            {
+                this.logger.LogTrace("(-)[NOT_SUCCESS_CODE]:null");
+                return null;
+            }
+
+            if (httpResponse.Content == null)
+            {
+                this.logger.LogTrace("(-)[NO_CONTENT]:null");
+                return null;
+            }
+
+            // Parse response.
+            string successJson = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            if (successJson == null)
+            {
+                this.logger.LogTrace("(-)[JSON_PARSING_FAILURE]:null");
+                return null;
+            }
+
+            Response responseModel = JsonConvert.DeserializeObject<Response>(successJson);
+
+            this.logger.LogTrace("(-)[SUCCESS]");
+            return responseModel;
         }
 
         protected async Task<HttpResponseMessage> SendGetRequestAsync(string apiMethodName, string arguments = null,
