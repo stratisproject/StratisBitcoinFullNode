@@ -78,5 +78,11 @@ namespace Stratis.Bitcoin.Features.PoA
 
             return headersPayload;
         }
+
+        /// <inheritdoc />
+        public override object Clone()
+        {
+            return new PoAConsensusManagerBehavior(this.ChainIndexer, this.InitialBlockDownloadState, this.ConsensusManager, this.PeerBanning, this.LoggerFactory);
+        }
     }
 }
