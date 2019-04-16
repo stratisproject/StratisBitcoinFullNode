@@ -18,6 +18,11 @@ namespace Stratis.Bitcoin.Features.PoA
 
         void Initialize();
 
+        /// <summary>Provides up to date list of federation members.</summary>
+        /// <remarks>
+        /// Blocks that are not signed with private keys that correspond
+        /// to public keys from this list are considered to be invalid.
+        /// </remarks>
         List<IFederationMember> GetFederationMembers();
 
         void AddFederationMember(IFederationMember federationMember);
@@ -110,11 +115,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.IsFederationMember = this.federationMembers.Any(x => x.PubKey == this.CurrentFederationKey?.PubKey);
         }
 
-        /// <summary>Provides up to date list of federation members.</summary>
-        /// <remarks>
-        /// Blocks that are not signed with private keys that correspond
-        /// to public keys from this list are considered to be invalid.
-        /// </remarks>
+        /// <inheritdoc />
         public List<IFederationMember> GetFederationMembers()
         {
             lock (this.locker)
