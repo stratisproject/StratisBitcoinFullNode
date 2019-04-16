@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.federationManager.Initialize();
             this.whitelistedHashesRepository.Initialize();
 
-            var options = (PoAConsensusOptions) this.network.Consensus.Options;
+            var options = (PoAConsensusOptions)this.network.Consensus.Options;
 
             if (options.VotingEnabled)
             {
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
             if (defaultBlockStoreBehavior == null)
             {
-                throw new MissingServiceException(typeof(BlockStoreBehavior), "Missing expected ConsensusManagerBehavior.");
+                throw new MissingServiceException(typeof(BlockStoreBehavior), "Missing expected BlockStoreBehavior.");
             }
 
             connectionParameters.TemplateBehaviors.Remove(defaultBlockStoreBehavior);
