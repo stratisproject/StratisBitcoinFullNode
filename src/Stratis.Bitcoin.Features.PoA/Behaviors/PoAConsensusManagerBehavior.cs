@@ -12,7 +12,7 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.PoA
+namespace Stratis.Bitcoin.Features.PoA.Behaviors
 {
     public class PoAConsensusManagerBehavior : ConsensusManagerBehavior
     {
