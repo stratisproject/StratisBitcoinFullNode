@@ -120,12 +120,12 @@ namespace Stratis.Bitcoin.Features.Api
     public sealed class ApiSettingsDefaults
     {
         /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
-        public string ApiHost { get; private set; }
-        public Network Network { get; private set; }
-        public bool UseHttps { get; private set; }
-        public string HttpsCertificateFilePath { get; private set; }
-        public int ApiPort { get; private set; }
-        public int KeepAlive { get; private set; }
+        public string ApiHost { get; set; }
+        public Network Network { get; set; }
+        public bool UseHttps { get; set; }
+        public string HttpsCertificateFilePath { get; set; }
+        public int ApiPort { get; set; }
+        public int KeepAlive { get; set; }
 
         public ApiSettingsDefaults(Network network)
         {
