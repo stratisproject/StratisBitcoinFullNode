@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -20,9 +18,10 @@ namespace Stratis.Bitcoin.Features.PoA.Behaviors
         {
         }
 
+        /// <inheritdoc />
         protected override Payload BuildHeadersAnnouncePayload(IEnumerable<BlockHeader> headers)
         {
-            List<PoABlockHeader> poaHeaders = headers.Cast<PoABlockHeader>().ToList();
+            var poaHeaders = headers.Cast<PoABlockHeader>().ToList();
 
             return new PoAHeadersPayload(poaHeaders);
         }
