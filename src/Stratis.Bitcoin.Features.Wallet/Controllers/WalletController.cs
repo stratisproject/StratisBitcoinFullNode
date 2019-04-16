@@ -980,7 +980,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// contains at least one transaction. For example, if three accounts named "account 0", "account 1",
         /// and "account 2" already exist and contain at least one transaction, then the
         /// the function will create "account 3". However, if "account 2", for example, instead contains no
-        /// transactions, then this API call returns "account 2". 
+        /// transactions, then this API call returns "account 2".
+        /// Accounts are created deterministically, which means that on any device, the accounts and addresses
+        /// for a given seed (or mnemonic) are always the same.
         /// </summary>
         /// <param name="request">An object containing the necessary parameters to create a new account in a wallet.</param>
         /// <returns>A JSON object containing the name of the new account or an existing account

@@ -73,9 +73,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
             catch (Exception error)
             {
-                if (error is WalletException walletException && walletException.Message == FederationWalletTransactionHandler.NoSpendableTransactionsMessage)
+                if (error is WalletException walletException && 
+                    (walletException.Message == FederationWalletTransactionHandler.NoSpendableTransactionsMessage
+                     || walletException.Message == FederationWalletTransactionHandler.NotEnoughFundsMessage))
                 {
-                    this.logger.LogWarning("No spendable transactions in the wallet. Should be resolved when a pending transaction is included in a block.");
+                    this.logger.LogWarning("Not enough spendable transactions in the wallet. Should be resolved when a pending transaction is included in a block.");
                 }
                 else
                 {

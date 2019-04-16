@@ -48,7 +48,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             ChainedHeader tip = headers.Last();
 
-            this.consensusManager.GetBlockDataAsync(Arg.Any<uint256>()).Returns(delegate(CallInfo info)
+            this.consensusManager.GetBlockData(Arg.Any<uint256>()).Returns(delegate(CallInfo info)
             {
                 uint256 hash = (uint256) info[0];
                 ChainedHeaderBlock block = blocks.Single(x => x.ChainedHeader.HashBlock == hash);
