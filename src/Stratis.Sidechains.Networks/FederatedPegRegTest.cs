@@ -72,7 +72,7 @@ namespace Stratis.Sidechains.Networks
             var genesisFederation = new List<IFederationMember>(federationPubKeys.Count);
 
             foreach (PubKey pubKey in federationPubKeys)
-                genesisFederation.Add(new FederationMember(pubKey));
+                genesisFederation.Add(new CollateralFederationMember(pubKey, new Money(0), null));
 
             var consensusOptions = new PoAConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
