@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
@@ -28,19 +29,26 @@ namespace Stratis.Bitcoin.Base
         private readonly ConsensusSettings consensusSettings;
 
         /// <summary>
+        /// Temporarily useful to trace PoA issues.
+        /// </summary>
+        private readonly ILogger logger;
+
+        /// <summary>
         /// Creates a new instance of the <see cref="InitialBlockDownloadState" /> class.
         /// </summary>
         /// <param name="chainState">Information about node's chain.</param>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="consensusSettings">Configurable settings for the consensus feature.</param>
         /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
-        public InitialBlockDownloadState(IChainState chainState, Network network, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
+        /// <param name="loggerFactory">Provides us with a logger.</param>
+        public InitialBlockDownloadState(IChainState chainState, Network network, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ILoggerFactory loggerFactory)
         {
             this.network = network;
             this.consensusSettings = consensusSettings;
             this.chainState = chainState;
             this.checkpoints = checkpoints;
             this.dateTimeProvider = DateTimeProvider.Default;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <inheritdoc />
@@ -57,6 +65,11 @@ namespace Stratis.Bitcoin.Base
 
             if (this.chainState.ConsensusTip.ChainWork < (this.network.Consensus.MinimumChainWork ?? uint256.Zero))
                 return true;
+
+            // Temporary log to help us debug PoA.
+            this.logger.LogTrace("BlockTimeUnixSeconds={0}, DateTimeProviderTime={1}, ConsensusSettingsMaxTipAge={2}",
+                this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds(), this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds(),
+                this.consensusSettings.MaxTipAge);
 
             if (this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds() < (this.dateTimeProvider.GetTime() - this.consensusSettings.MaxTipAge))
                 return true;
