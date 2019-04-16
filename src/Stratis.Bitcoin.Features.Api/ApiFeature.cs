@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Api
 
         private readonly ApiSettings apiSettings;
 
-        private readonly ApiFeatureOptions apiFeatureOptions;
+        private readonly ApiSettingsDefaults apiSettingsDefaults;
 
         private readonly ILogger logger;
 
@@ -35,14 +35,14 @@ namespace Stratis.Bitcoin.Features.Api
         public ApiFeature(
             IFullNodeBuilder fullNodeBuilder,
             FullNode fullNode,
-            ApiFeatureOptions apiFeatureOptions,
+            ApiSettingsDefaults apiSettingsDefaults,
             ApiSettings apiSettings,
             ILoggerFactory loggerFactory,
             ICertificateStore certificateStore)
         {
             this.fullNodeBuilder = fullNodeBuilder;
             this.fullNode = fullNode;
-            this.apiFeatureOptions = apiFeatureOptions;
+            this.apiSettingsDefaults = apiSettingsDefaults;
             this.apiSettings = apiSettings;
             this.certificateStore = certificateStore;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -117,8 +117,25 @@ namespace Stratis.Bitcoin.Features.Api
         }
     }
 
-    public sealed class ApiFeatureOptions
+    public sealed class ApiSettingsDefaults
     {
+        /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
+        public string ApiHost { get; private set; }
+        public Network Network { get; private set; }
+        public bool UseHttps { get; private set; }
+        public string HttpsCertificateFilePath { get; private set; }
+        public int ApiPort { get; private set; }
+        public int KeepAlive { get; private set; }
+
+        public ApiSettingsDefaults(Network network)
+        {
+            this.Network = network;
+            this.UseHttps = false;
+            this.HttpsCertificateFilePath = null;
+            this.ApiHost = "http://localhost";
+            this.ApiPort = network.DefaultAPIPort;
+            this.KeepAlive = 0;
+        }
     }
 
     /// <summary>
@@ -126,12 +143,8 @@ namespace Stratis.Bitcoin.Features.Api
     /// </summary>
     public static class ApiFeatureExtension
     {
-        public static IFullNodeBuilder UseApi(this IFullNodeBuilder fullNodeBuilder, Action<ApiFeatureOptions> optionsAction = null)
+        public static IFullNodeBuilder UseApi(this IFullNodeBuilder fullNodeBuilder, ApiSettingsDefaults defaults = null)
         {
-            // TODO: move the options in to the feature builder
-            var options = new ApiFeatureOptions();
-            optionsAction?.Invoke(options);
-
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
@@ -139,7 +152,7 @@ namespace Stratis.Bitcoin.Features.Api
                 .FeatureServices(services =>
                     {
                         services.AddSingleton(fullNodeBuilder);
-                        services.AddSingleton(options);
+                        services.AddSingleton(defaults ?? new ApiSettingsDefaults(fullNodeBuilder.Network));
                         services.AddSingleton<ApiSettings>();
                         services.AddSingleton<ICertificateStore, CertificateStore>();
                     });
