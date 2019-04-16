@@ -39,6 +39,12 @@ namespace Stratis.Bitcoin.Features.PoA
             return this.PubKey.Equals(item.PubKey);
         }
 
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return this.PubKey.GetHashCode();
+        }
+
         public static bool operator ==(FederationMember a, FederationMember b)
         {
             if (ReferenceEquals(a, b))

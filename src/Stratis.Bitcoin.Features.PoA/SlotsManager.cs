@@ -15,11 +15,11 @@ namespace Stratis.Bitcoin.Features.PoA
     {
         private readonly PoAConsensusOptions consensusOptions;
 
-        private readonly FederationManager federationManager;
+        private readonly IFederationManager federationManager;
 
         private readonly ILogger logger;
 
-        public SlotsManager(Network network, FederationManager federationManager, ILoggerFactory loggerFactory)
+        public SlotsManager(Network network, IFederationManager federationManager, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             this.federationManager = Guard.NotNull(federationManager, nameof(federationManager));

@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
     public class PollResultExecutor : IPollResultExecutor
     {
-        private readonly FederationManager federationManager;
+        private readonly IFederationManager federationManager;
 
         private readonly IWhitelistedHashesRepository whitelistedHashesRepository;
 
@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private readonly ILogger logger;
 
-        public PollResultExecutor(FederationManager federationManager, ILoggerFactory loggerFactory, IWhitelistedHashesRepository whitelistedHashesRepository, Network network)
+        public PollResultExecutor(IFederationManager federationManager, ILoggerFactory loggerFactory, IWhitelistedHashesRepository whitelistedHashesRepository, Network network)
         {
             this.federationManager = federationManager;
             this.whitelistedHashesRepository = whitelistedHashesRepository;

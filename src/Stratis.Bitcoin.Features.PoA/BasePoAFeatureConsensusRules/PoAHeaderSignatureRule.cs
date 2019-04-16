@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
 
         private VotingManager votingManager;
 
-        private FederationManager federationManager;
+        private IFederationManager federationManager;
 
         private IChainState chainState;
 

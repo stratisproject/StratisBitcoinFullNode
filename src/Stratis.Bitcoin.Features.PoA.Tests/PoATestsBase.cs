@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         protected readonly SlotsManager slotsManager;
         protected readonly ConsensusSettings consensusSettings;
         protected readonly ChainIndexer ChainIndexer;
-        protected readonly FederationManager federationManager;
+        protected readonly IFederationManager federationManager;
         protected readonly VotingManager votingManager;
         protected readonly Mock<IPollResultExecutor> resultExecutorMock;
         protected readonly ISignals signals;
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             this.currentHeader = headers.Last();
         }
 
-        public static FederationManager CreateFederationManager(object caller, Network network, LoggerFactory loggerFactory, ISignals signals)
+        public static IFederationManager CreateFederationManager(object caller, Network network, LoggerFactory loggerFactory, ISignals signals)
         {
             string dir = TestBase.CreateTestDir(caller);
             var keyValueRepo = new KeyValueRepository(dir, new DBreezeSerializer(network.Consensus.ConsensusFactory));
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             return federationManager;
         }
 
-        public static FederationManager CreateFederationManager(object caller)
+        public static IFederationManager CreateFederationManager(object caller)
         {
             return CreateFederationManager(caller, new TestPoANetwork(), new ExtendedLoggerFactory(), new Signals.Signals(new LoggerFactory(), null));
         }

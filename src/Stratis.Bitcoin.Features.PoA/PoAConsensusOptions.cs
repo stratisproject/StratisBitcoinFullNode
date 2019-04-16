@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <remarks>
         /// Do not use this list anywhere except for at the initialization of the chain.
         /// Actual collection of the federation members can be changed with time.
-        /// Use <see cref="FederationManager.GetFederationMembers"/> as a source of
+        /// Use <see cref="IFederationManager.GetFederationMembers"/> as a source of
         /// up to date federation keys.
         /// </remarks>
         public List<IFederationMember> GenesisFederation { get; protected set; }

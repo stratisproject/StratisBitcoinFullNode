@@ -36,14 +36,14 @@ namespace Stratis.Features.FederatedPeg.Controllers
 
         private readonly IFederationWalletManager federationWalletManager;
 
-        private readonly FederationManager federationManager;
+        private readonly IFederationManager federationManager;
 
         public FederationGatewayController(
             ILoggerFactory loggerFactory,
             IMaturedBlocksProvider maturedBlocksProvider,
             IFederationGatewaySettings federationGatewaySettings,
             IFederationWalletManager federationWalletManager,
-            FederationManager federationManager = null)
+            IFederationManager federationManager = null)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.maturedBlocksProvider = maturedBlocksProvider;

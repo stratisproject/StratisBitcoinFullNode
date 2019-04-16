@@ -40,7 +40,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
         private readonly IFederationGatewaySettings federationGatewaySettings;
 
-        private readonly FederationManager federationManager;
+        private readonly CollateralFederationManager federationManager;
 
         private readonly IFederationWalletManager federationWalletManager;
 
@@ -61,7 +61,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             this.federationWalletManager = Substitute.For<IFederationWalletManager>();
             this.keyValueRepository = Substitute.For<IKeyValueRepository>();
             this.signals = new Signals(this.loggerFactory, null);
-            this.federationManager = new FederationManager(NodeSettings.Default(this.network), this.network, this.loggerFactory, this.keyValueRepository, this.signals);
+            this.federationManager = new CollateralFederationManager(NodeSettings.Default(this.network), this.network, this.loggerFactory, this.keyValueRepository, this.signals);
         }
 
         private FederationGatewayController CreateController()

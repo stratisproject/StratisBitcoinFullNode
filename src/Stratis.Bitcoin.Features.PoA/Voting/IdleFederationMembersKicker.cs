@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private readonly Network network;
 
-        private readonly FederationManager federationManager;
+        private readonly IFederationManager federationManager;
 
         private readonly SlotsManager slotsManager;
 
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         private const string fedMembersByLastActiveTimeKey = "fedMembersByLastActiveTime";
 
         public IdleFederationMembersKicker(ISignals signals, Network network, IKeyValueRepository keyValueRepository, IConsensusManager consensusManager,
-            FederationManager federationManager, SlotsManager slotsManager, VotingManager votingManager, ILoggerFactory loggerFactory)
+            IFederationManager federationManager, SlotsManager slotsManager, VotingManager votingManager, ILoggerFactory loggerFactory)
         {
             this.signals = signals;
             this.network = network;

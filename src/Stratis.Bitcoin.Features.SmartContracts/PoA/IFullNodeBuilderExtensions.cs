@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                     .AddFeature<PoAFeature>()
                     .FeatureServices(services =>
                     {
-                        services.AddSingleton<FederationManager>();
+                        services.AddSingleton<IFederationManager, FederationManager>();
                         services.AddSingleton<PoABlockHeaderValidator>();
                         services.AddSingleton<IPoAMiner, PoAMiner>();
                         services.AddSingleton<PoAMinerSettings>();

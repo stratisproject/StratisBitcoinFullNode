@@ -10,7 +10,22 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
-    public class FederationManager
+    public interface IFederationManager
+    {
+        bool IsFederationMember { get; }
+
+        Key CurrentFederationKey { get; }
+
+        void Initialize();
+
+        List<IFederationMember> GetFederationMembers();
+
+        void AddFederationMember(IFederationMember federationMember);
+
+        void RemoveFederationMember(IFederationMember federationMember);
+    }
+
+    public class FederationManager : IFederationManager
     {
         /// <summary><c>true</c> in case current node is a federation member.</summary>
         public bool IsFederationMember { get; private set; }
@@ -18,18 +33,18 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Current federation member's private key. <c>null</c> if <see cref="IsFederationMember"/> is <c>false</c>.</summary>
         public Key CurrentFederationKey { get; private set; }
 
+        protected readonly IKeyValueRepository keyValueRepo;
+
+        protected readonly ILogger logger;
+
         private readonly NodeSettings settings;
 
         private readonly PoANetwork network;
 
-        private readonly ILogger logger;
-
-        private readonly IKeyValueRepository keyValueRepo;
-
         private readonly ISignals signals;
 
         /// <summary>Key for accessing list of public keys that represent federation members from <see cref="IKeyValueRepository"/>.</summary>
-        private const string federationMembersDbKey = "fedmemberskeys";
+        protected const string federationMembersDbKey = "fedmemberskeys";
 
         /// <summary>Collection of all active federation members.</summary>
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
@@ -144,9 +159,9 @@ namespace Stratis.Bitcoin.Features.PoA
             this.signals.Publish(new FedMemberKicked(federationMember));
         }
 
-        protected virtual void SaveFederation(List<IFederationMember> pubKeys)
+        protected virtual void SaveFederation(List<IFederationMember> federation)
         {
-            List<string> hexList = pubKeys.Select(x => x.PubKey.ToHex()).ToList();
+            List<string> hexList = federation.Select(x => x.PubKey.ToHex()).ToList();
 
             this.keyValueRepo.SaveValueJson(federationMembersDbKey, hexList);
         }
