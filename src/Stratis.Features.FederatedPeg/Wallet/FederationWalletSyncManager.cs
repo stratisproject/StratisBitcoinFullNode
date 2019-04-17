@@ -36,9 +36,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public ChainedHeader WalletTip => this.walletTip;
 
         /// <summary>Queue which contains blocks that should be processed by <see cref="WalletManager"/>.</summary>
-        private readonly BlockQueue blocksQueue;
+        private readonly BlockQueueProcessor blockQueueProcessor;
 
-        /// <summary>Limit <see cref="blocksQueue"/> size to 100MB.</summary>
+        /// <summary>Limit <see cref="blockQueueProcessor"/> size to 100MB.</summary>
         private const int MaxQueueSize = 100 * 1024 * 1024;
 
         public FederationWalletSyncManager(ILoggerFactory loggerFactory, IFederationWalletManager walletManager, ChainIndexer chain,
@@ -61,7 +61,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.nodeLifetime = nodeLifetime;
             this.asyncProvider = asyncProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.blocksQueue = new BlockQueue(this.logger, this.asyncProvider, this.OnProcessBlockAsync, MaxQueueSize);
+            this.blockQueueProcessor = new BlockQueueProcessor(this.logger, this.asyncProvider, this.OnProcessBlockAsync, MaxQueueSize);
         }
 
         /// <inheritdoc />
@@ -222,7 +222,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(block, nameof(block));
 
-            this.blocksQueue.TryEnqueue(block);
+            this.blockQueueProcessor.TryEnqueue(block);
         }
 
         /// <inheritdoc />
@@ -251,7 +251,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public void Dispose()
         {
-            this.blocksQueue.Dispose();
+            this.blockQueueProcessor.Dispose();
         }
     }
 }

@@ -17,7 +17,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             var logger = Substitute.For<ILogger>();
             var asyncProvider = Substitute.For<IAsyncProvider>();
-            var blockQueue = new BlockQueue(logger, asyncProvider, (_, token) => Task.CompletedTask);
+            var blockQueue = new BlockQueueProcessor(logger, asyncProvider, (_, token) => Task.CompletedTask);
 
             var block = new Block();
 
@@ -51,7 +51,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                     blockQueueCallback = info.ArgAt<Func<Block, CancellationToken, Task>>(1);
                 });
 
-            var blockQueue = new BlockQueue(logger, asyncProvider, callback);
+            var blockQueue = new BlockQueueProcessor(logger, asyncProvider, callback);
 
             var block = new Block();
 
