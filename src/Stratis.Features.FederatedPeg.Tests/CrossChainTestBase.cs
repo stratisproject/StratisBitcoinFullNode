@@ -287,7 +287,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <param name="failureReason">The failure reason if any.</param>
         /// <param name="retryDelayInMiliseconds">How often to retry in milliseconds.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        private static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))
+        protected static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken = cancellationToken == default(CancellationToken)
                 ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 60 * 1000).Token
