@@ -50,14 +50,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
             await this.callback(block, cancellationToken);
         }
 
-        private void Enqueue(Block block)
-        {
-            long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, block.BlockSize.Value);
-            this.logger.LogTrace("Queue sized changed to {0} bytes.", currentBlockQueueSize);
-
-            this.blocksQueue.Enqueue(block);
-        }
-
         /// <summary>
         /// Attempts to enqueue the block. If the maximum queue size has been reached, this will return false, and the block will
         /// not be queued.
@@ -88,7 +80,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, block.BlockSize.Value);
                 this.logger.LogTrace("Queue sized changed to {0} bytes.", currentBlockQueueSize);
 
-                this.Enqueue(block);
+                this.blocksQueue.Enqueue(block);
 
                 return true;
             }
