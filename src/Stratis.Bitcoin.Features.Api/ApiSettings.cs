@@ -113,11 +113,9 @@ namespace Stratis.Bitcoin.Features.Api
         /// Get the default configuration.
         /// </summary>
         /// <param name="builder">The string builder to add the settings to.</param>
-        /// <param name="network">The network to base the defaults off.</param>
-        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        /// <param name="defaults">The settings defaults.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, ApiSettingsDefaults defaults)
         {
-            var defaults = new ApiSettingsDefaults(network);
-
             builder.AppendLine("####API Settings####");
             builder.AppendLine($"#URI to node's API interface. Defaults to '{ defaults.ApiHost }'.");
             builder.AppendLine($"#apiuri={ defaults.ApiHost }");

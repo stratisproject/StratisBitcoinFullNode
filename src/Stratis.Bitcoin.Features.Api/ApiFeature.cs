@@ -81,9 +81,9 @@ namespace Stratis.Bitcoin.Features.Api
         /// Prints command-line help.
         /// </summary>
         /// <param name="fullNodeServiceProvider">The full node service provider.</param>
-        public static void PrintHelp(Network network, IServiceProvider fullNodeServiceProvider)
+        public static void PrintHelp(IServiceProvider fullNodeServiceProvider)
         {
-            var apiSettingsDefaults = fullNodeServiceProvider.GetService<ApiSettingsDefaults>();
+            ApiSettingsDefaults apiSettingsDefaults = fullNodeServiceProvider.GetService<ApiSettingsDefaults>();
             ApiSettings.PrintHelp(apiSettingsDefaults);
         }
 
@@ -91,10 +91,11 @@ namespace Stratis.Bitcoin.Features.Api
         /// Get the default configuration.
         /// </summary>
         /// <param name="builder">The string builder to add the settings to.</param>
-        /// <param name="network">The network to base the defaults off.</param>
-        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        /// <param name="fullNodeServiceProvider">The full node service provider.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, IServiceProvider fullNodeServiceProvider)
         {
-            ApiSettings.BuildDefaultConfigurationFile(builder, network);
+            ApiSettingsDefaults apiSettingsDefaults = fullNodeServiceProvider.GetService<ApiSettingsDefaults>();
+            ApiSettings.BuildDefaultConfigurationFile(builder, apiSettingsDefaults);
         }
 
         /// <inheritdoc />
