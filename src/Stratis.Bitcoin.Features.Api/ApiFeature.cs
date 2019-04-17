@@ -80,10 +80,11 @@ namespace Stratis.Bitcoin.Features.Api
         /// <summary>
         /// Prints command-line help.
         /// </summary>
-        /// <param name="network">The network to extract values from.</param>
-        public static void PrintHelp(Network network)
+        /// <param name="fullNodeServiceProvider">The full node service provider.</param>
+        public static void PrintHelp(Network network, IServiceProvider fullNodeServiceProvider)
         {
-            ApiSettings.PrintHelp(network);
+            var apiSettingsDefaults = fullNodeServiceProvider.GetService<ApiSettingsDefaults>();
+            ApiSettings.PrintHelp(apiSettingsDefaults);
         }
 
         /// <summary>

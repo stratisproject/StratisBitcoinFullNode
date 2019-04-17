@@ -162,25 +162,6 @@ namespace Stratis.Bitcoin.Builder
 
             this.Services = this.BuildServices();
 
-            // Print command-line help
-            if (this.NodeSettings?.PrintHelpAndExit ?? false)
-            {
-                NodeSettings.PrintHelp(this.Network);
-
-                foreach (IFeatureRegistration featureRegistration in this.Features.FeatureRegistrations)
-                {
-                    MethodInfo printHelp = featureRegistration.FeatureType.GetMethod("PrintHelp", BindingFlags.Public | BindingFlags.Static);
-
-                    printHelp?.Invoke(null, new object[] { this.NodeSettings.Network });
-                }
-
-                // Signal node not built
-                return null;
-            }
-
-            // Create configuration file if required
-            this.NodeSettings?.CreateDefaultConfigurationFile(this.Features.FeatureRegistrations);
-
             ServiceProvider fullNodeServiceProvider = this.Services.BuildServiceProvider();
             this.ConfigureServices(fullNodeServiceProvider);
 
@@ -196,6 +177,18 @@ namespace Stratis.Bitcoin.Builder
             var fullNode = fullNodeServiceProvider.GetService<FullNode>();
             if (fullNode == null)
                 throw new InvalidOperationException("Fullnode not registered with provider");
+
+            // Create configuration file if required
+            this.NodeSettings?.CreateDefaultConfigurationFile(this.Features.FeatureRegistrations, fullNodeServiceProvider);
+
+            // Print command-line help
+            if (this.NodeSettings?.PrintHelpAndExit ?? false)
+            {
+                NodeSettings.PrintHelp(this.Features.FeatureRegistrations, fullNodeServiceProvider);
+
+                // Signal node not built
+                return null;
+            }
 
             fullNode.Initialize(new FullNodeServiceProvider(
                 fullNodeServiceProvider,

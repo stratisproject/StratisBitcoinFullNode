@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -261,7 +262,7 @@ namespace Stratis.Bitcoin.Configuration
         /// Creates the configuration file if it does not exist.
         /// </summary>
         /// <param name="features">The features for which to include settings in the configuration file.</param>
-        public void CreateDefaultConfigurationFile(List<IFeatureRegistration> features)
+        public void CreateDefaultConfigurationFile(List<IFeatureRegistration> features, IServiceProvider serviceProvider)
         {
             // If the config file does not exist yet then create it now.
             if (!File.Exists(this.ConfigurationFile))
@@ -269,17 +270,16 @@ namespace Stratis.Bitcoin.Configuration
                 this.Logger.LogDebug("Creating configuration file '{0}'.", this.ConfigurationFile);
 
                 var builder = new StringBuilder();
+                var objects = new object[] { builder, this.Network, serviceProvider };
 
-                BuildDefaultConfigurationFile(builder, this.Network);
+                var featureTypes = new List<Type>() { typeof(NodeSettings), typeof(ConnectionManagerSettings) };
+                featureTypes.AddRange(features.Select(f => f.FeatureType));
 
-                foreach (IFeatureRegistration featureRegistration in features)
+                foreach (Type featureType in featureTypes)
                 {
-                    MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("BuildDefaultConfigurationFile", BindingFlags.Public | BindingFlags.Static);
-                    if (getDefaultConfiguration != null)
-                    {
-                        getDefaultConfiguration.Invoke(null, new object[] { builder, this.Network });
-                        builder.AppendLine();
-                    }
+                    CallStaticMethod(featureType, "BuildDefaultConfigurationFile", objects);
+
+                    builder.AppendLine();
                 }
 
                 File.WriteAllText(this.ConfigurationFile, builder.ToString());
@@ -362,9 +362,10 @@ namespace Stratis.Bitcoin.Configuration
         /// Displays command-line help.
         /// </summary>
         /// <param name="network">The network to extract values from.</param>
-        public static void PrintHelp(Network network)
+        public static void PrintHelp(List<IFeatureRegistration> featureRegistrations, IServiceProvider serviceProvider)
         {
-            Guard.NotNull(network, nameof(network));
+            var nodeSettings = (NodeSettings)serviceProvider.GetService(typeof(NodeSettings));
+            var network = nodeSettings.Network;
 
             NodeSettings defaults = Default(network: network);
             string daemonName = Path.GetFileName(Assembly.GetEntryAssembly().Location);
@@ -391,7 +392,43 @@ namespace Stratis.Bitcoin.Configuration
 
             defaults.Logger.LogInformation(builder.ToString());
 
-            ConnectionManagerSettings.PrintHelp(network);
+            // Print command-line help
+            var objects = new object[] { network, serviceProvider, featureRegistrations };
+            CallStaticMethod(typeof(ConnectionManagerSettings), "PrintHelp", objects);
+
+            foreach (IFeatureRegistration featureRegistration in featureRegistrations)
+                CallStaticMethod(featureRegistration.FeatureType, "PrintHelp", objects);
+        }
+
+        private static bool CallStaticMethod(Type classType, string methodName, object[] objects)
+        {
+            MethodInfo method = classType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
+            if (method == null)
+                return false;
+
+            var parameterInfo = method.GetParameters();
+            var parameters = new object[parameterInfo.Length];
+
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                Type type = parameterInfo[i].ParameterType;
+
+                foreach (object obj in objects)
+                {
+                    if (type.IsAssignableFrom(obj.GetType()))
+                    {
+                        parameters[i] = obj;
+                        break;
+                    }
+                }
+
+                if (parameters[i] == null)
+                    throw new Exception($"Unsupported '{ classType }.{ methodName }' method parameters.");
+            }
+
+            method.Invoke(null, parameters);
+
+            return true;
         }
 
         /// <summary>
@@ -413,8 +450,6 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine($"#Minimum relay fee rate. Defaults to {network.MinRelayTxFee}.");
             builder.AppendLine($"#minrelaytxfee={network.MinRelayTxFee}");
             builder.AppendLine();
-
-            ConnectionManagerSettings.BuildDefaultConfigurationFile(builder, network);
         }
 
         /// <inheritdoc />

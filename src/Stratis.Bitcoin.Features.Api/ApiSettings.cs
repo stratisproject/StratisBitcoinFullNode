@@ -94,20 +94,19 @@ namespace Stratis.Bitcoin.Features.Api
         }
 
         /// <summary>Prints the help information on how to configure the API settings to the logger.</summary>
-        /// <param name="network">The network to use.</param>
-        public static void PrintHelp(Network network)
+        /// <param name="defaults">The defaults.</param>
+        public static void PrintHelp(ApiSettingsDefaults defaults)
         {
             var builder = new StringBuilder();
-            var defaults = new ApiSettingsDefaults(network);
 
             builder.AppendLine($"-apiuri=<string>                  URI to node's API interface. Defaults to '{ defaults.ApiHost }'.");
             builder.AppendLine($"-apiport=<0-65535>                Port of node's API interface. Defaults to { defaults.ApiPort }.");
             builder.AppendLine($"-keepalive=<seconds>              Keep Alive interval (set in seconds). Default: { defaults.KeepAlive } (0 = no keep alive).");
-            builder.AppendLine($"-usehttps=<bool>                  Use https protocol on the API. Defaults to { defaults.KeepAlive }.");
+            builder.AppendLine($"-usehttps=<bool>                  Use https protocol on the API. Defaults to { defaults.UseHttps }.");
             builder.AppendLine($"-certificatefilepath=<string>     Path to the certificate used for https traffic encryption. Defaults to { (defaults.HttpsCertificateFilePath ?? "<null>") }.");
             builder.AppendLine($"                                  Password protected files are not supported. On MacOs, only p12 certificates can be used without password.");
 
-            NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
+            NodeSettings.Default(defaults.Network).Logger.LogInformation(builder.ToString());
         }
 
         /// <summary>
