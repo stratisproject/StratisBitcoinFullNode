@@ -22,16 +22,14 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Information about node's chain.</summary>
         private readonly IChainState chainState;
 
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
 
         /// <summary>User defined consensus settings.</summary>
         private readonly ConsensusSettings consensusSettings;
-
-        /// <summary>
-        /// Temporarily useful to trace PoA issues.
-        /// </summary>
-        private readonly ILogger logger;
 
         /// <summary>
         /// Creates a new instance of the <see cref="InitialBlockDownloadState" /> class.
@@ -66,7 +64,6 @@ namespace Stratis.Bitcoin.Base
             if (this.chainState.ConsensusTip.ChainWork < (this.network.Consensus.MinimumChainWork ?? uint256.Zero))
                 return true;
 
-            // Temporary log to help us debug PoA.
             this.logger.LogTrace("BlockTimeUnixSeconds={0}, DateTimeProviderTime={1}, ConsensusSettingsMaxTipAge={2}",
                 this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds(), this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds(),
                 this.consensusSettings.MaxTipAge);
