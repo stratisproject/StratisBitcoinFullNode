@@ -12,8 +12,10 @@ namespace Stratis.Bitcoin.Features.PoA
 {
     public interface IFederationManager
     {
+        /// <summary><c>true</c> in case current node is a federation member.</summary>
         bool IsFederationMember { get; }
 
+        /// <summary>Current federation member's private key. <c>null</c> if <see cref="IsFederationMember"/> is <c>false</c>.</summary>
         Key CurrentFederationKey { get; }
 
         void Initialize();
@@ -32,10 +34,10 @@ namespace Stratis.Bitcoin.Features.PoA
 
     public class FederationManager : IFederationManager
     {
-        /// <summary><c>true</c> in case current node is a federation member.</summary>
+        /// <inheritdoc />
         public bool IsFederationMember { get; private set; }
 
-        /// <summary>Current federation member's private key. <c>null</c> if <see cref="IsFederationMember"/> is <c>false</c>.</summary>
+        /// <inheritdoc />
         public Key CurrentFederationKey { get; private set; }
 
         protected readonly IKeyValueRepository keyValueRepo;
