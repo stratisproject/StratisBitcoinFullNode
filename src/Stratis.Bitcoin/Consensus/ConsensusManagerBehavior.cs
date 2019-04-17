@@ -201,7 +201,10 @@ namespace Stratis.Bitcoin.Consensus
                 try
                 {
                     await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
-                    this.BestSentHeader = lastHeader;
+
+                    // Do not set best sent header if no new headers were sent.
+                    if (lastHeader != null)
+                        this.BestSentHeader = lastHeader;
                 }
                 catch (OperationCanceledException)
                 {
