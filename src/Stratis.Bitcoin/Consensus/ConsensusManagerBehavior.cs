@@ -21,19 +21,19 @@ namespace Stratis.Bitcoin.Consensus
     public class ConsensusManagerBehavior : NetworkPeerBehavior
     {
         /// <summary>Provider of IBD state.</summary>
-        private readonly IInitialBlockDownloadState initialBlockDownloadState;
+        protected IInitialBlockDownloadState InitialBlockDownloadState { get; private set; }
 
-        /// <inheritdoc cref="ConsensusManager"/>
-        private readonly IConsensusManager consensusManager;
+        /// <inheritdoc cref="Consensus.ConsensusManager"/>
+        protected IConsensusManager ConsensusManager { get; private set; }
 
         /// <inheritdoc cref="NBitcoin.ChainIndexer"/>
-        protected ChainIndexer ChainIndexer;
+        protected ChainIndexer ChainIndexer { get; private set; }
 
         /// <inheritdoc cref="IPeerBanning"/>
-        private readonly IPeerBanning peerBanning;
+        protected IPeerBanning PeerBanning { get; private set; }
 
         /// <summary>Factory for creating loggers.</summary>
-        private readonly ILoggerFactory loggerFactory;
+        protected ILoggerFactory LoggerFactory { get; private set; }
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <seealso cref="https://en.bitcoin.it/wiki/Protocol_documentation#getheaders"/>
         protected const int MaxItemsPerHeadersMessage = 2000;
 
-        /// <summary>List of block headers that were not yet consumed by <see cref="ConsensusManager"/>.</summary>
+        /// <summary>List of block headers that were not yet consumed by <see cref="Consensus.ConsensusManager"/>.</summary>
         /// <remarks>Should be protected by <see cref="asyncLock"/>.</remarks>
         protected readonly List<BlockHeader> cachedHeaders;
 
@@ -75,11 +75,11 @@ namespace Stratis.Bitcoin.Consensus
 
         public ConsensusManagerBehavior(ChainIndexer chainIndexer, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
         {
-            this.loggerFactory = loggerFactory;
-            this.initialBlockDownloadState = initialBlockDownloadState;
-            this.consensusManager = consensusManager;
+            this.LoggerFactory = loggerFactory;
+            this.InitialBlockDownloadState = initialBlockDownloadState;
+            this.ConsensusManager = consensusManager;
             this.ChainIndexer = chainIndexer;
-            this.peerBanning = peerBanning;
+            this.PeerBanning = peerBanning;
 
             this.cachedHeaders = new List<BlockHeader>();
             this.asyncLock = new AsyncLock();
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }
 
-        /// <summary>Presents cached headers to <see cref="ConsensusManager"/> from the cache if any and removes consumed from the cache.</summary>
+        /// <summary>Presents cached headers to <see cref="Consensus.ConsensusManager"/> from the cache if any and removes consumed from the cache.</summary>
         public async Task<ConnectNewHeadersResult> ConsensusTipChangedAsync()
         {
             ConnectNewHeadersResult result = null;
@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Consensus
             // Ignoring "getheaders" from peers because node is in initial block download unless the peer is whitelisted.
             // We don't want to reveal our position in IBD which can be used by attacker. Also we don't won't to deliver peers any blocks
             // because that will slow down our own syncing process.
-            if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.IsWhitelisted())
+            if (this.InitialBlockDownloadState.IsInitialBlockDownload() && !peer.IsWhitelisted())
             {
                 this.logger.LogDebug("GetHeaders message from {0} was ignored because node is in IBD.", peer.PeerEndPoint);
                 this.logger.LogTrace("(-)[IGNORE_ON_IBD]");
@@ -201,7 +201,10 @@ namespace Stratis.Bitcoin.Consensus
                 try
                 {
                     await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
-                    this.BestSentHeader = lastHeader;
+
+                    // Do not set best sent header if no new headers were sent.
+                    if (lastHeader != null)
+                        this.BestSentHeader = lastHeader;
                 }
                 catch (OperationCanceledException)
                 {
@@ -213,7 +216,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Find last header that should be included in headers payload.</summary>
         protected ChainedHeader GetLastHeaderToSend(ChainedHeader fork, uint256 hashStop)
         {
-            ChainedHeader lastHeader = this.consensusManager.Tip;
+            ChainedHeader lastHeader = this.ConsensusManager.Tip;
 
             // If the hash stop has been given, calculate the last chained header from it.
             if (hashStop != null && hashStop != uint256.Zero)
@@ -299,7 +302,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (!this.ValidateHeadersFromPayload(peer, headers, out string validationError))
             {
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, validationError);
+                this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, validationError);
 
                 this.logger.LogDebug("Headers are invalid. Peer was banned.");
                 this.logger.LogTrace("(-)[VALIDATION_FAILED]");
@@ -437,7 +440,7 @@ namespace Stratis.Bitcoin.Consensus
             return true;
         }
 
-        /// <summary>Presents the headers to <see cref="ConsensusManager"/> and handles exceptions if any.</summary>
+        /// <summary>Presents the headers to <see cref="Consensus.ConsensusManager"/> and handles exceptions if any.</summary>
         /// <remarks>Have to be locked by <see cref="asyncLock"/>.</remarks>
         /// <param name="headers">List of headers that the peer presented.</param>
         /// <param name="triggerDownload">Specifies if the download should be scheduled for interesting blocks.</param>
@@ -456,7 +459,7 @@ namespace Stratis.Bitcoin.Consensus
 
             try
             {
-                result = this.consensusManager.HeadersPresented(peer, headers, triggerDownload);
+                result = this.ConsensusManager.HeadersPresented(peer, headers, triggerDownload);
             }
             catch (ConnectHeaderException)
             {
@@ -482,22 +485,22 @@ namespace Stratis.Bitcoin.Consensus
             catch (ConsensusRuleException exception)
             {
                 this.logger.LogDebug("Peer's header is invalid. Peer will be banned and disconnected. Error: {0}.", exception.ConsensusError);
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, $"Peer presented invalid header, error: {exception.ConsensusError}.");
+                this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, $"Peer presented invalid header, error: {exception.ConsensusError}.");
             }
             catch (HeaderInvalidException)
             {
                 this.logger.LogDebug("Peer's header is invalid. Peer will be banned and disconnected.");
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, $"Peer presented invalid header.");
+                this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, $"Peer presented invalid header.");
             }
             catch (CheckpointMismatchException)
             {
                 this.logger.LogDebug("Peer's headers violated a checkpoint. Peer will be banned and disconnected.");
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer presented header that violates a checkpoint.");
+                this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer presented header that violates a checkpoint.");
             }
             catch (MaxReorgViolationException)
             {
                 this.logger.LogDebug("Peer violates max reorg. Peer will be banned and disconnected.");
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer violates max reorg rule.");
+                this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer violates max reorg rule.");
             }
 
             return result;
@@ -612,7 +615,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             return new GetHeadersPayload()
             {
-                BlockLocator = (this.BestReceivedTip ?? this.consensusManager.Tip).GetLocator(),
+                BlockLocator = (this.BestReceivedTip ?? this.ConsensusManager.Tip).GetLocator(),
                 HashStop = null
             };
         }
@@ -631,7 +634,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </remarks>
         protected async Task ProcessInvAsync(INetworkPeer peer, List<InventoryVector> inventory)
         {
-            if (this.initialBlockDownloadState.IsInitialBlockDownload())
+            if (this.InitialBlockDownloadState.IsInitialBlockDownload())
             {
                 this.logger.LogTrace("(-)[IGNORE_DURING_IBD]");
                 return;
@@ -646,7 +649,7 @@ namespace Stratis.Bitcoin.Consensus
             if (inventory.Count > InvPayload.MaxInventorySize)
             {
                 this.logger.LogDebug("Peer sent oversize inventory message. Peer will be banned and disconnected.");
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer sent oversize inventory message.");
+                this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer sent oversize inventory message.");
                 this.logger.LogTrace("(-)[OVERSIZE_INVENTORY]");
                 return;
             }
@@ -684,7 +687,7 @@ namespace Stratis.Bitcoin.Consensus
             }, null, interval, interval);
 
             if (this.AttachedPeer.State == NetworkPeerState.Connected)
-                this.AttachedPeer.MyVersion.StartHeight = this.consensusManager.Tip.Height;
+                this.AttachedPeer.MyVersion.StartHeight = this.ConsensusManager.Tip.Height;
 
             this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
@@ -708,7 +711,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public override object Clone()
         {
-            return new ConsensusManagerBehavior(this.ChainIndexer, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory);
+            return new ConsensusManagerBehavior(this.ChainIndexer, this.InitialBlockDownloadState, this.ConsensusManager, this.PeerBanning, this.LoggerFactory);
         }
 
         internal int GetCachedItemsCount()
