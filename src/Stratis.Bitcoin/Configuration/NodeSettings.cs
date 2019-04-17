@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.Configuration
         /// Creates the configuration file if it does not exist.
         /// </summary>
         /// <param name="features">The features for which to include settings in the configuration file.</param>
-        public void CreateDefaultConfigurationFile(List<IFeatureRegistration> features, IServiceProvider serviceProvider)
+        public void CreateDefaultConfigurationFile(List<Type> features, IServiceProvider serviceProvider)
         {
             // If the config file does not exist yet then create it now.
             if (!File.Exists(this.ConfigurationFile))
@@ -273,7 +273,7 @@ namespace Stratis.Bitcoin.Configuration
                 var objects = new object[] { builder, this.Network, serviceProvider };
 
                 var featureTypes = new List<Type>() { typeof(NodeSettings), typeof(ConnectionManagerSettings) };
-                featureTypes.AddRange(features.Select(f => f.FeatureType));
+                featureTypes.AddRange(features);
 
                 foreach (Type featureType in featureTypes)
                 {
@@ -361,8 +361,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>
         /// Displays command-line help.
         /// </summary>
-        /// <param name="network">The network to extract values from.</param>
-        public static void PrintHelp(List<IFeatureRegistration> featureRegistrations, IServiceProvider serviceProvider)
+        /// <param name="featureTypes">The list of features to display help for.</param>
+        /// <param name="serviceProvider">The service provider that can resolve feature types.</param>
+        public static void PrintHelp(List<Type> featureTypes, IServiceProvider serviceProvider)
         {
             var nodeSettings = (NodeSettings)serviceProvider.GetService(typeof(NodeSettings));
             var network = nodeSettings.Network;
@@ -393,11 +394,11 @@ namespace Stratis.Bitcoin.Configuration
             defaults.Logger.LogInformation(builder.ToString());
 
             // Print command-line help
-            var objects = new object[] { network, serviceProvider, featureRegistrations };
+            var objects = new object[] { network, serviceProvider };
             CallStaticMethod(typeof(ConnectionManagerSettings), "PrintHelp", objects);
 
-            foreach (IFeatureRegistration featureRegistration in featureRegistrations)
-                CallStaticMethod(featureRegistration.FeatureType, "PrintHelp", objects);
+            foreach (Type featureType in featureTypes)
+                CallStaticMethod(featureType, "PrintHelp", objects);
         }
 
         private static bool CallStaticMethod(Type classType, string methodName, object[] objects)

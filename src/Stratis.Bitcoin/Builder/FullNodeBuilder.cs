@@ -178,21 +178,21 @@ namespace Stratis.Bitcoin.Builder
             if (fullNode == null)
                 throw new InvalidOperationException("Fullnode not registered with provider");
 
+            List<Type> features = this.Features.FeatureRegistrations.Select(s => s.FeatureType).ToList();
+
             // Create configuration file if required
-            this.NodeSettings?.CreateDefaultConfigurationFile(this.Features.FeatureRegistrations, fullNodeServiceProvider);
+            this.NodeSettings?.CreateDefaultConfigurationFile(features, fullNodeServiceProvider);
 
             // Print command-line help
             if (this.NodeSettings?.PrintHelpAndExit ?? false)
             {
-                NodeSettings.PrintHelp(this.Features.FeatureRegistrations, fullNodeServiceProvider);
+                NodeSettings.PrintHelp(features, fullNodeServiceProvider);
 
                 // Signal node not built
                 return null;
             }
 
-            fullNode.Initialize(new FullNodeServiceProvider(
-                fullNodeServiceProvider,
-                this.Features.FeatureRegistrations.Select(s => s.FeatureType).ToList()));
+            fullNode.Initialize(new FullNodeServiceProvider(fullNodeServiceProvider, features));
 
             return fullNode;
         }
