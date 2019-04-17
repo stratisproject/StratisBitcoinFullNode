@@ -26,18 +26,20 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         private readonly ILogger logger;
 
-        /// <summary>Limit <see cref="blocksQueue"/> size to 100MB.</summary>
-        private readonly int maxQueueSize;
-
         private readonly Func<Block, CancellationToken, Task> callback;
 
         public BlockQueue(ILogger logger, IAsyncProvider asyncProvider, Func<Block, CancellationToken, Task> callback, int maxQueueSize = 100 * 1024 * 1024)
         {
             this.logger = logger;
-            this.maxQueueSize = maxQueueSize;
+            this.MaxQueueSize = maxQueueSize;
             this.callback = callback;
             this.blocksQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<Block>($"{nameof(FederationWalletSyncManager)}-{nameof(this.blocksQueue)}", this.OnProcessBlockAsync);
         }
+
+        /// <summary>Limits the <see cref="blocksQueue"/> size.</summary>
+        public int MaxQueueSize { get; }
+
+        public long QueueSizeBytes => this.blocksQueueSize;
 
         private async Task OnProcessBlockAsync(Block block, CancellationToken cancellationToken)
         {
@@ -69,7 +71,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             // If the queue reaches the maximum limit, ignore incoming blocks until the queue is empty.
             if (!this.maxQueueSizeReached)
             {
-                if (this.blocksQueueSize >= this.maxQueueSize)
+                if (this.blocksQueueSize >= this.MaxQueueSize)
                 {
                     this.maxQueueSizeReached = true;
                     this.logger.LogTrace("(-)[REACHED_MAX_QUEUE_SIZE]");
