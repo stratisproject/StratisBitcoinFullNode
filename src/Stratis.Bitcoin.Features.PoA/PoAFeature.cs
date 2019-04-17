@@ -59,15 +59,11 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly IdleFederationMembersKicker idleFederationMembersKicker;
 
-<<<<<<< HEAD
-        public PoAFeature(IFederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ChainIndexer chainIndexer,
-=======
         private readonly IChainState chainState;
 
         private readonly IBlockStoreQueue blockStoreQueue;
 
-        public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ChainIndexer chainIndexer,
->>>>>>> remotes/upstream/master
+        public PoAFeature(IFederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ChainIndexer chainIndexer,
             IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory,
             IPoAMiner miner, VotingManager votingManager, Network network, IWhitelistedHashesRepository whitelistedHashesRepository,
             IdleFederationMembersKicker idleFederationMembersKicker, IChainState chainState, IBlockStoreQueue blockStoreQueue)
