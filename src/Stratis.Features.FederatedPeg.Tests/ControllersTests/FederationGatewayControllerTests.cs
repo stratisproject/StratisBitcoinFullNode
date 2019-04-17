@@ -202,7 +202,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             string[] args = new[] { "-sidechain", "-regtest", $"-federationips={federationIps}", $"-redeemscript={redeemScript}", $"-publickey={multisigPubKey}", "-mincoinmaturity=1", "-mindepositconfirmations=1" };
             var nodeSettings = new NodeSettings(FederatedPegNetwork.NetworksSelector.Regtest(), ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
-            this.federationWalletManager.IsFederationActive().Returns(true);
+            this.federationWalletManager.IsFederationWalletActive().Returns(true);
 
             this.federationManager.Initialize();
 
@@ -239,7 +239,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             string[] args = new[] { "-mainchain", "-testnet", $"-federationips={federationIps}", $"-redeemscript={redeemScript}", $"-publickey={multisigPubKey}", "-mincoinmaturity=1", "-mindepositconfirmations=1" };
             var nodeSettings = new NodeSettings(FederatedPegNetwork.NetworksSelector.Regtest(), ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
-            this.federationWalletManager.IsFederationActive().Returns(true);
+            this.federationWalletManager.IsFederationWalletActive().Returns(true);
 
             var settings = new FederationGatewaySettings(nodeSettings);
 

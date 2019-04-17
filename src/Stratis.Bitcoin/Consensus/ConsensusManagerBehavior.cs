@@ -369,6 +369,16 @@ namespace Stratis.Bitcoin.Consensus
                     return;
                 }
 
+                if (result.Consumed == this.BestReceivedTip)
+                {
+                    this.logger.LogDebug("No new headers were presented");
+                    this.logger.LogTrace("(-)[NO_NEW_HEADERS_PRESENTED]");
+
+                    return;
+                }
+
+                this.logger.LogTrace("{0} is {1} and {2} is {3}", nameof(this.BestReceivedTip), this.BestReceivedTip, nameof(result.Consumed), result.Consumed);
+
                 this.BestReceivedTip = result.Consumed;
                 this.UpdateBestSentHeader(this.BestReceivedTip);
 
@@ -464,9 +474,8 @@ namespace Stratis.Bitcoin.Consensus
                 }
                 else
                 {
-                    this.cachedHeaders.Clear();
-
                     // Resync in case we can't connect the header.
+                    this.cachedHeaders.Clear();
                     await this.ResyncAsync().ConfigureAwait(false);
                 }
             }
@@ -528,6 +537,7 @@ namespace Stratis.Bitcoin.Consensus
             this.BestReceivedTip = null;
             this.BestSentHeader = null;
 
+            this.cachedHeaders.Clear();
             await this.ResyncAsync().ConfigureAwait(false);
         }
 
@@ -562,6 +572,12 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Tries to sync the chain with the peer by sending it <see cref="GetHeadersPayload"/> in case peer's state is <see cref="NetworkPeerState.HandShaked"/>.</summary>
         public async Task ResyncAsync()
         {
+            if (this.cachedHeaders.Any())
+            {
+                this.logger.LogTrace("(-)[CACHE_NOT_EMPTY]");
+                throw new ConsensusException($"Resync is only allowed to be called when the cache is empty. The current cache count is {this.cachedHeaders.Count}.");
+            }
+
             INetworkPeer peer = this.AttachedPeer;
 
             if ((peer != null) && (peer.State == NetworkPeerState.HandShaked))
@@ -648,8 +664,11 @@ namespace Stratis.Bitcoin.Consensus
 
             if (blockHashAnnounced)
             {
-                this.logger.LogDebug("Block was announced, sending getheaders.");
-                await this.ResyncAsync().ConfigureAwait(false);
+                if (this.cachedHeaders.Count == 0)
+                {
+                    this.logger.LogDebug("An 'Inv' was received, requesting new headers.");
+                    await this.ResyncAsync().ConfigureAwait(false);
+                }
             }
         }
 
@@ -660,7 +679,8 @@ namespace Stratis.Bitcoin.Consensus
             int interval = (int)TimeSpan.FromMinutes(AutosyncIntervalMinutes).TotalMilliseconds;
             this.autosyncTimer = new Timer(async (o) =>
             {
-                await this.ResyncAsync().ConfigureAwait(false);
+                if (this.cachedHeaders.Count == 0)
+                    await this.ResyncAsync().ConfigureAwait(false);
             }, null, interval, interval);
 
             if (this.AttachedPeer.State == NetworkPeerState.Connected)

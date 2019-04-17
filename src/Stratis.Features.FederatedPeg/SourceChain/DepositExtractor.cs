@@ -10,6 +10,17 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 {
     public class DepositExtractor : IDepositExtractor
     {
+        /// <summary>
+        /// This deposit extractor implementation only looks for a very specific deposit format.
+        /// Deposits will have 2 outputs when there is no change.
+        /// </summary>
+        private const int ExpectedNumberOfOutputsNoChange = 2;
+
+        /// <summary>
+        /// Deposits will have 3 outputs when there is change.
+        /// </summary>
+        private const int ExpectedNumberOfOutputsChange = 3;
+
         private readonly IOpReturnDataReader opReturnDataReader;
 
         private readonly ILogger logger;
@@ -39,6 +50,11 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         public IReadOnlyList<IDeposit> ExtractDepositsFromBlock(Block block, int blockHeight)
         {
             var deposits = new List<IDeposit>();
+
+            // If it's an empty block, there's no deposits inside.
+            if (block.Transactions.Count <= 1)
+                return deposits;
+
             uint256 blockHash = block.GetHash();
 
             foreach (Transaction transaction in block.Transactions)
@@ -50,12 +66,21 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                 }
             }
 
-            return deposits.AsReadOnly();
+            return deposits;
         }
 
         /// <inheritdoc />
         public IDeposit ExtractDepositFromTransaction(Transaction transaction, int blockHeight, uint256 blockHash)
         {
+            // Coinbases can't have deposits.
+            if (transaction.IsCoinBase)
+                return null;
+
+            // Deposits have a certain structure.
+            if (transaction.Outputs.Count != ExpectedNumberOfOutputsNoChange 
+                && transaction.Outputs.Count != ExpectedNumberOfOutputsChange)
+                return null;
+
             List<TxOut> depositsToMultisig = transaction.Outputs.Where(output =>
                 output.ScriptPubKey == this.depositScript
                 && output.Value > this.settings.TransactionFee).ToList();

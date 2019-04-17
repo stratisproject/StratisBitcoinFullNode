@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BuilderExtensions;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -61,7 +62,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="walletSettings">The wallet settings.</param>
         /// <param name="dataFolder">Contains path locations to folders and files on disk.</param>
         /// <param name="walletFeePolicy">The wallet fee policy.</param>
-        /// <param name="asyncLoopFactory">Factory for creating and also possibly starting application defined tasks inside async loop.</param>
+        /// <param name="asyncProvider">Factory for creating and also possibly starting application defined tasks inside async loop.</param>
         /// <param name="nodeLifeTime">Allows consumers to perform cleanup during a graceful shutdown.</param>
         /// <param name="scriptAddressReader">A reader for extracting an address from a <see cref="Script"/>.</param>
         /// <param name="loggerFactory">The logger factory to use to create the custom logger.</param>
@@ -73,7 +74,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             WalletSettings walletSettings,
             DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             INodeLifetime nodeLifeTime,
             IScriptAddressReader scriptAddressReader,
             ILoggerFactory loggerFactory,
@@ -85,7 +86,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 walletSettings,
                 dataFolder,
                 walletFeePolicy,
-                asyncLoopFactory,
+                asyncProvider,
                 nodeLifeTime,
                 dateTimeProvider,
                 scriptAddressReader,

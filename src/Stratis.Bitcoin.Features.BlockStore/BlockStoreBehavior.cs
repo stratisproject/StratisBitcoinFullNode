@@ -290,7 +290,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // TODO: bring logic from core
             foreach (InventoryVector item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
             {
-                ChainedHeaderBlock chainedHeaderBlock = await this.consensusManager.GetBlockDataAsync(item.Hash).ConfigureAwait(false);
+                ChainedHeaderBlock chainedHeaderBlock = this.consensusManager.GetBlockData(item.Hash);
 
                 if (chainedHeaderBlock?.Block != null)
                 {

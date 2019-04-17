@@ -21,7 +21,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         /// <param name="maxBlocks">The number of blocks to retrieve.</param>
         /// <returns>A list of mature block deposits.</returns>
         /// <exception cref="InvalidOperationException">Thrown if the blocks are not mature or not found.</exception>
-        Task<List<MaturedBlockDepositsModel>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks);
+        Task<Result<List<MaturedBlockDepositsModel>>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks);
     }
 
     public class MaturedBlocksProvider : IMaturedBlocksProvider
@@ -41,7 +41,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         }
 
         /// <inheritdoc />
-        public async Task<List<MaturedBlockDepositsModel>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks)
+        public async Task<Result<List<MaturedBlockDepositsModel>>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks)
         {
             ChainedHeader consensusTip = this.consensusManager.Tip;
 
@@ -49,7 +49,9 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
             if (blockHeight > matureTipHeight)
             {
-                throw new InvalidOperationException($"Block height {blockHeight} submitted is not mature enough. Blocks less than a height of {matureTipHeight} can be processed.");
+                // We need to return a Result type here to explicitly indicate failure and the reason for failure.
+                // This is an expected condition so we can avoid throwing an exception here.
+                return Result<List<MaturedBlockDepositsModel>>.Fail($"Block height {blockHeight} submitted is not mature enough. Blocks less than a height of {matureTipHeight} can be processed.");
             }
 
             var maturedBlocks = new List<MaturedBlockDepositsModel>();
@@ -62,7 +64,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
             {
                 ChainedHeader currentHeader = consensusTip.GetAncestor(i);
 
-                ChainedHeaderBlock block = await this.consensusManager.GetBlockDataAsync(currentHeader.HashBlock).ConfigureAwait(false);
+                ChainedHeaderBlock block = this.consensusManager.GetBlockData(currentHeader.HashBlock);
 
                 MaturedBlockDepositsModel maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(block);
 
@@ -78,7 +80,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                 }
             }
 
-            return maturedBlocks;
+            return Result<List<MaturedBlockDepositsModel>>.Ok(maturedBlocks);
         }
     }
 }

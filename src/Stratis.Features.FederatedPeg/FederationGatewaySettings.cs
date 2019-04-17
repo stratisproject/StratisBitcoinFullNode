@@ -76,7 +76,7 @@ namespace Stratis.Features.FederatedPeg
                 throw new ConfigurationException("Please make sure the public key passed as parameter was used to generate the multisig redeem script.");
             }
 
-            this.CounterChainApiPort = configReader.GetOrDefault(CounterChainApiPortParam, 0);
+            this.CounterChainApiPort = configReader.GetOrDefault(CounterChainApiPortParam, federatedPegOptions?.CounterChainNetwork.DefaultAPIPort ?? 0);
 
             // Federation IPs - These are required to receive and sign withdrawal transactions.
             string federationIpsRaw = configReader.GetOrDefault<string>(FederationIpsParam, null);
