@@ -114,6 +114,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(block, nameof(block));
 
+            long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, -block.BlockSize.Value);
+            this.logger.LogTrace("Queue sized changed to {0} bytes.", currentBlockQueueSize);
+
             ChainedHeader newTip = this.chain.GetHeader(block.GetHash());
             if (newTip == null)
             {
