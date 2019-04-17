@@ -12,7 +12,7 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.PoA
+namespace Stratis.Bitcoin.Features.PoA.Behaviors
 {
     public class PoAConsensusManagerBehavior : ConsensusManagerBehavior
     {
@@ -77,6 +77,12 @@ namespace Stratis.Bitcoin.Features.PoA
             this.logger.LogTrace("{0} headers were selected for sending, last one is '{1}'.", headersPayload.Headers.Count, headersPayload.Headers.LastOrDefault()?.GetHash());
 
             return headersPayload;
+        }
+
+        /// <inheritdoc />
+        public override object Clone()
+        {
+            return new PoAConsensusManagerBehavior(this.ChainIndexer, this.InitialBlockDownloadState, this.ConsensusManager, this.PeerBanning, this.LoggerFactory);
         }
     }
 }
