@@ -33,10 +33,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
     public class BlockStoreBehavior : NetworkPeerBehavior, IBlockStoreBehavior
     {
-        // TODO: move this to the options
-        // Maximum number of headers to announce when relaying blocks with headers message.
-        private const int MaxBlocksToAnnounce = 8;
-
         protected readonly ChainIndexer ChainIndexer;
 
         protected readonly IConsensusManager consensusManager;
@@ -362,7 +358,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            bool revertToInv = ((!this.PreferHeaders && (!this.preferHeaderAndIDs || blocksToAnnounce.Count > 1)) || blocksToAnnounce.Count > MaxBlocksToAnnounce);
+            bool revertToInv = (!this.PreferHeaders && (!this.preferHeaderAndIDs || blocksToAnnounce.Count > 1));
 
             this.logger.LogTrace("Block propagation preferences of the peer '{0}': prefer headers - {1}, prefer headers and IDs - {2}, will{3} revert to 'inv' now.", peer.RemoteSocketEndpoint, this.PreferHeaders, this.preferHeaderAndIDs, revertToInv ? "" : " NOT");
 

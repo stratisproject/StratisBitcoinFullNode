@@ -75,7 +75,6 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             }
 
             foreach (var pair in types
-                .Where(t => t.Namespace == typeof(PayloadAttribute).Namespace)
                 .Where(t => t.IsDefined(typeof(PayloadAttribute), true))
                 .Select(t =>
                     new
