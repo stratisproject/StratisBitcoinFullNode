@@ -61,7 +61,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.nodeLifetime = nodeLifetime;
             this.asyncProvider = asyncProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.blockQueueProcessor = new BlockQueueProcessor(this.logger, this.asyncProvider, this.OnProcessBlockAsync, MaxQueueSize);
+            this.blockQueueProcessor = new BlockQueueProcessor(this.logger, this.asyncProvider, this.OnProcessBlockAsync, MaxQueueSize, nameof(FederationWalletSyncManager));
         }
 
         /// <inheritdoc />
