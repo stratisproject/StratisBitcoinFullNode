@@ -10,7 +10,9 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 
@@ -57,6 +59,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Configuration related to incoming and outgoing connections.</summary>
         private readonly ConnectionManagerSettings connectionManagerSettings;
 
+        /// <summary>Used to publish application events.</summary>
+        private readonly ISignals signals;
+
         /// <summary>
         /// Initializes instance of a network peer server.
         /// </summary>
@@ -79,7 +84,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             IAsyncProvider asyncProvider)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{localEndPoint}] ");
-
+            this.signals = asyncProvider.Signals;
             this.networkPeerFactory = networkPeerFactory;
             this.networkPeerDisposer = new NetworkPeerDisposer(loggerFactory, asyncProvider);
             this.initialBlockDownloadState = initialBlockDownloadState;
@@ -157,8 +162,10 @@ namespace Stratis.Bitcoin.P2P.Peer
                     if (error != null)
                         throw error;
 
-                    if (!this.AllowClientConnection(tcpClient))
+                    (bool successful, string reason) connectionAttempt = this.AllowClientConnection(tcpClient);
+                    if (!connectionAttempt.successful)
                     {
+                        this.signals.Publish(new PeerConnectionAttemptFailed(true, (IPEndPoint)tcpClient.Client.RemoteEndPoint, connectionAttempt.reason));
                         this.logger.LogTrace("Connection from client '{0}' was rejected and will be closed.", tcpClient.Client.RemoteEndPoint);
                         tcpClient.Close();
                         continue;
@@ -166,7 +173,8 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                     this.logger.LogTrace("Connection accepted from client '{0}'.", tcpClient.Client.RemoteEndPoint);
 
-                    this.networkPeerFactory.CreateNetworkPeer(tcpClient, this.CreateNetworkPeerConnectionParameters(), this.networkPeerDisposer);
+                    INetworkPeer connectedPeer = this.networkPeerFactory.CreateNetworkPeer(tcpClient, this.CreateNetworkPeerConnectionParameters(), this.networkPeerDisposer);
+                    this.signals.Publish(new PeerConnected(connectedPeer.Inbound, connectedPeer.PeerEndPoint));
                 }
             }
             catch (OperationCanceledException)
@@ -213,18 +221,18 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Check if the client is allowed to connect based on certain criteria.
         /// </summary>
         /// <returns>When criteria is met returns <c>true</c>, to allow connection.</returns>
-        private bool AllowClientConnection(TcpClient tcpClient)
+        private (bool successful, string reason) AllowClientConnection(TcpClient tcpClient)
         {
             if (this.networkPeerDisposer.ConnectedInboundPeersCount >= this.connectionManagerSettings.MaxInboundConnections)
             {
                 this.logger.LogTrace("(-)[MAX_CONNECTION_THRESHOLD_REACHED]:false");
-                return false;
+                return (false, "Max Connection Threshold Reached.");
             }
 
             if (!this.initialBlockDownloadState.IsInitialBlockDownload())
             {
                 this.logger.LogTrace("(-)[IBD_COMPLETE_ALLOW_CONNECTION]:true");
-                return true;
+                return (true, "IBD Complete, allow connection.");
             }
 
             var clientLocalEndPoint = tcpClient.Client.LocalEndPoint as IPEndPoint;
@@ -234,12 +242,12 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (endpointCanBeWhiteListed)
             {
                 this.logger.LogTrace("(-)[ENDPOINT_WHITELISTED_ALLOW_CONNECTION]:true");
-                return true;
+                return (true, "Endpoint Whitelisted, Allow Connection even if in IBD.");
             }
 
             this.logger.LogTrace("Node '{0}' is not white listed during initial block download.", clientLocalEndPoint);
 
-            return false;
+            return (false, "Node in IBD, Endpoint not whitelisted, connection refused.");
         }
     }
 }

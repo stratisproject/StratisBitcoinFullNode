@@ -38,6 +38,9 @@ namespace Stratis.Bitcoin.AsyncWork
             (Name: "Health", Width: 15)
         };
 
+        /// <inheritdoc />
+        public ISignals Signals => this.signals;
+
         public AsyncProvider(ILoggerFactory loggerFactory, ISignals signals, INodeLifetime nodeLifetime)
         {
             this.lockAsyncDelegates = new object();

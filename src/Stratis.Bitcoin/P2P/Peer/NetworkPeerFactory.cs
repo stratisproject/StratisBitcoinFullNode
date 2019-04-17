@@ -8,6 +8,7 @@ using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -201,7 +202,9 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
+                this.asyncProvider.Signals.Publish(new PeerConnectionAttempt(peer.Inbound, peer.PeerEndPoint));
                 await peer.ConnectAsync(peer.ConnectionParameters.ConnectCancellation).ConfigureAwait(false);
+                this.asyncProvider.Signals.Publish(new PeerConnected(peer.Inbound, peer.PeerEndPoint));
 
                 networkPeerDisposer?.AddPeer(peer);
             }
