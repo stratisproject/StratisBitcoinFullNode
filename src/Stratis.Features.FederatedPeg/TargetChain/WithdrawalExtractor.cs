@@ -21,9 +21,15 @@ namespace Stratis.Features.FederatedPeg.TargetChain
     public class WithdrawalExtractor : IWithdrawalExtractor
     {
         /// <summary>
-        /// Withdrawals have a particular format we look for. In current iterations they always contain 3 outputs.
+        /// Withdrawals have a particular format we look for.
+        /// They will have 2 outputs when there is no change to be sent.
         /// </summary>
-        private const int ExpectedNumberOfOutputs = 3;
+        private const int ExpectedNumberOfOutputsNoChange = 2;
+
+        /// <summary>
+        /// Withdrawals will have 3 outputs when there is change to be sent.
+        /// </summary>
+        private const int ExpectedNumberOfOutputsChange = 3;
 
         private readonly IOpReturnDataReader opReturnDataReader;
 
@@ -71,7 +77,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 return null;
 
             // Withdrawal has a specific structure.
-            if (transaction.Outputs.Count != ExpectedNumberOfOutputs)
+            if (transaction.Outputs.Count != ExpectedNumberOfOutputsNoChange
+                && transaction.Outputs.Count != ExpectedNumberOfOutputsChange)
                 return null;
 
             if (!this.IsOnlyFromMultisig(transaction))

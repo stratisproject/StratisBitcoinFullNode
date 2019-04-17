@@ -8,6 +8,7 @@ using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -155,14 +156,17 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var consensusSettings = new ConsensusSettings(nodeSettings);
                 var connectionSettings = new ConnectionManagerSettings(nodeSettings);
 
-                var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker(loggerFactory, connectionSettings), new Mock<IInitialBlockDownloadState>().Object, new ConnectionManagerSettings(nodeSettings));
+                var signals = new Signals.Signals(loggerFactory, null);
+                var asyncProvider = new AsyncProvider(loggerFactory, signals, new NodeLifetime());
+
+                var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker(loggerFactory, connectionSettings), new Mock<IInitialBlockDownloadState>().Object, new ConnectionManagerSettings(nodeSettings), asyncProvider);
 
                 var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker(loggerFactory, connectionSettings));
-                var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, this.network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
+                var peerDiscovery = new PeerDiscovery(asyncProvider, loggerFactory, this.network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
                 var selfEndpointTracker = new SelfEndpointTracker(loggerFactory, connectionSettings);
                 var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory,
                     nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { },
-                    peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider(), new Mock<INodeStats>().Object);
+                    peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider(), new Mock<INodeStats>().Object, asyncProvider);
 
                 var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
                 var deployments = new NodeDeployments(this.network, this.ChainIndexer);
@@ -175,7 +179,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 };
 
                 this.ConsensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, this.ChainIndexer, deployments, consensusSettings,
-                    new Checkpoints(), this.cachedCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider)).Register();
+                    new Checkpoints(), this.cachedCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), asyncProvider).Register();
 
                 this.consensus = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chainIndexer: this.ChainIndexer);
 

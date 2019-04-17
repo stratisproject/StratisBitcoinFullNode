@@ -37,6 +37,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
     {
         public const string NoSpendableTransactionsMessage = "No spendable transactions found.";
 
+        public const string NotEnoughFundsMessage = "Not enough funds.";
+
         /// <summary>A threshold that if possible will limit the amount of UTXO sent to the <see cref="ICoinSelector"/>.</summary>
         /// <remarks>
         /// 500 is a safe number that if reached ensures the coin selector will not take too long to complete,
@@ -160,56 +162,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <summary>
-        /// Compares transaction data to determine the order of inclusion in the transaction.
-        /// </summary>
-        /// <param name="x">First transaction data.</param>
-        /// <param name="y">Second transaction data.</param>
-        /// <returns>Returns <c>0</c> if the outputs are the same and <c>-1<c> or <c>1</c> depending on whether the first or second output takes precedence.</returns>
-        public static int CompareTransactionData(TransactionData x, TransactionData y)
-        {
-            // The oldest UTXO (determined by block height) is selected first.
-            if ((x.BlockHeight ?? int.MaxValue) != (y.BlockHeight ?? int.MaxValue))
-            {
-                return ((x.BlockHeight ?? int.MaxValue) < (y.BlockHeight ?? int.MaxValue)) ? -1 : 1;
-            }
-
-            // If a block has more than one UTXO, then they are selected in order of transaction id.
-            if (x.Id != y.Id)
-            {
-                return (x.Id < y.Id) ? -1 : 1;
-            }
-
-            // If multiple UTXOs appear within a transaction then they are selected in ascending index order.
-            if (x.Index != y.Index)
-            {
-                return (x.Index < y.Index) ? -1 : 1;
-            }
-
-            return 0;
-        }
-
-        /// <summary>
-        /// Compares two unspent outputs to determine the order of inclusion in the transaction.
-        /// </summary>
-        /// <param name="x">First unspent output.</param>
-        /// <param name="y">Second unspent output.</param>
-        /// <returns>Returns <c>0</c> if the outputs are the same and <c>-1<c> or <c>1</c> depending on whether the first or second output takes precedence.</returns>
-        private int CompareUnspentOutputReferences(UnspentOutputReference x, UnspentOutputReference y)
-        {
-            return CompareTransactionData(x.Transaction, y.Transaction);
-        }
-
-        /// <summary>
-        /// Returns the unspent outputs in the preferred order of consumption.
-        /// </summary>
-        /// <param name="context">The context associated with the current transaction being built.</param>
-        /// <returns>The unspent outputs in the preferred order of consumption.</returns>
-        private IOrderedEnumerable<UnspentOutputReference> GetOrderedUnspentOutputs(TransactionBuildContext context)
-        {
-            return context.UnspentOutputs.OrderBy(a => a, Comparer<UnspentOutputReference>.Create((x, y) => this.CompareUnspentOutputReferences(x, y)));
-        }
-
-        /// <summary>
         /// Find the next available change address.
         /// </summary>
         /// <param name="transactionBuilder"></param>
@@ -240,7 +192,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             long balance = context.UnspentOutputs.Sum(t => t.Transaction.Amount);
             long totalToSend = context.Recipients.Sum(s => s.Amount);
             if (balance < totalToSend)
-                throw new WalletException("Not enough funds.");
+                throw new WalletException(NotEnoughFundsMessage);
 
             if (context.SelectedInputs.Any())
             {
@@ -263,18 +215,15 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
 
             long sum = 0;
-            int index = 0;
             var coins = new List<Coin>();
 
-            // Note that the coins are ordered and selected by the CoinSelector later on.
-            // TODO: Move GetOrderedUnspentOutputs to happen inside the DeterministicCoinSelector.
-            IEnumerable<UnspentOutputReference> orderedUnspentOutputs = this.GetOrderedUnspentOutputs(context);
+            // We order the potential inputs now because we order them by information that the coin selector won't have access to.
+            IEnumerable<UnspentOutputReference> orderedUnspentOutputs = DeterministicCoinOrdering.GetOrderedUnspentOutputs(context);
 
             foreach (UnspentOutputReference item in orderedUnspentOutputs)
             {
                 coins.Add(ScriptCoin.Create(this.network, item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, this.walletManager.GetWallet().MultiSigAddress.RedeemScript));
                 sum += item.Transaction.Amount;
-                index++;
 
                 // Sufficient UTXOs are selected to cover the value of the outputs + fee.
                 if (sum >= (totalToSend + context.TransactionFee))

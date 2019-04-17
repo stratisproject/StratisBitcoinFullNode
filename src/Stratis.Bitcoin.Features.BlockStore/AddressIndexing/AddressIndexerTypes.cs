@@ -7,16 +7,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <summary>Id required for litedb.</summary>
         public int Id { get; set; }
 
-        public string TipHash { get; set; }
+        public byte[] TipHashBytes { get; set; }
 
-        public List<AddressIndexData> AddressIndexDatas { get; set; }
-    }
-
-    public class AddressIndexData
-    {
-        public byte[] ScriptPubKeyBytes { get; set; }
-
-        public List<AddressBalanceChange> Changes { get; set; }
+        /// <summary>Address changes by address.</summary>
+        public Dictionary<string, List<AddressBalanceChange>> AddressChanges { get; set; }
     }
 
     public class AddressBalanceChange

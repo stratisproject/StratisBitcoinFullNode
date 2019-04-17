@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -24,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
     public class PowMiningTest : LogsTestBase, IClassFixture<PowMiningTestFixture>
     {
-        private readonly Mock<IAsyncLoopFactory> asyncLoopFactory;
+        private readonly Mock<IAsyncProvider> asyncProvider;
         private ChainIndexer chainIndexer;
         private readonly Mock<IConsensusManager> consensusManager;
         private readonly Mock<IConsensusRuleEngine> consensusRules;
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             if (this.initialNetworkOptions == null)
                 this.network.Consensus.Options = new ConsensusOptions();
 
-            this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
+            this.asyncProvider = new Mock<IAsyncProvider>();
 
             this.consensusManager = new Mock<IConsensusManager>();
             this.consensusManager.SetupGet(c => c.Tip).Returns(() => this.chainIndexer.Tip);
@@ -70,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void Mine_FirstCall_CreatesNewMiningLoop_ReturnsMiningLoop()
         {
-            this.asyncLoopFactory.Setup(a => a.Run("PowMining.Mine", It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(), TimeSpans.Second, TimeSpans.TenSeconds))
+            this.asyncProvider.Setup(a => a.CreateAndRunAsyncLoop("PowMining.Mine", It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(), TimeSpans.Second, TimeSpans.TenSeconds))
                 .Returns(new AsyncLoop("PowMining.Mine2", this.FullNodeLogger.Object, token => { return Task.CompletedTask; }))
                 .Verifiable();
 
@@ -80,13 +81,13 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             miner.Mine(new Key().ScriptPubKey);
 
             this.nodeLifetime.Verify();
-            this.asyncLoopFactory.Verify();
+            this.asyncProvider.Verify();
         }
 
         [Fact]
         public void Mine_SecondCall_ReturnsSameMiningLoop()
         {
-            this.asyncLoopFactory.Setup(a => a.Run("PowMining.Mine", It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(), TimeSpans.Second, TimeSpans.TenSeconds))
+            this.asyncProvider.Setup(a => a.CreateAndRunAsyncLoop("PowMining.Mine", It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(), TimeSpans.Second, TimeSpans.TenSeconds))
                 .Returns(new AsyncLoop("PowMining.Mine2", this.FullNodeLogger.Object, token => { return Task.CompletedTask; }))
                 .Verifiable();
 
@@ -97,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             miner.Mine(new Key().ScriptPubKey);
 
             this.nodeLifetime.Verify();
-            this.asyncLoopFactory.Verify(a => a.Run("PowMining.Mine", It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(), TimeSpans.Second, TimeSpans.TenSeconds), Times.Exactly(1));
+            this.asyncProvider.Verify(a => a.CreateAndRunAsyncLoop("PowMining.Mine", It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(), TimeSpans.Second, TimeSpans.TenSeconds), Times.Exactly(1));
         }
 
         [Fact]
@@ -112,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             Func<CancellationToken, Task> callbackFunc = null;
             TimeSpan? callbackRepeat = null;
 
-            this.asyncLoopFactory.Setup(a => a.Run("PowMining.Mine", It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(), TimeSpans.Second, TimeSpans.TenSeconds))
+            this.asyncProvider.Setup(a => a.CreateAndRunAsyncLoop("PowMining.Mine", It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(), TimeSpans.Second, TimeSpans.TenSeconds))
                 .Callback<string, Func<CancellationToken, Task>, CancellationToken, TimeSpan?, TimeSpan?>(
                 (name, func, token, repeat, startafter) =>
                 {
@@ -130,7 +131,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             PowMining miner = this.CreateProofOfWorkMiner(blockBuilder.Object);
 
             miner.Mine(new Key().ScriptPubKey);
-            this.asyncLoopFactory.Verify();
+            this.asyncProvider.Verify();
         }
 
         [Fact]
@@ -367,7 +368,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private PowMining CreateProofOfWorkMiner(PowBlockDefinition blockDefinition)
         {
             var blockBuilder = new MockPowBlockProvider(blockDefinition);
-            return new PowMining(this.asyncLoopFactory.Object, blockBuilder, this.consensusManager.Object, this.chainIndexer, DateTimeProvider.Default, this.mempool.Object, this.mempoolLock, this.network, this.nodeLifetime.Object, this.LoggerFactory.Object, this.initialBlockDownloadState.Object);
+            return new PowMining(this.asyncProvider.Object, blockBuilder, this.consensusManager.Object, this.chainIndexer, DateTimeProvider.Default, this.mempool.Object, this.mempoolLock, this.network, this.nodeLifetime.Object, this.LoggerFactory.Object, this.initialBlockDownloadState.Object);
         }
 
         private static ChainIndexer GenerateChainWithHeight(int blockAmount, Network network)

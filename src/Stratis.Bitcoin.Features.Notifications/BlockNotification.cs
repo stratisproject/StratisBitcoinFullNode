@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Signals;
@@ -22,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Notifications
         private IAsyncLoop asyncLoop;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -39,20 +40,20 @@ namespace Stratis.Bitcoin.Features.Notifications
             ChainIndexer chainIndexer,
             IConsensusManager consensusManager,
             ISignals signals,
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             INodeLifetime nodeLifetime)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(chainIndexer, nameof(chainIndexer));
             Guard.NotNull(consensusManager, nameof(consensusManager));
             Guard.NotNull(signals, nameof(signals));
-            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
+            Guard.NotNull(asyncProvider, nameof(asyncProvider));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 
             this.ChainIndexer = chainIndexer;
             this.consensusManager = consensusManager;
             this.signals = signals;
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -91,7 +92,7 @@ namespace Stratis.Bitcoin.Features.Notifications
         /// <inheritdoc/>
         public void Start()
         {
-            this.asyncLoop = this.asyncLoopFactory.Run("Notify", async token =>
+            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop("Notify", async token =>
             {
                 await this.Notify(this.nodeLifetime.ApplicationStopping);
             },

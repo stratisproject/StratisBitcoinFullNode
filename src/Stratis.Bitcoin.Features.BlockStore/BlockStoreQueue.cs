@@ -6,8 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
@@ -66,8 +66,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc cref="IBlockRepository"/>
         private readonly IBlockRepository blockRepository;
 
+        private readonly IAsyncProvider asyncProvider;
+
         /// <summary>Queue which contains blocks that should be saved to the database.</summary>
-        private readonly AsyncQueue<ChainedHeaderBlock> blocksQueue;
+        private readonly IAsyncQueue<ChainedHeaderBlock> blocksQueue;
 
         /// <summary>Batch of blocks which should be saved in the database.</summary>
         /// <remarks>Write access should be protected by <see cref="blocksCacheLock"/>.</remarks>
@@ -97,7 +99,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             StoreSettings storeSettings,
             IBlockRepository blockRepository,
             ILoggerFactory loggerFactory,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            IAsyncProvider asyncProvider)
         {
             Guard.NotNull(blockStoreQueueFlushCondition, nameof(blockStoreQueueFlushCondition));
             Guard.NotNull(chainIndexer, nameof(chainIndexer));
@@ -112,9 +115,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.chainState = chainState;
             this.storeSettings = storeSettings;
             this.blockRepository = blockRepository;
+            this.asyncProvider = asyncProvider;
             this.batch = new List<ChainedHeaderBlock>();
             this.blocksCacheLock = new object();
-            this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>();
+            this.blocksQueue = asyncProvider.CreateAsyncQueue<ChainedHeaderBlock>();
             this.pendingBlocksCache = new Dictionary<uint256, ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.cancellation = new CancellationTokenSource();
@@ -212,7 +216,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc/>
-        public Transaction[] GetTransactionsByIds(uint256[] trxids)
+        public Transaction[] GetTransactionsByIds(uint256[] trxids, CancellationToken cancellation = default(CancellationToken))
         {
             // Only look for transactions if they're indexed.
             if (!this.storeSettings.TxIndex)
@@ -249,7 +253,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
             }
 
-            Transaction[] fetchedTxes = this.blockRepository.GetTransactionsByIds(notFoundIds.ToArray());
+            Transaction[] fetchedTxes = this.blockRepository.GetTransactionsByIds(notFoundIds.ToArray(), cancellation);
+
+            if (fetchedTxes == null)
+            {
+                this.logger.LogTrace("(-)[NOT_FOUND_IN_REPOSITORY]:null");
+                return null;
+            }
+
             int fetchedIndex = 0;
 
             for (int i = 0; i < txes.Length; i++)

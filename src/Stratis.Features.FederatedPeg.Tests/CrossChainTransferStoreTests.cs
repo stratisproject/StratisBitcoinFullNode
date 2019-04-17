@@ -51,8 +51,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
+                WaitLoop(() => this.wallet.LastBlockSyncedHeight == crossChainTransferStore.TipHashAndHeight.Height);
                 Assert.Equal(this.wallet.LastBlockSyncedHash, crossChainTransferStore.TipHashAndHeight.HashBlock);
-                Assert.Equal(this.wallet.LastBlockSyncedHeight, crossChainTransferStore.TipHashAndHeight.Height);
             }
         }
 
@@ -74,8 +74,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 this.federationWalletManager.SaveWallet();
 
+                WaitLoop(() => this.wallet.LastBlockSyncedHeight == crossChainTransferStore.TipHashAndHeight.Height);
                 Assert.Equal(this.wallet.LastBlockSyncedHash, crossChainTransferStore.TipHashAndHeight.HashBlock);
-                Assert.Equal(this.wallet.LastBlockSyncedHeight, crossChainTransferStore.TipHashAndHeight.Height);
             }
 
             // Create a new instance of this test that loads from the persistence that we created in the step before.
@@ -115,8 +115,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
+                WaitLoop(() => this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height);
                 Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
-                Assert.Equal(this.ChainIndexer.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
 
                 BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
                 BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
@@ -137,12 +137,12 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 Assert.Equal(2, transactions.Length);
 
-                // Transactions[0] inputs.
+                // Transactions[0] inputs. Ordered deterministically, roughly a mixture of time and canonical ordering.
                 Assert.Equal(2, transactions[0].Inputs.Count);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[0].PrevOut.Hash);
-                Assert.Equal((uint)1, transactions[0].Inputs[0].PrevOut.N);
+                Assert.Equal((uint)0, transactions[0].Inputs[0].PrevOut.N);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[1].PrevOut.Hash);
-                Assert.Equal((uint)0, transactions[0].Inputs[1].PrevOut.N);
+                Assert.Equal((uint)1, transactions[0].Inputs[1].PrevOut.N);
 
                 // Transaction[0] outputs.
                 Assert.Equal(3, transactions[0].Outputs.Count);
@@ -212,8 +212,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
+                WaitLoop(() => this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height);
                 Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
-                Assert.Equal(this.ChainIndexer.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
 
                 uint256 txId1 = 0;
                 uint256 txId2 = 1;
@@ -240,17 +240,17 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 Assert.Equal(2, transactions.Length);
 
-                // Transactions[0] inputs. Note that inputs are ordered by amount.
+                // Transactions[0] inputs. Ordered deterministically.
                 Assert.Equal(2, transactions[0].Inputs.Count);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[0].PrevOut.Hash);
-                Assert.Equal((uint)1, transactions[0].Inputs[0].PrevOut.N);
+                Assert.Equal((uint)0, transactions[0].Inputs[0].PrevOut.N);
                 Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[1].PrevOut.Hash);
-                Assert.Equal((uint)0, transactions[0].Inputs[1].PrevOut.N);
+                Assert.Equal((uint)1, transactions[0].Inputs[1].PrevOut.N);
 
                 // Transaction[0] outputs.
                 Assert.Equal(3, transactions[0].Outputs.Count);
 
-                // Transaction[0] output value - change. 
+                // Transaction[0] output value - change.
                 Assert.Equal(new Money(10m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[0].Outputs[0].ScriptPubKey);
 
@@ -278,15 +278,15 @@ namespace Stratis.Features.FederatedPeg.Tests
                 transactions = transfers.Select(t => t.PartialTransaction).ToArray();
 
                 // Transactions[1] inputs.
-                Assert.Equal(1, transactions[1].Inputs.Count);
-                Assert.Equal(this.fundingTransactions[2].GetHash(), transactions[1].Inputs[0].PrevOut.Hash);
+                Assert.Equal(2, transactions[1].Inputs.Count);
+                Assert.Equal(this.fundingTransactions[1].GetHash(), transactions[1].Inputs[0].PrevOut.Hash);
                 Assert.Equal((uint)0, transactions[1].Inputs[0].PrevOut.N);
 
                 // Transaction[1] outputs.
                 Assert.Equal(3, transactions[1].Outputs.Count);
 
                 // Transaction[1] output value - change.
-                Assert.Equal(new Money(900m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
+                Assert.Equal(new Money(970m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[1].Outputs[0].ScriptPubKey);
 
                 // Transaction[1] output value - recipient 2, but minus 0.01 for the tx fee.
@@ -305,7 +305,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 (Money confirmed, Money unconfirmed) spendable = this.wallet.GetSpendableAmount();
 
-                Assert.Equal(new Money(910m, MoneyUnit.BTC), spendable.unconfirmed);
+                Assert.Equal(new Money(980m, MoneyUnit.BTC), spendable.unconfirmed);
             }
         }
 
@@ -326,8 +326,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
+                WaitLoop(() => this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height);
                 Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
-                Assert.Equal(this.ChainIndexer.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
 
                 BitcoinAddress address = (new Key()).PubKey.Hash.GetAddress(this.network);
 
@@ -424,8 +424,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
+                WaitLoop(() => this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height);
                 Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
-                Assert.Equal(this.ChainIndexer.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
 
                 BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
                 BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
@@ -445,7 +445,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Dictionary<uint256, Transaction> transactions = crossChainTransferStore.GetTransactionsByStatusAsync(
                     CrossChainTransferStatus.Partial).GetAwaiter().GetResult();
 
-                var requester = new PartialTransactionRequester(this.loggerFactory, crossChainTransferStore, this.asyncLoopFactory,
+                var requester = new PartialTransactionRequester(this.loggerFactory, crossChainTransferStore, this.asyncProvider,
                     this.nodeLifetime, this.connectionManager, this.federationGatewaySettings, this.ibdState, this.federationWalletManager);
 
                 var peerEndPoint = new IPEndPoint(System.Net.IPAddress.Parse("1.2.3.4"), 5);
@@ -464,7 +464,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 requester.Start();
 
-                Thread.Sleep(100);
+                Thread.Sleep(500);
 
                 peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
                     o.DepositId == 0 && o.PartialTransaction.GetHash() == transactions[0].GetHash())).GetAwaiter().GetResult();
@@ -561,8 +561,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
+                WaitLoop(() => this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height);
                 Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
-                Assert.Equal(this.ChainIndexer.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
 
                 BitcoinAddress address = (new Key()).PubKey.Hash.GetAddress(this.network);
 
