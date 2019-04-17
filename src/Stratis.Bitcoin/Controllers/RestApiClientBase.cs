@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Polly;
 using Polly.Retry;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Controllers
 {
@@ -53,8 +54,7 @@ namespace Stratis.Bitcoin.Controllers
 
         protected async Task<HttpResponseMessage> SendPostRequestAsync<Model>(Model requestModel, string apiMethodName, CancellationToken cancellation) where Model : class
         {
-            if (requestModel == null)
-                throw new ArgumentException($"{nameof(requestModel)} can't be null.");
+            Guard.NotNull(requestModel, nameof(requestModel));
 
             var publicationUri = new Uri($"{this.endpointUrl}/{apiMethodName}");
 
