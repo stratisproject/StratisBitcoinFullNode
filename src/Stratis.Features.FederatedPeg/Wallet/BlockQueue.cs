@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Features.FederatedPeg.Wallet
 {
     /// <summary>
-    /// Queue which contains blocks for processing by a callback. Limited by a maximum size. If this size is reached,
+    /// Queue which contains blocks that are processed by a callback. Limited by a maximum size in bytes. If this size is reached,
     /// enqueuing new blocks will be unsuccessful.
     /// </summary>
     public class BlockQueue : IDisposable
@@ -36,7 +36,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.blocksQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<Block>($"{nameof(FederationWalletSyncManager)}-{nameof(this.blocksQueue)}", this.OnProcessBlockAsync);
         }
 
-        /// <summary>Limits the <see cref="blocksQueue"/> size.</summary>
+        /// <summary>Limits the <see cref="blocksQueue"/> size, in bytes.</summary>
         public int MaxQueueSize { get; }
 
         public long QueueSizeBytes => this.blocksQueueSize;
