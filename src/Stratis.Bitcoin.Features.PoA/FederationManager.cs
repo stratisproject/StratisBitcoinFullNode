@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.PoA
         void RemoveFederationMember(IFederationMember federationMember);
     }
 
-    public class FederationManager : IFederationManager
+    public abstract class FederationManagerBase : IFederationManager
     {
         /// <inheritdoc />
         public bool IsFederationMember { get; private set; }
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Protects access to <see cref="federationMembers"/>.</summary>
         private readonly object locker;
 
-        public FederationManager(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo, ISignals signals)
+        public FederationManagerBase(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo, ISignals signals)
         {
             this.settings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
             this.network = Guard.NotNull(network as PoANetwork, nameof(network));
@@ -162,15 +162,28 @@ namespace Stratis.Bitcoin.Features.PoA
             this.signals.Publish(new FedMemberKicked(federationMember));
         }
 
-        protected virtual void SaveFederation(List<IFederationMember> federation)
+        protected abstract void SaveFederation(List<IFederationMember> federation);
+
+        /// <summary>Loads saved collection of federation members from the database.</summary>
+        protected abstract List<IFederationMember> LoadFederation();
+    }
+
+    public class FederationManager : FederationManagerBase
+    {
+        public FederationManager(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo, ISignals signals)
+            :base(nodeSettings, network, loggerFactory, keyValueRepo, signals)
+        {
+        }
+
+        protected override void SaveFederation(List<IFederationMember> federation)
         {
             List<string> hexList = federation.Select(x => x.PubKey.ToHex()).ToList();
 
             this.keyValueRepo.SaveValueJson(federationMembersDbKey, hexList);
         }
 
-        /// <summary>Loads saved collection of federation members from the database.</summary>
-        protected virtual List<IFederationMember> LoadFederation()
+        /// <inheritdoc />
+        protected override List<IFederationMember> LoadFederation()
         {
             List<string> hexList = this.keyValueRepo.LoadValueJson<List<string>>(federationMembersDbKey);
 

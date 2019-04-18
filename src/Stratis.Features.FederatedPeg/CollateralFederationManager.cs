@@ -9,7 +9,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Features.FederatedPeg
 {
-    public class CollateralFederationManager : FederationManager
+    public class CollateralFederationManager : FederationManagerBase
     {
         public CollateralFederationManager(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo, ISignals signals)
             : base(nodeSettings, network, loggerFactory, keyValueRepo, signals)
