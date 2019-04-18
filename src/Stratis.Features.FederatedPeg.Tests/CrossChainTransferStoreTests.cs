@@ -466,10 +466,11 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 Thread.Sleep(500);
 
+                // Receives all of the requests. We broadcast multiple at a time.
                 peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
                     o.DepositId == 0 && o.PartialTransaction.GetHash() == transactions[0].GetHash())).GetAwaiter().GetResult();
 
-                peer.DidNotReceive().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
+                peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
                     o.DepositId == 1 && o.PartialTransaction.GetHash() == transactions[1].GetHash())).GetAwaiter().GetResult();
             }
         }
