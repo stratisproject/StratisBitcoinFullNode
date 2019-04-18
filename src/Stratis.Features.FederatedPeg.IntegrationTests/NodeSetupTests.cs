@@ -6,7 +6,6 @@ using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Features.FederatedPeg.IntegrationTests.Utils;
 using Stratis.Features.FederatedPeg.Interfaces;
-using Stratis.Features.FederatedPeg.Tests.Utils;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.IntegrationTests
@@ -38,7 +37,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 context.EnableSideFedWallets();
 
                 // Wait for node to reach premine height
-                await context.FedSide1.MineBlocksAsync((int) context.SideChainNetwork.Consensus.PremineHeight);
+                await context.FedSide1.MineBlocksAsync((int)context.SideChainNetwork.Consensus.PremineHeight);
                 TestHelper.WaitForNodeToSync(context.SideUser, context.FedSide1, context.FedSide2, context.FedSide3);
 
                 // Ensure that coinbase contains premine reward and it goes to the fed.
@@ -118,7 +117,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
         }
 
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact(Skip = FederatedPegTestHelper.SkipTests)]
         public void StartBothChainsWithWallets()
         {
             using (var context = new SidechainTestContext())
@@ -130,7 +129,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
             }
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact(Skip = FederatedPegTestHelper.SkipTests)]
         public async Task MainChain_To_SideChain_Transfer_And_Back()
         {
             using (var context = new SidechainTestContext())

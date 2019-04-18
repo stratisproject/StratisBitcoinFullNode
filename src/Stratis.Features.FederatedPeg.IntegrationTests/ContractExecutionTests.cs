@@ -19,7 +19,6 @@ using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Features.FederatedPeg.IntegrationTests.Utils;
-using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.Core;
@@ -36,7 +35,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
 
         private (Script payToMultiSig, BitcoinAddress sidechainMultisigAddress, BitcoinAddress mainchainMultisigAddress) scriptAndAddresses;
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact(Skip = FederatedPegTestHelper.SkipTests)]
         public async Task BasicTransferTest()
         {
             using (SidechainNodeBuilder nodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this))
