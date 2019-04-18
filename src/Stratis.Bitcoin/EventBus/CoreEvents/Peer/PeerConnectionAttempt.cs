@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using Stratis.Bitcoin.P2P.Peer;
 
 namespace Stratis.Bitcoin.EventBus.CoreEvents
 {
@@ -7,16 +6,13 @@ namespace Stratis.Bitcoin.EventBus.CoreEvents
     /// Event that is published whenever the node tries to connect to a peer.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.EventBus.EventBase" />
-    public class PeerConnectionAttempt : EventBase
+    public class PeerConnectionAttempt : PeerEventBase
     {
         public bool Inbound { get; }
 
-        public IPEndPoint PeerEndPoint { get; }
-
-        public PeerConnectionAttempt(bool inbound, IPEndPoint peerEndPoint)
+        public PeerConnectionAttempt(bool inbound, IPEndPoint peerEndPoint) : base(peerEndPoint)
         {
             this.Inbound = inbound;
-            this.PeerEndPoint = peerEndPoint;
         }
     }
 }

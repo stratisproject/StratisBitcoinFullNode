@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using Stratis.Bitcoin.P2P.Peer;
 
 namespace Stratis.Bitcoin.EventBus.CoreEvents
 {
@@ -8,16 +7,13 @@ namespace Stratis.Bitcoin.EventBus.CoreEvents
     /// This happens prior to any Payload they have to exchange.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.EventBus.EventBase" />
-    public class PeerConnected : EventBase
+    public class PeerConnected : PeerEventBase
     {
         public bool Inbound { get; }
 
-        public IPEndPoint PeerEndPoint { get; }
-
-        public PeerConnected(bool inbound, IPEndPoint peerEndPoint)
+        public PeerConnected(bool inbound, IPEndPoint peerEndPoint) : base(peerEndPoint)
         {
             this.Inbound = inbound;
-            this.PeerEndPoint = peerEndPoint;
         }
     }
 }

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.AsyncWork;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -136,6 +137,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     Message message = await this.ReadAndParseMessageAsync(this.peer.Version, this.CancellationSource.Token).ConfigureAwait(false);
 
+                    this.asyncProvider.Signals.Publish(new PeerMessageReceived(this.peer.PeerEndPoint, message));
                     this.logger.LogTrace("Received message: '{0}'", message);
 
                     this.peer.Counter.AddRead(message.MessageSize);
@@ -230,9 +232,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             else cancellation = this.CancellationSource.Token;
 
+            Message message = null;
             try
             {
-                var message = new Message(this.payloadProvider)
+                message = new Message(this.payloadProvider)
                 {
                     Magic = this.peer.Network.Magic,
                     Payload = payload
@@ -252,6 +255,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     byte[] bytes = ms.ToArray();
 
                     await this.SendAsync(bytes, cancellation).ConfigureAwait(false);
+                    this.asyncProvider.Signals.Publish(new PeerMessageSent(this.peer.PeerEndPoint, message, bytes.Length));
                     this.peer.Counter.AddWritten(bytes.Length);
                 }
             }
@@ -263,6 +267,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception ex)
             {
+                this.asyncProvider.Signals.Publish(new PeerMessageSendFailure(this.peer.PeerEndPoint, message, ex));
                 this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
 
                 this.peer.Disconnect("Unexpected exception while sending a message", ex);
