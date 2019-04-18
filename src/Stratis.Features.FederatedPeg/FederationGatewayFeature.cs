@@ -39,6 +39,7 @@ using Stratis.Features.FederatedPeg.RestClients;
 using Stratis.Features.FederatedPeg.SourceChain;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
+using TracerAttributes;
 
 //todo: this is pre-refactoring code
 //todo: ensure no duplicate or fake withdrawal or deposit transactions are possible (current work underway)
@@ -194,6 +195,7 @@ namespace Stratis.Features.FederatedPeg
             }
         }
 
+        [NoTrace]
         private string CollectStats()
         {
             StringBuilder benchLog = new StringBuilder();
