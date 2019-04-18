@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28803.156
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{5B331FD3-D493-46A9-928B-B786FC6F3103}"
 	ProjectSection(SolutionItems) = preProject
@@ -158,9 +158,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Features.FederatedP
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Features.FederatedPeg.Tests", "Stratis.Features.FederatedPeg.Tests\Stratis.Features.FederatedPeg.Tests.csproj", "{DE629FE5-BC8A-4597-B19C-DDAB5EC1528D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.CirrusD", "Stratis.CirrusD\Stratis.CirrusD.csproj", "{D1A3A36B-4F50-4C10-9DAE-DACFAF617A6D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.CirrusD", "Stratis.CirrusD\Stratis.CirrusD.csproj", "{D1A3A36B-4F50-4C10-9DAE-DACFAF617A6D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.CirrusPegD", "Stratis.CirrusPegD\Stratis.CirrusPegD.csproj", "{3E6D4D9E-CAF5-4A23-9C96-07B1B1FE76B7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.CirrusPegD", "Stratis.CirrusPegD\Stratis.CirrusPegD.csproj", "{3E6D4D9E-CAF5-4A23-9C96-07B1B1FE76B7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Features.FederatedPeg.IntegrationTests", "Stratis.Features.FederatedPeg.IntegrationTests\Stratis.Features.FederatedPeg.IntegrationTests.csproj", "{D71A7BBE-E64A-4F2E-B2A9-6D742FE94ED9}"
 EndProject
