@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode = builder.CreateStratisPowNode(this.regTest).Start();
+                CoreNode stratisNode = builder.CreateStratisPowNode(this.regTest, "cv-1-stratisNode").Start();
                 CoreNode coreNode1 = builder.CreateBitcoinCoreNode().Start();
                 CoreNode coreNode2 = builder.CreateBitcoinCoreNode().Start();
 
