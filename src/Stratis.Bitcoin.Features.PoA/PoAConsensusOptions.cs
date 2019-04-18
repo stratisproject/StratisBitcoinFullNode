@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.PoA
         /// Use <see cref="IFederationManager.GetFederationMembers"/> as a source of
         /// up to date federation keys.
         /// </remarks>
-        public List<IFederationMember> GenesisFederation { get; protected set; }
+        public List<IFederationMember> GenesisFederationMembers { get; protected set; }
 
         public uint TargetSpacingSeconds { get; protected set; }
 
@@ -34,14 +34,14 @@ namespace Stratis.Bitcoin.Features.PoA
             int maxStandardTxWeight,
             int maxBlockSigopsCost,
             int maxStandardTxSigopsCost,
-            List<IFederationMember> genesisFederation,
+            List<IFederationMember> genesisFederationMembers,
             uint targetSpacingSeconds,
             bool votingEnabled,
             bool autoKickIdleMembers,
             uint federationMemberMaxIdleTimeSeconds = 60 * 60 * 24 * 7)
                 : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
-            this.GenesisFederation = genesisFederation;
+            this.GenesisFederationMembers = genesisFederationMembers;
             this.TargetSpacingSeconds = targetSpacingSeconds;
             this.VotingEnabled = votingEnabled;
             this.AutoKickIdleMembers = autoKickIdleMembers;

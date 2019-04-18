@@ -56,7 +56,7 @@ namespace Stratis.Sidechains.Networks
             // Configure federation public keys used to sign blocks.
             // Keep in mind that order in which keys are added to this list is important
             // and should be the same for all nodes operating on this network.
-            var genesisFederation = new List<IFederationMember>()
+            var genesisFederationMembers = new List<IFederationMember>()
             {
                 new CollateralFederationMember(new PubKey("036317d97f911ce899fd0a360866d19f2dca5252c7960d4652d814ab155a8342de"), new Money(0), null),
                 new CollateralFederationMember(new PubKey("02a08d72d47b3103261163c15aa2f6b0d007e1872ad9f5fddbfbd27bdb738156e9"), new Money(0), null),
@@ -73,7 +73,7 @@ namespace Stratis.Sidechains.Networks
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
-                genesisFederation: genesisFederation,
+                genesisFederationMembers: genesisFederationMembers,
                 targetSpacingSeconds: 16,
                 votingEnabled: false,
                 autoKickIdleMembers: false

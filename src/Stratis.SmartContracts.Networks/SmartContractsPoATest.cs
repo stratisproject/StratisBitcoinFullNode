@@ -43,7 +43,7 @@ namespace Stratis.SmartContracts.Networks
 
             this.Genesis = genesisBlock;
 
-            var genesisFederation = new List<IFederationMember>
+            var genesisFederationMembers = new List<IFederationMember>
             {
                 new FederationMember(new PubKey("03df4a360038a42b68aca8d198fc487c495ef9e4f3fe56daa6bbfdeea1a7cb5ec5")),
                 new FederationMember(new PubKey("021c3e5b81a43284d166fb8862a9e7382630c2750f8556a4c7ba405ccdd70d4808")),
@@ -60,7 +60,7 @@ namespace Stratis.SmartContracts.Networks
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
-                genesisFederation: genesisFederation,
+                genesisFederationMembers: genesisFederationMembers,
                 targetSpacingSeconds: 60,
                 votingEnabled: true,
                 autoKickIdleMembers: false

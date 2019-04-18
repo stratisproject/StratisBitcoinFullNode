@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
             this.FederationKey2 = new Mnemonic("idle power swim wash diesel blouse photo among eager reward govern menu").DeriveExtKey().PrivateKey;
             this.FederationKey3 = new Mnemonic("high neither night category fly wasp inner kitchen phone current skate hair").DeriveExtKey().PrivateKey;
 
-            var genesisFederation = new List<IFederationMember>()
+            var genesisFederationMembers = new List<IFederationMember>()
             {
                 new FederationMember(this.FederationKey1.PubKey), // 029528e83f065153d7fa655e73a07fc96fc759162f1e2c8936fa592f2942f39af0
                 new FederationMember(this.FederationKey2.PubKey), // 03b539807c64abafb2d14c52a0d1858cc29d7c7fad0598f92a1274789c18d74d2d
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
                 maxStandardTxWeight: baseOptions.MaxStandardTxWeight,
                 maxBlockSigopsCost: baseOptions.MaxBlockSigopsCost,
                 maxStandardTxSigopsCost: baseOptions.MaxStandardTxSigopsCost,
-                genesisFederation: genesisFederation,
+                genesisFederationMembers: genesisFederationMembers,
                 targetSpacingSeconds: 60,
                 votingEnabled: baseOptions.VotingEnabled,
                 autoKickIdleMembers: baseOptions.AutoKickIdleMembers,
