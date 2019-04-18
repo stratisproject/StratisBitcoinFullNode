@@ -213,6 +213,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Start();
 
                 WaitLoop(() => this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height);
+                WaitLoop(() => this.wallet.LastBlockSyncedHeight == this.ChainIndexer.Tip.Height);
                 Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
 
                 uint256 txId1 = 0;
@@ -273,6 +274,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Add more funds and resubmit the deposits.
                 AddFundingTransaction(new Money[] { Money.COIN * 1000 });
+                WaitLoop(() => this.wallet.LastBlockSyncedHeight == this.ChainIndexer.Tip.Height);
                 crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
                 transfers = crossChainTransferStore.GetAsync(new uint256[] { txId1, txId2 }).GetAwaiter().GetResult().ToArray();
                 transactions = transfers.Select(t => t.PartialTransaction).ToArray();
@@ -464,7 +466,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 requester.Start();
 
-                Thread.Sleep(500);
+                Thread.Sleep(2000);
 
                 // Receives all of the requests. We broadcast multiple at a time.
                 peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
