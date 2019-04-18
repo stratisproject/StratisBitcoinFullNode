@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Controllers;
 
-namespace Stratis.Bitcoin.Features.BlockStore.ControllersAndClients
+namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 {
     /// <summary>Rest client for <see cref="BlockStoreController"/>.</summary>
     public interface IBlockStoreClient

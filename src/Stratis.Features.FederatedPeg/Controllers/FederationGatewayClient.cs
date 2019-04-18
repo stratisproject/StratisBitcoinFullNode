@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 
-namespace Stratis.Features.FederatedPeg.ControllersAndClients
+namespace Stratis.Features.FederatedPeg.Controllers
 {
     /// <summary>Rest client for <see cref="FederationGatewayController"/>.</summary>
     public interface IFederationGatewayClient

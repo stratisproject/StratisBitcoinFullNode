@@ -14,7 +14,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
 
-namespace Stratis.Bitcoin.Features.BlockStore.ControllersAndClients
+namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 {
     public static class BlockStoreRouteEndPoint
     {

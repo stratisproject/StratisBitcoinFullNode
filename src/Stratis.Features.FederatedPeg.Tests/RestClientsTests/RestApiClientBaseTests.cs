@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
-using Stratis.Features.FederatedPeg.ControllersAndClients;
+using Stratis.Features.FederatedPeg.Controllers;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests

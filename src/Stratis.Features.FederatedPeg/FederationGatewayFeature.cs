@@ -34,7 +34,7 @@ using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.Notifications;
 using Stratis.Features.FederatedPeg.Payloads;
-using Stratis.Features.FederatedPeg.ControllersAndClients;
+using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.SourceChain;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
@@ -376,4 +376,3 @@ namespace Stratis.Features.FederatedPeg
         }
     }
 }
-
