@@ -36,17 +36,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public ChainedHeader WalletTip => this.walletTip;
 
         /// <summary>Queue which contains blocks that should be processed by <see cref="WalletManager"/>.</summary>
-        private readonly IAsyncDelegateDequeuer<Block> blocksQueue;
+        private readonly BlockQueueProcessor blockQueueProcessor;
 
-        /// <summary>Current <see cref="blocksQueue"/> size in bytes.</summary>
-        private long blocksQueueSize;
-
-        /// <summary>Flag to determine when the <see cref="MaxQueueSize"/> is reached.</summary>
-        private bool maxQueueSizeReached;
-
-        /// <summary>Limit <see cref="blocksQueue"/> size to 100MB.</summary>
+        /// <summary>Limit <see cref="blockQueueProcessor"/> size to 100MB.</summary>
         private const int MaxQueueSize = 100 * 1024 * 1024;
-
 
         public FederationWalletSyncManager(ILoggerFactory loggerFactory, IFederationWalletManager walletManager, ChainIndexer chain,
             Network network, IBlockStore blockStore, StoreSettings storeSettings, INodeLifetime nodeLifetime, IAsyncProvider asyncProvider)
@@ -68,9 +61,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.nodeLifetime = nodeLifetime;
             this.asyncProvider = asyncProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.blocksQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<Block>($"{nameof(FederationWalletSyncManager)}-{nameof(this.blocksQueue)}", this.OnProcessBlockAsync);
-
-            this.blocksQueueSize = 0;
+            this.blockQueueProcessor = new BlockQueueProcessor(this.logger, this.asyncProvider, this.OnProcessBlockAsync, MaxQueueSize, nameof(FederationWalletSyncManager));
         }
 
         /// <inheritdoc />
@@ -231,29 +222,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(block, nameof(block));
 
-            // If the queue reaches the maximum limit, ignore incoming blocks until the queue is empty.
-            if (!this.maxQueueSizeReached)
-            {
-                if (this.blocksQueueSize >= MaxQueueSize)
-                {
-                    this.maxQueueSizeReached = true;
-                    this.logger.LogTrace("(-)[REACHED_MAX_QUEUE_SIZE]");
-                    return;
-                }
-            }
-            else
-            {
-                // If queue is empty then reset the maxQueueSizeReached flag.
-                this.maxQueueSizeReached = this.blocksQueueSize > 0;
-            }
-
-            if (!this.maxQueueSizeReached)
-            {
-                long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, block.BlockSize.Value);
-                this.logger.LogTrace("Queue sized changed to {0} bytes.", currentBlockQueueSize);
-
-                this.blocksQueue.Enqueue(block);
-            }
+            this.blockQueueProcessor.TryEnqueue(block);
         }
 
         /// <inheritdoc />
@@ -282,7 +251,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public void Dispose()
         {
-            this.blocksQueue.Dispose();
+            this.blockQueueProcessor.Dispose();
         }
     }
 }

@@ -35,7 +35,7 @@ namespace Stratis.Features.FederatedPeg
         ///
         /// TODO: This should be configurable on the Network level in the future, but individual nodes shouldn't be tweaking it.
         /// </remarks>
-        public static readonly Money DefaultTransactionFee = Money.Coins(0.01m);
+        public static readonly Money DefaultTransactionFee = Money.Coins(0.001m);
 
         /// <summary>
         /// Sidechains to STRAT don't need to check for deposits for the whole main chain. Only from when they begun.
