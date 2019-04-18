@@ -115,7 +115,7 @@ namespace Stratis.Features.FederatedPeg
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            // add our payload 
+            // add our payload
             var payloadProvider = (PayloadProvider)this.fullNode.Services.ServiceProvider.GetService(typeof(PayloadProvider));
             payloadProvider.AddPayload(typeof(RequestPartialTransactionPayload));
 
@@ -328,7 +328,7 @@ namespace Stratis.Features.FederatedPeg
             {
                 features.AddFeature<PoAFeature>().DependOn<FederationGatewayFeature>().FeatureServices(services =>
                     {
-                        services.AddSingleton<FederationManager>();
+                        services.AddSingleton<IFederationManager, CollateralFederationManager>();
                         services.AddSingleton<PoABlockHeaderValidator>();
                         services.AddSingleton<IPoAMiner, PoAMiner>();
                         services.AddSingleton<SlotsManager>();

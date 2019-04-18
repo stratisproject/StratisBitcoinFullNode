@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
     [Route("api/[controller]")]
     public class VotingController : Controller
     {
-        private readonly FederationManager fedManager;
+        private readonly IFederationManager fedManager;
 
         private readonly VotingManager votingManager;
 
@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private readonly ILogger logger;
 
-        public VotingController(FederationManager fedManager, ILoggerFactory loggerFactory, VotingManager votingManager,
+        public VotingController(IFederationManager fedManager, ILoggerFactory loggerFactory, VotingManager votingManager,
             IWhitelistedHashesRepository whitelistedHashesRepository)
         {
             this.fedManager = fedManager;
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             try
             {
-                List<string> hexList = this.fedManager.GetFederationMembers().Select(x => x.ToHex()).ToList();
+                List<string> hexList = this.fedManager.GetFederationMembers().Select(x => x.PubKey.ToHex()).ToList();
 
                 return this.Json(hexList);
             }

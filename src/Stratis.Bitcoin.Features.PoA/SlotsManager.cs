@@ -15,11 +15,11 @@ namespace Stratis.Bitcoin.Features.PoA
     {
         private readonly PoAConsensusOptions consensusOptions;
 
-        private readonly FederationManager federationManager;
+        private readonly IFederationManager federationManager;
 
         private readonly ILogger logger;
 
-        public SlotsManager(Network network, FederationManager federationManager, ILoggerFactory loggerFactory)
+        public SlotsManager(Network network, IFederationManager federationManager, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             this.federationManager = Guard.NotNull(federationManager, nameof(federationManager));
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Gets the public key for specified timestamp.</summary>
         /// <param name="headerUnixTimestamp">Timestamp of a header.</param>
         /// <exception cref="ConsensusErrorException">In case timestamp is invalid.</exception>
-        public PubKey GetPubKeyForTimestamp(uint headerUnixTimestamp, List<PubKey> federationMembers = null)
+        public PubKey GetPubKeyForTimestamp(uint headerUnixTimestamp, List<IFederationMember> federationMembers = null)
         {
             if (!this.IsValidTimestamp(headerUnixTimestamp))
                 PoAConsensusErrors.InvalidHeaderTimestamp.Throw();
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.PoA
             // Slot number in current round.
             int currentSlotNumber = (int)((headerUnixTimestamp - roundStartTimestamp) / this.consensusOptions.TargetSpacingSeconds);
 
-            return federationMembers[currentSlotNumber];
+            return federationMembers[currentSlotNumber].PubKey;
         }
 
         /// <summary>Gets next timestamp at which current node can produce a block.</summary>
@@ -57,13 +57,13 @@ namespace Stratis.Bitcoin.Features.PoA
             if (!this.federationManager.IsFederationMember)
                 throw new NotAFederationMemberException();
 
-            List<PubKey> federationMembers = this.federationManager.GetFederationMembers();
+            List<IFederationMember> federationMembers = this.federationManager.GetFederationMembers();
 
             // Round length in seconds.
             uint roundTime = this.GetRoundLengthSeconds(federationMembers.Count);
 
             // Index of a slot that current node can take in each round.
-            uint slotIndex = (uint)federationMembers.IndexOf(this.federationManager.FederationMemberKey.PubKey);
+            uint slotIndex = (uint)federationMembers.FindIndex(x => x.PubKey == this.federationManager.CurrentFederationKey.PubKey);
 
             // Time when current round started.
             uint roundStartTimestamp = (currentTime / roundTime) * roundTime;

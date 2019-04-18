@@ -89,10 +89,23 @@ namespace Stratis.Bitcoin.Tests.Common
         {
             Type type = obj.GetType();
 
-            if (type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance) == null)
+            obj.SetPrivatePropertyValue(type, propertyName, value);
+        }
+
+        /// <summary>
+        /// Sets a private property value for a given object.
+        /// </summary>
+        /// <typeparam name="T">Type of the Property</typeparam>
+        /// <param name="obj">Object from where the Property Value is set</param>
+        /// <param name="objectType">Type of a given object.</param>
+        /// <param name="propertyName">Property name as string.</param>
+        /// <param name="value">Value to set.</param>
+        public static void SetPrivatePropertyValue<T>(this object obj, Type objectType, string propertyName, T value)
+        {
+            if (objectType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance) == null)
                 throw new ArgumentOutOfRangeException("propertyName", string.Format("Property {0} was not found in Type {1}", propertyName, obj.GetType().FullName));
 
-            type.InvokeMember(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.SetProperty | BindingFlags.Instance, null, obj, new object[] { value });
+            objectType.InvokeMember(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.SetProperty | BindingFlags.Instance, null, obj, new object[] { value });
         }
 
         /// <summary>
