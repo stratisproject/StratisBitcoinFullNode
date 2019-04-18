@@ -127,7 +127,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <inheritdoc />
         public void Start() {
             this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop(nameof(PartialTransactionRequester), async token => {
-                await this.BroadcastPartialTransactionsAsync();
+                await this.BroadcastPartialTransactionsAsync().ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
             TimeBetweenQueries);
