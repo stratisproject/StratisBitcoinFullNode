@@ -181,17 +181,5 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 Assert.Equal(bestBlock1.Transactions.First().GetHash(), trx.GetHash());
             }
         }
-
-        [Fact]
-        public void GetBlockCanRetreiveGenesis()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
-            {
-                CoreNode node = builder.CreateStratisPowNode(this.network, "bs-5-node").Start();
-                uint256 genesisHash = node.FullNode.ChainIndexer.Genesis.HashBlock;
-                Block genesisBlock = node.FullNode.BlockStore().GetBlock(genesisHash);
-                Assert.Equal(genesisHash, genesisBlock.GetHash());
-            }
-        }
     }
 }

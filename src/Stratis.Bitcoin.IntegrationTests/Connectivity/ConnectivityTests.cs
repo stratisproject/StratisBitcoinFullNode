@@ -125,27 +125,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
         [Fact]
         public void When_Connecting_WithConnectOnly_Connect_ToTheRequestedPeer()
         {
-            // TS102_Connectivity_CallConnect.
-
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode node1 = builder.CreateStratisPosNode(this.posNetwork, "conn-4-node1").Start();
-                CoreNode node2 = builder.CreateStratisPosNode(this.posNetwork, "conn-4-node2").Start();
 
-                var node2ConnectionMgr = node2.FullNode.NodeService<IConnectionManager>();
+                var nodeConfig = new NodeConfigParameters
+                {
+                    { "-connect", node1.Endpoint.ToString() }
+                };
 
-                var node2PeerNodeConnector = node2ConnectionMgr.PeerConnectors.
-                    Where(p => p.GetType() == typeof(PeerConnectorConnectNode)).First() as PeerConnectorConnectNode;
+                CoreNode node2 = builder.CreateStratisPosNode(this.posNetwork, "conn-4-node2", configParameters: nodeConfig).Start();
 
-                node1.FullNode.ConnectionManager.ConnectedPeers.Should().BeEmpty();
-
-                node2PeerNodeConnector.ConnectionSettings.Connect = new List<IPEndPoint>() { node1.Endpoint };
-
-                node2ConnectionMgr.Initialize(node2.FullNode.NodeService<IConsensusManager>());
-
-                TestHelper.WaitLoop(() => node2ConnectionMgr.ConnectedPeers.Count() == 1);
-
-                node1.FullNode.ConnectionManager.ConnectedPeers.Should().ContainSingle();
+                TestHelper.WaitLoop(() => TestHelper.IsNodeConnectedTo(node1, node2));
             }
         }
 

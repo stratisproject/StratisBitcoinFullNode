@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NBitcoin;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
@@ -30,30 +29,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 Type consensusType = typeof(NBitcoin.Consensus);
                 consensusType.GetProperty("MaxReorgLength").SetValue(this.Consensus, (uint)10);
-            }
-        }
-
-        [Fact]
-        public void Pow_NodesCanConnectToEachOthers()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
-            {
-                CoreNode node1 = builder.CreateStratisPowNode(this.powNetwork).Start();
-                CoreNode node2 = builder.CreateStratisPowNode(this.powNetwork).Start();
-
-                Assert.Empty(node1.FullNode.ConnectionManager.ConnectedPeers);
-                Assert.Empty(node2.FullNode.ConnectionManager.ConnectedPeers);
-
-                TestHelper.Connect(node1, node2);
-                Assert.Single(node1.FullNode.ConnectionManager.ConnectedPeers);
-                Assert.Single(node2.FullNode.ConnectionManager.ConnectedPeers);
-
-                var behavior = node1.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.OfType<IConnectionManagerBehavior>().FirstOrDefault();
-                Assert.False(behavior.AttachedPeer.Inbound);
-                Assert.True(behavior.OneTry);
-                behavior = node2.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.OfType<IConnectionManagerBehavior>().FirstOrDefault();
-                Assert.True(behavior.AttachedPeer.Inbound);
-                Assert.False(behavior.OneTry);
             }
         }
 
