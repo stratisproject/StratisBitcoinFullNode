@@ -99,7 +99,7 @@ namespace Stratis.Features.FederatedPeg
             ISignedMultisigTransactionBroadcaster signedBroadcaster,
             IMaturedBlocksSyncManager maturedBlocksSyncManager,
             IWithdrawalHistoryProvider withdrawalHistoryProvider,
-            CollateralChecker collateralChecker)
+            CollateralChecker collateralChecker = null)
         {
             this.loggerFactory = loggerFactory;
             this.connectionManager = connectionManager;
@@ -149,7 +149,7 @@ namespace Stratis.Features.FederatedPeg
             // Query our database for fully-signed transactions and broadcast them every N seconds.
             this.signedBroadcaster.Start();
 
-            this.collateralChecker.Initialize();
+            this.collateralChecker?.Initialize();
 
             // Connect the node to the other federation members.
             foreach (IPEndPoint federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
@@ -170,7 +170,7 @@ namespace Stratis.Features.FederatedPeg
 
             this.crossChainTransferStore.Dispose();
 
-            this.collateralChecker.Dispose();
+            this.collateralChecker?.Dispose();
         }
 
         private void AddInlineStats(StringBuilder benchLogs)
@@ -317,7 +317,7 @@ namespace Stratis.Features.FederatedPeg
                         services.AddSingleton<IFederationGatewayClient, FederationGatewayClient>();
                         services.AddSingleton<IMaturedBlocksSyncManager, MaturedBlocksSyncManager>();
                         services.AddSingleton<IWithdrawalHistoryProvider, WithdrawalHistoryProvider>();
-                        services.AddSingleton<CollateralChecker>();
+                        services.AddSingleton<FederationGatewaySettings>();
 
                         // Set up events.
                         services.AddSingleton<TransactionObserver>();
@@ -380,6 +380,8 @@ namespace Stratis.Features.FederatedPeg
 
                         return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
                     });
+
+                    services.AddSingleton<CollateralChecker>();
                 });
             });
 
