@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.EventBus;
@@ -29,12 +31,15 @@ namespace Stratis.Features.FederatedPeg
 
         private SubscriptionToken memberAddedToken, memberKickedToken;
 
+        /// <summary>Amount of confirmations required for collateral.</summary>
+        private const int RequiredConfirmations = 1;
+
         /// <summary>Deposits mapped by federation member.</summary>
         /// <remarks>
         /// Deposits are not updated if federation member doesn't have collateral requirement enabled.
         /// All access should be protected by <see cref="locker"/>.
         /// </remarks>
-        private Dictionary<CollateralFederationMember, Money> depositsByFederationMember;
+        private Dictionary<CollateralFederationMember, Money> depositsByFederationMember; // TODO change to be an address
 
         public CollateralChecker(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, FederationGatewaySettings settings,
             IFederationManager federationManager, ISignals signals)
@@ -48,7 +53,7 @@ namespace Stratis.Features.FederatedPeg
             this.blockStoreClient = new BlockStoreClient(loggerFactory, httpClientFactory, settings.CounterChainApiPort);
         }
 
-        public void Initialize()
+        public async Task InitializeAsync()
         {
             this.memberAddedToken = this.signals.Subscribe<FedMemberAdded>(this.OnFedMemberAdded);
             this.memberKickedToken = this.signals.Subscribe<FedMemberKicked>(this.OnFedMemberKicked);
@@ -56,9 +61,34 @@ namespace Stratis.Features.FederatedPeg
             foreach (CollateralFederationMember federationMember in this.federationManager.GetFederationMembers().Cast<CollateralFederationMember>())
                 this.depositsByFederationMember.Add(federationMember, null);
 
+
+
+
+
+
             // TODO DO first API update in initialize to get initial values
 
             // TODO start updating deposits in BG. Ask API only for those that have address and not null amount
+        }
+
+        private async Task UpdateCollateralInfoAsync(CancellationToken cancellation = default(CancellationToken))
+        {
+            List<CollateralFederationMember> membersToCheck;
+
+            lock (this.locker)
+            {
+                membersToCheck = this.depositsByFederationMember.Keys.Where(x => x.CollateralAmount != null && x.CollateralAmount > 0).ToList();
+            }
+
+            Dictionary<string, Money> collateral = await this.blockStoreClient.GetAddressBalancesAsync(membersToCheck.Select(x => x.CollateralMainchainAddress).ToList(), RequiredConfirmations).ConfigureAwait(false);
+
+            lock (this.locker)
+            {
+                foreach (KeyValuePair<string, Money> addressMoney in collateral)
+                {
+
+                }
+            }
         }
 
         public bool CheckCollateral(IFederationMember federationMember)
