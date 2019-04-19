@@ -1,7 +1,6 @@
-﻿using System;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -9,7 +8,6 @@ using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.Diagnostic.Controllers;
 using Stratis.Features.Diagnostic.PeerDiagnostic;
-using Stratis.Features.Diagnostic.Utils;
 
 namespace Stratis.Features.Diagnostic
 {
@@ -22,31 +20,42 @@ namespace Stratis.Features.Diagnostic
     /// <seealso cref="Stratis.Bitcoin.Builder.Feature.FullNodeFeature" />
     public class DiagnosticFeature : FullNodeFeature
     {
-        private ISignals signals;
+        private readonly ISignals signals;
+        private readonly DiagnosticSettings diagnosticSettings;
+        private readonly PeerStatisticsCollector peerStatisticsCollector;
 
-        public DiagnosticFeature(ISignals signals, INodeStats nodeStats)
+        public DiagnosticFeature(ISignals signals, DiagnosticSettings diagnosticSettings, PeerStatisticsCollector peerStatisticsCollector)
         {
-            this.signals = signals;
-            nodeStats.RegisterStats(AddInlineStats, StatsType.Inline);
+            this.signals = Guard.NotNull(signals, nameof(signals));
+            this.diagnosticSettings = Guard.NotNull(diagnosticSettings, nameof(diagnosticSettings));
+            this.peerStatisticsCollector = Guard.NotNull(peerStatisticsCollector, nameof(peerStatisticsCollector));
         }
 
         public override Task InitializeAsync()
         {
+            this.peerStatisticsCollector.Initialize();
             return Task.CompletedTask;
         }
 
-
-        private void AddInlineStats(StringBuilder builder)
+        /// <summary>
+        /// Prints command-line help.
+        /// </summary>
+        /// <param name="network">The network to extract values from.</param>
+        public static void PrintHelp(Network network)
         {
-            builder.Append("GC.GetTotalMemory: ".PadRight(LoggingConfiguration.ColumnLength + 1));
-            builder.AppendLine($"{GC.GetTotalMemory(false).SizeSuffix(2)}");
+            DiagnosticSettings.PrintHelp(network);
+        }
+
+        public override void Dispose()
+        {
+            this.peerStatisticsCollector.Dispose();
         }
     }
 
 
     public static class DiagnosticFeatureExtension
     {
-        public static IFullNodeBuilder UseCustomFeature(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder UseDiagnosticFeature(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<DiagnosticFeature>("diagnostic");
 
@@ -55,7 +64,8 @@ namespace Stratis.Features.Diagnostic
                 .AddFeature<DiagnosticFeature>()
                 .FeatureServices(services => services
                     .AddSingleton<DiagnosticController>()
-                    .AddSingleton<PeerDiagnosticCollector>()
+                    .AddSingleton<PeerStatisticsCollector>()
+                    .AddSingleton<DiagnosticSettings>()
                 )
             );
 

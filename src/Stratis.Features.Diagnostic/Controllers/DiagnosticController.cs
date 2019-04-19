@@ -7,8 +7,9 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using Stratis.Features.Diagnostic.Controllers.Models;
+using Stratis.Features.Diagnostic.PeerDiagnostic;
 using Stratis.Features.Diagnostic.Utils;
 
 namespace Stratis.Features.Diagnostic.Controllers
@@ -19,11 +20,12 @@ namespace Stratis.Features.Diagnostic.Controllers
     [Route("api/[controller]/[action]")]
     public class DiagnosticController : FeatureController
     {
-        private ISignals signals;
+        private readonly PeerStatisticsCollector peerStatisticsCollector;
 
-        public DiagnosticController(ISignals signals, IConsensusManager consensusManager, IConnectionManager connectionManager)
+        public DiagnosticController(PeerStatisticsCollector peerDiagnosticCollector, IConnectionManager connectionManager, IConsensusManager consensusManager)
             : base(connectionManager: connectionManager, consensusManager: consensusManager)
         {
+            this.peerStatisticsCollector = peerDiagnosticCollector;
         }
 
         /// <summary>
@@ -48,6 +50,103 @@ namespace Stratis.Features.Diagnostic.Controllers
                     connectedPeers = connectedPeers.Select(DumpPeer),
                     connectedPeersNotInPeersByPeerId = connectedPeers.Except(peersByPeerId).Select(DumpPeer)
                 });
+            }
+            catch (Exception e)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Gets the Diagnostic Feature status.
+        /// </summary>
+        /// <returns>The Diagnostic Feature status</returns>
+        [HttpGet]
+        public IActionResult GetStatus()
+        {
+            try
+            {
+                return this.Json(new
+                {
+                    PeerStatistics = this.peerStatisticsCollector.Enabled ? "Enabled" : "Disabled"
+                });
+            }
+            catch (Exception e)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Returns the connected peers with some information
+        /// </summary>
+        /// <param name="connectedOnly">if set to <c>true</c> returns statistics related to connected peers only.</param>
+        /// <returns>List of peer statistics</returns>
+        [HttpGet]
+        public ActionResult<List<PeerStatisticsModel>> GetPeersStatistics(bool connectedOnly)
+        {
+            try
+            {
+                IEnumerable<PeerStatistics> peerStatistics = this.peerStatisticsCollector.GetStatistics();
+
+                if (connectedOnly)
+                {
+                    IEnumerable<IPEndPoint> connectedPeersEndpoints = this.ConnectionManager.ConnectedPeers.ToList().Select(peer => peer.PeerEndPoint);
+                    peerStatistics = peerStatistics.Where(peerStatistic => connectedPeersEndpoints.Contains(peerStatistic.PeerEndPoint));
+                }
+
+                return this.Json(peerStatistics.Select(peer => new PeerStatisticsModel(peer)));
+            }
+            catch (Exception e)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Starts collecting peers statistics.
+        /// </summary>
+        /// <returns>Operation result.</returns>
+        [HttpGet]
+        public IActionResult StartCollectingPeersStatistics()
+        {
+            try
+            {
+                if (this.peerStatisticsCollector.Enabled)
+                {
+                    return Ok("Diagnostic Peer Statistic Collector already enabled.");
+                }
+                else
+                {
+                    this.peerStatisticsCollector.StartCollecting();
+                    return Ok("Diagnostic Peer Statistic Collector enabled.");
+                }
+            }
+            catch (Exception e)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Stops collecting peers statistics.
+        /// Stopping a running peer statistic collecotr doesn't clear obtained results.
+        /// </summary>
+        /// <returns>Operation result.</returns>
+        [HttpGet]
+        public IActionResult StopCollectingPeersStatistics()
+        {
+            try
+            {
+                if (!this.peerStatisticsCollector.Enabled)
+                {
+                    return Ok("Diagnostic Peer Statistic Collector already disabled.");
+                }
+                else
+                {
+                    this.peerStatisticsCollector.StartCollecting();
+                    return Ok("Diagnostic Peer Statistic Collector disabled.");
+                }
             }
             catch (Exception e)
             {

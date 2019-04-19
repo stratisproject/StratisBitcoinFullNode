@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Text;
-using System.Threading;
 using Stratis.Features.Diagnostic.Utils;
 
 namespace Stratis.Features.Diagnostic.PeerDiagnostic
@@ -13,7 +10,7 @@ namespace Stratis.Features.Diagnostic.PeerDiagnostic
     /// </summary>
     public class PeerStatistics
     {
-        public IPEndPoint IPEndPoint { get; set; }
+        public IPEndPoint PeerEndPoint { get; set; }
 
         public bool Inbound { get; set; }
 
@@ -40,13 +37,13 @@ namespace Stratis.Features.Diagnostic.PeerDiagnostic
         /// <param name="peerEndPoint">The peer end point.</param>
         public PeerStatistics(int maxLoggedEvents, IPEndPoint peerEndPoint)
         {
-            this.IPEndPoint = peerEndPoint;
+            this.PeerEndPoint = peerEndPoint;
             this.LatestEvents = new ConcurrentFixedSizeQueue<string>(maxLoggedEvents);
         }
 
         public void LogEvent(string loggedText)
         {
-            this.LatestEvents.Enqueue(loggedText);
+            this.LatestEvents.Enqueue($"[{DateTime.UtcNow}] {loggedText}");
         }
     }
 }
