@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Features.FederatedPeg.Tests.Utils;
+using Stratis.Features.FederatedPeg.IntegrationTests.Utils;
 using Stratis.Sidechains.Networks;
 using Xunit;
 
@@ -13,7 +13,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
 {
     public class MiningTests
     {
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact(Skip = FederatedPegTestHelper.SkipTests)]
         public void NodeCanLoadFederationKey()
         {
             var network = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();
@@ -37,7 +37,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
             }
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact(Skip = FederatedPegTestHelper.SkipTests)]
         public void NodeCanMine()
         {
             var network = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();
@@ -59,7 +59,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
             }
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact(Skip = FederatedPegTestHelper.SkipTests)]
         public void PremineIsReceived()
         {
             var network = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();
