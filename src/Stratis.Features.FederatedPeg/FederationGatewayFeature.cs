@@ -82,6 +82,8 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly ILogger logger;
 
+        private readonly CollateralChecker collateralChecker;
+
         public FederationGatewayFeature(
             ILoggerFactory loggerFactory,
             IConnectionManager connectionManager,
@@ -96,7 +98,8 @@ namespace Stratis.Features.FederatedPeg
             IPartialTransactionRequester partialTransactionRequester,
             ISignedMultisigTransactionBroadcaster signedBroadcaster,
             IMaturedBlocksSyncManager maturedBlocksSyncManager,
-            IWithdrawalHistoryProvider withdrawalHistoryProvider)
+            IWithdrawalHistoryProvider withdrawalHistoryProvider,
+            CollateralChecker collateralChecker)
         {
             this.loggerFactory = loggerFactory;
             this.connectionManager = connectionManager;
@@ -111,6 +114,7 @@ namespace Stratis.Features.FederatedPeg
             this.maturedBlocksSyncManager = maturedBlocksSyncManager;
             this.withdrawalHistoryProvider = withdrawalHistoryProvider;
             this.signedBroadcaster = signedBroadcaster;
+            this.collateralChecker = collateralChecker;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -145,6 +149,8 @@ namespace Stratis.Features.FederatedPeg
             // Query our database for fully-signed transactions and broadcast them every N seconds.
             this.signedBroadcaster.Start();
 
+            this.collateralChecker.Initialize();
+
             // Connect the node to the other federation members.
             foreach (IPEndPoint federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
                 this.connectionManager.AddNodeAddress(federationMemberIp);
@@ -163,6 +169,8 @@ namespace Stratis.Features.FederatedPeg
             this.maturedBlocksSyncManager.Dispose();
 
             this.crossChainTransferStore.Dispose();
+
+            this.collateralChecker.Dispose();
         }
 
         private void AddInlineStats(StringBuilder benchLogs)
@@ -309,6 +317,7 @@ namespace Stratis.Features.FederatedPeg
                         services.AddSingleton<IFederationGatewayClient, FederationGatewayClient>();
                         services.AddSingleton<IMaturedBlocksSyncManager, MaturedBlocksSyncManager>();
                         services.AddSingleton<IWithdrawalHistoryProvider, WithdrawalHistoryProvider>();
+                        services.AddSingleton<CollateralChecker>();
 
                         // Set up events.
                         services.AddSingleton<TransactionObserver>();
