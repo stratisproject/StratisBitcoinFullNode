@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.Disconnect(stratisNode, coreNode2);
                 ((CachedCoinView)stratisNode.FullNode.CoinView()).Flush();
 
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode, coreNode2));
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode, coreNode2));
             }
         }
 

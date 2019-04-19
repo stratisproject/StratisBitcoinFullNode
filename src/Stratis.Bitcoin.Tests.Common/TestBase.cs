@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
 using NBitcoin;
-using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -275,6 +273,49 @@ namespace Stratis.Bitcoin.Tests.Common
             }
 
             return headers;
+        }
+
+        public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int waitTimeSeconds = 60, int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            if (cancellationToken == default(CancellationToken))
+            {
+                cancellationToken = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : waitTimeSeconds * 1000).Token;
+            }
+
+            while (!act())
+            {
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    Thread.Sleep(retryDelayInMiliseconds);
+                }
+                catch (OperationCanceledException e)
+                {
+                    Assert.False(true, $"{failureReason}{Environment.NewLine}{e.Message} [{e.InnerException?.Message}]");
+                }
+            }
+        }
+
+        public static void WaitLoopMessage(Func<(bool success, string message)> act, int waitTimeSeconds = 60)
+        {
+            CancellationToken cancellationToken = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : waitTimeSeconds * 1000).Token;
+
+            (bool success, string message) = act();
+
+            while (!success)
+            {
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    Thread.Sleep(1000);
+
+                    (success, message) = act();
+                }
+                catch (OperationCanceledException e)
+                {
+                    Assert.False(true, $"{message}{Environment.NewLine}{e.Message} [{e.InnerException?.Message}]");
+                }
+            }
         }
     }
 }
