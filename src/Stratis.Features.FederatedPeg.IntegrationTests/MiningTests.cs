@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Features.FederatedPeg.Tests.Utils;
+using Stratis.Features.FederatedPeg.IntegrationTests.Utils;
 using Stratis.Sidechains.Networks;
 using Xunit;
 
@@ -13,7 +13,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
 {
     public class MiningTests
     {
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact(Skip = FederatedPegTestHelper.SkipTests)]
         public void NodeCanLoadFederationKey()
         {
             var network = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();
@@ -24,20 +24,20 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 Key key = network.FederationKeys[0];
                 CoreNode node = builder.CreatePoANode(network, key).Start();
 
-                Assert.True(node.FullNode.NodeService<FederationManager>().IsFederationMember);
-                Assert.Equal(node.FullNode.NodeService<FederationManager>().FederationMemberKey, key);
-                // Assert.True(node.FullNode.NodeService<IPoAMiner>().IsMining()); Old method 
+                Assert.True(node.FullNode.NodeService<IFederationManager>().IsFederationMember);
+                Assert.Equal(node.FullNode.NodeService<IFederationManager>().CurrentFederationKey, key);
+                // Assert.True(node.FullNode.NodeService<IPoAMiner>().IsMining()); Old method
 
                 // Create second node as normal node.
                 CoreNode node2 = builder.CreatePoANode(network).Start();
 
-                Assert.False(node2.FullNode.NodeService<FederationManager>().IsFederationMember);
-                Assert.Equal(node2.FullNode.NodeService<FederationManager>().FederationMemberKey, null);
+                Assert.False(node2.FullNode.NodeService<IFederationManager>().IsFederationMember);
+                Assert.Equal(node2.FullNode.NodeService<IFederationManager>().CurrentFederationKey, null);
                 // Assert.False(node2.FullNode.NodeService<IPoAMiner>().IsMining()); Old method
             }
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact(Skip = FederatedPegTestHelper.SkipTests)]
         public void NodeCanMine()
         {
             var network = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();
@@ -59,7 +59,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
             }
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact(Skip = FederatedPegTestHelper.SkipTests)]
         public void PremineIsReceived()
         {
             var network = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();

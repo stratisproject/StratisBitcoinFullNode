@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Thread safe chain of block headers from genesis.</summary>
         private readonly ChainIndexer chainIndexer;
 
-        private readonly FederationManager federationManager;
+        private readonly IFederationManager federationManager;
 
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly IBlockStoreQueue blockStoreQueue;
 
-        public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ChainIndexer chainIndexer,
+        public PoAFeature(IFederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ChainIndexer chainIndexer,
             IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory,
             IPoAMiner miner, VotingManager votingManager, Network network, IWhitelistedHashesRepository whitelistedHashesRepository,
             IdleFederationMembersKicker idleFederationMembersKicker, IChainState chainState, IBlockStoreQueue blockStoreQueue)
@@ -215,7 +215,7 @@ namespace Stratis.Bitcoin.Features.PoA
                     .DependOn<ConsensusFeature>()
                     .FeatureServices(services =>
                     {
-                        services.AddSingleton<FederationManager>();
+                        services.AddSingleton<IFederationManager, FederationManager>();
                         services.AddSingleton<PoABlockHeaderValidator>();
                         services.AddSingleton<IPoAMiner, PoAMiner>();
                         services.AddSingleton<MinerSettings>();

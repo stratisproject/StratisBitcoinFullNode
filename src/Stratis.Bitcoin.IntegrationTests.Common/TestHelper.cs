@@ -493,7 +493,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 Connect(thisNode, coreNode);
 
             foreach (CoreNode coreNode in to)
-                WaitLoop(() => AreNodesSynced(thisNode, coreNode, ignoreMempool), waitTimeSeconds: 120);
+                WaitLoopMessage(() => AreNodesSyncedMessage(thisNode, coreNode, ignoreMempool), waitTimeSeconds: 120);
         }
 
         /// <summary>

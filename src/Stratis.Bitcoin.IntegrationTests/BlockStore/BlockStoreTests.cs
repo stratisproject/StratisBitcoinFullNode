@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 }
 
                 // delete
-                blockRepository.Delete(new HashHeightPair(blocks.ElementAt(2).GetHash(), 2), new[] {blocks.ElementAt(2).GetHash()}.ToList());
+                blockRepository.Delete(new HashHeightPair(blocks.ElementAt(2).GetHash(), 2), new[] { blocks.ElementAt(2).GetHash() }.ToList());
                 Block deleted = blockRepository.GetBlock(blocks.ElementAt(2).GetHash());
                 Assert.Null(deleted);
             }
@@ -77,9 +77,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10NoWallet).Start();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10NoWallet).Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network, "bs-1-stratisNodeSync").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network, "bs-1-stratisNode1").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10NoWallet).Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network, "bs-1-stratisNode2").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10NoWallet).Start();
 
                 // Sync both nodes
                 TestHelper.ConnectAndSync(stratisNode1, stratisNodeSync);
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network, "bs-2-stratisNodeSync").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
 
                 // Set the tip of the best chain to some blocks in the past.
                 stratisNodeSync.FullNode.ChainIndexer.SetTip(stratisNodeSync.FullNode.ChainIndexer.GetHeader(stratisNodeSync.FullNode.ChainIndexer.Height - 5));
@@ -125,9 +125,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network, "bs-3-stratisNodeSync").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network, "bs-3-stratisNode1").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network, "bs-3-stratisNode2").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
 
                 // Sync both nodes.
                 TestHelper.ConnectAndSync(stratisNodeSync, stratisNode1);
@@ -163,8 +163,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10NoWallet).Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network, "bs-4-stratisNode1").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network, "bs-4-stratisNode2").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10NoWallet).Start();
 
                 // Sync both nodes.
                 TestHelper.ConnectAndSync(stratisNode1, stratisNode2);
@@ -179,18 +179,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 Transaction trx = stratisNode2.FullNode.BlockStore().GetTransactionById(bestBlock1.Transactions.First().GetHash());
                 Assert.NotNull(trx);
                 Assert.Equal(bestBlock1.Transactions.First().GetHash(), trx.GetHash());
-            }
-        }
-
-        [Fact]
-        public void GetBlockCanRetreiveGenesis()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
-            {
-                CoreNode node = builder.CreateStratisPowNode(this.network).Start();
-                uint256 genesisHash = node.FullNode.ChainIndexer.Genesis.HashBlock;
-                Block genesisBlock = node.FullNode.BlockStore().GetBlock(genesisHash);
-                Assert.Equal(genesisHash, genesisBlock.GetHash());
             }
         }
     }

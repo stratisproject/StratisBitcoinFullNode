@@ -7,8 +7,8 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.AsyncWork;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -709,36 +709,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Fact]
-        public void Miner_Create_Block_Whilst_Connected_Syncs()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
-            {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithDummyWallet().Start();
-                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest).Start();
-
-                TestHelper.Connect(miner, syncer);
-
-                TestHelper.MineBlocks(miner, 1);
-
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncer));
-            }
-        }
-
-        [Fact]
-        public void Miner_Create_Block_Whilst_Disconnected_Syncs()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
-            {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithDummyWallet().Start();
-                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest).Start();
-
-                TestHelper.MineBlocks(miner, 1);
-
-                TestHelper.ConnectAndSync(miner, syncer);
-            }
-        }
-
         //NOTE: These tests rely on CreateNewBlock doing its own self-validation!
         private void MinerCreateNewBlockValidity()
         {
@@ -874,19 +844,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             //    chainActive.Tip().Height--;
             //    SetMockTime(0);
             //    mempool.clear();
-        }
-
-        [Fact]
-        public void MiningAndPropagatingPOW_MineBlockCheckNodeConsensusTipIsCorrect()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
-            {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithDummyWallet().Start();
-
-                TestHelper.MineBlocks(miner, 5);
-
-                Assert.Equal(5, miner.FullNode.ConsensusManager().Tip.Height);
-            }
         }
 
         [Fact]
