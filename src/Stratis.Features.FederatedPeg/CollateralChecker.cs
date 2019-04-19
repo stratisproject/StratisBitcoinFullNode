@@ -29,6 +29,11 @@ namespace Stratis.Features.FederatedPeg
 
         private SubscriptionToken memberAddedToken, memberKickedToken;
 
+        /// <summary>Deposits mapped by federation member.</summary>
+        /// <remarks>
+        /// Deposits are not updated if federation member doesn't have collateral requirement enabled.
+        /// All access should be protected by <see cref="locker"/>.
+        /// </remarks>
         private Dictionary<CollateralFederationMember, Money> depositsByFederationMember;
 
         public CollateralChecker(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, FederationGatewaySettings settings,
@@ -70,7 +75,7 @@ namespace Stratis.Features.FederatedPeg
 
                 if (member.CollateralAmount == null)
                 {
-                    this.logger.LogTrace("(-)[NO_COLLATERAL_REQUIRMENT]:true");
+                    this.logger.LogTrace("(-)[NO_COLLATERAL_REQUIREMENT]:true");
                     return true;
                 }
 
@@ -98,6 +103,8 @@ namespace Stratis.Features.FederatedPeg
         {
             this.signals.Unsubscribe(this.memberAddedToken);
             this.signals.Unsubscribe(this.memberKickedToken);
+
+            // TODO stop BG update
         }
     }
 }
