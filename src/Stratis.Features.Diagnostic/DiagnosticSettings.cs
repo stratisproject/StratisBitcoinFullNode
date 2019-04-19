@@ -59,8 +59,10 @@ namespace Stratis.Features.Diagnostic
         {
             var builder = new StringBuilder();
 
+            builder.AppendLine($"**DIAGNOSTIC SETTINGS**");
             builder.AppendLine($"-diagpeerstats=<bool>             Start the diagnostic peer statistics collector. Defaults to {DefaultPeersStatisticsCollectorEnabled}.");
             builder.AppendLine($"-diagpeerstatsmaxlog=<number>     Maximum number of logged peer events stored during the diagnostic peer statistics collector. Defaults to {DefaultMaxPeerLoggedEvents}.");
+            builder.AppendLine($"**END OF DIAGNOSTIC SETTINGS**");
 
             NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
         }

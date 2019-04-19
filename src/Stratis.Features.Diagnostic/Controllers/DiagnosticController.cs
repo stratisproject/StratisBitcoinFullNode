@@ -88,14 +88,14 @@ namespace Stratis.Features.Diagnostic.Controllers
             try
             {
                 IEnumerable<PeerStatistics> peerStatistics = this.peerStatisticsCollector.GetStatistics();
+                IEnumerable<IPEndPoint> connectedPeersEndpoints = this.ConnectionManager.ConnectedPeers.ToList().Select(peer => peer.PeerEndPoint);
 
                 if (connectedOnly)
                 {
-                    IEnumerable<IPEndPoint> connectedPeersEndpoints = this.ConnectionManager.ConnectedPeers.ToList().Select(peer => peer.PeerEndPoint);
-                    peerStatistics = peerStatistics.Where(peerStatistic => connectedPeersEndpoints.Contains(peerStatistic.PeerEndPoint));
+                    peerStatistics = peerStatistics.Where(peer => connectedPeersEndpoints.Contains(peer.PeerEndPoint));
                 }
 
-                return this.Json(peerStatistics.Select(peer => new PeerStatisticsModel(peer)));
+                return this.Json(peerStatistics.Select(peer => new PeerStatisticsModel(peer, connectedPeersEndpoints.Contains(peer.PeerEndPoint))));
             }
             catch (Exception e)
             {

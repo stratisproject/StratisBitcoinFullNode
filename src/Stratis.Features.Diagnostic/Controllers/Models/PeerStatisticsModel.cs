@@ -8,6 +8,8 @@ namespace Stratis.Features.Diagnostic.Controllers.Models
     {
         public string PeerEndPoint { get; set; }
 
+        public bool Connected { get; set; }
+
         public bool Inbound { get; set; }
 
         public long BytesSent { get; set; }
@@ -20,9 +22,10 @@ namespace Stratis.Features.Diagnostic.Controllers.Models
 
         public List<string> LatestEvents { get; set; }
 
-        public PeerStatisticsModel(PeerStatistics peer)
+        public PeerStatisticsModel(PeerStatistics peer, bool connected)
         {
             this.LatestEvents = new List<string>();
+            this.Connected = connected;
 
             if (peer != null)
             {
