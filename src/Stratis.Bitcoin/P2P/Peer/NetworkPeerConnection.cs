@@ -12,6 +12,7 @@ using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
@@ -175,43 +176,32 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                // This variable records any error occurring in the thread pool task's context.
-                Exception error = null;
-
-                await Task.Run(() =>
-                {
-                    try
-                    {
-                        this.asyncProvider.Signals.Publish(new PeerConnectionAttempt(false, endPoint));
-                        this.tcpClient.ConnectAsync(endPoint.Address, endPoint.Port).Wait(cancellation);
-                        this.asyncProvider.Signals.Publish(new PeerConnected(false, endPoint));
-                    }
-                    catch (Exception e)
-                    {
-                        // Record the error occurring in the thread pool's context.
-                        error = e;
-                        this.asyncProvider.Signals.Publish(new PeerConnectionAttemptFailed(false, endPoint, e.Message));
-                    }
-                }).ConfigureAwait(false);
-
-                // Throw the error within this error handling context.
-                if (error != null)
-                    throw error;
+                this.asyncProvider.Signals.Publish(new PeerConnectionAttempt(false, endPoint));
+                await this.tcpClient.ConnectAsync(endPoint.Address, endPoint.Port).WithCancellationAsync(cancellation).ConfigureAwait(false);
+                this.asyncProvider.Signals.Publish(new PeerConnected(false, endPoint));
 
                 this.stream = this.tcpClient.GetStream();
             }
             catch (OperationCanceledException)
             {
+                this.asyncProvider.Signals.Publish(new PeerConnectionAttemptFailed(false, endPoint, "Operation Canceled"));
                 this.logger.LogTrace("Connecting to '{0}' cancelled.", endPoint);
                 this.logger.LogTrace("(-)[CANCELLED]");
                 throw;
             }
-            catch (Exception e)
+            catch (SocketException ex)
             {
-                if (e is AggregateException) e = e.InnerException;
-                this.logger.LogDebug("Error connecting to '{0}', exception message: {1}", endPoint, e.Message);
+                this.asyncProvider.Signals.Publish(new PeerConnectionAttemptFailed(false, endPoint, $"Socket Exception: {ex.Message}"));
+                this.logger.LogDebug("Error connecting to '{0}', exception message: {1}", endPoint, ex.Message);
                 this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
-                throw e;
+                throw;
+            }
+            catch (Exception ex)
+            {
+                this.asyncProvider.Signals.Publish(new PeerConnectionAttemptFailed(false, endPoint, ex.Message));
+                this.logger.LogDebug("Error connecting to '{0}', exception message: {1}", endPoint, ex.Message);
+                this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
+                throw ex;
             }
         }
 
