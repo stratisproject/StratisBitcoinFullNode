@@ -61,7 +61,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.nodeLifetime = nodeLifetime;
             this.asyncProvider = asyncProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.blockQueueProcessor = new BlockQueueProcessor(this.logger, this.asyncProvider, this.OnProcessBlockAsync, MaxQueueSize, nameof(FederationWalletSyncManager));
+            this.blockQueueProcessor = new BlockQueueProcessor(this.logger, this.asyncProvider, this.OnProcessBlockWrapperAsync, MaxQueueSize, nameof(FederationWalletSyncManager));
         }
 
         /// <inheritdoc />
@@ -99,6 +99,19 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public void Stop()
         {
+        }
+
+        private async Task OnProcessBlockWrapperAsync(Block block, CancellationToken cancellationToken)
+        {
+            // This way the queue should continue working, but if / when it fails at least we can see why without it pushing up to AsyncProvider
+            try
+            {
+                await this.OnProcessBlockAsync(block, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError(e.ToString());
+            }
         }
 
         private async Task OnProcessBlockAsync(Block block, CancellationToken cancellationToken)
