@@ -182,12 +182,15 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     try
                     {
+                        this.asyncProvider.Signals.Publish(new PeerConnectionAttempt(false, endPoint));
                         this.tcpClient.ConnectAsync(endPoint.Address, endPoint.Port).Wait(cancellation);
+                        this.asyncProvider.Signals.Publish(new PeerConnected(false, endPoint));
                     }
                     catch (Exception e)
                     {
                         // Record the error occurring in the thread pool's context.
                         error = e;
+                        this.asyncProvider.Signals.Publish(new PeerConnectionAttemptFailed(false, endPoint, e.Message));
                     }
                 }).ConfigureAwait(false);
 
