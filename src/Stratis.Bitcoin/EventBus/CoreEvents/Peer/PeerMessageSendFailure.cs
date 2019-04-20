@@ -4,7 +4,7 @@ using Stratis.Bitcoin.P2P.Protocol;
 namespace Stratis.Bitcoin.EventBus.CoreEvents
 {
     /// <summary>
-    /// A peer message has been sent successfully.
+    /// A peer message failed to be sent.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.EventBus.EventBase" />
     public class PeerMessageSendFailure : PeerEventBase
