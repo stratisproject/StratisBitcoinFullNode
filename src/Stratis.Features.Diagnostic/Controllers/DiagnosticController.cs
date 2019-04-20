@@ -144,7 +144,7 @@ namespace Stratis.Features.Diagnostic.Controllers
                 }
                 else
                 {
-                    this.peerStatisticsCollector.StartCollecting();
+                    this.peerStatisticsCollector.StopCollecting();
                     return Ok("Diagnostic Peer Statistic Collector disabled.");
                 }
             }
