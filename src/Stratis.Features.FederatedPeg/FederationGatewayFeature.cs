@@ -160,8 +160,6 @@ namespace Stratis.Features.FederatedPeg
             NetworkPeerConnectionParameters networkPeerConnectionParameters = this.connectionManager.Parameters;
             networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager,
                 this.network, this.federationGatewaySettings, this.crossChainTransferStore));
-
-            return Task.CompletedTask;
         }
 
         public override void Dispose()

@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Events;
 using Stratis.Bitcoin.Signals;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Features.FederatedPeg
 {
@@ -31,6 +32,8 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly CancellationTokenSource cancellationSource;
 
+        private readonly INodeLifetime lifetime;
+
         private SubscriptionToken memberAddedToken, memberKickedToken;
 
         /// <summary>Amount of confirmations required for collateral.</summary>
@@ -48,10 +51,11 @@ namespace Stratis.Features.FederatedPeg
         private Task updateCollateralContinuouslyTask;
 
         public CollateralChecker(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, FederationGatewaySettings settings,
-            IFederationManager federationManager, ISignals signals)
+            IFederationManager federationManager, ISignals signals, INodeLifetime lifetime)
         {
             this.federationManager = federationManager;
             this.signals = signals;
+            this.lifetime = lifetime;
 
             this.cancellationSource = new CancellationTokenSource();
             this.locker = new object();
@@ -68,8 +72,30 @@ namespace Stratis.Features.FederatedPeg
             foreach (CollateralFederationMember federationMember in this.federationManager.GetFederationMembers().Cast<CollateralFederationMember>().Where(x => x.CollateralAmount != null && x.CollateralAmount > 0))
                 this.depositsByAddress.Add(federationMember.CollateralMainchainAddress, null);
 
-            // TODO handle cancel
-            bool success = await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
+            while (true)
+            {
+                bool success = await this.UpdateCollateralInfoAsync(this.lifetime.ApplicationStopping).ConfigureAwait(false);
+
+                this.logger.LogWarning("Failed to update collateral. Ensure that mainnet gateway node is running and API is enabled. " +
+                                       "Node will not continue initialization before another gateway node responds.");
+
+                if (!success)
+                {
+                    try
+                    {
+                        await Task.Delay(3000, this.lifetime.ApplicationStopping).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        this.logger.LogTrace("(-)[CANCELLED]");
+                        return;
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
 
             this.updateCollateralContinuouslyTask = this.UpdateCollateralInfoContinuouslyAsync();
         }
@@ -89,7 +115,9 @@ namespace Stratis.Features.FederatedPeg
                 }
 
                 bool success = await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
-                // TODO handle bool
+
+                if (!success)
+                    this.logger.LogWarning("Failed to update collateral. Ensure that mainnet gateway node is running and API is enabled.");
             }
         }
 

@@ -107,9 +107,17 @@ namespace Stratis.Bitcoin.Controllers
         public async Task<Response> SendGetRequestAsync<Response>(string apiMethodName, string arguments = null,
             CancellationToken cancellation = default(CancellationToken)) where Response : class
         {
-            HttpResponseMessage response = await this.SendGetRequestAsync(apiMethodName, arguments, cancellation).ConfigureAwait(false);
+            try
+            {
+                HttpResponseMessage response = await this.SendGetRequestAsync(apiMethodName, arguments, cancellation).ConfigureAwait(false);
 
-            return await this.ParseHttpResponseMessageAsync<Response>(response).ConfigureAwait(false);
+                return await this.ParseHttpResponseMessageAsync<Response>(response).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         private async Task<Response> ParseHttpResponseMessageAsync<Response>(HttpResponseMessage httpResponse) where Response : class
@@ -185,7 +193,7 @@ namespace Stratis.Bitcoin.Controllers
                 {
                     this.logger.LogError("Target node is not ready to receive API calls at this time ({0})", url);
                     this.logger.LogError("Failed to send a message. Exception: '{0}'.", ex);
-                    return new HttpResponseMessage() { ReasonPhrase = ex.ToString(), StatusCode = HttpStatusCode.InternalServerError };
+                    return new HttpResponseMessage() { ReasonPhrase = ex.Message, StatusCode = HttpStatusCode.InternalServerError };
                 }
             }
 
