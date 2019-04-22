@@ -127,6 +127,12 @@ namespace Stratis.Features.FederatedPeg
                 addressesToCheck = this.depositsByAddress.Keys.ToList();
             }
 
+            if (addressesToCheck.Count == 0)
+            {
+                this.logger.LogTrace("(-)[NOTHING_TO_CHECK]:true");
+                return true;
+            }
+
             Dictionary<string, Money> collateral = await this.blockStoreClient.GetAddressBalancesAsync(addressesToCheck, RequiredConfirmations, cancellation).ConfigureAwait(false);
 
             if (collateral == null)
