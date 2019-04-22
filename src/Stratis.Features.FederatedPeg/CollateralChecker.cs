@@ -32,8 +32,6 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly CancellationTokenSource cancellationSource;
 
-        private readonly INodeLifetime lifetime;
-
         private SubscriptionToken memberAddedToken, memberKickedToken;
 
         /// <summary>Amount of confirmations required for collateral.</summary>
@@ -51,11 +49,10 @@ namespace Stratis.Features.FederatedPeg
         private Task updateCollateralContinuouslyTask;
 
         public CollateralChecker(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, FederationGatewaySettings settings,
-            IFederationManager federationManager, ISignals signals, INodeLifetime lifetime)
+            IFederationManager federationManager, ISignals signals)
         {
             this.federationManager = federationManager;
             this.signals = signals;
-            this.lifetime = lifetime;
 
             this.cancellationSource = new CancellationTokenSource();
             this.locker = new object();
@@ -74,7 +71,7 @@ namespace Stratis.Features.FederatedPeg
 
             while (true)
             {
-                bool success = await this.UpdateCollateralInfoAsync(this.lifetime.ApplicationStopping).ConfigureAwait(false);
+                bool success = await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
 
                 this.logger.LogWarning("Failed to update collateral. Ensure that mainnet gateway node is running and API is enabled. " +
                                        "Node will not continue initialization before another gateway node responds.");
@@ -83,7 +80,7 @@ namespace Stratis.Features.FederatedPeg
                 {
                     try
                     {
-                        await Task.Delay(3000, this.lifetime.ApplicationStopping).ConfigureAwait(false);
+                        await Task.Delay(3000, this.cancellationSource.Token).ConfigureAwait(false);
                     }
                     catch (OperationCanceledException)
                     {
