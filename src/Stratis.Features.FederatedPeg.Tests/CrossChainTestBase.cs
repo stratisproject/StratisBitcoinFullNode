@@ -273,6 +273,9 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.federationWalletSyncManager.ProcessBlock(block);
 
+            // Ensure that the block was processed.
+            TestBase.WaitLoop(() => this.federationWalletManager.WalletTipHash == block.GetHash());
+
             return last;
         }
     }
