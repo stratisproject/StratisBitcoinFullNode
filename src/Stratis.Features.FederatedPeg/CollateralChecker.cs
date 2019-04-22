@@ -25,21 +25,27 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly ILogger logger;
 
-        /// <summary>Protects access to <see cref="depositsByFederationMember"/>.</summary>
+        /// <summary>Protects access to <see cref="depositsByAddress"/>.</summary>
 
         private readonly object locker;
+
+        private readonly CancellationTokenSource cancellationSource;
 
         private SubscriptionToken memberAddedToken, memberKickedToken;
 
         /// <summary>Amount of confirmations required for collateral.</summary>
         private const int RequiredConfirmations = 1;
 
+        private const int CollateralUpdateIntervalSeconds = 20;
+
         /// <summary>Deposits mapped by federation member.</summary>
         /// <remarks>
         /// Deposits are not updated if federation member doesn't have collateral requirement enabled.
         /// All access should be protected by <see cref="locker"/>.
         /// </remarks>
-        private Dictionary<CollateralFederationMember, Money> depositsByFederationMember; // TODO change to be an address
+        private Dictionary<string, Money> depositsByAddress;
+
+        private Task updateCollateralContinuouslyTask;
 
         public CollateralChecker(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, FederationGatewaySettings settings,
             IFederationManager federationManager, ISignals signals)
@@ -47,8 +53,9 @@ namespace Stratis.Features.FederatedPeg
             this.federationManager = federationManager;
             this.signals = signals;
 
+            this.cancellationSource = new CancellationTokenSource();
             this.locker = new object();
-            this.depositsByFederationMember = new Dictionary<CollateralFederationMember, Money>();
+            this.depositsByAddress = new Dictionary<string, Money>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.blockStoreClient = new BlockStoreClient(loggerFactory, httpClientFactory, settings.CounterChainApiPort);
         }
@@ -58,58 +65,73 @@ namespace Stratis.Features.FederatedPeg
             this.memberAddedToken = this.signals.Subscribe<FedMemberAdded>(this.OnFedMemberAdded);
             this.memberKickedToken = this.signals.Subscribe<FedMemberKicked>(this.OnFedMemberKicked);
 
-            foreach (CollateralFederationMember federationMember in this.federationManager.GetFederationMembers().Cast<CollateralFederationMember>())
-                this.depositsByFederationMember.Add(federationMember, null);
+            foreach (CollateralFederationMember federationMember in this.federationManager.GetFederationMembers().Cast<CollateralFederationMember>().Where(x => x.CollateralAmount != null && x.CollateralAmount > 0))
+                this.depositsByAddress.Add(federationMember.CollateralMainchainAddress, null);
 
+            // TODO handle cancel
+            bool success = await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
 
-
-
-
-
-            // TODO DO first API update in initialize to get initial values
-
-            // TODO start updating deposits in BG. Ask API only for those that have address and not null amount
+            this.updateCollateralContinuouslyTask = this.UpdateCollateralInfoContinuouslyAsync();
         }
 
-        private async Task UpdateCollateralInfoAsync(CancellationToken cancellation = default(CancellationToken))
+        private async Task UpdateCollateralInfoContinuouslyAsync()
         {
-            List<CollateralFederationMember> membersToCheck;
+            while (!this.cancellationSource.Token.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(CollateralUpdateIntervalSeconds * 1000, this.cancellationSource.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException )
+                {
+                    this.logger.LogTrace("(-)[CANCELLED]");
+                    return;
+                }
+
+                bool success = await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
+                // TODO handle bool
+            }
+        }
+
+        private async Task<bool> UpdateCollateralInfoAsync(CancellationToken cancellation = default(CancellationToken))
+        {
+            List<string> addressesToCheck;
 
             lock (this.locker)
             {
-                membersToCheck = this.depositsByFederationMember.Keys.Where(x => x.CollateralAmount != null && x.CollateralAmount > 0).ToList();
+                addressesToCheck = this.depositsByAddress.Keys.ToList();
             }
 
-            Dictionary<string, Money> collateral = await this.blockStoreClient.GetAddressBalancesAsync(membersToCheck.Select(x => x.CollateralMainchainAddress).ToList(), RequiredConfirmations).ConfigureAwait(false);
+            Dictionary<string, Money> collateral = await this.blockStoreClient.GetAddressBalancesAsync(addressesToCheck, RequiredConfirmations, cancellation).ConfigureAwait(false);
+
+            if (collateral == null)
+            {
+                this.logger.LogTrace("(-)[FAILED]:false");
+                return false;
+            }
 
             lock (this.locker)
             {
                 foreach (KeyValuePair<string, Money> addressMoney in collateral)
-                {
-
-                }
+                    this.depositsByAddress[addressMoney.Key] = addressMoney.Value;
             }
+
+            return true;
         }
 
         public bool CheckCollateral(IFederationMember federationMember)
         {
+            var member = federationMember as CollateralFederationMember;
+
+            if ((member.CollateralAmount == null) || (member.CollateralAmount == 0))
+            {
+                this.logger.LogTrace("(-)[NO_COLLATERAL_REQUIREMENT]:true");
+                return true;
+            }
+
             lock (this.locker)
             {
-                var member = federationMember as CollateralFederationMember;
-
-                if (!this.depositsByFederationMember.TryGetValue(member, out Money value))
-                {
-                    this.logger.LogTrace("(-)[NOT_FOUND]");
-                    throw new ArgumentException("Provided federation member wasn't found.");
-                }
-
-                if (member.CollateralAmount == null)
-                {
-                    this.logger.LogTrace("(-)[NO_COLLATERAL_REQUIREMENT]:true");
-                    return true;
-                }
-
-                return value >= member.CollateralAmount;
+                return this.depositsByAddress[member.CollateralMainchainAddress] >= member.CollateralAmount;
             }
         }
 
@@ -117,7 +139,7 @@ namespace Stratis.Features.FederatedPeg
         {
             lock (this.locker)
             {
-                this.depositsByFederationMember.Remove((CollateralFederationMember) fedMemberKicked.KickedMember);
+                this.depositsByAddress.Remove(((CollateralFederationMember) fedMemberKicked.KickedMember).CollateralMainchainAddress);
             }
         }
 
@@ -125,7 +147,7 @@ namespace Stratis.Features.FederatedPeg
         {
             lock (this.locker)
             {
-                this.depositsByFederationMember.Add((CollateralFederationMember)fedMemberAdded.AddedMember, null);
+                this.depositsByAddress.Add(((CollateralFederationMember)fedMemberAdded.AddedMember).CollateralMainchainAddress, null);
             }
         }
 
@@ -134,7 +156,9 @@ namespace Stratis.Features.FederatedPeg
             this.signals.Unsubscribe(this.memberAddedToken);
             this.signals.Unsubscribe(this.memberKickedToken);
 
-            // TODO stop BG update
+            this.cancellationSource.Cancel();
+
+            this.updateCollateralContinuouslyTask?.GetAwaiter().GetResult();
         }
     }
 }

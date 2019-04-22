@@ -126,7 +126,7 @@ namespace Stratis.Features.FederatedPeg
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 800);
         }
 
-        public override Task InitializeAsync()
+        public override async Task InitializeAsync()
         {
             // Set up our database of deposit and withdrawal transactions. Needs to happen before everything else.
             this.crossChainTransferStore.Initialize();
@@ -149,7 +149,8 @@ namespace Stratis.Features.FederatedPeg
             // Query our database for fully-signed transactions and broadcast them every N seconds.
             this.signedBroadcaster.Start();
 
-            this.collateralChecker?.Initialize();
+            if (this.collateralChecker != null)
+                await this.collateralChecker.InitializeAsync().ConfigureAwait(false);
 
             // Connect the node to the other federation members.
             foreach (IPEndPoint federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
