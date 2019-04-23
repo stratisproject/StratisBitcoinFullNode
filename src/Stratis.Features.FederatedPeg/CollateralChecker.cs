@@ -11,7 +11,6 @@ using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Events;
 using Stratis.Bitcoin.Signals;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Features.FederatedPeg
 {
