@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         /// <summary>Collection of all active federation members.</summary>
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
-        private List<IFederationMember> federationMembers;
+        protected List<IFederationMember> federationMembers;
 
         /// <summary>Protects access to <see cref="federationMembers"/>.</summary>
         private readonly object locker;
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.locker = new object();
         }
 
-        public void Initialize()
+        public virtual void Initialize()
         {
             // Load federation from the db.
             this.federationMembers = this.LoadFederation();
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.PoA
             }
         }
 
-        public virtual void AddFederationMember(IFederationMember federationMember)
+        public void AddFederationMember(IFederationMember federationMember)
         {
             lock (this.locker)
             {
