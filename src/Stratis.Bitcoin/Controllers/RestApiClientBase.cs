@@ -107,17 +107,9 @@ namespace Stratis.Bitcoin.Controllers
         public async Task<Response> SendGetRequestAsync<Response>(string apiMethodName, string arguments = null,
             CancellationToken cancellation = default(CancellationToken)) where Response : class
         {
-            try
-            {
-                HttpResponseMessage response = await this.SendGetRequestAsync(apiMethodName, arguments, cancellation).ConfigureAwait(false);
+            HttpResponseMessage response = await this.SendGetRequestAsync(apiMethodName, arguments, cancellation).ConfigureAwait(false);
 
-                return await this.ParseHttpResponseMessageAsync<Response>(response).ConfigureAwait(false);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
+            return await this.ParseHttpResponseMessageAsync<Response>(response).ConfigureAwait(false);
         }
 
         private async Task<Response> ParseHttpResponseMessageAsync<Response>(HttpResponseMessage httpResponse) where Response : class
