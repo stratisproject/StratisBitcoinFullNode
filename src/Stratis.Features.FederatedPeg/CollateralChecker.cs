@@ -37,6 +37,8 @@ namespace Stratis.Features.FederatedPeg
         /// <summary>Amount of confirmations required for collateral.</summary>
         private const int RequiredConfirmations = 1;
 
+        private const int CollateralInitializationUpdateIntervalSeconds = 3;
+
         private const int CollateralUpdateIntervalSeconds = 20;
 
         /// <summary>Deposits mapped by federation member.</summary>
@@ -80,7 +82,7 @@ namespace Stratis.Features.FederatedPeg
                 {
                     try
                     {
-                        await Task.Delay(3000, this.cancellationSource.Token).ConfigureAwait(false);
+                        await Task.Delay(CollateralInitializationUpdateIntervalSeconds * 1000, this.cancellationSource.Token).ConfigureAwait(false);
                     }
                     catch (OperationCanceledException)
                     {

@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.PoA
             }
         }
 
-        public virtual void AddFederationMember(IFederationMember federationMember)
+        public void AddFederationMember(IFederationMember federationMember)
         {
             lock (this.locker)
             {
