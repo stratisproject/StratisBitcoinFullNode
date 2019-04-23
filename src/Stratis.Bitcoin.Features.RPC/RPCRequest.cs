@@ -21,14 +21,13 @@ namespace Stratis.Bitcoin.Features.RPC
         public RPCRequest()
         {
             this.JsonRpc = "1.0";
-            this.Id = 1;
         }
         public string JsonRpc
         {
             get;
             set;
         }
-        public int Id
+        public string Id
         {
             get;
             set;

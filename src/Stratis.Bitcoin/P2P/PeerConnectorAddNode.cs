@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.P2P.Peer;
@@ -18,9 +19,10 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     public sealed class PeerConnectorAddNode : PeerConnector
     {
-        /// <summary>Constructor for dependency injection.</summary>
+        private readonly ILogger logger;
+
         public PeerConnectorAddNode(
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
@@ -30,8 +32,10 @@ namespace Stratis.Bitcoin.P2P
             ConnectionManagerSettings connectionSettings,
             IPeerAddressManager peerAddressManager,
             ISelfEndpointTracker selfEndpointTracker) :
-            base(asyncLoopFactory, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, connectionSettings, peerAddressManager, selfEndpointTracker)
+            base(asyncProvider, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, connectionSettings, peerAddressManager, selfEndpointTracker)
         {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
             this.Requirements.RequiredServices = NetworkPeerServices.Nothing;
         }
 
@@ -54,6 +58,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
+        [NoTrace]
         public override void OnStartConnect()
         {
             this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
@@ -80,6 +85,8 @@ namespace Stratis.Bitcoin.P2P
                     PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
                     if (peerAddress != null && !this.IsPeerConnected(peerAddress.Endpoint))
                     {
+                        this.logger.LogDebug("Attempting connection to {0}.", peerAddress.Endpoint);
+
                         await this.ConnectAsync(peerAddress).ConfigureAwait(false);
                     }
                 }).ConfigureAwait(false);

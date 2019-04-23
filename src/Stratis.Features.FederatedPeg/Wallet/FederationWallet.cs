@@ -103,8 +103,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// </summary>
         public (Money ConfirmedAmount, Money UnConfirmedAmount) GetSpendableAmount()
         {
-            long confirmed = this.MultiSigAddress.Transactions.Sum(t => t.SpendableAmount(true));
-            long total = this.MultiSigAddress.Transactions.Sum(t => t.SpendableAmount(false));
+            // "Lock in" current transactions so we don't have to worry about other code changing them.
+            IList<TransactionData> transactions = this.MultiSigAddress.Transactions.ToList();
+
+            long confirmed = transactions.Sum(t => t.SpendableAmount(true));
+            long total = transactions.Sum(t => t.SpendableAmount(false));
 
             return (confirmed, total - confirmed);
         }

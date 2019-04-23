@@ -67,6 +67,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"{nameof(this.Id)}:{this.Id}, {nameof(this.IsPending)}:{this.IsPending}, {nameof(this.IsExecuted)}:{this.IsExecuted}, " +

@@ -3,6 +3,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
@@ -11,13 +12,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// </summary>
     public class P2PKHNotContractRule : FullValidationConsensusRule, ISmartContractMempoolRule
     {
-        protected ISmartContractCoinviewRule ContractCoinviewRule { get; private set; }
+        private readonly IStateRepositoryRoot stateRepositoryRoot;
 
-        /// <inheritdoc />
-        public override void Initialize()
+        public P2PKHNotContractRule(IStateRepositoryRoot stateRepositoryRoot)
         {
-            base.Initialize();
-            this.ContractCoinviewRule = (ISmartContractCoinviewRule)this.Parent;
+            this.stateRepositoryRoot = stateRepositoryRoot;
         }
 
         public override Task RunAsync(RuleContext context)
@@ -45,7 +44,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
                 {
                     KeyId p2pkhParams = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(output.ScriptPubKey);
                     uint160 to = new uint160(p2pkhParams.ToBytes());
-                    if (this.ContractCoinviewRule.OriginalStateRoot.GetAccountState(to) != null)
+                    if (this.stateRepositoryRoot.GetAccountState(to) != null)
                         new ConsensusError("p2pkh-to-contract", "attempted send directly to contract address. use OP_CALL instead.").Throw();
                 }
             }

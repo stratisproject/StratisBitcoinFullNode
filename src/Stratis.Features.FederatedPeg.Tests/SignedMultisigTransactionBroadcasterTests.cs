@@ -1,19 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
-using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
 using Xunit;
 
@@ -25,12 +25,11 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly ILoggerFactory loggerFactory;
         private readonly IDisposable leaderReceiverSubscription;
         private readonly ICrossChainTransferStore store;
-        private readonly ILeaderReceiver leaderReceiver;
         private readonly IFederationGatewaySettings federationGatewaySettings;
         private readonly IBroadcasterManager broadcasterManager;
-        private ISignedMultisigTransactionBroadcaster signedMultisigTransactionBroadcaster;
-        private readonly ILeaderProvider leaderProvider;
 
+        private readonly IAsyncProvider asyncProvider;
+        private readonly INodeLifetime nodeLifetime;
         private readonly MempoolManager mempoolManager;
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly MempoolSettings mempoolSettings;
@@ -41,19 +40,26 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly IMempoolPersistence mempoolPersistence;
         private readonly ICoinView coinView;
 
+        private readonly IInitialBlockDownloadState ibdState;
+        private readonly IFederationWalletManager federationWalletManager;
+
         private const string PublicKey = "026ebcbf6bfe7ce1d957adbef8ab2b66c788656f35896a170257d6838bda70b95c";
 
         public SignedMultisigTransactionBroadcasterTests()
         {
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.logger = Substitute.For<ILogger>();
-            this.leaderReceiver = Substitute.For<ILeaderReceiver>();
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.leaderReceiverSubscription = Substitute.For<IDisposable>();
             this.store = Substitute.For<ICrossChainTransferStore>();
             this.broadcasterManager = Substitute.For<IBroadcasterManager>();
-            this.leaderProvider = Substitute.For<ILeaderProvider>();
+            this.asyncProvider = Substitute.For<IAsyncProvider>();
+            this.nodeLifetime = Substitute.For<INodeLifetime>();
+
+            this.ibdState = Substitute.For<IInitialBlockDownloadState>();
+            this.federationWalletManager = Substitute.For<IFederationWalletManager>();
+            this.federationWalletManager.IsFederationWalletActive().Returns(true);
 
             // Setup MempoolManager.
             this.dateTimeProvider = Substitute.For<IDateTimeProvider>();
@@ -91,52 +97,30 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.nodeSettings.Network);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
-        public async Task When_Not_The_CurrentLeader_Dont_Call_GetSignedTransactionsAsync()
-        {
-            this.federationGatewaySettings.PublicKey.Returns("dummykey");
-            this.leaderProvider.CurrentLeaderKey.Returns(new PubKey(PublicKey));
-
-            IObservable<ILeaderProvider> leaderStream = new[] { this.leaderProvider }.ToObservable();
-            this.leaderReceiver.LeaderProvidersStream.Returns(leaderStream);
-
-            this.signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
-                this.loggerFactory,
-                this.store,
-                this.leaderReceiver,
-                this.federationGatewaySettings,
-                this.mempoolManager,
-                this.broadcasterManager);
-
-            await this.signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync(this.leaderProvider).ConfigureAwait(false);
-
-            this.store.DidNotReceive();
-        }
-
-        [Fact(Skip = TestingValues.SkipTests)]
-        public async Task When_CurrentLeader_Call_GetSignedTransactionsAsync()
+        [Fact]
+        public async Task Call_GetSignedTransactionsAsync_No_Signed_Transactions_Doesnt_Broadcast()
         {
             this.federationGatewaySettings.PublicKey.Returns(PublicKey);
-            this.leaderProvider.CurrentLeaderKey.Returns(new PubKey(PublicKey));
-
-            IObservable<ILeaderProvider> leaderStream = new[] { this.leaderProvider }.ToObservable();
-            this.leaderReceiver.LeaderProvidersStream.Returns(leaderStream);
 
             var emptyTransactionPair = new Dictionary<uint256, Transaction>();
 
             this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).Returns(emptyTransactionPair);
 
-            this.signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+            var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+                this.asyncProvider,
                 this.loggerFactory,
                 this.store,
-                this.leaderReceiver,
-                this.federationGatewaySettings,
+                this.nodeLifetime,
                 this.mempoolManager,
-                this.broadcasterManager);
+                this.broadcasterManager,
+                this.ibdState,
+                this.federationWalletManager);
 
-            await this.signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync(this.leaderProvider).ConfigureAwait(false);
+            await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
 
             await this.store.Received().GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).ConfigureAwait(false);
+
+            await this.broadcasterManager.DidNotReceive().BroadcastTransactionAsync(Arg.Any<Transaction>());
 
             this.logger.Received().Log(LogLevel.Trace,
                 Arg.Any<EventId>(),
@@ -145,11 +129,10 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Arg.Any<Func<object, Exception, string>>());
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
-        public async Task When_CurrentLeader_BroadcastsTransactionAsync()
+        [Fact]
+        public async Task Call_GetSignedTransactionsAsync_Signed_Transactions_Broadcasts()
         {
             this.federationGatewaySettings.PublicKey.Returns(PublicKey);
-            this.leaderProvider.CurrentLeaderKey.Returns(new PubKey(PublicKey));
 
             var transactionPair = new Dictionary<uint256, Transaction>
             {
@@ -158,26 +141,64 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).Returns(transactionPair);
 
-            IObservable<ILeaderProvider> leaderStream = new[] { this.leaderProvider }.ToObservable();
-            this.leaderReceiver.LeaderProvidersStream.Returns(leaderStream);
-
-            this.signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+            var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+                this.asyncProvider,
                 this.loggerFactory,
                 this.store,
-                this.leaderReceiver,
-                this.federationGatewaySettings,
+                this.nodeLifetime,
                 this.mempoolManager,
-                this.broadcasterManager);
+                this.broadcasterManager,
+                this.ibdState,
+                this.federationWalletManager);
 
-            await this.signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync(this.leaderProvider).ConfigureAwait(false);
+            await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
             await this.store.Received().GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).ConfigureAwait(false);
-            await this.broadcasterManager.Received().BroadcastTransactionAsync(Arg.Any<Transaction>());
+            await this.broadcasterManager.Received(1).BroadcastTransactionAsync(Arg.Any<Transaction>());
+        }
+
+        [Fact]
+        public async Task Dont_Do_Work_In_IBD()
+        {
+            this.ibdState.IsInitialBlockDownload().Returns(true);
+
+            var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+                this.asyncProvider,
+                this.loggerFactory,
+                this.store,
+                this.nodeLifetime,
+                this.mempoolManager,
+                this.broadcasterManager,
+                this.ibdState,
+                this.federationWalletManager);
+
+            await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
+
+            await this.store.Received(0).GetTransactionsByStatusAsync(Arg.Any<CrossChainTransferStatus>());
+        }
+
+        [Fact]
+        public async Task Dont_Do_Work_Inactive_Federation()
+        {
+            this.federationWalletManager.IsFederationWalletActive().Returns(false);
+
+            var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+                this.asyncProvider,
+                this.loggerFactory,
+                this.store,
+                this.nodeLifetime,
+                this.mempoolManager,
+                this.broadcasterManager,
+                this.ibdState,
+                this.federationWalletManager);
+
+            await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
+
+            await this.store.Received(0).GetTransactionsByStatusAsync(Arg.Any<CrossChainTransferStatus>());
         }
 
         public void Dispose()
         {
             this.leaderReceiverSubscription?.Dispose();
-            this.leaderReceiver?.Dispose();
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
@@ -30,8 +31,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
             IProvenBlockHeaderStore provenBlockHeaderStore,
-            ISignals signals)
-            : base(blockStoreQueue, storeSettings, chainState, connection, nodeLifetime, loggerFactory, initialBlockDownloadState, signals)
+            ISignals signals,
+            IAsyncProvider asyncProvider)
+            : base(blockStoreQueue, storeSettings, chainState, connection, nodeLifetime, loggerFactory, initialBlockDownloadState, signals, asyncProvider)
         {
             this.network = Guard.NotNull(network, nameof(network));
             this.provenBlockHeaderStore = Guard.NotNull(provenBlockHeaderStore, nameof(provenBlockHeaderStore));

@@ -29,12 +29,14 @@ namespace Stratis.Sidechains.Networks
         internal FederatedPegRegTest()
         {
             this.Name = "FederatedPegRegTest";
+            this.NetworkType = NetworkType.Regtest;
             this.CoinTicker = "TFPG";
             this.Magic = 0x522357C;
             this.DefaultPort = 26179;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
-            this.RPCPort = 26175;
+            this.DefaultRPCPort = 26175;
+            this.DefaultAPIPort = 38223;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
@@ -67,15 +69,21 @@ namespace Stratis.Sidechains.Networks
 
             List<PubKey> federationPubKeys = this.FederationKeys.Select(k => k.PubKey).ToList();
 
+            var genesisFederationMembers = new List<IFederationMember>(federationPubKeys.Count);
+
+            foreach (PubKey pubKey in federationPubKeys)
+                genesisFederationMembers.Add(new CollateralFederationMember(pubKey, new Money(0), null));
+
             var consensusOptions = new PoAConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
-                federationPublicKeys: federationPubKeys,
-                targetSpacingSeconds: 4, // For integration tests - avoid FastMining
-                votingEnabled: false
+                genesisFederationMembers: genesisFederationMembers,
+                targetSpacingSeconds: 16,
+                votingEnabled: false,
+                autoKickIdleMembers: false
             );
 
             var buriedDeployments = new BuriedDeploymentsArray

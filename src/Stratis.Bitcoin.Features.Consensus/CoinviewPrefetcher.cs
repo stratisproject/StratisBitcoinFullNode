@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
@@ -25,22 +26,25 @@ namespace Stratis.Bitcoin.Features.Consensus
         private const int Lookahead = 20;
 
         /// <summary>Queue of headers that were added when block associated with such header was fully validated.</summary>
-        private readonly AsyncQueue<ChainedHeader> headersQueue;
+        private readonly IAsyncDelegateDequeuer<ChainedHeader> headersQueue;
 
         private readonly ICoinView coinview;
 
         private readonly CoinviewHelper coinviewHelper;
 
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
+
+        private readonly IAsyncProvider asyncProvider;
 
         private readonly ILogger logger;
 
-        public CoinviewPrefetcher(ICoinView coinview, ConcurrentChain chain, ILoggerFactory loggerFactory)
+        public CoinviewPrefetcher(ICoinView coinview, ChainIndexer chainIndexer, ILoggerFactory loggerFactory, IAsyncProvider asyncProvider)
         {
             this.coinview = coinview;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
+            this.asyncProvider = asyncProvider;
 
-            this.headersQueue = new AsyncQueue<ChainedHeader>(this.OnHeaderEnqueuedAsync);
+            this.headersQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<ChainedHeader>($"{nameof(CoinviewPrefetcher)}-{nameof(this.headersQueue)}", this.OnHeaderEnqueuedAsync);
             this.coinviewHelper = new CoinviewHelper();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -83,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return;
             }
 
-            bool farFromTip = currentHeader.Height > this.chain.Tip.Height + (Lookahead / 2);
+            bool farFromTip = currentHeader.Height > this.chainIndexer.Tip.Height + (Lookahead / 2);
 
             if (!farFromTip)
             {
@@ -97,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (idsToFetch.Length != 0)
             {
-                await this.coinview.FetchCoinsAsync(idsToFetch, cancellation).ConfigureAwait(false);
+                this.coinview.FetchCoins(idsToFetch, cancellation);
 
                 this.logger.LogTrace("{0} ids were pre-fetched.", idsToFetch.Length);
             }

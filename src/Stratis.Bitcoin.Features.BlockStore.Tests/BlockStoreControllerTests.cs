@@ -7,6 +7,7 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Controllers.Models;
+using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.BlockStore.Models;
 using Stratis.Bitcoin.Interfaces;
@@ -76,8 +77,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             (Mock<IBlockStore> store, BlockStoreController controller) = GetControllerAndStore();
 
-            store.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
-                .Returns(Task.FromResult((Block)null));
+            store.Setup(c => c.GetBlock(It.IsAny<uint256>()))
+                .Returns((Block)null);
 
             Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest()
             { Hash = ValidHash, OutputJson = true });
@@ -108,18 +109,18 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             (Mock<IBlockStore> store, BlockStoreController controller) = GetControllerAndStore();
 
-            store.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
-                .Returns(Task.FromResult(Block.Parse(BlockAsHex, KnownNetworks.StratisTest)));
+            store.Setup(c => c.GetBlock(It.IsAny<uint256>()))
+                .Returns(Block.Parse(BlockAsHex, KnownNetworks.StratisTest.Consensus.ConsensusFactory));
 
             Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest()
-                {Hash = ValidHash, OutputJson = true});
+            { Hash = ValidHash, OutputJson = true });
 
             response.Result.Should().BeOfType<JsonResult>();
-            var result = (JsonResult) response.Result;
+            var result = (JsonResult)response.Result;
 
             result.Value.Should().BeOfType<BlockModel>();
-            ((BlockModel) result.Value).Hash.Should().Be(ValidHash);
-            ((BlockModel) result.Value).MerkleRoot.Should()
+            ((BlockModel)result.Value).Hash.Should().Be(ValidHash);
+            ((BlockModel)result.Value).MerkleRoot.Should()
                 .Be("ccd1444acea4b5600c5917985aa369ca5af4f0a2de6b1ed8b6bd3cf2ce4cdf0f");
         }
 
@@ -128,33 +129,33 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             (Mock<IBlockStore> store, BlockStoreController controller) = GetControllerAndStore();
 
-            store.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
-                .Returns(Task.FromResult(Block.Parse(BlockAsHex, KnownNetworks.StratisTest)));
+            store
+                .Setup(c => c.GetBlock(It.IsAny<uint256>()))
+                .Returns(Block.Parse(BlockAsHex, KnownNetworks.StratisTest.Consensus.ConsensusFactory));
 
-            Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest()
-            { Hash = ValidHash, OutputJson = true, ShowTransactionDetails = true });
+            Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest() { Hash = ValidHash, OutputJson = true, ShowTransactionDetails = true });
 
             response.Result.Should().BeOfType<JsonResult>();
             var result = (JsonResult)response.Result;
 
-            result.Value.Should().BeOfType<Models.BlockTransactionDetailsModel>();
+            result.Value.Should().BeOfType<BlockTransactionDetailsModel>();
             ((BlockTransactionDetailsModel)result.Value).Transactions.Should().HaveCountGreaterThan(1);
         }
 
         [Fact]
         public void Get_Block_When_Block_Is_Found_And_Requesting_RawOuput()
         {
-                (Mock<IBlockStore> store, BlockStoreController controller) = GetControllerAndStore();
+            (Mock<IBlockStore> store, BlockStoreController controller) = GetControllerAndStore();
 
-                store.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
-                    .Returns(Task.FromResult(Block.Parse(BlockAsHex, KnownNetworks.StratisTest)));
+            store
+                .Setup(c => c.GetBlock(It.IsAny<uint256>()))
+                .Returns(Block.Parse(BlockAsHex, KnownNetworks.StratisTest.Consensus.ConsensusFactory));
 
-                Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest()
-                { Hash = ValidHash, OutputJson = false });
+            Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest() { Hash = ValidHash, OutputJson = false });
 
-                response.Result.Should().BeOfType<JsonResult>();
-                var result = (JsonResult)response.Result;
-                ((Block)(result.Value)).ToHex(KnownNetworks.StratisTest).Should().Be(BlockAsHex);
+            response.Result.Should().BeOfType<JsonResult>();
+            var result = (JsonResult)response.Result;
+            ((Block)(result.Value)).ToHex(KnownNetworks.StratisTest).Should().Be(BlockAsHex);
         }
 
         [Fact]
@@ -163,14 +164,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var logger = new Mock<ILoggerFactory>();
             var store = new Mock<IBlockStore>();
             var chainState = new Mock<IChainState>();
-            ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, KnownNetworks.StratisTest);
+            var addressIndexer = new Mock<IAddressIndexer>();
+
+            ChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(3, KnownNetworks.StratisTest);
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
             chainState.Setup(c => c.ConsensusTip)
-                .Returns(chain.GetBlock(2));
+                .Returns(chainIndexer.GetHeader(2));
 
-            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object, chain);
+            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object, chainIndexer, addressIndexer.Object);
 
             var json = (JsonResult)controller.GetBlockCount();
             int result = int.Parse(json.Value.ToString());
@@ -183,14 +186,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var logger = new Mock<ILoggerFactory>();
             var store = new Mock<IBlockStore>();
             var chainState = new Mock<IChainState>();
+            var addressIndexer = new Mock<IAddressIndexer>();
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
-            var  chain = new Mock<ConcurrentChain>();
-            Block block = Block.Parse(BlockAsHex, KnownNetworks.StratisTest);
-            chain.Setup(c => c.GetBlock(It.IsAny<uint256>())).Returns(new ChainedHeader(block.Header, block.Header.GetHash(), 1));
+            var chain = new Mock<ChainIndexer>();
+            Block block = Block.Parse(BlockAsHex, KnownNetworks.StratisTest.Consensus.ConsensusFactory);
+            chain.Setup(c => c.GetHeader(It.IsAny<uint256>())).Returns(new ChainedHeader(block.Header, block.Header.GetHash(), 1));
+            chain.Setup(x => x.Tip).Returns(new ChainedHeader(block.Header, block.Header.GetHash(), 1));
 
-            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object, chain.Object);
+            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object, chain.Object, addressIndexer.Object);
 
             return (store, controller);
         }

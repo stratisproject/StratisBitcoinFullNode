@@ -17,6 +17,7 @@ namespace Stratis.SmartContracts.Networks
         public SmartContractsPoATest()
         {
             this.Name = "SmartContractsPoATest-0.13.0-beta";
+            this.NetworkType = NetworkType.Testnet;
             this.CoinTicker = "SCPOA";
 
             var consensusFactory = new SmartContractPoAConsensusFactory();
@@ -42,15 +43,15 @@ namespace Stratis.SmartContracts.Networks
 
             this.Genesis = genesisBlock;
 
-            var federationPubKeys = new List<PubKey>
+            var genesisFederationMembers = new List<IFederationMember>
             {
-                new PubKey("03df4a360038a42b68aca8d198fc487c495ef9e4f3fe56daa6bbfdeea1a7cb5ec5"),
-                new PubKey("021c3e5b81a43284d166fb8862a9e7382630c2750f8556a4c7ba405ccdd70d4808"),
-                new PubKey("03a5055a77126a21b6d899482332bd9b2cc88fb96e83b172769754dee852a74316"),
-                new PubKey("03c9e8888a2d32b1022349a3bbf1aa325ed908f066bb0ebba8a1fe5eb6cabf3b7a"),
-                new PubKey("0282d9d0dcb978ecf1411c5cad744059ff75bdc9b352ab9454cf92ffe8cdf14789"),
-                new PubKey("02998a6d9a13446678e9f892c1fcc61834d1d439dd97d57fc9e30b51020d2277e4"),
-                new PubKey("037ab82c35af49860021e89c6868cd4a4b6f839cd1a3094dc828908ce9d86cf94a")
+                new FederationMember(new PubKey("03df4a360038a42b68aca8d198fc487c495ef9e4f3fe56daa6bbfdeea1a7cb5ec5")),
+                new FederationMember(new PubKey("021c3e5b81a43284d166fb8862a9e7382630c2750f8556a4c7ba405ccdd70d4808")),
+                new FederationMember(new PubKey("03a5055a77126a21b6d899482332bd9b2cc88fb96e83b172769754dee852a74316")),
+                new FederationMember(new PubKey("03c9e8888a2d32b1022349a3bbf1aa325ed908f066bb0ebba8a1fe5eb6cabf3b7a")),
+                new FederationMember(new PubKey("0282d9d0dcb978ecf1411c5cad744059ff75bdc9b352ab9454cf92ffe8cdf14789")),
+                new FederationMember(new PubKey("02998a6d9a13446678e9f892c1fcc61834d1d439dd97d57fc9e30b51020d2277e4")),
+                new FederationMember(new PubKey("037ab82c35af49860021e89c6868cd4a4b6f839cd1a3094dc828908ce9d86cf94a"))
             };
 
             var consensusOptions = new PoAConsensusOptions(
@@ -59,9 +60,10 @@ namespace Stratis.SmartContracts.Networks
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
-                federationPublicKeys: federationPubKeys,
+                genesisFederationMembers: genesisFederationMembers,
                 targetSpacingSeconds: 60,
-                votingEnabled: true
+                votingEnabled: true,
+                autoKickIdleMembers: false
             );
 
             var buriedDeployments = new BuriedDeploymentsArray

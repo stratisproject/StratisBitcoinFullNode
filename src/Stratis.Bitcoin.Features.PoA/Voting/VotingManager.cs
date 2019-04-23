@@ -5,6 +5,8 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
@@ -13,7 +15,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 {
     public class VotingManager : IDisposable
     {
-        private readonly FederationManager federationManager;
+        private readonly IFederationManager federationManager;
 
         private readonly VotingDataEncoder votingDataEncoder;
 
@@ -39,13 +41,16 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
         private List<Poll> polls;
 
+        private SubscriptionToken blockConnectedSubscription;
+        private SubscriptionToken blockDisconnectedSubscription;
+
         /// <summary>Collection of voting data that should be included in a block when it's mined.</summary>
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
         private List<VotingData> scheduledVotingData;
 
         private bool isInitialized;
 
-        public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory, SlotsManager slotsManager, IPollResultExecutor pollResultExecutor,
+        public VotingManager(IFederationManager federationManager, ILoggerFactory loggerFactory, SlotsManager slotsManager, IPollResultExecutor pollResultExecutor,
             INodeStats nodeStats, DataFolder dataFolder, DBreezeSerializer dBreezeSerializer, ISignals signals, IFinalizedBlockInfoRepository finalizedBlockInfo)
         {
             this.federationManager = Guard.NotNull(federationManager, nameof(federationManager));
@@ -70,8 +75,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             this.polls = this.pollsRepository.GetAllPolls();
 
-            this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
-            this.signals.OnBlockDisconnected.Attach(this.OnBlockDisconnected);
+            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
+            this.blockDisconnectedSubscription = this.signals.Subscribe<BlockDisconnected>(this.OnBlockDisconnected);
 
             this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1200);
 
@@ -151,8 +156,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        private void OnBlockConnected(ChainedHeaderBlock chBlock)
+        private void OnBlockConnected(BlockConnected blockConnected)
         {
+            ChainedHeaderBlock chBlock = blockConnected.ConnectedBlock;
             uint256 newFinalizedHash = this.finalizedBlockInfo.GetFinalizedBlockInfo().Hash;
 
             lock (this.locker)
@@ -217,7 +223,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                         this.logger.LogDebug("Fed member '{0}' already voted for this poll. Ignoring his vote. Poll: '{1}'.", fedMemberKeyHex, poll);
                     }
 
-                    List<string> fedMembersHex = this.federationManager.GetFederationMembers().Select(x => x.ToHex()).ToList();
+                    List<string> fedMembersHex = this.federationManager.GetFederationMembers().Select(x => x.PubKey.ToHex()).ToList();
 
                     // It is possible that there is a vote from a federation member that was deleted from the federation.
                     // Do not count votes from entities that are not active fed members.
@@ -236,8 +242,10 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        private void OnBlockDisconnected(ChainedHeaderBlock chBlock)
+        private void OnBlockDisconnected(BlockDisconnected blockDisconnected)
         {
+            ChainedHeaderBlock chBlock = blockDisconnected.DisconnectedBlock;
+
             lock (this.locker)
             {
                 foreach (Poll poll in this.polls.Where(x => !x.IsPending && x.PollExecutedBlockData?.Hash == chBlock.ChainedHeader.HashBlock).ToList())
@@ -316,8 +324,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <inheritdoc />
         public void Dispose()
         {
-            this.signals.OnBlockConnected.Detach(this.OnBlockConnected);
-            this.signals.OnBlockDisconnected.Detach(this.OnBlockDisconnected);
+            this.signals.Unsubscribe(this.blockConnectedSubscription);
+            this.signals.Unsubscribe(this.blockDisconnectedSubscription);
 
             this.pollsRepository.Dispose();
         }

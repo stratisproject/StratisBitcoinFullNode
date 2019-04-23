@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -32,13 +33,13 @@ namespace Stratis.Bitcoin.Features.Miner
     public class PowMining : IPowMining
     {
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>Builder that creates a proof-of-work block template.</summary>
         private readonly IBlockProvider blockProvider;
 
         /// <summary>Thread safe chain of block headers from genesis.</summary>
-        private readonly ConcurrentChain chain;
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly IConsensusManager consensusManager;
@@ -82,10 +83,10 @@ namespace Stratis.Bitcoin.Features.Miner
         private CancellationTokenSource miningCancellationTokenSource;
 
         public PowMining(
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             IBlockProvider blockProvider,
             IConsensusManager consensusManager,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             IDateTimeProvider dateTimeProvider,
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
@@ -94,9 +95,9 @@ namespace Stratis.Bitcoin.Features.Miner
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState initialBlockDownloadState)
         {
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.blockProvider = blockProvider;
-            this.chain = chain;
+            this.chainIndexer = chainIndexer;
             this.consensusManager = consensusManager;
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
@@ -117,7 +118,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.miningCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(new[] { this.nodeLifetime.ApplicationStopping });
 
-            this.miningLoop = this.asyncLoopFactory.Run("PowMining.Mine", token =>
+            this.miningLoop = this.asyncProvider.CreateAndRunAsyncLoop("PowMining.Mine", token =>
             {
                 try
                 {
@@ -163,7 +164,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <inheritdoc/>
         public List<uint256> GenerateBlocks(ReserveScript reserveScript, ulong amountOfBlocksToMine, ulong maxTries)
         {
-            var context = new MineBlockContext(amountOfBlocksToMine, (ulong)this.chain.Height, maxTries, reserveScript);
+            var context = new MineBlockContext(amountOfBlocksToMine, (ulong)this.chainIndexer.Height, maxTries, reserveScript);
 
             while (context.MiningCanContinue)
             {

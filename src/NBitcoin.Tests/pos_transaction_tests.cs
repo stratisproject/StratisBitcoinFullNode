@@ -46,7 +46,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanGetMedianBlock()
         {
-            var chain = new ConcurrentChain(this.stratisMain);
+            var chain = new ChainIndexer(this.stratisMain);
             DateTimeOffset now = DateTimeOffset.UtcNow;
             chain.SetTip(CreateBlock(now, 0, chain));
             chain.SetTip(CreateBlock(now, -1, chain));
@@ -70,7 +70,7 @@ namespace NBitcoin.Tests
             Assert.Equal(CreateBlock(now, 5).Header.BlockTime, chain.Tip.GetMedianTimePast()); // x -1 0 1 2 3 4 5 6 7 8 9 10
         }
 
-        private ChainedHeader CreateBlock(DateTimeOffset now, int offset, ChainBase chain = null)
+        private ChainedHeader CreateBlock(DateTimeOffset now, int offset, ChainIndexer chain = null)
         {
             Block block = this.consensusFactory.CreateBlock();
             block.Header.BlockTime = now + TimeSpan.FromMinutes(offset);
@@ -989,10 +989,8 @@ namespace NBitcoin.Tests
         private void CanVerifySequenceLockCore(Sequence[] sequences, int[] prevHeights, int currentHeight, DateTimeOffset first, bool expected, SequenceLock expectedLock)
         {
             Network network = this.stratisMain;
-            BlockHeader blockHeader = network.Consensus.ConsensusFactory.CreateBlockHeader();
-            blockHeader.BlockTime = first;
 
-            var chain = new ConcurrentChain(network, new ChainedHeader(blockHeader, blockHeader.GetHash(), 0));
+            var chain = new ChainIndexer(network);
             first = first + TimeSpan.FromMinutes(10);
 
             while (currentHeight != chain.Height)

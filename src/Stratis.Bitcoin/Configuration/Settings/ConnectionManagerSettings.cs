@@ -68,34 +68,16 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             try
             {
-                this.Bind.AddRange(config.GetAll("bind").Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), false)));
-            }
-            catch (FormatException)
-            {
-                throw new ConfigurationException("Invalid 'bind' parameter");
-            }
-
-            try
-            {
                 IEnumerable<IPEndPoint> whitebindEndpoints = config.GetAll("whitebind", this.logger).Select(s => s.ToIPEndPoint(this.Port));
 
-                List<IPEndPoint> networkEndpoints = this.Bind.Select(x => x.Endpoint).ToList();
+                this.Bind = whitebindEndpoints.Where(x => x.Address.AnyIP()).Select(x => new NodeServerEndpoint(x, true)).ToList();
 
-                foreach (IPEndPoint whiteBindEndpoint in whitebindEndpoints)
+                foreach (IPEndPoint endPoint in whitebindEndpoints.Where(x => !x.Address.AnyIP()))
                 {
-                    if (whiteBindEndpoint.CanBeMappedTo(networkEndpoints, out IPEndPoint outEndpoint))
-                    {
-                        // White-list white-bind endpoint if we are currently listening to it.
-                        NodeServerEndpoint listenToThisEndpoint = this.Bind.SingleOrDefault(x => x.Endpoint.Equals(outEndpoint));
+                    if (this.Bind.Select(x => x.Endpoint).Any(x => x.Contains(endPoint)))
+                        continue;
 
-                        if (listenToThisEndpoint != null)
-                            listenToThisEndpoint.Whitelisted = true;
-                    }
-                    else
-                    {
-                        // Add to list of network interfaces if we are not.
-                        this.Bind.Add(new NodeServerEndpoint(whiteBindEndpoint, true));
-                    }
+                    this.Bind.Add(new NodeServerEndpoint(endPoint, true));
                 }
             }
             catch (FormatException)
@@ -103,18 +85,24 @@ namespace Stratis.Bitcoin.Configuration.Settings
                 throw new ConfigurationException("Invalid 'whitebind' parameter");
             }
 
+            try
+            {
+                foreach (NodeServerEndpoint endPoint in config.GetAll("bind").Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), false)))
+                {
+                    if (this.Bind.Select(x => x.Endpoint).Any(x => x.Contains(endPoint.Endpoint)))
+                        continue;
+
+                    this.Bind.Add(endPoint);
+                }
+            }
+            catch (FormatException)
+            {
+                throw new ConfigurationException("Invalid 'bind' parameter");
+            }
+
             if (this.Bind.Count == 0)
             {
                 this.Bind.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), this.Port), false));
-            }
-            else
-            {
-                var ports = this.Bind.Select(l => l.Endpoint.Port).ToList();
-
-                if (ports.Count != ports.Distinct().Count())
-                {
-                    throw new ConfigurationException("Invalid attempt to bind the same port twice");
-                }
             }
 
             try
@@ -191,6 +179,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#connect=<ip:port>");
             builder.AppendLine($"#Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
             builder.AppendLine($"#addnode=<ip:port>");
+            builder.AppendLine($"#Bind to given address. Use [host]:port notation for IPv6. Can be specified multiple times.");
+            builder.AppendLine($"#bind=<ip:port>");
             builder.AppendLine($"#Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
             builder.AppendLine($"#whitebind=<ip:port>");
             builder.AppendLine($"#Whitelist peers having the given IP:port address, both inbound or outbound. Can be specified multiple times.");
@@ -203,6 +193,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#maxoutboundconnections=<number>");
             builder.AppendLine($"#The maximum number of inbound connections. Default {network.DefaultMaxInboundConnections}.");
             builder.AppendLine($"#maxinboundconnections=<number>");
+            builder.AppendLine($"#The number of connections to be reached before a 1 second connection interval (initally 100ms). Default 1.");
+            builder.AppendLine($"#initialconnectiontarget=<number>");
             builder.AppendLine($"#Sync with peers. Default 1.");
             builder.AppendLine($"#synctime=1");
             builder.AppendLine($"#An optional prefix for the node's user agent shared with peers. Truncated if over { MaximumAgentPrefixLength } characters.");
@@ -229,12 +221,14 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"-listen=<0 or 1>          Accept connections from the outside (defaulted to 1 unless -connect args specified).");
             builder.AppendLine($"-connect=<ip:port>        Specified node to connect to. Can be specified multiple times.");
             builder.AppendLine($"-addnode=<ip:port>        Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
+            builder.AppendLine($"-bind=<ip:port>           Bind to given address. Use [host]:port notation for IPv6. Can be specified multiple times.");
             builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
             builder.AppendLine($"-whitelist=<ip:port>      Whitelist peers having the given IP:port address, both inbound or outbound. Can be specified multiple times.");
             builder.AppendLine($"-externalip=<ip>          Specify your own public address.");
             builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
             builder.AppendLine($"-maxoutboundconnections=<number> The maximum number of outbound connections. Default {network.DefaultMaxOutboundConnections}.");
-            builder.AppendLine($"-maxinboundconnections=<number>  The maximum number of inbound connections. Default {network.DefaultMaxInboundConnections}.");
+            builder.AppendLine($"-maxinboundconnections=<number> The maximum number of inbound connections. Default {network.DefaultMaxInboundConnections}.");
+            builder.AppendLine($"-initialconnectiontarget=<number> The number of connections to be reached before a 1 second connection interval (initally 100ms). Default 1.");
             builder.AppendLine($"-synctime=<0 or 1>        Sync with peers. Default 1.");
             builder.AppendLine($"-agentprefix=<string>     An optional prefix for the node's user agent that will be shared with peers in the version handshake.");
             builder.AppendLine($"-blocksonly=<0 or 1>      Enable bandwidth saving setting to send and received confirmed blocks only. Defaults to { DefaultBlocksOnly }.");

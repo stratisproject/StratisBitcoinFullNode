@@ -4,8 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 
@@ -20,48 +22,88 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <summary>
         /// Broadcast signed transactions that are not in the mempool.
         /// </summary>
-        /// <param name="leaderProvider">
-        /// The current federated leader.
-        /// </param>
         /// <remarks>
         /// The current federated leader equal the <see cref="IFederationGatewaySettings.PublicKey"/> before it can broadcast the transactions.
         /// </remarks>
-        Task BroadcastTransactionsAsync(ILeaderProvider leaderProvider);
+        Task BroadcastTransactionsAsync();
+
+        /// <summary>
+        /// Starts the broadcasting of fully signed transactions every N seconds.
+        /// </summary>
+        void Start();
+
+        /// <summary>
+        /// Stops the broadcasting of fully signed transactions.
+        /// </summary>
+        void Stop();
     }
 
     public class SignedMultisigTransactionBroadcaster : ISignedMultisigTransactionBroadcaster, IDisposable
     {
+        /// <summary>
+        /// How often to trigger the query for and broadcasting of new transactions.
+        /// </summary>
+        private static readonly TimeSpan TimeBetweenQueries = TimeSpans.TenSeconds;
+
         private readonly ILogger logger;
-        private readonly IDisposable leaderReceiverSubscription;
         private readonly ICrossChainTransferStore store;
-        private readonly string publicKey;
         private readonly MempoolManager mempoolManager;
         private readonly IBroadcasterManager broadcasterManager;
+        private readonly INodeLifetime nodeLifetime;
+        private readonly IAsyncProvider asyncProvider;
 
-        public SignedMultisigTransactionBroadcaster(ILoggerFactory loggerFactory, ICrossChainTransferStore store, ILeaderReceiver leaderReceiver, IFederationGatewaySettings settings,
-            MempoolManager mempoolManager, IBroadcasterManager broadcasterManager)
+        private readonly IInitialBlockDownloadState ibdState;
+        private readonly IFederationWalletManager federationWalletManager;
+
+        private IAsyncLoop asyncLoop;
+
+        public SignedMultisigTransactionBroadcaster(
+            IAsyncProvider asyncProvider,
+            ILoggerFactory loggerFactory,
+            ICrossChainTransferStore store,
+            INodeLifetime nodeLifetime,
+            MempoolManager mempoolManager,
+            IBroadcasterManager broadcasterManager,
+            IInitialBlockDownloadState ibdState,
+            IFederationWalletManager federationWalletManager)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(store, nameof(store));
-            Guard.NotNull(leaderReceiver, nameof(leaderReceiver));
-            Guard.NotNull(settings, nameof(settings));
             Guard.NotNull(mempoolManager, nameof(mempoolManager));
             Guard.NotNull(broadcasterManager, nameof(broadcasterManager));
 
+
+            this.asyncProvider = asyncProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.store = store;
-            this.publicKey = settings.PublicKey;
+            this.nodeLifetime = nodeLifetime;
             this.mempoolManager = mempoolManager;
             this.broadcasterManager = broadcasterManager;
 
-            this.leaderReceiverSubscription = leaderReceiver.LeaderProvidersStream.Subscribe(async m => await this.BroadcastTransactionsAsync(m).ConfigureAwait(false));
-            this.logger.LogDebug("Subscribed to {0}", nameof(leaderReceiver), nameof(leaderReceiver.LeaderProvidersStream));
+            this.ibdState = ibdState;
+            this.federationWalletManager = federationWalletManager;
         }
 
         /// <inheritdoc />
-        public async Task BroadcastTransactionsAsync(ILeaderProvider leaderProvider)
+        public void Start()
         {
-            if (this.publicKey != leaderProvider.CurrentLeaderKey.ToString()) return;
+            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop(nameof(PartialTransactionRequester), _ =>
+                {
+                    this.BroadcastTransactionsAsync().GetAwaiter().GetResult();
+                    return Task.CompletedTask;
+                },
+                this.nodeLifetime.ApplicationStopping,
+                TimeBetweenQueries);
+        }
+
+        /// <inheritdoc />
+        public async Task BroadcastTransactionsAsync()
+        {
+            if (this.ibdState.IsInitialBlockDownload() || !this.federationWalletManager.IsFederationWalletActive())
+            {
+                this.logger.LogTrace("Federation wallet isn't active or in IBD. Not attempting to broadcast signed transactions.");
+                return;
+            }
 
             Dictionary<uint256, Transaction> transactions = await this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).ConfigureAwait(false);
 
@@ -89,8 +131,18 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         public void Dispose()
         {
+            this.Stop();
             this.store?.Dispose();
-            this.leaderReceiverSubscription?.Dispose();
+        }
+
+        /// <inheritdoc />
+        public void Stop()
+        {
+            if (this.asyncLoop != null)
+            {
+                this.asyncLoop.Dispose();
+                this.asyncLoop = null;
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
+using Stratis.Bitcoin.Networks;
 using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
 using Xunit;
@@ -15,6 +16,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
         private readonly Network network;
 
+        private readonly Network counterChainNetwork;
+
         private readonly OpReturnDataReader opReturnDataReader;
 
         private readonly AddressHelper addressHelper;
@@ -25,16 +28,16 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.network = FederatedPegNetwork.NetworksSelector.Regtest();
-            this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.network);
+            this.counterChainNetwork = Networks.Stratis.Regtest();
+            this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, new FederatedPegOptions(this.counterChainNetwork));
 
             this.transactionBuilder = new TestTransactionBuilder();
-            this.addressHelper = new AddressHelper(this.network);
+            this.addressHelper = new AddressHelper(this.network, this.counterChainNetwork);
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void TryGetTargetAddressFromOpReturn_CanReadAddress()
         {
-
             BitcoinPubKeyAddress opReturnAddress = this.addressHelper.GetNewTargetChainPubKeyAddress();
             byte[] opReturnBytes = Encoding.UTF8.GetBytes(opReturnAddress.ToString());
             Transaction transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes);
@@ -44,7 +47,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             addressFromOpReturn.Should().Be(opReturnAddress.ToString());
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void TryGetTargetAddressFromOpReturn_Can_NOT_ReadAddress_FromOwnNetwork()
         {
             BitcoinPubKeyAddress opReturnAddress = this.addressHelper.GetNewSourceChainPubKeyAddress();
@@ -57,25 +60,28 @@ namespace Stratis.Features.FederatedPeg.Tests
             opReturnString.Should().BeNull();
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void TryGetTargetAddressFromOpReturn_Can_NOT_Read_Transaction_with_two_valid_OpReturns_addresses()
         {
             BitcoinPubKeyAddress opReturnAddress1 = this.addressHelper.GetNewTargetChainPubKeyAddress();
             byte[] opReturnBytes1 = Encoding.UTF8.GetBytes(opReturnAddress1.ToString());
-
             Transaction transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes1);
 
             BitcoinPubKeyAddress opReturnAddress2 = this.addressHelper.GetNewTargetChainPubKeyAddress();
+
             opReturnAddress1.ToString().Should().NotBe(
                 opReturnAddress2.ToString(), "otherwise the transaction is not ambiguous");
+
             byte[] opReturnBytes2 = Encoding.UTF8.GetBytes(opReturnAddress2.ToString());
+
             transaction.AddOutput(Money.Zero, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(opReturnBytes2)));
 
             this.opReturnDataReader.TryGetTargetAddress(transaction, out string addressFromOpReturn);
+
             addressFromOpReturn.Should().BeNull();
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void TryGetTargetAddressFromOpReturn_Can_Read_Transaction_with_many_OpReturns_but_only_a_valid_address_one()
         {
             BitcoinPubKeyAddress opReturnValidAddress = this.addressHelper.GetNewTargetChainPubKeyAddress();
@@ -98,7 +104,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             addressFromOpReturn.Should().Be(opReturnValidAddress.ToString());
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void TryGetTargetAddressFromOpReturn_Can_NOT_ReadRandomStrings()
         {
             byte[] opReturnBytes = Encoding.UTF8.GetBytes("neither hash, nor address");
@@ -109,7 +115,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             opReturnString.Should().BeNull();
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void TryGetTransactionIdFromOpReturn_Can_NOT_Read_Random_Strings()
         {
             byte[] opReturnBytes = Encoding.UTF8.GetBytes("neither hash, nor address");
@@ -120,7 +126,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             opReturnString.Should().BeNull();
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void TryGetTransactionIdFromOpReturn_Can_NOT_Read_Two_Valid_uint256_OpReturns()
         {
             uint256 opReturnTransactionHash1 = this.transactionBuilder.BuildTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress()).GetHash();
@@ -139,7 +145,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             opReturnString.Should().BeNull();
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void TryGetTransactionIdFromOpReturn_Can_Read_many_OpReturns_with_only_one_valid_uint256()
         {
             uint256 opReturnTransactionHash1 = this.transactionBuilder.BuildTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress()).GetHash();
@@ -156,7 +162,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             opReturnString.Should().Be(new uint256(opReturnBytes1).ToString());
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public void TryGetTransactionIdFromOpReturn_Can_Read_single_OpReturn_with_valid_uint256()
         {
             uint256 opReturnTransactionHash = this.transactionBuilder.BuildTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress()).GetHash();

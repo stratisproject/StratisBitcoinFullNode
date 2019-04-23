@@ -5,9 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using Stratis.Bitcoin.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
-using Stratis.Features.FederatedPeg.RestClients;
-using Stratis.Features.FederatedPeg.Tests.Utils;
+using Stratis.Features.FederatedPeg.Controllers;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
@@ -25,10 +25,10 @@ namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.logger = Substitute.For<ILogger>();
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
-            this.httpClientFactory = new HttpClientFactory();
+            this.httpClientFactory = new Bitcoin.Controllers.HttpClientFactory();
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
+        [Fact]
         public async Task TestRetriesCountAsync()
         {
             IFederationGatewaySettings federationSettings = Substitute.For<IFederationGatewaySettings>();
@@ -37,8 +37,8 @@ namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
 
             HttpResponseMessage result = await testClient.CallThatWillAlwaysFail().ConfigureAwait(false);
 
-            Assert.Equal(testClient.RetriesCount, RestApiClientBase.RetryCount);
-            Assert.Equal(result.StatusCode, HttpStatusCode.InternalServerError);
+            Assert.Equal(RestApiClientBase.RetryCount, testClient.RetriesCount);
+            Assert.Equal(HttpStatusCode.InternalServerError, result.StatusCode);
         }
     }
 
@@ -47,7 +47,7 @@ namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
         public int RetriesCount { get; private set; }
 
         public TestRestApiClient(ILoggerFactory loggerFactory, IFederationGatewaySettings settings, IHttpClientFactory httpClientFactory)
-            : base(loggerFactory, settings, httpClientFactory)
+            : base(loggerFactory, httpClientFactory, settings.CounterChainApiPort, "FederationGateway")
         {
             this.RetriesCount = 0;
         }

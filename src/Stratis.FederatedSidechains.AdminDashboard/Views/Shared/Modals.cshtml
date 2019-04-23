@@ -1,0 +1,216 @@
+<div class="modal fade" data-keyboard="false" data-backdrop="static" id="stratisResyncCrosschain" tabindex="-1" role="dialog" aria-labelledby="resyncCrosschain" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="">Resync Crosschain transactions</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted my-2 text-center">Some text explaining what this does</p>
+                <span class="d-flex justify-content-center my-4">
+                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancel</button>
+                    <a data-ajax="true" asp-controller="StratisNode" asp-action="ResyncCrosschainTransactionsAsync" data-ajax-begin="HideModals" data-ajax-success="StratisCrosschainResynced" data-ajax-failure="StratisCrosschainResyncFailed" class="btn btn-danger ml-3">Resync Crosschain Transactions</a>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" data-keyboard="false" data-backdrop="static" id="stratisResyncBlockchain" tabindex="-1" role="dialog" aria-labelledby="resyncBlockchain" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="">Resync Stratis Blockchain</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted my-2 text-center">Some text explaining what this does</p>
+                <form class="my-3" data-ajax="true" asp-controller="StratisNode" asp-action="ResyncAsync" data-ajax-begin="HideModals" data-ajax-success="StratisResyncedBlockchain" data-ajax-failure="StratisResyncBlockchainFailed" method="post">
+                    <div class="form-group">
+                        <label for="value">Block height/Hash</label>
+                        <input type="text" class="form-control" name="value" required id="value" aria-describedby="value" placeholder="Enter Block height or Block Hash here">
+                    </div>
+                    <span class="d-flex justify-content-center my-4">
+                        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary ml-3">Resync Blockchain</button>
+                    </span>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" data-keyboard="false" data-backdrop="static" id="stratisStopNode" tabindex="-1" role="dialog" aria-labelledby="stopNode" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="">Stop Mainnet Node</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info" role="alert">Are you sure to stop the node ?</div>
+                <span class="d-flex justify-content-center my-4">
+                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancel</button>
+                    <a data-ajax="true" asp-controller="StratisNode" asp-action="StopNodeAsync" data-ajax-begin="HideModals" data-ajax-success="StratisNodeStopped" data-ajax-failure="StratisNodeStopFailed" class="btn btn-danger ml-3">Stop the node</a>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" data-keyboard="false" data-backdrop="static" id="sidechainResyncCrosschain" tabindex="-1" role="dialog" aria-labelledby="resyncCrosschain" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="">Resync Crosschain transactions</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p class="text-muted my-2 text-center">Some text explaining what this does</p>
+            <span class="d-flex justify-content-center my-4">
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancel</button>
+                <a data-ajax="true" asp-controller="SidechainNode" asp-action="ResyncCrosschainTransactionsAsync" data-ajax-begin="HideModals" data-ajax-success="SidechainCrosschainResynced" data-ajax-failure="SidechainCrosschainResyncFailed" class="btn btn-danger ml-3">Resync Crosschain Transactions</a>
+            </span>
+        </div>
+    </div>
+    </div>
+</div>
+<div class="modal fade" data-keyboard="false" data-backdrop="static" id="sidechainResyncBlockchain" tabindex="-1" role="dialog" aria-labelledby="resyncBlockchain" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="">Resync Sidechain Blockchain</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted my-2 text-center">Some text explaining what this does</p>
+                <form class="my-3" data-ajax="true" asp-controller="SidechainNode" asp-action="ResyncAsync" data-ajax-begin="HideModals" data-ajax-success="SidechainResyncedBlockchain" data-ajax-failure="SidechainResyncBlockchainFailed" method="post">
+                    <div class="form-group">
+                        <label for="value">Block height/Hash</label>
+                        <input type="text" class="form-control" name="value" required id="value" aria-describedby="value" placeholder="Enter Block height or Block Hash here">
+                    </div>
+                    <span class="d-flex justify-content-center my-4">
+                        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary ml-3">Resync Blockchain</button>
+                    </span>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" data-keyboard="false" data-backdrop="static" id="sidechainStopNode" tabindex="-1" role="dialog" aria-labelledby="stopNode" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="">Stop Mainnet Node</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info" role="alert">Are you sure to stop the node ?</div>
+                <span class="d-flex justify-content-center my-4">
+                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancel</button>
+                    <a data-ajax="true" asp-controller="SidechainNode" asp-action="StopNodeAsync" data-ajax-begin="HideModals" data-ajax-success="SidechainNodeStopped" data-ajax-failure="SidechainNodeStopFailed" class="btn btn-danger ml-3">Stop the node</a>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" data-keyboard="false" data-backdrop="static" id="stratisHistory" tabindex="-1" role="dialog" aria-labelledby="stratisHistory" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="">History</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-sm my-3">
+                    <thead>
+                        <tr>
+                            <th class="text-center" scope="col">Status</th>
+                            <th class="text-center" scope="col">Destination</th>
+                            <th class="text-center" scope="col">Tx ID</th>
+                            <th class="text-center" scope="col">Confirmed in block</th>
+                            <th class="text-center" scope="col">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach(dynamic transaction in (JArray)ViewBag.History[0])
+                        {
+                            <tr>
+                                <td class="text-center"><i class="material-icons text-green md-18">check_circle</i></td>
+                                <td class="text-center text-truncate"><code>@(transaction.withdrawal.targetAddress)</code></td>
+                                <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.id).htm" target="_blank">@transaction.withdrawal.id</a></td>
+                                <td class="text-center">@transaction.withdrawal.blockNumber</td>
+                                <td class="text-right">@(((double)transaction.withdrawal.amount/100000000).ToString("N8")) @ViewBag.StratisTicker</td>
+                            </tr>
+                        }
+                    </tbody>
+                    @if(((JArray)ViewBag.History[0]).Count == 0)
+                    {
+                        <tfoot>
+                            <tr>
+                                <td colspan="6" class="text-center"><em>There no transaction to display.</em></td>
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" data-keyboard="false" data-backdrop="static" id="sidechainHistory" tabindex="-1" role="dialog" aria-labelledby="sidechainHistory" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="">History</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-sm my-3">
+                    <thead>
+                        <tr>
+                            <th class="text-center" scope="col">Status</th>
+                            <th class="text-center" scope="col">Destination</th>
+                            <th class="text-center" scope="col">Tx ID</th>
+                            <th class="text-center" scope="col">Confirmed in block</th>
+                            <th class="text-center" scope="col">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach(dynamic transaction in (JArray)ViewBag.History[1])
+                        {
+                            <tr>
+                            <td class="text-center"><i class="material-icons text-green md-18">check_circle</i></td>
+                            <td class="text-center text-truncate"><code>@(transaction.withdrawal.targetAddress)</code></td>
+                            <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.id).htm" target="_blank">@transaction.withdrawal.id</a></td>
+                            <td class="text-center">@transaction.withdrawal.blockNumber</td>
+                            <td class="text-right">@(((double)transaction.withdrawal.amount/100000000).ToString("N8")) @ViewBag.SidechainTicker</td>
+                            </tr>
+                        }
+                    </tbody>
+                    @if(((JArray)ViewBag.History[1]).Count == 0)
+                    {
+                        <tfoot>
+                            <tr>
+                            <td colspan="6" class="text-center"><em>There no transaction to display.</em></td>
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

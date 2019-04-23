@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
 
         private readonly IConsensusManager consensusManager;
 
-        private readonly FederationManager federationManager;
+        private readonly IFederationManager federationManager;
 
         public TestPoAMiner(
             IConsensusManager consensusManager,
@@ -39,12 +39,13 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
             SlotsManager slotsManager,
             IConnectionManager connectionManager,
             PoABlockHeaderValidator poaHeaderValidator,
-            FederationManager federationManager,
+            IFederationManager federationManager,
             IIntegrityValidator integrityValidator,
             IWalletManager walletManager,
             INodeStats nodeStats,
-            VotingManager votingManager) : base(consensusManager, dateTimeProvider, network, nodeLifetime, loggerFactory, ibdState, blockDefinition, slotsManager,
-                connectionManager, poaHeaderValidator, federationManager, integrityValidator, walletManager, nodeStats, votingManager)
+            VotingManager votingManager,
+            PoAMinerSettings poAMinerSettings) : base(consensusManager, dateTimeProvider, network, nodeLifetime, loggerFactory, ibdState, blockDefinition, slotsManager,
+                connectionManager, poaHeaderValidator, federationManager, integrityValidator, walletManager, nodeStats, votingManager, poAMinerSettings)
         {
             this.timeProvider = dateTimeProvider as EditableTimeProvider;
 

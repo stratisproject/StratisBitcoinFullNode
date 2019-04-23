@@ -4,13 +4,12 @@ using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.PoA;
-using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.SmartContracts.Networks.Policies;
 
 namespace Stratis.Sidechains.Networks.CirrusV2
 {
-    public class CirrusMain : PoANetwork, ISignedCodePubKeyHolder
+    public class CirrusMain : PoANetwork
     {
         /// <summary> The name of the root folder containing the different federated peg blockchains.</summary>
         private const string NetworkRootFolderName = "cirrus";
@@ -18,20 +17,17 @@ namespace Stratis.Sidechains.Networks.CirrusV2
         /// <summary> The default name used for the federated peg configuration file. </summary>
         private const string NetworkDefaultConfigFilename = "cirrus.conf";
 
-        public PubKey SigningContractPubKey { get; }
-
         internal CirrusMain()
         {
-            // TODO: Replace with real secret key.
-            this.SigningContractPubKey = new Mnemonic("lava frown leave wedding virtual ghost sibling able mammal liar wide wisdom").DeriveExtKey().PrivateKey.PubKey;
-
             this.Name = nameof(CirrusMain);
+            this.NetworkType = NetworkType.Mainnet;
             this.CoinTicker = "CRS";
-            this.Magic = 0x522357A0; //
+            this.Magic = 0x522357A0;
             this.DefaultPort = 16179;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
-            this.RPCPort = 16175;
+            this.DefaultRPCPort = 16175;
+            this.DefaultAPIPort = 37223;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
@@ -57,15 +53,15 @@ namespace Stratis.Sidechains.Networks.CirrusV2
             // Configure federation public keys used to sign blocks.
             // Keep in mind that order in which keys are added to this list is important
             // and should be the same for all nodes operating on this network.
-            var federationPubKeys = new List<PubKey>
+            var genesisFederationMembers = new List<IFederationMember>()
             {
-                new PubKey("036317d97f911ce899fd0a360866d19f2dca5252c7960d4652d814ab155a8342de"),
-                new PubKey("02a08d72d47b3103261163c15aa2f6b0d007e1872ad9f5fddbfbd27bdb738156e9"),
-                new PubKey("03634c79d4e8e915cfb9f7bbef57bed32d715150836b7845b1a14c93670d816ab6"),
-                new PubKey("02062601ddfdb2208c1d074f1019fe6bc582ff9a0956a9cbe03f19af04b94f831b"),
-                new PubKey("03c36d4fd9a7f949df8ccd2b173e5cb8a5f77a8ad270d37b509314123b225afdfd"),
-                new PubKey("0254c4944820c49f8d595aa78bfce771453558dd159fd5eee8fac097fc3ac17c1b"),
-                new PubKey("03dad9bf0493560203ed6a1089749d140fa33d83aa15fcc8b22a108511389bdcef")
+                new CollateralFederationMember(new PubKey("036317d97f911ce899fd0a360866d19f2dca5252c7960d4652d814ab155a8342de"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("02a08d72d47b3103261163c15aa2f6b0d007e1872ad9f5fddbfbd27bdb738156e9"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("03634c79d4e8e915cfb9f7bbef57bed32d715150836b7845b1a14c93670d816ab6"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("02062601ddfdb2208c1d074f1019fe6bc582ff9a0956a9cbe03f19af04b94f831b"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("03c36d4fd9a7f949df8ccd2b173e5cb8a5f77a8ad270d37b509314123b225afdfd"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("0254c4944820c49f8d595aa78bfce771453558dd159fd5eee8fac097fc3ac17c1b"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("03dad9bf0493560203ed6a1089749d140fa33d83aa15fcc8b22a108511389bdcef"), new Money(0), null)
             };
 
             var consensusOptions = new PoAConsensusOptions(
@@ -74,9 +70,10 @@ namespace Stratis.Sidechains.Networks.CirrusV2
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
-                federationPublicKeys: federationPubKeys,
+                genesisFederationMembers: genesisFederationMembers,
                 targetSpacingSeconds: 16,
-                votingEnabled: false
+                votingEnabled: false,
+                autoKickIdleMembers: false
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -102,7 +99,7 @@ namespace Stratis.Sidechains.Networks.CirrusV2
                 bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
-                maxReorgLength: 0, // No max reorg limit on PoA networks.
+                maxReorgLength: 240, // 2 loops of PoA members
                 defaultAssumeValid: null,
                 maxMoney: Money.Coins(100_000_000),
                 coinbaseMaturity: 1,

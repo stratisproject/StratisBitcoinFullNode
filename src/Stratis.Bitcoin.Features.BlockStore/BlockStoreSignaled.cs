@@ -4,8 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Primitives;
@@ -31,7 +34,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly StoreSettings storeSettings;
 
         /// <summary>Queue of chained blocks that will be announced to the peers.</summary>
-        private readonly AsyncQueue<ChainedHeader> blocksToAnnounce;
+        private readonly IAsyncQueue<ChainedHeader> blocksToAnnounce;
 
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
@@ -43,6 +46,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly Task dequeueLoopTask;
 
         private readonly ISignals signals;
+        private readonly IAsyncProvider asyncProvider;
+        private SubscriptionToken blockConnectedSubscription;
 
         public BlockStoreSignaled(
             IBlockStoreQueue blockStoreQueue,
@@ -52,7 +57,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
-            ISignals signals)
+            ISignals signals,
+            IAsyncProvider asyncProvider)
         {
             this.blockStoreQueue = blockStoreQueue;
             this.chainState = chainState;
@@ -62,18 +68,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.storeSettings = storeSettings;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.signals = signals;
+            this.asyncProvider = asyncProvider;
 
-            this.blocksToAnnounce = new AsyncQueue<ChainedHeader>();
+            this.blocksToAnnounce = asyncProvider.CreateAsyncQueue<ChainedHeader>();
             this.dequeueLoopTask = this.DequeueContinuouslyAsync();
         }
 
         public void Initialize()
         {
-            this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
+            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
         }
 
-        private void OnBlockConnected(ChainedHeaderBlock blockPair)
+        private void OnBlockConnected(BlockConnected blockConnected)
         {
+            ChainedHeaderBlock blockPair = blockConnected.ConnectedBlock;
+
             ChainedHeader chainedHeader = blockPair.ChainedHeader;
             if (chainedHeader == null)
             {
@@ -246,7 +255,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blocksToAnnounce.Dispose();
             this.dequeueLoopTask.GetAwaiter().GetResult();
 
-            this.signals.OnBlockConnected.Detach(this.OnBlockConnected);
+            this.signals.Unsubscribe(this.blockConnectedSubscription);
         }
     }
 }
