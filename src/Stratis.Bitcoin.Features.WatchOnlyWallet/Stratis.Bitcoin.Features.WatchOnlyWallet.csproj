@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Description>Stratis Bitcoin Features WatchOnlyWallet</Description>
     <AssemblyTitle>Stratis.Bitcoin.Features.WatchOnlyWallet</AssemblyTitle>
-    <TargetFramework>netstandard2.0</TargetFramework>
+	<TargetFramework>netcoreapp2.2</TargetFramework>
     <AssemblyName>Stratis.Bitcoin.Features.WatchOnlyWallet</AssemblyName>
     <PackageId>Stratis.Bitcoin.Features.WatchOnlyWallet</PackageId>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>

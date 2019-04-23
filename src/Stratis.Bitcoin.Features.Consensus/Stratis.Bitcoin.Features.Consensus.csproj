@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Description>Stratis Bitcoin Features Consensus</Description>
     <AssemblyTitle>Stratis.Bitcoin.Features.Consensus</AssemblyTitle>
-    <TargetFramework>netstandard2.0</TargetFramework>
+	<TargetFramework>netcoreapp2.2</TargetFramework>
     <AssemblyName>Stratis.Bitcoin.Features.Consensus</AssemblyName>
     <PackageId>Stratis.Bitcoin.Features.Consensus</PackageId>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>

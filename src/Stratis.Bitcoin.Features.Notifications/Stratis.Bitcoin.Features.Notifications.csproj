@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Description>Stratis Bitcoin Features Notifications</Description>
     <AssemblyTitle>Stratis.Bitcoin.Features.Notifications</AssemblyTitle>
-    <TargetFramework>netstandard2.0</TargetFramework>
+	<TargetFramework>netcoreapp2.2</TargetFramework>
     <AssemblyName>Stratis.Bitcoin.Features.Notifications</AssemblyName>
     <PackageId>Stratis.Bitcoin.Features.Notifications</PackageId>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>

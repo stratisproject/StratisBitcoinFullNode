@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Description>Stratis Bitcoin Features MemoryPool</Description>
     <AssemblyTitle>Stratis.Bitcoin.Features.MemoryPool</AssemblyTitle>
-    <TargetFramework>netstandard2.0</TargetFramework>
+	<TargetFramework>netcoreapp2.2</TargetFramework>
     <AssemblyName>Stratis.Bitcoin.Features.MemoryPool</AssemblyName>
     <PackageId>Stratis.Bitcoin.Features.MemoryPool</PackageId>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
