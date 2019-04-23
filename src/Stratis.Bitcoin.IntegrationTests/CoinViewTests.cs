@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode = builder.CreateStratisPowNode(this.regTest).Start();
+                CoreNode stratisNode = builder.CreateStratisPowNode(this.regTest, "cv-1-stratisNode").Start();
                 CoreNode coreNode1 = builder.CreateBitcoinCoreNode().Start();
                 CoreNode coreNode2 = builder.CreateBitcoinCoreNode().Start();
 
@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.Disconnect(stratisNode, coreNode2);
                 ((CachedCoinView)stratisNode.FullNode.CoinView()).Flush();
 
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode, coreNode2));
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode, coreNode2));
             }
         }
 

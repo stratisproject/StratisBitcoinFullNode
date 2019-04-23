@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
@@ -217,7 +216,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc/>
-        public Transaction[] GetTransactionsByIds(uint256[] trxids)
+        public Transaction[] GetTransactionsByIds(uint256[] trxids, CancellationToken cancellation = default(CancellationToken))
         {
             // Only look for transactions if they're indexed.
             if (!this.storeSettings.TxIndex)
@@ -254,7 +253,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
             }
 
-            Transaction[] fetchedTxes = this.blockRepository.GetTransactionsByIds(notFoundIds.ToArray());
+            Transaction[] fetchedTxes = this.blockRepository.GetTransactionsByIds(notFoundIds.ToArray(), cancellation);
+
+            if (fetchedTxes == null)
+            {
+                this.logger.LogTrace("(-)[NOT_FOUND_IN_REPOSITORY]:null");
+                return null;
+            }
+
             int fetchedIndex = 0;
 
             for (int i = 0; i < txes.Length; i++)

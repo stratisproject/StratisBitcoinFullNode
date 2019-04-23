@@ -283,7 +283,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string AccountName { get; set; }
 
         /// <summary>
-        ///??UNSED??
+        /// A list of outpoints to use as inputs for the transaction.
         /// </summary> 
         public List<OutpointRequest> Outpoints { get; set; }
 
@@ -296,8 +296,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [MinLength(1)]
         public List<RecipientModel> Recipients { get; set; }
 
+        /// <summary>
+        /// A string containing any OP_RETURN output data to store as part of the transaction.
+        /// </summary>       
         public string OpReturnData { get; set; }
 
+        /// <summary>
+        /// The funds in STRAT (or a sidechain coin) to include with the OP_RETURN output. Currently, specifying
+        /// some funds helps OP_RETURN outputs be relayed around the network.
+        /// </summary>   
         [MoneyFormat(isRequired: false, ErrorMessage = "The op return amount is not in the correct format.")]
         public string OpReturnAmount { get; set; }
 

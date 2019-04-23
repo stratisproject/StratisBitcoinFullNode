@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
-using Stratis.Features.FederatedPeg.RestClients;
+using Stratis.Features.FederatedPeg.Controllers;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
 {

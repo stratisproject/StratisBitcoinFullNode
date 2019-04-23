@@ -115,6 +115,76 @@ namespace Stratis.Bitcoin.Tests.P2P
         }
 
         [Fact]
+        public void PeerFile_CanSaveAndLoadPeers_ResetBannedPeers()
+        {
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endpoint = new IPEndPoint(ipAddress, 80);
+
+            DataFolder peerFolder = CreateDataFolder(this);
+
+            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker(this.LoggerFactory.Object, this.connectionManagerSettings));
+            var addedPeer = addressManager.AddPeer(endpoint, IPAddress.Loopback);
+
+            addedPeer.BanReason = "test";
+            addedPeer.BanScore = 0;
+            addedPeer.BanTimeStamp = DateTime.UtcNow.AddHours(-2);
+            addedPeer.BanUntil = DateTime.UtcNow.AddHours(-1);
+
+            addressManager.SavePeers();
+
+            addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker(this.LoggerFactory.Object, this.connectionManagerSettings));
+            addressManager.LoadPeers();
+
+            PeerAddress savedPeer = addressManager.FindPeer(endpoint);
+
+            Assert.Null(savedPeer.BanReason);
+            Assert.Null(savedPeer.BanScore);
+            Assert.Null(savedPeer.BanTimeStamp);
+            Assert.Null(savedPeer.BanUntil);
+        }
+
+        [Fact]
+        public void PeerFile_CanSaveAndLoadPeers_ResetAttemptThresholdReachedPeers()
+        {
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endpoint = new IPEndPoint(ipAddress, 80);
+
+            DataFolder peerFolder = CreateDataFolder(this);
+
+            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker(this.LoggerFactory.Object, this.connectionManagerSettings));
+            addressManager.AddPeer(endpoint, IPAddress.Loopback);
+
+            DateTime applicableDate = DateTimeProvider.Default.GetUtcNow();
+
+            // Set the peer's failed attempts count to 4.
+            for (int i = 0; i < 4; i++)
+            {
+                addressManager.PeerAttempted(endpoint, applicableDate.AddHours(-i));
+            }
+
+            // Ensure that the last attempt (5) was more than 12 hours ago.
+            addressManager.PeerAttempted(endpoint, applicableDate.AddHours(-13));
+
+            // Ensure that the peer is still returned from the selector.
+            var peer = addressManager.PeerSelector.SelectPeer();
+            Assert.Equal(peer.Endpoint, endpoint);
+
+            // Persist the peers to the json file.
+            addressManager.SavePeers();
+
+            // Creat a new address manager instance and load the peers from file.
+            addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker(this.LoggerFactory.Object, this.connectionManagerSettings));
+            addressManager.LoadPeers();
+
+            PeerAddress savedPeer = addressManager.FindPeer(endpoint);
+
+            // The peer's attempt thresholds should now be reset.
+            Assert.False(savedPeer.Attempted);
+            Assert.Equal(0, savedPeer.ConnectionAttempts);
+            Assert.Null(savedPeer.LastAttempt);
+        }
+
+        [Fact]
         public void PeerAddressManager_AttemptThresholdReached_ResetAttempts()
         {
             IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
@@ -122,22 +192,25 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             DataFolder peerFolder = CreateDataFolder(this);
 
-            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object,
-                new SelfEndpointTracker(this.LoggerFactory.Object, this.connectionManagerSettings));
+            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker(this.LoggerFactory.Object, this.connectionManagerSettings));
             addressManager.AddPeer(endpoint, IPAddress.Loopback);
 
             DateTime applicableDate = DateTimeProvider.Default.GetUtcNow();
 
-            //Ensure that there was 10 failed attempts
-            for (int i = 0; i < 10; i++)
+            // Set the peer's failed attempts count to 4.
+            for (int i = 0; i < 4; i++)
             {
                 addressManager.PeerAttempted(endpoint, applicableDate.AddHours(-i));
             }
 
-            //Ensure that the last attempt was more than 12 hours ago
+            // Ensure that the last attempt (5) was more than 12 hours ago.
             addressManager.PeerAttempted(endpoint, applicableDate.AddHours(-13));
 
-            //This call should now reset the counts
+            // Ensure that the peer is still returned from the selector.
+            var peer = addressManager.PeerSelector.SelectPeer();
+            Assert.Equal(peer.Endpoint, endpoint);
+
+            // This call should now reset the counts
             DateTime resetTimestamp = DateTimeProvider.Default.GetUtcNow();
             addressManager.PeerAttempted(endpoint, resetTimestamp);
 
@@ -159,14 +232,13 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             DataFolder peerFolder = CreateDataFolder(this);
 
-            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object,
-                new SelfEndpointTracker(this.LoggerFactory.Object, this.connectionManagerSettings));
+            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker(this.LoggerFactory.Object, this.connectionManagerSettings));
             addressManager.AddPeer(endpoint, IPAddress.Loopback);
 
             DateTime applicableDate = DateTimeProvider.Default.GetUtcNow();
 
-            //Ensure that there was 10 failed attempts
-            for (int i = 0; i < 10; i++)
+            //Ensure that there was 4 failed attempts
+            for (int i = 0; i < 4; i++)
             {
                 addressManager.PeerAttempted(endpoint, applicableDate.AddHours(-i));
             }
@@ -177,7 +249,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             PeerAddress savedPeer = addressManager.FindPeer(endpoint);
 
-            Assert.Equal(11, savedPeer.ConnectionAttempts);
+            Assert.Equal(5, savedPeer.ConnectionAttempts);
             Assert.Equal(lastAttempt, savedPeer.LastAttempt);
             Assert.Null(savedPeer.LastConnectionSuccess);
             Assert.Null(savedPeer.LastConnectionHandshake);
