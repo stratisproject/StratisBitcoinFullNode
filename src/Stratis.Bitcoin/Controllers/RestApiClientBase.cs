@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.Controllers
                 {
                     this.logger.LogError("Target node is not ready to receive API calls at this time ({0})", url);
                     this.logger.LogError("Failed to send a message. Exception: '{0}'.", ex);
-                    return new HttpResponseMessage() { ReasonPhrase = ex.ToString(), StatusCode = HttpStatusCode.InternalServerError };
+                    return new HttpResponseMessage() { ReasonPhrase = ex.Message, StatusCode = HttpStatusCode.InternalServerError };
                 }
             }
 
