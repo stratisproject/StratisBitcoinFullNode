@@ -275,6 +275,14 @@ namespace Stratis.Bitcoin.Tests.Common
             return headers;
         }
 
+        /// <summary>
+        /// Waits for the given action to complete.
+        /// </summary>
+        /// <param name="act">The function to run (it must return true or false).</param>
+        /// <param name="failureReason">The reason the function failed to complete.</param>
+        /// <param name="waitTimeSeconds">The amount of time the function is allowed to run.</param>
+        /// <param name="retryDelayInMiliseconds">The delay before execution of the function is tried again.</param>
+        /// <param name="cancellationToken">Used in the event that a custom cancellation token is required.</param>
         public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int waitTimeSeconds = 60, int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (cancellationToken == default(CancellationToken))
