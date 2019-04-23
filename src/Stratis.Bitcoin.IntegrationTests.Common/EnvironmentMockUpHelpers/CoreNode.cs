@@ -263,7 +263,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ProtocolPort).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
-        private IAsyncProvider GetOrCreateAsyncProvider() {
+        private IAsyncProvider GetOrCreateAsyncProvider()
+        {
             if (this.runner.FullNode == null)
                 return new AsyncProvider(this.loggerFactory, new Signals.Signals(this.loggerFactory, null), new NodeLifetime());
             else
@@ -340,7 +341,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             TimeSpan duration = TimeSpan.FromMinutes(5);
             var cancellationToken = new CancellationTokenSource(duration).Token;
-            TestHelper.WaitLoop(() =>
+            TestBase.WaitLoop(() =>
             {
                 try
                 {
@@ -361,11 +362,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             var timeToNodeInit = TimeSpan.FromMinutes(1);
             var timeToNodeStart = TimeSpan.FromMinutes(1);
 
-            TestHelper.WaitLoop(() => this.runner.FullNode != null,
+            TestBase.WaitLoop(() => this.runner.FullNode != null,
                 cancellationToken: new CancellationTokenSource(timeToNodeInit).Token,
                 failureReason: $"Failed to assign instance of FullNode within {timeToNodeInit}");
 
-            TestHelper.WaitLoop(() => this.runner.FullNode.State == FullNodeState.Started,
+            TestBase.WaitLoop(() => this.runner.FullNode.State == FullNodeState.Started,
                 cancellationToken: new CancellationTokenSource(timeToNodeStart).Token,
                 failureReason: $"Failed to achieve state = started within {timeToNodeStart}");
 

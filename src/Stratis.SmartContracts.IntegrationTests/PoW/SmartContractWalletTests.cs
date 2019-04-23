@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Local;
@@ -61,7 +62,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 HdAddress address = scReceiver.GetUnusedAddress();
                 scSender.SendTransaction(address.ScriptPubKey, Money.COIN * 100);
                 scReceiver.WaitMempoolCount(1);
-                TestHelper.WaitLoop(() => (long) scReceiver.WalletSpendableBalance == Money.COIN * 100, waitTimeSeconds:10); // Give the wallet a bit of time to process receiving the transaction
+                TestBase.WaitLoop(() => (long)scReceiver.WalletSpendableBalance == Money.COIN * 100, waitTimeSeconds: 10); // Give the wallet a bit of time to process receiving the transaction
 
                 // Transaction is in chain in last block.
                 scReceiver.MineBlocks(1);

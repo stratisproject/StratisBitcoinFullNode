@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Features.FederatedPeg.IntegrationTests.Utils;
 using Stratis.Sidechains.Networks;
@@ -59,7 +60,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 TestHelper.Connect(user1, fed1);
 
                 // Let fed1 get the premine
-                TestHelper.WaitLoop(() => user1.FullNode.ChainIndexer.Height > network.Consensus.PremineHeight + network.Consensus.CoinbaseMaturity);
+                TestBase.WaitLoop(() => user1.FullNode.ChainIndexer.Height > network.Consensus.PremineHeight + network.Consensus.CoinbaseMaturity);
 
                 // Send funds from fed1 to user1
                 string user1Address = user1.GetUnusedAddress();
@@ -67,7 +68,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 Result<WalletSendTransactionModel> result = SendTransaction(fed1, scriptPubKey, new Money(100_000, MoneyUnit.BTC));
                 Assert.True(result.IsSuccess);
                 int currentHeight = user1.FullNode.ChainIndexer.Height;
-                TestHelper.WaitLoop(() => user1.FullNode.ChainIndexer.Height > currentHeight + 2);
+                TestBase.WaitLoop(() => user1.FullNode.ChainIndexer.Height > currentHeight + 2);
 
                 // Send new SC tx from user
                 Assert.Equal(new Money(100_000, MoneyUnit.BTC), user1.GetBalance());
@@ -75,10 +76,10 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 string newContractAddress = await SendCreateContractTransaction(user1, contractCode, 1, user1Address);
 
                 // SC tx reaches node mempool
-                TestHelper.WaitLoop(() => fed1.CreateRPCClient().GetRawMempool().Length == 1);
+                TestBase.WaitLoop(() => fed1.CreateRPCClient().GetRawMempool().Length == 1);
 
                 currentHeight = user1.FullNode.ChainIndexer.Height;
-                TestHelper.WaitLoop(() => user1.FullNode.ChainIndexer.Height > currentHeight + 2);
+                TestBase.WaitLoop(() => user1.FullNode.ChainIndexer.Height > currentHeight + 2);
 
                 // Did code save?
                 Assert.NotNull(user1.QueryContractCode(newContractAddress, network));

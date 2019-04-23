@@ -6,6 +6,7 @@ using NBitcoin;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -64,12 +65,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Block tip = coreCreateNode.FindBlock(5).Last();
                 TestHelper.ConnectAndSync(stratisNode, coreCreateNode);
 
-                TestHelper.WaitLoop(() => stratisNode.FullNode.ConsensusManager().Tip.Block.GetHash() == tip.GetHash());
+                TestBase.WaitLoop(() => stratisNode.FullNode.ConsensusManager().Tip.Block.GetHash() == tip.GetHash());
 
                 // Add a new stratis node which will download
                 // the blocks using the GetData payload
                 TestHelper.ConnectAndSync(stratisNodeSync, stratisNode);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.Block.GetHash() == tip.GetHash());
+                TestBase.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.Block.GetHash() == tip.GetHash());
             }
         }
 
@@ -86,7 +87,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // and wait till the stratis node is fully synced
                 Block tip = coreCreateNode.FindBlock(5).Last();
                 TestHelper.ConnectAndSync(stratisNode, coreCreateNode);
-                TestHelper.WaitLoop(() => stratisNode.FullNode.ConsensusManager().Tip.Block.GetHash() == tip.GetHash());
+                TestBase.WaitLoop(() => stratisNode.FullNode.ConsensusManager().Tip.Block.GetHash() == tip.GetHash());
 
                 // add a new stratis node which will download
                 // the blocks using the GetData payload
@@ -130,11 +131,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.ConnectNoCheck(syncer, reorg);
 
                 // Wait for the synced chain to get headers updated.
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(reorg));
+                TestBase.WaitLoop(() => !TestHelper.IsNodeConnected(reorg));
 
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncer));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(reorg, miner) == false);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(reorg, syncer) == false);
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncer));
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(reorg, miner) == false);
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(reorg, syncer) == false);
 
                 // Check that a reorg did not happen.
                 Assert.Equal(hashBeforeReorg, syncer.FullNode.ChainIndexer.Tip.HashBlock);

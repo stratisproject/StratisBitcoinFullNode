@@ -7,7 +7,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
-using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
@@ -126,12 +125,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                         return new ChainedHeaderBlock(block10, header); ;
                 }
 
-                return  new ChainedHeaderBlock(new Block(), header);;
+                return new ChainedHeaderBlock(new Block(), header); ;
             });
 
             this.addressIndexer.Initialize();
 
-            TestHelper.WaitLoop(() => this.addressIndexer.IndexerTip == headers.Last());
+            TestBase.WaitLoop(() => this.addressIndexer.IndexerTip == headers.Last());
 
             Dictionary<string, List<AddressBalanceChange>> index = this.addressIndexer.GetAddressIndexCopy();
             Assert.Equal(2, index.Keys.Count);
@@ -153,7 +152,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             });
 
             this.consensusManagerMock.Setup(x => x.Tip).Returns(() => headersFork.Last());
-            TestHelper.WaitLoop(() => this.addressIndexer.IndexerTip == headersFork.Last());
+            TestBase.WaitLoop(() => this.addressIndexer.IndexerTip == headersFork.Last());
 
             Assert.Equal(70_000, this.addressIndexer.GetAddressBalance(address1).Satoshi);
 

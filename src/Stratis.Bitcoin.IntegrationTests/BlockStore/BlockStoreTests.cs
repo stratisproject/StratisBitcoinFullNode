@@ -92,8 +92,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 TestHelper.MineBlocks(stratisNodeSync, 2);
 
                 // Wait for the other nodes to pick up the newly generated blocks
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode1, stratisNodeSync));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode2, stratisNodeSync));
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode1, stratisNodeSync));
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode2, stratisNodeSync));
             }
         }
 
@@ -140,21 +140,21 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 TestHelper.MineBlocks(stratisNode1, 10);
 
                 // Wait for node 1 to sync
-                TestHelper.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().Height == 20);
-                TestHelper.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock);
+                TestBase.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().Height == 20);
+                TestBase.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock);
 
                 // Remove node 1.
                 TestHelper.Disconnect(stratisNodeSync, stratisNode1);
 
                 // Mine a higher chain with node 2.
                 TestHelper.MineBlocks(stratisNode2, 20);
-                TestHelper.WaitLoop(() => stratisNode2.FullNode.GetBlockStoreTip().Height == 30);
+                TestBase.WaitLoop(() => stratisNode2.FullNode.GetBlockStoreTip().Height == 30);
 
                 // Add node 2.
                 TestHelper.Connect(stratisNodeSync, stratisNode2);
 
                 // Node2 should be synced.
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode2, stratisNodeSync));
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode2, stratisNodeSync));
             }
         }
 
@@ -169,8 +169,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 // Sync both nodes.
                 TestHelper.ConnectAndSync(stratisNode1, stratisNode2);
 
-                TestHelper.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().Height == 10);
-                TestHelper.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().HashBlock == stratisNode2.FullNode.GetBlockStoreTip().HashBlock);
+                TestBase.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().Height == 10);
+                TestBase.WaitLoop(() => stratisNode1.FullNode.GetBlockStoreTip().HashBlock == stratisNode2.FullNode.GetBlockStoreTip().HashBlock);
 
                 Block bestBlock1 = stratisNode1.FullNode.BlockStore().GetBlock(stratisNode1.FullNode.ChainIndexer.Tip.HashBlock);
                 Assert.NotNull(bestBlock1);
