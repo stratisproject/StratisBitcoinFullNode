@@ -994,7 +994,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             Assert.Throws<WalletException>(() =>
             {
-                var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new Mock<ChainIndexer>().Object,new WalletSettings(NodeSettings.Default(this.Network)),
+                var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new Mock<ChainIndexer>().Object, new WalletSettings(NodeSettings.Default(this.Network)),
                     CreateDataFolder(this), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
                 walletManager.GetHistory("noname");
             });
@@ -3255,45 +3255,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             File.Delete(dataFolder.WalletPath + $"/{walletName}.wallet.json");
 
             return (mnemonic, wallet);
-        }
-    }
-
-    public class WalletFixture : IDisposable
-    {
-        private readonly Dictionary<(string, string), Wallet> walletsGenerated;
-
-        public WalletFixture()
-        {
-            this.walletsGenerated = new Dictionary<(string, string), Wallet>();
-        }
-
-        public void Dispose()
-        {
-        }
-
-        /// <summary>
-        /// Creates a new wallet.
-        /// </summary>
-        /// <remarks>
-        /// If it's the first time this wallet is created within this class, it is added to a collection for use by other tests.
-        /// If the same parameters have already been used to create a wallet, the wallet will be retrieved from the internal collection and a copy of this wallet will be returned.
-        /// </remarks>
-        /// <param name="name">The name.</param>
-        /// <param name="password">The password.</param>
-        /// <returns></returns>
-        public Wallet GenerateBlankWallet(string name, string password)
-        {
-            if (this.walletsGenerated.TryGetValue((name, password), out Wallet existingWallet))
-            {
-                string serializedExistingWallet = JsonConvert.SerializeObject(existingWallet, Formatting.None);
-                return JsonConvert.DeserializeObject<Wallet>(serializedExistingWallet);
-            }
-
-            Wallet newWallet = WalletTestsHelpers.GenerateBlankWallet(name, password);
-            this.walletsGenerated.Add((name, password), newWallet);
-
-            string serializedNewWallet = JsonConvert.SerializeObject(newWallet, Formatting.None);
-            return JsonConvert.DeserializeObject<Wallet>(serializedNewWallet);
         }
     }
 }

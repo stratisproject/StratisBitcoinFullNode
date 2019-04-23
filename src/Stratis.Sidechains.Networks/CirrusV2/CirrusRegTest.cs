@@ -66,13 +66,18 @@ namespace Stratis.Sidechains.Networks.CirrusV2
 
             List<PubKey> federationPubKeys = this.FederationKeys.Select(k => k.PubKey).ToList();
 
+            var genesisFederationMembers = new List<IFederationMember>(federationPubKeys.Count);
+
+            foreach (PubKey pubKey in federationPubKeys)
+                genesisFederationMembers.Add(new FederationMember(pubKey));
+
             var consensusOptions = new PoAConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
-                federationPublicKeys: federationPubKeys,
+                genesisFederationMembers: genesisFederationMembers,
                 targetSpacingSeconds: 4, // For integration tests - avoid FastMining
                 votingEnabled: false,
                 autoKickIdleMembers: false

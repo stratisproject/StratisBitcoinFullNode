@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
 using NBitcoin;
@@ -10,10 +9,10 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
-    public class BlockRepositoryTest : LogsTestBase
+    public class BlockRepositoryTests : LogsTestBase
     {
         [Fact]
-        public void InitializesGenBlockAndTxIndexOnFirstLoad()
+        public void InitializesGenesisBlockAndTxIndexOnFirstLoad()
         {
             string dir = CreateTestDir(this);
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
