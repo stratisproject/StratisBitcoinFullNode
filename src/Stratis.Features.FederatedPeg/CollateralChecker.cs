@@ -17,7 +17,7 @@ namespace Stratis.Features.FederatedPeg
     /// <summary>Class that checks if federation members fulfill the collateral requirement.</summary>
     public class CollateralChecker : IDisposable
     {
-        private readonly BlockStoreClient blockStoreClient;
+        private readonly IBlockStoreClient blockStoreClient;
 
         private readonly IFederationManager federationManager;
 
@@ -139,6 +139,12 @@ namespace Stratis.Features.FederatedPeg
             if (collateral == null)
             {
                 this.logger.LogTrace("(-)[FAILED]:false");
+                return false;
+            }
+
+            if (collateral.Count != addressesToCheck.Count)
+            {
+                this.logger.LogTrace("(-)[INCONSISTENT_DATA]:false");
                 return false;
             }
 
