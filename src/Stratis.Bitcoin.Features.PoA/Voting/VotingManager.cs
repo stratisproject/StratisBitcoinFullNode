@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
 
             // Pub key of a fed member that created voting data.
-            string fedMemberKeyHex = this.slotsManager.GetPubKeyForTimestamp(chBlock.Block.Header.Time).ToHex();
+            string fedMemberKeyHex = this.slotsManager.GetFederationMemberForTimestamp(chBlock.Block.Header.Time).PubKey.ToHex();
 
             List<VotingData> votingDataList = this.votingDataEncoder.Decode(rawVotingData);
 
@@ -286,7 +286,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                     }
 
                     // Pub key of a fed member that created voting data.
-                    string fedMemberKeyHex = this.slotsManager.GetPubKeyForTimestamp(chBlock.Block.Header.Time).ToHex();
+                    string fedMemberKeyHex = this.slotsManager.GetFederationMemberForTimestamp(chBlock.Block.Header.Time).PubKey.ToHex();
 
                     targetPoll.PubKeysHexVotedInFavor.Remove(fedMemberKeyHex);
 

@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
                 if (currentFedIndex > federationMembers.Count - 1)
                     currentFedIndex = 0;
 
-                Assert.Equal(federationMembers[currentFedIndex].PubKey, this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * (uint)i));
+                Assert.Equal(federationMembers[currentFedIndex].PubKey, this.slotsManager.GetFederationMemberForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * (uint)i).PubKey);
             }
         }
 

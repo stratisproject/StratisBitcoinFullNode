@@ -17,23 +17,26 @@ namespace Stratis.Features.FederatedPeg
     {
         private readonly IInitialBlockDownloadState ibdState;
 
-        private readonly CollateralFederationManager federationManager;
+        private readonly SlotsManager slotsManager;
+
+        private readonly CollateralChecker collateralChecker;
 
         public SmartContractCollateralPoARuleRegistration(Network network, IStateRepositoryRoot stateRepositoryRoot, IContractExecutorFactory executorFactory,
             ICallDataSerializer callDataSerializer, ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView,
             IEnumerable<IContractTransactionPartialValidationRule> partialTxValidationRules, IEnumerable<IContractTransactionFullValidationRule> fullTxValidationRules,
-            IInitialBlockDownloadState ibdState, IFederationManager federationManager)
+            IInitialBlockDownloadState ibdState, SlotsManager slotsManager, CollateralChecker collateralChecker)
         : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView, partialTxValidationRules, fullTxValidationRules)
         {
             this.ibdState = ibdState;
-            this.federationManager = federationManager as CollateralFederationManager;
+            this.slotsManager = slotsManager;
+            this.collateralChecker = collateralChecker;
         }
 
         public override void RegisterRules(IConsensus consensus)
         {
             base.RegisterRules(consensus);
 
-            consensus.FullValidationRules.Add(new CheckCollateralFullValidationRule(this.ibdState, this.federationManager));
+            consensus.FullValidationRules.Add(new CheckCollateralFullValidationRule(this.ibdState, this.collateralChecker, this.slotsManager));
         }
     }
 }

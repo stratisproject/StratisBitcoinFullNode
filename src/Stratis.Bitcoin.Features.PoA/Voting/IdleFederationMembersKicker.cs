@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             // Update last active time.
             uint timestamp = blockConnectedData.ConnectedBlock.ChainedHeader.Header.Time;
-            PubKey key = this.slotsManager.GetPubKeyForTimestamp(timestamp);
+            PubKey key = this.slotsManager.GetFederationMemberForTimestamp(timestamp).PubKey;
             this.fedPubKeysByLastActiveTime.AddOrReplace(key, timestamp);
 
             this.SaveMembersByLastActiveTime();

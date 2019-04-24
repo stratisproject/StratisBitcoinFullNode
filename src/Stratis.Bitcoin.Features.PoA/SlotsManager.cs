@@ -28,10 +28,10 @@ namespace Stratis.Bitcoin.Features.PoA
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        /// <summary>Gets the public key for specified timestamp.</summary>
+        /// <summary>Gets the federation member for specified timestamp.</summary>
         /// <param name="headerUnixTimestamp">Timestamp of a header.</param>
         /// <exception cref="ConsensusErrorException">In case timestamp is invalid.</exception>
-        public PubKey GetPubKeyForTimestamp(uint headerUnixTimestamp, List<IFederationMember> federationMembers = null)
+        public IFederationMember GetFederationMemberForTimestamp(uint headerUnixTimestamp, List<IFederationMember> federationMembers = null)
         {
             if (!this.IsValidTimestamp(headerUnixTimestamp))
                 PoAConsensusErrors.InvalidHeaderTimestamp.Throw();
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.PoA
             // Slot number in current round.
             int currentSlotNumber = (int)((headerUnixTimestamp - roundStartTimestamp) / this.consensusOptions.TargetSpacingSeconds);
 
-            return federationMembers[currentSlotNumber].PubKey;
+            return federationMembers[currentSlotNumber];
         }
 
         /// <summary>Gets next timestamp at which current node can produce a block.</summary>

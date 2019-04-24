@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
         {
             var header = context.ValidationContext.ChainedHeaderToValidate.Header as PoABlockHeader;
 
-            PubKey pubKey = this.slotsManager.GetPubKeyForTimestamp(header.Time);
+            PubKey pubKey = this.slotsManager.GetFederationMemberForTimestamp(header.Time).PubKey;
 
             if (!this.validator.VerifySignature(pubKey, header))
             {
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
                             modifiedFederation.Remove(federationMember);
                     }
 
-                    pubKey = this.slotsManager.GetPubKeyForTimestamp(header.Time, modifiedFederation);
+                    pubKey = this.slotsManager.GetFederationMemberForTimestamp(header.Time, modifiedFederation).PubKey;
 
                     if (this.validator.VerifySignature(pubKey, header))
                     {

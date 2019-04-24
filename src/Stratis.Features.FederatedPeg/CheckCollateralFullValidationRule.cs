@@ -1,5 +1,7 @@
 ﻿using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Features.FederatedPeg
@@ -10,17 +12,33 @@ namespace Stratis.Features.FederatedPeg
     {
         private readonly IInitialBlockDownloadState ibdState;
 
-        private readonly CollateralFederationManager federationManager;
+        private readonly CollateralChecker collateralChecker;
 
-        public CheckCollateralFullValidationRule(IInitialBlockDownloadState ibdState, CollateralFederationManager federationManager)
+        private readonly SlotsManager slotsManager;
+
+        public CheckCollateralFullValidationRule(IInitialBlockDownloadState ibdState, CollateralChecker collateralChecker, SlotsManager slotsManager)
         {
             this.ibdState = ibdState;
-            this.federationManager = federationManager;
+            this.collateralChecker = collateralChecker;
+            this.slotsManager = slotsManager;
         }
 
         public override Task RunAsync(RuleContext context)
         {
-            // TODO implement the rule
+            if (this.ibdState.IsInitialBlockDownload())
+            {
+                this.Logger.LogTrace("(-)[SKIPPED_IN_IBD]");
+                return Task.CompletedTask;
+            }
+
+            IFederationMember federationMember = this.slotsManager.GetFederationMemberForTimestamp(context.ValidationContext.BlockToValidate.Header.Time);
+
+            if (!this.collateralChecker.CheckCollateral(federationMember))
+            {
+                this.Logger.LogTrace("(-)[BAD_COLLATERAL]");
+                PoAConsensusErrors.InvalidCollateralAmount.Throw();
+            }
+
             return Task.CompletedTask;
         }
     }
