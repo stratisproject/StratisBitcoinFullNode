@@ -18,6 +18,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -179,10 +180,16 @@ namespace Stratis.Bitcoin.IntegrationTests
                     BlockStoreTip = new ChainedHeader(genesis.Header, genesis.GetHash(), 0)
                 };
 
-                this.ConsensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, this.ChainIndexer, deployments, consensusSettings,
-                    new Checkpoints(), this.cachedCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), asyncProvider, new ConsensusRulesContainer()).SetupRulesEngineParent();
+                var consensusRulesContainer = new ConsensusRulesContainer();
+                foreach (var ruleType in network.Consensus.ConsensusRules.HeaderValidationRules)
+                    consensusRulesContainer.HeaderValidationRules.Add(Activator.CreateInstance(ruleType) as HeaderValidationConsensusRule);
+                foreach (var ruleType in network.Consensus.ConsensusRules.FullValidationRules)
+                    consensusRulesContainer.FullValidationRules.Add(Activator.CreateInstance(ruleType) as FullValidationConsensusRule);
 
-                this.consensus = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chainIndexer: this.ChainIndexer);
+                this.ConsensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, this.ChainIndexer, deployments, consensusSettings,
+                    new Checkpoints(), this.cachedCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), asyncProvider, consensusRulesContainer).SetupRulesEngineParent();
+
+                this.consensus = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chainIndexer: this.ChainIndexer, consensusRules: this.ConsensusRules);
 
                 await this.consensus.InitializeAsync(chainState.BlockStoreTip);
 

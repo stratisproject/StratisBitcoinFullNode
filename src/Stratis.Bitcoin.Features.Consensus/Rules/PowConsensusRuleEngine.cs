@@ -62,6 +62,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <inheritdoc />
         public override void Initialize(ChainedHeader chainTip)
         {
+            base.Initialize(chainTip);
+
             var breezeCoinView = (DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner;
 
             breezeCoinView.Initialize();

@@ -297,6 +297,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var syncerNetwork = new BitcoinOverrideRegTest();
 
+                // Inject a rule that will fail at block 15 of the new chain.
+                syncerNetwork.Consensus.ConsensusRules.FullValidationRules.Insert(1, typeof(FailValidation15));
+
                 var minerA = builder.CreateStratisPowNode(this.powNetwork, "cm-5-minerA").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
                 var minerB = builder.CreateStratisPowNode(this.powNetwork, "cm-5-minerB").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
                 var syncer = builder.CreateStratisPowNode(syncerNetwork, "cm-5-syncer").Start();
@@ -314,11 +317,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(minerA, 20));
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(minerB, 10));
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(syncer, 20));
-
-                // Inject a rule that will fail at block 15 of the new chain.
-                var engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
-                syncerNetwork.Consensus.ConsensusRules.FullValidationRules.Insert(1, typeof(FailValidation15));
-                engine.SetupRulesEngineParent();
 
                 // Miner B continues to mine to height 30 on a new and longer chain.
                 TestHelper.MineBlocks(minerB, 20);
@@ -344,6 +342,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var syncerNetwork = new BitcoinOverrideRegTest();
 
+                // Inject a rule that will fail at block 11 of the new chain
+                syncerNetwork.Consensus.ConsensusRules.FullValidationRules.Insert(1, typeof(FailValidation11));
+
                 var minerA = builder.CreateStratisPowNode(this.powNetwork, "cm-6-minerA").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
                 var minerB = builder.CreateStratisPowNode(this.powNetwork, "cm-6-minerB").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
                 var syncer = builder.CreateStratisPowNode(syncerNetwork, "cm-6-syncer").Start();
@@ -357,11 +358,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Miner A and syncer continues to mine to height 20.
                 TestHelper.MineBlocks(minerA, 10);
                 TestBase.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
-
-                // Inject a rule that will fail at block 11 of the new chain
-                ConsensusRuleEngine engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
-                syncerNetwork.Consensus.ConsensusRules.FullValidationRules.Insert(1, typeof(FailValidation11));
-                engine.SetupRulesEngineParent();
 
                 // Miner B continues to mine to height 30 on a new and longer chain.
                 TestHelper.MineBlocks(minerB, 20);
@@ -438,16 +434,14 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var syncerNetwork = new BitcoinOverrideRegTest();
 
+                // Inject a rule that will fail at block 11 of the new chain
+                syncerNetwork.Consensus.ConsensusRules.FullValidationRules.Insert(1, typeof(FailValidation11));
+
                 var minerA = builder.CreateStratisPowNode(this.powNetwork, "cm-8-minerA").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
                 var syncer = builder.CreateStratisPowNode(syncerNetwork, "cm-8-syncer").Start();
 
                 // Miner A mines to height 11.
                 TestHelper.MineBlocks(minerA, 1);
-
-                // Inject a rule that will fail at block 11 of the new chain
-                ConsensusRuleEngine engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
-                syncerNetwork.Consensus.ConsensusRules.FullValidationRules.Insert(1, typeof(FailValidation11));
-                engine.SetupRulesEngineParent();
 
                 // Connect syncer to Miner A, reorg should fail.
                 TestHelper.ConnectNoCheck(syncer, minerA);
