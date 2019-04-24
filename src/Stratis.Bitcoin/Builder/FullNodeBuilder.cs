@@ -181,7 +181,7 @@ namespace Stratis.Bitcoin.Builder
             List<Type> features = this.Features.FeatureRegistrations.Select(s => s.FeatureType).ToList();
 
             // Create configuration file if required
-            this.NodeSettings?.CreateDefaultConfigurationFile(features, fullNodeServiceProvider);
+            nodeSettings.CreateDefaultConfigurationFile(features, fullNodeServiceProvider);
 
             // Print command-line help
             if (nodeSettings.PrintHelpAndExit)
