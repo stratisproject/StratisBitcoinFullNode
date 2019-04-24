@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
                             // Not applied yet.
                             continue;
 
-                        IFederationMember federationMember = this.consensusFactory.CreateFederationMemberFromBytes(poll.VotingData.Data);
+                        IFederationMember federationMember = this.consensusFactory.DeserializeFederationMember(poll.VotingData.Data);
 
                         if (poll.VotingData.Key == VoteKey.AddFederationMember)
                             modifiedFederation.Add(federationMember);

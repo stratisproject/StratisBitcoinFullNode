@@ -19,16 +19,18 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         protected readonly VotingManager votingManager;
 
+        protected readonly Network network;
+
         private readonly IWhitelistedHashesRepository whitelistedHashesRepository;
 
         protected readonly ILogger logger;
 
-        public VotingControllerBase(IFederationManager fedManager, ILoggerFactory loggerFactory, VotingManager votingManager,
-            IWhitelistedHashesRepository whitelistedHashesRepository)
+        public VotingControllerBase(IFederationManager fedManager, ILoggerFactory loggerFactory, VotingManager votingManager, IWhitelistedHashesRepository whitelistedHashesRepository, Network network)
         {
             this.fedManager = fedManager;
             this.votingManager = votingManager;
             this.whitelistedHashesRepository = whitelistedHashesRepository;
+            this.network = network;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -164,8 +166,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
     public class VotingController : VotingControllerBase
     {
-        public VotingController(IFederationManager fedManager, ILoggerFactory loggerFactory, VotingManager votingManager, IWhitelistedHashesRepository whitelistedHashesRepository)
-            :base(fedManager, loggerFactory, votingManager, whitelistedHashesRepository)
+        public VotingController(IFederationManager fedManager, ILoggerFactory loggerFactory, VotingManager votingManager, IWhitelistedHashesRepository whitelistedHashesRepository, Network network)
+            :base(fedManager, loggerFactory, votingManager, whitelistedHashesRepository, network)
         {
         }
 
@@ -197,10 +199,13 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             {
                 var key = new PubKey(request.PubKeyHex);
 
+                IFederationMember federationMember = new FederationMember(key);
+                byte[] fedMemberBytes = (this.network.Consensus.ConsensusFactory as PoAConsensusFactory).SerializeFederationMember(federationMember);
+
                 this.votingManager.ScheduleVote(new VotingData()
                 {
                     Key = addMember ? VoteKey.AddFederationMember : VoteKey.KickFederationMember,
-                    Data = key.ToBytes()
+                    Data = fedMemberBytes
                 });
 
                 return this.Ok();
