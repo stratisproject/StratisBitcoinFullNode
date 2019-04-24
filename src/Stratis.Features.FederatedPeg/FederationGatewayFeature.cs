@@ -370,7 +370,7 @@ namespace Stratis.Features.FederatedPeg
 
                     // Consensus Rules
                     services.AddSingleton<PoAConsensusRuleEngine>();
-                    services.AddSingleton<IRuleRegistration, SmartContractPoARuleRegistration>();
+                    services.AddSingleton<IRuleRegistration, SmartContractCollateralPoARuleRegistration>();
                     services.AddSingleton<IConsensusRuleEngine>(f =>
                     {
                         var concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
