@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Sidechains.Networks;
 
@@ -48,7 +49,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
         public IReadOnlyList<CoreNode> MainChainFedNodes { get; }
         public IReadOnlyList<CoreNode> SideChainFedNodes { get; }
 
-        public CoreNode MainUser{ get; }
+        public CoreNode MainUser { get; }
         public CoreNode FedMain1 { get; }
         public CoreNode FedMain2 { get; }
         public CoreNode FedMain3 { get; }
@@ -121,7 +122,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             this.StartMainNodes();
             this.StartSideNodes();
 
-            TestHelper.WaitLoop(() => this.FedMain3.State == CoreNodeState.Running && this.FedSide3.State == CoreNodeState.Running);
+            TestBase.WaitLoop(() => this.FedMain3.State == CoreNodeState.Running && this.FedSide3.State == CoreNodeState.Running);
 
             this.ConnectMainChainNodes();
             this.ConnectSideChainNodes();
@@ -216,7 +217,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                 {
                     walletName = WalletName,
                     accountName = WalletAccount,
-                    password =  WalletPassword,
+                    password = WalletPassword,
                     opReturnData = sidechainDepositAddress,
                     feeAmount = "0.01",
                     allowUnconfirmed = true,
@@ -340,7 +341,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
         private void ApplyAgentPrefixToNodes()
         {
             // name assigning a little gross here - fix later.
-            string[] names = new string[] {"SideUser", "FedSide1", "FedSide2", "FedSide3", "MainUser", "FedMain1", "FedMain2", "FedMain3"};
+            string[] names = new string[] { "SideUser", "FedSide1", "FedSide2", "FedSide3", "MainUser", "FedMain1", "FedMain2", "FedMain3" };
             int index = 0;
             foreach (CoreNode n in this.SideChainNodes.Concat(this.MainChainNodes))
             {

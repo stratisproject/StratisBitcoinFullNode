@@ -14,6 +14,7 @@ using NLog.Config;
 using NLog.Targets;
 using NLog.Targets.Wrappers;
 using Stratis.Bitcoin.Controllers.Models;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -70,7 +71,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     .AppendPathSegment("node/loglevels")
                     .PutJsonAsync(request)
                     .ReceiveJson<string>();
-              
+
                 // Assert.
                 var exception = act.Should().Throw<FlurlHttpException>().Which;
                 var response = exception.Call.Response;
@@ -180,18 +181,25 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // Arrange.
-                CoreNode node = builder.CreateStratisPosNode(this.network).Start();
+                CoreNode node1 = builder.CreateStratisPosNode(this.network).Start();
+                CoreNode node2 = builder.CreateStratisPosNode(this.network).Start();
+
+                TestHelper.Connect(node1, node2);
+
                 this.ConfigLogManager();
 
                 // Act.
-                var request = new LogRulesRequest { LogRules = new List<LogRuleRequest>
+                var request = new LogRulesRequest
+                {
+                    LogRules = new List<LogRuleRequest>
                 {
                     new LogRuleRequest { RuleName = ruleName1, LogLevel = logLevel },
                     new LogRuleRequest { RuleName = ruleName2, LogLevel = logLevel },
                     new LogRuleRequest { RuleName = ruleName3, LogLevel = logLevel }
-                } };
+                }
+                };
 
-                HttpResponseMessage result = await $"http://localhost:{node.ApiPort}/api"
+                HttpResponseMessage result = await $"http://localhost:{node1.ApiPort}/api"
                     .AppendPathSegment("node/loglevels")
                     .PutJsonAsync(request);
 
@@ -210,7 +218,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             string ruleName1 = "logging1";
             string ruleName2 = "logging2";
             string ruleName3 = "logging3";
-            
+
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // Arrange.

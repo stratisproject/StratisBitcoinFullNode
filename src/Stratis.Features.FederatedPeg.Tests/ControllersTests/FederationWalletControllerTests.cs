@@ -119,7 +119,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         public void EnableFederation()
         {
             bool called = false;
-            this.walletManager.When(x => x.EnableFederation(null)).Do(info => called = true);
+            this.walletManager.When(x => x.EnableFederationWallet(null)).Do(info => called = true);
 
             this.controller.EnableFederation(new EnableFederationRequest());
 

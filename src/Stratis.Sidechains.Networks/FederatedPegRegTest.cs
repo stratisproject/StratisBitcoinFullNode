@@ -69,13 +69,18 @@ namespace Stratis.Sidechains.Networks
 
             List<PubKey> federationPubKeys = this.FederationKeys.Select(k => k.PubKey).ToList();
 
+            var genesisFederationMembers = new List<IFederationMember>(federationPubKeys.Count);
+
+            foreach (PubKey pubKey in federationPubKeys)
+                genesisFederationMembers.Add(new CollateralFederationMember(pubKey, new Money(0), null));
+
             var consensusOptions = new PoAConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
-                federationPublicKeys: federationPubKeys,
+                genesisFederationMembers: genesisFederationMembers,
                 targetSpacingSeconds: 16,
                 votingEnabled: false,
                 autoKickIdleMembers: false

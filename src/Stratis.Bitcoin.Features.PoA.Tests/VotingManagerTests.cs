@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         [Fact]
         public void CanScheduleAndRemoveVotes()
         {
-            this.federationManager.SetPrivatePropertyValue(nameof(this.federationManager.IsFederationMember), true);
+            this.federationManager.SetPrivatePropertyValue(typeof(FederationManagerBase), nameof(this.federationManager.IsFederationMember), true);
 
             this.votingManager.ScheduleVote(new VotingData());
 

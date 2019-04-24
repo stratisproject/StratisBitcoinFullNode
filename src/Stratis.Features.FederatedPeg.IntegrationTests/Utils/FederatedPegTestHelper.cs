@@ -6,6 +6,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 {
     public static class FederatedPegTestHelper
     {
+        public const string SkipTests = "Currently skipping all sidechains tests until they are stable. Make TestingValues.SkipTests null to prevent skipping.";
+
         public static (Script payToMultiSig, BitcoinAddress sidechainMultisigAddress, BitcoinAddress mainchainMultisigAddress)
             GenerateScriptAndAddresses(Network mainchainNetwork, Network sidechainNetwork, int quorum, Dictionary<Mnemonic, PubKey> pubKeysByMnemonic)
         {

@@ -53,9 +53,6 @@ namespace Stratis.Features.FederatedPeg
                 .Where(s => s != null)
                 .Distinct(StringComparer.InvariantCultureIgnoreCase).ToList();
 
-            this.logger.LogDebug("Address(es) found in OP_RETURN(s) of transaction {0}: [{1}]",
-                transaction.GetHash(), string.Join(",", opReturnAddresses));
-
             if (opReturnAddresses.Count != 1)
             {
                 address = null;
@@ -73,9 +70,6 @@ namespace Stratis.Features.FederatedPeg
                 .Select(this.TryConvertValidOpReturnDataToHash)
                 .Where(s => s != null)
                 .Distinct(StringComparer.InvariantCultureIgnoreCase).ToList();
-
-            this.logger.LogDebug("Transaction Id(s) found in OP_RETURN(s) of transaction {0}: [{1}]",
-                transaction.GetHash(), string.Join(",", transactionId));
 
             if (transactionId.Count != 1)
             {
@@ -106,8 +100,7 @@ namespace Stratis.Features.FederatedPeg
             // Attempt to parse the string. Validates the base58 string.
             try
             {
-                var bitcoinAddress = this.counterChainNetwork.Parse<BitcoinAddress>(destination);
-                this.logger.LogTrace($"ConvertValidOpReturnDataToAddress received {destination} and network.Parse received {bitcoinAddress}.");
+                BitcoinAddress bitcoinAddress = this.counterChainNetwork.Parse<BitcoinAddress>(destination);
                 return destination;
             }
             catch (Exception ex)
@@ -123,7 +116,6 @@ namespace Stratis.Features.FederatedPeg
             try
             {
                 var hash256 = new uint256(data);
-                this.logger.LogTrace($"ConvertValidOpReturnDataToHash received {hash256}.");
                 return hash256.ToString();
             }
             catch (Exception ex)

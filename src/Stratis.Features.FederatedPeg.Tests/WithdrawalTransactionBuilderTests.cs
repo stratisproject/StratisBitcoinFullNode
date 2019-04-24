@@ -97,5 +97,32 @@ namespace Stratis.Features.FederatedPeg.Tests
             // Log out a warning in this case, not an error.
             this.logger.Verify(x=>x.Log<object>(LogLevel.Warning, It.IsAny<EventId>(), It.IsAny<object>(), null, It.IsAny<Func<object, Exception, string>>()));
         }
+
+        [Fact]
+        public void NotEnoughFundsLogWarning()
+        {
+            // Throw a 'no spendable transactions' exception
+            this.federationWalletTransactionHandler.Setup(x => x.BuildTransaction(It.IsAny<TransactionBuildContext>()))
+                .Throws(new WalletException(FederationWalletTransactionHandler.NotEnoughFundsMessage));
+
+            var txBuilder = new WithdrawalTransactionBuilder(
+                this.loggerFactory.Object,
+                this.network,
+                this.federationWalletManager.Object,
+                this.federationWalletTransactionHandler.Object,
+                this.federationGatewaySettings.Object
+            );
+
+            var recipient = new Recipient
+            {
+                Amount = Money.Coins(101),
+                ScriptPubKey = new Script()
+            };
+
+            Transaction ret = txBuilder.BuildWithdrawalTransaction(uint256.One, 100, recipient);
+
+            // Log out a warning in this case, not an error.
+            this.logger.Verify(x => x.Log<object>(LogLevel.Warning, It.IsAny<EventId>(), It.IsAny<object>(), null, It.IsAny<Func<object, Exception, string>>()));
+        }
     }
 }
