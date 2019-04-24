@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Networks;
@@ -25,7 +22,6 @@ using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
 using Stratis.Sidechains.Networks;
-using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests
 {
@@ -122,7 +118,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.blockRepository.GetBlocks(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) =>
             {
-                var hashes = x.ArgAt<List<uint256>>(0);
+                List<uint256> hashes = x.ArgAt<List<uint256>>(0);
                 var blocks = new List<Block>();
                 for (int i = 0; i < hashes.Count; i++)
                 {
@@ -277,81 +273,10 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.federationWalletSyncManager.ProcessBlock(block);
 
+            // Ensure that the block was processed.
+            TestBase.WaitLoop(() => this.federationWalletManager.WalletTipHash == block.GetHash());
+
             return last;
-        }
-
-        /// <summary>
-        /// Waits for a function to return true.
-        /// </summary>
-        /// <param name="act">The function returning <c>true</c> or <c>false</c>.</param>
-        /// <param name="failureReason">The failure reason if any.</param>
-        /// <param name="retryDelayInMiliseconds">How often to retry in milliseconds.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        protected static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            cancellationToken = cancellationToken == default(CancellationToken)
-                ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 60 * 1000).Token
-                : cancellationToken;
-
-            while (!act())
-            {
-                try
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    Thread.Sleep(retryDelayInMiliseconds);
-                }
-                catch (OperationCanceledException e)
-                {
-                    Assert.False(true, $"{failureReason}{Environment.NewLine}{e.Message}");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Creates a directory for a test, based on the name of the class containing the test and the name of the test.
-        /// </summary>
-        /// <param name="caller">The calling object, from which we derive the namespace in which the test is contained.</param>
-        /// <param name="callingMethod">The name of the test being executed. A directory with the same name will be created.</param>
-        /// <returns>The path of the directory that was created.</returns>
-        public static string CreateTestDir(object caller, [System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
-        {
-            string directoryPath = GetTestDirectoryPath(caller, callingMethod);
-            return AssureEmptyDir(directoryPath);
-        }
-
-        /// <summary>
-        /// Gets the path of the directory that <see cref="CreateTestDir(object, string)"/> or <see cref="CreateDataFolder(object, string)"/> would create.
-        /// </summary>
-        /// <remarks>The path of the directory is of the form TestCase/{testClass}/{testName}.</remarks>
-        /// <param name="caller">The calling object, from which we derive the namespace in which the test is contained.</param>
-        /// <param name="callingMethod">The name of the test being executed. A directory with the same name will be created.</param>
-        /// <returns>The path of the directory.</returns>
-        public static string GetTestDirectoryPath(object caller, [System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
-        {
-            return GetTestDirectoryPath(Path.Combine(caller.GetType().Name, callingMethod));
-        }
-
-        /// <summary>
-        /// Gets the path of the directory that <see cref="CreateTestDir(object, string)"/> would create.
-        /// </summary>
-        /// <remarks>The path of the directory is of the form TestCase/{testClass}/{testName}.</remarks>
-        /// <param name="testDirectory">The directory in which the test files are contained.</param>
-        /// <returns>The path of the directory.</returns>
-        public static string GetTestDirectoryPath(string testDirectory)
-        {
-            return Path.Combine("..", "..", "..", "..", "TestCase", testDirectory);
-        }
-
-        /// <summary>
-        /// Creates a new folder that will be empty.
-        /// </summary>
-        /// <param name="dir">The first part of the folder name.</param>
-        /// <returns>A folder name with the current time concatenated.</returns>
-        public static string AssureEmptyDir(string dir)
-        {
-            string uniqueDirName = $"{dir}-{DateTime.UtcNow:ddMMyyyyTHH.mm.ss.fff}";
-            Directory.CreateDirectory(uniqueDirName);
-            return uniqueDirName;
         }
     }
 }

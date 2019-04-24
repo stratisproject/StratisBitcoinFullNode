@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.Payloads;
@@ -23,13 +24,6 @@ using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests
 {
-    public class CrossChainTransferStoreStratisTests : CrossChainTransferStoreTests
-    {
-        public CrossChainTransferStoreStratisTests() : base(new StratisRegTest())
-        {
-        }
-    }
-
     public class CrossChainTransferStoreTests : CrossChainTestBase
     {
         public CrossChainTransferStoreTests(Network network = null) : base(network)
@@ -42,7 +36,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact]
         public void StartSynchronizesWithWallet()
         {
-            var dataFolder = new DataFolder(CreateTestDir(this));
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
 
             this.Init(dataFolder);
             this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
@@ -52,7 +46,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
-                WaitLoop(() => this.wallet.LastBlockSyncedHeight == crossChainTransferStore.TipHashAndHeight.Height);
+                TestBase.WaitLoopMessage(() => (this.wallet.LastBlockSyncedHeight == crossChainTransferStore.TipHashAndHeight.Height, $"LastBlockSyncedHeight:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
                 Assert.Equal(this.wallet.LastBlockSyncedHash, crossChainTransferStore.TipHashAndHeight.HashBlock);
             }
         }
@@ -63,7 +57,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact]
         public void StartSynchronizesWithWalletAndSurvivesRestart()
         {
-            var dataFolder = new DataFolder(CreateTestDir(this));
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
 
             this.Init(dataFolder);
             this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
@@ -75,7 +69,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 this.federationWalletManager.SaveWallet();
 
-                WaitLoop(() => this.wallet.LastBlockSyncedHeight == crossChainTransferStore.TipHashAndHeight.Height);
+                TestBase.WaitLoopMessage(() => (this.wallet.LastBlockSyncedHeight == crossChainTransferStore.TipHashAndHeight.Height, $"LastBlockSyncedHeight:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
                 Assert.Equal(this.wallet.LastBlockSyncedHash, crossChainTransferStore.TipHashAndHeight.HashBlock);
             }
 
@@ -103,7 +97,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact]
         public void StoringDepositsWhenWalletBalanceSufficientSucceedsWithDeterministicTransactions()
         {
-            var dataFolder = new DataFolder(CreateTestDir(this));
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
 
             this.Init(dataFolder);
             this.AddFunding();
@@ -116,7 +110,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
-                WaitLoop(() => this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height);
+                TestBase.WaitLoopMessage(() => (this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height, $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
                 Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
 
                 BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
@@ -200,7 +194,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact]
         public void StoringDepositsWhenWalletBalanceInSufficientSucceedsWithSuspendStatus()
         {
-            var dataFolder = new DataFolder(CreateTestDir(this));
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
 
             this.Init(dataFolder);
             this.AddFunding();
@@ -213,8 +207,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
-                WaitLoop(() => this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height);
-                WaitLoop(() => this.wallet.LastBlockSyncedHeight == this.ChainIndexer.Tip.Height);
+                TestBase.WaitLoopMessage(() => (this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height, $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
+                TestBase.WaitLoop(() => this.wallet.LastBlockSyncedHeight == this.ChainIndexer.Tip.Height);
                 Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
 
                 uint256 txId1 = 0;
@@ -275,7 +269,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Add more funds and resubmit the deposits.
                 AddFundingTransaction(new Money[] { Money.COIN * 1000 });
-                WaitLoop(() => this.wallet.LastBlockSyncedHeight == this.ChainIndexer.Tip.Height);
+                TestBase.WaitLoop(() => this.wallet.LastBlockSyncedHeight == this.ChainIndexer.Tip.Height);
                 crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
                 transfers = crossChainTransferStore.GetAsync(new uint256[] { txId1, txId2 }).GetAwaiter().GetResult().ToArray();
                 transactions = transfers.Select(t => t.PartialTransaction).ToArray();
@@ -318,7 +312,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact]
         public void StoreMergesSignaturesAsExpected()
         {
-            var dataFolder = new DataFolder(CreateTestDir(this));
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
 
             this.Init(dataFolder);
             this.AddFunding();
@@ -329,7 +323,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
-                WaitLoop(() => this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height);
+                TestBase.WaitLoopMessage(() => (this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height, $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
                 Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
 
                 BitcoinAddress address = (new Key()).PubKey.Hash.GetAddress(this.network);
@@ -356,7 +350,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 // Create a separate instance to generate another transaction.
                 Transaction transaction2;
                 var newTest = new CrossChainTransferStoreTests(this.network);
-                var dataFolder2 = new DataFolder(CreateTestDir(this));
+                var dataFolder2 = new DataFolder(TestBase.CreateTestDir(this));
 
                 newTest.federationKeys = this.federationKeys;
                 newTest.SetExtendedKey(1);
@@ -414,7 +408,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact]
         public void StoredPartialTransactionsTriggerSignatureRequest()
         {
-            var dataFolder = new DataFolder(CreateTestDir(this));
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
 
             this.Init(dataFolder);
             this.AddFunding();
@@ -427,7 +421,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
-                WaitLoop(() => this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height);
+                TestBase.WaitLoopMessage(() => (this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height, $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
                 Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
 
                 BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
@@ -490,7 +484,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.federationGatewaySettings.CounterChainDepositStartBlock.Returns(depositHeight);
 
-            var dataFolder = new DataFolder(CreateTestDir(this));
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
 
             this.Init(dataFolder);
 
@@ -554,7 +548,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact]
         public async Task AttemptFederationInvalidWithdrawal()
         {
-            var dataFolder = new DataFolder(CreateTestDir(this));
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
 
             this.Init(dataFolder);
             this.AddFunding();
@@ -565,7 +559,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
-                WaitLoop(() => this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height);
+                TestBase.WaitLoopMessage(() => (this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height, $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
                 Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
 
                 BitcoinAddress address = (new Key()).PubKey.Hash.GetAddress(this.network);
@@ -581,7 +575,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
 
-                ICrossChainTransfer[] crossChainTransfers = await crossChainTransferStore.GetAsync(new[] {deposit.Id});
+                ICrossChainTransfer[] crossChainTransfers = await crossChainTransferStore.GetAsync(new[] { deposit.Id });
                 ICrossChainTransfer crossChainTransfer = crossChainTransfers.SingleOrDefault();
 
                 Assert.NotNull(crossChainTransfer);
@@ -622,7 +616,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             }
         }
 
-        private Q Post<T,Q>(string url, T body)
+        private Q Post<T, Q>(string url, T body)
         {
             // Request is sent to mainchain user.
             var request = (HttpWebRequest)WebRequest.Create(url);

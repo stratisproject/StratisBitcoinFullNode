@@ -3,8 +3,8 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Features.FederatedPeg.IntegrationTests.Utils;
 using Stratis.Sidechains.Networks;
 using Xunit;
@@ -50,7 +50,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 // node1.EnableFastMining(); Old method
 
                 int tipBefore = node0.GetTip().Height;
-                TestHelper.WaitLoop(
+                TestBase.WaitLoop(
                     () =>
                         {
                             return node0.GetTip().Height >= tipBefore + 5;
@@ -74,7 +74,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 long balanceOnStart = walletManager.GetBalances(walletName, "account 0").Sum(x => x.AmountConfirmed);
                 Assert.Equal(0, balanceOnStart);
 
-                TestHelper.WaitLoop(() => node.GetTip().Height >= network.Consensus.PremineHeight + network.Consensus.CoinbaseMaturity + 1);
+                TestBase.WaitLoop(() => node.GetTip().Height >= network.Consensus.PremineHeight + network.Consensus.CoinbaseMaturity + 1);
 
                 long balanceAfterPremine = walletManager.GetBalances(walletName, "account 0").Sum(x => x.AmountConfirmed);
 

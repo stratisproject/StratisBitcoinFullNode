@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -14,6 +15,25 @@ namespace Stratis.Features.FederatedPeg
         public CollateralFederationManager(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo, ISignals signals)
             : base(nodeSettings, network, loggerFactory, keyValueRepo, signals)
         {
+        }
+
+        public override void Initialize()
+        {
+            base.Initialize();
+
+            IEnumerable<CollateralFederationMember> collateralMembers = this.federationMembers.Cast<CollateralFederationMember>().Where(x => x.CollateralAmount != null && x.CollateralAmount > 0);
+
+            if (collateralMembers.Any(x => x.CollateralMainchainAddress == null))
+            {
+                throw new Exception("Federation can't contain members with non-zero collateral requirement but null collateral address.");
+            }
+
+            int distinctCount = collateralMembers.Select(x => x.CollateralMainchainAddress).Distinct().Count();
+
+            if (distinctCount != collateralMembers.Count())
+            {
+                throw new Exception("Federation can't contain members with duplicated collateral addresses.");
+            }
         }
 
         protected override List<IFederationMember> LoadFederation()

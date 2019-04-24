@@ -65,7 +65,8 @@ namespace Stratis.Bitcoin.Base
                 return true;
 
             this.logger.LogTrace("BlockTimeUnixSeconds={0}, DateTimeProviderTime={1}, ConsensusSettingsMaxTipAge={2}",
-                this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds(), this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds(),
+                this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds(),
+                this.dateTimeProvider.GetTime(),
                 this.consensusSettings.MaxTipAge);
 
             if (this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds() < (this.dateTimeProvider.GetTime() - this.consensusSettings.MaxTipAge))

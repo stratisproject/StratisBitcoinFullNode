@@ -11,6 +11,7 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
@@ -43,8 +44,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
                 TestHelper.Connect(nodeA, nodeB);
                 TestHelper.ConnectNoCheck(nodeA, nodeB);
 
-                TestHelper.WaitLoop(() => nodeA.FullNode.ConnectionManager.ConnectedPeers.Count() == 1);
-                TestHelper.WaitLoop(() => nodeB.FullNode.ConnectionManager.ConnectedPeers.Count() == 1);
+                TestBase.WaitLoop(() => nodeA.FullNode.ConnectionManager.ConnectedPeers.Count() == 1);
+                TestBase.WaitLoop(() => nodeB.FullNode.ConnectionManager.ConnectedPeers.Count() == 1);
 
                 Assert.False(nodeA.FullNode.ConnectionManager.ConnectedPeers.First().Inbound);
                 Assert.True(nodeB.FullNode.ConnectionManager.ConnectedPeers.First().Inbound);
@@ -70,8 +71,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 
                 // Connect B_1 to B_2.
                 nodeGroupB_1.FullNode.NodeService<IPeerAddressManager>().AddPeer(nodeGroupB_2.Endpoint, IPAddress.Loopback);
-                TestHelper.WaitLoop(() => TestHelper.IsNodeConnectedTo(nodeGroupB_1, nodeGroupB_2));
-                TestHelper.WaitLoop(() =>
+                TestBase.WaitLoop(() => TestHelper.IsNodeConnectedTo(nodeGroupB_1, nodeGroupB_2));
+                TestBase.WaitLoop(() =>
                 {
                     return nodeGroupB_1.FullNode.NodeService<IPeerAddressManager>().Peers.Any(p => p.Endpoint.Match(nodeGroupB_2.Endpoint));
                 });
@@ -81,7 +82,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
                 TestHelper.Connect(nodeGroupA_1, nodeGroupB_1);
 
                 //Wait until A_1 contains both B_1 and B_2's addresses in its address manager.
-                TestHelper.WaitLoop(() =>
+                TestBase.WaitLoop(() =>
                  {
                      var result = nodeGroupA_1.FullNode.NodeService<IPeerAddressManager>().Peers.Any(p => p.Endpoint.Match(nodeGroupB_1.Endpoint));
                      if (result)
@@ -90,7 +91,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
                  });
 
                 // Wait until A_1 connected to B_2.
-                TestHelper.WaitLoop(() => TestHelper.IsNodeConnectedTo(nodeGroupA_1, nodeGroupB_2));
+                TestBase.WaitLoop(() => TestHelper.IsNodeConnectedTo(nodeGroupA_1, nodeGroupB_2));
             }
         }
 
@@ -114,7 +115,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
                 syncerNode.FullNode.NodeService<IConnectionManager>().AddNodeAddress(node2.Endpoint);
                 syncerNode.FullNode.NodeService<IConnectionManager>().AddNodeAddress(node3.Endpoint);
 
-                TestHelper.WaitLoop(() => syncerNode.FullNode.ConnectionManager.ConnectedPeers.Count() == 3);
+                TestBase.WaitLoop(() => syncerNode.FullNode.ConnectionManager.ConnectedPeers.Count() == 3);
 
                 node1.FullNode.ConnectionManager.ConnectedPeers.Should().ContainSingle();
                 node2.FullNode.ConnectionManager.ConnectedPeers.Should().ContainSingle();
@@ -136,7 +137,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 
                 CoreNode node2 = builder.CreateStratisPosNode(this.posNetwork, "conn-4-node2", configParameters: nodeConfig).Start();
 
-                TestHelper.WaitLoop(() => TestHelper.IsNodeConnectedTo(node1, node2));
+                TestBase.WaitLoop(() => TestHelper.IsNodeConnectedTo(node1, node2));
             }
         }
 

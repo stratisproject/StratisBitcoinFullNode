@@ -4,6 +4,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
@@ -29,7 +30,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         public override void Stop()
         {
             TimeSpan duration = TimeSpan.FromSeconds(30);
-            TestHelper.WaitLoop(() =>
+            TestBase.WaitLoop(() =>
             {
                 try
                 {
@@ -61,7 +62,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && (new FileInfo(this.DataFolder).FullName.Length > 222))
                 throw new Exception("Path is too long for stratisd to function.");
 
-            TestHelper.WaitLoop(() =>
+            TestBase.WaitLoop(() =>
             {
                 try
                 {
