@@ -14,9 +14,9 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly ICollateralChecker collateralChecker;
 
-        private readonly SlotsManager slotsManager;
+        private readonly ISlotsManager slotsManager;
 
-        public CheckCollateralFullValidationRule(IInitialBlockDownloadState ibdState, ICollateralChecker collateralChecker, SlotsManager slotsManager)
+        public CheckCollateralFullValidationRule(IInitialBlockDownloadState ibdState, ICollateralChecker collateralChecker, ISlotsManager slotsManager)
         {
             this.ibdState = ibdState;
             this.collateralChecker = collateralChecker;

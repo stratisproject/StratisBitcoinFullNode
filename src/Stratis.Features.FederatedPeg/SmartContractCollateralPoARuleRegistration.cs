@@ -17,14 +17,14 @@ namespace Stratis.Features.FederatedPeg
     {
         private readonly IInitialBlockDownloadState ibdState;
 
-        private readonly SlotsManager slotsManager;
+        private readonly ISlotsManager slotsManager;
 
         private readonly ICollateralChecker collateralChecker;
 
         public SmartContractCollateralPoARuleRegistration(Network network, IStateRepositoryRoot stateRepositoryRoot, IContractExecutorFactory executorFactory,
             ICallDataSerializer callDataSerializer, ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView,
             IEnumerable<IContractTransactionPartialValidationRule> partialTxValidationRules, IEnumerable<IContractTransactionFullValidationRule> fullTxValidationRules,
-            IInitialBlockDownloadState ibdState, SlotsManager slotsManager, ICollateralChecker collateralChecker)
+            IInitialBlockDownloadState ibdState, ISlotsManager slotsManager, ICollateralChecker collateralChecker)
         : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView, partialTxValidationRules, fullTxValidationRules)
         {
             this.ibdState = ibdState;

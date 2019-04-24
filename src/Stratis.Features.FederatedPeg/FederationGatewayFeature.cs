@@ -336,7 +336,7 @@ namespace Stratis.Features.FederatedPeg
                         services.AddSingleton<IFederationManager, CollateralFederationManager>();
                         services.AddSingleton<PoABlockHeaderValidator>();
                         services.AddSingleton<IPoAMiner, PoAMiner>();
-                        services.AddSingleton<SlotsManager>();
+                        services.AddSingleton<ISlotsManager, SlotsManager>();
                         services.AddSingleton<BlockDefinition, FederatedPegBlockDefinition>();
                         services.AddSingleton<ICoinbaseSplitter, PremineCoinbaseSplitter>();
                         services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();

@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
     {
         private PoABlockHeaderValidator validator;
 
-        private SlotsManager slotsManager;
+        private ISlotsManager slotsManager;
 
         private uint maxReorg;
 

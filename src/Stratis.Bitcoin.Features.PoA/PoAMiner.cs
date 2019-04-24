@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly BlockDefinition blockDefinition;
 
-        private readonly SlotsManager slotsManager;
+        private readonly ISlotsManager slotsManager;
 
         private readonly IConnectionManager connectionManager;
 
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.PoA
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState ibdState,
             BlockDefinition blockDefinition,
-            SlotsManager slotsManager,
+            ISlotsManager slotsManager,
             IConnectionManager connectionManager,
             PoABlockHeaderValidator poaHeaderValidator,
             IFederationManager federationManager,

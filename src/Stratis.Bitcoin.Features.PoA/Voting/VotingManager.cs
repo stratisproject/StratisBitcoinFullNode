@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private readonly VotingDataEncoder votingDataEncoder;
 
-        private readonly SlotsManager slotsManager;
+        private readonly ISlotsManager slotsManager;
 
         private readonly IPollResultExecutor pollResultExecutor;
 
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private bool isInitialized;
 
-        public VotingManager(IFederationManager federationManager, ILoggerFactory loggerFactory, SlotsManager slotsManager, IPollResultExecutor pollResultExecutor,
+        public VotingManager(IFederationManager federationManager, ILoggerFactory loggerFactory, ISlotsManager slotsManager, IPollResultExecutor pollResultExecutor,
             INodeStats nodeStats, DataFolder dataFolder, DBreezeSerializer dBreezeSerializer, ISignals signals, IFinalizedBlockInfoRepository finalizedBlockInfo)
         {
             this.federationManager = Guard.NotNull(federationManager, nameof(federationManager));

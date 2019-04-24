@@ -3,16 +3,14 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Features.PoA.Tests.Rules;
 using Stratis.Bitcoin.Tests.Common;
-using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests
 {
     public class SlotsManagerTests
     {
-        private SlotsManager slotsManager;
+        private ISlotsManager slotsManager;
         private TestPoANetwork network;
         private PoAConsensusOptions consensusOptions;
         private IFederationManager federationManager;
