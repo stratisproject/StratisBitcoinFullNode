@@ -75,14 +75,5 @@ namespace Stratis.Features.FederatedPeg
 
             this.keyValueRepo.SaveValueJson(federationMembersDbKey, modelsCollection);
         }
-
-        public class CollateralFederationMemberModel
-        {
-            public string PubKeyHex { get; set; }
-
-            public long CollateralAmountSatoshis { get; set; }
-
-            public string CollateralMainchainAddress { get; set; }
-        }
     }
 }

@@ -20,19 +20,19 @@ namespace Stratis.Features.FederatedPeg.Controllers
 
         [Route("schedulevote-addfedmember")]
         [HttpPost]
-        public IActionResult VoteAddFedMember([FromBody]CollateralFederationManager.CollateralFederationMemberModel request)
+        public IActionResult VoteAddFedMember([FromBody]CollateralFederationMemberModel request)
         {
             return this.VoteAddKickFedMember(request, true);
         }
 
         [Route("schedulevote-kickfedmember")]
         [HttpPost]
-        public IActionResult VoteKickFedMember([FromBody]CollateralFederationManager.CollateralFederationMemberModel request)
+        public IActionResult VoteKickFedMember([FromBody]CollateralFederationMemberModel request)
         {
             return this.VoteAddKickFedMember(request, false);
         }
 
-        private IActionResult VoteAddKickFedMember(CollateralFederationManager.CollateralFederationMemberModel request, bool addMember)
+        private IActionResult VoteAddKickFedMember(CollateralFederationMemberModel request, bool addMember)
         {
             Guard.NotNull(request, nameof(request));
 

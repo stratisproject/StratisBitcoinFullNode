@@ -14,7 +14,7 @@ namespace Stratis.Sidechains.Networks.CirrusV2
             }
         }
 
-        public static Block CreateGenesis(SmartContractPoAConsensusFactory consensusFactory, uint genesisTime, uint nonce, uint bits, int version, Money reward, string coinbaseText)
+        public static Block CreateGenesis(SmartContractCollateralPoAConsensusFactory consensusFactory, uint genesisTime, uint nonce, uint bits, int version, Money reward, string coinbaseText)
         {
             Transaction genesisTransaction = consensusFactory.CreateTransaction();
             genesisTransaction.Time = genesisTime;

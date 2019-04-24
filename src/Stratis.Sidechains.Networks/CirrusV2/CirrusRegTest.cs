@@ -42,7 +42,7 @@ namespace Stratis.Sidechains.Networks.CirrusV2
             this.DefaultConfigFilename = NetworkDefaultConfigFilename;
             this.MaxTimeOffsetSeconds = 25 * 60;
 
-            var consensusFactory = new SmartContractPoAConsensusFactory();
+            var consensusFactory = new SmartContractCollateralPoAConsensusFactory();
 
             // Create the genesis block.
             this.GenesisTime = 1513622125;
