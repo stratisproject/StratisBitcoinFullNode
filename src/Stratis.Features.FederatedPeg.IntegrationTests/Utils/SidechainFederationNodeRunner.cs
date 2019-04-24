@@ -48,8 +48,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                     options.UseReflectionExecutor();
                 })
                 .UseSmartContractWallet()
-                .AddFederationGateway(new FederatedPegOptions(this.counterChainNetwork))
                 .UseFederatedPegPoAMining()
+                .AddFederationGateway(new FederatedPegOptions(this.counterChainNetwork))
                 .UseMempool()
                 .UseTransactionNotification()
                 .UseBlockNotification()
