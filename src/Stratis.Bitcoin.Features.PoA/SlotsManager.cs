@@ -25,7 +25,6 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Determines whether timestamp is valid according to the network rules.</summary>
         bool IsValidTimestamp(uint headerUnixTimestamp);
 
-
         uint GetRoundLengthSeconds(int federationMembersCount);
     }
 
