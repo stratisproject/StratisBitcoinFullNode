@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         {
             var federationMember = new FederationMember(new Key().PubKey);
 
-            Assert.Throws<ArgumentException>(this.factory.SerializeFederationMember(federationMember));
+            Assert.Throws<ArgumentException>(() => this.factory.SerializeFederationMember(federationMember));
         }
     }
 }
