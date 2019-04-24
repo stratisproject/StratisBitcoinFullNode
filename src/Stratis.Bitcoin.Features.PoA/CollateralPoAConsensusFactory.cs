@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities.JsonConverters;
 
@@ -20,6 +21,9 @@ namespace Stratis.Bitcoin.Features.PoA
         public override byte[] SerializeFederationMember(IFederationMember federationMember)
         {
             var member = federationMember as CollateralFederationMember;
+
+            if (member == null)
+                throw new ArgumentException($"Member of type: '{nameof(CollateralFederationMember)}' should be provided.");
 
             var model = new CollateralFederationMemberModel()
             {
