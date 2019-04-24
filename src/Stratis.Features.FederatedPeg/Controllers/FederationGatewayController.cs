@@ -36,14 +36,14 @@ namespace Stratis.Features.FederatedPeg.Controllers
 
         private readonly IFederationWalletManager federationWalletManager;
 
-        private readonly FederationManager federationManager;
+        private readonly IFederationManager federationManager;
 
         public FederationGatewayController(
             ILoggerFactory loggerFactory,
             IMaturedBlocksProvider maturedBlocksProvider,
             IFederationGatewaySettings federationGatewaySettings,
             IFederationWalletManager federationWalletManager,
-            FederationManager federationManager = null)
+            IFederationManager federationManager = null)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.maturedBlocksProvider = maturedBlocksProvider;
@@ -71,10 +71,16 @@ namespace Stratis.Features.FederatedPeg.Controllers
 
             try
             {
-                List<MaturedBlockDepositsModel> deposits = await this.maturedBlocksProvider.GetMaturedDepositsAsync(
+                Result<List<MaturedBlockDepositsModel>> depositsResult = await this.maturedBlocksProvider.GetMaturedDepositsAsync(
                     blockRequest.BlockHeight, blockRequest.MaxBlocksToSend).ConfigureAwait(false);
 
-                return this.Json(deposits);
+                if (depositsResult.IsSuccess)
+                {
+                    return this.Json(depositsResult.Value);
+                }
+
+                this.logger.LogTrace("Error calling /api/FederationGateway/{0}: {1}.", FederationGatewayRouteEndPoint.GetMaturedBlockDeposits, depositsResult.Error);
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not re-sync matured block deposits: {depositsResult.Error}", depositsResult.Error);
             }
             catch (Exception e)
             {
@@ -97,12 +103,12 @@ namespace Stratis.Features.FederatedPeg.Controllers
 
                 var model = new FederationGatewayInfoModel
                 {
-                    IsActive = this.federationWalletManager.IsFederationActive(),
+                    IsActive = this.federationWalletManager.IsFederationWalletActive(),
                     IsMainChain = isMainchain,
                     FederationNodeIpEndPoints = this.federationGatewaySettings.FederationNodeIpEndPoints.Select(i => $"{i.Address}:{i.Port}"),
                     MultisigPublicKey = this.federationGatewaySettings.PublicKey,
                     FederationMultisigPubKeys = this.federationGatewaySettings.FederationPublicKeys.Select(k => k.ToString()),
-                    MiningPublicKey =  isMainchain ? null : this.federationManager.FederationMemberKey?.PubKey.ToString(),
+                    MiningPublicKey =  isMainchain ? null : this.federationManager.CurrentFederationKey?.PubKey.ToString(),
                     FederationMiningPubKeys =  isMainchain ? null : this.federationManager.GetFederationMembers().Select(k => k.ToString()),
                     MultiSigAddress = this.federationGatewaySettings.MultiSigAddress,
                     MultiSigRedeemScript = this.federationGatewaySettings.MultiSigRedeemScript.ToString(),

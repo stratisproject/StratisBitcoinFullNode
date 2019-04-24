@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
-using Stratis.Features.FederatedPeg.RestClients;
+using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Xunit;
 

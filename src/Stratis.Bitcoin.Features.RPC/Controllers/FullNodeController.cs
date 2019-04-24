@@ -62,8 +62,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             IInitialBlockDownloadState ibdState = null)
             : base(
                   fullNode: fullNode,
-                  nodeSettings: nodeSettings,
                   network: network,
+                  nodeSettings: nodeSettings,
                   chainIndexer: chainIndexer,
                   chainState: chainState,
                   connectionManager: connectionManager,
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             else
             {
                 // Retrieve the block specified by the block hash.
-                chainedHeaderBlock = await this.ConsensusManager.GetBlockDataAsync(hash);
+                chainedHeaderBlock = this.ConsensusManager.GetBlockData(hash);
 
                 if (chainedHeaderBlock == null)
                 {

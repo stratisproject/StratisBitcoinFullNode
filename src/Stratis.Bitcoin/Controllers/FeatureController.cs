@@ -37,8 +37,8 @@ namespace Stratis.Bitcoin.Controllers
 
         public FeatureController(
             IFullNode fullNode = null,
-            NodeSettings nodeSettings = null,
             Network network = null,
+            NodeSettings nodeSettings = null,
             ChainIndexer chainIndexer = null,
             IChainState chainState = null,
             IConnectionManager connectionManager = null,

@@ -4,6 +4,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.P2P.Peer;
@@ -22,7 +23,7 @@ namespace Stratis.Bitcoin.P2P
         private readonly ILogger logger;
 
         public PeerConnectorConnectNode(
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
@@ -32,7 +33,7 @@ namespace Stratis.Bitcoin.P2P
             ConnectionManagerSettings connectionSettings,
             IPeerAddressManager peerAddressManager,
             ISelfEndpointTracker selfEndpointTracker) :
-            base(asyncLoopFactory, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, connectionSettings, peerAddressManager, selfEndpointTracker)
+            base(asyncProvider, dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeLifetime, nodeSettings, connectionSettings, peerAddressManager, selfEndpointTracker)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 

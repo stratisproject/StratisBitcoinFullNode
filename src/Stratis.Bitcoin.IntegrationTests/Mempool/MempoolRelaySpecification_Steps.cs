@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         protected void the_transaction_is_propagated_to_nodeC()
         {
             RPCClient rpc = this.nodeC.CreateRPCClient();
-            TestHelper.WaitLoop(() => rpc.GetRawMempool().Any());
+            TestBase.WaitLoop(() => rpc.GetRawMempool().Any());
 
             rpc.GetRawMempool()
                 .Should().ContainSingle()

@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security;
 using System.Text;
 using DBreeze.Utils;
 using FluentAssertions;
 using Moq;
 using NBitcoin;
 using NBitcoin.Policy;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -15,24 +15,25 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
     public class WalletTransactionHandlerTest : LogsTestBase
     {
-        public readonly string CostlyOpReturnData;
-        private readonly StandardTransactionPolicy standardTransactionPolicy;
+        private readonly IBlockStore blockStore;
+        private readonly string costlyOpReturnData;
         private readonly IScriptAddressReader scriptAddressReader;
+        private readonly StandardTransactionPolicy standardTransactionPolicy;
 
         public WalletTransactionHandlerTest()
         {
             // adding this data to the transaction output should increase the fee
             // 83 is the max size for the OP_RETURN script => 80 is the max for the content of the script
             byte[] maxQuantityOfBytes = Enumerable.Range(0, 80).Select(Convert.ToByte).ToArray();
-            this.CostlyOpReturnData = Encoding.UTF8.GetString(maxQuantityOfBytes);
+            this.costlyOpReturnData = Encoding.UTF8.GetString(maxQuantityOfBytes);
 
+            this.blockStore = new Mock<IBlockStore>().Object;
             this.standardTransactionPolicy = new StandardTransactionPolicy(this.Network);
             this.scriptAddressReader = new ScriptAddressReader();
         }
@@ -68,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 string dataDir = "TestData/WalletTransactionHandlerTest/BuildTransactionNoSpendableTransactionsThrowsWalletException";
                 var nodeSettings = new NodeSettings(network: this.Network, args: new string[] { $"-datadir={dataDir}" });
                 var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, new WalletSettings(nodeSettings),
-                    new DataFolder(nodeSettings.DataDir), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
+                    new DataFolder(nodeSettings.DataDir), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
                 var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, new Mock<IWalletFeePolicy>().Object, this.Network, new StandardTransactionPolicy(this.Network));
 
                 walletManager.Wallets.Add(wallet);
@@ -132,7 +133,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             string dataDir = "TestData/WalletTransactionHandlerTest/BuildTransactionFeeTooLowThrowsWalletException";
             var nodeSettings = new NodeSettings(network: this.Network, args: new string[] { $"-datadir={dataDir}" });
             var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, new WalletSettings(nodeSettings),
-                new DataFolder(nodeSettings.DataDir), walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
+                new DataFolder(nodeSettings.DataDir), walletFeePolicy.Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
             var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, walletFeePolicy.Object, this.Network, this.standardTransactionPolicy);
 
             walletManager.Wallets.Add(wallet);
@@ -254,7 +255,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             WalletTransactionHandlerTestContext testContext = SetupWallet();
 
-            byte[] eightyOneBytes = Encoding.UTF8.GetBytes(this.CostlyOpReturnData).Concat(Convert.ToByte(1));
+            byte[] eightyOneBytes = Encoding.UTF8.GetBytes(this.costlyOpReturnData).Concat(Convert.ToByte(1));
             string tooLongOpReturnString = Encoding.UTF8.GetString(eightyOneBytes);
 
             TransactionBuildContext context = CreateContext(this.Network, testContext.WalletReference, "password", testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, tooLongOpReturnString);
@@ -305,7 +306,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var overrideFeeRate = new FeeRate(20000);
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, new WalletSettings(NodeSettings.Default(this.Network)),
-                dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
+                dataFolder, walletFeePolicy.Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
             var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, walletFeePolicy.Object, this.Network, this.standardTransactionPolicy);
 
             walletManager.Wallets.Add(wallet);
@@ -375,7 +376,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var chain = new ChainIndexer(this.Network);
             var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, new WalletSettings(NodeSettings.Default(this.Network)),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
 
             var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, It.IsAny<WalletFeePolicy>(), this.Network, this.standardTransactionPolicy);
 
@@ -399,7 +400,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             DataFolder dataFolder = CreateDataFolder(this);
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new ChainIndexer(this.Network), new WalletSettings(NodeSettings.Default(this.Network)),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
 
             var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, It.IsAny<WalletFeePolicy>(), this.Network, this.standardTransactionPolicy);
 
@@ -435,7 +436,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             DataFolder dataFolder = CreateDataFolder(this);
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new ChainIndexer(this.Network), new WalletSettings(NodeSettings.Default(this.Network)),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
 
             var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, It.IsAny<WalletFeePolicy>(), this.Network, this.standardTransactionPolicy);
 
@@ -474,7 +475,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations())).Returns(new FeeRate(20000));
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new ChainIndexer(this.Network), new WalletSettings(NodeSettings.Default(this.Network)),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
 
             var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, walletFeePolicy.Object, this.Network, this.standardTransactionPolicy);
 
@@ -509,7 +510,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             DataFolder dataFolder = CreateDataFolder(this);
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new ChainIndexer(this.Network), new WalletSettings(NodeSettings.Default(this.Network)),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
 
             var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, It.IsAny<WalletFeePolicy>(), this.Network, this.standardTransactionPolicy);
             HdAccount account = WalletTestsHelpers.CreateAccount("account 1");
@@ -563,11 +564,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             WalletTransactionHandlerTestContext testContext = SetupWallet();
 
             // Context to build requires password in order to sign transaction.
-            TransactionBuildContext buildContext = CreateContext(this.Network, testContext.WalletReference, "password", testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
+            TransactionBuildContext buildContext = CreateContext(this.Network, testContext.WalletReference, "password", testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.costlyOpReturnData);
             testContext.WalletTransactionHandler.BuildTransaction(buildContext);
 
             // Context for estimate does not need password.
-            TransactionBuildContext estimateContext = CreateContext(this.Network, testContext.WalletReference, null, testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
+            TransactionBuildContext estimateContext = CreateContext(this.Network, testContext.WalletReference, null, testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.costlyOpReturnData);
             Money feeEstimate = testContext.WalletTransactionHandler.EstimateFee(estimateContext);
 
             feeEstimate.Should().Be(buildContext.TransactionFee);
@@ -582,7 +583,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             WalletTransactionHandlerTestContext testContext = SetupWallet();
 
             // Context with OpReturnData
-            TransactionBuildContext estimateContextWithOpReturn = CreateContext(this.Network, testContext.WalletReference, null, testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
+            TransactionBuildContext estimateContextWithOpReturn = CreateContext(this.Network, testContext.WalletReference, null, testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.costlyOpReturnData);
             Money feeEstimateWithOpReturn = testContext.WalletTransactionHandler.EstimateFee(estimateContextWithOpReturn);
 
             // Context without OpReturnData
@@ -602,7 +603,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             WalletTransactionHandlerTestContext testContext = SetupWallet();
 
             // Context with OpReturnData
-            TransactionBuildContext contextWithOpReturn = CreateContext(this.Network, testContext.WalletReference, "password", testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
+            TransactionBuildContext contextWithOpReturn = CreateContext(this.Network, testContext.WalletReference, "password", testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.costlyOpReturnData);
             testContext.WalletTransactionHandler.BuildTransaction(contextWithOpReturn);
 
             // Context without OpReturnData
@@ -667,7 +668,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain,
                 new WalletSettings(NodeSettings.Default(this.Network)), dataFolder,
-                walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
+                walletFeePolicy.Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
             var walletTransactionHandler =
                 new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, walletFeePolicy.Object, this.Network, this.standardTransactionPolicy);
 

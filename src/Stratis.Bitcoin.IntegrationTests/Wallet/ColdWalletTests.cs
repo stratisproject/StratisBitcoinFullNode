@@ -158,9 +158,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction1.ToHex()));
 
                 // Wait for the transaction to arrive
-                TestHelper.WaitLoop(() => stratisHotStake.CreateRPCClient().GetRawMempool().Length > 0);
+                TestBase.WaitLoop(() => stratisHotStake.CreateRPCClient().GetRawMempool().Length > 0);
                 Assert.NotNull(stratisHotStake.CreateRPCClient().GetRawTransaction(transaction1.GetHash(), null, false));
-                TestHelper.WaitLoop(() => stratisHotStake.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Any());
+                TestBase.WaitLoop(() => stratisHotStake.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Any());
 
                 long receivetotal = stratisHotStake.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
                 Assert.Equal(amountToSend, (Money)receivetotal);
@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 stratisHotStake.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction2.ToHex()));
 
                 // Wait for the transaction to arrive
-                TestHelper.WaitLoop(() => coldWalletManager.GetSpendableTransactionsInColdWallet(WalletName, true).Any());
+                TestBase.WaitLoop(() => coldWalletManager.GetSpendableTransactionsInColdWallet(WalletName, true).Any());
 
                 long receivetotal2 = coldWalletManager.GetSpendableTransactionsInColdWallet(WalletName, true).Sum(s => s.Transaction.Amount);
                 Assert.Equal(amountToSend2, (Money)receivetotal2);
@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 var hotMiningFeature = stratisHotStake.FullNode.NodeFeature<MiningFeature>();
                 hotMiningFeature.StartStaking(WalletName, Password);
 
-                TestHelper.WaitLoop(() =>
+                TestBase.WaitLoop(() =>
                 {
                     var stakingInfo = stratisHotStake.FullNode.NodeService<IPosMinting>().GetGetStakingInfoModel();
                     return stakingInfo.Staking;
@@ -196,7 +196,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // Wait for new cold wallet transaction.
                 var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(3)).Token;
-                TestHelper.WaitLoop(() =>
+                TestBase.WaitLoop(() =>
                 {
                     // Keep mining to ensure that staking outputs reach maturity.
                     TestHelper.MineBlocks(stratisSender, 1, true);
@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // Wait for money from staking.
                 cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(3)).Token;
-                TestHelper.WaitLoop(() =>
+                TestBase.WaitLoop(() =>
                 {
                     // Keep mining to ensure that staking outputs reach maturity.
                     TestHelper.MineBlocks(stratisSender, 1, true);

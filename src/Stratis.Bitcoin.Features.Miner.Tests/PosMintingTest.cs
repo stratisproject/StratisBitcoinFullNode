@@ -7,6 +7,7 @@ using FluentAssertions;
 using Moq;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
@@ -46,7 +47,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private readonly Mock<ITxMempool> txMempool;
         private readonly MinerSettings minerSettings;
         private readonly Mock<IWalletManager> walletManager;
-        private readonly Mock<IAsyncLoopFactory> asyncLoopFactory;
+        private readonly Mock<IAsyncProvider> asyncProvider;
         private readonly Mock<ITimeSyncBehaviorState> timeSyncBehaviorState;
         private readonly CancellationTokenSource cancellationTokenSource;
 
@@ -68,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.minerSettings = new MinerSettings(NodeSettings.Default(this.network));
             this.txMempool = new Mock<ITxMempool>();
             this.walletManager = new Mock<IWalletManager>();
-            this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
+            this.asyncProvider = new Mock<IAsyncProvider>();
             this.timeSyncBehaviorState = new Mock<ITimeSyncBehaviorState>();
 
             this.cancellationTokenSource = new CancellationTokenSource();
@@ -81,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public void Stake_StakingLoopNotStarted_StartsStakingLoop()
         {
             var asyncLoop = new AsyncLoop("PosMining.Stake2", this.FullNodeLogger.Object, token => { return Task.CompletedTask; });
-            this.asyncLoopFactory.Setup(a => a.Run("PosMining.Stake",
+            this.asyncProvider.Setup(a => a.CreateAndRunAsyncLoop("PosMining.Stake",
                 It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(),
                 It.Is<TimeSpan>(t => t.Milliseconds == 500), TimeSpans.Second))
                 .Returns(asyncLoop)
@@ -90,14 +91,14 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.posMinting.Stake(new WalletSecret() { WalletName = "wallet1", WalletPassword = "myPassword" });
 
             this.nodeLifetime.Verify();
-            this.asyncLoopFactory.Verify();
+            this.asyncProvider.Verify();
         }
 
         [Fact]
         public void Stake_StakingLoopThrowsMinerException_AddsErrorToRpcStakingInfoModel()
         {
             var asyncLoop = new AsyncLoop("PosMining.Stake2", this.FullNodeLogger.Object, token => { return Task.CompletedTask; });
-            this.asyncLoopFactory.Setup(a => a.Run("PosMining.Stake",
+            this.asyncProvider.Setup(a => a.CreateAndRunAsyncLoop("PosMining.Stake",
                 It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(),
                 It.Is<TimeSpan>(t => t.Milliseconds == 500), TimeSpans.Second))
                         .Callback<string, Func<CancellationToken, Task>, CancellationToken, TimeSpan?, TimeSpan?>((name, func, token, repeat, start) =>
@@ -131,7 +132,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public void Stake_StakingLoopThrowsConsensusErrorException_AddsErrorToRpcStakingInfoModel()
         {
             var asyncLoop = new AsyncLoop("PosMining.Stake2", this.FullNodeLogger.Object, token => { return Task.CompletedTask; });
-            this.asyncLoopFactory.Setup(a => a.Run("PosMining.Stake",
+            this.asyncProvider.Setup(a => a.CreateAndRunAsyncLoop("PosMining.Stake",
                 It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(),
                 It.Is<TimeSpan>(t => t.Milliseconds == 500), TimeSpans.Second))
                  .Callback<string, Func<CancellationToken, Task>, CancellationToken, TimeSpan?, TimeSpan?>((name, func, token, repeat, start) =>
@@ -168,7 +169,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             Func<CancellationToken, Task> stakingLoopFunction = null;
             CancellationToken stakingLoopToken = default(CancellationToken);
-            this.asyncLoopFactory.Setup(a => a.Run("PosMining.Stake",
+            this.asyncProvider.Setup(a => a.CreateAndRunAsyncLoop("PosMining.Stake",
                 It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(),
                 It.Is<TimeSpan>(t => t.Milliseconds == 500), TimeSpans.Second))
                  .Callback<string, Func<CancellationToken, Task>, CancellationToken, TimeSpan?, TimeSpan?>((name, func, token, repeat, start) =>
@@ -621,7 +622,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.mempoolSchedulerLock,
                 this.txMempool.Object,
                 this.walletManager.Object,
-                this.asyncLoopFactory.Object,
+                this.asyncProvider.Object,
                 this.timeSyncBehaviorState.Object,
                 this.LoggerFactory.Object,
                 this.minerSettings);

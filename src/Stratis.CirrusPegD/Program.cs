@@ -83,7 +83,14 @@ namespace Stratis.CirrusPegD
             );
 
             IFullNode node = new FullNodeBuilder()
-                .AddCommonFeatures(nodeSettings, fedPegOptions)
+                .UseNodeSettings(nodeSettings)
+                .UseBlockStore()
+                .AddFederationGateway(fedPegOptions)
+                .UseTransactionNotification()
+                .UseBlockNotification()
+                .UseApi()
+                .UseMempool()
+                .AddRPC()
                 .UsePosConsensus()
                 .UseWallet()
                 .AddPowPosMining()
@@ -104,32 +111,23 @@ namespace Stratis.CirrusPegD
             );
 
             IFullNode node = new FullNodeBuilder()
-                .AddCommonFeatures(nodeSettings, fedPegOptions)
+                .UseNodeSettings(nodeSettings)
+                .UseBlockStore()
+                .UseFederatedPegPoAMining()
+                .AddFederationGateway(fedPegOptions)
+                .UseTransactionNotification()
+                .UseBlockNotification()
+                .UseApi()
+                .UseMempool()
+                .AddRPC()
                 .AddSmartContracts(options =>
                 {
                     options.UseReflectionExecutor();
                 })
                 .UseSmartContractWallet()
-                .UseFederatedPegPoAMining()
                 .Build();
 
             return node;
-        }
-    }
-
-    internal static class CommonFeaturesExtension
-    {
-        internal static IFullNodeBuilder AddCommonFeatures(this IFullNodeBuilder fullNodeBuilder, NodeSettings nodeSettings, FederatedPegOptions options)
-        {
-            return fullNodeBuilder
-                .UseNodeSettings(nodeSettings)
-                .UseBlockStore()
-                .AddFederationGateway(options)
-                .UseTransactionNotification()
-                .UseBlockNotification()
-                .UseApi()
-                .UseMempool()
-                .AddRPC();
         }
     }
 }

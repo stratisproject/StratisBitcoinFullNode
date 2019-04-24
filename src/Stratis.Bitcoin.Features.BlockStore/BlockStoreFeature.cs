@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly IPrunedBlockRepository prunedBlockRepository;
 
-        private readonly AddressIndexer addressIndexer;
+        private readonly IAddressIndexer addressIndexer;
 
         public BlockStoreFeature(
             Network network,
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IConsensusManager consensusManager,
             ICheckpoints checkpoints,
             IPrunedBlockRepository prunedBlockRepository,
-            AddressIndexer addressIndexer)
+            IAddressIndexer addressIndexer)
         {
             this.network = network;
             this.chainIndexer = chainIndexer;
@@ -164,10 +164,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.prunedBlockRepository.PruneAndCompactDatabase(this.chainState.BlockStoreTip, this.network, false);
             }
 
-            this.logger.LogInformation("Stopping BlockStore.");
-
+            this.logger.LogInformation("Stopping BlockStoreSignaled.");
             this.blockStoreSignaled.Dispose();
 
+            this.logger.LogInformation("Stopping AddressIndexer.");
             this.addressIndexer.Dispose();
         }
     }
@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         services.AddSingleton<StoreSettings>();
                         services.AddSingleton<BlockStoreController>();
                         services.AddSingleton<IBlockStoreQueueFlushCondition, BlockStoreQueueFlushCondition>();
-                        services.AddSingleton<AddressIndexer>();
+                        services.AddSingleton<IAddressIndexer, AddressIndexer>();
                     });
             });
 
