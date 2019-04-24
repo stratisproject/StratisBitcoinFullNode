@@ -6,7 +6,7 @@ namespace Stratis.Features.Diagnostic.PeerDiagnostic
 {
     /// <summary>
     /// Holds peer statistics.
-    /// <see cref="LatestEvents"/> is a limited size string rapresentation of latest peer events, it's maximum size is specified in the class constructor maxLoggedEvents
+    /// <see cref="LatestEvents"/> is a limited size string representation of latest peer events, its maximum size is specified in the class constructor maxLoggedEvents
     /// </summary>
     public class PeerStatistics
     {

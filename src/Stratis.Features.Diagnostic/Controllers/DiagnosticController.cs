@@ -15,17 +15,17 @@ using Stratis.Features.Diagnostic.Utils;
 namespace Stratis.Features.Diagnostic.Controllers
 {
     /// <summary>
-    /// Controller providing operations on a wallet.
+    /// Controller providing diagnostic operations on fullnode.
     /// </summary>
     [Route("api/[controller]/[action]")]
     public class DiagnosticController : FeatureController
     {
         private readonly PeerStatisticsCollector peerStatisticsCollector;
 
-        public DiagnosticController(PeerStatisticsCollector peerDiagnosticCollector, IConnectionManager connectionManager, IConsensusManager consensusManager)
+        public DiagnosticController(PeerStatisticsCollector peerStatisticsCollector, IConnectionManager connectionManager, IConsensusManager consensusManager)
             : base(connectionManager: connectionManager, consensusManager: consensusManager)
         {
-            this.peerStatisticsCollector = peerDiagnosticCollector;
+            this.peerStatisticsCollector = peerStatisticsCollector;
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace Stratis.Features.Diagnostic.Controllers
         }
 
         /// <summary>
-        /// Returns the connected peers with some information
+        /// Returns the connected peers with some statistical information.
         /// </summary>
         /// <param name="connectedOnly">if set to <c>true</c> returns statistics related to connected peers only.</param>
         /// <returns>List of peer statistics</returns>

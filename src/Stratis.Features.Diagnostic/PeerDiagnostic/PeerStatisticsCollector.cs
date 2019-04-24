@@ -77,7 +77,7 @@ namespace Stratis.Features.Diagnostic.PeerDiagnostic
                     break;
                 case Event.PeerConnectionAttemptFailed @event:
                     statistics.Inbound = @event.Inbound;
-                    statistics.LogEvent($"Connection attemp FAILED. Reason: {@event.Reason}.");
+                    statistics.LogEvent($"Connection attempt FAILED. Reason: {@event.Reason}.");
                     break;
                 case Event.PeerDisconnected @event:
                     statistics.Inbound = @event.Inbound;
@@ -159,7 +159,6 @@ namespace Stratis.Features.Diagnostic.PeerDiagnostic
         {
             return this.peersStatistics.Values.ToList();
         }
-
 
         public void Dispose()
         {

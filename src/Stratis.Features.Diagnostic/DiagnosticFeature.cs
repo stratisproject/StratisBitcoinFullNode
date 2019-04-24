@@ -52,7 +52,6 @@ namespace Stratis.Features.Diagnostic
         }
     }
 
-
     public static class DiagnosticFeatureExtension
     {
         public static IFullNodeBuilder UseDiagnosticFeature(this IFullNodeBuilder fullNodeBuilder)

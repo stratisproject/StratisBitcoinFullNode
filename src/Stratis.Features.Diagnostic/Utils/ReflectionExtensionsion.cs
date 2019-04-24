@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace Stratis.Features.Diagnostic.Utils
 {
-    internal static class ReflectionExtensionsion
+    internal static class ReflectionExtension
     {
         /// <summary>
         /// Gets the private property value.

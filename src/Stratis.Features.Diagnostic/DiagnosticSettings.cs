@@ -45,7 +45,7 @@ namespace Stratis.Features.Diagnostic
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
-            this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(DiagnosticSettings).FullName);
+            this.logger = nodeSettings.LoggerFactory.CreateLogger(this.GetType().FullName);
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
