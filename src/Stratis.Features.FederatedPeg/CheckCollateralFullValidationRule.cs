@@ -12,11 +12,11 @@ namespace Stratis.Features.FederatedPeg
     {
         private readonly IInitialBlockDownloadState ibdState;
 
-        private readonly CollateralChecker collateralChecker;
+        private readonly ICollateralChecker collateralChecker;
 
         private readonly SlotsManager slotsManager;
 
-        public CheckCollateralFullValidationRule(IInitialBlockDownloadState ibdState, CollateralChecker collateralChecker, SlotsManager slotsManager)
+        public CheckCollateralFullValidationRule(IInitialBlockDownloadState ibdState, ICollateralChecker collateralChecker, SlotsManager slotsManager)
         {
             this.ibdState = ibdState;
             this.collateralChecker = collateralChecker;

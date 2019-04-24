@@ -20,7 +20,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 {
     public class CollateralCheckerTests
     {
-        private readonly CollateralChecker collateralChecker;
+        private readonly ICollateralChecker collateralChecker;
 
         private readonly List<CollateralFederationMember> collateralFederationMembers;
 

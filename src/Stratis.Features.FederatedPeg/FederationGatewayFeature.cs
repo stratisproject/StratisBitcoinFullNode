@@ -80,7 +80,7 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly ILogger logger;
 
-        private readonly CollateralChecker collateralChecker;
+        private readonly ICollateralChecker collateralChecker;
 
         public FederationGatewayFeature(
             ILoggerFactory loggerFactory,
@@ -97,7 +97,7 @@ namespace Stratis.Features.FederatedPeg
             ISignedMultisigTransactionBroadcaster signedBroadcaster,
             IMaturedBlocksSyncManager maturedBlocksSyncManager,
             IWithdrawalHistoryProvider withdrawalHistoryProvider,
-            CollateralChecker collateralChecker = null)
+            ICollateralChecker collateralChecker = null)
         {
             this.loggerFactory = loggerFactory;
             this.connectionManager = connectionManager;
@@ -378,7 +378,7 @@ namespace Stratis.Features.FederatedPeg
                         return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
                     });
 
-                    services.AddSingleton<CollateralChecker>();
+                    services.AddSingleton<ICollateralChecker, CollateralChecker>();
                     services.AddSingleton<CollateralVotingController>();
                 });
             });
