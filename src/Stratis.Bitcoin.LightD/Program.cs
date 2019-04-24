@@ -3,14 +3,11 @@ using System.Threading.Tasks;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Apps;
 using Stratis.Bitcoin.Features.LightWallet;
-using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Utilities;
 using Network = Stratis.Bitcoin.Networks.Networks;
 
@@ -28,8 +25,9 @@ namespace Stratis.Bitcoin.LightD
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()
                     .UseLightPowConsensus()
-                    .AddMining()
                     .AddRPC()
+                    .UseTransactionNotification()
+                    .UseBlockNotification()
                     .UseLightWallet()
                     .UseApi()
                     .UseApps()
