@@ -10,6 +10,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
     public interface IWithdrawalHistoryProvider
     {
         List<WithdrawalModel> GetHistory(int maximumEntriesToReturn);
+        List<WithdrawalModel> GetPending();
     }
 
     public class WithdrawalHistoryProvider : IWithdrawalHistoryProvider
@@ -43,14 +44,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <summary>
-        /// Get the history of withdrawals and statuses.
+        /// Get the history of successful withdrawals.
         /// </summary>
         /// <param name="maximumEntriesToReturn">The maximum number of entries to return.</param>
-        /// <returns>A <see cref="WithdrawalModel"/> object containing a history of withdrawals and statuses.</returns>
+        /// <returns>A <see cref="WithdrawalModel"/> object containing a history of withdrawals.</returns>
         public List<WithdrawalModel> GetHistory(int maximumEntriesToReturn)
         {
             var result = new List<WithdrawalModel>();
-            IWithdrawal[] withdrawals = this.federationWalletManager.GetWithdrawals().Take(maximumEntriesToReturn).ToArray();
+            IWithdrawal[] withdrawals = this.federationWalletManager.GetWithdrawals().Where(x=>x.BlockHash != null).Take(maximumEntriesToReturn).ToArray();
 
             if (withdrawals.Length > 0)
             {
@@ -61,24 +62,60 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     ICrossChainTransfer transfer = transfers[i];
                     var model = new WithdrawalModel();
                     model.withdrawal = withdrawals[i];
-                    string status = transfer?.Status.ToString();
-                    switch (transfer?.Status)
-                    {
-                        case CrossChainTransferStatus.FullySigned:
-                            if (this.mempoolManager.InfoAsync(model.withdrawal.Id).GetAwaiter().GetResult() != null)
-                                status += "+InMempool";
-
-                            model.SpendingOutputDetails = this.GetSpendingInfo(transfer.PartialTransaction);
-                            break;
-                        case CrossChainTransferStatus.Partial:
-                            status += " (" + transfer.GetSignatureCount(this.network) + "/" + this.federationGatewaySettings.MultiSigM + ")";
-                            model.SpendingOutputDetails = this.GetSpendingInfo(transfer.PartialTransaction);
-                            break;
-                    }
-
-                    model.TransferStatus = status;
+                    model.TransferStatus = transfer?.Status.ToString();
                     result.Add(model);
                 }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Get pending withdrawals.
+        /// </summary>
+        /// <returns>A <see cref="WithdrawalModel"/> object containing pending withdrawals and statuses.</returns>
+        public List<WithdrawalModel> GetPending()
+        {
+            var result = new List<WithdrawalModel>();
+
+            // Get all Suspended, all Partial, and all FullySigned transfers.
+            ICrossChainTransfer[] inProgressTransfers = this.crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[]
+            {
+                CrossChainTransferStatus.Suspended,
+                CrossChainTransferStatus.Partial,
+                CrossChainTransferStatus.FullySigned
+            });
+
+            foreach (ICrossChainTransfer transfer in inProgressTransfers)
+            {
+                var model = new WithdrawalModel();
+                model.withdrawal = new Withdrawal(
+                    transfer.DepositTransactionId,
+                    transfer.PartialTransaction.GetHash(),
+                    transfer.DepositAmount,
+                    transfer.DepositTargetAddress.GetDestinationAddress(this.network).ToString(),
+                    transfer.BlockHeight ?? 0,
+                    transfer.BlockHash
+                    );
+
+                string status = transfer?.Status.ToString();
+                switch (transfer?.Status)
+                {
+                    case CrossChainTransferStatus.FullySigned:
+                        if (this.mempoolManager.InfoAsync(model.withdrawal.Id).GetAwaiter().GetResult() != null)
+                            status += "+InMempool";
+
+                        model.SpendingOutputDetails = this.GetSpendingInfo(transfer.PartialTransaction);
+                        break;
+                    case CrossChainTransferStatus.Partial:
+                        status += " (" + transfer.GetSignatureCount(this.network) + "/" + this.federationGatewaySettings.MultiSigM + ")";
+                        model.SpendingOutputDetails = this.GetSpendingInfo(transfer.PartialTransaction);
+                        break;
+                }
+
+                model.TransferStatus = status;
+
+                result.Add(model);
             }
 
             return result;
