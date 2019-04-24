@@ -363,10 +363,9 @@ namespace Stratis.Bitcoin.Configuration
         /// </summary>
         /// <param name="featureTypes">The list of features to display help for.</param>
         /// <param name="serviceProvider">The service provider that can resolve feature types.</param>
-        public static void PrintHelp(List<Type> featureTypes, IServiceProvider serviceProvider)
+        public void PrintHelp(List<Type> featureTypes, IServiceProvider serviceProvider)
         {
-            var nodeSettings = (NodeSettings)serviceProvider.GetService(typeof(NodeSettings));
-            var network = nodeSettings.Network;
+            var network = this.Network;
 
             NodeSettings defaults = Default(network: network);
             string daemonName = Path.GetFileName(Assembly.GetEntryAssembly().Location);

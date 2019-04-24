@@ -184,9 +184,9 @@ namespace Stratis.Bitcoin.Builder
             this.NodeSettings?.CreateDefaultConfigurationFile(features, fullNodeServiceProvider);
 
             // Print command-line help
-            if (this.NodeSettings?.PrintHelpAndExit ?? false)
+            if (nodeSettings.PrintHelpAndExit)
             {
-                NodeSettings.PrintHelp(features, fullNodeServiceProvider);
+                nodeSettings.PrintHelp(features, fullNodeServiceProvider);
 
                 // Signal node not built
                 return null;
