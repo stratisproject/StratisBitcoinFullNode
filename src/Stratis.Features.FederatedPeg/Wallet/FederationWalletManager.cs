@@ -758,6 +758,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public bool RemoveTransientTransactions(uint256 depositId = null)
         {
+            this.logger.LogTrace("Removing transient transactions. DepositId={0}", depositId);
+
             lock (this.lockObject)
             {
                 // Remove transient transactions not seen in a block yet.
