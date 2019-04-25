@@ -1,4 +1,18 @@
-﻿using Stratis.Features.FederatedPeg.Interfaces;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Security;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using NBitcoin.Policy;
+using Stratis.Bitcoin.AsyncWork;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Broadcasting;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.FederationWallet.Tests")]
