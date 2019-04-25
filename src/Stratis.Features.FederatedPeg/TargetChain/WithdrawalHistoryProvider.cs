@@ -91,7 +91,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 var model = new WithdrawalModel();
                 model.withdrawal = new Withdrawal(
                     transfer.DepositTransactionId,
-                    transfer.PartialTransaction.GetHash(),
+                    transfer.PartialTransaction?.GetHash(),
                     transfer.DepositAmount,
                     transfer.DepositTargetAddress.GetDestinationAddress(this.network).ToString(),
                     transfer.BlockHeight ?? 0,
