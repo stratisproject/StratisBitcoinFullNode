@@ -43,6 +43,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.mempoolManager = mempoolManager;
         }
 
+        // TODO: These can be more efficient, i.e. remove the wallet calls from GetHistory
+        // And use a different model for Withdrawals. It doesn't quite map to the Withdrawal class.
+
         /// <summary>
         /// Get the history of successful withdrawals.
         /// </summary>
