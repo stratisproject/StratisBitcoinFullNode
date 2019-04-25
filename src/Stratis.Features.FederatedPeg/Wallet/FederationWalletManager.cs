@@ -453,8 +453,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             return foundSendingTrx || foundReceivingTrx;
         }
 
-        /// <inheritdoc />
-        public bool RemoveTransaction(Transaction transaction)
+        private bool RemoveTransaction(Transaction transaction)
         {
             Guard.NotNull(transaction, nameof(transaction));
             uint256 hash = transaction.GetHash();
@@ -473,6 +472,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 TransactionData spentTransaction = this.Wallet.MultiSigAddress.Transactions.SingleOrDefault(t => (t.Id == tTx.Id) && (t.Index == tTx.Index));
                 if (spentTransaction != null)
                 {
+                    this.logger.LogTrace("Unspending {0}-{1}", spentTransaction.Id, spentTransaction.Index);
+
                     spentTransaction.SpendingDetails = null;
                     spentTransaction.MerkleProof = null;
                     updatedWallet = true;
@@ -490,6 +491,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     TransactionData foundTransaction = this.Wallet.MultiSigAddress.Transactions.FirstOrDefault(t => (t.Id == hash) && (t.Index == index));
                     if (foundTransaction != null)
                     {
+                        this.logger.LogTrace("Removing UTXO {0}-{1}", foundTransaction.Id, foundTransaction.Index);
+
                         this.RemoveInputKeysLookupLock(foundTransaction);
                         this.Wallet.MultiSigAddress.Transactions.Remove(foundTransaction);
                         updatedWallet = true;
@@ -626,7 +629,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             // If the details of this spending transaction are seen for the first time.
             if (spentTransaction.SpendingDetails == null)
             {
-                this.logger.LogTrace("Spending UTXO '{0}-{1}' is new.", spendingTransactionId, spendingTransactionIndex);
+                this.logger.LogTrace("Spending UTXO '{0}-{1}' is new. BlockHeight={2}", spendingTransactionId, spendingTransactionIndex, blockHeight);
 
                 List<PaymentDetails> payments = new List<PaymentDetails>();
                 foreach (TxOut paidToOutput in paidToOutputs)
@@ -678,7 +681,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
             else // If this spending transaction is being confirmed in a block.
             {
-                this.logger.LogTrace("Spending transaction ID '{0}' is being confirmed, updating.", spendingTransactionId);
+                this.logger.LogTrace("Spending transaction ID '{0}' is being confirmed, updating. BlockHeight={1}", spendingTransactionId, blockHeight);
 
                 // Update the block height.
                 if (spentTransaction.SpendingDetails.BlockHeight == null && blockHeight != null)
