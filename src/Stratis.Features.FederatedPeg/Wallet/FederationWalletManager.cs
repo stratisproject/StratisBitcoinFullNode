@@ -287,6 +287,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(fork, nameof(fork));
 
+            this.logger.LogTrace("Removing blocks back to height {0} from {1}", fork.Height, this.LastBlockHeight());
+
             lock (this.lockObject)
             {
                 // Remove all the UTXO that have been reorged.
