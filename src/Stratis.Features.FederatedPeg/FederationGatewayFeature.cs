@@ -242,7 +242,7 @@ namespace Stratis.Features.FederatedPeg
 
             if (completedWithdrawals.Count > 0)
             {
-                benchLog.AppendLine("--- Completed Withdrawals ---");
+                benchLog.AppendLine("--- Recently Completed Withdrawals ---");
                 foreach (WithdrawalModel withdrawal in completedWithdrawals)
                     benchLog.AppendLine(withdrawal.ToString());
                 benchLog.AppendLine();
