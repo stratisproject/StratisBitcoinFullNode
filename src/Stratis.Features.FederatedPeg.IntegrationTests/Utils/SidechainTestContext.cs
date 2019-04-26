@@ -41,7 +41,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 
         public Network MainChainNetwork { get; }
 
-        public FederatedPegRegTest SideChainNetwork { get; }
+        public CirrusRegTest SideChainNetwork { get; }
 
         // TODO: HashSets / Readonly
         public IReadOnlyList<CoreNode> MainChainNodes { get; }
@@ -62,7 +62,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
         public SidechainTestContext()
         {
             this.MainChainNetwork = Networks.Stratis.Regtest();
-            this.SideChainNetwork = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();
+            this.SideChainNetwork = (CirrusRegTest)CirrusNetwork.NetworksSelector.Regtest();
 
             this.mnemonics = this.SideChainNetwork.FederationMnemonics;
             this.pubKeysByMnemonic = this.mnemonics.ToDictionary(m => m, m => m.DeriveExtKey().PrivateKey.PubKey);

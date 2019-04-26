@@ -31,9 +31,9 @@ namespace Stratis.CirrusPegD
 
         private static readonly Dictionary<NetworkType, Func<Network>> SidechainNetworks = new Dictionary<NetworkType, Func<Network>>
         {
-            { NetworkType.Mainnet, FederatedPegNetwork.NetworksSelector.Mainnet },
-            { NetworkType.Testnet, FederatedPegNetwork.NetworksSelector.Testnet},
-            { NetworkType.Regtest, FederatedPegNetwork.NetworksSelector.Regtest }
+            { NetworkType.Mainnet, CirrusNetwork.NetworksSelector.Mainnet },
+            { NetworkType.Testnet, CirrusNetwork.NetworksSelector.Testnet},
+            { NetworkType.Regtest, CirrusNetwork.NetworksSelector.Regtest }
         };
 
         private static readonly Dictionary<NetworkType, Func<Network>> MainChainNetworks = new Dictionary<NetworkType, Func<Network>>
@@ -101,7 +101,7 @@ namespace Stratis.CirrusPegD
 
         private static IFullNode GetSidechainFullNode(string[] args)
         {
-            var nodeSettings = new NodeSettings(networksSelector: FederatedPegNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args)
+            var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args)
             {
                 MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
             };

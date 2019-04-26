@@ -71,7 +71,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <param name="network">The network to run the tests for.</param>
         public CrossChainTestBase(Network network = null, Network counterChainNetwork = null)
         {
-            this.network = network ?? FederatedPegNetwork.NetworksSelector.Regtest();
+            this.network = network ?? CirrusNetwork.NetworksSelector.Regtest();
             this.counterChainNetwork = counterChainNetwork ?? Networks.Stratis.Regtest();
             this.federatedPegOptions = new FederatedPegOptions(counterChainNetwork);
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.SmartContracts.Networks.Policies;
@@ -12,25 +13,30 @@ namespace Stratis.Sidechains.Networks
     /// <summary>
     /// Right now, ripped nearly straight from <see cref="PoANetwork"/>.
     /// </summary>
-    public class FederatedPegMain : PoANetwork
+    public class CirrusRegTest : PoANetwork
     {
+        public IList<Mnemonic> FederationMnemonics { get; }
+
         /// <summary> The name of the root folder containing the different federated peg blockchains.</summary>
-        private const string NetworkRootFolderName = "cirrus";
+        private const string NetworkRootFolderName = "fedpeg";
 
         /// <summary> The default name used for the federated peg configuration file. </summary>
-        private const string NetworkDefaultConfigFilename = "cirrus.conf";
+        private const string NetworkDefaultConfigFilename = "fedpeg.conf";
 
-        internal FederatedPegMain()
+        // public IList<Mnemonic> FederationMnemonics { get; }
+        public IList<Key> FederationKeys { get; private set; }
+
+        internal CirrusRegTest()
         {
-            this.Name = "CirrusMain";
-            this.NetworkType = NetworkType.Mainnet;
-            this.CoinTicker = "CRS";
-            this.Magic = 0x522357A0;
-            this.DefaultPort = 16179;
+            this.Name = "CirrusRegTest";
+            this.NetworkType = NetworkType.Regtest;
+            this.CoinTicker = "TCRS";
+            this.Magic = 0x522357C;
+            this.DefaultPort = 26179;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
-            this.DefaultRPCPort = 16175;
-            this.DefaultAPIPort = 37223;
+            this.DefaultRPCPort = 26175;
+            this.DefaultAPIPort = 38223;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
@@ -42,30 +48,31 @@ namespace Stratis.Sidechains.Networks
             var consensusFactory = new SmartContractPoAConsensusFactory();
 
             // Create the genesis block.
-            this.GenesisTime = 1545310504;
-            this.GenesisNonce = 761900;
-            this.GenesisBits = new Target(new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+            this.GenesisTime = 1513622125;
+            this.GenesisNonce = 1560058197;
+            this.GenesisBits = 402691653;
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
 
-            string coinbaseText = "https://www.abc.net.au/news/science/2018-12-07/encryption-bill-australian-technology-industry-fuming-mad/10589962";
-            Block genesisBlock = FederatedPegNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward, coinbaseText);
+            string coinbaseText = "https://news.bitcoin.com/markets-update-cryptocurrencies-shed-billions-in-bloody-sell-off/";
+            Block genesisBlock = CirrusNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward, coinbaseText);
 
             this.Genesis = genesisBlock;
 
-            // Configure federation public keys used to sign blocks.
-            // Keep in mind that order in which keys are added to this list is important
-            // and should be the same for all nodes operating on this network.
-            var genesisFederationMembers = new List<IFederationMember>()
-            {
-                new CollateralFederationMember(new PubKey("036317d97f911ce899fd0a360866d19f2dca5252c7960d4652d814ab155a8342de"), new Money(0), null),
-                new CollateralFederationMember(new PubKey("02a08d72d47b3103261163c15aa2f6b0d007e1872ad9f5fddbfbd27bdb738156e9"), new Money(0), null),
-                new CollateralFederationMember(new PubKey("03634c79d4e8e915cfb9f7bbef57bed32d715150836b7845b1a14c93670d816ab6"), new Money(0), null),
-                new CollateralFederationMember(new PubKey("02062601ddfdb2208c1d074f1019fe6bc582ff9a0956a9cbe03f19af04b94f831b"), new Money(0), null),
-                new CollateralFederationMember(new PubKey("03c36d4fd9a7f949df8ccd2b173e5cb8a5f77a8ad270d37b509314123b225afdfd"), new Money(0), null),
-                new CollateralFederationMember(new PubKey("0254c4944820c49f8d595aa78bfce771453558dd159fd5eee8fac097fc3ac17c1b"), new Money(0), null),
-                new CollateralFederationMember(new PubKey("03dad9bf0493560203ed6a1089749d140fa33d83aa15fcc8b22a108511389bdcef"), new Money(0), null)
-            };
+            this.FederationMnemonics = new[] {
+                   "ensure feel swift crucial bridge charge cloud tell hobby twenty people mandate",
+                   "quiz sunset vote alley draw turkey hill scrap lumber game differ fiction",
+                   "exchange rent bronze pole post hurry oppose drama eternal voice client state"
+               }.Select(m => new Mnemonic(m, Wordlist.English)).ToList();
+
+            this.FederationKeys = this.FederationMnemonics.Select(m => m.DeriveExtKey().PrivateKey).ToList();
+
+            List<PubKey> federationPubKeys = this.FederationKeys.Select(k => k.PubKey).ToList();
+
+            var genesisFederationMembers = new List<IFederationMember>(federationPubKeys.Count);
+
+            foreach (PubKey pubKey in federationPubKeys)
+                genesisFederationMembers.Add(new CollateralFederationMember(pubKey, new Money(0), null));
 
             var consensusOptions = new PoAConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
@@ -91,7 +98,7 @@ namespace Stratis.Sidechains.Networks
             this.Consensus = new Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
-                coinType: 401,
+                coinType: 400,
                 hashGenesisBlock: genesisBlock.GetHash(),
                 subsidyHalvingInterval: 210000,
                 majorityEnforceBlockUpgrade: 750,
@@ -104,15 +111,15 @@ namespace Stratis.Sidechains.Networks
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
                 maxReorgLength: 0, // No max reorg limit on PoA networks.
                 defaultAssumeValid: null,
-                maxMoney: Money.Coins(100_000_000),
+                maxMoney: Money.Coins(20_000_000),
                 coinbaseMaturity: 1,
                 premineHeight: 2,
-                premineReward: Money.Coins(100_000_000),
+                premineReward: Money.Coins(20_000_000),
                 proofOfWorkReward: Money.Coins(0),
                 powTargetTimespan: TimeSpan.FromDays(14), // two weeks
                 powTargetSpacing: TimeSpan.FromMinutes(1),
                 powAllowMinDifficultyBlocks: false,
-                posNoRetargeting: false,
+                posNoRetargeting: true,
                 powNoRetargeting: true,
                 powLimit: null,
                 minimumChainWork: null,
@@ -125,8 +132,8 @@ namespace Stratis.Sidechains.Networks
 
             // Same as current smart contracts test networks to keep tests working
             this.Base58Prefixes = new byte[12][];
-            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { 28 }; // C
-            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { 88 }; // c
+            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { 55 }; // P
+            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { 117 }; // p
             this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (239) };
             this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC] = new byte[] { 0x01, 0x42 };
             this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC] = new byte[] { 0x01, 0x43 };
@@ -146,14 +153,11 @@ namespace Stratis.Sidechains.Networks
             this.Checkpoints = new Dictionary<int, CheckpointInfo>();
 
             this.DNSSeeds = new List<DNSSeedData>();
+            this.SeedNodes = new List<NetworkAddress>();
 
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
 
-            string[] seedNodes = { "40.112.89.58", "137.117.243.54", "51.140.255.152", "40.89.158.103", "40.89.158.153", "13.66.214.36", "23.101.147.254" };
-            this.SeedNodes = ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
-
-            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x000004b5e1be2efc806c0e779550e05fa11f4902063f87cc273959fadc5ca579"));
-            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x55168c43e5b997b99192af9819297efb43bedfdd698f29c6a2c22dfc671cc0fb"));
+            // TODO: Do we need Asserts for block hash
         }
     }
 }
