@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Networks;
@@ -123,6 +124,7 @@ namespace Stratis.CirrusPegD
                 .AddSmartContracts(options =>
                 {
                     options.UseReflectionExecutor();
+                    options.UsePoAWhitelistedContracts();
                 })
                 .UseSmartContractWallet()
                 .Build();
