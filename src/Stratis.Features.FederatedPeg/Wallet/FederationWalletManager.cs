@@ -389,11 +389,17 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     // Exit if already present and included in a block.
                     List<(Transaction, TransactionData, IWithdrawal)> walletData = this.FindWithdrawalTransactions(withdrawal.DepositId);
                     if ((walletData.Count == 1) && (walletData[0].Item2.BlockHeight != null))
+                    {
+                        this.logger.LogTrace("Deposit {0} Already included in block.", withdrawal.DepositId);
                         return false;
+                    }
 
                     // Remove this to prevent duplicates if the transaction hash has changed.
                     if (walletData.Count != 0)
+                    {
+                        this.logger.LogTrace("Removing duplicates for {0}", withdrawal.DepositId);
                         this.RemoveTransientTransactions(withdrawal.DepositId);
+                    }
                 }
 
                 // Check the outputs.
