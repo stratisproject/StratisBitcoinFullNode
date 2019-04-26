@@ -26,8 +26,9 @@ namespace Stratis.SmartContracts.CLR.Validation.Validators.Module
 
             foreach (AssemblyNameReference assemblyReference in module.AssemblyReferences)
             {
-                if (!this.allowedAssemblies.Any(assemblyName => assemblyName.FullName == assemblyReference.FullName))
-                    errors.Add(new ModuleDefinitionValidationResult("Assembly " + assemblyReference.FullName + " is not allowed."));
+                // Don't check version, just name.
+                if (!this.allowedAssemblies.Any(assemblyName => assemblyName.GetName().Name == assemblyReference.Name))
+                    errors.Add(new ModuleDefinitionValidationResult("Assembly " + assemblyReference.Name + " is not allowed."));
             }
 
             return errors;
