@@ -95,20 +95,17 @@ namespace Stratis.Features.FederatedPeg
             if (payload == null)
                 return;
 
-            // Get the template from the payload.
-            Transaction template = this.GetTemplateTransaction(payload.PartialTransaction);
-
             ICrossChainTransfer[] transfer = await this.crossChainTransferStore.GetAsync(new[] { payload.DepositId });
 
             if (transfer[0] == null)
             {
-                this.logger.LogTrace("OnMessageReceivedAsync: Transaction {0} does not exist.", template);
+                this.logger.LogTrace("OnMessageReceivedAsync: Deposit {0} does not exist.", payload.DepositId);
                 return;
             }
 
             if (transfer[0].Status != CrossChainTransferStatus.Partial)
             {
-                this.logger.LogTrace("OnMessageReceivedAsync: Transaction {0} is {1}.", template, transfer[0].Status);
+                this.logger.LogTrace("OnMessageReceivedAsync: Deposit {0} is {1}.", payload.DepositId, transfer[0].Status);
                 return;
             }
 

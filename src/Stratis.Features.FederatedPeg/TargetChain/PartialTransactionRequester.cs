@@ -120,7 +120,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             foreach (KeyValuePair<uint256, Transaction> kv in kvs)
             {
                 await this.BroadcastAsync(new RequestPartialTransactionPayload(kv.Key).AddPartial(kv.Value));
-                this.logger.LogInformation("Partial template requested");
+                this.logger.LogInformation("Partial template requested for deposit {0}. TransactionID={1}", kv.Key, kv.Value.GetHash());
             }
         }
 

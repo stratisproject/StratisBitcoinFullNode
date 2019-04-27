@@ -35,8 +35,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         private readonly Network network;
 
-        private readonly ILogger logger;
-
         private readonly BitcoinAddress multisigAddress;
 
         public WithdrawalExtractor(
@@ -45,7 +43,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             IOpReturnDataReader opReturnDataReader,
             Network network)
         {
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.multisigAddress = federationGatewaySettings.MultiSigAddress;
             this.opReturnDataReader = opReturnDataReader;
             this.network = network;
