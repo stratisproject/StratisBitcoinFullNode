@@ -232,6 +232,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     continue;
 
                 List<(Transaction, TransactionData, IWithdrawal)> walletData = this.federationWalletManager.FindWithdrawalTransactions(partialTransfer.DepositTransactionId);
+
+                bool txValidates = this.ValidateTransaction(walletData[0].Item1);
+
+                this.logger.LogTrace("Validating transfer {0}, WalletDataCount={1}, TxValid={2}", partialTransfer.DepositTransactionId, walletData.Count, txValidates);
+
                 if (walletData.Count == 1 && this.ValidateTransaction(walletData[0].Item1))
                 {
                     Transaction walletTran = walletData[0].Item1;
@@ -262,6 +267,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 if (partialTransfer.DepositHeight < newChainATip)
                     newChainATip = partialTransfer.DepositHeight ?? newChainATip;
 
+                this.logger.LogTrace("Going to set Suspended for DepositId={0}", partialTransfer.DepositTransactionId);
                 tracker.SetTransferStatus(partialTransfer, CrossChainTransferStatus.Suspended);
             }
 

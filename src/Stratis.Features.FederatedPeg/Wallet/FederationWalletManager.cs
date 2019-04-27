@@ -841,12 +841,16 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     {
                         // Check that the previous outputs are only spent by this transaction.
                         if (transactionData == null || transactionData.SpendingDetails.TransactionId != transaction.GetHash())
+                        {
+                            this.logger.LogTrace("Invalid UTXOs: TransactionID={0}", transaction.GetHash());
                             return false;
+                        }
 
                         coins?.Add(new Coin(transactionData.Id, (uint)transactionData.Index, transactionData.Amount, transactionData.ScriptPubKey));
                     }
                 }
 
+                this.logger.LogTrace("Valid UTXOs for TransactionID={0}", transaction.GetHash());
                 return true;
             }
         }
