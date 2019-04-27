@@ -16,7 +16,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
         [Fact(Skip = FederatedPegTestHelper.SkipTests)]
         public void NodeCanLoadFederationKey()
         {
-            var network = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();
+            var network = (CirrusRegTest)CirrusNetwork.NetworksSelector.Regtest();
 
             using (PoANodeBuilder builder = PoANodeBuilder.CreatePoANodeBuilder(this))
             {
@@ -40,7 +40,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
         [Fact(Skip = FederatedPegTestHelper.SkipTests)]
         public void NodeCanMine()
         {
-            var network = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();
+            var network = (CirrusRegTest)CirrusNetwork.NetworksSelector.Regtest();
 
             using (PoANodeBuilder builder = PoANodeBuilder.CreatePoANodeBuilder(this))
             {
@@ -62,7 +62,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
         [Fact(Skip = FederatedPegTestHelper.SkipTests)]
         public void PremineIsReceived()
         {
-            var network = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();
+            var network = (CirrusRegTest)CirrusNetwork.NetworksSelector.Regtest();
 
             using (PoANodeBuilder builder = PoANodeBuilder.CreatePoANodeBuilder(this))
             {
