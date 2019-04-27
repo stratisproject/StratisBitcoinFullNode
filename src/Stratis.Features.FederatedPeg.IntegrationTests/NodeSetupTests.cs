@@ -53,7 +53,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
             }
         }
 
-        [Fact]
+        [Fact(Skip = "Inherently unreliable, but shows that the multiple UTXO approach allows parallel sending!")]
         public async Task ParallelWithdrawalsToSidechain()
         {
             using (var context = new SidechainTestContext())
