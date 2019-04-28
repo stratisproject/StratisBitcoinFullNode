@@ -920,7 +920,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         partialTransfer.SetPartialTransaction(walletTran);
 
                         if (walletData[0].Item2.BlockHeight != null)
-                            return new TransferValidationResult { Updated = true, UpdatedStatus = CrossChainTransferStatus.Partial, UpdatedBlockHash = walletData[0].Item2.BlockHash , UpdatedBlockHeight = (int) walletData[0].Item2.BlockHeight };
+                            return new TransferValidationResult { Updated = true, UpdatedStatus = CrossChainTransferStatus.SeenInBlock, UpdatedBlockHash = walletData[0].Item2.BlockHash , UpdatedBlockHeight = (int) walletData[0].Item2.BlockHeight };
                         else if (this.ValidateTransaction(walletTran, true))
                             return new TransferValidationResult { Updated = true, UpdatedStatus = CrossChainTransferStatus.FullySigned };
                         else
