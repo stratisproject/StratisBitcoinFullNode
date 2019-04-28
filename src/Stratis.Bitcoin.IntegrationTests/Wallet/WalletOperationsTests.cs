@@ -255,7 +255,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Check the mnemonic returned.
             response = response.Replace("\"", "");
             response.Split(" ").Length.Should().Be(12);
-            Wordlist.AutoDetectLanguage(response).Should().Be(Language.ChineseTraditional);
+            Language detectedLanguage = Wordlist.AutoDetectLanguage(response);
+
+            // Relax the test due to the potential language ambiguity of the words returned.
+            detectedLanguage.Should().Match(p => p.Equals(Language.ChineseTraditional) || p.Equals(Language.ChineseSimplified));
+
             response.Should().Be(mnemonic);
 
             // Check a wallet file has been created.

@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
 
         private readonly IConsensusManager consensusManager;
 
-        private readonly FederationManager federationManager;
+        private readonly IFederationManager federationManager;
 
         public TestPoAMiner(
             IConsensusManager consensusManager,
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
             SlotsManager slotsManager,
             IConnectionManager connectionManager,
             PoABlockHeaderValidator poaHeaderValidator,
-            FederationManager federationManager,
+            IFederationManager federationManager,
             IIntegrityValidator integrityValidator,
             IWalletManager walletManager,
             INodeStats nodeStats,

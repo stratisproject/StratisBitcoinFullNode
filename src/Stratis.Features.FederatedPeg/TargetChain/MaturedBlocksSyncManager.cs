@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
-using Stratis.Features.FederatedPeg.RestClients;
+using Stratis.Features.FederatedPeg.Controllers;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
 {
@@ -96,7 +96,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             if (!this.store.HasSuspended())
                 blocksToRequest = MaxBlocksToRequest;
 
-            // TODO investigate if we can ask for blocks that are reorgable. If so it's a problem and an attack vector.
             // API method that provides blocks should't give us blocks that are not mature!
             var model = new MaturedBlockRequestModel(this.store.NextMatureDepositHeight, blocksToRequest);
 

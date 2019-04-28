@@ -1,28 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Networks;
 using NSubstitute;
 using Stratis.Bitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
 using Stratis.Sidechains.Networks;
-using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests
 {
@@ -35,10 +34,12 @@ namespace Stratis.Features.FederatedPeg.Tests
         protected ChainIndexer ChainIndexer;
         protected ILoggerFactory loggerFactory;
         protected ILogger logger;
+        protected ISignals signals;
         protected IDateTimeProvider dateTimeProvider;
         protected IOpReturnDataReader opReturnDataReader;
         protected IWithdrawalExtractor withdrawalExtractor;
         protected IBlockRepository blockRepository;
+        protected IInitialBlockDownloadState ibdState;
         protected IFullNode fullNode;
         protected IFederationWalletManager federationWalletManager;
         protected IFederationGatewaySettings federationGatewaySettings;
@@ -47,7 +48,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         protected IWithdrawalTransactionBuilder withdrawalTransactionBuilder;
         protected DataFolder dataFolder;
         protected IWalletFeePolicy walletFeePolicy;
-        protected IAsyncLoopFactory asyncLoopFactory;
+        protected IAsyncProvider asyncProvider;
         protected INodeLifetime nodeLifetime;
         protected IConnectionManager connectionManager;
         protected DBreezeSerializer dBreezeSerializer;
@@ -70,15 +71,17 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <param name="network">The network to run the tests for.</param>
         public CrossChainTestBase(Network network = null, Network counterChainNetwork = null)
         {
-            this.network = network ?? FederatedPegNetwork.NetworksSelector.Regtest();
+            this.network = network ?? CirrusNetwork.NetworksSelector.Regtest();
             this.counterChainNetwork = counterChainNetwork ?? Networks.Stratis.Regtest();
             this.federatedPegOptions = new FederatedPegOptions(counterChainNetwork);
 
             NetworkRegistration.Register(this.network);
 
             this.loggerFactory = Substitute.For<ILoggerFactory>();
+            this.nodeLifetime = new NodeLifetime();
             this.logger = Substitute.For<ILogger>();
-            this.asyncLoopFactory = new AsyncLoopFactory(this.loggerFactory);
+            this.signals = Substitute.For<ISignals>();
+            this.asyncProvider = new AsyncProvider(this.loggerFactory, this.signals, this.nodeLifetime);
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.dateTimeProvider = DateTimeProvider.Default;
             this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions);
@@ -89,10 +92,9 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationWalletSyncManager = Substitute.For<IFederationWalletSyncManager>();
             this.FederationWalletTransactionHandler = Substitute.For<IFederationWalletTransactionHandler>();
             this.walletFeePolicy = Substitute.For<IWalletFeePolicy>();
-            this.nodeLifetime = new NodeLifetime();
             this.connectionManager = Substitute.For<IConnectionManager>();
             this.dBreezeSerializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
-
+            this.ibdState = Substitute.For<IInitialBlockDownloadState>();
             this.wallet = null;
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
             this.ChainIndexer = new ChainIndexer(this.network);
@@ -114,8 +116,9 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.blockDict = new Dictionary<uint256, Block>();
             this.blockDict[this.network.GenesisHash] = this.network.GetGenesis();
 
-            this.blockRepository.GetBlocks(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) => {
-                var hashes = x.ArgAt<List<uint256>>(0);
+            this.blockRepository.GetBlocks(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) =>
+            {
+                List<uint256> hashes = x.ArgAt<List<uint256>>(0);
                 var blocks = new List<Block>();
                 for (int i = 0; i < hashes.Count; i++)
                 {
@@ -179,7 +182,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.ChainIndexer,
                 dataFolder,
                 this.walletFeePolicy,
-                this.asyncLoopFactory,
+                this.asyncProvider,
                 new NodeLifetime(),
                 this.dateTimeProvider,
                 this.federationGatewaySettings,
@@ -196,7 +199,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             var storeSettings = (StoreSettings)FormatterServices.GetUninitializedObject(typeof(StoreSettings));
 
             this.federationWalletSyncManager = new FederationWalletSyncManager(this.loggerFactory, this.federationWalletManager, this.ChainIndexer, this.network,
-                this.blockRepository, storeSettings, Substitute.For<INodeLifetime>());
+                this.blockRepository, storeSettings, Substitute.For<INodeLifetime>(), this.asyncProvider);
 
             this.federationWalletSyncManager.Initialize();
 
@@ -270,81 +273,10 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.federationWalletSyncManager.ProcessBlock(block);
 
+            // Ensure that the block was processed.
+            TestBase.WaitLoop(() => this.federationWalletManager.WalletTipHash == block.GetHash());
+
             return last;
-        }
-
-        /// <summary>
-        /// Waits for a function to return true.
-        /// </summary>
-        /// <param name="act">The function returning <c>true</c> or <c>false</c>.</param>
-        /// <param name="failureReason">The failure reason if any.</param>
-        /// <param name="retryDelayInMiliseconds">How often to retry in milliseconds.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        private static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            cancellationToken = cancellationToken == default(CancellationToken)
-                ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 60 * 1000).Token
-                : cancellationToken;
-
-            while (!act())
-            {
-                try
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    Thread.Sleep(retryDelayInMiliseconds);
-                }
-                catch (OperationCanceledException e)
-                {
-                    Assert.False(true, $"{failureReason}{Environment.NewLine}{e.Message}");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Creates a directory for a test, based on the name of the class containing the test and the name of the test.
-        /// </summary>
-        /// <param name="caller">The calling object, from which we derive the namespace in which the test is contained.</param>
-        /// <param name="callingMethod">The name of the test being executed. A directory with the same name will be created.</param>
-        /// <returns>The path of the directory that was created.</returns>
-        public static string CreateTestDir(object caller, [System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
-        {
-            string directoryPath = GetTestDirectoryPath(caller, callingMethod);
-            return AssureEmptyDir(directoryPath);
-        }
-
-        /// <summary>
-        /// Gets the path of the directory that <see cref="CreateTestDir(object, string)"/> or <see cref="CreateDataFolder(object, string)"/> would create.
-        /// </summary>
-        /// <remarks>The path of the directory is of the form TestCase/{testClass}/{testName}.</remarks>
-        /// <param name="caller">The calling object, from which we derive the namespace in which the test is contained.</param>
-        /// <param name="callingMethod">The name of the test being executed. A directory with the same name will be created.</param>
-        /// <returns>The path of the directory.</returns>
-        public static string GetTestDirectoryPath(object caller, [System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
-        {
-            return GetTestDirectoryPath(Path.Combine(caller.GetType().Name, callingMethod));
-        }
-
-        /// <summary>
-        /// Gets the path of the directory that <see cref="CreateTestDir(object, string)"/> would create.
-        /// </summary>
-        /// <remarks>The path of the directory is of the form TestCase/{testClass}/{testName}.</remarks>
-        /// <param name="testDirectory">The directory in which the test files are contained.</param>
-        /// <returns>The path of the directory.</returns>
-        public static string GetTestDirectoryPath(string testDirectory)
-        {
-            return Path.Combine("..", "..", "..", "..", "TestCase", testDirectory);
-        }
-
-        /// <summary>
-        /// Creates a new folder that will be empty.
-        /// </summary>
-        /// <param name="dir">The first part of the folder name.</param>
-        /// <returns>A folder name with the current time concatenated.</returns>
-        public static string AssureEmptyDir(string dir)
-        {
-            string uniqueDirName = $"{dir}-{DateTime.UtcNow:ddMMyyyyTHH.mm.ss.fff}";
-            Directory.CreateDirectory(uniqueDirName);
-            return uniqueDirName;
         }
     }
 }

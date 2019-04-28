@@ -61,13 +61,6 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         bool ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null, bool isPropagated = true);
 
         /// <summary>
-        /// Removes a transaction not yet broadcasted or included in a block.
-        /// </summary>
-        /// <param name="transaction">The transaction to remove.</param>
-        /// <returns>A value indicating whether this transaction affects the wallet.</returns>
-        bool RemoveTransaction(Transaction transaction);
-
-        /// <summary>
         /// Verifies that the transaction's input UTXO's have been reserved by the wallet.
         /// Also checks that an earlier transaction for the same deposit id does not exist.
         /// </summary>
@@ -128,7 +121,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// Determines if federation has been activated.
         /// </summary>
         /// <returns><c>True</c> if federation is active and <c>false</c> otherwise.</returns>
-        bool IsFederationActive();
+        bool IsFederationWalletActive();
 
         /// <summary>
         /// Enables federation.
@@ -136,7 +129,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// <param name="password">The federation wallet password.</param>
         /// <param name="mnemonic">The user's mnemonic.</param>
         /// <param name="passphrase">A passphrase used to derive the private key from the mnemonic.</param>
-        void EnableFederation(string password, string mnemonic = null, string passphrase = null);
+        void EnableFederationWallet(string password, string mnemonic = null, string passphrase = null);
 
         /// <summary>
         /// Removes all the transactions from the federation wallet.
