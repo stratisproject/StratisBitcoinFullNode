@@ -95,7 +95,7 @@ namespace Stratis.Features.FederatedPeg
             if (payload == null)
                 return;
 
-            ICrossChainTransfer[] transfer = await this.crossChainTransferStore.GetAsync(new[] { payload.DepositId });
+            ICrossChainTransfer[] transfer = this.crossChainTransferStore.QueryTransfersById(new[] { payload.DepositId });
 
             if (transfer[0] == null)
             {

@@ -50,8 +50,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                     options.UsePoAWhitelistedContracts();
                 })
                 .UseSmartContractWallet()
-                .UseFederatedPegPoAMining()
                 .AddFederationGateway(new FederatedPegOptions(this.counterChainNetwork))
+                .UseFederatedPegPoAMining()
                 .UseMempool()
                 .UseTransactionNotification()
                 .UseBlockNotification()
