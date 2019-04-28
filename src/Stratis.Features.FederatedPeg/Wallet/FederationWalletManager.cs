@@ -842,7 +842,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         // Check that the previous outputs are only spent by this transaction.
                         if (transactionData == null || transactionData.SpendingDetails.TransactionId != transaction.GetHash())
                         {
-                            this.logger.LogTrace("Invalid UTXOs: TransactionID={0}", transaction.GetHash());
+                            this.logger.LogTrace("Invalid UTXOs: TransactionID={0}, Existing spending transaction={1}, BlockHeight={2}", 
+                                transaction.GetHash(), transactionData.SpendingDetails.TransactionId, transactionData.SpendingDetails.BlockHeight);
                             return false;
                         }
 

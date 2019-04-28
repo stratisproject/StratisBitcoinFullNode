@@ -42,13 +42,6 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         Task<Dictionary<uint256, Transaction>> GetTransactionsByStatusAsync(CrossChainTransferStatus status, bool sort = false);
 
         /// <summary>
-        /// Returns transfers based on their status.
-        /// </summary>
-        /// <param name="statuses">Set of statuses to get transfers for.</param>
-        /// <returns>Transfers for the given statuses.</returns>
-        ICrossChainTransfer[] GetTransfersByStatus(CrossChainTransferStatus[] statuses);
-
-        /// <summary>
         /// Updates partial transactions in the store with signatures obtained from the passed transactions.
         /// The <see cref="CrossChainTransferStatus.FullySigned"/> status is set on fully signed transactions.
         /// </summary>
@@ -60,13 +53,6 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// </remarks>
         /// <returns>The updated transaction.</returns>
         Task<Transaction> MergeTransactionSignaturesAsync(uint256 depositId, Transaction[] partialTransactions);
-
-        /// <summary>
-        /// Get the cross-chain transfer information from the database, identified by the deposit transaction ids.
-        /// </summary>
-        /// <param name="depositIds">The deposit transaction ids.</param>
-        /// <returns>The cross-chain transfer information.</returns>
-        Task<ICrossChainTransfer[]> GetAsync(uint256[] depositIds);
 
         /// <summary>Determines if the store contains suspended transactions.</summary>
         /// <returns><c>True</c> if the store contains suspended transaction and <c>false</c> otherwise.</returns>
@@ -92,5 +78,9 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// </summary>
         /// <returns>The counter of the cross chain transfer for each <see cref="CrossChainTransferStatus"/> status</returns>
         Dictionary<CrossChainTransferStatus, int> GetCrossChainTransferStatusCounter();
+
+        ICrossChainTransfer[] QueryTransfersByStatus(CrossChainTransferStatus[] statuses);
+
+        ICrossChainTransfer[] QueryTransfersById(uint256[] depositIds);
     }
 }

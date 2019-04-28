@@ -68,7 +68,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly IFederationGatewaySettings settings;
 
         /// <summary>Provider of time functions.</summary>
-        private readonly object lockObj;
+        private readonly object writeLock;
 
         public CrossChainTransferStore(Network network, DataFolder dataFolder, ChainIndexer chainIndexer, IFederationGatewaySettings settings, IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory, IWithdrawalExtractor withdrawalExtractor, IFullNode fullNode, IBlockRepository blockRepository,
@@ -93,7 +93,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.withdrawalTransactionBuilder = withdrawalTransactionBuilder;
             this.withdrawalExtractor = withdrawalExtractor;
             this.dBreezeSerializer = dBreezeSerializer;
-            this.lockObj = new object();
+            this.writeLock = new object();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.TipHashAndHeight = this.chainIndexer.GetHeader(0);
             this.NextMatureDepositHeight = 1;
@@ -114,7 +114,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <summary>Performs any needed initialisation for the database.</summary>
         public void Initialize()
         {
-            lock (this.lockObj)
+            lock (this.writeLock)
             {
                 using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
                 {
@@ -150,7 +150,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <summary>Starts the cross-chain-transfer store.</summary>
         public void Start()
         {
-            lock (this.lockObj)
+            lock (this.writeLock)
             {
                 // Remove all transient transactions from the wallet to be re-added according to the
                 // information carried in the store. This ensures that we will re-sync in the case
@@ -346,7 +346,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             return Task.Run(() =>
             {
-                lock (this.lockObj)
+                lock (this.writeLock)
                 {
                     using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
                     {
@@ -366,7 +366,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
             return Task.Run(() =>
             {
-                lock (this.lockObj)
+                lock (this.writeLock)
                 {
                     // Sanitize and sort the list.
                     int originalDepositHeight = this.NextMatureDepositHeight;
@@ -534,7 +534,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
             return Task.Run(() =>
             {
-                lock (this.lockObj)
+                lock (this.writeLock)
                 {
                     this.Synchronize();
 
@@ -790,7 +790,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <returns>Returns <c>true</c> if the store is in sync or <c>false</c> otherwise.</returns>
         private bool Synchronize()
         {
-            lock (this.lockObj)
+            lock (this.writeLock)
             {
                 HashHeightPair tipToChase = this.TipToChase();
                 if (tipToChase.Hash == this.TipHashAndHeight.HashBlock)
@@ -925,18 +925,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             dbreezeTransaction.Insert<byte[], int>(commonTableName, NextMatureTipKey, this.NextMatureDepositHeight);
         }
 
-        /// <inheritdoc />
-        public Task<ICrossChainTransfer[]> GetAsync(uint256[] depositIds)
-        {
-            return Task.Run(() =>
-            {
-                this.Synchronize();
-
-                ICrossChainTransfer[] res = this.ValidateCrossChainTransfers(this.Get(depositIds));
-                return res;
-            });
-        }
-
         private ICrossChainTransfer[] Get(uint256[] depositId)
         {
             using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
@@ -985,7 +973,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         private ICrossChainTransfer[] GetTransfersByStatus(CrossChainTransferStatus[] statuses, bool sort = false, bool validate = true)
         {
-            lock (this.lockObj)
+            lock (this.writeLock)
             {
                 this.Synchronize();
 
@@ -1013,12 +1001,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <inheritdoc />
-        public ICrossChainTransfer[] GetTransfersByStatus(CrossChainTransferStatus[] statuses)
-        {
-            return this.GetTransfersByStatus(statuses, false, false);
-        }
-
-        /// <inheritdoc />
         public Task<Dictionary<uint256, Transaction>> GetTransactionsByStatusAsync(CrossChainTransferStatus status, bool sort = false)
         {
             return Task.Run(() =>
@@ -1026,6 +1008,25 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 ICrossChainTransfer[] res = this.GetTransfersByStatus(new[] { status }, sort);
                 return res.Where(t => t.PartialTransaction != null).ToDictionary(t => t.DepositTransactionId, t => t.PartialTransaction);
             });
+        }
+
+        public ICrossChainTransfer[] QueryTransfersByStatus(CrossChainTransferStatus[] statuses)
+        {
+            var depositIds = new HashSet<uint256>();
+
+            foreach (CrossChainTransferStatus status in statuses)
+                depositIds.UnionWith(this.depositsIdsByStatus[status]);
+
+            uint256[] partialTransferHashes = depositIds.ToArray();
+            ICrossChainTransfer[] partialTransfers = this.Get(partialTransferHashes).Where(t => t != null).ToArray();
+
+            return partialTransfers.OrderBy(t => this.EarliestOutput(t.PartialTransaction), Comparer<OutPoint>.Create((x, y) =>
+                this.federationWalletManager.CompareOutpoints(x, y))).ToArray();
+        }
+
+        public ICrossChainTransfer[] QueryTransfersById(uint256[] depositIds)
+        {
+            return this.Get(depositIds);
         }
 
         /// <summary>Persist the cross-chain transfer information into the database.</summary>
