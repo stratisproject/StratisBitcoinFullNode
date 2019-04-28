@@ -1020,8 +1020,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             uint256[] partialTransferHashes = depositIds.ToArray();
             ICrossChainTransfer[] partialTransfers = this.Get(partialTransferHashes).Where(t => t != null).ToArray();
 
-            return partialTransfers.OrderBy(t => this.EarliestOutput(t.PartialTransaction), Comparer<OutPoint>.Create((x, y) =>
-                this.federationWalletManager.CompareOutpoints(x, y))).ToArray();
+            return partialTransfers;
         }
 
         public ICrossChainTransfer[] QueryTransfersById(uint256[] depositIds)
