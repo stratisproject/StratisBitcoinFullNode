@@ -252,14 +252,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     if (partialTransfer.DepositHeight < newChainATip)
                         newChainATip = partialTransfer.DepositHeight ?? newChainATip;
                 }
-
-                // The chain may have been rewound so that this transaction or its UTXO's have been lost.
-                // Rewind our recorded chain A tip to ensure the transaction is re-built once UTXO's become available.
-                if (partialTransfer.DepositHeight < newChainATip)
-                    newChainATip = partialTransfer.DepositHeight ?? newChainATip;
-
-                this.logger.LogTrace("Going to set Suspended for DepositId={0}", partialTransfer.DepositTransactionId);
-                tracker.SetTransferStatus(partialTransfer, CrossChainTransferStatus.Suspended);
             }
 
             if (tracker.Count == 0)
