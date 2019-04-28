@@ -233,7 +233,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 List<(Transaction, TransactionData, IWithdrawal)> walletData = this.federationWalletManager.FindWithdrawalTransactions(partialTransfer.DepositTransactionId);
 
-                bool txValidates = this.ValidateTransaction(walletData[0].Item1);
+                bool txValidates = walletData.Count > 0 && this.ValidateTransaction(walletData[0].Item1);
 
                 this.logger.LogTrace("Validating transfer {0}, WalletDataCount={1}, TxValid={2}", partialTransfer.DepositTransactionId, walletData.Count, txValidates);
 
