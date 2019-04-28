@@ -390,6 +390,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                             continue;
                         }
 
+                        // Ensure deposits are in a deterministic order, sort by id.
+                        deposits = deposits.OrderBy(x => x.Id).ToList();
+
                         ICrossChainTransfer[] transfers = this.ValidateCrossChainTransfers(this.Get(deposits.Select(d => d.Id).ToArray()));
                         var tracker = new StatusChangeTracker();
                         bool walletUpdated = false;
