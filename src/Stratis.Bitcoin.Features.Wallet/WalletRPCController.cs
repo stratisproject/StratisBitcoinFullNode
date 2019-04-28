@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 		[ActionDescription("Provides information about the wallet.")]
 		public GetWalletInfoModel GetWalletInfo()
 		{
-			var accountReference = this.GetAccount();
+			var accountReference = this.GetWalletAccountReference();
 			var account = this.walletManager.GetAccounts(accountReference.WalletName)
 											.Where(i => i.Name.Equals(accountReference.AccountName))
 											.Single();

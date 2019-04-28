@@ -9,6 +9,7 @@ using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
@@ -119,7 +120,7 @@ namespace City.Chain.Tests.Features.Wallet
 			settings.WalletNotify = "curl -X POST -d txid=%s http://127.0.0.1:8080";
 
 			var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chainInfo.chain, settings,
-				dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
+				dataFolder, walletFeePolicy.Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
 			walletManager.Wallets.Add(wallet);
 			walletManager.LoadKeysLookupLock();
 			walletManager.WalletTipHash = block.Header.GetHash();
@@ -151,31 +152,31 @@ namespace City.Chain.Tests.Features.Wallet
 			Assert.Equal(chainedBlock.HashBlock, walletManager.WalletTipHash);
 		}
 
-		//[Fact]
-		//public void CreateDefaultWalletAndVerifyCustomPassword()
-		//{
-		//    DataFolder dataFolder = CreateDataFolder(this);
-		//    var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain, "-defaultwallet", "-defaultpassword=mypass");
-		//    walletManager.Start();
-		//    Assert.True(walletManager.ContainsWallets);
+        //[Fact]
+        //public void CreateDefaultWalletAndVerifyCustomPassword()
+        //{
+        //    DataFolder dataFolder = CreateDataFolder(this);
+        //    var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain, "-defaultwallet", "-defaultpassword=mypass");
+        //    walletManager.Start();
+        //    Assert.True(walletManager.ContainsWallets);
 
-		//    var defaultWallet = walletManager.Wallets.First();
+        //    var defaultWallet = walletManager.Wallets.First();
 
-		//    Assert.Equal("default", defaultWallet.Name);
+        //    Assert.Equal("default", defaultWallet.Name);
 
-		//    // Attempt to load the default wallet.
-		//    var wallet = walletManager.LoadWallet("default", "default");
+        //    // Attempt to load the default wallet.
+        //    var wallet = walletManager.LoadWallet("default", "default");
 
-		//    Assert.Equal(wallet.EncryptedSeed, defaultWallet.EncryptedSeed);
-		//}
+        //    Assert.Equal(wallet.EncryptedSeed, defaultWallet.EncryptedSeed);
+        //}
 
-		private WalletManager CreateWalletManager(DataFolder dataFolder, Network network, params string[] cmdLineArgs)
+        private WalletManager CreateWalletManager(DataFolder dataFolder, Network network, params string[] cmdLineArgs)
         {
             var nodeSettings = new NodeSettings(KnownNetworks.RegTest, ProtocolVersion.PROTOCOL_VERSION, network.Name, cmdLineArgs);
             var walletSettings = new WalletSettings(nodeSettings);
 
             return new WalletManager(this.LoggerFactory.Object, network, new ChainIndexer(network),
-                walletSettings, dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
+                walletSettings, dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
         }
     }
 
