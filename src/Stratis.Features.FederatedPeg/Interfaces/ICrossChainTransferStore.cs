@@ -42,6 +42,13 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         Task<Dictionary<uint256, Transaction>> GetTransactionsByStatusAsync(CrossChainTransferStatus status, bool sort = false);
 
         /// <summary>
+        /// Returns transfers based on their status.
+        /// </summary>
+        /// <param name="statuses">Set of statuses to get transfers for.</param>
+        /// <returns>Transfers for the given statuses.</returns>
+        ICrossChainTransfer[] GetTransfersByStatus(CrossChainTransferStatus[] statuses);
+
+        /// <summary>
         /// Updates partial transactions in the store with signatures obtained from the passed transactions.
         /// The <see cref="CrossChainTransferStatus.FullySigned"/> status is set on fully signed transactions.
         /// </summary>

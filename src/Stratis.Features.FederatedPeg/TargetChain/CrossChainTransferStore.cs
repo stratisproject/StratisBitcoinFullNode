@@ -1013,6 +1013,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <inheritdoc />
+        public ICrossChainTransfer[] GetTransfersByStatus(CrossChainTransferStatus[] statuses)
+        {
+            return this.GetTransfersByStatus(statuses, false, false);
+        }
+
+        /// <inheritdoc />
         public Task<Dictionary<uint256, Transaction>> GetTransactionsByStatusAsync(CrossChainTransferStatus status, bool sort = false)
         {
             return Task.Run(() =>

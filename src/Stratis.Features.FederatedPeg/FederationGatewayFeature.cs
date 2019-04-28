@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,11 +29,11 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.Notifications;
 using Stratis.Features.FederatedPeg.Payloads;
-using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.SourceChain;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
@@ -229,13 +228,22 @@ namespace Stratis.Features.FederatedPeg
                 benchLog.AppendLine();
             }
 
-            // Display recent withdrawals (if any).
-            // TODO: What order do these come out in?
-            List<WithdrawalModel> withdrawals = this.withdrawalHistoryProvider.GetHistory(TransfersToDisplay);
-            if (withdrawals.Count > 0)
+            List<WithdrawalModel> pendingWithdrawals = this.withdrawalHistoryProvider.GetPending();
+
+            if (pendingWithdrawals.Count > 0)
             {
-                benchLog.AppendLine("--- Recent Withdrawals ---");
-                foreach (WithdrawalModel withdrawal in withdrawals)
+                benchLog.AppendLine("--- Pending Withdrawals ---");
+                foreach (WithdrawalModel withdrawal in pendingWithdrawals)
+                    benchLog.AppendLine(withdrawal.ToString());
+                benchLog.AppendLine();
+            }
+
+            List<WithdrawalModel> completedWithdrawals = this.withdrawalHistoryProvider.GetHistory(TransfersToDisplay);
+
+            if (completedWithdrawals.Count > 0)
+            {
+                benchLog.AppendLine("--- Recently Completed Withdrawals ---");
+                foreach (WithdrawalModel withdrawal in completedWithdrawals)
                     benchLog.AppendLine(withdrawal.ToString());
                 benchLog.AppendLine();
             }
