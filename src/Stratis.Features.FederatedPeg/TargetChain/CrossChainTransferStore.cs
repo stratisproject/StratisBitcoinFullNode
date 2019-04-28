@@ -231,36 +231,27 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 if (partialTransfer.Status != CrossChainTransferStatus.Partial && partialTransfer.Status != CrossChainTransferStatus.FullySigned)
                     continue;
 
-                List<(Transaction, TransactionData, IWithdrawal)> walletData = this.federationWalletManager.FindWithdrawalTransactions(partialTransfer.DepositTransactionId);
+                FederationWalletManager.TransferValidationResult result = this.federationWalletManager.ValidateCrossChainTransfer(partialTransfer);
 
-                bool txValidates = walletData.Count > 0 && this.ValidateTransaction(walletData[0].Item1);
+                if (!result.Updated)
+                    continue;
 
-                this.logger.LogTrace("Validating transfer {0}, WalletDataCount={1}, TxValid={2}", partialTransfer.DepositTransactionId, walletData.Count, txValidates);
-
-                if (walletData.Count == 1 && this.ValidateTransaction(walletData[0].Item1))
+                if (result.UpdatedStatus == CrossChainTransferStatus.SeenInBlock)
                 {
-                    Transaction walletTran = walletData[0].Item1;
-                    if (walletTran.GetHash() == partialTransfer.PartialTransaction.GetHash())
-                        continue;
-
-                    if (CrossChainTransfer.TemplatesMatch(this.network, walletTran, partialTransfer.PartialTransaction))
-                    {
-                        partialTransfer.SetPartialTransaction(walletTran);
-
-                        if (walletData[0].Item2.BlockHeight != null)
-                            tracker.SetTransferStatus(partialTransfer, CrossChainTransferStatus.SeenInBlock, walletData[0].Item2.BlockHash, (int)walletData[0].Item2.BlockHeight);
-                        else if (this.ValidateTransaction(walletTran, true))
-                            tracker.SetTransferStatus(partialTransfer, CrossChainTransferStatus.FullySigned);
-                        else
-                            tracker.SetTransferStatus(partialTransfer, CrossChainTransferStatus.Partial);
-
-                        continue;
-                    }
+                    tracker.SetTransferStatus(partialTransfer, CrossChainTransferStatus.SeenInBlock, result.UpdatedBlockHash, result.UpdatedBlockHeight);
+                }
+                else
+                {
+                    tracker.SetTransferStatus(partialTransfer, result.UpdatedStatus);
                 }
 
-                // Remove any invalid withdrawal transactions.
-                foreach (IWithdrawal withdrawal in walletData.Select(d => d.Item3))
-                    this.federationWalletManager.RemoveTransientTransactions(withdrawal.DepositId);
+                if (result.UpdatedStatus == CrossChainTransferStatus.Suspended)
+                {
+                    // The chain may have been rewound so that this transaction or its UTXO's have been lost.
+                    // Rewind our recorded chain A tip to ensure the transaction is re-built once UTXO's become available.
+                    if (partialTransfer.DepositHeight < newChainATip)
+                        newChainATip = partialTransfer.DepositHeight ?? newChainATip;
+                }
 
                 // The chain may have been rewound so that this transaction or its UTXO's have been lost.
                 // Rewind our recorded chain A tip to ensure the transaction is re-built once UTXO's become available.

@@ -69,6 +69,9 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// <returns><c>True</c> if all's well and <c>false</c> otherwise.</returns>
         bool ValidateTransaction(Transaction transaction, bool checkSignature = false);
 
+        FederationWalletManager.TransferValidationResult
+            ValidateCrossChainTransfer(ICrossChainTransfer partialTransfer);
+
         /// <summary>
         /// Saves the wallet into the file system.
         /// </summary>

@@ -899,6 +899,54 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
+        public TransferValidationResult ValidateCrossChainTransfer(ICrossChainTransfer partialTransfer)
+        {
+            lock (this.lockObject)
+            {
+                List<(Transaction, TransactionData, IWithdrawal)> walletData = this.FindWithdrawalTransactions(partialTransfer.DepositTransactionId);
+
+                bool txValidates = walletData.Count > 0 && this.ValidateTransaction(walletData[0].Item1);
+
+                this.logger.LogTrace("Validating transfer {0}, WalletDataCount={1}, TxValid={2}", partialTransfer.DepositTransactionId, walletData.Count, txValidates);
+
+                if (walletData.Count == 1 && this.ValidateTransaction(walletData[0].Item1))
+                {
+                    Transaction walletTran = walletData[0].Item1;
+                    if (walletTran.GetHash() == partialTransfer.PartialTransaction.GetHash())
+                        return new TransferValidationResult {Updated = false};
+
+                    if (CrossChainTransfer.TemplatesMatch(this.network, walletTran, partialTransfer.PartialTransaction))
+                    {
+                        partialTransfer.SetPartialTransaction(walletTran);
+
+                        if (walletData[0].Item2.BlockHeight != null)
+                            return new TransferValidationResult { Updated = true, UpdatedStatus = CrossChainTransferStatus.Partial, UpdatedBlockHash = walletData[0].Item2.BlockHash , UpdatedBlockHeight = (int) walletData[0].Item2.BlockHeight };
+                        else if (this.ValidateTransaction(walletTran, true))
+                            return new TransferValidationResult { Updated = true, UpdatedStatus = CrossChainTransferStatus.FullySigned };
+                        else
+                            return new TransferValidationResult { Updated = true, UpdatedStatus = CrossChainTransferStatus.Partial};
+                    }
+                }
+
+                // Remove any invalid withdrawal transactions.
+                foreach (IWithdrawal withdrawal in walletData.Select(d => d.Item3))
+                    this.RemoveTransientTransactions(withdrawal.DepositId);
+
+                return new TransferValidationResult{Updated = true, UpdatedStatus = CrossChainTransferStatus.Suspended};
+            }
+        }
+
+        public class TransferValidationResult
+        {
+            public bool Updated { get; set; }
+
+            public CrossChainTransferStatus UpdatedStatus { get; set; }
+
+            public int UpdatedBlockHeight { get; set; }
+
+            public uint256 UpdatedBlockHash { get; set; }
+        }
+
         /// <inheritdoc />
         public void UpdateLastBlockSyncedHeight(ChainedHeader chainedHeader)
         {
