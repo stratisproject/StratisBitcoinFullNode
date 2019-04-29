@@ -647,7 +647,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact]
         public void StoringDepositsWhenTargetIsMultisigIsIgnored()
         {
-            var dataFolder = new DataFolder(CreateTestDir(this));
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
 
             this.Init(dataFolder);
             this.AddFunding();
@@ -660,7 +660,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
-                WaitLoop(() => this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height);
+                TestBase.WaitLoopMessage(() => (this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height, $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
                 Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
 
                 // Forwarding money already in the multisig address to the muultisig address is ignored.
