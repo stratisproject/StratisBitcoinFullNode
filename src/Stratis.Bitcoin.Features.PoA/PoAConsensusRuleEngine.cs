@@ -21,12 +21,12 @@ namespace Stratis.Bitcoin.Features.PoA
 
         public VotingManager VotingManager { get; private set; }
 
-        public FederationManager FederationManager { get; private set; }
+        public IFederationManager FederationManager { get; private set; }
 
         public PoAConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ChainIndexer chainIndexer,
             NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IChainState chainState,
             IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, SlotsManager slotsManager, PoABlockHeaderValidator poaHeaderValidator,
-            VotingManager votingManager, FederationManager federationManager, IAsyncProvider asyncProvider)
+            VotingManager votingManager, IFederationManager federationManager, IAsyncProvider asyncProvider)
             : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats, asyncProvider)
         {
             this.SlotsManager = slotsManager;

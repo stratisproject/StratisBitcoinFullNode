@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 rpc.AddNode(nodeB.Endpoint);
 
                 AddedNodeInfo[] info = null;
-                TestHelper.WaitLoop(() =>
+                TestBase.WaitLoop(() =>
                 {
                     info = rpc.GetAddedNodeInfo(true);
                     return info != null && info.Length > 0;
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 Assert.Null(oneInfo);
                 rpc.RemoveNode(nodeB.Endpoint);
 
-                TestHelper.WaitLoop(() =>
+                TestBase.WaitLoop(() =>
                 {
                     info = rpc.GetAddedNodeInfo(true);
                     return info.Length == 0;

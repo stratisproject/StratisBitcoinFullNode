@@ -30,12 +30,11 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.Notifications;
 using Stratis.Features.FederatedPeg.Payloads;
-using Stratis.Features.FederatedPeg.RestClients;
+using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.SourceChain;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
@@ -83,6 +82,8 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly ILogger logger;
 
+        private readonly CollateralChecker collateralChecker;
+
         public FederationGatewayFeature(
             ILoggerFactory loggerFactory,
             IConnectionManager connectionManager,
@@ -97,7 +98,8 @@ namespace Stratis.Features.FederatedPeg
             IPartialTransactionRequester partialTransactionRequester,
             ISignedMultisigTransactionBroadcaster signedBroadcaster,
             IMaturedBlocksSyncManager maturedBlocksSyncManager,
-            IWithdrawalHistoryProvider withdrawalHistoryProvider)
+            IWithdrawalHistoryProvider withdrawalHistoryProvider,
+            CollateralChecker collateralChecker = null)
         {
             this.loggerFactory = loggerFactory;
             this.connectionManager = connectionManager;
@@ -112,10 +114,11 @@ namespace Stratis.Features.FederatedPeg
             this.maturedBlocksSyncManager = maturedBlocksSyncManager;
             this.withdrawalHistoryProvider = withdrawalHistoryProvider;
             this.signedBroadcaster = signedBroadcaster;
+            this.collateralChecker = collateralChecker;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            // add our payload 
+            // add our payload
             var payloadProvider = (PayloadProvider)this.fullNode.Services.ServiceProvider.GetService(typeof(PayloadProvider));
             payloadProvider.AddPayload(typeof(RequestPartialTransactionPayload));
 
@@ -123,7 +126,7 @@ namespace Stratis.Features.FederatedPeg
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 800);
         }
 
-        public override Task InitializeAsync()
+        public override async Task InitializeAsync()
         {
             // Set up our database of deposit and withdrawal transactions. Needs to happen before everything else.
             this.crossChainTransferStore.Initialize();
@@ -146,6 +149,9 @@ namespace Stratis.Features.FederatedPeg
             // Query our database for fully-signed transactions and broadcast them every N seconds.
             this.signedBroadcaster.Start();
 
+            if (this.collateralChecker != null)
+                await this.collateralChecker.InitializeAsync().ConfigureAwait(false);
+
             // Connect the node to the other federation members.
             foreach (IPEndPoint federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
                 this.connectionManager.AddNodeAddress(federationMemberIp);
@@ -154,8 +160,6 @@ namespace Stratis.Features.FederatedPeg
             NetworkPeerConnectionParameters networkPeerConnectionParameters = this.connectionManager.Parameters;
             networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager,
                 this.network, this.federationGatewaySettings, this.crossChainTransferStore));
-
-            return Task.CompletedTask;
         }
 
         public override void Dispose()
@@ -164,6 +168,8 @@ namespace Stratis.Features.FederatedPeg
             this.maturedBlocksSyncManager.Dispose();
 
             this.crossChainTransferStore.Dispose();
+
+            this.collateralChecker?.Dispose();
         }
 
         private void AddInlineStats(StringBuilder benchLogs)
@@ -292,7 +298,7 @@ namespace Stratis.Features.FederatedPeg
                 features.AddFeature<FederationGatewayFeature>().DependOn<BlockNotificationFeature>().FeatureServices(
                     services =>
                     {
-                        services.AddSingleton<IHttpClientFactory, HttpClientFactory>();
+                        services.AddSingleton<IHttpClientFactory, Bitcoin.Controllers.HttpClientFactory>();
                         services.AddSingleton<IMaturedBlocksProvider, MaturedBlocksProvider>();
                         services.AddSingleton<IFederationGatewaySettings, FederationGatewaySettings>();
                         services.AddSingleton<IOpReturnDataReader, OpReturnDataReader>();
@@ -310,6 +316,7 @@ namespace Stratis.Features.FederatedPeg
                         services.AddSingleton<IFederationGatewayClient, FederationGatewayClient>();
                         services.AddSingleton<IMaturedBlocksSyncManager, MaturedBlocksSyncManager>();
                         services.AddSingleton<IWithdrawalHistoryProvider, WithdrawalHistoryProvider>();
+                        services.AddSingleton<FederationGatewaySettings>();
 
                         // Set up events.
                         services.AddSingleton<TransactionObserver>();
@@ -328,7 +335,7 @@ namespace Stratis.Features.FederatedPeg
             {
                 features.AddFeature<PoAFeature>().DependOn<FederationGatewayFeature>().FeatureServices(services =>
                     {
-                        services.AddSingleton<FederationManager>();
+                        services.AddSingleton<IFederationManager, CollateralFederationManager>();
                         services.AddSingleton<PoABlockHeaderValidator>();
                         services.AddSingleton<IPoAMiner, PoAMiner>();
                         services.AddSingleton<SlotsManager>();
@@ -372,25 +379,12 @@ namespace Stratis.Features.FederatedPeg
 
                         return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
                     });
+
+                    services.AddSingleton<CollateralChecker>();
                 });
             });
 
             return fullNodeBuilder;
         }
     }
-
-    //todo: this should be removed when compatible with full node API, instead, we should use
-    //services.AddHttpClient from Microsoft.Extensions.Http
-    public class HttpClientFactory : IHttpClientFactory
-    {
-        /// <inheritdoc />
-        public HttpClient CreateClient(string name)
-        {
-            var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Accept.Clear();
-            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            return httpClient;
-        }
-    }
 }
-
