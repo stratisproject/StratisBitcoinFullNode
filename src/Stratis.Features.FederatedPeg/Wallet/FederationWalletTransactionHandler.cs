@@ -220,6 +220,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
             // We order the potential inputs now because we order them by information that the coin selector won't have access to.
             IEnumerable<UnspentOutputReference> orderedUnspentOutputs = DeterministicCoinOrdering.GetOrderedUnspentOutputs(context);
 
+            this.logger.LogTrace("Available ordered outputs: {0}", String.Join(",", orderedUnspentOutputs.Select(x => x.Transaction.Id.ToString() + "-" + x.Transaction.Index)));
+
             foreach (UnspentOutputReference item in orderedUnspentOutputs)
             {
                 coins.Add(ScriptCoin.Create(this.network, item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, this.walletManager.GetWallet().MultiSigAddress.RedeemScript));
