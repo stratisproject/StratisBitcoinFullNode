@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.10.1" />
-    <PackageReference Include="Stratis.SmartContracts" Version="1.1.0" />
+    <PackageReference Include="Stratis.SmartContracts" Version="1.2.1" />
     <PackageReference Include="Stratis.SmartContracts.Standards" Version="1.0.0" />
   </ItemGroup>
 

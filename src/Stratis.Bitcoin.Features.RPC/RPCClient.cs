@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.ExceptionServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.DataEncoders;
@@ -17,6 +18,42 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
+    public class RPCCapabilities
+    {
+        public int Version { get; set; }
+        public bool SupportSignRawTransactionWith { get; set; }
+        public bool SupportSegwit { get; set; }
+        public bool SupportScanUTXOSet { get; set; }
+        public bool SupportGetNetworkInfo { get; set; }
+        public bool SupportEstimateSmartFee { get; set; }
+        public bool SupportGenerateToAddress { get; set; }
+
+        public RPCCapabilities Clone(int newVersion)
+        {
+            return new RPCCapabilities()
+            {
+                Version = newVersion,
+                SupportScanUTXOSet = SupportScanUTXOSet,
+                SupportSegwit = SupportSegwit,
+                SupportSignRawTransactionWith = SupportSignRawTransactionWith,
+                SupportGetNetworkInfo = SupportGetNetworkInfo,
+                SupportEstimateSmartFee = SupportEstimateSmartFee,
+                SupportGenerateToAddress = SupportGenerateToAddress
+            };
+        }
+
+        public override string ToString()
+        {
+            return $"Version: {this.Version}{Environment.NewLine}" +
+                $"SupportScanUTXOSet: {this.SupportScanUTXOSet}{Environment.NewLine}" +
+                $"SupportSegwit: {this.SupportSegwit}{Environment.NewLine}" +
+                $"SupportSignRawTransactionWith: {this.SupportSignRawTransactionWith}{Environment.NewLine}" +
+                $"SupportGetNetworkInfo: {this.SupportGetNetworkInfo}{Environment.NewLine}" +
+                $"SupportEstimateSmartFee: {this.SupportEstimateSmartFee}{Environment.NewLine}" +
+                $"SupportGenerateToAddress: {this.SupportGenerateToAddress}{Environment.NewLine}";
+        }
+    }
+
     /*
         Category            Name                        Implemented
         ------------------ --------------------------- -----------------------
@@ -257,6 +294,114 @@ namespace Stratis.Bitcoin.Features.RPC
                 return this.CredentialString.CookieFile;
 
             return null;
+        }
+
+        /// <summary>
+        /// The RPC Capabilities of this RPCClient instance, this property will be set by a call to ScanRPCCapabilitiesAsync
+        /// </summary>
+        public RPCCapabilities Capabilities { get; set; }
+
+        /// <summary>
+        /// Run several RPC function to scan the RPC capabilities, then set RPCClient.Capabilities
+        /// </summary>
+        /// <returns>The RPCCapabilities</returns>
+        public async Task<RPCCapabilities> ScanRPCCapabilitiesAsync()
+        {
+            var capabilities = new RPCCapabilities();
+            var rpc = this.PrepareBatch();
+            var waiting = Task.WhenAll(
+            SetVersionAsync(capabilities),
+            CheckCapabilities(rpc, "scantxoutset", v => capabilities.SupportScanUTXOSet = v),
+            CheckCapabilities(rpc, "signrawtransactionwithkey", v => capabilities.SupportSignRawTransactionWith = v),
+            CheckCapabilities(rpc, "estimatesmartfee", v => capabilities.SupportEstimateSmartFee = v),
+            CheckCapabilities(rpc, "generatetoaddress", v => capabilities.SupportGenerateToAddress = v),
+            CheckSegwitCapabilitiesAsync(rpc, v => capabilities.SupportSegwit = v));
+            await rpc.SendBatchAsync();
+            await waiting;
+            Thread.MemoryBarrier();
+
+            this.Capabilities = capabilities;
+            return capabilities;
+        }
+
+        private async Task SetVersionAsync(RPCCapabilities capabilities)
+        {
+            try
+            {
+                var getInfo = await SendCommandAsync(RPCOperations.getnetworkinfo);
+                capabilities.Version = ((JObject)getInfo.Result)["version"].Value<int>();
+                capabilities.SupportGetNetworkInfo = true;
+                return;
+            }
+            catch (RPCException ex) when (ex.RPCCode == RPCErrorCode.RPC_METHOD_NOT_FOUND || ex.RPCCode == RPCErrorCode.RPC_METHOD_DEPRECATED)
+            {
+                capabilities.SupportGetNetworkInfo = false;
+            }
+
+            {
+#pragma warning disable CS0618 // Type or member is obsolete
+                var getInfo = await SendCommandAsync(RPCOperations.getinfo);
+#pragma warning restore CS0618 // Type or member is obsolete
+                capabilities.Version = ((JObject)getInfo.Result)["version"].Value<int>();
+            }
+        }
+
+        /// <summary>
+        /// Run several RPC function to scan the RPC capabilities, then set RPCClient.RPCCapabilities
+        /// </summary>
+        /// <returns>The RPCCapabilities</returns>
+        public RPCCapabilities ScanRPCCapabilities()
+        {
+            return ScanRPCCapabilitiesAsync().GetAwaiter().GetResult();
+        }
+
+        private static async Task CheckSegwitCapabilitiesAsync(RPCClient rpc, Action<bool> setResult)
+        {
+            BitcoinAddress address = null;
+            try
+            {
+                address = new Key().ScriptPubKey.WitHash.ScriptPubKey.GetDestinationAddress(rpc.Network);
+            }
+            catch (NotImplementedException)
+            {
+            }
+  
+            if (address == null)
+            {
+                setResult(false);
+                return;
+            }
+            try
+            {
+                var result = await rpc.SendCommandAsync("validateaddress", new[] { address.ToString() });
+                result.ThrowIfError();
+                setResult(result.Result["isvalid"].Value<bool>());
+            }
+            catch (RPCException ex)
+            {
+                setResult(ex.RPCCode == RPCErrorCode.RPC_TYPE_ERROR);
+            }
+        }
+
+        private static async Task CheckCapabilitiesAsync(Func<Task> command, Action<bool> setResult)
+        {
+            try
+            {
+                await command();
+                setResult(true);
+            }
+            catch (RPCException ex) when (ex.RPCCode == RPCErrorCode.RPC_METHOD_NOT_FOUND || ex.RPCCode == RPCErrorCode.RPC_METHOD_DEPRECATED)
+            {
+                setResult(false);
+            }
+            catch (RPCException)
+            {
+                setResult(true);
+            }
+        }
+        private static Task CheckCapabilities(RPCClient rpc, string command, Action<bool> setResult)
+        {
+            return CheckCapabilitiesAsync(() => rpc.SendCommandAsync(command, "random"), setResult);
         }
 
         public static string GetDefaultCookieFilePath(Network network)

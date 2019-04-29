@@ -58,14 +58,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// <param name="block">The block in which this transaction was included.</param>
         /// <param name="isPropagated">Transaction propagation state.</param>
         /// <returns>A value indicating whether this transaction affects the wallet.</returns>
-        bool ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null, bool isPropagated = true);
-
-        /// <summary>
-        /// Removes a transaction not yet broadcasted or included in a block.
-        /// </summary>
-        /// <param name="transaction">The transaction to remove.</param>
-        /// <returns>A value indicating whether this transaction affects the wallet.</returns>
-        bool RemoveTransaction(Transaction transaction);
+        bool ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null);
 
         /// <summary>
         /// Verifies that the transaction's input UTXO's have been reserved by the wallet.
