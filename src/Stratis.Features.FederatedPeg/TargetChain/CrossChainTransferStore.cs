@@ -394,7 +394,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                         this.logger.LogTrace("Will sort");
                         // Ensure deposits are in a deterministic order, sort by id.
-                        deposits = deposits.OrderBy(x => x.Id).ToList();
+                        deposits = deposits.OrderBy(x => x.Id, Comparer<uint256>.Create(DeterministicCoinOrdering.CompareUint256)).ToList();
 
                         this.logger.LogTrace("sorted");
 
