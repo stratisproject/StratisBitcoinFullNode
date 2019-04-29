@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
+using Stratis.Features.FederatedPeg.Wallet;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
 {
@@ -117,6 +120,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     // Log what we've received.
                     foreach (MaturedBlockDepositsModel maturedBlockDeposit in matureBlockDeposits)
                     {
+                        maturedBlockDeposit.Deposits = maturedBlockDeposit.Deposits.OrderBy(x => x.Id, Comparer<uint256>.Create(DeterministicCoinOrdering.CompareUint256)).ToList();
+
                         foreach (IDeposit deposit in maturedBlockDeposit.Deposits)
                         {
                             this.logger.LogDebug(

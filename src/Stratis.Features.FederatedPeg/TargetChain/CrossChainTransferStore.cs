@@ -392,13 +392,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                             continue;
                         }
 
-                        this.logger.LogTrace("Will sort");
-                        // Ensure deposits are in a deterministic order, sort by id.
-                        deposits = deposits.OrderBy(x => x.Id, Comparer<uint256>.Create(DeterministicCoinOrdering.CompareUint256)).ToList();
-
-                        this.logger.LogTrace("sorted");
-
-
                         ICrossChainTransfer[] transfers = this.ValidateCrossChainTransfers(this.Get(deposits.Select(d => d.Id).ToArray()));
                         var tracker = new StatusChangeTracker();
                         bool walletUpdated = false;
