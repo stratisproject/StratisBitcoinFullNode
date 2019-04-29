@@ -26,7 +26,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         public WithdrawalTransactionBuilderTests()
         {
             this.loggerFactory = new Mock<ILoggerFactory>();
-            this.network = FederatedPegNetwork.NetworksSelector.Regtest();
+            this.network = CirrusNetwork.NetworksSelector.Regtest();
             this.federationWalletManager = new Mock<IFederationWalletManager>();
             this.federationWalletTransactionHandler = new Mock<IFederationWalletTransactionHandler>();
             this.federationGatewaySettings = new Mock<IFederationGatewaySettings>();

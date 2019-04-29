@@ -29,7 +29,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             var loggerFactory = new LoggerFactory();
             IHttpClientFactory clientFactory = new Bitcoin.Controllers.HttpClientFactory();
 
-            Network network = FederatedPegNetwork.NetworksSelector.Regtest();
+            Network network = CirrusNetwork.NetworksSelector.Regtest();
 
             this.collateralFederationMembers = new List<CollateralFederationMember>()
             {

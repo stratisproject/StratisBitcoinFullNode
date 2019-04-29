@@ -4,13 +4,13 @@ using Stratis.Bitcoin.Features.SmartContracts.PoA;
 
 namespace Stratis.Sidechains.Networks
 {
-    public static class FederatedPegNetwork
+    public static class CirrusNetwork
     {
         public static NetworksSelector NetworksSelector
         {
             get
             {
-                return new NetworksSelector(() => new FederatedPegMain(), () => new FederatedPegTest(), () => new FederatedPegRegTest());
+                return new NetworksSelector(() => new CirrusMain(), () => new CirrusTest(), () => new CirrusRegTest());
             }
         }
 
