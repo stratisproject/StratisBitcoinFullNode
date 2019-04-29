@@ -213,30 +213,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <returns>Returns the list of transfers, possible with updated statuses.</returns>
         private ICrossChainTransfer[] ValidateCrossChainTransfers(ICrossChainTransfer[] crossChainTransfers = null)
         {
-            bool setAllSuspended = false;
-
             if (crossChainTransfers == null)
             {
-                // If there are Suspended transactions with a depositid before Partial or FullySigned transactions, then start over. They need to happen in order.
-                // TODO: Inefficient right now.
-                HashSet<uint256> suspended = this.depositsIdsByStatus[CrossChainTransferStatus.Suspended];
-                IOrderedEnumerable<uint256> orderedSuspended = suspended.OrderBy(x => x, Comparer<uint256>.Create(DeterministicCoinOrdering.CompareUint256));
-                uint256 lowestSuspended = orderedSuspended.FirstOrDefault();
-
                 IEnumerable<uint256> partialAndFullySigned = this.depositsIdsByStatus[CrossChainTransferStatus.Partial].Union(this.depositsIdsByStatus[CrossChainTransferStatus.FullySigned]);
-                IOrderedEnumerable<uint256> orderedPartialAndFullySigned = partialAndFullySigned.OrderBy(x => x, Comparer<uint256>.Create(DeterministicCoinOrdering.CompareUint256));
-                uint256 highestPartial = orderedPartialAndFullySigned.LastOrDefault();
-
-                if (lowestSuspended != null 
-                    && highestPartial != null
-                    && lowestSuspended < highestPartial)
-                {
-                    setAllSuspended = true;
-                }
-
-                crossChainTransfers = this.Get(
-                    this.depositsIdsByStatus[CrossChainTransferStatus.Partial].Union(
-                        this.depositsIdsByStatus[CrossChainTransferStatus.FullySigned]).ToArray());
+                crossChainTransfers = this.Get(partialAndFullySigned.ToArray());
             }
 
             var tracker = new StatusChangeTracker();
@@ -244,18 +224,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
             foreach (ICrossChainTransfer partialTransfer in crossChainTransfers)
             {
-                if (setAllSuspended)
-                {
-                    tracker.SetTransferStatus(partialTransfer,CrossChainTransferStatus.Suspended);
-                    this.federationWalletManager.RemoveTransientTransactions(partialTransfer.DepositTransactionId);
-                    // The chain may have been rewound so that this transaction or its UTXO's have been lost.
-                    // Rewind our recorded chain A tip to ensure the transaction is re-built once UTXO's become available.
-                    if (partialTransfer.DepositHeight < newChainATip)
-                        newChainATip = partialTransfer.DepositHeight ?? newChainATip;
-
-                    continue;
-                }
-
                 if (partialTransfer == null)
                     continue;
 
