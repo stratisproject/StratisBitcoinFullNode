@@ -171,6 +171,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
         {
+            this.logger.LogTrace("Propagation state updating: {0} set to {1}", transactionEntry.Transaction.GetHash(), transactionEntry.State);
             this.ProcessTransaction(transactionEntry.Transaction, null, null, transactionEntry.State == State.Propagated);
         }
 

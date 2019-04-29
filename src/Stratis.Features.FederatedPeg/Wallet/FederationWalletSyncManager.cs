@@ -245,6 +245,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(transaction, nameof(transaction));
 
+            this.logger.LogTrace("About to process transaction coming in from mempool: {0}", transaction.GetHash());
+
             this.walletManager.ProcessTransaction(transaction);
         }
 
