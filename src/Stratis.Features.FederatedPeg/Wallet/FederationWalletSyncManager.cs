@@ -144,6 +144,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                     this.logger.LogInformation("Reorg detected, going back from '{0}' to '{1}'.", this.walletTip, fork);
 
+                    this.walletManager.RemoveTransientTransactions();
                     this.walletManager.RemoveBlocks(fork);
                     this.walletTip = fork;
 
