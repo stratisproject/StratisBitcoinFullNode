@@ -92,7 +92,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 depositId,
                 transaction.GetHash());
 
-            TxOut targetAddressOutput = transaction.Outputs.Single(this.IsTargetAddressCandidate);
+            TxOut targetAddressOutput = transaction.Outputs.SingleOrDefault(this.IsTargetAddressCandidate);
+            if (targetAddressOutput == null)
+                return null;
+
             var withdrawal = new Withdrawal(
                 uint256.Parse(depositId),
                 transaction.GetHash(),

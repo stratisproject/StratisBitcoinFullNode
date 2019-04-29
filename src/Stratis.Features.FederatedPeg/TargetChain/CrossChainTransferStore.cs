@@ -388,7 +388,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                         if (maturedDeposit.BlockInfo.BlockHeight != this.NextMatureDepositHeight)
                             continue;
 
-                        IReadOnlyList<IDeposit> deposits = maturedDeposit.Deposits;
+                        IReadOnlyList<IDeposit> deposits = maturedDeposit.Deposits.Where(d => d.TargetAddress != this.settings.MultiSigAddress.ToString()).ToList();
                         if (deposits.Count == 0)
                         {
                             this.NextMatureDepositHeight++;

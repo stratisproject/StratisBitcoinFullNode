@@ -641,5 +641,48 @@ namespace Stratis.Features.FederatedPeg.Tests
                 return JsonConvert.DeserializeObject<Q>(result);
             }
         }
+
+
+        /// <summary>
+        /// Recording deposits when the wallet UTXOs are sufficient succeeds with deterministic transactions.
+        /// </summary>
+        [Fact]
+        public void StoringDepositsWhenTargetIsMultisigIsIgnored()
+        {
+            var dataFolder = new DataFolder(CreateTestDir(this));
+
+            this.Init(dataFolder);
+            this.AddFunding();
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
+
+            MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
+
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
+            {
+                crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
+
+                WaitLoop(() => this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height);
+                Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
+
+                // Forwarding money already in the multisig address to the muultisig address is ignored.
+                BitcoinAddress address1 = multiSigAddress.RedeemScript.Hash.GetAddress(this.network);
+
+                var deposit1 = new Deposit(0, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+
+                MaturedBlockDepositsModel[] blockDeposits = new[] { new MaturedBlockDepositsModel(
+                    new MaturedBlockInfoModel() {
+                        BlockHash = 1,
+                        BlockHeight = crossChainTransferStore.NextMatureDepositHeight },
+                    new[] { deposit1 })
+                };
+
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
+
+                Transaction[] transactions = crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.Partial).GetAwaiter().GetResult().Values.ToArray();
+
+                Assert.Empty(transactions);
+            }
+        }
     }
 }
