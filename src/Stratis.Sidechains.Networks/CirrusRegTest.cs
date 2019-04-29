@@ -8,24 +8,27 @@ using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.SmartContracts.Networks.Policies;
 
-namespace Stratis.Sidechains.Networks.CirrusV2
+namespace Stratis.Sidechains.Networks
 {
+    /// <summary>
+    /// Right now, ripped nearly straight from <see cref="PoANetwork"/>.
+    /// </summary>
     public class CirrusRegTest : PoANetwork
     {
         public IList<Mnemonic> FederationMnemonics { get; }
 
         /// <summary> The name of the root folder containing the different federated peg blockchains.</summary>
-        private const string NetworkRootFolderName = "cirrus";
+        private const string NetworkRootFolderName = "fedpeg";
 
         /// <summary> The default name used for the federated peg configuration file. </summary>
-        private const string NetworkDefaultConfigFilename = "cirrus.conf";
+        private const string NetworkDefaultConfigFilename = "fedpeg.conf";
 
         // public IList<Mnemonic> FederationMnemonics { get; }
         public IList<Key> FederationKeys { get; private set; }
 
         internal CirrusRegTest()
         {
-            this.Name = nameof(CirrusRegTest);
+            this.Name = "CirrusRegTest";
             this.NetworkType = NetworkType.Regtest;
             this.CoinTicker = "TCRS";
             this.Magic = 0x522357C;
@@ -66,14 +69,19 @@ namespace Stratis.Sidechains.Networks.CirrusV2
 
             List<PubKey> federationPubKeys = this.FederationKeys.Select(k => k.PubKey).ToList();
 
+            var genesisFederationMembers = new List<IFederationMember>(federationPubKeys.Count);
+
+            foreach (PubKey pubKey in federationPubKeys)
+                genesisFederationMembers.Add(new CollateralFederationMember(pubKey, new Money(0), null));
+
             var consensusOptions = new PoAConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
-                federationPublicKeys: federationPubKeys,
-                targetSpacingSeconds: 4, // For integration tests - avoid FastMining
+                genesisFederationMembers: genesisFederationMembers,
+                targetSpacingSeconds: 16,
                 votingEnabled: false,
                 autoKickIdleMembers: false
             );
@@ -101,7 +109,7 @@ namespace Stratis.Sidechains.Networks.CirrusV2
                 bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
-                maxReorgLength: 240, // 2 loops of PoA members
+                maxReorgLength: 0, // No max reorg limit on PoA networks.
                 defaultAssumeValid: null,
                 maxMoney: Money.Coins(20_000_000),
                 coinbaseMaturity: 1,

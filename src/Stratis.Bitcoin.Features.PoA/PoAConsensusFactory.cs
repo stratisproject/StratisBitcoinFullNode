@@ -15,5 +15,15 @@ namespace Stratis.Bitcoin.Features.PoA
         {
             return new PoABlockHeader();
         }
+
+        // TODO later implement IBitcoinSerializable for IFederationMember and replace creation from bytes with creation of an empty federation member
+        public virtual IFederationMember CreateFederationMemberFromBytes(byte[] serializedBytes)
+        {
+            var key = new PubKey(serializedBytes);
+
+            IFederationMember federationMember = new FederationMember(key);
+
+            return federationMember;
+        }
     }
 }
