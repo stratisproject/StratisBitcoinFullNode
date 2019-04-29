@@ -668,16 +668,60 @@ namespace Stratis.Features.FederatedPeg.Wallet
             {
                 this.logger.LogTrace("Spending transaction ID '{0}' is being confirmed, updating. BlockHeight={1}", spendingTransactionId, blockHeight);
 
-                // Update the block height.
-                if (spentTransaction.SpendingDetails.BlockHeight == null && blockHeight != null)
-                {
-                    spentTransaction.SpendingDetails.BlockHeight = blockHeight;
-                }
+                // While we're reorging the silly cross chain transfer store may make new transactions.
+                // If it does this but a new transaction comes in a block we want to have the correct details.
 
-                // Update the block time to be that of the block in which the transaction is confirmed.
-                if (block != null)
+                // TODO: This whole method can be refactored if this works.
+
+                if (blockHeight != null)
                 {
-                    spentTransaction.SpendingDetails.CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time);
+                    List<PaymentDetails> payments = new List<PaymentDetails>();
+                    foreach (TxOut paidToOutput in paidToOutputs)
+                    {
+                        // Figure out how to retrieve the destination address.
+                        string destinationAddress = string.Empty;
+                        ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate(this.network);
+                        switch (scriptTemplate.Type)
+                        {
+                            // Pay to PubKey can be found in outputs of staking transactions.
+                            case TxOutType.TX_PUBKEY:
+                                PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(paidToOutput.ScriptPubKey);
+                                destinationAddress = pubKey.GetAddress(this.network).ToString();
+                                break;
+                            // Pay to PubKey hash is the regular, most common type of output.
+                            case TxOutType.TX_PUBKEYHASH:
+                                destinationAddress = paidToOutput.ScriptPubKey.GetDestinationAddress(this.network).ToString();
+                                break;
+                            case TxOutType.TX_NONSTANDARD:
+                            case TxOutType.TX_SCRIPTHASH:
+                                destinationAddress = paidToOutput.ScriptPubKey.GetDestinationAddress(this.network).ToString();
+                                break;
+                            case TxOutType.TX_MULTISIG:
+                            case TxOutType.TX_NULL_DATA:
+                            case TxOutType.TX_SEGWIT:
+                                break;
+                        }
+
+                        payments.Add(new PaymentDetails
+                        {
+                            DestinationScriptPubKey = paidToOutput.ScriptPubKey,
+                            DestinationAddress = destinationAddress,
+                            Amount = paidToOutput.Value
+                        });
+                    }
+
+                    SpendingDetails spendingDetails = new SpendingDetails
+                    {
+                        TransactionId = transaction.GetHash(),
+                        Payments = payments,
+                        CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? transaction.Time),
+                        BlockHeight = blockHeight,
+                        Hex = transaction.ToHex(),
+                        IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true
+                    };
+
+                    spentTransaction.SpendingDetails = spendingDetails;
+                    spentTransaction.MerkleProof = null;
                 }
             }
         }
