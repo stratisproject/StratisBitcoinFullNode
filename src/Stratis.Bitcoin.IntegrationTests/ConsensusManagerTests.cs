@@ -79,9 +79,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        public class FailValidation15 : FailValidation
+        public class FailValidation15_2 : FailValidation
         {
-            public FailValidation15() : base(15)
+            public FailValidation15_2() : base(15,2)
             {
             }
         }
@@ -93,25 +93,43 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
+        public class FailValidation11_2 : FailValidation
+        {
+            public FailValidation11_2() : base(11, 2)
+            {
+            }
+        }
+
         public class FailValidation : FullValidationConsensusRule
         {
-            private readonly int failheight;
-            private int failcount;
+            /// <summary>
+            /// Fail at this height if <see cref="failOnAttemptCount"/> is zero, otherwise decrement it.
+            /// </summary>
+            private readonly int failOnHeight;
 
-            public FailValidation(int failheight, int failcount = 1)
+            /// <summary>
+            /// The number of blocks at height <see cref="failOnHeight"/> that need to pass before an error is thrown.
+            /// </summary>
+            private int failOnAttemptCount;
+
+            public FailValidation(int failOnHeight, int failOnAttemptCount = 1)
             {
-                this.failheight = failheight;
-                this.failcount = failcount;
+                this.failOnHeight = failOnHeight;
+                this.failOnAttemptCount = failOnAttemptCount;
             }
 
             public override Task RunAsync(RuleContext context)
             {
-                if (this.failcount > 0)
+                if (this.failOnAttemptCount > 0)
                 {
-                    if (context.ValidationContext.ChainedHeaderToValidate.Height == this.failheight)
+                    if (context.ValidationContext.ChainedHeaderToValidate.Height == this.failOnHeight)
                     {
-                        this.failcount -= 1;
-                        throw new ConsensusErrorException(new ConsensusError("error", "error"));
+                        this.failOnAttemptCount -= 1;
+
+                        if (this.failOnAttemptCount == 0)
+                        {
+                            throw new ConsensusErrorException(new ConsensusError("ConsensusManagerTests-FailValidation-Error", "ConsensusManagerTests-FailValidation-Error"));
+                        }
                     }
                 }
 
@@ -298,7 +316,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var syncerNetwork = new BitcoinOverrideRegTest();
 
                 // Inject a rule that will fail at block 15 of the new chain.
-                syncerNetwork.Consensus.ConsensusRules.FullValidationRules.Insert(1, typeof(FailValidation15));
+                syncerNetwork.Consensus.ConsensusRules.FullValidationRules.Insert(1, typeof(FailValidation15_2));
 
                 var minerA = builder.CreateStratisPowNode(this.powNetwork, "cm-5-minerA").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
                 var minerB = builder.CreateStratisPowNode(this.powNetwork, "cm-5-minerB").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
@@ -343,7 +361,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var syncerNetwork = new BitcoinOverrideRegTest();
 
                 // Inject a rule that will fail at block 11 of the new chain
-                syncerNetwork.Consensus.ConsensusRules.FullValidationRules.Insert(1, typeof(FailValidation11));
+                syncerNetwork.Consensus.ConsensusRules.FullValidationRules.Insert(1, typeof(FailValidation11_2));
 
                 var minerA = builder.CreateStratisPowNode(this.powNetwork, "cm-6-minerA").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
                 var minerB = builder.CreateStratisPowNode(this.powNetwork, "cm-6-minerB").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
@@ -488,7 +506,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         /// <remarks>This test assumes CoinbaseMaturity is 10 and at block 2 there is a huge premine, adjust the test if this changes.</remarks>
-        [Fact(Skip = "Work in progress")]
+        [Fact()]
         public void ConsensusManager_Fork_Occurs_When_Stake_Coins_Are_Spent_And_Found_In_Rewind_Data()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
