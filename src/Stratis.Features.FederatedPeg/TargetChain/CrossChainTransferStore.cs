@@ -438,7 +438,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                 if (transaction != null)
                                 {
                                     // Reserve the UTXOs before building the next transaction.
-                                    walletUpdated |= this.federationWalletManager.ProcessTransaction(transaction, isPropagated: false);
+                                    walletUpdated |= this.federationWalletManager.ProcessTransaction(transaction);
 
                                     status = CrossChainTransferStatus.Partial;
                                 }

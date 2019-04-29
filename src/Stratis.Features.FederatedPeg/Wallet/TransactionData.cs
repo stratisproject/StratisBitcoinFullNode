@@ -52,13 +52,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         [JsonProperty(PropertyName = "hex", NullValueHandling = NullValueHandling.Ignore)]
         public string Hex { get; set; }
 
-        /// <summary>
-        /// Propagation state of this transaction.
-        /// </summary>
-        /// <remarks>Assume it's <c>true</c> if the field is <c>null</c>.</remarks>
-        [JsonProperty(PropertyName = "isPropagated", NullValueHandling = NullValueHandling.Ignore)]
-        public bool? IsPropagated { get; set; }
-
         [JsonProperty(PropertyName = "spendingDetails", NullValueHandling = NullValueHandling.Ignore)]
         public SpendingDetails SpendingDetails { get; set; }
 
