@@ -172,13 +172,13 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             }
         }
 
-        private VarString user_agent;
+        private VarString userAgentVarString;
 
         public string UserAgent
         {
             get
             {
-                return Encoders.ASCII.EncodeData(this.user_agent.GetString());
+                return Encoders.ASCII.EncodeData(this.userAgentVarString.GetString());
             }
 
             set
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
                 if (value.Length > MaxSubversionLength)
                     value = value.Substring(0, MaxSubversionLength);
 
-                this.user_agent = new VarString(Encoders.ASCII.DecodeData(value));
+                this.userAgentVarString = new VarString(Encoders.ASCII.DecodeData(value));
             }
         }
 
@@ -224,10 +224,10 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
                     }
 
                     stream.ReadWrite(ref this.nonce);
-                    stream.ReadWrite(ref this.user_agent);
+                    stream.ReadWrite(ref this.userAgentVarString);
                     if (this.version < 60002)
                     {
-                        if (this.user_agent.Length != 0)
+                        if (this.userAgentVarString.Length != 0)
                             throw new FormatException("Should not find user agent for current version " + this.version);
                     }
 

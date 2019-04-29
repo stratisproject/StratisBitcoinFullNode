@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Base
         /// <summary>A provider of the date and time.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>Lock object to protect access to <see cref="invalidBlockHashesExpirations"/> and <see cref="orderedHashList"/>.</summary>
+        /// <summary>Lock object to protect access to <see cref="invalidBlockHashesExpirations"/> and <see cref="OrderedHashList"/>.</summary>
         private readonly object lockObject = new object();
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Base
         /// All access to this object has to be protected by <see cref="lockObject"/>.
         /// <para>The field is internal for testing purposes.</para>
         /// </remarks>
-        internal readonly CircularArray<uint256> orderedHashList;
+        internal CircularArray<uint256> OrderedHashList { get; private set; }
 
         /// <summary>
         /// Initializes the instance of the object.
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Base
             this.dateTimeProvider = dateTimeProvider;
 
             this.invalidBlockHashesExpirations = new Dictionary<uint256, DateTime?>(capacity);
-            this.orderedHashList = new CircularArray<uint256>(capacity);
+            this.OrderedHashList = new CircularArray<uint256>(capacity);
         }
 
         /// <inheritdoc />
@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Base
                     // We start by adding the new entry to the queue, which will possibly remove the oldest entry if the capacity is reached.
                     // If capacity has not been reached, there is nothing more to do with the queue.
                     uint256 oldestEntry;
-                    if (this.orderedHashList.Add(hashBlock, out oldestEntry))
+                    if (this.OrderedHashList.Add(hashBlock, out oldestEntry))
                     {
                         // Then we check the dictionary whether it contains the removed entry.
                         // If not, we remove the next entry from the queue, if there is any,
@@ -139,10 +139,10 @@ namespace Stratis.Bitcoin.Base
                         // for the entry we just added.
                         while (!this.invalidBlockHashesExpirations.Remove(oldestEntry))
                         {
-                            if (this.orderedHashList.Count == 1)
+                            if (this.OrderedHashList.Count == 1)
                                 break;
 
-                            this.orderedHashList.RemoveFirst(out oldestEntry);
+                            this.OrderedHashList.RemoveFirst(out oldestEntry);
                         }
                     }
 

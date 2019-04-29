@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Tests.Base
             // Then we add a new hash, which should remove the four hashes from the circular array as well.
             invalidBlockHashStore.MarkInvalid(uint256.Parse("0000000000000000000000000000000000000000000000000000000000000031"));
 
-            Assert.Equal(6, invalidBlockHashStore.orderedHashList.Count);
+            Assert.Equal(6, invalidBlockHashStore.OrderedHashList.Count);
         }
 
         /// <summary>
@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.Tests.Base
                 Assert.False(invalidBlockHashStore.IsInvalid(hash));
 
             // Check the number of entries is now 1.
-            Assert.Equal(1, invalidBlockHashStore.orderedHashList.Count);
+            Assert.Equal(1, invalidBlockHashStore.OrderedHashList.Count);
 
             // Check the last entry is banned.
             Assert.True(invalidBlockHashStore.IsInvalid(lastHash));
