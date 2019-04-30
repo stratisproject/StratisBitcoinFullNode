@@ -324,8 +324,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             lock (this.lockObject)
             {
-                this.RemoveTransientTransactions();
-
                 bool walletUpdated = false;
                 foreach (Transaction transaction in block.Transactions.Where(t => !(t.IsCoinBase && t.TotalOut == Money.Zero)))
                 {
