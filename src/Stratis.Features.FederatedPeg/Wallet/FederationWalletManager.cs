@@ -116,7 +116,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         // we keep a couple of objects in memory:
         // 1. the list of unspent outputs for checking whether inputs from a transaction are being spent by our wallet and
         // 2. the list of addresses contained in our wallet for checking whether a transaction is being paid to the wallet.
-        private readonly Dictionary<OutPoint, TransactionData> outpointLookup;
+        private Dictionary<OutPoint, TransactionData> outpointLookup;
         //    internal Dictionary<Script, MultiSigAddress> multiSigKeysLookup;
 
         // Gateway settings picked up from the node config.
@@ -302,6 +302,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     transactionData.SpendingDetails = null;
 
                 this.UpdateLastBlockSyncedHeight(fork);
+
+                this.RefreshInputKeysLookupLock();
             }
         }
 
@@ -743,6 +745,23 @@ namespace Stratis.Features.FederatedPeg.Wallet
             lock (this.lockObject)
             {
                 this.outpointLookup.Remove(new OutPoint(transactionData.Id, transactionData.Index));
+            }
+        }
+
+        private void RefreshInputKeysLookupLock()
+        {
+            lock (this.lockObject)
+            {
+                this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
+
+                // Get the UTXOs that are unspent or spent but not confirmed.
+                // We only exclude from the list the confirmed spent UTXOs.
+                foreach (TransactionData transaction in this.Wallet.MultiSigAddress.Transactions.Where(t => t.SpendingDetails?.BlockHeight == null))
+                {
+                    this.outpointLookup[new OutPoint(transaction.Id, transaction.Index)] = transaction;
+                }
+                
+                
             }
         }
 
