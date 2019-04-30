@@ -305,11 +305,11 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 targetHeight = targetHeight ?? (currentHeight - 1);
 
-                Guard.Assert(targetHeight < currentHeight);
+                Guard.Assert(targetHeight >= 0 && targetHeight < currentHeight);
 
                 transaction.SynchronizeTables("BlockHash", "Coins", "Rewind");
 
-                if (targetHeight <= 0)
+                if (targetHeight == 0)
                 {
                     transaction.RemoveAllKeys("Coins", true);
                     transaction.RemoveAllKeys("Rewind", true);
@@ -318,13 +318,13 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 }
                 else
                 {
+                    transaction.ValuesLazyLoadingIsOn = false;
+
                     var keysToRemove = new List<int>();
                     var changes = new Dictionary<uint256, Coins>();
 
-                    while (currentHeight > targetHeight)
+                    for (;  currentHeight > targetHeight; currentHeight--)
                     {
-                        transaction.ValuesLazyLoadingIsOn = false;
-
                         Row<int, byte[]> firstRow = transaction.Select<int, byte[]>("Rewind", currentHeight);
                         var rewindData = this.dBreezeSerializer.Deserialize<RewindData>(firstRow.Value);
                         keysToRemove.Add(firstRow.Key);
@@ -342,8 +342,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         }
 
                         res = rewindData.PreviousBlockHash;
-
-                        currentHeight--;
                     }
 
                     var byteListComparer = new ByteListComparer();
