@@ -675,6 +675,15 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 if (blockHeight != null)
                 {
+                    // If the transaction that was there before is different, remove it. It was most likely created during reorg.
+                    if (spendingTransactionId != spentTransaction.SpendingDetails.TransactionId)
+                    {
+                        this.logger.LogTrace("Replacing spending transation {0} with {1}", spentTransaction.SpendingDetails.TransactionId, spendingTransactionId);
+                        TransactionData toRemoveTransactionData = this.Wallet.MultiSigAddress.Transactions.First(x => x.Id == spentTransaction.SpendingDetails.TransactionId);
+                        Transaction toRemoveTransaction = toRemoveTransactionData.GetFullTransaction(this.network);
+                        this.RemoveTransaction(toRemoveTransaction);
+                    }
+
                     List<PaymentDetails> payments = new List<PaymentDetails>();
                     foreach (TxOut paidToOutput in paidToOutputs)
                     {
