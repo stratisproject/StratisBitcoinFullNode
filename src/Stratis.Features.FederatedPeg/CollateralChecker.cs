@@ -15,7 +15,14 @@ using Stratis.Bitcoin.Signals;
 namespace Stratis.Features.FederatedPeg
 {
     /// <summary>Class that checks if federation members fulfill the collateral requirement.</summary>
-    public class CollateralChecker : IDisposable
+    public interface ICollateralChecker : IDisposable
+    {
+        Task InitializeAsync();
+
+        bool CheckCollateral(IFederationMember federationMember);
+    }
+
+    public class CollateralChecker : ICollateralChecker
     {
         private readonly IBlockStoreClient blockStoreClient;
 

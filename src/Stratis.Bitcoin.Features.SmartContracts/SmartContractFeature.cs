@@ -54,7 +54,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             if (this.network.Consensus.IsProofOfStake)
                 Guard.Assert(this.network.Consensus.ConsensusFactory is SmartContractPosConsensusFactory);
             else
-                Guard.Assert(this.network.Consensus.ConsensusFactory is SmartContractPowConsensusFactory || this.network.Consensus.ConsensusFactory is SmartContractPoAConsensusFactory);
+                Guard.Assert(this.network.Consensus.ConsensusFactory is SmartContractPowConsensusFactory
+                             || this.network.Consensus.ConsensusFactory is SmartContractPoAConsensusFactory
+                             || this.network.Consensus.ConsensusFactory is SmartContractCollateralPoAConsensusFactory);
 
             this.stateRoot.SyncToRoot(((ISmartContractBlockHeader)this.consensusManager.Tip.Header).HashStateRoot.ToBytes());
 
