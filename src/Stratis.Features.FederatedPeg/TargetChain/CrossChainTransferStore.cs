@@ -402,9 +402,21 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                         for (int i = 0; i < deposits.Count; i++)
                         {
+                            if (transfers[i] != null && transfers[i].DepositTransactionId != deposits[i].Id)
+                            {
+                                this.logger.LogTrace("DepositId={0}, TransferId={1}", deposits[i].Id, transfers[i].DepositTransactionId);
+                                throw new Exception("Deposit and transfer don't match.");
+                            }
+
                             // Only do work for non-existing or suspended transfers.
                             if (transfers[i] != null && transfers[i].Status != CrossChainTransferStatus.Suspended)
                             {
+                                if (haveSuspendedTransfers)
+                                {
+                                    // If there were earlier Suspended though, we need to suspend later ones too and remove their UTXOs.
+                                    tracker.SetTransferStatus(transfers[i], CrossChainTransferStatus.Suspended);
+                                    this.federationWalletManager.RemoveTransientTransactions(deposits[i].Id);
+                                }
                                 continue;
                             }
 

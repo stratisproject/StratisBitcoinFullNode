@@ -155,7 +155,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
             catch (Exception e)
             {
-                this.logger.LogTrace(e.ToString());
+                this.logger.LogError(e.ToString());
                 throw e;
             }
         }
