@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             this.coinView = coinView;
         }
 
-        public void RegisterRules_(IConsensus consensus)
+        public static void RegisterRules(IConsensus consensus)
         {
             consensus.ConsensusRules.HeaderValidationRules = new List<Type>()
             {
@@ -72,10 +72,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
                 typeof(CheckPowTransactionRule),
                 typeof(CheckSigOpsRule),
                 typeof(AllowedScriptTypeRule),
-                typeof(ContractTransactionPartialValidationRule)
-                //{
-                //    new SmartContractFormatLogic() // TODO: fix this
-                //})
+                typeof(ContractTransactionPartialValidationRule) // dependency on SmartContractFormatLogic
             };
 
             consensus.ConsensusRules.FullValidationRules = new List<Type>()
