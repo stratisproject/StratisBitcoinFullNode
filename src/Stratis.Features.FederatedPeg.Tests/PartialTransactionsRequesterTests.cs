@@ -57,7 +57,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             await partialRequester.BroadcastPartialTransactionsAsync();
 
-            await this.store.Received(0).GetTransactionsByStatusAsync(Arg.Any<CrossChainTransferStatus>());
+            this.store.Received(0).GetTransfersByStatus(Arg.Any<CrossChainTransferStatus[]>());
         }
 
         [Fact]
@@ -77,7 +77,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             await partialRequester.BroadcastPartialTransactionsAsync();
 
-            await this.store.Received(0).GetTransactionsByStatusAsync(Arg.Any<CrossChainTransferStatus>());
+            this.store.Received(0).GetTransfersByStatus(Arg.Any<CrossChainTransferStatus[]>());
         }
     }
 }

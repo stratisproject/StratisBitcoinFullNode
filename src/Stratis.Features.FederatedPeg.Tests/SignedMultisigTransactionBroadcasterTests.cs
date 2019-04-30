@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -102,9 +101,9 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.federationGatewaySettings.PublicKey.Returns(PublicKey);
 
-            var emptyTransactionPair = new Dictionary<uint256, Transaction>();
+            var emptyTransactionPair = new CrossChainTransfer[0];
 
-            this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).Returns(emptyTransactionPair);
+            this.store.GetTransfersByStatus(new[]{CrossChainTransferStatus.FullySigned}).Returns(emptyTransactionPair);
 
             var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
                 this.asyncProvider,
@@ -118,7 +117,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
 
-            await this.store.Received().GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).ConfigureAwait(false);
+            this.store.Received().GetTransfersByStatus(Arg.Any<CrossChainTransferStatus[]>());
 
             await this.broadcasterManager.DidNotReceive().BroadcastTransactionAsync(Arg.Any<Transaction>());
 
@@ -134,12 +133,16 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.federationGatewaySettings.PublicKey.Returns(PublicKey);
 
-            var transactionPair = new Dictionary<uint256, Transaction>
+            var partial = new Transaction();
+            var xfer = new CrossChainTransfer();
+            xfer.SetPartialTransaction(partial);
+
+            var transactionPair = new CrossChainTransfer[]
             {
-                { new uint256(), new Transaction() }
+                xfer
             };
 
-            this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).Returns(transactionPair);
+            this.store.GetTransfersByStatus(Arg.Any<CrossChainTransferStatus[]>()).Returns(transactionPair);
 
             var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
                 this.asyncProvider,
@@ -152,7 +155,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.federationWalletManager);
 
             await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
-            await this.store.Received().GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).ConfigureAwait(false);
+            this.store.Received().GetTransfersByStatus(Arg.Any<CrossChainTransferStatus[]>());
             await this.broadcasterManager.Received(1).BroadcastTransactionAsync(Arg.Any<Transaction>());
         }
 
@@ -173,7 +176,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
 
-            await this.store.Received(0).GetTransactionsByStatusAsync(Arg.Any<CrossChainTransferStatus>());
+            this.store.Received(0).GetTransfersByStatus(Arg.Any<CrossChainTransferStatus[]>());
         }
 
         [Fact]
@@ -193,7 +196,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
 
-            await this.store.Received(0).GetTransactionsByStatusAsync(Arg.Any<CrossChainTransferStatus>());
+            this.store.Received(0).GetTransfersByStatus(Arg.Any<CrossChainTransferStatus[]>());
         }
 
         public void Dispose()
