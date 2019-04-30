@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     {
                         this.CheckInputs(tx, view, index.Height);
 
-                        if (!tx.IsCoinStake)
+                        if (!this.Consensus.IsProofOfStake || !tx.IsCoinStake)
                             fees += view.GetValueIn(tx) - tx.TotalOut;
 
                         var txData = new PrecomputedTransactionData(tx);
