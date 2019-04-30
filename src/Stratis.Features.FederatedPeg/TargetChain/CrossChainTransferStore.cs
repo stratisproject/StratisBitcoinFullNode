@@ -920,6 +920,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <inheritdoc />
+        [Obsolete("This doesn't lock when validating cross chain transfers. Don't use.")]
         public Task<ICrossChainTransfer[]> GetAsync(uint256[] depositIds)
         {
             return Task.Run(() =>
@@ -1007,19 +1008,29 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <inheritdoc />
-        public ICrossChainTransfer[] GetTransfersByStatus(CrossChainTransferStatus[] statuses)
+        public ICrossChainTransfer[] GetTransfersByStatus(CrossChainTransferStatus[] statuses, bool sort = false)
         {
-            return this.GetTransfersByStatus(statuses, false, false);
+            return this.GetTransfersByStatus(statuses, sort, false);
         }
 
         /// <inheritdoc />
-        public Task<Dictionary<uint256, Transaction>> GetTransactionsByStatusAsync(CrossChainTransferStatus status, bool sort = false)
+        public ICrossChainTransfer[] QueryTransfersByStatus(CrossChainTransferStatus[] statuses)
         {
-            return Task.Run(() =>
-            {
-                ICrossChainTransfer[] res = this.GetTransfersByStatus(new[] { status }, sort);
-                return res.Where(t => t.PartialTransaction != null).ToDictionary(t => t.DepositTransactionId, t => t.PartialTransaction);
-            });
+            var depositIds = new HashSet<uint256>();
+
+            foreach (CrossChainTransferStatus status in statuses)
+                depositIds.UnionWith(this.depositsIdsByStatus[status]);
+
+            uint256[] partialTransferHashes = depositIds.ToArray();
+            ICrossChainTransfer[] partialTransfers = this.Get(partialTransferHashes).Where(t => t != null).ToArray();
+
+            return partialTransfers;
+        }
+
+        /// <inheritdoc />
+        public ICrossChainTransfer[] QueryTransfersById(uint256[] depositIds)
+        {
+            return this.Get(depositIds);
         }
 
         /// <summary>Persist the cross-chain transfer information into the database.</summary>
