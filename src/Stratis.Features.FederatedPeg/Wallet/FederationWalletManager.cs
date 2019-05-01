@@ -384,6 +384,23 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     }
                 }
 
+                // Check if we're trying to spend a utxo twice
+                foreach (TxIn input in transaction.Inputs)
+                {
+                    if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData tTx))
+                    {
+                        continue;
+                    }
+
+                    // If we're trying to spend an input that is already spent, and it's not coming in a new block, don't reserve.
+                    TransactionData spentTransaction = this.Wallet.MultiSigAddress.Transactions.Single(t => (t.Id == tTx.Id) && (t.Index == tTx.Index));
+                    if (blockHeight == null && spentTransaction.SpendingDetails?.BlockHeight != null)
+                    {
+                        return false;
+                    }
+
+                }
+
                 // Check the outputs.
                 foreach (TxOut utxo in transaction.Outputs)
                 {
