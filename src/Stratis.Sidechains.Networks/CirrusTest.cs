@@ -42,13 +42,13 @@ namespace Stratis.Sidechains.Networks
             var consensusFactory = new SmartContractCollateralPoAConsensusFactory();
 
             // Create the genesis block.
-            this.GenesisTime = 1544113232;
-            this.GenesisNonce = 56989;
+            this.GenesisTime = 1556631753;
+            this.GenesisNonce = 146421;
             this.GenesisBits = new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000"));
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
 
-            string coinbaseText = "https://news.bitcoin.com/markets-update-cryptocurrencies-shed-billions-in-bloody-sell-off/";
+            string coinbaseText = "https://github.com/stratisproject/StratisBitcoinFullNode/tree/master/src/Stratis.CirrusD";
             Block genesisBlock = CirrusNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward, coinbaseText);
 
             this.Genesis = genesisBlock;
@@ -58,11 +58,13 @@ namespace Stratis.Sidechains.Networks
             // and should be the same for all nodes operating on this network.
             var genesisFederationMembers = new List<IFederationMember>()
             {
-                new CollateralFederationMember(new PubKey("03e89abd3c9e791f4fb13ced638457c85beb4aff74d37b3fe031cd888f0f92989e"), new Money(0), null), // I
-                new CollateralFederationMember(new PubKey("026b7b9092828f3bf9e73995bfa3547c3bcd3814f8101fac626b8349d9a6f0e534"), new Money(0), null), // J
-                new CollateralFederationMember(new PubKey("02a8a565bf3c675aee4eb8585771c7517e358708faee4f9db2ed7502d7f9dae740"), new Money(0), null), // L
-                new CollateralFederationMember(new PubKey("0248de019680c6f18e434547c8c9d48965b656b8e5e70c5a5564cfb1270db79a11"), new Money(0), null), // M
-                new CollateralFederationMember(new PubKey("034bd1a94b0ae315f584ecd22b2ad8fa35056cc70862f33e3e08286f3bbe2207c4"), new Money(0), null), // P
+                new CollateralFederationMember(new PubKey("021040ef28c82fcffb63028e69081605ed4712910c8384d5115c9ffeacd9dbcae4"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("0244290a31824ba7d53e59c7a29d13dbeca15a9b0d36fdd4d28fce426753107bfc"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("032df4a2d62c0db12cd1d66201819a10788637c9b90a1cd2a5a3f5196fdab7a621"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("028ed190eb4ed6e46440ac6af21d8a67a537bd1bd7edb9cc5177d36d5a0972244d"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("02ff9923324399a188daf4310825a85dd3b89e2301d0ad073295b6f33ae1c72f7a"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("03dfcbf94ead22922e1a193d7f0a153e0f3f17c4107dc4a036e9827c5e57e6dd92"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("02e10b42299da11526985bd213d15d8151ec553b58e8f6425eb94e9def5da1bb47"), new Money(0), null),
             };
 
             var consensusOptions = new PoAConsensusOptions(
@@ -123,8 +125,8 @@ namespace Stratis.Sidechains.Networks
 
             // Same as current smart contracts test networks to keep tests working
             this.Base58Prefixes = new byte[12][];
-            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { 55 }; // P
-            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { 117 }; // p
+            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { 127 }; // t
+            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { 137 }; // x
             this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (239) };
             this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC] = new byte[] { 0x01, 0x42 };
             this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC] = new byte[] { 0x01, 0x43 };
@@ -148,8 +150,8 @@ namespace Stratis.Sidechains.Networks
 
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
 
-            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x00008460b940e3e9c7415a07a54cb569a9f69adf790961f11de0c42aa6470708"));
-            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0xb68311ebfee717754de683570de6e792a2149776381ed49df9cdf3383e59749d"));
+            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0000af9ab2c8660481328d0444cf167dfd31f24ca2dbba8e5e963a2434cffa93"));
+            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("cf8ce1419bbc4870b7d4f1c084534d91126dd3283b51ec379e0a20e27bd23633"));
         }
     }
 }
