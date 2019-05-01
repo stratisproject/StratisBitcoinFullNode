@@ -389,7 +389,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         continue;
                     }
 
-                    // If we're trying to spend an input that is already spent, and it's not coming in a new block, don't reserve the transaction.
+                    // If we're trying to spend an input that is already spent, and it's not coming in a new block, don't reserve the transaction. 
+                    // This would be the case when blocks are synced in between CrossChainTransferStore calling
+                    // FederationWalletTransactionHandler.BuildTransaction and FederationWalletManager.ProcessTransaction.
+
                     // TODO: Do we need to get the transaction from the wallet rather than using tTx? Copying the other method approaches.
                     TransactionData spentTransaction = this.Wallet.MultiSigAddress.Transactions.Single(t => (t.Id == tTx.Id) && (t.Index == tTx.Index));
                     if (blockHeight == null && spentTransaction.SpendingDetails?.BlockHeight != null)
