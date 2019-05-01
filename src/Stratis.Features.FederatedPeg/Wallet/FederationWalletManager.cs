@@ -394,8 +394,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     // FederationWalletTransactionHandler.BuildTransaction and FederationWalletManager.ProcessTransaction.
 
                     // TODO: Do we need to get the transaction from the wallet rather than using tTx? Copying the other method approaches.
-                    TransactionData spentTransaction = this.Wallet.MultiSigAddress.Transactions.Single(t => (t.Id == tTx.Id) && (t.Index == tTx.Index));
-                    if (blockHeight == null && spentTransaction.SpendingDetails?.BlockHeight != null)
+                    if (blockHeight == null && tTx.SpendingDetails?.BlockHeight != null)
                     {
                         return false;
                     }
