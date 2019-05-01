@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public override void OnInitialize()
+        protected override void OnInitialize()
         {
             this.MaxOutboundConnections = this.ConnectionSettings.AddNode.Count;
 
@@ -59,14 +59,14 @@ namespace Stratis.Bitcoin.P2P
 
         /// <inheritdoc/>
         [NoTrace]
-        public override void OnStartConnect()
+        protected override void OnStartConnect()
         {
             this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
         }
 
         /// <inheritdoc/>
         [NoTrace]
-        public override TimeSpan CalculateConnectionInterval()
+        protected override TimeSpan CalculateConnectionInterval()
         {
             return TimeSpans.Second;
         }
@@ -82,8 +82,8 @@ namespace Stratis.Bitcoin.P2P
                     if (this.NodeLifetime.ApplicationStopping.IsCancellationRequested)
                         return;
 
-                    PeerAddress peerAddress = this.PeerAddressManager.FindPeer(ipEndpoint);
-                    if (peerAddress != null && !this.IsPeerConnected(peerAddress.Endpoint))
+                    PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
+                    if (peerAddress != null)
                     {
                         this.logger.LogDebug("Attempting connection to {0}.", peerAddress.Endpoint);
 

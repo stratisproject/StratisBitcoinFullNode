@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<IPoAMiner, PoAMiner>();
                         services.AddSingleton<MinerSettings>();
                         services.AddSingleton<PoAMinerSettings>();
-                        services.AddSingleton<SlotsManager>();
+                        services.AddSingleton<ISlotsManager, SlotsManager>();
                         services.AddSingleton<BlockDefinition, PoABlockDefinition>();
                     });
             });

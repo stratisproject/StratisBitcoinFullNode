@@ -1,6 +1,4 @@
-﻿using System.Text;
-using System.Threading;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Stratis.Bitcoin.AsyncWork;
 
 namespace Stratis.Bitcoin.Controllers

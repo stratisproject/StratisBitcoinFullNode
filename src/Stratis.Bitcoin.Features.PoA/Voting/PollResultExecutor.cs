@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         public void AddFederationMember(byte[] federationMemberBytes)
         {
-            IFederationMember federationMember = this.consensusFactory.CreateFederationMemberFromBytes(federationMemberBytes);
+            IFederationMember federationMember = this.consensusFactory.DeserializeFederationMember(federationMemberBytes);
 
             this.logger.LogInformation("Adding new fed member: '{0}'.", federationMember);
             this.federationManager.AddFederationMember(federationMember);
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         public void RemoveFederationMember(byte[] federationMemberBytes)
         {
-            IFederationMember federationMember = this.consensusFactory.CreateFederationMemberFromBytes(federationMemberBytes);
+            IFederationMember federationMember = this.consensusFactory.DeserializeFederationMember(federationMemberBytes);
 
             this.logger.LogInformation("Kicking fed member: '{0}'.", federationMember);
             this.federationManager.RemoveFederationMember(federationMember);

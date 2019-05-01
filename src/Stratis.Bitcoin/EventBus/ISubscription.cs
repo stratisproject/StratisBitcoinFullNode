@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Stratis.Bitcoin.EventBus
+﻿namespace Stratis.Bitcoin.EventBus
 {
     public interface ISubscription
     {
