@@ -298,7 +298,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.send_api_get_request($"{AddnodeUri}?endpoint={this.secondStratisPowApiNode.Endpoint.ToString()}&command=onetry");
             this.responseText.Should().Be("true");
 
-            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.firstStratisPowApiNode, this.secondStratisPowApiNode));
+            TestBase.WaitLoop(() => TestHelper.AreNodesSynced(this.firstStratisPowApiNode, this.secondStratisPowApiNode));
         }
 
         private void calling_block()

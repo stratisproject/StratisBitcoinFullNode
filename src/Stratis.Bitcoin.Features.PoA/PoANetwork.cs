@@ -68,14 +68,14 @@ namespace Stratis.Bitcoin.Features.PoA
 
             this.Genesis = genesisBlock;
 
-            // Configure federation public keys.
+            // Configure federation.
             // Keep in mind that order in which keys are added to this list is important
             // and should be the same for all nodes operating on this network.
-            var federationPublicKeys = new List<PubKey>()
+            var genesisFederationMembers = new List<IFederationMember>()
             {
-                new PubKey("03025fcadedd28b12665de0542c8096f4cd5af8e01791a4d057f67e2866ca66ba7"),
-                new PubKey("027724a9ecc54417ff0250c3355d300cee008747b630f43e791cd02c2b35294d2f"),
-                new PubKey("022f8ad1799fd281fc9519814d20a407ed120ba84ec24cca8e869b811e6f6d4590")
+                new FederationMember(new PubKey("03025fcadedd28b12665de0542c8096f4cd5af8e01791a4d057f67e2866ca66ba7")),
+                new FederationMember(new PubKey("027724a9ecc54417ff0250c3355d300cee008747b630f43e791cd02c2b35294d2f")),
+                new FederationMember(new PubKey("022f8ad1799fd281fc9519814d20a407ed120ba84ec24cca8e869b811e6f6d4590"))
             };
 
             var consensusOptions = new PoAConsensusOptions(
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
-                federationPublicKeys: federationPublicKeys,
+                genesisFederationMembers: genesisFederationMembers,
                 targetSpacingSeconds: 16,
                 votingEnabled: true,
                 autoKickIdleMembers: false
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Features.PoA
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0621b88fb7a99c985d695be42e606cb913259bace2babe92970547fa033e4076"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x9928b372fd9e4cf62a31638607344c03c48731ba06d24576342db9c8591e1432"));
 
-            if ((this.ConsensusOptions.GenesisFederationPublicKeys == null) || (this.ConsensusOptions.GenesisFederationPublicKeys.Count == 0))
+            if ((this.ConsensusOptions.GenesisFederationMembers == null) || (this.ConsensusOptions.GenesisFederationMembers.Count == 0))
             {
                 throw new Exception("No keys for initial federation are configured!");
             }

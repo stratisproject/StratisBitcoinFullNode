@@ -27,7 +27,7 @@ namespace Stratis.CirrusD
         {
             try
             {
-                var nodeSettings = new NodeSettings(networksSelector: FederatedPegNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+                var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
                 IFullNode node = GetFederatedPegFullNode(nodeSettings);
 
@@ -49,6 +49,7 @@ namespace Stratis.CirrusD
                 .AddSmartContracts(options =>
                 {
                     options.UseReflectionExecutor();
+                    options.UsePoAWhitelistedContracts();
                 })
                 .UseSmartContractPoAConsensus()
                 .UseSmartContractPoAMining()

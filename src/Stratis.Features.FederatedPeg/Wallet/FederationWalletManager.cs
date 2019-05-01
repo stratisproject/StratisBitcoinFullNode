@@ -10,7 +10,6 @@ using NBitcoin.Policy;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
@@ -89,9 +88,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <summary>An object capable of storing <see cref="FederationWallet"/>s to the file system.</summary>
         private readonly FileStorage<FederationWallet> fileStorage;
 
-        /// <summary>The broadcast manager.</summary>
-        private readonly IBroadcasterManager broadcasterManager;
-
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
@@ -132,8 +128,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
             IFederationGatewaySettings federationGatewaySettings,
-            IWithdrawalExtractor withdrawalExtractor,
-            IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node broadcasted
+            IWithdrawalExtractor withdrawalExtractor)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
@@ -155,23 +150,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.asyncProvider = asyncProvider;
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<FederationWallet>(dataFolder.WalletPath);
-            this.broadcasterManager = broadcasterManager;
             this.dateTimeProvider = dateTimeProvider;
             this.federationGatewaySettings = federationGatewaySettings;
             this.withdrawalExtractor = withdrawalExtractor;
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
             this.isFederationActive = false;
-
-            // register events
-            if (this.broadcasterManager != null)
-            {
-                this.broadcasterManager.TransactionStateChanged += this.BroadcasterManager_TransactionStateChanged;
-            }
-        }
-
-        private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
-        {
-            this.ProcessTransaction(transactionEntry.Transaction, null, null, transactionEntry.State == State.Propagated);
         }
 
         public void Start()
@@ -208,9 +191,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public void Stop()
         {
-            if (this.broadcasterManager != null)
-                this.broadcasterManager.TransactionStateChanged -= this.BroadcasterManager_TransactionStateChanged;
-
             this.asyncLoop?.Dispose();
             this.SaveWallet();
         }
@@ -286,6 +266,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public void RemoveBlocks(ChainedHeader fork)
         {
             Guard.NotNull(fork, nameof(fork));
+
+            this.logger.LogTrace("Removing blocks back to height {0} from {1}", fork.Height, this.LastBlockHeight());
 
             lock (this.lockObject)
             {
@@ -366,7 +348,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 bool walletUpdated = false;
                 foreach (Transaction transaction in block.Transactions.Where(t => !(t.IsCoinBase && t.TotalOut == Money.Zero)))
                 {
-                    bool trxFound = this.ProcessTransaction(transaction, chainedHeader.Height, block, true);
+                    bool trxFound = this.ProcessTransaction(transaction, chainedHeader.Height, block);
                     if (trxFound)
                     {
                         walletUpdated = true;
@@ -386,7 +368,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <inheritdoc />
-        public bool ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null, bool isPropagated = true)
+        public bool ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null)
         {
             Guard.NotNull(transaction, nameof(transaction));
             uint256 hash = transaction.GetHash();
@@ -408,11 +390,17 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     // Exit if already present and included in a block.
                     List<(Transaction, TransactionData, IWithdrawal)> walletData = this.FindWithdrawalTransactions(withdrawal.DepositId);
                     if ((walletData.Count == 1) && (walletData[0].Item2.BlockHeight != null))
+                    {
+                        this.logger.LogTrace("Deposit {0} Already included in block.", withdrawal.DepositId);
                         return false;
+                    }
 
                     // Remove this to prevent duplicates if the transaction hash has changed.
                     if (walletData.Count != 0)
+                    {
+                        this.logger.LogTrace("Removing duplicates for {0}", withdrawal.DepositId);
                         this.RemoveTransientTransactions(withdrawal.DepositId);
+                    }
                 }
 
                 // Check the outputs.
@@ -421,7 +409,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     // Check if the outputs contain one of our addresses.
                     if (this.Wallet.MultiSigAddress.ScriptPubKey == utxo.ScriptPubKey)
                     {
-                        this.AddTransactionToWallet(transaction, utxo, blockHeight, block, isPropagated);
+                        this.AddTransactionToWallet(transaction, utxo, blockHeight, block);
                         foundReceivingTrx = true;
                     }
                 }
@@ -474,8 +462,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             return foundSendingTrx || foundReceivingTrx;
         }
 
-        /// <inheritdoc />
-        public bool RemoveTransaction(Transaction transaction)
+        private bool RemoveTransaction(Transaction transaction)
         {
             Guard.NotNull(transaction, nameof(transaction));
             uint256 hash = transaction.GetHash();
@@ -494,6 +481,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 TransactionData spentTransaction = this.Wallet.MultiSigAddress.Transactions.SingleOrDefault(t => (t.Id == tTx.Id) && (t.Index == tTx.Index));
                 if (spentTransaction != null)
                 {
+                    this.logger.LogTrace("Unspending {0}-{1}", spentTransaction.Id, spentTransaction.Index);
+
                     spentTransaction.SpendingDetails = null;
                     spentTransaction.MerkleProof = null;
                     updatedWallet = true;
@@ -511,6 +500,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     TransactionData foundTransaction = this.Wallet.MultiSigAddress.Transactions.FirstOrDefault(t => (t.Id == hash) && (t.Index == index));
                     if (foundTransaction != null)
                     {
+                        this.logger.LogTrace("Removing UTXO {0}-{1}", foundTransaction.Id, foundTransaction.Index);
+
                         this.RemoveInputKeysLookupLock(foundTransaction);
                         this.Wallet.MultiSigAddress.Transactions.Remove(foundTransaction);
                         updatedWallet = true;
@@ -552,7 +543,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <param name="blockHeight">Height of the block.</param>
         /// <param name="block">The block containing the transaction to add.</param>
         /// <param name="isPropagated">Propagation state of the transaction.</param>
-        private void AddTransactionToWallet(Transaction transaction, TxOut utxo, int? blockHeight = null, Block block = null, bool isPropagated = true)
+        private void AddTransactionToWallet(Transaction transaction, TxOut utxo, int? blockHeight = null, Block block = null)
         {
             Guard.NotNull(transaction, nameof(transaction));
             Guard.NotNull(utxo, nameof(utxo));
@@ -569,7 +560,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
             TransactionData foundTransaction = this.Wallet.MultiSigAddress.Transactions.FirstOrDefault(t => (t.Id == transactionHash) && (t.Index == index));
             if (foundTransaction == null)
             {
-                this.logger.LogTrace("UTXO '{0}-{1}' not found, creating.", transactionHash, index);
+                this.logger.LogTrace("UTXO '{0}-{1}' not found, creating. BlockHeight={2}, BlockHash={3}", transactionHash, index, blockHeight, block?.GetHash());
+
                 TransactionData newTransaction = new TransactionData
                 {
                     Amount = amount,
@@ -579,8 +571,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? transaction.Time),
                     Index = index,
                     ScriptPubKey = script,
-                    Hex = transaction.ToHex(),
-                    IsPropagated = isPropagated
+                    Hex = transaction.ToHex()
                 };
 
                 // Add the Merkle proof to the (non-spending) transaction.
@@ -594,7 +585,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
             else
             {
-                this.logger.LogTrace("Transaction ID '{0}' found, updating.", transactionHash);
+                this.logger.LogTrace("Transaction ID '{0}-{1}' found, updating BlockHeight={2}, BlockHash={3}.", transactionHash, index, blockHeight, block?.GetHash());
 
                 // Update the block height and block hash.
                 if ((foundTransaction.BlockHeight == null) && (blockHeight != null))
@@ -614,9 +605,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 {
                     foundTransaction.MerkleProof = new MerkleBlock(block, new[] { transactionHash }).PartialMerkleTree;
                 }
-
-                if (isPropagated)
-                    foundTransaction.IsPropagated = true;
             }
 
             this.TransactionFoundInternal(script);
@@ -650,7 +638,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             // If the details of this spending transaction are seen for the first time.
             if (spentTransaction.SpendingDetails == null)
             {
-                this.logger.LogTrace("Spending UTXO '{0}-{1}' is new.", spendingTransactionId, spendingTransactionIndex);
+                this.logger.LogTrace("Spending UTXO '{0}-{1}' is new. BlockHeight={2}", spendingTransactionId, spendingTransactionIndex, blockHeight);
 
                 List<PaymentDetails> payments = new List<PaymentDetails>();
                 foreach (TxOut paidToOutput in paidToOutputs)
@@ -702,7 +690,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
             else // If this spending transaction is being confirmed in a block.
             {
-                this.logger.LogTrace("Spending transaction ID '{0}' is being confirmed, updating.", spendingTransactionId);
+                this.logger.LogTrace("Spending transaction ID '{0}' is being confirmed, updating. BlockHeight={1}", spendingTransactionId, blockHeight);
 
                 // Update the block height.
                 if (spentTransaction.SpendingDetails.BlockHeight == null && blockHeight != null)
@@ -779,6 +767,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public bool RemoveTransientTransactions(uint256 depositId = null)
         {
+            this.logger.LogTrace("Removing transient transactions. DepositId={0}", depositId);
+
             lock (this.lockObject)
             {
                 // Remove transient transactions not seen in a block yet.
@@ -900,9 +890,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     TransactionBuilder builder = new TransactionBuilder(this.Wallet.Network).AddCoins(coins);
                     if (!builder.Verify(transaction, this.federationGatewaySettings.TransactionFee, out TransactionPolicyError[] errors))
                     {
+                        // Trace the reason validation failed. Note that failure here doesn't mean an error necessarily. Just that the transaction is not fully signed.
                         foreach (TransactionPolicyError transactionPolicyError in errors)
                         {
-                            this.logger.LogError("TransactionBuilder.Verify FAILED - {0}", transactionPolicyError.ToString());
+                            this.logger.LogInformation("TransactionBuilder.Verify FAILED - {0}", transactionPolicyError.ToString());
                         }
 
                         return false;

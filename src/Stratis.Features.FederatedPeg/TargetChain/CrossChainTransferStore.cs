@@ -380,7 +380,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                         if (maturedDeposit.BlockInfo.BlockHeight != this.NextMatureDepositHeight)
                             continue;
 
-                        IReadOnlyList<IDeposit> deposits = maturedDeposit.Deposits;
+                        IReadOnlyList<IDeposit> deposits = maturedDeposit.Deposits.Where(d => d.TargetAddress != this.settings.MultiSigAddress.ToString()).ToList();
                         if (deposits.Count == 0)
                         {
                             this.NextMatureDepositHeight++;
@@ -430,7 +430,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                 if (transaction != null)
                                 {
                                     // Reserve the UTXOs before building the next transaction.
-                                    walletUpdated |= this.federationWalletManager.ProcessTransaction(transaction, isPropagated: false);
+                                    walletUpdated |= this.federationWalletManager.ProcessTransaction(transaction);
 
                                     status = CrossChainTransferStatus.Partial;
                                 }

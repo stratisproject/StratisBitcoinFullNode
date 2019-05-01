@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public override void OnInitialize()
+        protected override void OnInitialize()
         {
             this.MaxOutboundConnections = this.ConnectionSettings.MaxOutboundConnections;
         }
@@ -54,11 +54,12 @@ namespace Stratis.Bitcoin.P2P
 
         /// <inheritdoc/>
         [NoTrace]
-        public override void OnStartConnect()
+        protected override void OnStartConnect()
         {
             this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
         }
 
+        /// <inheritdoc/>
         public override async Task OnConnectAsync()
         {
             int peerSelectionFailed = 0;
@@ -87,14 +88,6 @@ namespace Stratis.Bitcoin.P2P
                 if (!peer.Endpoint.Address.IsValid())
                 {
                     this.logger.LogTrace("Selection failed, peer endpoint is not valid '{0}'.", peer.Endpoint);
-                    peerSelectionFailed++;
-                    continue;
-                }
-
-                // If the peer is already connected just continue.
-                if (this.IsPeerConnected(peer.Endpoint))
-                {
-                    this.logger.LogTrace("Selection failed, peer is already connected '{0}'.", peer.Endpoint);
                     peerSelectionFailed++;
                     continue;
                 }

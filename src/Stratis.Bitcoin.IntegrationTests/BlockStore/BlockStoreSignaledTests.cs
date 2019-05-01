@@ -81,8 +81,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network, "bss-1-stratisNodeSync").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network, "bss-1-stratisNode1").Start();
 
                 // Change the second node's list of default behaviours include the test behaviour in it.
                 // We leave the other behaviors alone for this test because we want to see what messages the node gets under normal operation.
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 INetworkPeer connectedPeer = node1ConnectionManager.ConnectedPeers.FindByEndpoint(stratisNodeSync.Endpoint);
                 TestBehavior testBehavior = connectedPeer.Behavior<TestBehavior>();
 
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode1, stratisNodeSync));
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode1, stratisNodeSync));
 
                 HashSet<uint256> advertised = new HashSet<uint256>();
 
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 IAsyncQueue<ChainedHeader> blocksToAnnounce = (IAsyncQueue<ChainedHeader>)blockStoreSignaled.GetMemberValue("blocksToAnnounce");
                 Queue<ChainedHeader> queueItems = (Queue<ChainedHeader>)blocksToAnnounce.GetMemberValue("items");
 
-                TestHelper.WaitLoop(() => queueItems.Count == 0);
+                TestBase.WaitLoop(() => queueItems.Count == 0);
             }
         }
 
@@ -126,11 +126,11 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network, "bss-2-stratisNodeSync").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
 
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).Start();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).Start();
-                CoreNode stratisNode3 = builder.CreateStratisPowNode(this.network).Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network, "bss-2-stratisNode1").Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network, "bss-2-stratisNode2").Start();
+                CoreNode stratisNode3 = builder.CreateStratisPowNode(this.network, "bss-2-stratisNode3").Start();
 
                 // Change the other nodes' lists of default behaviours include the test behaviour in it.
                 // We leave the other behaviors alone for this test because we want to see what messages the node gets under normal operation.
@@ -160,8 +160,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 TestBehavior testBehavior3 = connectedPeer3.Behavior<TestBehavior>();
 
                 // If the announce queue is not getting stalled, the other 2 nodes should sync properly.
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode1, stratisNodeSync));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode2, stratisNodeSync));
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode1, stratisNodeSync));
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode2, stratisNodeSync));
 
                 HashSet<uint256> advertised = new HashSet<uint256>();
 
@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 Queue<ChainedHeader> queueItems = (Queue<ChainedHeader>)blocksToAnnounce.GetMemberValue("items");
 
                 // It should still eventually empty despite not being able to communicate with node3.
-                TestHelper.WaitLoop(() => queueItems.Count == 0);
+                TestBase.WaitLoop(() => queueItems.Count == 0);
             }
         }
 
@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network, "bss-3-stratisNodeSync").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
                 BlockStoreSignaled blockStoreSignaled = stratisNodeSync.FullNode.NodeService<BlockStoreSignaled>();
 
                 AsyncQueue<ChainedHeader> blocksToAnnounce = (AsyncQueue<ChainedHeader>)blockStoreSignaled.GetMemberValue("blocksToAnnounce");
@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
                 // Announce queue length should drop to zero once the announce batch timer elapses at the latest.
                 // Most likely it will be cleared almost instantly as the blocks getting mined are all tips.
-                TestHelper.WaitLoop(() => queueItems.Count == 0);
+                TestBase.WaitLoop(() => queueItems.Count == 0);
             }
         }
 
@@ -225,9 +225,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10NoWallet).Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network, "bss-2-stratisNodeSync").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network, "bss-2-stratisNode1").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Listener).Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network, "bss-2-stratisNode2").WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10NoWallet).Start();
 
                 // Store block 1 of chain0 for later usage
                 ChainedHeader firstBlock = null;
@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 TestBehavior testBehavior = connectedPeer.Behavior<TestBehavior>();
 
                 // We expect that node0 will abandon the 10 block chain and use the 15 block chain from node1
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode1, stratisNodeSync));
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode1, stratisNodeSync));
 
                 // Connect all nodes together
                 TestHelper.Connect(stratisNode2, stratisNodeSync);
@@ -267,7 +267,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 TestBehavior testBehavior2 = connectedPeer2.Behavior<TestBehavior>();
 
                 // Wait for node2 to sync; it should have the 15 block chain
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode2, stratisNodeSync));
+                TestBase.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode2, stratisNodeSync));
 
                 // Insert block 1 from chain0 into node1's announce queue
                 BlockStoreSignaled node1BlockStoreSignaled = stratisNode1.FullNode.NodeService<BlockStoreSignaled>();
@@ -276,7 +276,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
                 Queue<ChainedHeader> node1QueueItems = (Queue<ChainedHeader>)node1BlocksToAnnounce.GetMemberValue("items");
 
-                TestHelper.WaitLoop(() => node1QueueItems.Count == 0);
+                TestBase.WaitLoop(() => node1QueueItems.Count == 0);
 
                 // Check that node2 does not have block 1 in test behaviour advertised list
                 foreach (IncomingMessage message in testBehavior2.receivedMessageTracker["headers"])

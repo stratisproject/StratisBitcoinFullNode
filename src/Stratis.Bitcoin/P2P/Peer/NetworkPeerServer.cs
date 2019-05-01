@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.AsyncWork;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;

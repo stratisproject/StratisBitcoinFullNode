@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
@@ -172,11 +171,14 @@ namespace Stratis.Bitcoin.Networks
                 { 1000000, new CheckpointInfo(new uint256("0x3cdd812d9a7e249e7ad825cb372fbb0889f5b515a4a924a4aa3281d8e334d559"), new uint256("0x36a51839ceb5866b3251c9e5e0049a0209fe0b1861b2ada118fe00a8cacf62df")) },
                 { 1150000, new CheckpointInfo(new uint256("0x2bdb553600592655dd50f0d2e1632e5ac3bad99a5e1864f8b8ac02f768721e17"), new uint256("0x0ae7676da03bee9c8005680058a06b8a5009fb584d84811fc29ae1aeb7665426")) } // 13-01-2019
             };
-
-            var encoder = new Bech32Encoder("bc");
+           
             this.Bech32Encoders = new Bech32Encoder[2];
-            this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
-            this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
+            // Bech32 is currently unsupported on Stratis - once supported uncomment lines below
+            //var encoder = new Bech32Encoder("bc");
+            //this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
+            //this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
+            this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = null;
+            this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = null;
 
             this.DNSSeeds = new List<DNSSeedData>
             {

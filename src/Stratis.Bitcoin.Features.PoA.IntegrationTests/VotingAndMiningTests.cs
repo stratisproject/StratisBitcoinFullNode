@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
         // Checks that miner adds voting data if it exists.
         public async Task CantVoteTwiceAsync()
         {
-            int originalFedMembersCount = this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count;
+            int originalFedMembersCount = this.node1.FullNode.NodeService<IFederationManager>().GetFederationMembers().Count;
 
             TestHelper.Connect(this.node1, this.node2);
 
@@ -74,8 +74,8 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
 
             CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2);
 
-            Assert.Equal(originalFedMembersCount + 1, this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count);
-            Assert.Equal(originalFedMembersCount + 1, this.node2.FullNode.NodeService<FederationManager>().GetFederationMembers().Count);
+            Assert.Equal(originalFedMembersCount + 1, this.node1.FullNode.NodeService<IFederationManager>().GetFederationMembers().Count);
+            Assert.Equal(originalFedMembersCount + 1, this.node2.FullNode.NodeService<IFederationManager>().GetFederationMembers().Count);
 
             TestHelper.Connect(this.node2, this.node3);
 
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
         // Checks that node can sync from scratch if federation voted in favor of adding a new fed member.
         public async Task CanSyncIfFedMemberAddedAsync()
         {
-            int originalFedMembersCount = this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count;
+            int originalFedMembersCount = this.node1.FullNode.NodeService<IFederationManager>().GetFederationMembers().Count;
 
             TestHelper.Connect(this.node1, this.node2);
 
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
             await this.node2.MineBlocksAsync((int)this.network.Consensus.MaxReorgLength * 3);
             CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2);
 
-            Assert.Equal(originalFedMembersCount + 1, this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count);
+            Assert.Equal(originalFedMembersCount + 1, this.node1.FullNode.NodeService<IFederationManager>().GetFederationMembers().Count);
 
             TestHelper.Connect(this.node2, this.node3);
 
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
         // Checks that node can sync from scratch if federation voted in favor of kicking a fed member.
         public async Task CanSyncIfFedMemberKickedAsync()
         {
-            int originalFedMembersCount = this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count;
+            int originalFedMembersCount = this.node1.FullNode.NodeService<IFederationManager>().GetFederationMembers().Count;
 
             TestHelper.Connect(this.node1, this.node2);
 
@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
             await this.node1.MineBlocksAsync((int)this.network.Consensus.MaxReorgLength * 3);
             CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2);
 
-            Assert.Equal(originalFedMembersCount - 1, this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count);
+            Assert.Equal(originalFedMembersCount - 1, this.node1.FullNode.NodeService<IFederationManager>().GetFederationMembers().Count);
 
             TestHelper.Connect(this.node2, this.node3);
 
@@ -135,22 +135,22 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
         [Fact]
         public async Task CanAddAndRemoveSameFedMemberAsync()
         {
-            int originalFedMembersCount = this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count;
+            int originalFedMembersCount = this.node1.FullNode.NodeService<IFederationManager>().GetFederationMembers().Count;
 
             TestHelper.Connect(this.node1, this.node2);
             TestHelper.Connect(this.node2, this.node3);
 
             await this.AllVoteAndMineAsync(this.testPubKey, true);
 
-            Assert.Equal(originalFedMembersCount + 1, this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count);
+            Assert.Equal(originalFedMembersCount + 1, this.node1.FullNode.NodeService<IFederationManager>().GetFederationMembers().Count);
 
             await this.AllVoteAndMineAsync(this.testPubKey, false);
 
-            Assert.Equal(originalFedMembersCount, this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count);
+            Assert.Equal(originalFedMembersCount, this.node1.FullNode.NodeService<IFederationManager>().GetFederationMembers().Count);
 
             await this.AllVoteAndMineAsync(this.testPubKey, true);
 
-            Assert.Equal(originalFedMembersCount + 1, this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count);
+            Assert.Equal(originalFedMembersCount + 1, this.node1.FullNode.NodeService<IFederationManager>().GetFederationMembers().Count);
         }
 
         [Fact]
@@ -251,14 +251,14 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
                 Key key = network.FederationKey1;
                 CoreNode node = builder.CreatePoANode(network, key).Start();
 
-                Assert.True(node.FullNode.NodeService<FederationManager>().IsFederationMember);
-                Assert.Equal(node.FullNode.NodeService<FederationManager>().FederationMemberKey, key);
+                Assert.True(node.FullNode.NodeService<IFederationManager>().IsFederationMember);
+                Assert.Equal(node.FullNode.NodeService<IFederationManager>().CurrentFederationKey, key);
 
                 // Create second node as normal node.
                 CoreNode node2 = builder.CreatePoANode(network).Start();
 
-                Assert.False(node2.FullNode.NodeService<FederationManager>().IsFederationMember);
-                Assert.Equal(node2.FullNode.NodeService<FederationManager>().FederationMemberKey, null);
+                Assert.False(node2.FullNode.NodeService<IFederationManager>().IsFederationMember);
+                Assert.Equal(node2.FullNode.NodeService<IFederationManager>().CurrentFederationKey, null);
             }
         }
 

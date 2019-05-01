@@ -15,18 +15,18 @@ namespace Stratis.Bitcoin.Features.PoA
     /// <inheritdoc />
     public class PoAConsensusRuleEngine : PowConsensusRuleEngine
     {
-        public SlotsManager SlotsManager { get; private set; }
+        public ISlotsManager SlotsManager { get; private set; }
 
         public PoABlockHeaderValidator PoaHeaderValidator { get; private set; }
 
         public VotingManager VotingManager { get; private set; }
 
-        public FederationManager FederationManager { get; private set; }
+        public IFederationManager FederationManager { get; private set; }
 
         public PoAConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ChainIndexer chainIndexer,
             NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IChainState chainState,
-            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, SlotsManager slotsManager, PoABlockHeaderValidator poaHeaderValidator,
-            VotingManager votingManager, FederationManager federationManager, IAsyncProvider asyncProvider)
+            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, ISlotsManager slotsManager, PoABlockHeaderValidator poaHeaderValidator,
+            VotingManager votingManager, IFederationManager federationManager, IAsyncProvider asyncProvider)
             : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats, asyncProvider)
         {
             this.SlotsManager = slotsManager;

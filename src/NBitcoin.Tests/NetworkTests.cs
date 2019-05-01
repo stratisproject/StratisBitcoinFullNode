@@ -344,8 +344,8 @@ namespace NBitcoin.Tests
             Assert.Equal("STRAT", network.CoinTicker);
 
             Assert.Equal(2, network.Bech32Encoders.Length);
-            Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
-            Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS].ToString());
+            Assert.Null(network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS]);
+            Assert.Null(network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS]);
 
             Assert.Equal(12, network.Base58Prefixes.Length);
             Assert.Equal(new byte[] { (63) }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
@@ -421,8 +421,8 @@ namespace NBitcoin.Tests
             Assert.Equal("TSTRAT", network.CoinTicker);
 
             Assert.Equal(2, network.Bech32Encoders.Length);
-            Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
-            Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS].ToString());
+            Assert.Null(network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS]);
+            Assert.Null(network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS]);
 
             Assert.Equal(12, network.Base58Prefixes.Length);
             Assert.Equal(new byte[] { (65) }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
@@ -498,8 +498,8 @@ namespace NBitcoin.Tests
             Assert.Equal("TSTRAT", network.CoinTicker);
 
             Assert.Equal(2, network.Bech32Encoders.Length);
-            Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
-            Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS].ToString());
+            Assert.Null(network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS]);
+            Assert.Null(network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS]);
 
             Assert.Equal(12, network.Base58Prefixes.Length);
             Assert.Equal(new byte[] { (65) }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
