@@ -350,7 +350,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public bool ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null)
         {
             Guard.NotNull(transaction, nameof(transaction));
-            uint256 hash = transaction.GetHash();
 
             if (this.Wallet == null)
             {
@@ -379,6 +378,23 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     {
                         this.logger.LogTrace("Removing duplicates for {0}", withdrawal.DepositId);
                         this.RemoveTransientTransactions(withdrawal.DepositId);
+                    }
+                }
+
+                // Check if we're trying to spend a utxo twice
+                foreach (TxIn input in transaction.Inputs)
+                {
+                    if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData tTx))
+                    {
+                        continue;
+                    }
+
+                    // If we're trying to spend an input that is already spent, and it's not coming in a new block, don't reserve the transaction.
+                    // TODO: Do we need to get the transaction from the wallet rather than using tTx? Copying the other method approaches.
+                    TransactionData spentTransaction = this.Wallet.MultiSigAddress.Transactions.Single(t => (t.Id == tTx.Id) && (t.Index == tTx.Index));
+                    if (blockHeight == null && spentTransaction.SpendingDetails?.BlockHeight != null)
+                    {
+                        return false;
                     }
                 }
 
