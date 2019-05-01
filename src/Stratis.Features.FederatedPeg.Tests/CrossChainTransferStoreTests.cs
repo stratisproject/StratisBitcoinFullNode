@@ -616,6 +616,94 @@ namespace Stratis.Features.FederatedPeg.Tests
             }
         }
 
+        /// <summary>
+        /// Recording deposits when the wallet UTXOs are sufficient succeeds with deterministic transactions.
+        /// </summary>
+        [Fact]
+        public void StoringDepositsAfterRewindIsPrecededByClearingInvalidTransientsAndSettingNextMatureDepositHeightCorrectly()
+        {
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+
+            this.Init(dataFolder);
+
+            // Creates two consecutive blocks of funding transactions with 100 coins each.
+            (Transaction fundingTransaction1, ChainedHeader fundingBlock1) = AddFundingTransaction(new Money[] { Money.COIN * 100 });
+            (Transaction fundingTransaction2, ChainedHeader fundingBlock2) = AddFundingTransaction(new Money[] { Money.COIN * 100 });
+
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
+
+            MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
+
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
+            {
+                crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
+
+                TestBase.WaitLoopMessage(() => (this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height, $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
+                Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
+
+                BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
+                BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
+
+                // First deposit.
+                var deposit1 = new Deposit(1, new Money(99m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+
+                MaturedBlockDepositsModel[] blockDeposit1 = new[] { new MaturedBlockDepositsModel(
+                    new MaturedBlockInfoModel() {
+                        BlockHash = 1,
+                        BlockHeight = crossChainTransferStore.NextMatureDepositHeight },
+                    new[] { deposit1 })
+                };
+
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposit1).GetAwaiter().GetResult();
+
+                ICrossChainTransfer transfer1 = crossChainTransferStore.GetAsync(new[] { deposit1.Id }).GetAwaiter().GetResult().FirstOrDefault();
+                Assert.Equal(CrossChainTransferStatus.Partial, transfer1?.Status);
+
+                // Second deposit.
+                var deposit2 = new Deposit(2, new Money(99m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 2);
+
+                MaturedBlockDepositsModel[] blockDeposit2 = new[] { new MaturedBlockDepositsModel(
+                    new MaturedBlockInfoModel() {
+                        BlockHash = 2,
+                        BlockHeight = crossChainTransferStore.NextMatureDepositHeight },
+                    new[] { deposit2 })
+                };
+
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposit2).GetAwaiter().GetResult();
+
+                ICrossChainTransfer transfer2 = crossChainTransferStore.GetAsync(new[] { deposit2.Id }).GetAwaiter().GetResult().FirstOrDefault();
+                Assert.Equal(CrossChainTransferStatus.Partial, transfer2?.Status);
+
+                // Both partial transactions have been created. Now rewind the wallet.
+                this.ChainIndexer.SetTip(fundingBlock1);
+                this.federationWalletSyncManager.ProcessBlock(fundingBlock1.Block);
+
+                TestBase.WaitLoopMessage(() => (this.ChainIndexer.Tip.Height == this.federationWalletSyncManager.WalletTip.Height, $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} SyncManager.TipHashHeight:{this.federationWalletSyncManager.WalletTip.Height}"));
+
+                // Synchronize the store using a dummy get.
+                crossChainTransferStore.GetAsync(new uint256[] { }).GetAwaiter().GetResult();
+
+                // See if the NextMatureDepositHeight was rewound for the replay of deposit 2.
+                Assert.Equal(deposit2.BlockNumber, crossChainTransferStore.NextMatureDepositHeight);
+
+                // That's great. Now let's redo deposit 2 which had its funding wiped out.
+                (fundingTransaction2, fundingBlock2) = AddFundingTransaction(new Money[] { Money.COIN * 100 });
+
+                // Ensure that the new funds are mature.
+                this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
+
+                // Recreate the second deposit.
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposit2).GetAwaiter().GetResult();
+
+                // Check that its status is partial.
+                transfer2 = crossChainTransferStore.GetAsync(new[] { deposit2.Id }).GetAwaiter().GetResult().FirstOrDefault();
+                Assert.Equal(CrossChainTransferStatus.Partial, transfer2?.Status);
+
+                Assert.Equal(4, this.wallet.MultiSigAddress.Transactions.Count);
+            }
+        }
+
         private Q Post<T, Q>(string url, T body)
         {
             // Request is sent to mainchain user.

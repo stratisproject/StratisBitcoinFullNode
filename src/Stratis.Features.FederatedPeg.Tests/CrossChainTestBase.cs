@@ -144,7 +144,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.withdrawalExtractor = new WithdrawalExtractor(this.loggerFactory, this.federationGatewaySettings, this.opReturnDataReader, this.network);
         }
 
-        protected Transaction AddFundingTransaction(Money[] amounts)
+        protected (Transaction, ChainedHeader) AddFundingTransaction(Money[] amounts)
         {
             Transaction transaction = this.network.CreateTransaction();
 
@@ -153,12 +153,14 @@ namespace Stratis.Features.FederatedPeg.Tests
                 transaction.Outputs.Add(new TxOut(amount, this.wallet.MultiSigAddress.ScriptPubKey));
             }
 
-            transaction.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
+            // This is just a dummy unique input so don't take the implementation too seriously. It ensures a unique txid.
+            transaction.AddInput(new TxIn(new OutPoint(this.ChainIndexer.Tip.HashBlock, 0), new Script(OpcodeType.OP_1)));
 
-            this.AppendBlock(transaction);
+            ChainedHeader chainedHeader = this.AppendBlock(transaction);
+
             this.fundingTransactions.Add(transaction);
 
-            return transaction;
+            return (transaction, chainedHeader);
         }
 
         protected void AddFunding()
@@ -268,6 +270,8 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             if (!this.ChainIndexer.TrySetTip(block.Header, out ChainedHeader last))
                 throw new InvalidOperationException("Previous not existing");
+
+            last.Block = block;
 
             this.blockDict[block.GetHash()] = block;
 
