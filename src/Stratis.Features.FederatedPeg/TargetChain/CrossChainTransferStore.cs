@@ -165,7 +165,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 // Any transactions seen in blocks must also be present in the wallet.
                 FederationWallet wallet = this.federationWalletManager.GetWallet();
-                ICrossChainTransfer[] transfers = this.GetTransfersByStatus(new[] { CrossChainTransferStatus.SeenInBlock }, true, false).ToArray();
+                ICrossChainTransfer[] transfers = this.GetTransfersByStatusInternal(new[] { CrossChainTransferStatus.SeenInBlock }, true, false).ToArray();
                 foreach (ICrossChainTransfer transfer in transfers)
                 {
                     (Transaction tran, TransactionData tranData, _) = this.federationWalletManager.FindWithdrawalTransactions(transfer.DepositTransactionId).FirstOrDefault();
@@ -920,6 +920,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <inheritdoc />
+        [Obsolete("This doesn't lock when validating cross chain transfers. Don't use.")]
         public Task<ICrossChainTransfer[]> GetAsync(uint256[] depositIds)
         {
             return Task.Run(() =>
@@ -977,7 +978,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             return transaction.Inputs.Select(i => i.PrevOut).OrderByDescending(t => t, comparer).FirstOrDefault();
         }
 
-        private ICrossChainTransfer[] GetTransfersByStatus(CrossChainTransferStatus[] statuses, bool sort = false, bool validate = true)
+        private ICrossChainTransfer[] GetTransfersByStatusInternal(CrossChainTransferStatus[] statuses, bool sort = false, bool validate = true)
         {
             lock (this.lockObj)
             {
@@ -1007,13 +1008,35 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <inheritdoc />
-        public Task<Dictionary<uint256, Transaction>> GetTransactionsByStatusAsync(CrossChainTransferStatus status, bool sort = false)
+        public ICrossChainTransfer[] GetTransfersByStatus(CrossChainTransferStatus[] statuses, bool sort = false)
         {
-            return Task.Run(() =>
+            return this.GetTransfersByStatusInternal(statuses, sort);
+        }
+
+        /// <inheritdoc />
+        public ICrossChainTransfer[] QueryTransfersByStatus(CrossChainTransferStatus[] statuses)
+        {
+            lock (this.lockObj)
             {
-                ICrossChainTransfer[] res = this.GetTransfersByStatus(new[] { status }, sort);
-                return res.Where(t => t.PartialTransaction != null).ToDictionary(t => t.DepositTransactionId, t => t.PartialTransaction);
-            });
+                var depositIds = new HashSet<uint256>();
+
+                foreach (CrossChainTransferStatus status in statuses)
+                    depositIds.UnionWith(this.depositsIdsByStatus[status]);
+
+                uint256[] partialTransferHashes = depositIds.ToArray();
+                ICrossChainTransfer[] partialTransfers = this.Get(partialTransferHashes).Where(t => t != null).ToArray();
+
+                return partialTransfers;
+            }
+        }
+
+        /// <inheritdoc />
+        public ICrossChainTransfer[] QueryTransfersById(uint256[] depositIds)
+        {
+            lock (this.lockObj)
+            {
+                return this.Get(depositIds);
+            }
         }
 
         /// <summary>Persist the cross-chain transfer information into the database.</summary>
