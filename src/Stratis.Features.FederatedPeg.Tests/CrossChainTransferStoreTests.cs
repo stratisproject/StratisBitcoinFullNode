@@ -677,8 +677,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
 
-                Transaction[] partialTransactions = crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.Partial).GetAwaiter().GetResult().Values.ToArray();
-                Transaction[] suspendedTransactions = crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.Suspended).GetAwaiter().GetResult().Values.ToArray();
+                Transaction[] partialTransactions = crossChainTransferStore.GetTransfersByStatus(new[]{CrossChainTransferStatus.Partial}).Select(x=>x.PartialTransaction).ToArray();
+                Transaction[] suspendedTransactions = crossChainTransferStore.GetTransfersByStatus(new []{CrossChainTransferStatus.Suspended}).Select(x => x.PartialTransaction).ToArray();
 
                 // Only the deposit going towards a different multisig address is accepted. The other is ignored.
                 Assert.Single(partialTransactions);
