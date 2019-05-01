@@ -1033,7 +1033,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <inheritdoc />
         public ICrossChainTransfer[] QueryTransfersById(uint256[] depositIds)
         {
-            return this.Get(depositIds);
+            lock (this.lockObj)
+            {
+                return this.Get(depositIds);
+            }
         }
 
         /// <summary>Persist the cross-chain transfer information into the database.</summary>
