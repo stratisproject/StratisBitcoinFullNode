@@ -36,7 +36,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
         public DepositExtractorTests()
         {
-            this.network = FederatedPegNetwork.NetworksSelector.Regtest();
+            this.network = CirrusNetwork.NetworksSelector.Regtest();
             this.counterChainNetwork = Networks.Stratis.Regtest();
 
             this.loggerFactory = Substitute.For<ILoggerFactory>();

@@ -53,14 +53,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             this.fullTxValidationRules = fullTxValidationRules;
         }
 
-        public void RegisterRules(IConsensus consensus)
+        public virtual void RegisterRules(IConsensus consensus)
         {
             this.baseRuleRegistration.RegisterRules(consensus);
 
             // Add SC-Specific partial rules
             var txValidationRules = new List<IContractTransactionPartialValidationRule>(this.partialTxValidationRules)
             {
-                new SmartContractFormatLogic()                
+                new SmartContractFormatLogic()
             };
             consensus.PartialValidationRules.Add(new AllowedScriptTypeRule(this.network));
             consensus.PartialValidationRules.Add(new ContractTransactionPartialValidationRule(this.callDataSerializer, txValidationRules));

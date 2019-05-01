@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly BlockDefinition blockDefinition;
 
-        private readonly SlotsManager slotsManager;
+        private readonly ISlotsManager slotsManager;
 
         private readonly IConnectionManager connectionManager;
 
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.PoA
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState ibdState,
             BlockDefinition blockDefinition,
-            SlotsManager slotsManager,
+            ISlotsManager slotsManager,
             IConnectionManager connectionManager,
             PoABlockHeaderValidator poaHeaderValidator,
             IFederationManager federationManager,
@@ -317,7 +317,7 @@ namespace Stratis.Bitcoin.Features.PoA
             for (int i = tip.Height; (i > 0) && (i > tip.Height - maxDepth); i--)
             {
                 // Add stats for current header.
-                string pubKeyRepresentation = this.slotsManager.GetPubKeyForTimestamp(currentTime).ToString().Substring(0, pubKeyTakeCharacters);
+                string pubKeyRepresentation = this.slotsManager.GetFederationMemberForTimestamp(currentTime).ToString().Substring(0, pubKeyTakeCharacters);
 
                 log.Append("[" + pubKeyRepresentation + "]-");
                 depthReached++;

@@ -24,7 +24,6 @@ using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.SmartContracts;
-using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -81,7 +80,7 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly ILogger logger;
 
-        private readonly CollateralChecker collateralChecker;
+        private readonly ICollateralChecker collateralChecker;
 
         public FederationGatewayFeature(
             ILoggerFactory loggerFactory,
@@ -98,7 +97,7 @@ namespace Stratis.Features.FederatedPeg
             ISignedMultisigTransactionBroadcaster signedBroadcaster,
             IMaturedBlocksSyncManager maturedBlocksSyncManager,
             IWithdrawalHistoryProvider withdrawalHistoryProvider,
-            CollateralChecker collateralChecker = null)
+            ICollateralChecker collateralChecker = null)
         {
             this.loggerFactory = loggerFactory;
             this.connectionManager = connectionManager;
@@ -346,7 +345,7 @@ namespace Stratis.Features.FederatedPeg
                         services.AddSingleton<IFederationManager, CollateralFederationManager>();
                         services.AddSingleton<PoABlockHeaderValidator>();
                         services.AddSingleton<IPoAMiner, PoAMiner>();
-                        services.AddSingleton<SlotsManager>();
+                        services.AddSingleton<ISlotsManager, SlotsManager>();
                         services.AddSingleton<BlockDefinition, FederatedPegBlockDefinition>();
                         services.AddSingleton<ICoinbaseSplitter, PremineCoinbaseSplitter>();
                         services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();
@@ -379,7 +378,7 @@ namespace Stratis.Features.FederatedPeg
 
                     // Consensus Rules
                     services.AddSingleton<PoAConsensusRuleEngine>();
-                    services.AddSingleton<IRuleRegistration, SmartContractPoARuleRegistration>();
+                    services.AddSingleton<IRuleRegistration, SmartContractCollateralPoARuleRegistration>();
                     services.AddSingleton<IConsensusRuleEngine>(f =>
                     {
                         var concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
@@ -388,7 +387,8 @@ namespace Stratis.Features.FederatedPeg
                         return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
                     });
 
-                    services.AddSingleton<CollateralChecker>();
+                    services.AddSingleton<ICollateralChecker, CollateralChecker>();
+                    services.AddSingleton<CollateralVotingController>();
                 });
             });
 

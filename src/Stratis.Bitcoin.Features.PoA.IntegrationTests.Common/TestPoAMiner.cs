@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
 
         private CancellationTokenSource cancellation;
 
-        private readonly SlotsManager slotsManager;
+        private readonly ISlotsManager slotsManager;
 
         private readonly IConsensusManager consensusManager;
 
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState ibdState,
             BlockDefinition blockDefinition,
-            SlotsManager slotsManager,
+            ISlotsManager slotsManager,
             IConnectionManager connectionManager,
             PoABlockHeaderValidator poaHeaderValidator,
             IFederationManager federationManager,
