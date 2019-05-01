@@ -703,14 +703,13 @@ namespace Stratis.Features.FederatedPeg.Tests
             }
         }
 
-        private Q Post<T, Q>(string url, T body)
         [Fact]
         public async Task WalletSyncFromHeightOverridesWalletLastBlockSyncedHeight()
         {
             // Only sync the wallet from the second funding block.
             this.federationGatewaySettings.WalletSyncFromHeight.Returns(2);
 
-            var dataFolder = new DataFolder(CreateTestDir(this));
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
 
             this.Init(dataFolder);
 
