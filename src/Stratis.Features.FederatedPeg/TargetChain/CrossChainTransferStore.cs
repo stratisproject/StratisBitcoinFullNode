@@ -440,7 +440,18 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                     // Reserve the UTXOs before building the next transaction.
                                     walletUpdated |= this.federationWalletManager.ProcessTransaction(transaction);
 
-                                    status = CrossChainTransferStatus.Partial;
+                                    if (!this.ValidateTransaction(transaction))
+                                    {
+                                        this.logger.LogTrace("Suspending transfer for deposit '{0}' to retry invalid transaction later.", deposit.Id);
+
+                                        this.federationWalletManager.RemoveTransientTransactions(deposit.Id);
+                                        haveSuspendedTransfers = true;
+                                        transaction = null;
+                                    }
+                                    else
+                                    {
+                                        status = CrossChainTransferStatus.Partial;
+                                    }
                                 }
                                 else
                                 {
