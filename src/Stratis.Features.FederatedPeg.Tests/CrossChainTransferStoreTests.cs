@@ -128,7 +128,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
 
-                Transaction[] transactions = crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.Partial).GetAwaiter().GetResult().Values.ToArray();
+                Transaction[] transactions = crossChainTransferStore.GetTransfersByStatus(new []{CrossChainTransferStatus.Partial}).Select(x=>x.PartialTransaction).ToArray();
 
                 Assert.Equal(2, transactions.Length);
 
@@ -393,7 +393,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(CrossChainTransferStatus.FullySigned, crossChainTransfer.Status);
 
                 // Should be returned as signed.
-                Transaction signedTransaction = crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).GetAwaiter().GetResult().Values.SingleOrDefault();
+                Transaction signedTransaction = crossChainTransferStore.GetTransfersByStatus(new[]{CrossChainTransferStatus.FullySigned}).Select(x=>x.PartialTransaction).SingleOrDefault();
 
                 Assert.NotNull(signedTransaction);
 
@@ -439,8 +439,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
 
-                Dictionary<uint256, Transaction> transactions = crossChainTransferStore.GetTransactionsByStatusAsync(
-                    CrossChainTransferStatus.Partial).GetAwaiter().GetResult();
+                var transactions = crossChainTransferStore.GetTransfersByStatus(new[] {CrossChainTransferStatus.Partial});
 
                 var requester = new PartialTransactionRequester(this.loggerFactory, crossChainTransferStore, this.asyncProvider,
                     this.nodeLifetime, this.connectionManager, this.federationGatewaySettings, this.ibdState, this.federationWalletManager);
@@ -465,10 +464,10 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Receives all of the requests. We broadcast multiple at a time.
                 peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
-                    o.DepositId == 0 && o.PartialTransaction.GetHash() == transactions[0].GetHash())).GetAwaiter().GetResult();
+                    o.DepositId == 0 && o.PartialTransaction.GetHash() == transactions[0].PartialTransaction.GetHash())).GetAwaiter().GetResult();
 
                 peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
-                    o.DepositId == 1 && o.PartialTransaction.GetHash() == transactions[1].GetHash())).GetAwaiter().GetResult();
+                    o.DepositId == 1 && o.PartialTransaction.GetHash() == transactions[1].PartialTransaction.GetHash())).GetAwaiter().GetResult();
             }
         }
 
@@ -609,8 +608,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.NotEqual(CrossChainTransferStatus.FullySigned, crossChainTransfer.Status);
 
                 // Should return null.
-                Dictionary<uint256, Transaction> signedTransactions = await crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned);
-                Transaction signedTransaction = signedTransactions.Values.SingleOrDefault();
+                var signedTransactions = crossChainTransferStore.GetTransfersByStatus(new[] {CrossChainTransferStatus.FullySigned});
+                Transaction signedTransaction = signedTransactions.Select(x=>x.PartialTransaction).SingleOrDefault();
 
                 Assert.Null(signedTransaction);
             }
@@ -766,8 +765,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
 
-                Transaction[] partialTransactions = crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.Partial).GetAwaiter().GetResult().Values.ToArray();
-                Transaction[] suspendedTransactions = crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.Suspended).GetAwaiter().GetResult().Values.ToArray();
+                Transaction[] partialTransactions = crossChainTransferStore.GetTransfersByStatus(new[]{CrossChainTransferStatus.Partial}).Select(x=>x.PartialTransaction).ToArray();
+                Transaction[] suspendedTransactions = crossChainTransferStore.GetTransfersByStatus(new []{CrossChainTransferStatus.Suspended}).Select(x => x.PartialTransaction).ToArray();
 
                 // Only the deposit going towards a different multisig address is accepted. The other is ignored.
                 Assert.Single(partialTransactions);
