@@ -304,8 +304,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
             if (this.Wallet.LastBlockSyncedHeight >= (height ?? this.chainIndexer.Height))
                 return false;
 
-            this.Wallet.LastBlockSyncedHash = this.chainIndexer[(int)this.Wallet.LastBlockSyncedHeight].HashBlock;
-
             return true;
         }
 
@@ -316,7 +314,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
 
             // If there is no wallet yet, update the wallet tip hash and do nothing else.
-            if (!IsWalletActive(chainedHeader.Height))
+            if (!this.IsWalletActive(chainedHeader.Height))
             {
                 this.WalletTipHash = chainedHeader.HashBlock;
                 this.logger.LogTrace("(-)[NO_WALLET]");
@@ -375,7 +373,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(transaction, nameof(transaction));
             uint256 hash = transaction.GetHash();
 
-            if (!IsWalletActive())
+            if (!this.IsWalletActive())
             {
                 this.logger.LogTrace("(-)");
                 return false;
@@ -925,7 +923,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
 
-            if (this.IsWalletActive())
+            if (this.IsWalletActive(chainedHeader.Height))
             {
                 lock (this.lockObject)
                 {
