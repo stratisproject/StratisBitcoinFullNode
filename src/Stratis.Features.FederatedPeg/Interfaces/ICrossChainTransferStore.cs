@@ -39,6 +39,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// Returns transfers based on their status.
         /// </summary>
         /// <param name="statuses">Set of statuses to get transfers for.</param>
+        /// <param name="sort">Set to <c>true</c> to sort the transfers by their earliest inputs.</param>
         /// <returns>Transfers for the given statuses.</returns>
         ICrossChainTransfer[] GetTransfersByStatus(CrossChainTransferStatus[] statuses, bool sort = false);
 
