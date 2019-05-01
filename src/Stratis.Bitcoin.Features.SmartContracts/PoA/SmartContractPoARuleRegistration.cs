@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;

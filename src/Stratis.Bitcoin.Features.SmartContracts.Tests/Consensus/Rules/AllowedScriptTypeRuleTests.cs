@@ -1,21 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.Extensions.Logging;
-using Moq;
-using NBitcoin;
+﻿using NBitcoin;
 using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Configuration.Settings;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
-using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Networks;
 using Xunit;
 

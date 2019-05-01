@@ -10,7 +10,6 @@ using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
