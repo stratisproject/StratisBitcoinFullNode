@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Utilities.JsonConverters;
 namespace Stratis.Features.FederatedPeg.Interfaces
 {
     /// <summary>
-    /// Represents a withdrawals made from a source chain to a target chain.
+    /// Represents a withdrawal made from a source chain to a target chain.
     /// </summary>
     public interface IWithdrawal
     {
