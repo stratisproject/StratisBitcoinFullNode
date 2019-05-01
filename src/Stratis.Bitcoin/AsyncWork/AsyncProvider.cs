@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.AsyncWork
             this.asyncDelegates = new Dictionary<IAsyncDelegate, AsyncTaskInfo>();
 
             this.loggerFactory = Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            this.logger = this.loggerFactory.CreateLogger(nameof(AsyncProvider));
+            this.logger = this.loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.signals = Guard.NotNull(signals, nameof(signals));
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
@@ -318,7 +318,7 @@ namespace Stratis.Bitcoin.AsyncWork
                         infoSetter.Exception = asyncLoop.UncaughtException;
                         infoSetter.Status = TaskStatus.Faulted;
 
-                        this.logger.LogTrace("Async Loop '{0}' completed with an UncaughtException, marking it as faulted. Task Id: {1}.", itemToRemove.FriendlyName, task.Id);
+                        this.logger.LogError("Async Loop '{0}' completed with an UncaughtException, marking it as faulted. Task Id: {1}.", itemToRemove.FriendlyName, task.Id);
                         return;
                     }
                     else
