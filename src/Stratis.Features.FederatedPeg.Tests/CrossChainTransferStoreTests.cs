@@ -305,6 +305,67 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(new Money(980m, MoneyUnit.BTC), spendable.unconfirmed);
             }
         }
+        /// <summary>
+        /// Test that if one transaction is set to suspended then all following transactions will be too to maintain deterministic order.
+        /// </summary>
+        [Fact]
+        public void SetAllAfterSuspendedToSuspended()
+        {
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+
+            this.Init(dataFolder);
+            this.AddFunding();
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
+
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
+            {
+                crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
+
+                TestBase.WaitLoopMessage(() => (this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height, $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
+                TestBase.WaitLoop(() => this.wallet.LastBlockSyncedHeight == this.ChainIndexer.Tip.Height);
+                Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
+
+                uint256 txId1 = 0;
+                uint256 txId2 = 1;
+                uint256 txId3 = 2;
+                uint256 blockHash = 2;
+
+                BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
+                BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
+                BitcoinAddress address3 = (new Key()).PubKey.Hash.GetAddress(this.network);
+
+                var deposit1 = new Deposit(txId1, new Money(1m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, blockHash);
+                var deposit2 = new Deposit(txId2, new Money(2m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, blockHash);
+                var deposit3 = new Deposit(txId3, new Money(3m, MoneyUnit.BTC), address3.ToString(), crossChainTransferStore.NextMatureDepositHeight, blockHash);
+
+
+                MaturedBlockDepositsModel[] blockDeposits = new[] { new MaturedBlockDepositsModel(
+                    new MaturedBlockInfoModel() {
+                        BlockHash = blockHash,
+                        BlockHeight = crossChainTransferStore.NextMatureDepositHeight },
+                    new[] { deposit1, deposit2, deposit3 })
+                };
+
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
+
+                ICrossChainTransfer[] transfers = crossChainTransferStore.GetAsync(new uint256[] { txId1, txId2, txId3 }).GetAwaiter().GetResult().ToArray();
+
+                Assert.Equal(3, transfers.Length);
+                Assert.Equal(CrossChainTransferStatus.Partial, transfers[0].Status);
+                Assert.Equal(CrossChainTransferStatus.Partial, transfers[1].Status);
+                Assert.Equal(CrossChainTransferStatus.Partial, transfers[2].Status);
+
+                // Lets break the first transaction
+                this.federationWalletManager.RemoveTransientTransactions(deposit1.Id);
+                
+                // Transactions after will be broken
+                transfers = crossChainTransferStore.GetAsync(new uint256[] { txId1, txId2, txId3 }).GetAwaiter().GetResult().ToArray();
+                Assert.Equal(CrossChainTransferStatus.Suspended, transfers[0].Status);
+                Assert.Equal(CrossChainTransferStatus.Suspended, transfers[1].Status);
+                Assert.Equal(CrossChainTransferStatus.Suspended, transfers[2].Status);
+            }
+        }
 
         /// <summary>
         /// Tests whether the store merges signatures as expected.
