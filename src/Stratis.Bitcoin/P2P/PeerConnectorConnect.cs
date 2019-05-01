@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.P2P
                     if (this.NodeLifetime.ApplicationStopping.IsCancellationRequested)
                         return;
 
-                    PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
+                    PeerAddress peerAddress = this.PeerAddressManager.FindPeer(ipEndpoint);
                     if (peerAddress != null)
                     {
                         this.logger.LogDebug("Attempting connection to {0}.", peerAddress.Endpoint);

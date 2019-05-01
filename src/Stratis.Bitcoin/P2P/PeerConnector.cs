@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.P2P
         private readonly ISelfEndpointTracker selfEndpointTracker;
 
         /// <summary>Factory for creating P2P network peers.</summary>
-        private INetworkPeerFactory networkPeerFactory;
+        private readonly INetworkPeerFactory networkPeerFactory;
 
         /// <inheritdoc/>
         public NetworkPeerRequirement Requirements { get; internal set; }
