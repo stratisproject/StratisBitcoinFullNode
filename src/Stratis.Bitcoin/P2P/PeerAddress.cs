@@ -329,6 +329,15 @@ namespace Stratis.Bitcoin.P2P
             this.LastSeen = lastSeenAt;
         }
 
+        /// <summary>Determines if the peer is currently banned.</summary>
+        internal bool IsBanned(DateTime currentTime)
+        {
+            if (this.BanUntil == null)
+                return false;
+
+            return this.BanUntil > currentTime;
+        }
+
         /// <summary>
         /// Un-bans a peer by resetting the <see cref="BanReason"/>, <see cref="BanScore"/>, <see cref="BanTimeStamp"/> and <see cref="BanUntil"/> properties.
         /// </summary>

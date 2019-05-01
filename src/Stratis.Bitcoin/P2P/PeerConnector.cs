@@ -177,10 +177,10 @@ namespace Stratis.Bitcoin.P2P
         public abstract bool CanStartConnect { get; }
 
         /// <summary>Initialization logic specific to each concrete implementation of this class.</summary>
-        public abstract void OnInitialize();
+        protected abstract void OnInitialize();
 
         /// <summary>Start up logic specific to each concrete implementation of this class.</summary>
-        public abstract void OnStartConnect();
+        protected abstract void OnStartConnect();
 
         /// <summary>Connect logic specific to each concrete implementation of this class.</summary>
         public abstract Task OnConnectAsync();
@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.P2P
         /// <c>true</c> if the peer is already connected.
         /// </summary>
         /// <param name="ipEndpoint">The endpoint to check.</param>
-        internal bool IsPeerConnected(IPEndPoint ipEndpoint)
+        private bool IsPeerConnected(IPEndPoint ipEndpoint)
         {
             return this.connectionManager.ConnectedPeers.FindByEndpoint(ipEndpoint) != null;
         }
@@ -214,11 +214,23 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>Attempts to connect to a random peer.</summary>
-        internal async Task ConnectAsync(PeerAddress peerAddress)
+        public async Task ConnectAsync(PeerAddress peerAddress)
         {
             if (this.selfEndpointTracker.IsSelf(peerAddress.Endpoint))
             {
-                this.logger.LogTrace("{0} is self. Therefore not connecting.", peerAddress.Endpoint);
+                this.logger.LogDebug("Connect aborted: {0} is self.", peerAddress.Endpoint);
+                return;
+            }
+
+            if (this.IsPeerConnected(peerAddress.Endpoint))
+            {
+                this.logger.LogDebug("Connect aborted: {0} is already connected.", peerAddress.Endpoint);
+                return;
+            }
+
+            if (peerAddress.IsBanned(this.dateTimeProvider.GetUtcNow()))
+            {
+                this.logger.LogDebug("Connect aborted: {0} is banned until {1}.", peerAddress.Endpoint, peerAddress.BanUntil);
                 return;
             }
 
@@ -262,7 +274,7 @@ namespace Stratis.Bitcoin.P2P
             }
             catch (Exception exception)
             {
-                this.logger.LogTrace("Exception occurred while connecting: {0}", exception is SocketException ? exception.Message : exception.ToString());
+                this.logger.LogDebug("Exception occurred while connecting: {0}", exception is SocketException ? exception.Message : exception.ToString());
                 peerAddress.SetHandshakeAttempted(this.dateTimeProvider.GetUtcNow());
                 peer?.Disconnect("Error while connecting", exception);
             }
@@ -272,7 +284,7 @@ namespace Stratis.Bitcoin.P2P
         /// Determines how often the connector should try and connect to an address from it's list.
         /// </summary>
         [NoTrace]
-        public virtual TimeSpan CalculateConnectionInterval()
+        protected virtual TimeSpan CalculateConnectionInterval()
         {
             return this.ConnectorPeers.Count < this.ConnectionSettings.InitialConnectionTarget ? TimeSpans.Ms100 : TimeSpans.Second;
         }
