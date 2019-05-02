@@ -361,6 +361,23 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             lock (this.lockObject)
             {
+                // Check if we're trying to spend a utxo twice
+                foreach (TxIn input in transaction.Inputs)
+                {
+                    if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData tTx))
+                    {
+                        continue;
+                    }
+
+                    // If we're trying to spend an input that is already spent, and it's not coming in a new block, don't reserve the transaction. 
+                    // This would be the case when blocks are synced in between CrossChainTransferStore calling
+                    // FederationWalletTransactionHandler.BuildTransaction and FederationWalletManager.ProcessTransaction.
+                    if (blockHeight == null && tTx.SpendingDetails?.BlockHeight != null)
+                    {
+                        return false;
+                    }
+                }
+
                 // Extract the withdrawal from the transaction (if any).
                 IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(transaction, block?.GetHash(), blockHeight ?? 0);
                 if (withdrawal != null)
@@ -378,23 +395,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     {
                         this.logger.LogTrace("Removing duplicates for {0}", withdrawal.DepositId);
                         this.RemoveTransientTransactions(withdrawal.DepositId);
-                    }
-                }
-
-                // Check if we're trying to spend a utxo twice
-                foreach (TxIn input in transaction.Inputs)
-                {
-                    if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData tTx))
-                    {
-                        continue;
-                    }
-
-                    // If we're trying to spend an input that is already spent, and it's not coming in a new block, don't reserve the transaction. 
-                    // This would be the case when blocks are synced in between CrossChainTransferStore calling
-                    // FederationWalletTransactionHandler.BuildTransaction and FederationWalletManager.ProcessTransaction.
-                    if (blockHeight == null && tTx.SpendingDetails?.BlockHeight != null)
-                    {
-                        return false;
                     }
                 }
 
