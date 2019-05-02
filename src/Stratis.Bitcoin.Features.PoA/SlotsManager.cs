@@ -11,7 +11,24 @@ namespace Stratis.Bitcoin.Features.PoA
     /// Provider of information about which pubkey should be used at which timestamp
     /// and what is the next timestamp at which current node will be able to mine.
     /// </summary>
-    public class SlotsManager
+    public interface ISlotsManager
+    {
+        /// <summary>Gets the federation member for specified timestamp.</summary>
+        /// <param name="headerUnixTimestamp">Timestamp of a header.</param>
+        /// <exception cref="ConsensusErrorException">In case timestamp is invalid.</exception>
+        IFederationMember GetFederationMemberForTimestamp(uint headerUnixTimestamp, List<IFederationMember> federationMembers = null);
+
+        /// <summary>Gets next timestamp at which current node can produce a block.</summary>
+        /// <exception cref="Exception">Thrown if this node is not a federation member.</exception>
+        uint GetMiningTimestamp(uint currentTime);
+
+        /// <summary>Determines whether timestamp is valid according to the network rules.</summary>
+        bool IsValidTimestamp(uint headerUnixTimestamp);
+
+        uint GetRoundLengthSeconds(int federationMembersCount);
+    }
+
+    public class SlotsManager : ISlotsManager
     {
         private readonly PoAConsensusOptions consensusOptions;
 
@@ -28,10 +45,8 @@ namespace Stratis.Bitcoin.Features.PoA
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        /// <summary>Gets the public key for specified timestamp.</summary>
-        /// <param name="headerUnixTimestamp">Timestamp of a header.</param>
-        /// <exception cref="ConsensusErrorException">In case timestamp is invalid.</exception>
-        public PubKey GetPubKeyForTimestamp(uint headerUnixTimestamp, List<IFederationMember> federationMembers = null)
+        /// <inheritdoc />
+        public IFederationMember GetFederationMemberForTimestamp(uint headerUnixTimestamp, List<IFederationMember> federationMembers = null)
         {
             if (!this.IsValidTimestamp(headerUnixTimestamp))
                 PoAConsensusErrors.InvalidHeaderTimestamp.Throw();
@@ -47,11 +62,10 @@ namespace Stratis.Bitcoin.Features.PoA
             // Slot number in current round.
             int currentSlotNumber = (int)((headerUnixTimestamp - roundStartTimestamp) / this.consensusOptions.TargetSpacingSeconds);
 
-            return federationMembers[currentSlotNumber].PubKey;
+            return federationMembers[currentSlotNumber];
         }
 
-        /// <summary>Gets next timestamp at which current node can produce a block.</summary>
-        /// <exception cref="Exception">Thrown if this node is not a federation member.</exception>
+        /// <inheritdoc />
         public uint GetMiningTimestamp(uint currentTime)
         {
             if (!this.federationManager.IsFederationMember)
@@ -80,7 +94,7 @@ namespace Stratis.Bitcoin.Features.PoA
             return nextTimestampForMining;
         }
 
-        /// <summary>Determines whether timestamp is valid according to the network rules.</summary>
+        /// <inheritdoc />
         public bool IsValidTimestamp(uint headerUnixTimestamp)
         {
             return (headerUnixTimestamp % this.consensusOptions.TargetSpacingSeconds) == 0;

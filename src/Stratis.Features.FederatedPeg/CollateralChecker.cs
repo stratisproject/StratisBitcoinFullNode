@@ -15,7 +15,15 @@ using Stratis.Bitcoin.Signals;
 namespace Stratis.Features.FederatedPeg
 {
     /// <summary>Class that checks if federation members fulfill the collateral requirement.</summary>
-    public class CollateralChecker : IDisposable
+    public interface ICollateralChecker : IDisposable
+    {
+        Task InitializeAsync();
+
+        /// <summary>Checks if given federation member fulfills the collateral requirement.</summary>
+        bool CheckCollateral(IFederationMember federationMember);
+    }
+
+    public class CollateralChecker : ICollateralChecker
     {
         private readonly IBlockStoreClient blockStoreClient;
 
@@ -26,7 +34,6 @@ namespace Stratis.Features.FederatedPeg
         private readonly ILogger logger;
 
         /// <summary>Protects access to <see cref="depositsByAddress"/>.</summary>
-
         private readonly object locker;
 
         private readonly CancellationTokenSource cancellationSource;
@@ -45,7 +52,7 @@ namespace Stratis.Features.FederatedPeg
         /// Deposits are not updated if federation member doesn't have collateral requirement enabled.
         /// All access should be protected by <see cref="locker"/>.
         /// </remarks>
-        private Dictionary<string, Money> depositsByAddress;
+        private readonly Dictionary<string, Money> depositsByAddress;
 
         private Task updateCollateralContinuouslyTask;
 
@@ -67,8 +74,11 @@ namespace Stratis.Features.FederatedPeg
             this.memberAddedToken = this.signals.Subscribe<FedMemberAdded>(this.OnFedMemberAdded);
             this.memberKickedToken = this.signals.Subscribe<FedMemberKicked>(this.OnFedMemberKicked);
 
-            foreach (CollateralFederationMember federationMember in this.federationManager.GetFederationMembers().Cast<CollateralFederationMember>().Where(x => x.CollateralAmount != null && x.CollateralAmount > 0))
+            foreach (CollateralFederationMember federationMember in this.federationManager.GetFederationMembers()
+                .Cast<CollateralFederationMember>().Where(x => x.CollateralAmount != null && x.CollateralAmount > 0))
+            {
                 this.depositsByAddress.Add(federationMember.CollateralMainchainAddress, null);
+            }
 
             while (true)
             {
@@ -98,6 +108,7 @@ namespace Stratis.Features.FederatedPeg
             this.updateCollateralContinuouslyTask = this.UpdateCollateralInfoContinuouslyAsync();
         }
 
+        /// <summary>Continuously updates info about money deposited to fed member's addresses.</summary>
         private async Task UpdateCollateralInfoContinuouslyAsync()
         {
             while (!this.cancellationSource.Token.IsCancellationRequested)
@@ -161,6 +172,12 @@ namespace Stratis.Features.FederatedPeg
         {
             var member = federationMember as CollateralFederationMember;
 
+            if (member == null)
+            {
+                this.logger.LogTrace("(-)[WRONG_TYPE]");
+                throw new ArgumentException($"{nameof(federationMember)} should be of type: {nameof(CollateralFederationMember)}.");
+            }
+
             if ((member.CollateralAmount == null) || (member.CollateralAmount == 0))
             {
                 this.logger.LogTrace("(-)[NO_COLLATERAL_REQUIREMENT]:true");
@@ -177,7 +194,7 @@ namespace Stratis.Features.FederatedPeg
         {
             lock (this.locker)
             {
-                this.depositsByAddress.Remove(((CollateralFederationMember) fedMemberKicked.KickedMember).CollateralMainchainAddress);
+                this.depositsByAddress.Remove(((CollateralFederationMember)fedMemberKicked.KickedMember).CollateralMainchainAddress);
             }
         }
 
@@ -189,6 +206,7 @@ namespace Stratis.Features.FederatedPeg
             }
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             this.signals.Unsubscribe(this.memberAddedToken);

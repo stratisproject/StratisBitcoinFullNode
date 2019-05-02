@@ -1,8 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using NBitcoin;
+using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg.Wallet
 {
+    [NoTrace]
     public static class DeterministicCoinOrdering
     {
         /// <summary>
@@ -53,6 +56,14 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
 
             return 0;
+        }
+
+        public static int CompareUint256(uint256 x, uint256 y)
+        {
+            if (x == y)
+                return 0;
+
+            return (x < y) ? -1 : 1;
         }
     }
 }

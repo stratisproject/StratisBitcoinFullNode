@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Utilities
 
         /// <summary>Consumer of the items in the queue which responsibility is to execute the user defined callback.</summary>
         /// <remarks>Internal for test purposes.</remarks>
-        internal readonly Task ConsumerTask;
+        internal Task ConsumerTask { get; private set; }
 
         /// <summary>Cancellation that is triggered when the component is disposed.</summary>
         private readonly CancellationTokenSource cancellationTokenSource;

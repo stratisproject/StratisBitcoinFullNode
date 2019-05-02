@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -105,27 +103,27 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 return;
             }
 
-            Dictionary<uint256, Transaction> transactions = await this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).ConfigureAwait(false);
+            ICrossChainTransfer[] transfers = this.store.GetTransfersByStatus(new CrossChainTransferStatus[]{CrossChainTransferStatus.FullySigned});
 
-            if (!transactions.Any())
+            if (!transfers.Any())
             {
                 this.logger.LogTrace("Signed multisig transactions do not exist in the CrossChainTransfer store.");
                 return;
             }
 
-            foreach (KeyValuePair<uint256, Transaction> transaction in transactions)
+            foreach (ICrossChainTransfer transfer in transfers)
             {
-                TxMempoolInfo txInfo = await this.mempoolManager.InfoAsync(transaction.Value.GetHash()).ConfigureAwait(false);
+                TxMempoolInfo txInfo = await this.mempoolManager.InfoAsync(transfer.PartialTransaction.GetHash()).ConfigureAwait(false);
 
                 if (txInfo != null)
                 {
-                    this.logger.LogTrace("Transaction ID '{0}' already in the mempool.", transaction.Key);
+                    this.logger.LogTrace("Deposit ID '{0}' already in the mempool.", transfer.DepositTransactionId);
                     continue;
                 }
 
-                this.logger.LogInformation("Broadcasting deposit-id={0} a signed multisig transaction {1} to the network.", transaction.Key, transaction.Value.GetHash());
+                this.logger.LogInformation("Broadcasting deposit-id={0} a signed multisig transaction {1} to the network.", transfer.DepositTransactionId, transfer.PartialTransaction.GetHash());
 
-                await this.broadcasterManager.BroadcastTransactionAsync(transaction.Value).ConfigureAwait(false);
+                await this.broadcasterManager.BroadcastTransactionAsync(transfer.PartialTransaction).ConfigureAwait(false);
             }
         }
 
