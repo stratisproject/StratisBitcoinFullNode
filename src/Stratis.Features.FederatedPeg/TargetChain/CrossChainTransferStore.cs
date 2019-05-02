@@ -935,15 +935,17 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <inheritdoc />
-        [Obsolete("This doesn't lock when validating cross chain transfers. Don't use.")]
         public Task<ICrossChainTransfer[]> GetAsync(uint256[] depositIds)
         {
             return Task.Run(() =>
             {
-                this.Synchronize();
+                lock (this.lockObj)
+                {
+                    this.Synchronize();
 
-                ICrossChainTransfer[] res = this.ValidateCrossChainTransfers(this.Get(depositIds));
-                return res;
+                    ICrossChainTransfer[] res = this.ValidateCrossChainTransfers(this.Get(depositIds));
+                    return res;
+                }
             });
         }
 
