@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
+using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg.Wallet
 {
@@ -56,6 +57,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             return 0;
         }
 
+        [NoTrace]
         public static int CompareUint256(uint256 x, uint256 y)
         {
             if (x == y)
