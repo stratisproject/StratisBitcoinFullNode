@@ -352,7 +352,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public bool ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null)
         {
             Guard.NotNull(transaction, nameof(transaction));
-            uint256 hash = transaction.GetHash();
 
             if (this.Wallet == null)
             {
@@ -364,6 +363,23 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             lock (this.lockObject)
             {
+                // Check if we're trying to spend a utxo twice
+                foreach (TxIn input in transaction.Inputs)
+                {
+                    if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData tTx))
+                    {
+                        continue;
+                    }
+
+                    // If we're trying to spend an input that is already spent, and it's not coming in a new block, don't reserve the transaction. 
+                    // This would be the case when blocks are synced in between CrossChainTransferStore calling
+                    // FederationWalletTransactionHandler.BuildTransaction and FederationWalletManager.ProcessTransaction.
+                    if (blockHeight == null && tTx.SpendingDetails?.BlockHeight != null)
+                    {
+                        return false;
+                    }
+                }
+
                 // Extract the withdrawal from the transaction (if any).
                 IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(transaction, block?.GetHash(), blockHeight ?? 0);
                 if (withdrawal != null)
