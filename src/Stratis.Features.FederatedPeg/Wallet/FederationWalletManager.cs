@@ -385,8 +385,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (withdrawal != null)
                 {
                     // Exit if already present and included in a block.
-                    List<(Transaction, IWithdrawal)> walletData = this.FindWithdrawalTransactions(withdrawal.DepositId);
-                    if ((walletData.Count == 1) && (walletData[0].Item2.BlockNumber != 0))
+                    List<(Transaction transaction, IWithdrawal withdrawal)> walletData = this.FindWithdrawalTransactions(withdrawal.DepositId);
+                    if ((walletData.Count == 1) && (walletData[0].withdrawal.BlockNumber != 0))
                     {
                         this.logger.LogTrace("Deposit {0} Already included in block.", withdrawal.DepositId);
                         return false;
@@ -783,10 +783,12 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 // Remove transient transactions not seen in a block yet.
                 bool walletUpdated = false;
 
-                foreach ((Transaction transaction, _) in this.FindWithdrawalTransactions(depositId)
-                    .Where(w => w.Item2.BlockNumber == 0))
+                foreach ((Transaction transaction, IWithdrawal withdrawal) in this.FindWithdrawalTransactions(depositId))
                 {
-                    walletUpdated |= this.RemoveTransaction(transaction);
+                    if (withdrawal.BlockNumber == 0)
+                    {
+                        walletUpdated |= this.RemoveTransaction(transaction);
+                    }
                 }
 
                 return walletUpdated;
@@ -813,7 +815,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             // A withdrawal is a transaction that spends funds from the multisig wallet.
             lock (this.lockObject)
             {
-                var withdrawals = new List<(Transaction, IWithdrawal)>();
+                var withdrawals = new List<(Transaction transaction, IWithdrawal withdrawal)>();
 
                 foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions)
                 {
@@ -822,7 +824,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                     Transaction walletTran = this.network.CreateTransaction(transactionData.SpendingDetails.Hex);
 
-                    if (withdrawals.Any(w => w.Item1.GetHash() == walletTran.GetHash()))
+                    if (withdrawals.Any(w => w.transaction.GetHash() == walletTran.GetHash()))
                         continue;
 
                     int? blockHeight = transactionData.SpendingDetails.BlockHeight;

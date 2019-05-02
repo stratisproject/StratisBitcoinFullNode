@@ -228,10 +228,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 if (partialTransfer.Status != CrossChainTransferStatus.Partial && partialTransfer.Status != CrossChainTransferStatus.FullySigned)
                     continue;
 
-                List<(Transaction, IWithdrawal)> walletData = this.federationWalletManager.FindWithdrawalTransactions(partialTransfer.DepositTransactionId);
-                if (walletData.Count == 1 && this.ValidateTransaction(walletData[0].Item1))
+                List<(Transaction transaction, IWithdrawal withdrawal)> walletData = this.federationWalletManager.FindWithdrawalTransactions(partialTransfer.DepositTransactionId);
+
+                if (walletData.Count == 1 && this.ValidateTransaction(walletData[0].transaction))
                 {
-                    Transaction walletTran = walletData[0].Item1;
+                    Transaction walletTran = walletData[0].transaction;
                     if (walletTran.GetHash() == partialTransfer.PartialTransaction.GetHash())
                         continue;
 
@@ -239,8 +240,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     {
                         partialTransfer.SetPartialTransaction(walletTran);
 
-                        if (walletData[0].Item2.BlockNumber != 0)
-                            tracker.SetTransferStatus(partialTransfer, CrossChainTransferStatus.SeenInBlock, walletData[0].Item2.BlockHash, (int)walletData[0].Item2.BlockNumber);
+                        if (walletData[0].withdrawal.BlockNumber != 0)
+                            tracker.SetTransferStatus(partialTransfer, CrossChainTransferStatus.SeenInBlock, walletData[0].withdrawal.BlockHash, (int)walletData[0].withdrawal.BlockNumber);
                         else if (this.ValidateTransaction(walletTran, true))
                             tracker.SetTransferStatus(partialTransfer, CrossChainTransferStatus.FullySigned);
                         else
@@ -251,7 +252,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 }
 
                 // Remove any invalid withdrawal transactions.
-                foreach (IWithdrawal withdrawal in walletData.Select(d => d.Item2))
+                foreach (IWithdrawal withdrawal in walletData.Select(d => d.withdrawal))
                     this.federationWalletManager.RemoveTransientTransactions(withdrawal.DepositId);
 
                 // The chain may have been rewound so that this transaction or its UTXO's have been lost.
@@ -295,11 +296,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     }
 
                     // Remove transient transactions after the next mature deposit height.
-                    foreach ((Transaction, IWithdrawal) t in this.federationWalletManager.FindWithdrawalTransactions())
+                    foreach ((Transaction transaction, IWithdrawal withdrawal) in this.federationWalletManager.FindWithdrawalTransactions())
                     {
-                        if (t.Item2.BlockNumber >= newChainATip)
+                        if (withdrawal.BlockNumber >= newChainATip)
                         {
-                            this.federationWalletManager.RemoveTransientTransactions(t.Item2.DepositId);
+                            this.federationWalletManager.RemoveTransientTransactions(withdrawal.DepositId);
                         }
                     }
 
