@@ -5,6 +5,7 @@ using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg.Wallet
 {
+    [NoTrace]
     public static class DeterministicCoinOrdering
     {
         /// <summary>
@@ -57,7 +58,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
             return 0;
         }
 
-        [NoTrace]
         public static int CompareUint256(uint256 x, uint256 y)
         {
             if (x == y)
