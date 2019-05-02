@@ -165,7 +165,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 // Any transactions seen in blocks must also be present in the wallet.
                 FederationWallet wallet = this.federationWalletManager.GetWallet();
-                ICrossChainTransfer[] transfers = this.GetTransfersByStatusInternal(new[] { CrossChainTransferStatus.SeenInBlock }, true, false).ToArray();
+                ICrossChainTransfer[] transfers = this.GetTransfersByStatusInternalLocked(new[] { CrossChainTransferStatus.SeenInBlock }, true, false).ToArray();
                 foreach (ICrossChainTransfer transfer in transfers)
                 {
                     (Transaction tran, TransactionData tranData, _) = this.federationWalletManager.FindWithdrawalTransactions(transfer.DepositTransactionId).FirstOrDefault();
@@ -998,7 +998,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             return transaction.Inputs.Select(i => i.PrevOut).OrderByDescending(t => t, comparer).FirstOrDefault();
         }
 
-        private ICrossChainTransfer[] GetTransfersByStatusInternal(CrossChainTransferStatus[] statuses, bool sort = false, bool validate = true)
+        private ICrossChainTransfer[] GetTransfersByStatusInternalLocked(CrossChainTransferStatus[] statuses, bool sort = false, bool validate = true)
         {
             var depositIds = new HashSet<uint256>();
             foreach (CrossChainTransferStatus status in statuses)
@@ -1029,7 +1029,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             {
                 Guard.Assert(this.Synchronize());
 
-                return this.GetTransfersByStatusInternal(statuses, sort);
+                return this.GetTransfersByStatusInternalLocked(statuses, sort);
             }
         }
 
