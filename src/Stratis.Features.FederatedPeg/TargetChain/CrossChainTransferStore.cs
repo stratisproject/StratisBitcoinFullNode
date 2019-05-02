@@ -251,6 +251,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                         continue;
                     }
+
+                    this.logger.LogDebug("Templates don't match for {0} and {1}.", walletTran.GetHash(), partialTransfer.PartialTransaction.GetHash());
                 }
 
                 // Remove any invalid withdrawal transactions.
@@ -261,6 +263,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 // Rewind our recorded chain A tip to ensure the transaction is re-built once UTXO's become available.
                 if (partialTransfer.DepositHeight < newChainATip)
                     newChainATip = partialTransfer.DepositHeight ?? newChainATip;
+
+                this.logger.LogDebug("Setting DepositId {0} to Suspended", partialTransfer.DepositTransactionId);
 
                 tracker.SetTransferStatus(partialTransfer, CrossChainTransferStatus.Suspended);
             }
