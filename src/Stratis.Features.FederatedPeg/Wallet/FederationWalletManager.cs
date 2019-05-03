@@ -828,7 +828,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         continue;
 
                     int? blockHeight = transactionData.SpendingDetails.BlockHeight;
-                    uint256 blockHash = (blockHeight == null) ? null : this.chainIndexer.GetHeader((int)blockHeight).HashBlock;
+                    uint256 blockHash = (blockHeight == null) ? null : this.chainIndexer.GetHeader((int)blockHeight)?.HashBlock;
 
                     IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(walletTran, blockHash, blockHeight ?? 0);
                     if (withdrawal == null)
