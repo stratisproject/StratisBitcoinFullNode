@@ -302,15 +302,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                         }
                     }
 
-                    // Remove transient transactions after the next mature deposit height.
-                    foreach ((Transaction transaction, IWithdrawal withdrawal) in this.federationWalletManager.FindWithdrawalTransactions())
-                    {
-                        if (withdrawal.BlockNumber >= newChainATip)
-                        {
-                            this.federationWalletManager.RemoveTransientTransactions(withdrawal.DepositId);
-                        }
-                    }
-
                     this.federationWalletManager.SaveWallet();
 
                     return crossChainTransfers;
