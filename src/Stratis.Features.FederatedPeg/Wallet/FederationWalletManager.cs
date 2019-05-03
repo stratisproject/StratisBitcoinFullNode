@@ -371,7 +371,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         continue;
                     }
 
-                    // If we're trying to spend an input that is already spent, and it's not coming in a new block, don't reserve the transaction. 
+                    // If we're trying to spend an input that is already spent, and it's not coming in a new block, don't reserve the transaction.
                     // This would be the case when blocks are synced in between CrossChainTransferStore calling
                     // FederationWalletTransactionHandler.BuildTransaction and FederationWalletManager.ProcessTransaction.
                     if (blockHeight == null && tTx.SpendingDetails?.BlockHeight != null)
@@ -896,7 +896,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (checkSignature)
                 {
                     TransactionBuilder builder = new TransactionBuilder(this.Wallet.Network).AddCoins(coins);
-                    if (!builder.Verify(transaction, this.federationGatewaySettings.TransactionFee, out TransactionPolicyError[] errors))
+                    if (!builder.Verify(transaction, this.federationGatewaySettings.TransactionFee(coins.Count), out TransactionPolicyError[] errors))
                     {
                         // Trace the reason validation failed. Note that failure here doesn't mean an error necessarily. Just that the transaction is not fully signed.
                         foreach (TransactionPolicyError transactionPolicyError in errors)

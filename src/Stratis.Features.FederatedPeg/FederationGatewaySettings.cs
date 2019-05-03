@@ -36,6 +36,7 @@ namespace Stratis.Features.FederatedPeg
         /// TODO: This should be configurable on the Network level in the future, but individual nodes shouldn't be tweaking it.
         /// </remarks>
         public static readonly Money DefaultTransactionFee = Money.Coins(0.001m);
+        public static readonly Money InputsTransactionFee = Money.Coins(0.0m);
 
         /// <summary>
         /// Sidechains to STRAT don't need to check for deposits for the whole main chain. Only from when they begun.
@@ -66,8 +67,6 @@ namespace Stratis.Features.FederatedPeg
             this.FederationPublicKeys = payToMultisigScriptParams.PubKeys;
 
             this.PublicKey = configReader.GetOrDefault<string>(PublicKeyParam, null);
-
-            this.TransactionFee = DefaultTransactionFee;
 
             if (this.FederationPublicKeys.All(p => p != new PubKey(this.PublicKey)))
             {
@@ -113,7 +112,10 @@ namespace Stratis.Features.FederatedPeg
         public int MultiSigN { get; }
 
         /// <inheritdoc/>
-        public Money TransactionFee { get; }
+        public Money TransactionFee(int numInputs)
+        {
+            return DefaultTransactionFee + numInputs * InputsTransactionFee;
+        }
 
         /// <inheritdoc/>
         public int CounterChainDepositStartBlock { get; }
