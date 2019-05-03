@@ -887,7 +887,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 TransactionData earliestUnspent = this.Wallet.MultiSigAddress.Transactions.Where(t => t.SpendingDetails == null).OrderBy(t => t, comparer).FirstOrDefault();
                 if (earliestUnspent != null)
                 {
-                    TransactionData oldestInput = transaction.Inputs.Select(i => this.outpointLookup[i.PrevOut]).OrderByDescending(t => t, comparer).FirstOrDefault();
+                    TransactionData oldestInput = transaction.Inputs
+                                                             .Where(i => this.outpointLookup.ContainsKey(i.PrevOut))
+                                                             .Select(i => this.outpointLookup[i.PrevOut])
+                                                             .OrderByDescending(t => t, comparer)
+                                                             .FirstOrDefault();
                     if (oldestInput != null && DeterministicCoinOrdering.CompareTransactionData(earliestUnspent, oldestInput) < 0)
                         return false;
                 }
