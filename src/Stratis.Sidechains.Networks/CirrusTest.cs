@@ -58,13 +58,13 @@ namespace Stratis.Sidechains.Networks
             // and should be the same for all nodes operating on this network.
             var genesisFederationMembers = new List<IFederationMember>()
             {
-                new CollateralFederationMember(new PubKey("021040ef28c82fcffb63028e69081605ed4712910c8384d5115c9ffeacd9dbcae4"), new Money(0), null),
-                new CollateralFederationMember(new PubKey("0244290a31824ba7d53e59c7a29d13dbeca15a9b0d36fdd4d28fce426753107bfc"), new Money(0), null),
-                new CollateralFederationMember(new PubKey("032df4a2d62c0db12cd1d66201819a10788637c9b90a1cd2a5a3f5196fdab7a621"), new Money(0), null),
-                new CollateralFederationMember(new PubKey("028ed190eb4ed6e46440ac6af21d8a67a537bd1bd7edb9cc5177d36d5a0972244d"), new Money(0), null),
-                new CollateralFederationMember(new PubKey("02ff9923324399a188daf4310825a85dd3b89e2301d0ad073295b6f33ae1c72f7a"), new Money(0), null),
-                new CollateralFederationMember(new PubKey("03dfcbf94ead22922e1a193d7f0a153e0f3f17c4107dc4a036e9827c5e57e6dd92"), new Money(0), null),
-                new CollateralFederationMember(new PubKey("02e10b42299da11526985bd213d15d8151ec553b58e8f6425eb94e9def5da1bb47"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("03cfc06ef56352038e1169deb3b4fa228356e2a54255cf77c271556d2e2607c28c"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("022553fb641898be98e6e331d644c1689455536e58ad643d84844e981708da38e9"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("02fc828e06041ae803ab5378b5ec4e0def3d4e331977a69e1b6ef694d67f5c9c13"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("02fd4f3197c40d41f9f5478d55844f522744258ca4093b5119571de1a5df1bc653"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("030ac8e3e119257aff4512ea44450632a6a9b54104f936732d31c28a63a2104064"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("03348a438f86727c579febfd6a656cfd6477605e5fa00efa5b4f5fe1cab01c49ef"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("0329acc983836fe25d87de72165f8aa5658c4eba37de9e56f2559b895d63df09b3"), new Money(0), null),
             };
 
             var consensusOptions = new PoAConsensusOptions(
