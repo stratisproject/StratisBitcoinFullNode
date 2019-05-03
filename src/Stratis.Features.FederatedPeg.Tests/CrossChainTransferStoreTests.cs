@@ -128,7 +128,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
 
-                Transaction[] transactions = crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.Partial).GetAwaiter().GetResult().Values.ToArray();
+                Transaction[] transactions = crossChainTransferStore.GetTransfersByStatus(new []{CrossChainTransferStatus.Partial}).Select(x=>x.PartialTransaction).ToArray();
 
                 Assert.Equal(2, transactions.Length);
 
@@ -305,6 +305,67 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(new Money(980m, MoneyUnit.BTC), spendable.unconfirmed);
             }
         }
+        /// <summary>
+        /// Test that if one transaction is set to suspended then all following transactions will be too to maintain deterministic order.
+        /// </summary>
+        [Fact]
+        public void SetAllAfterSuspendedToSuspended()
+        {
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+
+            this.Init(dataFolder);
+            this.AddFunding();
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
+
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
+            {
+                crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
+
+                TestBase.WaitLoopMessage(() => (this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height, $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
+                TestBase.WaitLoop(() => this.wallet.LastBlockSyncedHeight == this.ChainIndexer.Tip.Height);
+                Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
+
+                uint256 txId1 = 0;
+                uint256 txId2 = 1;
+                uint256 txId3 = 2;
+                uint256 blockHash = 2;
+
+                BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
+                BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
+                BitcoinAddress address3 = (new Key()).PubKey.Hash.GetAddress(this.network);
+
+                var deposit1 = new Deposit(txId1, new Money(1m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, blockHash);
+                var deposit2 = new Deposit(txId2, new Money(2m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, blockHash);
+                var deposit3 = new Deposit(txId3, new Money(3m, MoneyUnit.BTC), address3.ToString(), crossChainTransferStore.NextMatureDepositHeight, blockHash);
+
+
+                MaturedBlockDepositsModel[] blockDeposits = new[] { new MaturedBlockDepositsModel(
+                    new MaturedBlockInfoModel() {
+                        BlockHash = blockHash,
+                        BlockHeight = crossChainTransferStore.NextMatureDepositHeight },
+                    new[] { deposit1, deposit2, deposit3 })
+                };
+
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
+
+                ICrossChainTransfer[] transfers = crossChainTransferStore.GetAsync(new uint256[] { txId1, txId2, txId3 }).GetAwaiter().GetResult().ToArray();
+
+                Assert.Equal(3, transfers.Length);
+                Assert.Equal(CrossChainTransferStatus.Partial, transfers[0].Status);
+                Assert.Equal(CrossChainTransferStatus.Partial, transfers[1].Status);
+                Assert.Equal(CrossChainTransferStatus.Partial, transfers[2].Status);
+
+                // Lets break the first transaction
+                this.federationWalletManager.RemoveTransientTransactions(deposit1.Id);
+                
+                // Transactions after will be broken
+                transfers = crossChainTransferStore.GetAsync(new uint256[] { txId1, txId2, txId3 }).GetAwaiter().GetResult().ToArray();
+                Assert.Equal(CrossChainTransferStatus.Suspended, transfers[0].Status);
+                Assert.Equal(CrossChainTransferStatus.Suspended, transfers[1].Status);
+                Assert.Equal(CrossChainTransferStatus.Suspended, transfers[2].Status);
+            }
+        }
 
         /// <summary>
         /// Tests whether the store merges signatures as expected.
@@ -393,7 +454,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(CrossChainTransferStatus.FullySigned, crossChainTransfer.Status);
 
                 // Should be returned as signed.
-                Transaction signedTransaction = crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).GetAwaiter().GetResult().Values.SingleOrDefault();
+                Transaction signedTransaction = crossChainTransferStore.GetTransfersByStatus(new[]{CrossChainTransferStatus.FullySigned}).Select(x=>x.PartialTransaction).SingleOrDefault();
 
                 Assert.NotNull(signedTransaction);
 
@@ -439,8 +500,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
 
-                Dictionary<uint256, Transaction> transactions = crossChainTransferStore.GetTransactionsByStatusAsync(
-                    CrossChainTransferStatus.Partial).GetAwaiter().GetResult();
+                var transactions = crossChainTransferStore.GetTransfersByStatus(new[] {CrossChainTransferStatus.Partial});
 
                 var requester = new PartialTransactionRequester(this.loggerFactory, crossChainTransferStore, this.asyncProvider,
                     this.nodeLifetime, this.connectionManager, this.federationGatewaySettings, this.ibdState, this.federationWalletManager);
@@ -465,10 +525,10 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Receives all of the requests. We broadcast multiple at a time.
                 peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
-                    o.DepositId == 0 && o.PartialTransaction.GetHash() == transactions[0].GetHash())).GetAwaiter().GetResult();
+                    o.DepositId == 0 && o.PartialTransaction.GetHash() == transactions[0].PartialTransaction.GetHash())).GetAwaiter().GetResult();
 
                 peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
-                    o.DepositId == 1 && o.PartialTransaction.GetHash() == transactions[1].GetHash())).GetAwaiter().GetResult();
+                    o.DepositId == 1 && o.PartialTransaction.GetHash() == transactions[1].PartialTransaction.GetHash())).GetAwaiter().GetResult();
             }
         }
 
@@ -518,7 +578,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             var transaction = new PosTransaction(model.Hex);
 
-            var reader = new OpReturnDataReader(this.loggerFactory, new FederatedPegOptions(FederatedPegNetwork.NetworksSelector.Testnet()));
+            var reader = new OpReturnDataReader(this.loggerFactory, new FederatedPegOptions(CirrusNetwork.NetworksSelector.Testnet()));
             var extractor = new DepositExtractor(this.loggerFactory, this.federationGatewaySettings, reader);
             IDeposit deposit = extractor.ExtractDepositFromTransaction(transaction, 2, 1);
 
@@ -609,10 +669,98 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.NotEqual(CrossChainTransferStatus.FullySigned, crossChainTransfer.Status);
 
                 // Should return null.
-                Dictionary<uint256, Transaction> signedTransactions = await crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned);
-                Transaction signedTransaction = signedTransactions.Values.SingleOrDefault();
+                var signedTransactions = crossChainTransferStore.GetTransfersByStatus(new[] {CrossChainTransferStatus.FullySigned});
+                Transaction signedTransaction = signedTransactions.Select(x=>x.PartialTransaction).SingleOrDefault();
 
                 Assert.Null(signedTransaction);
+            }
+        }
+
+        /// <summary>
+        /// Recording deposits when the wallet UTXOs are sufficient succeeds with deterministic transactions.
+        /// </summary>
+        [Fact]
+        public void StoringDepositsAfterRewindIsPrecededByClearingInvalidTransientsAndSettingNextMatureDepositHeightCorrectly()
+        {
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+
+            this.Init(dataFolder);
+
+            // Creates two consecutive blocks of funding transactions with 100 coins each.
+            (Transaction fundingTransaction1, ChainedHeader fundingBlock1) = AddFundingTransaction(new Money[] { Money.COIN * 100 });
+            (Transaction fundingTransaction2, ChainedHeader fundingBlock2) = AddFundingTransaction(new Money[] { Money.COIN * 100 });
+
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
+
+            MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
+
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
+            {
+                crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
+
+                TestBase.WaitLoopMessage(() => (this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height, $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
+                Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
+
+                BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
+                BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
+
+                // First deposit.
+                var deposit1 = new Deposit(1, new Money(99m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+
+                MaturedBlockDepositsModel[] blockDeposit1 = new[] { new MaturedBlockDepositsModel(
+                    new MaturedBlockInfoModel() {
+                        BlockHash = 1,
+                        BlockHeight = crossChainTransferStore.NextMatureDepositHeight },
+                    new[] { deposit1 })
+                };
+
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposit1).GetAwaiter().GetResult();
+
+                ICrossChainTransfer transfer1 = crossChainTransferStore.GetAsync(new[] { deposit1.Id }).GetAwaiter().GetResult().FirstOrDefault();
+                Assert.Equal(CrossChainTransferStatus.Partial, transfer1?.Status);
+
+                // Second deposit.
+                var deposit2 = new Deposit(2, new Money(99m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 2);
+
+                MaturedBlockDepositsModel[] blockDeposit2 = new[] { new MaturedBlockDepositsModel(
+                    new MaturedBlockInfoModel() {
+                        BlockHash = 2,
+                        BlockHeight = crossChainTransferStore.NextMatureDepositHeight },
+                    new[] { deposit2 })
+                };
+
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposit2).GetAwaiter().GetResult();
+
+                ICrossChainTransfer transfer2 = crossChainTransferStore.GetAsync(new[] { deposit2.Id }).GetAwaiter().GetResult().FirstOrDefault();
+                Assert.Equal(CrossChainTransferStatus.Partial, transfer2?.Status);
+
+                // Both partial transactions have been created. Now rewind the wallet.
+                this.ChainIndexer.SetTip(fundingBlock1);
+                this.federationWalletSyncManager.ProcessBlock(fundingBlock1.Block);
+
+                TestBase.WaitLoopMessage(() => (this.ChainIndexer.Tip.Height == this.federationWalletSyncManager.WalletTip.Height, $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} SyncManager.TipHashHeight:{this.federationWalletSyncManager.WalletTip.Height}"));
+
+                // Synchronize the store using a dummy get.
+                crossChainTransferStore.GetAsync(new uint256[] { }).GetAwaiter().GetResult();
+
+                // See if the NextMatureDepositHeight was rewound for the replay of deposit 2.
+                Assert.Equal(deposit2.BlockNumber, crossChainTransferStore.NextMatureDepositHeight);
+
+                // That's great. Now let's redo deposit 2 which had its funding wiped out.
+                (fundingTransaction2, fundingBlock2) = AddFundingTransaction(new Money[] { Money.COIN * 100 });
+
+                // Ensure that the new funds are mature.
+                this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
+
+                // Recreate the second deposit.
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposit2).GetAwaiter().GetResult();
+
+                // Check that its status is partial.
+                transfer2 = crossChainTransferStore.GetAsync(new[] { deposit2.Id }).GetAwaiter().GetResult().FirstOrDefault();
+                Assert.Equal(CrossChainTransferStatus.Partial, transfer2?.Status);
+
+                Assert.Equal(4, this.wallet.MultiSigAddress.Transactions.Count);
             }
         }
 
@@ -637,6 +785,56 @@ namespace Stratis.Features.FederatedPeg.Tests
             {
                 string result = streamReader.ReadToEnd();
                 return JsonConvert.DeserializeObject<Q>(result);
+            }
+        }
+
+        /// <summary>
+        /// Recording deposits when the target is our multisig is ignored, but a different multisig is allowed.
+        /// </summary>
+        [Fact]
+        public void StoringDepositsWhenTargetIsMultisigIsIgnoredIffOurMultisig()
+        {
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+
+            this.Init(dataFolder);
+            this.AddFunding();
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
+
+            MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
+
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
+            {
+                crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
+
+                TestBase.WaitLoopMessage(() => (this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height, $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
+                Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
+
+                // Forwarding money already in the multisig address to the multisig address is ignored.
+                BitcoinAddress address1 = multiSigAddress.RedeemScript.Hash.GetAddress(this.network);
+                BitcoinAddress address2 = new Script("").Hash.GetAddress(this.network);
+
+                var deposit1 = new Deposit(0, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                var deposit2 = new Deposit(1, new Money(160m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+
+                MaturedBlockDepositsModel[] blockDeposits = new[] { new MaturedBlockDepositsModel(
+                    new MaturedBlockInfoModel() {
+                        BlockHash = 1,
+                        BlockHeight = crossChainTransferStore.NextMatureDepositHeight },
+                    new[] { deposit1, deposit2 })
+                };
+
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
+
+                Transaction[] partialTransactions = crossChainTransferStore.GetTransfersByStatus(new[]{CrossChainTransferStatus.Partial}).Select(x=>x.PartialTransaction).ToArray();
+                Transaction[] suspendedTransactions = crossChainTransferStore.GetTransfersByStatus(new []{CrossChainTransferStatus.Suspended}).Select(x => x.PartialTransaction).ToArray();
+
+                // Only the deposit going towards a different multisig address is accepted. The other is ignored.
+                Assert.Single(partialTransactions);
+                Assert.Empty(suspendedTransactions);
+
+                IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(partialTransactions[0], null, 1);
+                Assert.Equal((uint256)1, withdrawal.DepositId);
             }
         }
     }

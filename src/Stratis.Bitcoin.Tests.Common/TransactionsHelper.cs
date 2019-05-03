@@ -3,7 +3,6 @@ using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Utilities;
-using Xunit.Sdk;
 
 namespace Stratis.Bitcoin.Tests.Common
 {

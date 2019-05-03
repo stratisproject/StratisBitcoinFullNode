@@ -12,7 +12,7 @@ namespace Stratis.Sidechains.Networks
     /// <summary>
     /// Right now, ripped nearly straight from <see cref="PoANetwork"/>.
     /// </summary>
-    public class FederatedPegMain : PoANetwork
+    public class CirrusMain : PoANetwork
     {
         /// <summary> The name of the root folder containing the different federated peg blockchains.</summary>
         private const string NetworkRootFolderName = "cirrus";
@@ -20,7 +20,7 @@ namespace Stratis.Sidechains.Networks
         /// <summary> The default name used for the federated peg configuration file. </summary>
         private const string NetworkDefaultConfigFilename = "cirrus.conf";
 
-        internal FederatedPegMain()
+        internal CirrusMain()
         {
             this.Name = "CirrusMain";
             this.NetworkType = NetworkType.Mainnet;
@@ -39,7 +39,7 @@ namespace Stratis.Sidechains.Networks
             this.DefaultConfigFilename = NetworkDefaultConfigFilename;
             this.MaxTimeOffsetSeconds = 25 * 60;
 
-            var consensusFactory = new SmartContractPoAConsensusFactory();
+            var consensusFactory = new SmartContractCollateralPoAConsensusFactory();
 
             // Create the genesis block.
             this.GenesisTime = 1545310504;
@@ -49,7 +49,7 @@ namespace Stratis.Sidechains.Networks
             this.GenesisReward = Money.Zero;
 
             string coinbaseText = "https://www.abc.net.au/news/science/2018-12-07/encryption-bill-australian-technology-industry-fuming-mad/10589962";
-            Block genesisBlock = FederatedPegNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward, coinbaseText);
+            Block genesisBlock = CirrusNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward, coinbaseText);
 
             this.Genesis = genesisBlock;
 
@@ -102,7 +102,7 @@ namespace Stratis.Sidechains.Networks
                 bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
-                maxReorgLength: 0, // No max reorg limit on PoA networks.
+                maxReorgLength: 240, // Heuristic. Roughly 2 * mining members
                 defaultAssumeValid: null,
                 maxMoney: Money.Coins(100_000_000),
                 coinbaseMaturity: 1,

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Security;
-using NBitcoin;
+﻿using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 {

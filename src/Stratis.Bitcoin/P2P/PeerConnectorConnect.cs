@@ -41,14 +41,14 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public override void OnInitialize()
+        protected override void OnInitialize()
         {
             this.MaxOutboundConnections = this.ConnectionSettings.Connect.Count;
 
             // Add the endpoints from the -connect arg to the address manager.
             foreach (IPEndPoint ipEndpoint in this.ConnectionSettings.Connect)
             {
-                this.peerAddressManager.AddPeer(ipEndpoint.MapToIpv6(), IPAddress.Loopback);
+                this.PeerAddressManager.AddPeer(ipEndpoint.MapToIpv6(), IPAddress.Loopback);
             }
         }
 
@@ -60,14 +60,14 @@ namespace Stratis.Bitcoin.P2P
 
         /// <inheritdoc/>
         [NoTrace]
-        public override void OnStartConnect()
+        protected override void OnStartConnect()
         {
             this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.None;
         }
 
         /// <inheritdoc/>
         [NoTrace]
-        public override TimeSpan CalculateConnectionInterval()
+        protected override TimeSpan CalculateConnectionInterval()
         {
             return TimeSpans.Second;
         }
@@ -77,14 +77,14 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         public override async Task OnConnectAsync()
         {
-            await this.ConnectionSettings.Connect.ForEachAsync(this.ConnectionSettings.MaxOutboundConnections, this.nodeLifetime.ApplicationStopping,
+            await this.ConnectionSettings.Connect.ForEachAsync(this.ConnectionSettings.MaxOutboundConnections, this.NodeLifetime.ApplicationStopping,
                 async (ipEndpoint, cancellation) =>
                 {
-                    if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+                    if (this.NodeLifetime.ApplicationStopping.IsCancellationRequested)
                         return;
 
-                    PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
-                    if (peerAddress != null && !this.IsPeerConnected(peerAddress.Endpoint))
+                    PeerAddress peerAddress = this.PeerAddressManager.FindPeer(ipEndpoint);
+                    if (peerAddress != null)
                     {
                         this.logger.LogDebug("Attempting connection to {0}.", peerAddress.Endpoint);
 

@@ -36,6 +36,19 @@ namespace Stratis.Features.FederatedPeg
             }
         }
 
+        protected override void AddFederationMemberLocked(IFederationMember federationMember)
+        {
+            var collateralMember = federationMember as CollateralFederationMember;
+
+            if (this.federationMembers.Cast<CollateralFederationMember>().Any(x => x.CollateralMainchainAddress == collateralMember.CollateralMainchainAddress))
+            {
+                this.logger.LogTrace("(-)[DUPLICATED_COLLATERAL_ADDR]");
+                return;
+            }
+
+            base.AddFederationMemberLocked(federationMember);
+        }
+
         protected override List<IFederationMember> LoadFederation()
         {
             List<CollateralFederationMemberModel> fedMemberModels = this.keyValueRepo.LoadValueJson<List<CollateralFederationMemberModel>>(federationMembersDbKey);
@@ -74,15 +87,6 @@ namespace Stratis.Features.FederatedPeg
             }
 
             this.keyValueRepo.SaveValueJson(federationMembersDbKey, modelsCollection);
-        }
-
-        public class CollateralFederationMemberModel
-        {
-            public string PubKeyHex { get; set; }
-
-            public long CollateralAmountSatoshis { get; set; }
-
-            public string CollateralMainchainAddress { get; set; }
         }
     }
 }

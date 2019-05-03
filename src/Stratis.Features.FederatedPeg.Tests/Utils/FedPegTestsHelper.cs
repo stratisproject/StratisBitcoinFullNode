@@ -1,7 +1,6 @@
 ﻿using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Sidechains.Networks;
 
 namespace Stratis.Features.FederatedPeg.Tests.Utils
 {

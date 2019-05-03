@@ -11,4 +11,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             return new SmartContractPoABlockHeader();
         }
     }
+
+    public class SmartContractCollateralPoAConsensusFactory : CollateralPoAConsensusFactory
+    {
+        /// <inheritdoc />
+        public override BlockHeader CreateBlockHeader()
+        {
+            return new SmartContractPoABlockHeader();
+        }
+    }
 }

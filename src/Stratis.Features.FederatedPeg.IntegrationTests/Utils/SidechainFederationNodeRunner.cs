@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
@@ -46,10 +47,11 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                 .AddSmartContracts(options =>
                 {
                     options.UseReflectionExecutor();
+                    options.UsePoAWhitelistedContracts();
                 })
                 .UseSmartContractWallet()
-                .AddFederationGateway(new FederatedPegOptions(this.counterChainNetwork))
                 .UseFederatedPegPoAMining()
+                .AddFederationGateway(new FederatedPegOptions(this.counterChainNetwork))
                 .UseMempool()
                 .UseTransactionNotification()
                 .UseBlockNotification()
