@@ -425,9 +425,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                             if (!haveSuspendedTransfers)
                             {
+                                var fixedTransferCost = new Money(0.01m, MoneyUnit.BTC);
+
                                 var recipient = new Recipient
                                 {
-                                    Amount = deposit.Amount,
+                                    Amount = deposit.Amount - fixedTransferCost,
                                     ScriptPubKey = scriptPubKey
                                 };
 
