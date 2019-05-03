@@ -371,7 +371,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         continue;
                     }
 
-                    // If we're trying to spend an input that is already spent, and it's not coming in a new block, don't reserve the transaction.
+                    // If we're trying to spend an input that is already spent, and it's not coming in a new block, don't reserve the transaction. 
                     // This would be the case when blocks are synced in between CrossChainTransferStore calling
                     // FederationWalletTransactionHandler.BuildTransaction and FederationWalletManager.ProcessTransaction.
                     if (blockHeight == null && tTx.SpendingDetails?.BlockHeight != null)
@@ -385,8 +385,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (withdrawal != null)
                 {
                     // Exit if already present and included in a block.
-                    List<(Transaction transaction, IWithdrawal withdrawal)> walletData = this.FindWithdrawalTransactions(withdrawal.DepositId);
-                    if ((walletData.Count == 1) && (walletData[0].withdrawal.BlockNumber != 0))
+                    List<(Transaction, TransactionData, IWithdrawal)> walletData = this.FindWithdrawalTransactions(withdrawal.DepositId);
+                    if ((walletData.Count == 1) && (walletData[0].Item2.BlockHeight != null))
                     {
                         this.logger.LogTrace("Deposit {0} Already included in block.", withdrawal.DepositId);
                         return false;
@@ -783,12 +783,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 // Remove transient transactions not seen in a block yet.
                 bool walletUpdated = false;
 
-                foreach ((Transaction transaction, IWithdrawal withdrawal) in this.FindWithdrawalTransactions(depositId))
+                foreach ((Transaction transaction, TransactionData transactionData, _) in this.FindWithdrawalTransactions(depositId)
+                    .Where(w => w.Item2.BlockHash == null))
                 {
-                    if (withdrawal.BlockNumber == 0)
-                    {
-                        walletUpdated |= this.RemoveTransaction(transaction);
-                    }
+                    Guard.Assert(transactionData.SpendingDetails == null);
+                    walletUpdated |= this.RemoveTransaction(transaction);
                 }
 
                 return walletUpdated;
@@ -810,34 +809,23 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <inheritdoc />
-        public List<(Transaction, IWithdrawal)> FindWithdrawalTransactions(uint256 depositId = null)
+        public List<(Transaction, TransactionData, IWithdrawal)> FindWithdrawalTransactions(uint256 depositId = null)
         {
-            // A withdrawal is a transaction that spends funds from the multisig wallet.
             lock (this.lockObject)
             {
-                var withdrawals = new List<(Transaction transaction, IWithdrawal withdrawal)>();
+                List<(Transaction, TransactionData, IWithdrawal)> withdrawals = new List<(Transaction, TransactionData, IWithdrawal)>();
 
                 foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions)
                 {
-                    if (transactionData.SpendingDetails == null)
-                        continue;
-
-                    Transaction walletTran = this.network.CreateTransaction(transactionData.SpendingDetails.Hex);
-
-                    if (withdrawals.Any(w => w.transaction.GetHash() == walletTran.GetHash()))
-                        continue;
-
-                    int? blockHeight = transactionData.SpendingDetails.BlockHeight;
-                    uint256 blockHash = (blockHeight == null) ? null : this.chainIndexer.GetHeader((int)blockHeight).HashBlock;
-
-                    IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(walletTran, blockHash, blockHeight ?? 0);
+                    Transaction walletTran = transactionData.GetFullTransaction(this.network);
+                    IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(walletTran, transactionData.BlockHash, transactionData.BlockHeight ?? 0);
                     if (withdrawal == null)
                         continue;
 
                     if (depositId != null && withdrawal.DepositId != depositId)
                         continue;
 
-                    withdrawals.Add((walletTran, withdrawal));
+                    withdrawals.Add((walletTran, transactionData, withdrawal));
                 }
 
                 return withdrawals;

@@ -358,7 +358,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Lets break the first transaction
                 this.federationWalletManager.RemoveTransientTransactions(deposit1.Id);
-
+                
                 // Transactions after will be broken
                 transfers = crossChainTransferStore.GetAsync(new uint256[] { txId1, txId2, txId3 }).GetAwaiter().GetResult().ToArray();
                 Assert.Equal(CrossChainTransferStatus.Suspended, transfers[0].Status);
@@ -706,7 +706,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
 
                 // First deposit.
-                var deposit1 = new Deposit(1, new Money(100m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                var deposit1 = new Deposit(1, new Money(99m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
 
                 MaturedBlockDepositsModel[] blockDeposit1 = new[] { new MaturedBlockDepositsModel(
                     new MaturedBlockInfoModel() {
@@ -721,7 +721,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(CrossChainTransferStatus.Partial, transfer1?.Status);
 
                 // Second deposit.
-                var deposit2 = new Deposit(2, new Money(100m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 2);
+                var deposit2 = new Deposit(2, new Money(99m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 2);
 
                 MaturedBlockDepositsModel[] blockDeposit2 = new[] { new MaturedBlockDepositsModel(
                     new MaturedBlockInfoModel() {
@@ -760,7 +760,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 transfer2 = crossChainTransferStore.GetAsync(new[] { deposit2.Id }).GetAwaiter().GetResult().FirstOrDefault();
                 Assert.Equal(CrossChainTransferStatus.Partial, transfer2?.Status);
 
-                Assert.Equal(2, this.wallet.MultiSigAddress.Transactions.Count);
+                Assert.Equal(4, this.wallet.MultiSigAddress.Transactions.Count);
             }
         }
 
