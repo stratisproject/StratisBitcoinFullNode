@@ -171,7 +171,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     (Transaction tran, _) = this.federationWalletManager.FindWithdrawalTransactions(transfer.DepositTransactionId).FirstOrDefault();
                     if (tran == null && wallet.LastBlockSyncedHeight >= transfer.BlockHeight)
                     {
-                        this.federationWalletManager.ProcessTransaction(transfer.PartialTransaction, transfer.BlockHeight);
+                        this.federationWalletManager.ProcessTransaction(transfer.PartialTransaction, transfer.BlockHeight, transfer.BlockHash);
                     }
                 }
             }
@@ -679,7 +679,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                             Transaction transaction = block.Transactions.Single(t => t.GetHash() == withdrawal.Id);
 
                             // Ensure that the wallet is in step.
-                            this.federationWalletManager.ProcessTransaction(transaction, withdrawal.BlockNumber, block);
+                            this.federationWalletManager.ProcessTransaction(transaction, withdrawal.BlockNumber, withdrawal.BlockHash, block);
 
                             if (crossChainTransfers[i] == null)
                             {
