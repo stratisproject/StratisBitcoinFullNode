@@ -42,7 +42,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
             using (SidechainNodeBuilder nodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this))
             {
                 // Much setup - TODO: move into fixture for more tests.
-                FederatedPegRegTest network = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();
+                CirrusRegTest network = (CirrusRegTest)CirrusNetwork.NetworksSelector.Regtest();
                 Network counterChainNetwork = Networks.Stratis.Regtest();
                 IList<Mnemonic> mnemonics = network.FederationMnemonics;
                 var pubKeysByMnemonic = mnemonics.ToDictionary(m => m, m => m.DeriveExtKey().PrivateKey.PubKey);

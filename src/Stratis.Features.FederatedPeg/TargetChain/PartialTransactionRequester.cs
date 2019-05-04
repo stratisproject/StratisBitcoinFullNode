@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
@@ -113,14 +112,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
 
             // Broadcast the partial transaction with the earliest inputs.
-            IEnumerable<KeyValuePair<uint256, Transaction>> kvs =
-                (await this.crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.Partial, true))
-                .Take(NumberToSignAtATime);
+            IEnumerable<ICrossChainTransfer> transfers = this.crossChainTransferStore.GetTransfersByStatus(new[] {CrossChainTransferStatus.Partial}, true).Take(NumberToSignAtATime);
 
-            foreach (KeyValuePair<uint256, Transaction> kv in kvs)
+            foreach (ICrossChainTransfer transfer in transfers)
             {
-                await this.BroadcastAsync(new RequestPartialTransactionPayload(kv.Key).AddPartial(kv.Value));
-                this.logger.LogInformation("Partial template requested");
+                await this.BroadcastAsync(new RequestPartialTransactionPayload(transfer.DepositTransactionId).AddPartial(transfer.PartialTransaction));
+                this.logger.LogInformation("Partial template requested for deposit ID {0}", transfer.DepositTransactionId);
             }
         }
 

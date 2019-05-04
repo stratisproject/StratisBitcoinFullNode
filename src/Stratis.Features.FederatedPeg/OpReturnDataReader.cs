@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg
 {
@@ -33,6 +34,7 @@ namespace Stratis.Features.FederatedPeg
         bool TryGetTransactionId(Transaction transaction, out string txId);
     }
 
+    [NoTrace]
     public class OpReturnDataReader : IOpReturnDataReader
     {
         private readonly ILogger logger;
@@ -105,7 +107,7 @@ namespace Stratis.Features.FederatedPeg
             }
             catch (Exception ex)
             {
-                this.logger.LogTrace($"Address {destination} could not be converted to a valid address. Reason {ex.Message}.");
+                this.logger.LogDebug("Address {destination} could not be converted to a valid address. Reason {message}.", destination, ex.Message);
                 return null;
             }
         }
@@ -120,7 +122,7 @@ namespace Stratis.Features.FederatedPeg
             }
             catch (Exception ex)
             {
-                this.logger.LogTrace($"Candidate hash {data} could not be converted to a valid uint256. Reason {ex.Message}.");
+                this.logger.LogDebug("Candidate hash {data} could not be converted to a valid uint256. Reason {message}.", data, ex.Message);
                 return null;
             }
         }

@@ -77,6 +77,39 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Mainchain address that should have the collateral.</summary>
         public string CollateralMainchainAddress { get; set; }
 
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            var item = obj as CollateralFederationMember;
+            if (item == null)
+                return false;
+
+            return this.PubKey.Equals(item.PubKey);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return this.PubKey.GetHashCode();
+        }
+
+        public static bool operator ==(CollateralFederationMember a, CollateralFederationMember b)
+        {
+            if (ReferenceEquals(a, b))
+                return true;
+
+            if (((object)a == null) || ((object)b == null))
+                return false;
+
+            return (a.PubKey == b.PubKey) && (a.CollateralAmount == b.CollateralAmount) && (a.CollateralMainchainAddress == b.CollateralMainchainAddress);
+        }
+
+        public static bool operator !=(CollateralFederationMember a, CollateralFederationMember b)
+        {
+            return !(a == b);
+        }
+
         /// <inheritdoc />
         public override string ToString()
         {

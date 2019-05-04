@@ -15,9 +15,9 @@ namespace Stratis.Bitcoin.Utilities
         {
             get
             {
-                lock (this.lockObject)
+                lock (this.LockObject)
                 {
-                    return this.totalSize;
+                    return base.totalSize;
                 }
             }
         }
