@@ -944,10 +944,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             {
                 lock (this.lockObj)
                 {
-                    this.Synchronize();
+                    lock (((FederationWalletManager)this.federationWalletManager).lockObject)
+                    {
+                        Guard.Assert(this.Synchronize());
 
-                    ICrossChainTransfer[] res = this.ValidateCrossChainTransfers(this.Get(depositIds));
-                    return res;
+                        ICrossChainTransfer[] res = this.ValidateCrossChainTransfers(this.Get(depositIds));
+                        return res;
+                    }
                 }
             });
         }
