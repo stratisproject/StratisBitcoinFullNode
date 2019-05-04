@@ -84,11 +84,11 @@ namespace Stratis.Features.FederatedPeg
             {
                 bool success = await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
 
-                this.logger.LogWarning("Failed to update collateral. Ensure that mainnet gateway node is running and API is enabled. " +
-                                       "Node will not continue initialization before another gateway node responds.");
-
                 if (!success)
                 {
+                    this.logger.LogWarning("Failed to update collateral. Ensure that mainnet gateway node is running and API is enabled. " +
+                                       "Node will not continue initialization before another gateway node responds.");
+
                     try
                     {
                         await Task.Delay(CollateralInitializationUpdateIntervalSeconds * 1000, this.cancellationSource.Token).ConfigureAwait(false);
