@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
 
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.FederatedPeg")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.FederationWallet.Tests")]
 
 namespace Stratis.Features.FederatedPeg.Wallet
@@ -56,7 +57,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// A lock object that protects access to the <see cref="FederationWallet"/>.
         /// Any of the collections inside Wallet must be synchronized using this lock.
         /// </summary>
-        private readonly object lockObject;
+        internal object lockObject { get; }
 
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
@@ -159,40 +160,46 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         public void Start()
         {
-            // Find the wallet and load it in memory.
-            if (this.fileStorage.Exists(WalletFileName))
-                this.Wallet = this.fileStorage.LoadByFileName(WalletFileName);
-            else
+            lock (this.lockObject)
             {
-                // Create the multisig wallet file if it doesn't exist
-                this.Wallet = this.GenerateWallet();
-                this.SaveWallet();
+                // Find the wallet and load it in memory.
+                if (this.fileStorage.Exists(WalletFileName))
+                    this.Wallet = this.fileStorage.LoadByFileName(WalletFileName);
+                else
+                {
+                    // Create the multisig wallet file if it doesn't exist
+                    this.Wallet = this.GenerateWallet();
+                    this.SaveWallet();
+                }
+
+                // Load data in memory for faster lookups.
+                this.LoadKeysLookupLock();
+
+                // find the last chain block received by the wallet manager.
+                this.WalletTipHash = this.LastReceivedBlockHash();
+
+                // save the wallets file every 5 minutes to help against crashes.
+                this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop("wallet persist job", token =>
+                {
+                    this.SaveWallet();
+                    this.logger.LogInformation("Wallets saved to file at {0}.", this.dateTimeProvider.GetUtcNow());
+
+                    return Task.CompletedTask;
+                },
+                this.nodeLifetime.ApplicationStopping,
+                repeatEvery: TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes),
+                startAfter: TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes));
             }
-
-            // Load data in memory for faster lookups.
-            this.LoadKeysLookupLock();
-
-            // find the last chain block received by the wallet manager.
-            this.WalletTipHash = this.LastReceivedBlockHash();
-
-            // save the wallets file every 5 minutes to help against crashes.
-            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop("wallet persist job", token =>
-            {
-                this.SaveWallet();
-                this.logger.LogInformation("Wallets saved to file at {0}.", this.dateTimeProvider.GetUtcNow());
-
-                return Task.CompletedTask;
-            },
-            this.nodeLifetime.ApplicationStopping,
-            repeatEvery: TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes),
-            startAfter: TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes));
         }
 
         /// <inheritdoc />
         public void Stop()
         {
-            this.asyncLoop?.Dispose();
-            this.SaveWallet();
+            lock (this.lockObject)
+            {
+                this.asyncLoop?.Dispose();
+                this.SaveWallet();
+            }
         }
 
         /// <inheritdoc />
@@ -211,15 +218,18 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public int LastBlockHeight()
         {
-            if (this.Wallet == null)
+            lock (this.lockObject)
             {
-                int height = this.chainIndexer.Tip.Height;
-                this.logger.LogTrace("(-)[NO_WALLET]:{0}", height);
-                return height;
-            }
+                if (this.Wallet == null)
+                {
+                    int height = this.chainIndexer.Tip.Height;
+                    this.logger.LogTrace("(-)[NO_WALLET]:{0}", height);
+                    return height;
+                }
 
-            int res = this.Wallet.LastBlockSyncedHeight ?? 0;
-            return res;
+                int res = this.Wallet.LastBlockSyncedHeight ?? 0;
+                return res;
+            }
         }
 
         /// <summary>
@@ -228,38 +238,42 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <returns>Hash of the last block received by the wallets.</returns>
         public uint256 LastReceivedBlockHash()
         {
-            if (this.Wallet == null)
+            lock (this.lockObject)
             {
-                uint256 hash = this.chainIndexer.Tip.HashBlock;
-                this.logger.LogTrace("(-)[NO_WALLET]:'{0}'", hash);
-                return hash;
+                if (this.Wallet == null)
+                {
+                    uint256 hash = this.chainIndexer.Tip.HashBlock;
+                    this.logger.LogTrace("(-)[NO_WALLET]:'{0}'", hash);
+                    return hash;
+                }
+
+                uint256 lastBlockSyncedHash = this.Wallet.LastBlockSyncedHash;
+
+                if (lastBlockSyncedHash == null)
+                {
+                    lastBlockSyncedHash = this.chainIndexer.Tip.HashBlock;
+                }
+
+                return lastBlockSyncedHash;
             }
-
-            uint256 lastBlockSyncedHash = this.Wallet.LastBlockSyncedHash;
-
-            if (lastBlockSyncedHash == null)
-            {
-                lastBlockSyncedHash = this.chainIndexer.Tip.HashBlock;
-            }
-
-            return lastBlockSyncedHash;
         }
 
         /// <inheritdoc />
         public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(int confirmations = 0)
         {
-            if (this.Wallet == null)
-            {
-                return Enumerable.Empty<Wallet.UnspentOutputReference>();
-            }
-
-            UnspentOutputReference[] res;
             lock (this.lockObject)
             {
-                res = this.Wallet.GetSpendableTransactions(this.chainIndexer.Tip.Height, confirmations).ToArray();
-            }
 
-            return res;
+                if (this.Wallet == null)
+                {
+                    return Enumerable.Empty<Wallet.UnspentOutputReference>();
+                }
+
+                UnspentOutputReference[] res;
+                res = this.Wallet.GetSpendableTransactions(this.chainIndexer.Tip.Height, confirmations).ToArray();
+
+                return res;
+            }
         }
 
         /// <inheritdoc />
@@ -267,10 +281,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(fork, nameof(fork));
 
-            this.logger.LogTrace("Removing blocks back to height {0} from {1}", fork.Height, this.LastBlockHeight());
-
             lock (this.lockObject)
             {
+                this.logger.LogTrace("Removing blocks back to height {0} from {1}", fork.Height, this.LastBlockHeight());
+
                 // Remove all the UTXO that have been reorged.
                 IEnumerable<TransactionData> makeUnspendable = this.Wallet.MultiSigAddress.Transactions.Where(w => w.BlockHeight > fork.Height).ToList();
                 foreach (TransactionData transactionData in makeUnspendable)
@@ -294,38 +308,38 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(block, nameof(block));
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
 
-            // If there is no wallet yet, update the wallet tip hash and do nothing else.
-            if (this.Wallet == null)
-            {
-                this.WalletTipHash = chainedHeader.HashBlock;
-                this.logger.LogTrace("(-)[NO_WALLET]");
-                return;
-            }
-
-            // Is this the next block.
-            if (chainedHeader.Header.HashPrevBlock != this.WalletTipHash)
-            {
-                this.logger.LogTrace("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
-
-                // Are we still on the main chain.
-                ChainedHeader current = this.chainIndexer.GetHeader(this.WalletTipHash);
-                if (current == null)
-                {
-                    this.logger.LogTrace("(-)[REORG]");
-                    throw new WalletException("Reorg");
-                }
-
-                // The block coming in to the wallet should never be ahead of the wallet.
-                // If the block is behind, let it pass.
-                if (chainedHeader.Height > current.Height)
-                {
-                    this.logger.LogTrace("(-)[BLOCK_TOO_FAR]");
-                    throw new WalletException("block too far in the future has arrived to the wallet");
-                }
-            }
-
             lock (this.lockObject)
             {
+                // If there is no wallet yet, update the wallet tip hash and do nothing else.
+                if (this.Wallet == null)
+                {
+                    this.WalletTipHash = chainedHeader.HashBlock;
+                    this.logger.LogTrace("(-)[NO_WALLET]");
+                    return;
+                }
+
+                // Is this the next block.
+                if (chainedHeader.Header.HashPrevBlock != this.WalletTipHash)
+                {
+                    this.logger.LogTrace("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
+
+                    // Are we still on the main chain.
+                    ChainedHeader current = this.chainIndexer.GetHeader(this.WalletTipHash);
+                    if (current == null)
+                    {
+                        this.logger.LogTrace("(-)[REORG]");
+                        throw new WalletException("Reorg");
+                    }
+
+                    // The block coming in to the wallet should never be ahead of the wallet.
+                    // If the block is behind, let it pass.
+                    if (chainedHeader.Height > current.Height)
+                    {
+                        this.logger.LogTrace("(-)[BLOCK_TOO_FAR]");
+                        throw new WalletException("block too far in the future has arrived to the wallet");
+                    }
+                }
+
                 bool walletUpdated = false;
                 foreach (Transaction transaction in block.Transactions.Where(t => !(t.IsCoinBase && t.TotalOut == Money.Zero)))
                 {
@@ -353,16 +367,16 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(transaction, nameof(transaction));
 
-            if (this.Wallet == null)
-            {
-                this.logger.LogTrace("(-)");
-                return false;
-            }
-
-            bool foundReceivingTrx = false, foundSendingTrx = false;
-
             lock (this.lockObject)
             {
+                if (this.Wallet == null)
+                {
+                    this.logger.LogTrace("(-)");
+                    return false;
+                }
+
+                bool foundReceivingTrx = false, foundSendingTrx = false;
+
                 // Check if we're trying to spend a utxo twice
                 foreach (TxIn input in transaction.Inputs)
                 {
@@ -371,7 +385,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         continue;
                     }
 
-                    // If we're trying to spend an input that is already spent, and it's not coming in a new block, don't reserve the transaction. 
+                    // If we're trying to spend an input that is already spent, and it's not coming in a new block, don't reserve the transaction.
                     // This would be the case when blocks are synced in between CrossChainTransferStore calling
                     // FederationWalletTransactionHandler.BuildTransaction and FederationWalletManager.ProcessTransaction.
                     if (blockHeight == null && tTx.SpendingDetails?.BlockHeight != null)
@@ -444,19 +458,19 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     this.AddSpendingTransactionToWallet(transaction, paidOutTo, tTx.Id, tTx.Index, blockHeight, block);
                     foundSendingTrx = true;
                 }
-            }
 
-            // Figure out what to do when this transaction is found to affect the wallet.
-            if (foundSendingTrx || foundReceivingTrx)
-            {
-                // Save the wallet when the transaction was not included in a block.
-                if (blockHeight == null)
+                // Figure out what to do when this transaction is found to affect the wallet.
+                if (foundSendingTrx || foundReceivingTrx)
                 {
-                    this.SaveWallet();
+                    // Save the wallet when the transaction was not included in a block.
+                    if (blockHeight == null)
+                    {
+                        this.SaveWallet();
+                    }
                 }
-            }
 
-            return foundSendingTrx || foundReceivingTrx;
+                return foundSendingTrx || foundReceivingTrx;
+            }
         }
 
         private bool RemoveTransaction(Transaction transaction)
@@ -518,14 +532,14 @@ namespace Stratis.Features.FederatedPeg.Wallet
             {
                 removedTransactions = this.Wallet.MultiSigAddress.Transactions.Select(t => (t.Id, t.CreationTime)).ToHashSet();
                 this.Wallet.MultiSigAddress.Transactions.Clear();
-            }
 
-            if (removedTransactions.Any())
-            {
-                this.SaveWallet();
-            }
+                if (removedTransactions.Any())
+                {
+                    this.SaveWallet();
+                }
 
-            return removedTransactions;
+                return removedTransactions;
+            }
         }
 
         /// <summary>
@@ -764,11 +778,14 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public void SaveWallet()
         {
-            if (this.Wallet != null)
+            lock (this.lockObject)
             {
-                lock (this.lockObject)
+                if (this.Wallet != null)
                 {
-                    this.fileStorage.SaveToFile(this.Wallet, WalletFileName);
+                    lock (this.lockObject)
+                    {
+                        this.fileStorage.SaveToFile(this.Wallet, WalletFileName);
+                    }
                 }
             }
         }
@@ -797,14 +814,17 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public IEnumerable<IWithdrawal> GetWithdrawals()
         {
-            foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions.OrderByDescending(t => t.CreationTime))
+            lock (this.lockObject)
             {
-                Transaction walletTrx = transactionData.GetFullTransaction(this.network);
-                IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(walletTrx, transactionData.BlockHash, transactionData.BlockHeight ?? 0);
-                if (withdrawal == null)
-                    continue;
+                foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions.OrderByDescending(t => t.CreationTime))
+                {
+                    Transaction walletTrx = transactionData.GetFullTransaction(this.network);
+                    IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(walletTrx, transactionData.BlockHash, transactionData.BlockHeight ?? 0);
+                    if (withdrawal == null)
+                        continue;
 
-                yield return withdrawal;
+                    yield return withdrawal;
+                }
             }
         }
 
@@ -930,9 +950,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 // Update the wallets with the last processed block height.
                 this.Wallet.LastBlockSyncedHeight = chainedHeader.Height;
                 this.Wallet.LastBlockSyncedHash = chainedHeader.HashBlock;
+                this.WalletTipHash = chainedHeader.HashBlock;
             }
-
-            this.WalletTipHash = chainedHeader.HashBlock;
         }
 
         /// <summary>
@@ -944,32 +963,35 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             this.logger.LogTrace("Generating the federation wallet file.");
 
-            // Check if any wallet file already exists, with case insensitive comparison.
-            if (this.fileStorage.Exists(WalletFileName))
+            lock (this.lockObject)
             {
-                this.logger.LogTrace("(-)[WALLET_ALREADY_EXISTS]");
-                throw new WalletException("A federation wallet already exists.");
-            }
-
-            FederationWallet wallet = new FederationWallet
-            {
-                CreationTime = this.dateTimeProvider.GetTimeOffset(),
-                Network = this.network,
-                CoinType = this.coinType,
-                LastBlockSyncedHeight = 0,
-                LastBlockSyncedHash = this.chainIndexer.Genesis.HashBlock,
-                MultiSigAddress = new MultiSigAddress
+                // Check if any wallet file already exists, with case insensitive comparison.
+                if (this.fileStorage.Exists(WalletFileName))
                 {
-                    Address = this.federationGatewaySettings.MultiSigAddress.ToString(),
-                    M = this.federationGatewaySettings.MultiSigM,
-                    ScriptPubKey = this.federationGatewaySettings.MultiSigAddress.ScriptPubKey,
-                    RedeemScript = this.federationGatewaySettings.MultiSigRedeemScript,
-                    Transactions = new List<TransactionData>()
+                    this.logger.LogTrace("(-)[WALLET_ALREADY_EXISTS]");
+                    throw new WalletException("A federation wallet already exists.");
                 }
-            };
 
-            this.logger.LogTrace("(-)");
-            return wallet;
+                FederationWallet wallet = new FederationWallet
+                {
+                    CreationTime = this.dateTimeProvider.GetTimeOffset(),
+                    Network = this.network,
+                    CoinType = this.coinType,
+                    LastBlockSyncedHeight = 0,
+                    LastBlockSyncedHash = this.chainIndexer.Genesis.HashBlock,
+                    MultiSigAddress = new MultiSigAddress
+                    {
+                        Address = this.federationGatewaySettings.MultiSigAddress.ToString(),
+                        M = this.federationGatewaySettings.MultiSigM,
+                        ScriptPubKey = this.federationGatewaySettings.MultiSigAddress.ScriptPubKey,
+                        RedeemScript = this.federationGatewaySettings.MultiSigRedeemScript,
+                        Transactions = new List<TransactionData>()
+                    }
+                };
+
+                this.logger.LogTrace("(-)");
+                return wallet;
+            }
         }
 
         /// <inheritdoc />
@@ -977,72 +999,81 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotEmpty(password, nameof(password));
 
-            // Protect against de-activation if the federation is already active.
-            if (this.isFederationActive)
+            lock (this.lockObject)
             {
-                this.logger.LogWarning("(-):[FEDERATION_ALREADY_ACTIVE]");
-                return;
-            }
-
-            // Get the key and encrypted seed.
-            Key key = null;
-            string encryptedSeed = this.Wallet.EncryptedSeed;
-
-            if (!string.IsNullOrEmpty(mnemonic))
-            {
-                ExtKey extendedKey;
-                try
+                // Protect against de-activation if the federation is already active.
+                if (this.isFederationActive)
                 {
-                    extendedKey = HdOperations.GetExtendedKey(mnemonic, passphrase);
-                }
-                catch (NotSupportedException ex)
-                {
-                    this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
-                    this.logger.LogTrace("(-)[EXCEPTION]");
-
-                    if (ex.Message == "Unknown")
-                        throw new WalletException("Please make sure you enter valid mnemonic words.");
-
-                    throw;
-                }
-
-                // Create a wallet file.
-                key = extendedKey.PrivateKey;
-                encryptedSeed = key.GetEncryptedBitcoinSecret(password, this.network).ToWif();
-            }
-
-            try
-            {
-                if (key == null)
-                    key = Key.Parse(encryptedSeed, password, this.Wallet.Network);
-
-                bool isValidKey = key.PubKey.ToHex() == this.federationGatewaySettings.PublicKey;
-                if (!isValidKey)
-                {
-                    this.logger.LogInformation("The wallet public key {0} does not match the federation member's public key {1}", key.PubKey.ToHex(), this.federationGatewaySettings.PublicKey);
+                    this.logger.LogWarning("(-):[FEDERATION_ALREADY_ACTIVE]");
                     return;
                 }
 
-                this.Secret = new WalletSecret() { WalletPassword = password };
-                this.Wallet.EncryptedSeed = encryptedSeed;
-                this.SaveWallet();
+                // Get the key and encrypted seed.
+                Key key = null;
+                string encryptedSeed = this.Wallet.EncryptedSeed;
 
-                this.isFederationActive = isValidKey;
-            }
-            catch (Exception ex)
-            {
-                throw new SecurityException(ex.Message);
+                if (!string.IsNullOrEmpty(mnemonic))
+                {
+                    ExtKey extendedKey;
+                    try
+                    {
+                        extendedKey = HdOperations.GetExtendedKey(mnemonic, passphrase);
+                    }
+                    catch (NotSupportedException ex)
+                    {
+                        this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
+                        this.logger.LogTrace("(-)[EXCEPTION]");
+
+                        if (ex.Message == "Unknown")
+                            throw new WalletException("Please make sure you enter valid mnemonic words.");
+
+                        throw;
+                    }
+
+                    // Create a wallet file.
+                    key = extendedKey.PrivateKey;
+                    encryptedSeed = key.GetEncryptedBitcoinSecret(password, this.network).ToWif();
+                }
+
+                try
+                {
+                    if (key == null)
+                        key = Key.Parse(encryptedSeed, password, this.Wallet.Network);
+
+                    bool isValidKey = key.PubKey.ToHex() == this.federationGatewaySettings.PublicKey;
+                    if (!isValidKey)
+                    {
+                        this.logger.LogInformation("The wallet public key {0} does not match the federation member's public key {1}", key.PubKey.ToHex(), this.federationGatewaySettings.PublicKey);
+                        return;
+                    }
+
+                    this.Secret = new WalletSecret() { WalletPassword = password };
+                    this.Wallet.EncryptedSeed = encryptedSeed;
+                    this.SaveWallet();
+
+                    this.isFederationActive = isValidKey;
+                }
+                catch (Exception ex)
+                {
+                    throw new SecurityException(ex.Message);
+                }
             }
         }
 
         public bool IsFederationWalletActive()
         {
-            return this.isFederationActive;
+            lock (this.lockObject)
+            {
+                return this.isFederationActive;
+            }
         }
 
         public FederationWallet GetWallet()
         {
-            return this.Wallet;
+            lock (this.lockObject)
+            {
+                return this.Wallet;
+            }
         }
     }
 }
