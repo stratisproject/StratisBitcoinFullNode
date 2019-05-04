@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
+using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg.Wallet
 {
+    [NoTrace]
     public static class DeterministicCoinOrdering
     {
         /// <summary>

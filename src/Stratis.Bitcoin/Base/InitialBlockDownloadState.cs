@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Base
     public class InitialBlockDownloadState : IInitialBlockDownloadState
     {
         /// <summary>A provider of the date and time.</summary>
-        protected readonly IDateTimeProvider dateTimeProvider;
+        private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Provider of block header hash checkpoints.</summary>
         private readonly ICheckpoints checkpoints;

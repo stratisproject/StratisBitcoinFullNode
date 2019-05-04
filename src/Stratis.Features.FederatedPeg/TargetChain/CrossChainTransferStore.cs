@@ -165,7 +165,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 // Any transactions seen in blocks must also be present in the wallet.
                 FederationWallet wallet = this.federationWalletManager.GetWallet();
-                ICrossChainTransfer[] transfers = this.GetTransfersByStatusInternal(new[] { CrossChainTransferStatus.SeenInBlock }, true, false).ToArray();
+                ICrossChainTransfer[] transfers = this.GetTransfersByStatusInternalLocked(new[] { CrossChainTransferStatus.SeenInBlock }, true, false).ToArray();
                 foreach (ICrossChainTransfer transfer in transfers)
                 {
                     (Transaction tran, _) = this.federationWalletManager.FindWithdrawalTransactions(transfer.DepositTransactionId).FirstOrDefault();
@@ -180,7 +180,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <inheritdoc />
         public bool HasSuspended()
         {
-            return this.depositsIdsByStatus[CrossChainTransferStatus.Suspended].Count != 0;
+            lock (this.lockObj)
+            {
+                return this.depositsIdsByStatus[CrossChainTransferStatus.Suspended].Count != 0;
+            }
         }
 
         /// <summary>
@@ -249,6 +252,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                         continue;
                     }
+
+                    this.logger.LogDebug("Templates don't match for {0} and {1}.", walletTran.GetHash(), partialTransfer.PartialTransaction.GetHash());
                 }
 
                 // Remove any invalid withdrawal transactions.
@@ -259,6 +264,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 // Rewind our recorded chain A tip to ensure the transaction is re-built once UTXO's become available.
                 if (partialTransfer.DepositHeight < newChainATip)
                     newChainATip = partialTransfer.DepositHeight ?? newChainATip;
+
+                this.logger.LogDebug("Setting DepositId {0} to Suspended", partialTransfer.DepositTransactionId);
 
                 tracker.SetTransferStatus(partialTransfer, CrossChainTransferStatus.Suspended);
             }
@@ -292,15 +299,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                         if (kv.Value == CrossChainTransferStatus.Suspended)
                         {
                             this.federationWalletManager.RemoveTransientTransactions(kv.Key.DepositTransactionId);
-                        }
-                    }
-
-                    // Remove transient transactions after the next mature deposit height.
-                    foreach ((Transaction transaction, IWithdrawal withdrawal) in this.federationWalletManager.FindWithdrawalTransactions())
-                    {
-                        if (withdrawal.BlockNumber >= newChainATip)
-                        {
-                            this.federationWalletManager.RemoveTransientTransactions(withdrawal.DepositId);
                         }
                     }
 
@@ -929,15 +927,17 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <inheritdoc />
-        [Obsolete("This doesn't lock when validating cross chain transfers. Don't use.")]
         public Task<ICrossChainTransfer[]> GetAsync(uint256[] depositIds)
         {
             return Task.Run(() =>
             {
-                this.Synchronize();
+                lock (this.lockObj)
+                {
+                    this.Synchronize();
 
-                ICrossChainTransfer[] res = this.ValidateCrossChainTransfers(this.Get(depositIds));
-                return res;
+                    ICrossChainTransfer[] res = this.ValidateCrossChainTransfers(this.Get(depositIds));
+                    return res;
+                }
             });
         }
 
@@ -987,39 +987,39 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             return transaction.Inputs.Select(i => i.PrevOut).OrderByDescending(t => t, comparer).FirstOrDefault();
         }
 
-        private ICrossChainTransfer[] GetTransfersByStatusInternal(CrossChainTransferStatus[] statuses, bool sort = false, bool validate = true)
+        private ICrossChainTransfer[] GetTransfersByStatusInternalLocked(CrossChainTransferStatus[] statuses, bool sort = false, bool validate = true)
         {
-            lock (this.lockObj)
+            var depositIds = new HashSet<uint256>();
+            foreach (CrossChainTransferStatus status in statuses)
+                depositIds.UnionWith(this.depositsIdsByStatus[status]);
+
+            uint256[] partialTransferHashes = depositIds.ToArray();
+            ICrossChainTransfer[] partialTransfers = this.Get(partialTransferHashes).Where(t => t != null).ToArray();
+
+            if (validate)
             {
-                this.Synchronize();
-
-                var depositIds = new HashSet<uint256>();
-                foreach (CrossChainTransferStatus status in statuses)
-                    depositIds.UnionWith(this.depositsIdsByStatus[status]);
-
-                uint256[] partialTransferHashes = depositIds.ToArray();
-                ICrossChainTransfer[] partialTransfers = this.Get(partialTransferHashes).Where(t => t != null).ToArray();
-
-                if (validate)
-                {
-                    this.ValidateCrossChainTransfers(partialTransfers);
-                    partialTransfers = partialTransfers.Where(t => statuses.Contains(t.Status)).ToArray();
-                }
-
-                if (!sort)
-                {
-                    return partialTransfers;
-                }
-
-                return partialTransfers.OrderBy(t => this.EarliestOutput(t.PartialTransaction), Comparer<OutPoint>.Create((x, y) =>
-                    this.federationWalletManager.CompareOutpoints(x, y))).ToArray();
+                this.ValidateCrossChainTransfers(partialTransfers);
+                partialTransfers = partialTransfers.Where(t => statuses.Contains(t.Status)).ToArray();
             }
+
+            if (!sort)
+            {
+                return partialTransfers;
+            }
+
+            return partialTransfers.OrderBy(t => this.EarliestOutput(t.PartialTransaction), Comparer<OutPoint>.Create((x, y) =>
+                this.federationWalletManager.CompareOutpoints(x, y))).ToArray();
         }
 
         /// <inheritdoc />
         public ICrossChainTransfer[] GetTransfersByStatus(CrossChainTransferStatus[] statuses, bool sort = false)
         {
-            return this.GetTransfersByStatusInternal(statuses, sort);
+            lock (this.lockObj)
+            {
+                Guard.Assert(this.Synchronize());
+
+                return this.GetTransfersByStatusInternalLocked(statuses, sort);
+            }
         }
 
         /// <inheritdoc />
@@ -1199,13 +1199,16 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <inheritdoc />
         public Dictionary<CrossChainTransferStatus, int> GetCrossChainTransferStatusCounter()
         {
-            Dictionary<CrossChainTransferStatus, int> result = new Dictionary<CrossChainTransferStatus, int>();
-            foreach (CrossChainTransferStatus status in Enum.GetValues(typeof(CrossChainTransferStatus)).Cast<CrossChainTransferStatus>())
+            lock (this.lockObj)
             {
-                result[status] = this.depositsIdsByStatus.TryGet(status)?.Count ?? 0;
-            }
+                Dictionary<CrossChainTransferStatus, int> result = new Dictionary<CrossChainTransferStatus, int>();
+                foreach (CrossChainTransferStatus status in Enum.GetValues(typeof(CrossChainTransferStatus)).Cast<CrossChainTransferStatus>())
+                {
+                    result[status] = this.depositsIdsByStatus.TryGet(status)?.Count ?? 0;
+                }
 
-            return result;
+                return result;
+            }
         }
 
         /// <inheritdoc />
