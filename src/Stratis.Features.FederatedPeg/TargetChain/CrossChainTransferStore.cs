@@ -380,6 +380,17 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                         return true;
                     }
 
+                    // Paying to our own multisig is a null operation and not supported.
+                    Func<IDeposit, bool> depositFilter = d => d.TargetAddress != this.settings.MultiSigAddress.ToString();
+
+                    if (!maturedBlockDeposits.Any(md => md.Deposits.Any(depositFilter)))
+                    {
+                        this.NextMatureDepositHeight += maturedBlockDeposits.Count;
+
+                        this.logger.LogTrace("(-)[NO_DEPOSITS]:true");
+                        return true;
+                    }
+
                     lock (((FederationWalletManager)this.federationWalletManager).lockObject)
                     {
                         Guard.Assert(this.Synchronize());
@@ -389,7 +400,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                             if (maturedDeposit.BlockInfo.BlockHeight != this.NextMatureDepositHeight)
                                 continue;
 
-                            IReadOnlyList<IDeposit> deposits = maturedDeposit.Deposits.Where(d => d.TargetAddress != this.settings.MultiSigAddress.ToString()).ToList();
+                            IReadOnlyList<IDeposit> deposits = maturedDeposit.Deposits.Where(depositFilter).ToList();
                             if (deposits.Count == 0)
                             {
                                 this.NextMatureDepositHeight++;
