@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet.Broadcasting

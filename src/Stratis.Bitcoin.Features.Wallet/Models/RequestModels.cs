@@ -5,7 +5,6 @@ using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Validations;
 using Stratis.Bitcoin.Utilities.ValidationAttributes;
 

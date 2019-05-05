@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public override void OnInitialize()
+        protected override void OnInitialize()
         {
             this.MaxOutboundConnections = this.ConnectionSettings.MaxOutboundConnections;
         }
@@ -54,18 +54,19 @@ namespace Stratis.Bitcoin.P2P
 
         /// <inheritdoc/>
         [NoTrace]
-        public override void OnStartConnect()
+        protected override void OnStartConnect()
         {
             this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
         }
 
+        /// <inheritdoc/>
         public override async Task OnConnectAsync()
         {
             int peerSelectionFailed = 0;
 
             PeerAddress peer = null;
 
-            while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+            while (!this.NodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
                 if (peerSelectionFailed > MaximumPeerSelectionAttempts)
                 {
@@ -76,7 +77,7 @@ namespace Stratis.Bitcoin.P2P
                     break;
                 }
 
-                peer = this.peerAddressManager.PeerSelector.SelectPeer();
+                peer = this.PeerAddressManager.PeerSelector.SelectPeer();
                 if (peer == null)
                 {
                     this.logger.LogTrace("Selection failed, selector returned nothing.");
@@ -87,14 +88,6 @@ namespace Stratis.Bitcoin.P2P
                 if (!peer.Endpoint.Address.IsValid())
                 {
                     this.logger.LogTrace("Selection failed, peer endpoint is not valid '{0}'.", peer.Endpoint);
-                    peerSelectionFailed++;
-                    continue;
-                }
-
-                // If the peer is already connected just continue.
-                if (this.IsPeerConnected(peer.Endpoint))
-                {
-                    this.logger.LogTrace("Selection failed, peer is already connected '{0}'.", peer.Endpoint);
                     peerSelectionFailed++;
                     continue;
                 }
@@ -127,7 +120,7 @@ namespace Stratis.Bitcoin.P2P
             if (peer == null)
             {
                 this.logger.LogTrace("Selection failed, executing selection delay.");
-                await Task.Delay(2000, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+                await Task.Delay(2000, this.NodeLifetime.ApplicationStopping).ConfigureAwait(false);
             }
             else
             {
@@ -146,7 +139,7 @@ namespace Stratis.Bitcoin.P2P
 
         private bool PeerIsPartOfExistingGroup(PeerAddress peerAddress)
         {
-            if (this.connectionManager.ConnectedPeers == null)
+            if (this.ConnectionManager.ConnectedPeers == null)
             {
                 this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]:false");
                 return false;
@@ -154,7 +147,7 @@ namespace Stratis.Bitcoin.P2P
 
             byte[] peerAddressGroup = peerAddress.Endpoint.MapToIpv6().Address.GetGroup();
 
-            foreach (INetworkPeer endPoint in this.connectionManager.ConnectedPeers.ToList())
+            foreach (INetworkPeer endPoint in this.ConnectionManager.ConnectedPeers.ToList())
             {
                 byte[] endPointGroup = endPoint.PeerEndPoint.MapToIpv6().Address.GetGroup();
                 if (endPointGroup.SequenceEqual(peerAddressGroup))

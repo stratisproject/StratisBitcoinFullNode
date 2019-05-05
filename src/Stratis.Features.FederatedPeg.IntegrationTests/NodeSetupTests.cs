@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
@@ -95,8 +94,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 ICrossChainTransferStore fedSideStore = context.FedSide1.FullNode.NodeService<ICrossChainTransferStore>();
                 TestBase.WaitLoop(() =>
                 {
-                    Dictionary<uint256, Transaction> fullySignedTransactions = fedSideStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).GetAwaiter().GetResult();
-                    return fullySignedTransactions.Count == toSend;
+                    ICrossChainTransfer[] fullySignedTransactions = fedSideStore.GetTransfersByStatus(new[] {CrossChainTransferStatus.FullySigned});
+                    return fullySignedTransactions.Length == toSend;
                 });
 
                 // Mine one more block on the main chain to trigger leader selection on sidechain

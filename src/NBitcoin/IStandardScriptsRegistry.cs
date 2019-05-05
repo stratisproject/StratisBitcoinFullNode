@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin.BitcoinCore;
+﻿using NBitcoin.BitcoinCore;
 
 namespace NBitcoin
 {

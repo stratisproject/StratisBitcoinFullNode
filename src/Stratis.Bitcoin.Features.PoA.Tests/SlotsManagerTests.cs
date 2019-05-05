@@ -3,16 +3,14 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Features.PoA.Tests.Rules;
 using Stratis.Bitcoin.Tests.Common;
-using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests
 {
     public class SlotsManagerTests
     {
-        private SlotsManager slotsManager;
+        private ISlotsManager slotsManager;
         private TestPoANetwork network;
         private PoAConsensusOptions consensusOptions;
         private IFederationManager federationManager;
@@ -51,7 +49,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
                 if (currentFedIndex > federationMembers.Count - 1)
                     currentFedIndex = 0;
 
-                Assert.Equal(federationMembers[currentFedIndex].PubKey, this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * (uint)i));
+                Assert.Equal(federationMembers[currentFedIndex].PubKey, this.slotsManager.GetFederationMemberForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * (uint)i).PubKey);
             }
         }
 

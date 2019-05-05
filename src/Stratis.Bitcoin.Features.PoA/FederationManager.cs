@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.PoA
         protected List<IFederationMember> federationMembers;
 
         /// <summary>Protects access to <see cref="federationMembers"/>.</summary>
-        private readonly object locker;
+        protected readonly object locker;
 
         public FederationManagerBase(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo, ISignals signals)
         {
@@ -130,21 +130,27 @@ namespace Stratis.Bitcoin.Features.PoA
         {
             lock (this.locker)
             {
-                if (this.federationMembers.Contains(federationMember))
-                {
-                    this.logger.LogTrace("(-)[ALREADY_EXISTS]");
-                    return;
-                }
-
-                this.federationMembers.Add(federationMember);
-
-                this.SaveFederation(this.federationMembers);
-                this.SetIsFederationMember();
-
-                this.logger.LogInformation("Federation member '{0}' was added!", federationMember);
+                this.AddFederationMemberLocked(federationMember);
             }
 
             this.signals.Publish(new FedMemberAdded(federationMember));
+        }
+
+        /// <remarks>Should be protected by <see cref="locker"/>.</remarks>
+        protected virtual void AddFederationMemberLocked(IFederationMember federationMember)
+        {
+            if (this.federationMembers.Contains(federationMember))
+            {
+                this.logger.LogTrace("(-)[ALREADY_EXISTS]");
+                return;
+            }
+
+            this.federationMembers.Add(federationMember);
+
+            this.SaveFederation(this.federationMembers);
+            this.SetIsFederationMember();
+
+            this.logger.LogInformation("Federation member '{0}' was added!", federationMember);
         }
 
         public void RemoveFederationMember(IFederationMember federationMember)

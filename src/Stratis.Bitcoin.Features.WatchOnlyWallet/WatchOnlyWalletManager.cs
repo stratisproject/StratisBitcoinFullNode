@@ -5,7 +5,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
