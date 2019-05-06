@@ -75,7 +75,7 @@ namespace Stratis.Sidechains.Networks
                 maxStandardTxSigopsCost: 20_000 / 5,
                 genesisFederationMembers: genesisFederationMembers,
                 targetSpacingSeconds: 16,
-                votingEnabled: false,
+                votingEnabled: true,
                 autoKickIdleMembers: false
             );
 
