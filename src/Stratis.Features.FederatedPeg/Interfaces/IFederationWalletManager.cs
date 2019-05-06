@@ -109,14 +109,6 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         bool RemoveTransientTransactions(uint256 depositId = null);
 
         /// <summary>
-        /// Compares two outpoints to see which occurs earlier.
-        /// </summary>
-        /// <param name="outPoint1">The first outpoint to compare.</param>
-        /// <param name="outPoint2">The second outpoint to compare.</param>
-        /// <returns><c>-1</c> if the <paramref name="outPoint1"/> occurs first and <c>1</c> otherwise.</returns>
-        int CompareOutpoints(OutPoint outPoint1, OutPoint outPoint2);
-
-        /// <summary>
         /// Determines if federation has been activated.
         /// </summary>
         /// <returns><c>True</c> if federation is active and <c>false</c> otherwise.</returns>

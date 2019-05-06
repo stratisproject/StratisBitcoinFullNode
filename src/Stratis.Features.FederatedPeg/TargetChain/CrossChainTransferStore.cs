@@ -1006,7 +1006,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         private OutPoint EarliestOutput(Transaction transaction)
         {
-            Comparer<OutPoint> comparer = Comparer<OutPoint>.Create((x, y) => this.federationWalletManager.CompareOutpoints(x, y));
+            Comparer<OutPoint> comparer = Comparer<OutPoint>.Create((x, y) => ((FederationWalletManager)this.federationWalletManager).CompareOutpoints(x, y));
             return transaction.Inputs.Select(i => i.PrevOut).OrderByDescending(t => t, comparer).FirstOrDefault();
         }
 
@@ -1031,7 +1031,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
 
             return partialTransfers.OrderBy(t => this.EarliestOutput(t.PartialTransaction), Comparer<OutPoint>.Create((x, y) =>
-                this.federationWalletManager.CompareOutpoints(x, y))).ToArray();
+                ((FederationWalletManager)this.federationWalletManager).CompareOutpoints(x, y))).ToArray();
         }
 
         /// <inheritdoc />

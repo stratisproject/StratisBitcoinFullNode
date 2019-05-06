@@ -738,10 +738,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(transactionData, nameof(transactionData));
 
-            lock (this.lockObject)
-            {
-                this.outpointLookup[new OutPoint(transactionData.Id, transactionData.Index)] = transactionData;
-            }
+            // Locked in containing methods.
+            this.outpointLookup[new OutPoint(transactionData.Id, transactionData.Index)] = transactionData;
         }
 
         /// <summary>
@@ -751,10 +749,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(transactionData, nameof(transactionData));
 
-            lock (this.lockObject)
-            {
-                this.outpointLookup.Remove(new OutPoint(transactionData.Id, transactionData.Index));
-            }
+            // Locked in containing methods.
+            this.outpointLookup.Remove(new OutPoint(transactionData.Id, transactionData.Index));
         }
 
         private void RefreshInputKeysLookupLock()
@@ -875,35 +871,34 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <returns><c>True</c> if UTXO's are valid and <c>false</c> otherwise.</returns>
         private bool TransactionHasValidUTXOs(Transaction transaction, List<Coin> coins = null)
         {
-            lock (this.lockObject)
+            // All the input UTXO's should be present in spending details of the multi-sig address.
+            foreach (TxIn input in transaction.Inputs)
             {
-                // All the input UTXO's should be present in spending details of the multi-sig address.
-                foreach (TxIn input in transaction.Inputs)
-                {
-                    TransactionData transactionData = this.Wallet.MultiSigAddress.Transactions
-                        .Where(t => t.Id == input.PrevOut.Hash && t.Index == input.PrevOut.N && t.SpendingDetails?.TransactionId == transaction.GetHash())
-                        .SingleOrDefault();
+                TransactionData transactionData = this.Wallet.MultiSigAddress.Transactions
+                    .Where(t => t.Id == input.PrevOut.Hash && t.Index == input.PrevOut.N && t.SpendingDetails?.TransactionId == transaction.GetHash())
+                    .SingleOrDefault();
 
-                    if (transactionData == null)
-                        return false;
+                if (transactionData == null)
+                    return false;
 
-                    coins?.Add(new Coin(transactionData.Id, (uint)transactionData.Index, transactionData.Amount, transactionData.ScriptPubKey));
-                }
-
-                return true;
+                coins?.Add(new Coin(transactionData.Id, (uint)transactionData.Index, transactionData.Amount, transactionData.ScriptPubKey));
             }
+
+            return true;
         }
 
-        /// <inheritdoc />
-        public int CompareOutpoints(OutPoint outPoint1, OutPoint outPoint2)
+        /// <summary>
+        /// Compares two outpoints to see which occurs earlier.
+        /// </summary>
+        /// <param name="outPoint1">The first outpoint to compare.</param>
+        /// <param name="outPoint2">The second outpoint to compare.</param>
+        /// <returns><c>-1</c> if the <paramref name="outPoint1"/> occurs first and <c>1</c> otherwise.</returns>
+        internal int CompareOutpoints(OutPoint outPoint1, OutPoint outPoint2)
         {
-            lock (this.lockObject)
-            {
-                TransactionData transactionData1 = this.outpointLookup[outPoint1];
-                TransactionData transactionData2 = this.outpointLookup[outPoint2];
+            TransactionData transactionData1 = this.outpointLookup[outPoint1];
+            TransactionData transactionData2 = this.outpointLookup[outPoint2];
 
-                return DeterministicCoinOrdering.CompareTransactionData(transactionData1, transactionData2);
-            }
+            return DeterministicCoinOrdering.CompareTransactionData(transactionData1, transactionData2);
         }
 
         /// <inheritdoc />
@@ -974,39 +969,30 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// </summary>
         /// <returns>The wallet object that was saved into the file system.</returns>
         /// <exception cref="WalletException">Thrown if wallet cannot be created.</exception>
-        public FederationWallet GenerateWallet()
+        private FederationWallet GenerateWallet()
         {
             this.logger.LogTrace("Generating the federation wallet file.");
 
-            lock (this.lockObject)
+            var wallet = new FederationWallet
             {
-                // Check if any wallet file already exists, with case insensitive comparison.
-                if (this.fileStorage.Exists(WalletFileName))
+                CreationTime = this.dateTimeProvider.GetTimeOffset(),
+                Network = this.network,
+                CoinType = this.coinType,
+                LastBlockSyncedHeight = 0,
+                LastBlockSyncedHash = this.chainIndexer.Genesis.HashBlock,
+                MultiSigAddress = new MultiSigAddress
                 {
-                    this.logger.LogTrace("(-)[WALLET_ALREADY_EXISTS]");
-                    throw new WalletException("A federation wallet already exists.");
+                    Address = this.federationGatewaySettings.MultiSigAddress.ToString(),
+                    M = this.federationGatewaySettings.MultiSigM,
+                    ScriptPubKey = this.federationGatewaySettings.MultiSigAddress.ScriptPubKey,
+                    RedeemScript = this.federationGatewaySettings.MultiSigRedeemScript,
+                    Transactions = new List<TransactionData>()
                 }
+            };
 
-                FederationWallet wallet = new FederationWallet
-                {
-                    CreationTime = this.dateTimeProvider.GetTimeOffset(),
-                    Network = this.network,
-                    CoinType = this.coinType,
-                    LastBlockSyncedHeight = 0,
-                    LastBlockSyncedHash = this.chainIndexer.Genesis.HashBlock,
-                    MultiSigAddress = new MultiSigAddress
-                    {
-                        Address = this.federationGatewaySettings.MultiSigAddress.ToString(),
-                        M = this.federationGatewaySettings.MultiSigM,
-                        ScriptPubKey = this.federationGatewaySettings.MultiSigAddress.ScriptPubKey,
-                        RedeemScript = this.federationGatewaySettings.MultiSigRedeemScript,
-                        Transactions = new List<TransactionData>()
-                    }
-                };
+            this.logger.LogTrace("(-)");
+            return wallet;
 
-                this.logger.LogTrace("(-)");
-                return wallet;
-            }
         }
 
         /// <inheritdoc />
