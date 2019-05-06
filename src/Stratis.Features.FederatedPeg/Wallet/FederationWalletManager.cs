@@ -15,9 +15,6 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
 
-[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.FederatedPeg")]
-[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.FederationWallet.Tests")]
-
 namespace Stratis.Features.FederatedPeg.Wallet
 {
     /// <summary>
