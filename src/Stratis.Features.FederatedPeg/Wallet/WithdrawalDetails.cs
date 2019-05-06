@@ -14,7 +14,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public uint256 MatchingDepositId { get; set; }
 
         /// <summary>
-        /// The amnount of money being sent in this withdrawal.
+        /// The amount of money being sent in this withdrawal.
         /// </summary>
         [JsonProperty(PropertyName = "amount")]
         [JsonConverter(typeof(MoneyJsonConverter))]
