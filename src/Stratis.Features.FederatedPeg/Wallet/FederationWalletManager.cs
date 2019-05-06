@@ -828,25 +828,15 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
-        /// <inheritdoc />
-        public IEnumerable<IWithdrawal> GetWithdrawals()
-        {
-            lock (this.lockObject)
-            {
-                foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions.OrderByDescending(t => t.CreationTime))
-                {
-                    Transaction walletTrx = transactionData.GetFullTransaction(this.network);
-                    IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(walletTrx, transactionData.BlockHash, transactionData.BlockHeight ?? 0);
-                    if (withdrawal == null)
-                        continue;
 
-                    yield return withdrawal;
-                }
-            }
+        private OutPoint EarliestOutput(Transaction transaction)
+        {
+            var comparer = Comparer<OutPoint>.Create((x, y) => this.CompareOutpoints(x, y));
+            return transaction.Inputs.Select(i => i.PrevOut).OrderBy(t => t, comparer).FirstOrDefault();
         }
 
         /// <inheritdoc />
-        public List<(Transaction, IWithdrawal)> FindWithdrawalTransactions(uint256 depositId = null)
+        public List<(Transaction, IWithdrawal)> FindWithdrawalTransactions(uint256 depositId = null, bool sort = false)
         {
             lock (this.lockObject)
             {
@@ -877,6 +867,13 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         spendingDetail.BlockHash);
 
                     withdrawals.Add((transaction, withdrawal));
+                }
+
+                if (sort)
+                {
+                    return withdrawals
+                        .OrderBy(w => this.EarliestOutput(w.Item1), Comparer<OutPoint>.Create((x, y) => this.CompareOutpoints(x, y)))
+                        .ToList();
                 }
 
                 return withdrawals;
