@@ -43,6 +43,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.mempoolManager = mempoolManager;
         }
 
+        private OutPoint EarliestOutput(Transaction transaction)
+        {
+            Comparer<OutPoint> comparer = Comparer<OutPoint>.Create((x, y) => this.federationWalletManager.CompareOutpoints(x, y));
+            return transaction.Inputs.Select(i => i.PrevOut).OrderByDescending(t => t, comparer).FirstOrDefault();
+        }
+
         // TODO: These can be more efficient, i.e. remove the wallet calls from GetHistory
         // And use a different model for Withdrawals. It doesn't quite map to the Withdrawal class.
 
@@ -54,7 +60,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         public List<WithdrawalModel> GetHistory(int maximumEntriesToReturn)
         {
             var result = new List<WithdrawalModel>();
-            IWithdrawal[] withdrawals = this.federationWalletManager.GetWithdrawals().Where(x=>x.BlockHash != null).Take(maximumEntriesToReturn).ToArray();
+
+            // Enumerate withdrawals starting with the most recent.
+            IWithdrawal[] withdrawals = this.federationWalletManager.FindWithdrawalTransactions()
+                .OrderByDescending(w => this.EarliestOutput(w.Item1), Comparer<OutPoint>.Create((x, y) => this.federationWalletManager.CompareOutpoints(x, y)))
+                .Select(w => w.Item2)
+                .Where(x => x.BlockHash != null)
+                .Take(maximumEntriesToReturn)
+                .ToArray();
 
             if (withdrawals.Length > 0)
             {
