@@ -1077,18 +1077,12 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         public bool IsFederationWalletActive()
         {
-            lock (this.lockObject)
-            {
-                return this.isFederationActive;
-            }
+            return this.isFederationActive;
         }
 
         public FederationWallet GetWallet()
         {
-            lock (this.lockObject)
-            {
-                return this.Wallet;
-            }
+            return this.Wallet;
         }
     }
 }
