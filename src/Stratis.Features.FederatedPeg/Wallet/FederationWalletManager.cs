@@ -863,11 +863,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 // All the input UTXO's should be present in spending details of the multi-sig address.
                 foreach (TxIn input in transaction.Inputs)
                 {
-                    TransactionData transactionData = this.Wallet.MultiSigAddress.Transactions
-                        .Where(t => t.Id == input.PrevOut.Hash && t.Index == input.PrevOut.N && t.SpendingDetails?.TransactionId == transaction.GetHash())
-                        .SingleOrDefault();
-
-                    if (transactionData == null)
+                    if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData transactionData))
                         return false;
 
                     coins?.Add(new Coin(transactionData.Id, (uint)transactionData.Index, transactionData.Amount, transactionData.ScriptPubKey));
