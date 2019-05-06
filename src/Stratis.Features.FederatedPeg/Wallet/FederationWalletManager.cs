@@ -805,7 +805,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         private OutPoint EarliestOutput(Transaction transaction)
         {
             var comparer = Comparer<OutPoint>.Create((x, y) => this.CompareOutpoints(x, y));
-            return transaction.Inputs.Select(i => i.PrevOut).OrderByDescending(t => t, comparer).FirstOrDefault();
+            return transaction.Inputs.Select(i => i.PrevOut).OrderBy(t => t, comparer).FirstOrDefault();
         }
 
         /// <inheritdoc />
@@ -877,8 +877,13 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
-        /// <inheritdoc />
-        public int CompareOutpoints(OutPoint outPoint1, OutPoint outPoint2)
+        /// <summary>
+        /// Compares two outpoints to see which occurs earlier.
+        /// </summary>
+        /// <param name="outPoint1">The first outpoint to compare.</param>
+        /// <param name="outPoint2">The second outpoint to compare.</param>
+        /// <returns><c>-1</c> if the <paramref name="outPoint1"/> occurs first and <c>1</c> otherwise.</returns>
+        internal int CompareOutpoints(OutPoint outPoint1, OutPoint outPoint2)
         {
             lock (this.lockObject)
             {
