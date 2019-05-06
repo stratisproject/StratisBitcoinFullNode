@@ -801,8 +801,15 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
+
+        private OutPoint EarliestOutput(Transaction transaction)
+        {
+            var comparer = Comparer<OutPoint>.Create((x, y) => this.CompareOutpoints(x, y));
+            return transaction.Inputs.Select(i => i.PrevOut).OrderByDescending(t => t, comparer).FirstOrDefault();
+        }
+
         /// <inheritdoc />
-        public List<(Transaction, IWithdrawal)> FindWithdrawalTransactions(uint256 depositId = null)
+        public List<(Transaction, IWithdrawal)> FindWithdrawalTransactions(uint256 depositId = null, bool sort = false)
         {
             // A withdrawal is a transaction that spends funds from the multisig wallet.
             lock (this.lockObject)
@@ -830,6 +837,13 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         continue;
 
                     withdrawals.Add((walletTran, withdrawal));
+                }
+
+                if (sort)
+                {
+                    return withdrawals
+                        .OrderBy(w => this.EarliestOutput(w.Item1), Comparer<OutPoint>.Create((x, y) => this.CompareOutpoints(x, y)))
+                        .ToList();
                 }
 
                 return withdrawals;
