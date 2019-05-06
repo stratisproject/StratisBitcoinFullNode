@@ -801,17 +801,21 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
+        private OutPoint EarliestOutput(Transaction transaction)
+        {
+            Comparer<OutPoint> comparer = Comparer<OutPoint>.Create((x, y) => CompareOutpoints(x, y));
+            return transaction.Inputs.Select(i => i.PrevOut).OrderByDescending(t => t, comparer).FirstOrDefault();
+        }
+
         /// <inheritdoc />
         public IEnumerable<IWithdrawal> GetWithdrawals()
         {
-            foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions.OrderByDescending(t => t.CreationTime))
+            lock (this.lockObject)
             {
-                Transaction walletTrx = transactionData.GetFullTransaction(this.network);
-                IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(walletTrx, transactionData.BlockHash, transactionData.BlockHeight ?? 0);
-                if (withdrawal == null)
-                    continue;
-
-                yield return withdrawal;
+                return this.FindWithdrawalTransactions()
+                    .OrderByDescending(w => this.EarliestOutput(w.Item1), Comparer<OutPoint>.Create((x, y) => CompareOutpoints(x, y)))
+                    .Select(w => w.Item2)
+                    .ToArray();
             }
         }
 
