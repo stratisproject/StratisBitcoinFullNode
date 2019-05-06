@@ -885,13 +885,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <returns><c>-1</c> if the <paramref name="outPoint1"/> occurs first and <c>1</c> otherwise.</returns>
         internal int CompareOutpoints(OutPoint outPoint1, OutPoint outPoint2)
         {
-            lock (this.lockObject)
-            {
-                TransactionData transactionData1 = this.outpointLookup[outPoint1];
-                TransactionData transactionData2 = this.outpointLookup[outPoint2];
+            TransactionData transactionData1 = this.outpointLookup[outPoint1];
+            TransactionData transactionData2 = this.outpointLookup[outPoint2];
 
-                return DeterministicCoinOrdering.CompareTransactionData(transactionData1, transactionData2);
-            }
+            return DeterministicCoinOrdering.CompareTransactionData(transactionData1, transactionData2);
         }
 
         /// <inheritdoc />
