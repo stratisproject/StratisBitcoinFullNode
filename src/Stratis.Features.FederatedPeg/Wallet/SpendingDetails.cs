@@ -58,6 +58,12 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public string Hex { get; set; }
 
         /// <summary>
+        /// If this spending transaction is a withdrawal, this contains its details.
+        /// </summary>
+        [JsonProperty(PropertyName = "withdrawalDetails", NullValueHandling = NullValueHandling.Ignore)]
+        public WithdrawalDetails WithdrawalDetails { get; set; }
+
+        /// <summary>
         /// Gets or sets the full transaction object.
         /// </summary>
         [JsonIgnore]
