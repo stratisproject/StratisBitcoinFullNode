@@ -154,14 +154,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             {
                 lock (((FederationWalletManager)this.federationWalletManager).lockObject)
                 {
-                    // Remove all transient transactions from the wallet to be re-added according to the
-                    // information carried in the store. This ensures that we will re-sync in the case
-                    // where the store may have been deleted.
-                    // Any partial transfers affected by these removals are expected to first become
-                    // suspended due to the missing wallet transactions which will rewind the counter-
-                    // chain tip to then reprocess them.
-
-                    bool walletUpdated = this.federationWalletManager.RemoveTransientTransactions();
+                    // Remove all unconfirmed transaction data from the wallet to be re-added when blocks are processed.
+                    bool walletUpdated = this.federationWalletManager.RemoveUnconfirmedTransactionData();
 
                     Guard.Assert(this.Synchronize());
 

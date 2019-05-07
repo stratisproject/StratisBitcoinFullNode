@@ -110,6 +110,11 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         bool RemoveTransientTransactions(uint256 depositId = null);
 
         /// <summary>
+        /// Removes transaction data that is still to be confirmed in a block.
+        /// </summary>
+        bool RemoveUnconfirmedTransactionData();
+
+        /// <summary>
         /// Determines if federation has been activated.
         /// </summary>
         /// <returns><c>True</c> if federation is active and <c>false</c> otherwise.</returns>

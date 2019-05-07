@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Security;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -807,7 +806,33 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <inheritdoc />
-        public bool RemoveTransientTransactions(uint256 depositId = null)
+        public bool RemoveUnconfirmedTransactionData()
+        {
+            lock (this.lockObject)
+            {
+                bool walletUpdated = false;
+
+                foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions.ToList())
+                {
+                    bool changeForUnconfirmedTransaction = transactionData.BlockHeight == null;
+                    bool spendByUnconfirmedTransaction = transactionData.SpendingDetails != null && transactionData.SpendingDetails.BlockHeight == null;
+
+                    if (changeForUnconfirmedTransaction || spendByUnconfirmedTransaction)
+                    {
+                        this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
+
+                        walletUpdated = true;
+                    }
+                }
+
+                this.LoadKeysLookupLock();
+
+                return walletUpdated;
+            }
+        }
+
+        /// <inheritdoc />
+        public bool RemoveTransientTransactions(uint256 depositId)
         {
             this.logger.LogTrace("Removing transient transactions. DepositId={0}", depositId);
 
@@ -816,24 +841,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 // Remove transient transactions not seen in a block yet.
                 bool walletUpdated = false;
 
-                if (depositId == null)
+                foreach ((Transaction transaction, IWithdrawal withdrawal) in this.FindWithdrawalTransactions(depositId))
                 {
-                    foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions.ToList())
-                    {
-                        if (transactionData.BlockHeight == null)
-                        {
-                            this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
-                        }
-                    }
-
-                    this.LoadKeysLookupLock();
-                }
-                else
-                {
-                    foreach ((Transaction transaction, IWithdrawal withdrawal) in this.FindWithdrawalTransactions(depositId))
-                    {
-                        walletUpdated |= this.RemoveTransaction(transaction);
-                    }
+                    walletUpdated |= this.RemoveTransaction(transaction);
                 }
 
                 return walletUpdated;
