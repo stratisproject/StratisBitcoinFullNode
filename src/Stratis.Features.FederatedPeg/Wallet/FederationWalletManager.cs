@@ -106,12 +106,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// </summary>
         private const string WalletFileName = "multisig_wallet.json";
 
-        // In order to allow faster look-ups of transactions affecting the wallets' addresses,
-        // we keep a couple of objects in memory:
-        // 1. the list of unspent outputs for checking whether inputs from a transaction are being spent by our wallet and
-        // 2. the list of addresses contained in our wallet for checking whether a transaction is being paid to the wallet.
+        /// <summary>
+        /// Creates a mapping from (TransactionData.Id, TransactionData.Index) to TransactionData.
+        /// </summary>
         private Dictionary<OutPoint, TransactionData> outpointLookup;
-        //    internal Dictionary<Script, MultiSigAddress> multiSigKeysLookup;
 
         // Gateway settings picked up from the node config.
         private readonly IFederationGatewaySettings federationGatewaySettings;
@@ -746,7 +744,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <summary>
-        /// Add to the list of unspent outputs kept in memory for faster lookups.
+        /// Adds a <see cref="TransactionData"/> to <see cref="outpointLookup"/>.
         /// </summary>
         private void AddInputKeysLookupLock(TransactionData transactionData)
         {
@@ -757,7 +755,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <summary>
-        /// Remove from the list of unspent outputs kept in memory for faster lookups.
+        /// Remove a <see cref="TransactionData"/> from <see cref="outpointLookup"/>.
         /// </summary>
         private void RemoveInputKeysLookupLock(TransactionData transactionData)
         {
