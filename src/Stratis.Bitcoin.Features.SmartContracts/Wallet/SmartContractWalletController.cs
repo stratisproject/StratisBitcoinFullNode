@@ -19,6 +19,7 @@ using Stratis.Bitcoin.Utilities.ModelStateErrors;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
+using State = Stratis.Bitcoin.Features.Wallet.Broadcasting.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
@@ -287,6 +288,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             Transaction transaction = this.network.CreateTransaction(response.Hex);
             this.walletManager.ProcessTransaction(transaction, null, null, false);
             this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+
+            // Check if transaction was actually added to a mempool.
+            TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
+
+            if (transactionBroadCastEntry?.State == State.CantBroadcast)
+            {
+                this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
+            }
 
             return this.Json(response.TransactionId);
         }
