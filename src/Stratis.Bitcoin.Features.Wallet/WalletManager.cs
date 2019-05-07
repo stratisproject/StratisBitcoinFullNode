@@ -12,8 +12,10 @@ using NBitcoin.BuilderExtensions;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
+using Stratis.Bitcoin.Features.Wallet.Events;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 using TracerAttributes;
@@ -90,13 +92,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>The private key cache for unlocked wallets.</summary>
         private readonly MemoryCache privateKeyCache;
 
-		/// <summary>The shell command to execute.</summary>
-		private string shellCommand;
-
-		/// <summary>The shell arguments to send to the shell command.</summary>
-		private string shellArguments;
-
-        private readonly IShellHelper shellHelper;
+        private readonly ISignals signals;
 
         public uint256 WalletTipHash { get; set; }
 
@@ -119,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             IDateTimeProvider dateTimeProvider,
             IScriptAddressReader scriptAddressReader,
             IBroadcasterManager broadcasterManager = null, // no need to know about transactions the node will broadcast to.
-            IShellHelper shellHelper = null)
+            ISignals signals = null)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
@@ -146,7 +142,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.broadcasterManager = broadcasterManager;
             this.scriptAddressReader = scriptAddressReader;
             this.dateTimeProvider = dateTimeProvider;
-            this.shellHelper = shellHelper;
+            this.signals = signals;
 
             // register events
             if (this.broadcasterManager != null)
@@ -158,14 +154,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
 
             this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
-
-			if (!string.IsNullOrWhiteSpace(this.walletSettings.WalletNotify))
-			{
-				var cmdArray = this.walletSettings.WalletNotify.Split(' ');
-
-				this.shellCommand = cmdArray.First();
-				this.shellArguments = string.Join(" ", cmdArray.Skip(1));
-			}
 		}
 
         /// <summary>
@@ -1031,22 +1019,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                         foundReceivingTrx = true;
                         this.logger.LogDebug("Transaction '{0}' contained funds received by the user's wallet(s).", hash);
 
-						try
-						{
-							// Whenever a new receiving transaction is found, trigger the -walletnotify.
-							if (!string.IsNullOrWhiteSpace(this.shellCommand) && shellHelper != null)
-							{
-								var arguments = this.shellArguments.Replace("%s", transaction.ToString());
-								this.logger.LogInformation($"-walletnotify running command: {this.shellCommand} {arguments}");
-
-                                this.shellHelper.RunCommand(this.shellCommand, arguments);
-							}
-						}
-						catch (Exception ex)
-						{
-							this.logger.LogError(ex, "Failed to parse and execute on -walletnotify.");
-						}
-					}
+                        if (this.signals != null)
+                        {
+                            this.signals.Publish(new TransactionFound(transaction));
+                        }
+                    }
                 }
 
                 // Check the inputs - include those that have a reference to a transaction containing one of our scripts and the same index.

@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 			DataFolder dataFolder = CreateDataFolder(this);
 			Directory.CreateDirectory(dataFolder.WalletPath);
 
-			Stratis.Bitcoin.Features.Wallet.Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password");
+            Stratis.Bitcoin.Features.Wallet.Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password");
 			(ExtKey ExtKey, string ExtPubKey) accountKeys = WalletTestsHelpers.GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
 			(PubKey PubKey, BitcoinPubKeyAddress Address) spendingKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
 			(PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
@@ -99,9 +99,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 				InternalAddresses = new List<HdAddress> { changeAddress }
 			});
 
-            var shellHelper = new Mock<IShellHelper>();
+            //var shellHelper = new Mock<IShellHelper>();
+            var signals = new Signals.Signals(this.LoggerFactory.Object, null);
 
-			var walletFeePolicy = new Mock<IWalletFeePolicy>();
+            var walletFeePolicy = new Mock<IWalletFeePolicy>();
 			walletFeePolicy.Setup(w => w.GetMinimumFee(258, 50))
 				.Returns(new Money(5000));
 
@@ -109,7 +110,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 			settings.WalletNotify = "curl -X POST -d txid=%s http://127.0.0.1:8080";
 
 			var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chainInfo.chain, settings,
-				dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader(), null, shellHelper.Object);
+				dataFolder, walletFeePolicy.Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader(), null, signals);
 			walletManager.Wallets.Add(wallet);
 			walletManager.LoadKeysLookupLock();
 			walletManager.WalletTipHash = block.Header.GetHash();
@@ -117,7 +118,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 			ChainedHeader chainedBlock = chainInfo.chain.GetHeader(block.GetHash());
 			walletManager.ProcessBlock(block, chainedBlock);
 
-            shellHelper.Verify(m => m.RunCommand(It.IsAny<string>(), It.IsAny<string>(), false, 2000), Times.Exactly(2));
+            //shellHelper.Verify(m => m.RunCommand(It.IsAny<string>(), It.IsAny<string>(), false, 2000), Times.Exactly(2));
         }
 
         /// <summary>

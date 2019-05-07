@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.ColdStaking;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Features.WalletNotify;
 
 namespace Stratis.StratisD
 {
@@ -37,6 +38,7 @@ namespace Stratis.StratisD
                     .AddPowPosMining()
                     .UseApi()
                     .UseApps()
+                    .UseWalletNotify()
                     .AddRPC()
                     .Build();
 

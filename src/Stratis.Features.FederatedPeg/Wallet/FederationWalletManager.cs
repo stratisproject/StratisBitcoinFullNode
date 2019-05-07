@@ -10,7 +10,9 @@ using NBitcoin.Policy;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Events;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
@@ -89,6 +91,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
+        private readonly ISignals signals;
+
         /// <summary>Indicates whether the federation is active.</summary>
         private bool isFederationActive;
 
@@ -124,7 +128,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
             IFederationGatewaySettings federationGatewaySettings,
-            IWithdrawalExtractor withdrawalExtractor)
+            IWithdrawalExtractor withdrawalExtractor, 
+            ISignals signals)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
@@ -135,6 +140,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(federationGatewaySettings, nameof(federationGatewaySettings));
             Guard.NotNull(withdrawalExtractor, nameof(withdrawalExtractor));
+            Guard.NotNull(signals, nameof(signals));
 
             this.lockObject = new object();
 
@@ -151,6 +157,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.withdrawalExtractor = withdrawalExtractor;
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
             this.isFederationActive = false;
+            this.signals = signals;
         }
 
         public void Start()
@@ -419,6 +426,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     {
                         this.AddTransactionToWallet(transaction, utxo, blockHeight, blockHash, block);
                         foundReceivingTrx = true;
+                        this.signals.Publish(new TransactionFound(transaction));
                     }
                 }
 

@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Apps;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Features.WalletNotify;
 
 namespace Stratis.BitcoinD
 {
@@ -33,7 +34,8 @@ namespace Stratis.BitcoinD
                     .AddRPC()
                     .UseWallet()
                     .UseApi()
-                    .UseApps()                    
+                    .UseApps()
+                    .UseWalletNotify()
                     .Build();
 
                 if (node != null)
