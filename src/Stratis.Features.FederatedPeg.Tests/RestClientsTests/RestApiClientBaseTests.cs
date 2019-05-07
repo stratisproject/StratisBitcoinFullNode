@@ -46,7 +46,7 @@ namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
         public int RetriesCount { get; private set; }
 
         public TestRestApiClient(ILoggerFactory loggerFactory, IFederationGatewaySettings settings, IHttpClientFactory httpClientFactory)
-            : base(loggerFactory, httpClientFactory, settings.CounterChainApiPort, "FederationGateway")
+            : base(loggerFactory, httpClientFactory, settings.CounterChainApiPort, "FederationGateway", "http://localhost")
         {
             this.RetriesCount = 0;
         }
