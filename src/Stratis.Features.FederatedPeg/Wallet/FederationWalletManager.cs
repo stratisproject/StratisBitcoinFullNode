@@ -294,7 +294,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 this.UpdateLastBlockSyncedHeight(fork);
 
-                this.RefreshInputKeysLookupLock();
+                this.LoadKeysLookupLock();
             }
         }
 
@@ -629,7 +629,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <param name="blockHeight">Height of the block.</param>
         /// <param name="blockHash">Hash of the block.</param>
         /// <param name="block">The block containing the transaction to add.</param>
-        private void AddSpendingTransactionToWallet(Transaction transaction, 
+        private void AddSpendingTransactionToWallet(Transaction transaction,
             IEnumerable<TxOut> paidToOutputs,
             uint256 spendingTransactionId,
             int? spendingTransactionIndex,
@@ -741,10 +741,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             lock (this.lockObject)
             {
-                foreach (TransactionData transaction in this.Wallet.MultiSigAddress.Transactions)
-                {
-                    this.outpointLookup[new OutPoint(transaction.Id, transaction.Index)] = transaction;
-                }
+                this.outpointLookup = this.Wallet.MultiSigAddress.Transactions.ToDictionary(t => new OutPoint(t.Id, t.Index), t => t);
             }
         }
 
@@ -768,21 +765,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             // Locked in containing methods.
             this.outpointLookup.Remove(new OutPoint(transactionData.Id, transactionData.Index));
-        }
-
-        private void RefreshInputKeysLookupLock()
-        {
-            lock (this.lockObject)
-            {
-                this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
-
-                // Get the UTXOs that are unspent or spent but not confirmed.
-                // We only exclude from the list the confirmed spent UTXOs.
-                foreach (TransactionData transaction in this.Wallet.MultiSigAddress.Transactions.Where(t => t.SpendingDetails?.BlockHeight == null))
-                {
-                    this.outpointLookup[new OutPoint(transaction.Id, transaction.Index)] = transaction;
-                }
-            }
         }
 
         public void TransactionFoundInternal(Script script)
