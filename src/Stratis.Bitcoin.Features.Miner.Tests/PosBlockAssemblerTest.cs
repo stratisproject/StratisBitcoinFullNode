@@ -18,7 +18,6 @@ using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Mining;
-using Stratis.Bitcoin.Networks.Deployments;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -457,7 +456,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 new Mock<IChainState>().Object,
                 new InvalidBlockHashStore(dateTimeProvider),
                 new NodeStats(dateTimeProvider),
-                new Mock<IRewindDataIndexCache>().Object);
+                new Mock<IRewindDataIndexCache>().Object,
+                this.CreateAsyncProvider());
 
             posConsensusRules.Register();
 

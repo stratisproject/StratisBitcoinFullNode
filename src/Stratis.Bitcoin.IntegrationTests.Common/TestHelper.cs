@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -14,57 +13,14 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
-using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common
 {
     public class TestHelper
     {
-        public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int waitTimeSeconds = 60, int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            if (cancellationToken == default(CancellationToken))
-            {
-                cancellationToken = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : waitTimeSeconds * 1000).Token;
-            }
-
-            while (!act())
-            {
-                try
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    Thread.Sleep(retryDelayInMiliseconds);
-                }
-                catch (OperationCanceledException e)
-                {
-                    Assert.False(true, $"{failureReason}{Environment.NewLine}{e.Message} [{e.InnerException?.Message}]");
-                }
-            }
-        }
-
-        public static void WaitLoopMessage(Func<(bool success, string message)> act, int waitTimeSeconds = 60)
-        {
-            var cancellationToken = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : waitTimeSeconds * 1000).Token;
-
-            var (success, message) = act();
-
-            while (!success)
-            {
-                try
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    Thread.Sleep(1000);
-
-                    (success, message) = act();
-                }
-                catch (OperationCanceledException e)
-                {
-                    Assert.False(true, $"{message}{Environment.NewLine}{e.Message} [{e.InnerException?.Message}]");
-                }
-            }
-        }
-
         public static bool AreNodesSynced(CoreNode node1, CoreNode node2, bool ignoreMempool = false)
         {
             if (node1.runner is BitcoinCoreRunner || node2.runner is BitcoinCoreRunner)
@@ -175,7 +131,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <returns>Returns <c>true</c> if the node is synced at a given height.</returns>
         public static bool IsNodeSyncedAtHeight(CoreNode node, int height)
         {
-            WaitLoop(() => node.FullNode.ConsensusManager().Tip.Height == height);
+            TestBase.WaitLoop(() => node.FullNode.ConsensusManager().Tip.Height == height);
             return true;
         }
 
@@ -197,8 +153,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static void WaitForNodeToSync(params CoreNode[] nodes)
         {
-            nodes.ToList().ForEach(n => WaitLoop(() => IsNodeSynced(n)));
-            nodes.Skip(1).ToList().ForEach(n => WaitLoop(() => AreNodesSynced(nodes.First(), n)));
+            nodes.ToList().ForEach(n => TestBase.WaitLoop(() => IsNodeSynced(n)));
+            nodes.Skip(1).ToList().ForEach(n => TestBase.WaitLoop(() => AreNodesSynced(nodes.First(), n)));
         }
 
         public static void DisableBlockPropagation(CoreNode from, CoreNode to)
@@ -213,8 +169,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static void WaitForNodeToSyncIgnoreMempool(params CoreNode[] nodes)
         {
-            nodes.ToList().ForEach(node => WaitLoop(() => IsNodeSynced(node)));
-            nodes.Skip(1).ToList().ForEach(node => WaitLoop(() => AreNodesSynced(nodes.First(), node, true)));
+            nodes.ToList().ForEach(node => TestBase.WaitLoop(() => IsNodeSynced(node)));
+            nodes.Skip(1).ToList().ForEach(node => TestBase.WaitLoop(() => AreNodesSynced(nodes.First(), node, true)));
         }
 
         public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, int numberOfBlocks, bool syncNode = true, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0", string miningAddress = null)
@@ -230,7 +186,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             var blockHashes = node.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(script, (ulong)numberOfBlocks, uint.MaxValue);
 
             if (syncNode)
-                WaitLoop(() => IsNodeSynced(node));
+                TestBase.WaitLoop(() => IsNodeSynced(node));
 
             return (node.MinerHDAddress, blockHashes);
         }
@@ -348,7 +304,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 return;
 
             thisNode.CreateRPCClient().RemoveNode(nodeToDisconnect.Endpoint);
-            WaitLoop(() => !IsNodeConnectedTo(thisNode, nodeToDisconnect));
+            TestBase.WaitLoop(() => !IsNodeConnectedTo(thisNode, nodeToDisconnect));
         }
 
         /// <summary>
@@ -364,12 +320,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                     node.CreateRPCClient().RemoveNode(peer.PeerEndPoint);
                 }
 
-                WaitLoop(() => node.FullNode.ConnectionManager.ConnectedPeers.Where(p => !p.Inbound).Count() == 0);
+                TestBase.WaitLoop(() => node.FullNode.ConnectionManager.ConnectedPeers.Where(p => !p.Inbound).Count() == 0);
             }
 
             foreach (var node in nodes)
             {
-                WaitLoop(() => !IsNodeConnected(node));
+                TestBase.WaitLoop(() => !IsNodeConnected(node));
             }
         }
 
@@ -416,7 +372,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
             var isConnecting = false;
 
-            WaitLoop(() =>
+            TestBase.WaitLoop(() =>
             {
                 try
                 {
@@ -453,7 +409,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             var cancellation = new CancellationTokenSource((int)TimeSpan.FromSeconds(30).TotalMilliseconds);
 
-            WaitLoop(() =>
+            TestBase.WaitLoop(() =>
             {
                 try
                 {
@@ -493,7 +449,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 Connect(thisNode, coreNode);
 
             foreach (CoreNode coreNode in to)
-                WaitLoop(() => AreNodesSynced(thisNode, coreNode, ignoreMempool), waitTimeSeconds: 120);
+                TestBase.WaitLoopMessage(() => AreNodesSyncedMessage(thisNode, coreNode, ignoreMempool), waitTimeSeconds: 120);
         }
 
         /// <summary>

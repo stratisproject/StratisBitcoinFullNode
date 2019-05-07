@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
@@ -49,7 +48,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly MempoolManager mempoolManager;
         private readonly IBroadcasterManager broadcasterManager;
         private readonly INodeLifetime nodeLifetime;
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         private readonly IInitialBlockDownloadState ibdState;
         private readonly IFederationWalletManager federationWalletManager;
@@ -57,7 +56,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private IAsyncLoop asyncLoop;
 
         public SignedMultisigTransactionBroadcaster(
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             ILoggerFactory loggerFactory,
             ICrossChainTransferStore store,
             INodeLifetime nodeLifetime,
@@ -72,7 +71,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             Guard.NotNull(broadcasterManager, nameof(broadcasterManager));
 
 
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.store = store;
             this.nodeLifetime = nodeLifetime;
@@ -86,7 +85,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <inheritdoc />
         public void Start()
         {
-            this.asyncLoop = this.asyncLoopFactory.Run(nameof(PartialTransactionRequester), _ =>
+            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop(nameof(PartialTransactionRequester), _ =>
                 {
                     this.BroadcastTransactionsAsync().GetAwaiter().GetResult();
                     return Task.CompletedTask;
@@ -104,27 +103,27 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 return;
             }
 
-            Dictionary<uint256, Transaction> transactions = await this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).ConfigureAwait(false);
+            ICrossChainTransfer[] transfers = this.store.GetTransfersByStatus(new CrossChainTransferStatus[]{CrossChainTransferStatus.FullySigned});
 
-            if (!transactions.Any())
+            if (!transfers.Any())
             {
                 this.logger.LogTrace("Signed multisig transactions do not exist in the CrossChainTransfer store.");
                 return;
             }
 
-            foreach (KeyValuePair<uint256, Transaction> transaction in transactions)
+            foreach (ICrossChainTransfer transfer in transfers)
             {
-                TxMempoolInfo txInfo = await this.mempoolManager.InfoAsync(transaction.Value.GetHash()).ConfigureAwait(false);
+                TxMempoolInfo txInfo = await this.mempoolManager.InfoAsync(transfer.PartialTransaction.GetHash()).ConfigureAwait(false);
 
                 if (txInfo != null)
                 {
-                    this.logger.LogTrace("Transaction ID '{0}' already in the mempool.", transaction.Key);
+                    this.logger.LogTrace("Deposit ID '{0}' already in the mempool.", transfer.DepositTransactionId);
                     continue;
                 }
 
-                this.logger.LogInformation("Broadcasting deposit-id={0} a signed multisig transaction {1} to the network.", transaction.Key, transaction.Value.GetHash());
+                this.logger.LogInformation("Broadcasting deposit-id={0} a signed multisig transaction {1} to the network.", transfer.DepositTransactionId, transfer.PartialTransaction.GetHash());
 
-                await this.broadcasterManager.BroadcastTransactionAsync(transaction.Value).ConfigureAwait(false);
+                await this.broadcasterManager.BroadcastTransactionAsync(transfer.PartialTransaction).ConfigureAwait(false);
             }
         }
 

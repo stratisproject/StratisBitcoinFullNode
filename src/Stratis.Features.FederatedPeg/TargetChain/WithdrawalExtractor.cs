@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Features.FederatedPeg.Interfaces;
+using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
 {
@@ -18,12 +19,19 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         IWithdrawal ExtractWithdrawalFromTransaction(Transaction transaction, uint256 blockHash, int blockHeight);
     }
 
+    [NoTrace]
     public class WithdrawalExtractor : IWithdrawalExtractor
     {
         /// <summary>
-        /// Withdrawals have a particular format we look for. In current iterations they always contain 3 outputs.
+        /// Withdrawals have a particular format we look for.
+        /// They will have 2 outputs when there is no change to be sent.
         /// </summary>
-        private const int ExpectedNumberOfOutputs = 3;
+        private const int ExpectedNumberOfOutputsNoChange = 2;
+
+        /// <summary>
+        /// Withdrawals will have 3 outputs when there is change to be sent.
+        /// </summary>
+        private const int ExpectedNumberOfOutputsChange = 3;
 
         private readonly IOpReturnDataReader opReturnDataReader;
 
@@ -71,7 +79,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 return null;
 
             // Withdrawal has a specific structure.
-            if (transaction.Outputs.Count != ExpectedNumberOfOutputs)
+            if (transaction.Outputs.Count != ExpectedNumberOfOutputsNoChange
+                && transaction.Outputs.Count != ExpectedNumberOfOutputsChange)
                 return null;
 
             if (!this.IsOnlyFromMultisig(transaction))
@@ -80,12 +89,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             if (!this.opReturnDataReader.TryGetTransactionId(transaction, out string depositId))
                 return null;
 
-            this.logger.LogDebug(
-                "Processing received transaction with source deposit id: {0}. Transaction hash: {1}.",
-                depositId,
-                transaction.GetHash());
+            TxOut targetAddressOutput = transaction.Outputs.SingleOrDefault(this.IsTargetAddressCandidate);
+            if (targetAddressOutput == null)
+                return null;
 
-            TxOut targetAddressOutput = transaction.Outputs.Single(this.IsTargetAddressCandidate);
             var withdrawal = new Withdrawal(
                 uint256.Parse(depositId),
                 transaction.GetHash(),

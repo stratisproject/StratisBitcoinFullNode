@@ -10,6 +10,7 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Wallet;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC
@@ -133,12 +134,12 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             var transaction = from.FullNode.WalletTransactionHandler().BuildTransaction(WalletTests.CreateContext(from.FullNode.Network, new WalletAccountReference(walletName, accountName), password, toAddress.ScriptPubKey, coins, FeeType.Medium, 10));
             from.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
-            TestHelper.WaitLoop(() => from.CreateRPCClient().GetRawMempool().Length > 0);
+            TestBase.WaitLoop(() => from.CreateRPCClient().GetRawMempool().Length > 0);
 
             // Mine the transaction.
             TestHelper.MineBlocks(this.miner, 10);
-            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(from, to));
-            TestHelper.WaitLoop(() => to.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Sum(x => x.Transaction.Amount) > 0);
+            TestBase.WaitLoop(() => TestHelper.AreNodesSynced(from, to));
+            TestBase.WaitLoop(() => to.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Sum(x => x.Transaction.Amount) > 0);
         }
 
         private async Task<AddressGroupingModel[]> CallListAddressGroupingsAsync()

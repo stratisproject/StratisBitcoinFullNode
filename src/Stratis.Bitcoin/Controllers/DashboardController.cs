@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Stratis.Bitcoin.AsyncWork;
 
 namespace Stratis.Bitcoin.Controllers
 {
@@ -9,10 +10,12 @@ namespace Stratis.Bitcoin.Controllers
     public class DashboardController : Controller
     {
         private readonly IFullNode fullNode;
+        private readonly IAsyncProvider asyncProvider;
 
-        public DashboardController(IFullNode fullNode)
+        public DashboardController(IFullNode fullNode, IAsyncProvider asyncProvider)
         {
             this.fullNode = fullNode;
+            this.asyncProvider = asyncProvider;
         }
 
         /// <summary>
@@ -25,6 +28,17 @@ namespace Stratis.Bitcoin.Controllers
         {
             string content = (this.fullNode as FullNode).LastLogOutput;
             return this.Content(content);
+        }
+
+        /// <summary>
+        /// Returns a web page with Async Loops statistics
+        /// </summary>
+        /// <returns>text/html content</returns>
+        [HttpGet]
+        [Route("AsyncLoopsStats")]
+        public IActionResult AsyncLoopsStats()
+        {
+            return this.Content(this.asyncProvider.GetStatistics(false));
         }
     }
 }

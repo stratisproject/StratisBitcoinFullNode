@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.P2P
         {
             IEnumerable<PeerAddress> notBanned = this.NotBanned();
 
-            int attemptedReachedThresholdCount = notBanned.Count(p => p.ConnectionAttempts == PeerAddress.AttemptThreshold);
+            int attemptedReachedThresholdCount = notBanned.Count(p => p.ConnectionAttempts >= PeerAddress.AttemptThreshold);
             bool areAllPeersReachedThreshold = attemptedReachedThresholdCount == notBanned.Count();
 
             return areAllPeersReachedThreshold;
@@ -323,7 +323,7 @@ namespace Stratis.Bitcoin.P2P
         {
             return this.peerAddresses.Values.Where(p =>
                 p.Attempted &&
-                p.ConnectionAttempts < PeerAddress.AttemptThreshold &&
+                p.ConnectionAttempts <= PeerAddress.AttemptThreshold &&
                 p.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-PeerAddress.AttempThresholdHours) &&
                 !this.IsBanned(p));
         }

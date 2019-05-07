@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Text;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
