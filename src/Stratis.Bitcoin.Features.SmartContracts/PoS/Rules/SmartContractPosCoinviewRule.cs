@@ -81,6 +81,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
         }
 
         /// <inheritdoc />
+        protected override Money GetTransactionFee(UnspentOutputSet view, Transaction tx)
+        {
+            return tx.IsCoinStake ? Money.Zero : view.GetValueIn(tx) - tx.TotalOut;
+        }
+
+        /// <inheritdoc />
         public override void UpdateCoinView(RuleContext context, Transaction transaction)
         {
             if (this.generatedTransaction != null)
