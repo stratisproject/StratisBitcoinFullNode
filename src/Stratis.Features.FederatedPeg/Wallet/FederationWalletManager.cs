@@ -702,6 +702,16 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true
                 };
 
+                if (withdrawal != null)
+                {
+                    spendingDetails.WithdrawalDetails = new WithdrawalDetails
+                    {
+                        Amount = withdrawal.Amount,
+                        MatchingDepositId = withdrawal.DepositId,
+                        TargetAddress = withdrawal.TargetAddress
+                    };
+                }
+
                 spentTransaction.SpendingDetails = spendingDetails;
                 spentTransaction.MerkleProof = null;
             }
@@ -721,16 +731,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 {
                     spentTransaction.SpendingDetails.CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time);
                 }
-            }
-
-            if (withdrawal != null)
-            {
-                spentTransaction.SpendingDetails.WithdrawalDetails = new WithdrawalDetails
-                {
-                    Amount = withdrawal.Amount,
-                    MatchingDepositId = withdrawal.DepositId,
-                    TargetAddress = withdrawal.TargetAddress
-                };
             }
         }
 
