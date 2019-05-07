@@ -54,7 +54,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         public List<WithdrawalModel> GetHistory(int maximumEntriesToReturn)
         {
             var result = new List<WithdrawalModel>();
-            IWithdrawal[] withdrawals = this.federationWalletManager.GetWithdrawals().Where(x=>x.BlockHash != null).Take(maximumEntriesToReturn).ToArray();
+
+            // Enumerate withdrawals starting with the most recent.
+            IWithdrawal[] withdrawals = this.federationWalletManager.FindWithdrawalTransactions(sort: true)
+                .Select(w => w.Item2)
+                .Where(x => x.BlockHash != null)
+                .Reverse()
+                .Take(maximumEntriesToReturn)
+                .ToArray();
 
             if (withdrawals.Length > 0)
             {
