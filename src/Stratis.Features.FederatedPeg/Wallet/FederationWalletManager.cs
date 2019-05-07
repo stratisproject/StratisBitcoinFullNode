@@ -54,7 +54,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// A lock object that protects access to the <see cref="FederationWallet"/>.
         /// Any of the collections inside Wallet must be synchronized using this lock.
         /// </summary>
-        internal object lockObject { get; }
+        internal object lockObject { get; private set; }
 
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
