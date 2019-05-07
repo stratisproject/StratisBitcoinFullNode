@@ -816,9 +816,21 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 // Remove transient transactions not seen in a block yet.
                 bool walletUpdated = false;
 
-                foreach ((Transaction transaction, IWithdrawal withdrawal) in this.FindWithdrawalTransactions(depositId))
+                if (depositId == null)
                 {
-                    if (withdrawal.BlockNumber == 0)
+                    foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions.ToList())
+                    {
+                        if (transactionData.BlockHeight == null)
+                        {
+                            this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
+                        }
+                    }
+
+                    this.LoadKeysLookupLock();
+                }
+                else
+                {
+                    foreach ((Transaction transaction, IWithdrawal withdrawal) in this.FindWithdrawalTransactions(depositId))
                     {
                         walletUpdated |= this.RemoveTransaction(transaction);
                     }
