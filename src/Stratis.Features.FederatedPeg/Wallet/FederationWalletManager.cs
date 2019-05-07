@@ -629,7 +629,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <param name="blockHeight">Height of the block.</param>
         /// <param name="blockHash">Hash of the block.</param>
         /// <param name="block">The block containing the transaction to add.</param>
-        private void AddSpendingTransactionToWallet(Transaction transaction, 
+        private void AddSpendingTransactionToWallet(Transaction transaction,
             IEnumerable<TxOut> paidToOutputs,
             uint256 spendingTransactionId,
             int? spendingTransactionIndex,
@@ -892,6 +892,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
             foreach (TxIn input in transaction.Inputs)
             {
                 if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData transactionData))
+                    return false;
+
+                if (transactionData.SpendingDetails?.TransactionId != transaction.GetHash())
                     return false;
 
                 coins?.Add(new Coin(transactionData.Id, (uint)transactionData.Index, transactionData.Amount, transactionData.ScriptPubKey));
