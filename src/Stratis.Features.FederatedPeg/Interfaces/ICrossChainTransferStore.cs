@@ -61,7 +61,6 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// </summary>
         /// <param name="depositIds">The deposit transaction ids.</param>
         /// <returns>The cross-chain transfer information.</returns>
-        [Obsolete]
         Task<ICrossChainTransfer[]> GetAsync(uint256[] depositIds);
 
         /// <summary>Determines if the store contains suspended transactions.</summary>
