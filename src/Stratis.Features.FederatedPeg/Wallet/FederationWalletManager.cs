@@ -817,12 +817,20 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     bool changeForUnconfirmedTransaction = transactionData.BlockHeight == null;
                     bool spendByUnconfirmedTransaction = transactionData.SpendingDetails != null && transactionData.SpendingDetails.BlockHeight == null;
 
-                    if (changeForUnconfirmedTransaction || spendByUnconfirmedTransaction)
+                    if (!changeForUnconfirmedTransaction && !spendByUnconfirmedTransaction)
+                        continue;
+
+                    if (spendByUnconfirmedTransaction)
+                    {
+                        transactionData.SpendingDetails = null;
+                    }
+
+                    if (changeForUnconfirmedTransaction)
                     {
                         this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
-
-                        walletUpdated = true;
                     }
+
+                    walletUpdated = true;
                 }
 
                 this.LoadKeysLookupLock();
