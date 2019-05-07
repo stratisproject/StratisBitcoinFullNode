@@ -65,10 +65,10 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>List of block headers that were not yet consumed by <see cref="Consensus.ConsensusManager"/>.</summary>
         /// <remarks>Should be protected by <see cref="asyncLock"/>.</remarks>
-        protected readonly List<BlockHeader> cachedHeaders;
+        private readonly List<BlockHeader> cachedHeaders;
 
         /// <summary>Protects access to <see cref="cachedHeaders"/>.</summary>
-        protected readonly AsyncLock asyncLock;
+        private readonly AsyncLock asyncLock;
 
         /// <summary>Protects write access to the <see cref="BestSentHeader"/>.</summary>
         private readonly object bestSentHeaderLock;

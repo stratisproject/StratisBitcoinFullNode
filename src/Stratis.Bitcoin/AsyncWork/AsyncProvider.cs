@@ -158,7 +158,6 @@ namespace Stratis.Bitcoin.AsyncWork
         }
 
         /// <inheritdoc />
-
         public bool IsAsyncDelegateDequeuerRunning(IAsyncDelegate asyncDelegate)
         {
             lock (this.lockAsyncDelegates)
@@ -174,7 +173,6 @@ namespace Stratis.Bitcoin.AsyncWork
         }
 
         /// <inheritdoc />
-
         public bool IsAsyncDelegateDequeuerRunning(string name)
         {
             lock (this.lockAsyncDelegates)
@@ -185,7 +183,6 @@ namespace Stratis.Bitcoin.AsyncWork
         }
 
         /// <inheritdoc />
-
         public bool IsAsyncLoopRunning(string name)
         {
             lock (this.lockAsyncDelegates)
@@ -222,7 +219,8 @@ namespace Stratis.Bitcoin.AsyncWork
                 orderby info.FriendlyName
                 select new
                 {
-                    Columns = new string[] {
+                    Columns = new string[]
+                    {
                         info.FriendlyName,
                         (info.IsLoop ? "Loop" : "Dequeuer"),
                         (info.IsRunning ? "Running" : "Faulted")

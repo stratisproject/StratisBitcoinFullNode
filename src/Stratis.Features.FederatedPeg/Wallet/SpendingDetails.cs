@@ -33,6 +33,12 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public int? BlockHeight { get; set; }
 
         /// <summary>
+        /// The hash of the block including this transaction.
+        /// </summary>
+        [JsonProperty(PropertyName = "blockHash", NullValueHandling = NullValueHandling.Ignore)]
+        public uint256 BlockHash { get; set; }
+
+        /// <summary>
         /// A value indicating whether this is a coin stake transaction or not.
         /// </summary>
         [JsonProperty(PropertyName = "isCoinStake", NullValueHandling = NullValueHandling.Ignore)]
@@ -50,6 +56,12 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// </summary>
         [JsonProperty(PropertyName = "hex", NullValueHandling = NullValueHandling.Ignore)]
         public string Hex { get; set; }
+
+        /// <summary>
+        /// If this spending transaction is a withdrawal, this contains its details.
+        /// </summary>
+        [JsonProperty(PropertyName = "withdrawalDetails", NullValueHandling = NullValueHandling.Ignore)]
+        public WithdrawalDetails WithdrawalDetails { get; set; }
 
         /// <summary>
         /// Gets or sets the full transaction object.

@@ -2,6 +2,7 @@
 using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Utilities.JsonConverters;
+using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg.Wallet
 {
@@ -60,6 +61,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             return this.BlockHeight != null;
         }
 
+        [NoTrace]
         public Transaction GetFullTransaction(Network network)
         {
             return network.CreateTransaction(this.Hex);

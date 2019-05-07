@@ -5,9 +5,11 @@ using NBitcoin;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
+using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg.SourceChain
 {
+    [NoTrace]
     public class DepositExtractor : IDepositExtractor
     {
         /// <summary>
