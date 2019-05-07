@@ -794,20 +794,19 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions.ToList())
                 {
-                    bool changeForUnconfirmedTransaction = transactionData.BlockHeight == null;
-                    bool spendByUnconfirmedTransaction = transactionData.SpendingDetails != null && transactionData.SpendingDetails.BlockHeight == null;
-
-                    if (!changeForUnconfirmedTransaction && !spendByUnconfirmedTransaction)
-                        continue;
-
-                    if (spendByUnconfirmedTransaction)
+                    // Change for unconfirmed transaction?
+                    if (transactionData.BlockHeight == null)
+                    {
+                        this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
+                    }
+                    // Spend by unconfirmed transaction?
+                    else if (transactionData.SpendingDetails != null && transactionData.SpendingDetails.BlockHeight == null)
                     {
                         transactionData.SpendingDetails = null;
                     }
-
-                    if (changeForUnconfirmedTransaction)
+                    else
                     {
-                        this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
+                        continue;
                     }
 
                     walletUpdated = true;
