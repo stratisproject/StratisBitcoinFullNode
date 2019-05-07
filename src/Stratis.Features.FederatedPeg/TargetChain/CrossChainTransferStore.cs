@@ -167,8 +167,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                     // Any transactions seen in blocks must also be present in the wallet.
                     FederationWallet wallet = this.federationWalletManager.GetWallet();
-                    ICrossChainTransfer[] transfers = this.GetTransfersByStatusInternalLocked(new[] { CrossChainTransferStatus.SeenInBlock }, true, false).ToArray();
-                    foreach (ICrossChainTransfer transfer in transfers)
+                    ICrossChainTransfer[] transfers = this.GetTransfersByStatusInternalLocked(new[] { CrossChainTransferStatus.SeenInBlock }, false, false).ToArray();
+                    foreach (ICrossChainTransfer transfer in transfers.OrderBy(t => t.BlockHeight))
                     {
                         (Transaction tran, _) = this.federationWalletManager.FindWithdrawalTransactions(transfer.DepositTransactionId).FirstOrDefault();
                         if (tran == null && wallet.LastBlockSyncedHeight >= transfer.BlockHeight)

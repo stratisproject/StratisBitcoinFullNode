@@ -629,7 +629,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <param name="blockHeight">Height of the block.</param>
         /// <param name="blockHash">Hash of the block.</param>
         /// <param name="block">The block containing the transaction to add.</param>
-        private void AddSpendingTransactionToWallet(Transaction transaction, 
+        private void AddSpendingTransactionToWallet(Transaction transaction,
             IEnumerable<TxOut> paidToOutputs,
             uint256 spendingTransactionId,
             int? spendingTransactionIndex,
@@ -702,16 +702,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true
                 };
 
-                if (withdrawal != null)
-                {
-                    spendingDetails.WithdrawalDetails = new WithdrawalDetails
-                    {
-                        Amount = withdrawal.Amount,
-                        MatchingDepositId = withdrawal.DepositId,
-                        TargetAddress = withdrawal.TargetAddress
-                    };
-                }
-
                 spentTransaction.SpendingDetails = spendingDetails;
                 spentTransaction.MerkleProof = null;
             }
@@ -731,6 +721,16 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 {
                     spentTransaction.SpendingDetails.CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time);
                 }
+            }
+
+            if (withdrawal != null)
+            {
+                spentTransaction.SpendingDetails.WithdrawalDetails = new WithdrawalDetails
+                {
+                    Amount = withdrawal.Amount,
+                    MatchingDepositId = withdrawal.DepositId,
+                    TargetAddress = withdrawal.TargetAddress
+                };
             }
         }
 
