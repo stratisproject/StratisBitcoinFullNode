@@ -66,7 +66,7 @@ namespace Stratis.Features.FederatedPeg
             this.locker = new object();
             this.depositsByAddress = new Dictionary<string, Money>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.blockStoreClient = new BlockStoreClient(loggerFactory, httpClientFactory, settings.CounterChainApiHost, settings.CounterChainApiPort);
+            this.blockStoreClient = new BlockStoreClient(loggerFactory, httpClientFactory, $"http://{settings.CounterChainApiHost}", settings.CounterChainApiPort);
         }
 
         public async Task InitializeAsync()
