@@ -160,22 +160,27 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     // Any partial transfers affected by these removals are expected to first become
                     // suspended due to the missing wallet transactions which will rewind the counter-
                     // chain tip to then reprocess them.
-                    if (this.federationWalletManager.RemoveTransientTransactions())
-                        this.federationWalletManager.SaveWallet();
+
+                    bool walletUpdated = this.federationWalletManager.RemoveTransientTransactions();
 
                     Guard.Assert(this.Synchronize());
 
                     // Any transactions seen in blocks must also be present in the wallet.
                     FederationWallet wallet = this.federationWalletManager.GetWallet();
                     ICrossChainTransfer[] transfers = this.GetTransfersByStatusInternalLocked(new[] { CrossChainTransferStatus.SeenInBlock }, false, false).ToArray();
+
                     foreach (ICrossChainTransfer transfer in transfers.OrderBy(t => t.BlockHeight))
                     {
                         (Transaction tran, _) = this.federationWalletManager.FindWithdrawalTransactions(transfer.DepositTransactionId).FirstOrDefault();
                         if (tran == null && wallet.LastBlockSyncedHeight >= transfer.BlockHeight)
                         {
-                            this.federationWalletManager.ProcessTransaction(transfer.PartialTransaction, transfer.BlockHeight, transfer.BlockHash);
+                            walletUpdated |= this.federationWalletManager.ProcessTransaction(transfer.PartialTransaction, transfer.BlockHeight, transfer.BlockHash);
                         }
                     }
+
+                    if (walletUpdated)
+                        this.federationWalletManager.SaveWallet();
+
                 }
             }
         }
