@@ -21,8 +21,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
     /// <inheritdoc cref="IBlockStoreClient"/>
     public class BlockStoreClient : RestApiClientBase, IBlockStoreClient
     {
-        public BlockStoreClient(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, int port)
-            : base(loggerFactory, httpClientFactory, port, "BlockStore")
+        public BlockStoreClient(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, string url, int port)
+            : base(loggerFactory, httpClientFactory, port, "BlockStore", url)
         {
         }
 

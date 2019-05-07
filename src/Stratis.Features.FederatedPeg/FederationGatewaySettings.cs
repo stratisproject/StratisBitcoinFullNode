@@ -13,6 +13,8 @@ namespace Stratis.Features.FederatedPeg
     /// <inheritdoc />
     public sealed class FederationGatewaySettings : IFederationGatewaySettings
     {
+        public const string CounterChainApiHostParam = "counterchainapihost";
+
         public const string CounterChainApiPortParam = "counterchainapiport";
 
         public const string RedeemScriptParam = "redeemscript";
@@ -58,6 +60,7 @@ namespace Stratis.Features.FederatedPeg
             Console.WriteLine(redeemScriptRaw);
             if (redeemScriptRaw == null)
                 throw new ConfigurationException($"could not find {RedeemScriptParam} configuration parameter");
+
             this.MultiSigRedeemScript = new Script(redeemScriptRaw);
             this.MultiSigAddress = this.MultiSigRedeemScript.Hash.GetAddress(nodeSettings.Network);
             PayToMultiSigTemplateParameters payToMultisigScriptParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(this.MultiSigRedeemScript);
@@ -74,15 +77,14 @@ namespace Stratis.Features.FederatedPeg
                 throw new ConfigurationException("Please make sure the public key passed as parameter was used to generate the multisig redeem script.");
             }
 
+            this.CounterChainApiHost = configReader.GetOrDefault(CounterChainApiPortParam, "http://localhost");
             this.CounterChainApiPort = configReader.GetOrDefault(CounterChainApiPortParam, federatedPegOptions?.CounterChainNetwork.DefaultAPIPort ?? 0);
 
             // Federation IPs - These are required to receive and sign withdrawal transactions.
             string federationIpsRaw = configReader.GetOrDefault<string>(FederationIpsParam, null);
 
             if (federationIpsRaw == null)
-            {
                 throw new ConfigurationException("Federation IPs must be specified.");
-            }
 
             this.FederationNodeIpEndPoints = federationIpsRaw.Split(',').Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort));
 
@@ -105,6 +107,9 @@ namespace Stratis.Features.FederatedPeg
 
         /// <inheritdoc/>
         public int CounterChainApiPort { get; }
+
+        /// <inheritdoc/>
+        public string CounterChainApiHost { get; }
 
         /// <inheritdoc/>
         public int MultiSigM { get; }
