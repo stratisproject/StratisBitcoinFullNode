@@ -406,7 +406,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     if (walletData.Count != 0)
                     {
                         this.logger.LogTrace("Removing duplicates for {0}", withdrawal.DepositId);
-                        this.RemoveTransientTransactions(withdrawal.DepositId);
+                        this.RemoveWithdrawalTransactions(withdrawal.DepositId);
                     }
                 }
 
@@ -819,7 +819,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <inheritdoc />
-        public bool RemoveTransientTransactions(uint256 depositId)
+        public bool RemoveWithdrawalTransactions(uint256 depositId)
         {
             this.logger.LogTrace("Removing transient transactions. DepositId={0}", depositId);
 

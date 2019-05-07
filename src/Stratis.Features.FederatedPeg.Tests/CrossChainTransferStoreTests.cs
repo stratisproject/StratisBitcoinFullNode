@@ -357,7 +357,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(CrossChainTransferStatus.Partial, transfers[2].Status);
 
                 // Lets break the first transaction
-                this.federationWalletManager.RemoveTransientTransactions(deposit1.Id);
+                this.federationWalletManager.RemoveWithdrawalTransactions(deposit1.Id);
 
                 // Transactions after will be broken
                 transfers = crossChainTransferStore.GetAsync(new uint256[] { txId1, txId2, txId3 }).GetAwaiter().GetResult().ToArray();

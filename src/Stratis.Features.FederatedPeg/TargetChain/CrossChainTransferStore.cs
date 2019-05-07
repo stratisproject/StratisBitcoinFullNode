@@ -259,7 +259,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 }
 
                 // Remove any invalid withdrawal transactions.
-                this.federationWalletManager.RemoveTransientTransactions(partialTransfer.DepositTransactionId);
+                this.federationWalletManager.RemoveWithdrawalTransactions(partialTransfer.DepositTransactionId);
 
                 // The chain may have been rewound so that this transaction or its UTXO's have been lost.
                 // Rewind our recorded chain A tip to ensure the transaction is re-built once UTXO's become available.
@@ -299,7 +299,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     {
                         if (kv.Value == CrossChainTransferStatus.Suspended)
                         {
-                            this.federationWalletManager.RemoveTransientTransactions(kv.Key.DepositTransactionId);
+                            this.federationWalletManager.RemoveWithdrawalTransactions(kv.Key.DepositTransactionId);
                         }
                     }
 
@@ -454,7 +454,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                         {
                                             this.logger.LogTrace("Suspending transfer for deposit '{0}' to retry invalid transaction later.", deposit.Id);
 
-                                            this.federationWalletManager.RemoveTransientTransactions(deposit.Id);
+                                            this.federationWalletManager.RemoveWithdrawalTransactions(deposit.Id);
                                             haveSuspendedTransfers = true;
                                             transaction = null;
                                         }
@@ -521,7 +521,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                         {
                                             if (kv.Value == CrossChainTransferStatus.Partial)
                                             {
-                                                this.federationWalletManager.RemoveTransientTransactions(kv.Key.DepositTransactionId);
+                                                this.federationWalletManager.RemoveWithdrawalTransactions(kv.Key.DepositTransactionId);
                                             }
                                         }
 
