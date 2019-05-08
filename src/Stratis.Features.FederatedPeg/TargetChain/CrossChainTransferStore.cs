@@ -260,8 +260,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 }
 
                 // Remove any invalid withdrawal transactions.
-                foreach (IWithdrawal withdrawal in walletData.Select(d => d.withdrawal))
-                    this.federationWalletManager.RemoveTransientTransactions(withdrawal.DepositId);
+                this.federationWalletManager.RemoveTransientTransactions(partialTransfer.DepositTransactionId);
 
                 // The chain may have been rewound so that this transaction or its UTXO's have been lost.
                 // Rewind our recorded chain A tip to ensure the transaction is re-built once UTXO's become available.

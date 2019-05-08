@@ -54,7 +54,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// A lock object that protects access to the <see cref="FederationWallet"/>.
         /// Any of the collections inside Wallet must be synchronized using this lock.
         /// </summary>
-        internal object lockObject { get; }
+        internal object lockObject { get; private set; }
 
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
@@ -106,12 +106,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// </summary>
         private const string WalletFileName = "multisig_wallet.json";
 
-        // In order to allow faster look-ups of transactions affecting the wallets' addresses,
-        // we keep a couple of objects in memory:
-        // 1. the list of unspent outputs for checking whether inputs from a transaction are being spent by our wallet and
-        // 2. the list of addresses contained in our wallet for checking whether a transaction is being paid to the wallet.
+        /// <summary>
+        /// Creates a mapping from (TransactionData.Id, TransactionData.Index) to TransactionData.
+        /// </summary>
         private Dictionary<OutPoint, TransactionData> outpointLookup;
-        //    internal Dictionary<Script, MultiSigAddress> multiSigKeysLookup;
 
         // Gateway settings picked up from the node config.
         private readonly IFederationGatewaySettings federationGatewaySettings;
@@ -267,7 +265,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 }
 
                 UnspentOutputReference[] res;
-                res = this.Wallet.GetSpendableTransactions(this.chainIndexer.Tip.Height, confirmations).ToArray();
+                res = this.GetSpendableTransactions(this.chainIndexer.Tip.Height, confirmations).ToArray();
 
                 return res;
             }
@@ -294,7 +292,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 this.UpdateLastBlockSyncedHeight(fork);
 
-                this.RefreshInputKeysLookupLock();
+                this.LoadKeysLookupLock();
             }
         }
 
@@ -629,7 +627,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <param name="blockHeight">Height of the block.</param>
         /// <param name="blockHash">Hash of the block.</param>
         /// <param name="block">The block containing the transaction to add.</param>
-        private void AddSpendingTransactionToWallet(Transaction transaction, 
+        private void AddSpendingTransactionToWallet(Transaction transaction,
             IEnumerable<TxOut> paidToOutputs,
             uint256 spendingTransactionId,
             int? spendingTransactionIndex,
@@ -741,15 +739,12 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             lock (this.lockObject)
             {
-                foreach (TransactionData transaction in this.Wallet.MultiSigAddress.Transactions)
-                {
-                    this.outpointLookup[new OutPoint(transaction.Id, transaction.Index)] = transaction;
-                }
+                this.outpointLookup = this.Wallet.MultiSigAddress.Transactions.ToDictionary(t => new OutPoint(t.Id, t.Index), t => t);
             }
         }
 
         /// <summary>
-        /// Add to the list of unspent outputs kept in memory for faster lookups.
+        /// Adds a <see cref="TransactionData"/> to <see cref="outpointLookup"/>.
         /// </summary>
         private void AddInputKeysLookupLock(TransactionData transactionData)
         {
@@ -760,7 +755,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <summary>
-        /// Remove from the list of unspent outputs kept in memory for faster lookups.
+        /// Remove a <see cref="TransactionData"/> from <see cref="outpointLookup"/>.
         /// </summary>
         private void RemoveInputKeysLookupLock(TransactionData transactionData)
         {
@@ -768,21 +763,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             // Locked in containing methods.
             this.outpointLookup.Remove(new OutPoint(transactionData.Id, transactionData.Index));
-        }
-
-        private void RefreshInputKeysLookupLock()
-        {
-            lock (this.lockObject)
-            {
-                this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
-
-                // Get the UTXOs that are unspent or spent but not confirmed.
-                // We only exclude from the list the confirmed spent UTXOs.
-                foreach (TransactionData transaction in this.Wallet.MultiSigAddress.Transactions.Where(t => t.SpendingDetails?.BlockHeight == null))
-                {
-                    this.outpointLookup[new OutPoint(transaction.Id, transaction.Index)] = transaction;
-                }
-            }
         }
 
         public void TransactionFoundInternal(Script script)
@@ -827,7 +807,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 return walletUpdated;
             }
         }
-
 
         private OutPoint EarliestOutput(Transaction transaction)
         {
@@ -892,6 +871,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
             foreach (TxIn input in transaction.Inputs)
             {
                 if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData transactionData))
+                    return false;
+
+                if (transactionData.SpendingDetails?.TransactionId != transaction.GetHash())
                     return false;
 
                 coins?.Add(new Coin(transactionData.Id, (uint)transactionData.Index, transactionData.Amount, transactionData.ScriptPubKey));
@@ -1082,6 +1064,48 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public FederationWallet GetWallet()
         {
             return this.Wallet;
+        }
+
+        /// <summary>
+        /// Lists all spendable transactions in the current wallet.
+        /// </summary>
+        /// <param name="currentChainHeight">The current height of the chain. Used for calculating the number of confirmations a transaction has.</param>
+        /// <param name="confirmations">The minimum number of confirmations required for transactions to be considered.</param>
+        /// <returns>A collection of spendable outputs that belong to the given account.</returns>
+        private IEnumerable<UnspentOutputReference> GetSpendableTransactions(int currentChainHeight, int confirmations = 0)
+        {
+            // A block that is at the tip has 1 confirmation.
+            // When calculating the confirmations the tip must be advanced by one.
+
+            int countFrom = currentChainHeight + 1;
+            foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions.Where(t => t.IsSpendable()))
+            {
+                int? confirmationCount = 0;
+                if (transactionData.BlockHeight != null)
+                    confirmationCount = countFrom >= transactionData.BlockHeight ? countFrom - transactionData.BlockHeight : 0;
+
+                if (confirmationCount >= confirmations)
+                {
+                    yield return new UnspentOutputReference
+                    {
+                        Transaction = transactionData,
+                    };
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public (Money ConfirmedAmount, Money UnConfirmedAmount) GetSpendableAmount()
+        {
+            lock (this.lockObject)
+            {
+                IEnumerable<TransactionData> transactions = this.Wallet.MultiSigAddress.Transactions;
+
+                long confirmed = transactions.Sum(t => t.SpendableAmount(true));
+                long total = transactions.Sum(t => t.SpendableAmount(false));
+
+                return (confirmed, total - confirmed);
+            }
         }
     }
 }
