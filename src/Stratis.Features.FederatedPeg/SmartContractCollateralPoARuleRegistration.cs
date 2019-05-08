@@ -36,7 +36,7 @@ namespace Stratis.Features.FederatedPeg
         {
             base.RegisterRules(consensus);
 
-            consensus.FullValidationRules.Add(new CheckCollateralFullValidationRule(this.ibdState, this.collateralChecker, this.slotsManager));
+            consensus.ConsensusRules.FullValidationRules.Add(typeof(CheckCollateralFullValidationRule));
         }
     }
 }
