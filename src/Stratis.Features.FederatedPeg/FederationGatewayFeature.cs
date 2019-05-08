@@ -206,7 +206,7 @@ namespace Stratis.Features.FederatedPeg
             benchLog.AppendLine();
             benchLog.AppendLine("====== Federation Wallet ======");
 
-            (Money ConfirmedAmount, Money UnConfirmedAmount) balances = this.federationWalletManager.GetWallet().GetSpendableAmount();
+            (Money ConfirmedAmount, Money UnConfirmedAmount) balances = this.federationWalletManager.GetSpendableAmount();
             bool isFederationActive = this.federationWalletManager.IsFederationWalletActive();
             benchLog.AppendLine("Federation Wallet: ".PadRight(LoggingConfiguration.ColumnLength)
                                 + " Confirmed balance: " + balances.ConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)
