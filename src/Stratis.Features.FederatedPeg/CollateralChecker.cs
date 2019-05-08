@@ -66,7 +66,7 @@ namespace Stratis.Features.FederatedPeg
             this.locker = new object();
             this.depositsByAddress = new Dictionary<string, Money>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.blockStoreClient = new BlockStoreClient(loggerFactory, httpClientFactory, settings.CounterChainApiPort);
+            this.blockStoreClient = new BlockStoreClient(loggerFactory, httpClientFactory, $"http://{settings.CounterChainApiHost}", settings.CounterChainApiPort);
         }
 
         public async Task InitializeAsync()
@@ -117,7 +117,7 @@ namespace Stratis.Features.FederatedPeg
                 {
                     await Task.Delay(CollateralUpdateIntervalSeconds * 1000, this.cancellationSource.Token).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException )
+                catch (OperationCanceledException)
                 {
                     this.logger.LogTrace("(-)[CANCELLED]");
                     return;
