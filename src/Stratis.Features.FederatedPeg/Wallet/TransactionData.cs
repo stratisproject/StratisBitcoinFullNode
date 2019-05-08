@@ -39,10 +39,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         [JsonConverter(typeof(DateTimeOffsetConverter))]
         public DateTimeOffset CreationTime { get; set; }
 
-        [JsonProperty(PropertyName = "merkleProof", NullValueHandling = NullValueHandling.Ignore)]
-        [JsonConverter(typeof(BitcoinSerializableJsonConverter))]
-        public PartialMerkleTree MerkleProof { get; set; }
-
         [JsonProperty(PropertyName = "scriptPubKey")]
         [JsonConverter(typeof(ScriptJsonConverter))]
         public Script ScriptPubKey { get; set; }
