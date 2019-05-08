@@ -11,7 +11,8 @@ namespace Stratis.Bitcoin.Features.Api
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env)
+        
+        public Startup(IHostingEnvironment env, ApiSettings apiSettings)
         {
             IConfigurationBuilder builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
@@ -20,9 +21,11 @@ namespace Stratis.Bitcoin.Features.Api
                 .AddEnvironmentVariables();
 
             this.Configuration = builder.Build();
+            this.apiSettings = apiSettings;
         }
 
         public IConfigurationRoot Configuration { get; }
+        private readonly ApiSettings apiSettings;
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -72,13 +75,15 @@ namespace Stratis.Bitcoin.Features.Api
 
                 //Set the comments path for the swagger json and ui.
                 string basePath = PlatformServices.Default.Application.ApplicationBasePath;
-                string apiXmlPath = Path.Combine(basePath, "Stratis.Bitcoin.Api.xml");
-                string walletXmlPath = Path.Combine(basePath, "Stratis.Bitcoin.LightWallet.xml");
 
+                string apiXmlPath = Path.Combine(basePath, this.apiSettings.RelativePathToApiDocXmlFile);
+                
                 if (File.Exists(apiXmlPath))
                 {
                     setup.IncludeXmlComments(apiXmlPath);
                 }
+                
+                string walletXmlPath = Path.Combine(basePath, "Stratis.Bitcoin.LightWallet.xml");
 
                 if (File.Exists(walletXmlPath))
                 {
