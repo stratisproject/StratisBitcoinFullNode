@@ -114,7 +114,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
                     return this.NotFound("No federation wallet found.");
                 }
 
-                (Money ConfirmedAmount, Money UnConfirmedAmount) result = wallet.GetSpendableAmount();
+                (Money ConfirmedAmount, Money UnConfirmedAmount) result = this.walletManager.GetSpendableAmount();
 
                 var balance = new AccountBalanceModel
                 {

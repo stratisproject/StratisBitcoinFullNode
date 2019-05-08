@@ -54,7 +54,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// A lock object that protects access to the <see cref="FederationWallet"/>.
         /// Any of the collections inside Wallet must be synchronized using this lock.
         /// </summary>
-        internal object lockObject { get; }
+        internal object lockObject { get; private set; }
 
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
@@ -265,7 +265,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 }
 
                 UnspentOutputReference[] res;
-                res = this.Wallet.GetSpendableTransactions(this.chainIndexer.Tip.Height, confirmations).ToArray();
+                res = this.GetSpendableTransactions(this.chainIndexer.Tip.Height, confirmations).ToArray();
 
                 return res;
             }
@@ -808,7 +808,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
-
         private OutPoint EarliestOutput(Transaction transaction)
         {
             var comparer = Comparer<OutPoint>.Create((x, y) => this.CompareOutpoints(x, y));
@@ -1065,6 +1064,48 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public FederationWallet GetWallet()
         {
             return this.Wallet;
+        }
+
+        /// <summary>
+        /// Lists all spendable transactions in the current wallet.
+        /// </summary>
+        /// <param name="currentChainHeight">The current height of the chain. Used for calculating the number of confirmations a transaction has.</param>
+        /// <param name="confirmations">The minimum number of confirmations required for transactions to be considered.</param>
+        /// <returns>A collection of spendable outputs that belong to the given account.</returns>
+        private IEnumerable<UnspentOutputReference> GetSpendableTransactions(int currentChainHeight, int confirmations = 0)
+        {
+            // A block that is at the tip has 1 confirmation.
+            // When calculating the confirmations the tip must be advanced by one.
+
+            int countFrom = currentChainHeight + 1;
+            foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions.Where(t => t.IsSpendable()))
+            {
+                int? confirmationCount = 0;
+                if (transactionData.BlockHeight != null)
+                    confirmationCount = countFrom >= transactionData.BlockHeight ? countFrom - transactionData.BlockHeight : 0;
+
+                if (confirmationCount >= confirmations)
+                {
+                    yield return new UnspentOutputReference
+                    {
+                        Transaction = transactionData,
+                    };
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public (Money ConfirmedAmount, Money UnConfirmedAmount) GetSpendableAmount()
+        {
+            lock (this.lockObject)
+            {
+                IEnumerable<TransactionData> transactions = this.Wallet.MultiSigAddress.Transactions;
+
+                long confirmed = transactions.Sum(t => t.SpendableAmount(true));
+                long total = transactions.Sum(t => t.SpendableAmount(false));
+
+                return (confirmed, total - confirmed);
+            }
         }
     }
 }
