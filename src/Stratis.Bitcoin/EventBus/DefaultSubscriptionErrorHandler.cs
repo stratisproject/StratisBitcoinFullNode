@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.EventBus
@@ -9,7 +6,7 @@ namespace Stratis.Bitcoin.EventBus
     /// <summary>
     /// Default implementation of <see cref="ISubscriptionErrorHandler"/> that log the error and re-throw it.
     /// </summary>
-    /// <seealso cref="Stratis.Bitcoin.EventBus.ISubscriptionErrorHandler" />
+    /// <seealso cref="ISubscriptionErrorHandler" />
     public class DefaultSubscriptionErrorHandler : ISubscriptionErrorHandler
     {
         /// <summary>
@@ -25,7 +22,7 @@ namespace Stratis.Bitcoin.EventBus
         /// <inheritdoc />
         public void Handle(EventBase @event, Exception exception, ISubscription subscription)
         {
-            logger.LogError(exception, "Error handling the event {0}", @event.GetType().Name);
+            this.logger.LogError(exception, "Error handling the event {0}", @event.GetType().Name);
             throw exception;
         }
     }

@@ -27,7 +27,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         public OpReturnDataReaderTests()
         {
             this.loggerFactory = Substitute.For<ILoggerFactory>();
-            this.network = FederatedPegNetwork.NetworksSelector.Regtest();
+            this.network = CirrusNetwork.NetworksSelector.Regtest();
             this.counterChainNetwork = Networks.Stratis.Regtest();
             this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, new FederatedPegOptions(this.counterChainNetwork));
 

@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         protected PoAConsensusRuleEngine rulesEngine;
         protected readonly LoggerFactory loggerFactory;
         protected readonly PoABlockHeaderValidator poaHeaderValidator;
-        protected readonly SlotsManager slotsManager;
+        protected readonly ISlotsManager slotsManager;
         protected readonly ConsensusSettings consensusSettings;
         protected readonly ChainIndexer ChainIndexer;
         protected readonly IFederationManager federationManager;

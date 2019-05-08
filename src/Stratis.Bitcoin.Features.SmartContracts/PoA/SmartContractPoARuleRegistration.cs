@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -54,14 +52,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             this.fullTxValidationRules = fullTxValidationRules;
         }
 
-        public void RegisterRules(IConsensus consensus)
+        public virtual void RegisterRules(IConsensus consensus)
         {
             // this.baseRuleRegistration.RegisterRules(consensus); this should already be set
 
             // Add SC-Specific partial rules
             var txValidationRules = new List<IContractTransactionPartialValidationRule>(this.partialTxValidationRules)
             {
-                new SmartContractFormatLogic()                
+                new SmartContractFormatLogic()
             };
             consensus.ConsensusRules.PartialValidationRules.Add(typeof(AllowedScriptTypeRule));
             consensus.ConsensusRules.PartialValidationRules.Add(typeof(ContractTransactionPartialValidationRule));

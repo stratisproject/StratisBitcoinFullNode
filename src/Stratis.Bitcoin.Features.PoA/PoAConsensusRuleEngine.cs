@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.PoA
     /// <inheritdoc />
     public class PoAConsensusRuleEngine : PowConsensusRuleEngine
     {
-        public SlotsManager SlotsManager { get; private set; }
+        public ISlotsManager SlotsManager { get; private set; }
 
         public PoABlockHeaderValidator PoaHeaderValidator { get; private set; }
 

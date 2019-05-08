@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Base
     public class InitialBlockDownloadState : IInitialBlockDownloadState
     {
         /// <summary>A provider of the date and time.</summary>
-        protected readonly IDateTimeProvider dateTimeProvider;
+        private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Provider of block header hash checkpoints.</summary>
         private readonly ICheckpoints checkpoints;
@@ -65,7 +65,8 @@ namespace Stratis.Bitcoin.Base
                 return true;
 
             this.logger.LogTrace("BlockTimeUnixSeconds={0}, DateTimeProviderTime={1}, ConsensusSettingsMaxTipAge={2}",
-                this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds(), this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds(),
+                this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds(),
+                this.dateTimeProvider.GetTime(),
                 this.consensusSettings.MaxTipAge);
 
             if (this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds() < (this.dateTimeProvider.GetTime() - this.consensusSettings.MaxTipAge))

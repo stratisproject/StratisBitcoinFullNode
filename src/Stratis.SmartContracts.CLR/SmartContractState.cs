@@ -35,9 +35,6 @@ namespace Stratis.SmartContracts.CLR
 
         public ISerializer Serializer { get; }
 
-        [Obsolete]
-        public IGasMeter GasMeter { get; }
-
         public IContractLogger ContractLogger { get; }
 
         public IInternalTransactionExecutor InternalTransactionExecutor { get; }

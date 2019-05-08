@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Consensus
     public abstract class ConsensusRuleEngine : IConsensusRuleEngine
     {
         /// <summary>Instance logger.</summary>
-        protected readonly ILogger logger;
+        private readonly ILogger logger;
 
         /// <summary>A factory to creates logger instances for each rule.</summary>
         public ILoggerFactory LoggerFactory { get; }

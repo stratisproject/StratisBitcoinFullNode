@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using NBitcoin;
-using NBitcoin.Rules;
+﻿using NBitcoin;
 
 namespace Stratis.Bitcoin.Consensus.Rules
 {
