@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Features.FederatedPeg.Interfaces;
+using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
 {
@@ -18,6 +19,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         IWithdrawal ExtractWithdrawalFromTransaction(Transaction transaction, uint256 blockHash, int blockHeight);
     }
 
+    [NoTrace]
     public class WithdrawalExtractor : IWithdrawalExtractor
     {
         /// <summary>
@@ -87,7 +89,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             if (!this.opReturnDataReader.TryGetTransactionId(transaction, out string depositId))
                 return null;
 
-            TxOut targetAddressOutput = transaction.Outputs.Single(this.IsTargetAddressCandidate);
+            TxOut targetAddressOutput = transaction.Outputs.SingleOrDefault(this.IsTargetAddressCandidate);
+            if (targetAddressOutput == null)
+                return null;
+
             var withdrawal = new Withdrawal(
                 uint256.Parse(depositId),
                 transaction.GetHash(),

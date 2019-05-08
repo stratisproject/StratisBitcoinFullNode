@@ -39,16 +39,16 @@ namespace Stratis.Sidechains.Networks
             this.DefaultConfigFilename = NetworkDefaultConfigFilename;
             this.MaxTimeOffsetSeconds = 25 * 60;
 
-            var consensusFactory = new SmartContractPoAConsensusFactory();
+            var consensusFactory = new SmartContractCollateralPoAConsensusFactory();
 
             // Create the genesis block.
-            this.GenesisTime = 1544113232;
-            this.GenesisNonce = 56989;
+            this.GenesisTime = 1556631753;
+            this.GenesisNonce = 146421;
             this.GenesisBits = new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000"));
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
 
-            string coinbaseText = "https://news.bitcoin.com/markets-update-cryptocurrencies-shed-billions-in-bloody-sell-off/";
+            string coinbaseText = "https://github.com/stratisproject/StratisBitcoinFullNode/tree/master/src/Stratis.CirrusD";
             Block genesisBlock = CirrusNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward, coinbaseText);
 
             this.Genesis = genesisBlock;
@@ -58,11 +58,13 @@ namespace Stratis.Sidechains.Networks
             // and should be the same for all nodes operating on this network.
             var genesisFederationMembers = new List<IFederationMember>()
             {
-                new CollateralFederationMember(new PubKey("03e89abd3c9e791f4fb13ced638457c85beb4aff74d37b3fe031cd888f0f92989e"), new Money(0), null), // I
-                new CollateralFederationMember(new PubKey("026b7b9092828f3bf9e73995bfa3547c3bcd3814f8101fac626b8349d9a6f0e534"), new Money(0), null), // J
-                new CollateralFederationMember(new PubKey("02a8a565bf3c675aee4eb8585771c7517e358708faee4f9db2ed7502d7f9dae740"), new Money(0), null), // L
-                new CollateralFederationMember(new PubKey("0248de019680c6f18e434547c8c9d48965b656b8e5e70c5a5564cfb1270db79a11"), new Money(0), null), // M
-                new CollateralFederationMember(new PubKey("034bd1a94b0ae315f584ecd22b2ad8fa35056cc70862f33e3e08286f3bbe2207c4"), new Money(0), null), // P
+                new CollateralFederationMember(new PubKey("03cfc06ef56352038e1169deb3b4fa228356e2a54255cf77c271556d2e2607c28c"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("022553fb641898be98e6e331d644c1689455536e58ad643d84844e981708da38e9"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("02fc828e06041ae803ab5378b5ec4e0def3d4e331977a69e1b6ef694d67f5c9c13"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("02fd4f3197c40d41f9f5478d55844f522744258ca4093b5119571de1a5df1bc653"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("030ac8e3e119257aff4512ea44450632a6a9b54104f936732d31c28a63a2104064"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("03348a438f86727c579febfd6a656cfd6477605e5fa00efa5b4f5fe1cab01c49ef"), new Money(0), null),
+                new CollateralFederationMember(new PubKey("0329acc983836fe25d87de72165f8aa5658c4eba37de9e56f2559b895d63df09b3"), new Money(0), null),
             };
 
             var consensusOptions = new PoAConsensusOptions(
@@ -73,7 +75,7 @@ namespace Stratis.Sidechains.Networks
                 maxStandardTxSigopsCost: 20_000 / 5,
                 genesisFederationMembers: genesisFederationMembers,
                 targetSpacingSeconds: 16,
-                votingEnabled: false,
+                votingEnabled: true,
                 autoKickIdleMembers: false
             );
 
@@ -100,7 +102,7 @@ namespace Stratis.Sidechains.Networks
                 bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
-                maxReorgLength: 0, // No max reorg limit on PoA networks.
+                maxReorgLength: 240, // Heuristic. Roughly 2 * mining members
                 defaultAssumeValid: null,
                 maxMoney: Money.Coins(20_000_000),
                 coinbaseMaturity: 1,
@@ -123,8 +125,8 @@ namespace Stratis.Sidechains.Networks
 
             // Same as current smart contracts test networks to keep tests working
             this.Base58Prefixes = new byte[12][];
-            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { 55 }; // P
-            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { 117 }; // p
+            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { 127 }; // t
+            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { 137 }; // x
             this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (239) };
             this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC] = new byte[] { 0x01, 0x42 };
             this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC] = new byte[] { 0x01, 0x43 };
@@ -148,8 +150,8 @@ namespace Stratis.Sidechains.Networks
 
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
 
-            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x00008460b940e3e9c7415a07a54cb569a9f69adf790961f11de0c42aa6470708"));
-            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0xb68311ebfee717754de683570de6e792a2149776381ed49df9cdf3383e59749d"));
+            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0000af9ab2c8660481328d0444cf167dfd31f24ca2dbba8e5e963a2434cffa93"));
+            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("cf8ce1419bbc4870b7d4f1c084534d91126dd3283b51ec379e0a20e27bd23633"));
         }
     }
 }

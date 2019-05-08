@@ -3,13 +3,11 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Xunit;
-using System.Linq;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using NBitcoin.Protocol;
-using System.Threading.Tasks;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Api;
 

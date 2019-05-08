@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Utilities
         public static RetryOptions Default => new RetryOptions();
 
         public RetryStrategyType Type { get; }
-        
+
         public short RetryCount { get; }
 
         public Type[] ExceptionTypes { get; }

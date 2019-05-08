@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;

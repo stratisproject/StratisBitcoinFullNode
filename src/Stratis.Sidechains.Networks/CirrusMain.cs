@@ -39,7 +39,7 @@ namespace Stratis.Sidechains.Networks
             this.DefaultConfigFilename = NetworkDefaultConfigFilename;
             this.MaxTimeOffsetSeconds = 25 * 60;
 
-            var consensusFactory = new SmartContractPoAConsensusFactory();
+            var consensusFactory = new SmartContractCollateralPoAConsensusFactory();
 
             // Create the genesis block.
             this.GenesisTime = 1545310504;
@@ -75,7 +75,7 @@ namespace Stratis.Sidechains.Networks
                 maxStandardTxSigopsCost: 20_000 / 5,
                 genesisFederationMembers: genesisFederationMembers,
                 targetSpacingSeconds: 16,
-                votingEnabled: false,
+                votingEnabled: true,
                 autoKickIdleMembers: false
             );
 
@@ -102,7 +102,7 @@ namespace Stratis.Sidechains.Networks
                 bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
-                maxReorgLength: 0, // No max reorg limit on PoA networks.
+                maxReorgLength: 240, // Heuristic. Roughly 2 * mining members
                 defaultAssumeValid: null,
                 maxMoney: Money.Coins(100_000_000),
                 coinbaseMaturity: 1,

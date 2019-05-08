@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Controllers
 
         private readonly RetryPolicy policy;
 
-        public RestApiClientBase(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, int port, string controllerName, string url = "http://localhost")
+        public RestApiClientBase(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, int port, string controllerName, string url)
         {
             this.httpClientFactory = httpClientFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -76,7 +76,6 @@ namespace Stratis.Bitcoin.Controllers
 
                         response = await client.PostAsync(publicationUri, request, cancellation).ConfigureAwait(false);
                         this.logger.LogDebug("Response received: {0}", response);
-
                     }, cancellation);
                 }
                 catch (OperationCanceledException)
@@ -172,7 +171,6 @@ namespace Stratis.Bitcoin.Controllers
 
                         response = await client.GetAsync(url, cancellation).ConfigureAwait(false);
                         this.logger.LogDebug("Response received: {0}", response);
-
                     }, cancellation);
                 }
                 catch (OperationCanceledException)
@@ -207,12 +205,13 @@ namespace Stratis.Bitcoin.Controllers
         public JsonContent(object obj) :
             base(JsonConvert.SerializeObject(obj), Encoding.UTF8, "application/json")
         {
-
         }
     }
 
-    //todo: this should be removed when compatible with full node API, instead, we should use
-    //services.AddHttpClient from Microsoft.Extensions.Http
+    /// <summary>
+    /// TODO: this should be removed when compatible with full node API, instead, we should use
+    /// services.AddHttpClient from Microsoft.Extensions.Http
+    /// </summary>
     public class HttpClientFactory : IHttpClientFactory
     {
         /// <inheritdoc />

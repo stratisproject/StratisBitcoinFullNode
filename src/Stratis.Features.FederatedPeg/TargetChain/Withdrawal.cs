@@ -42,7 +42,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         public string GetInfo()
         {
             return string.Format("Tran#={0} Dep#={1} Amount={2,12} Addr={3} BlkNum={4,8} BlkHash={5}",
-                this.Id.ToString().Substring(0, 6),
+                this.Id?.ToString().Substring(0, 6),
                 this.DepositId.ToString().Substring(0, 6),
                 this.Amount.ToString(),
                 this.TargetAddress,

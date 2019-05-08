@@ -55,10 +55,10 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// </summary>
         /// <param name="transaction">The transaction.</param>
         /// <param name="blockHeight">The height of the block this transaction came from. Null if it was not a transaction included in a block.</param>
+        /// <param name="blockHash">The hash of the block this transaction came from. Null if it was not a transaction included in a block.</param>
         /// <param name="block">The block in which this transaction was included.</param>
-        /// <param name="isPropagated">Transaction propagation state.</param>
         /// <returns>A value indicating whether this transaction affects the wallet.</returns>
-        bool ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null);
+        bool ProcessTransaction(Transaction transaction, int? blockHeight = null, uint256 blockHash = null, Block block = null);
 
         /// <summary>
         /// Verifies that the transaction's input UTXO's have been reserved by the wallet.
@@ -99,23 +99,15 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// Finds all withdrawal transactions with optional filtering by deposit id or transaction id.
         /// </summary>
         /// <param name="depositId">Filters by this deposit id if not <c>null</c>.</param>
-        /// <param name="transactionId">Filters by this transaction id if not <c>null</c>.</param>
+        /// <param name="sort">Sorts the results ascending according to earliest input UTXO.</param>
         /// <returns>The transaction data containing the withdrawal transaction.</returns>
-        List<(Transaction, TransactionData, IWithdrawal)> FindWithdrawalTransactions(uint256 depositId = null);
+        List<(Transaction, IWithdrawal)> FindWithdrawalTransactions(uint256 depositId = null, bool sort = false);
 
         /// <summary>
         /// Removes the transient transactions associated with the corresponding deposit ids.
         /// </summary>
         /// <param name="depositId">The deposit id identifying the transient transactions to remove. Set to <c>null</c> to remove all.</param>
         bool RemoveTransientTransactions(uint256 depositId = null);
-
-        /// <summary>
-        /// Compares two outpoints to see which occurs earlier.
-        /// </summary>
-        /// <param name="outPoint1">The first outpoint to compare.</param>
-        /// <param name="outPoint2">The second outpoint to compare.</param>
-        /// <returns><c>-1</c> if the <paramref name="outPoint1"/> occurs first and <c>1</c> otherwise.</returns>
-        int CompareOutpoints(OutPoint outPoint1, OutPoint outPoint2);
 
         /// <summary>
         /// Determines if federation has been activated.
@@ -138,9 +130,9 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         HashSet<(uint256, DateTimeOffset)> RemoveAllTransactions();
 
         /// <summary>
-        /// Enumerate withdrawals starting with the most recent.
+        /// Get the accounts total spendable value for both confirmed and unconfirmed UTXO.
         /// </summary>
-        /// <returns>An enumeration of IWithdrawal objects.</returns>
-        IEnumerable<IWithdrawal> GetWithdrawals();
+        /// <returns>A tuple containing the confirmed and unconfirmed balances.</returns>
+        (Money ConfirmedAmount, Money UnConfirmedAmount) GetSpendableAmount();
     }
 }

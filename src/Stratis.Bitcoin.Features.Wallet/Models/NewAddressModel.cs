@@ -1,6 +1,4 @@
-﻿using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
 using Stratis.Bitcoin.Controllers.Converters;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models

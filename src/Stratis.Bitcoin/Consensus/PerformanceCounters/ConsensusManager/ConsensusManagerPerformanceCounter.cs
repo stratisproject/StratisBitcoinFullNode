@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus.PerformanceCounters.ConsensusManager
