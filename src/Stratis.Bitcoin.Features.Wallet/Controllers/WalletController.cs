@@ -1346,7 +1346,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     MinConfirmations = 1,
                     Shuffle = true,
                     WalletPassword = request.WalletPassword,
-                    Recipients = recipients
+                    Recipients = recipients,
+                    Time = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()
                 };
 
                 Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);

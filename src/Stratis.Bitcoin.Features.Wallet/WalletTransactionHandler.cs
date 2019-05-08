@@ -193,6 +193,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.AddSecrets(context);
             this.FindChangeAddress(context);
             this.AddFee(context);
+
+            if (context.Time.HasValue)
+                context.TransactionBuilder.SetTimeStamp(context.Time.Value);
         }
 
         /// <summary>
@@ -498,5 +501,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Whether the secret should be cached for 5 mins after it is used or not.
         /// </summary>
         public bool CacheSecret { get; set; }
+
+        /// <summary>
+        /// The timestamp to set on the transaction.
+        /// </summary>
+        public uint? Time { get; set; }
     }
 }
