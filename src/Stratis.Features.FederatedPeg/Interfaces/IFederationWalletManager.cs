@@ -128,5 +128,11 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// </summary>
         /// <returns>A list of objects made up of transaction IDs along with the time at which they were created.</returns>
         HashSet<(uint256, DateTimeOffset)> RemoveAllTransactions();
+
+        /// <summary>
+        /// Get the accounts total spendable value for both confirmed and unconfirmed UTXO.
+        /// </summary>
+        /// <returns>A tuple containing the confirmed and unconfirmed balances.</returns>
+        (Money ConfirmedAmount, Money UnConfirmedAmount) GetSpendableAmount();
     }
 }

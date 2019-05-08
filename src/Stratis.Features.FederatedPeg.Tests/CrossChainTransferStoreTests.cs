@@ -300,7 +300,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(deposit2.Amount, new Money(transfers[1].DepositAmount));
                 Assert.Equal(address2.ScriptPubKey, transfers[1].DepositTargetAddress);
 
-                (Money confirmed, Money unconfirmed) spendable = this.wallet.GetSpendableAmount();
+                (Money confirmed, Money unconfirmed) spendable = this.federationWalletManager.GetSpendableAmount();
 
                 Assert.Equal(new Money(980m, MoneyUnit.BTC), spendable.unconfirmed);
             }

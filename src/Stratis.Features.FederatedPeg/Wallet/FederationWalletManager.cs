@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Security;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -54,7 +53,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// A lock object that protects access to the <see cref="FederationWallet"/>.
         /// Any of the collections inside Wallet must be synchronized using this lock.
         /// </summary>
-        internal object lockObject { get; }
+        internal object lockObject { get; private set; }
 
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
@@ -265,7 +264,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 }
 
                 UnspentOutputReference[] res;
-                res = this.Wallet.GetSpendableTransactions(this.chainIndexer.Tip.Height, confirmations).ToArray();
+                res = this.GetSpendableTransactions(this.chainIndexer.Tip.Height, confirmations).ToArray();
 
                 return res;
             }
@@ -492,7 +491,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     this.logger.LogTrace("Unspending {0}-{1}", spentTransaction.Id, spentTransaction.Index);
 
                     spentTransaction.SpendingDetails = null;
-                    spentTransaction.MerkleProof = null;
                     updatedWallet = true;
                 }
             }
@@ -580,12 +578,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     Hex = transaction.ToHex()
                 };
 
-                // Add the Merkle proof to the (non-spending) transaction.
-                if (block != null)
-                {
-                    newTransaction.MerkleProof = new MerkleBlock(block, new[] { transactionHash }).PartialMerkleTree;
-                }
-
                 this.Wallet.MultiSigAddress.Transactions.Add(newTransaction);
                 this.AddInputKeysLookupLock(newTransaction);
             }
@@ -604,12 +596,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (block != null)
                 {
                     foundTransaction.CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time);
-                }
-
-                // Add the Merkle proof now that the transaction is confirmed in a block.
-                if ((block != null) && (foundTransaction.MerkleProof == null))
-                {
-                    foundTransaction.MerkleProof = new MerkleBlock(block, new[] { transactionHash }).PartialMerkleTree;
                 }
             }
 
@@ -649,87 +635,105 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 return;
             }
 
-            // If the details of this spending transaction are seen for the first time.
             if (spentTransaction.SpendingDetails == null)
             {
+                // 1) If no existing spending details, always set new spending details.
+
                 this.logger.LogTrace("Spending UTXO '{0}-{1}' is new. BlockHeight={2}", spendingTransactionId, spendingTransactionIndex, blockHeight);
 
-                List<PaymentDetails> payments = new List<PaymentDetails>();
-                foreach (TxOut paidToOutput in paidToOutputs)
-                {
-                    // Figure out how to retrieve the destination address.
-                    string destinationAddress = string.Empty;
-                    ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate(this.network);
-                    switch (scriptTemplate.Type)
-                    {
-                        // Pay to PubKey can be found in outputs of staking transactions.
-                        case TxOutType.TX_PUBKEY:
-                            PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(paidToOutput.ScriptPubKey);
-                            destinationAddress = pubKey.GetAddress(this.network).ToString();
-                            break;
-                        // Pay to PubKey hash is the regular, most common type of output.
-                        case TxOutType.TX_PUBKEYHASH:
-                            destinationAddress = paidToOutput.ScriptPubKey.GetDestinationAddress(this.network).ToString();
-                            break;
-                        case TxOutType.TX_NONSTANDARD:
-                        case TxOutType.TX_SCRIPTHASH:
-                            destinationAddress = paidToOutput.ScriptPubKey.GetDestinationAddress(this.network).ToString();
-                            break;
-                        case TxOutType.TX_MULTISIG:
-                        case TxOutType.TX_NULL_DATA:
-                        case TxOutType.TX_SEGWIT:
-                            break;
-                    }
-
-                    payments.Add(new PaymentDetails
-                    {
-                        DestinationScriptPubKey = paidToOutput.ScriptPubKey,
-                        DestinationAddress = destinationAddress,
-                        Amount = paidToOutput.Value
-                    });
-                }
-
-                SpendingDetails spendingDetails = new SpendingDetails
-                {
-                    TransactionId = transaction.GetHash(),
-                    Payments = payments,
-                    CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? transaction.Time),
-                    BlockHeight = blockHeight,
-                    BlockHash = blockHash,
-                    Hex = transaction.ToHex(),
-                    IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true
-                };
-
-                if (withdrawal != null)
-                {
-                    spendingDetails.WithdrawalDetails = new WithdrawalDetails
-                    {
-                        Amount = withdrawal.Amount,
-                        MatchingDepositId = withdrawal.DepositId,
-                        TargetAddress = withdrawal.TargetAddress
-                    };
-                }
-
-                spentTransaction.SpendingDetails = spendingDetails;
-                spentTransaction.MerkleProof = null;
+                spentTransaction.SpendingDetails = this.BuildSpendingDetails(transaction, paidToOutputs, blockHeight, blockHash, block, withdrawal);
             }
-            else // If this spending transaction is being confirmed in a block.
+            else if (spentTransaction.SpendingDetails.BlockHeight == null)
             {
-                this.logger.LogTrace("Spending transaction ID '{0}' is being confirmed, updating. BlockHeight={1}", spendingTransactionId, blockHeight);
+                // 2) If there are unconfirmed existing spending details, always overwrite with new one. Could be a
+                //   "more" signed tx, a FullySigned mempool tx or a confirmed block tx.
 
-                // Update the block height.
-                if (spentTransaction.SpendingDetails.BlockHeight == null && blockHeight != null)
-                {
-                    spentTransaction.SpendingDetails.BlockHeight = blockHeight;
-                    spentTransaction.SpendingDetails.BlockHash = blockHash;
-                }
+                this.logger.LogTrace("Spending UTXO '{0}-{1}' is being overwritten. BlockHeight={2}", spendingTransactionId, spendingTransactionIndex, blockHeight);
 
-                // Update the block time to be that of the block in which the transaction is confirmed.
-                if (block != null)
-                {
-                    spentTransaction.SpendingDetails.CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time);
-                }
+                spentTransaction.SpendingDetails = this.BuildSpendingDetails(transaction, paidToOutputs, blockHeight, blockHash, block, withdrawal);
             }
+            else if (spentTransaction.SpendingDetails.BlockHeight != null && blockHeight == null)
+            {
+                // 3) If we have confirmed existing spending details, and this is coming in unconfirmed,
+                //   probably just unlucky concurrency issues, e.g. tx from mempool coming in after confirmed in a block.
+                this.logger.LogTrace("Unconfirmed spending UTXO '{0}-{1}' is being ignored. Already confirmed in block.", spendingTransactionId, spendingTransactionIndex);
+            }
+            else
+            {
+                // 4) If we have confirmed existing spending details, and this is also coming in confirmed, then something has gone wrong.
+                // We should have rewound before seeing this transaction in a block again.
+
+                throw new WalletException($"Attempting to confirm already-confirmed transaction {transaction.GetHash()} in a block.");
+            }
+        }
+
+        /// <summary>
+        /// Creates a SpendingDetails object that we can spend an existing transaction with.
+        /// </summary>
+        private SpendingDetails BuildSpendingDetails(Transaction transaction,
+            IEnumerable<TxOut> paidToOutputs,
+            int? blockHeight = null,
+            uint256 blockHash = null,
+            Block block = null,
+            IWithdrawal withdrawal = null)
+        {
+            List<PaymentDetails> payments = new List<PaymentDetails>();
+            foreach (TxOut paidToOutput in paidToOutputs)
+            {
+                // Figure out how to retrieve the destination address.
+                string destinationAddress = string.Empty;
+                ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate(this.network);
+                switch (scriptTemplate.Type)
+                {
+                    // Pay to PubKey can be found in outputs of staking transactions.
+                    case TxOutType.TX_PUBKEY:
+                        PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(paidToOutput.ScriptPubKey);
+                        destinationAddress = pubKey.GetAddress(this.network).ToString();
+                        break;
+                    // Pay to PubKey hash is the regular, most common type of output.
+                    case TxOutType.TX_PUBKEYHASH:
+                        destinationAddress = paidToOutput.ScriptPubKey.GetDestinationAddress(this.network).ToString();
+                        break;
+                    case TxOutType.TX_NONSTANDARD:
+                    case TxOutType.TX_SCRIPTHASH:
+                        destinationAddress = paidToOutput.ScriptPubKey.GetDestinationAddress(this.network).ToString();
+                        break;
+                    case TxOutType.TX_MULTISIG:
+                    case TxOutType.TX_NULL_DATA:
+                    case TxOutType.TX_SEGWIT:
+                        break;
+                }
+
+                payments.Add(new PaymentDetails
+                {
+                    DestinationScriptPubKey = paidToOutput.ScriptPubKey,
+                    DestinationAddress = destinationAddress,
+                    Amount = paidToOutput.Value
+                });
+            }
+
+            SpendingDetails spendingDetails = new SpendingDetails
+            {
+                TransactionId = transaction.GetHash(),
+                Payments = payments,
+                CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? transaction.Time),
+                BlockHeight = blockHeight,
+                BlockHash = blockHash,
+                Hex = transaction.ToHex(),
+                IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true
+            };
+
+            if (withdrawal != null)
+            {
+                spendingDetails.WithdrawalDetails = new WithdrawalDetails
+                {
+                    Amount = withdrawal.Amount,
+                    MatchingDepositId = withdrawal.DepositId,
+                    TargetAddress = withdrawal.TargetAddress
+                };
+            }
+
+            return spendingDetails;
         }
 
         /// <summary>
@@ -807,7 +811,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 return walletUpdated;
             }
         }
-
 
         private OutPoint EarliestOutput(Transaction transaction)
         {
@@ -1065,6 +1068,48 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public FederationWallet GetWallet()
         {
             return this.Wallet;
+        }
+
+        /// <summary>
+        /// Lists all spendable transactions in the current wallet.
+        /// </summary>
+        /// <param name="currentChainHeight">The current height of the chain. Used for calculating the number of confirmations a transaction has.</param>
+        /// <param name="confirmations">The minimum number of confirmations required for transactions to be considered.</param>
+        /// <returns>A collection of spendable outputs that belong to the given account.</returns>
+        private IEnumerable<UnspentOutputReference> GetSpendableTransactions(int currentChainHeight, int confirmations = 0)
+        {
+            // A block that is at the tip has 1 confirmation.
+            // When calculating the confirmations the tip must be advanced by one.
+
+            int countFrom = currentChainHeight + 1;
+            foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions.Where(t => t.IsSpendable()))
+            {
+                int? confirmationCount = 0;
+                if (transactionData.BlockHeight != null)
+                    confirmationCount = countFrom >= transactionData.BlockHeight ? countFrom - transactionData.BlockHeight : 0;
+
+                if (confirmationCount >= confirmations)
+                {
+                    yield return new UnspentOutputReference
+                    {
+                        Transaction = transactionData,
+                    };
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public (Money ConfirmedAmount, Money UnConfirmedAmount) GetSpendableAmount()
+        {
+            lock (this.lockObject)
+            {
+                IEnumerable<TransactionData> transactions = this.Wallet.MultiSigAddress.Transactions;
+
+                long confirmed = transactions.Sum(t => t.SpendableAmount(true));
+                long total = transactions.Sum(t => t.SpendableAmount(false));
+
+                return (confirmed, total - confirmed);
+            }
         }
     }
 }
