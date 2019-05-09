@@ -133,7 +133,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         {
             try
             {
-                return this.Json(this.addressIndexer.GetAddressBalance(address, minConfirmations));
+                Money balance = this.addressIndexer.GetAddressBalance(address, minConfirmations);
+
+                if (balance == null)
+                    balance = new Money(0);
+
+                return this.Json(balance);
             }
             catch (Exception e)
             {
@@ -151,10 +156,21 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             {
                 string[] addressesArray = addresses.Split(',');
 
+                this.logger.LogDebug($"Asking data for {addressesArray.Length} addresses.");
+
                 var balances = new Dictionary<string, Money>(addresses.Length);
 
                 foreach (string address in addressesArray)
-                    balances[address] = this.addressIndexer.GetAddressBalance(address, minConfirmations);
+                {
+                    Money balance = this.addressIndexer.GetAddressBalance(address, minConfirmations);
+
+                    if (balance == null)
+                        balance = new Money(0);
+
+                    balances[address] = balance;
+                }
+
+                this.logger.LogDebug($"Sending {balances.Count} entries.");
 
                 return this.Json(balances);
             }
