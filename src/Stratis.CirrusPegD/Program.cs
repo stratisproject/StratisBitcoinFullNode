@@ -33,7 +33,7 @@ namespace Stratis.CirrusPegD
         private static readonly Dictionary<NetworkType, Func<Network>> SidechainNetworks = new Dictionary<NetworkType, Func<Network>>
         {
             { NetworkType.Mainnet, CirrusNetwork.NetworksSelector.Mainnet },
-            { NetworkType.Testnet, CirrusNetwork.NetworksSelector.Testnet},
+            { NetworkType.Testnet, CirrusNetwork.NetworksSelector.Testnet },
             { NetworkType.Regtest, CirrusNetwork.NetworksSelector.Regtest }
         };
 

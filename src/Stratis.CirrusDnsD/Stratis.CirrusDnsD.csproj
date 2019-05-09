@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp2.1</TargetFramework>
+        <AssemblyName>Stratis.CirrusDnsD</AssemblyName>
+        <OutputType>Exe</OutputType>
+        <PackageId>Stratis.CirrusDnsD</PackageId>
+        <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
+        <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+        <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+        <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <NoWarn>1701;1702;1705;IDE0008;</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <LangVersion>latest</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Stratis.Bitcoin.Features.Api\Stratis.Bitcoin.Features.Api.csproj" />
+      <ProjectReference Include="..\Stratis.Bitcoin.Features.Dns\Stratis.Bitcoin.Features.Dns.csproj" />
+      <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
+      <ProjectReference Include="..\Stratis.Sidechains.Networks\Stratis.Sidechains.Networks.csproj" />
+    </ItemGroup>
+
+</Project>
