@@ -660,10 +660,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
             else
             {
-                // 4) If we have confirmed existing spending details, and this is also coming in confirmed, then something has gone wrong.
-                // We should have rewound before seeing this transaction in a block again.
+                // 4) If we have confirmed existing spending details, and this is also coming in confirmed, then update the spending details.
 
-                throw new WalletException($"Attempting to confirm already-confirmed transaction {transaction.GetHash()} in a block.");
+                this.logger.LogTrace("Spending UTXO '{0}-{1}' is being overwritten. BlockHeight={2}", spendingTransactionId, spendingTransactionIndex, blockHeight);
+
+                spentTransaction.SpendingDetails = this.BuildSpendingDetails(transaction, paidToOutputs, blockHeight, blockHash, block, withdrawal);
             }
         }
 
