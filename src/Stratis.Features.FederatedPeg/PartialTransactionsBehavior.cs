@@ -99,9 +99,21 @@ namespace Stratis.Features.FederatedPeg
                 return;
             }
 
+            if (transfer[0].PartialTransaction == null)
+            {
+                this.logger.LogTrace("OnMessageReceivedAsync: Deposit {0}, PartialTransaction not found.", payload.DepositId);
+                return;
+            }
+
             uint256 oldHash = transfer[0].PartialTransaction.GetHash();
 
             Transaction signedTransaction = await this.crossChainTransferStore.MergeTransactionSignaturesAsync(payload.DepositId, new[] { payload.PartialTransaction }).ConfigureAwait(false);
+
+            if (signedTransaction == null)
+            {
+                this.logger.LogTrace("OnMessageReceivedAsync: Deposit {0}, signedTransaction not found.", payload.DepositId);
+                return;
+            }
 
             if (oldHash != signedTransaction.GetHash())
             {
