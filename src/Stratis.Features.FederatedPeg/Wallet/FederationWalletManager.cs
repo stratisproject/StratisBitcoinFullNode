@@ -662,8 +662,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
             {
                 // 4) If we have confirmed existing spending details, and this is also coming in confirmed, then something has gone wrong.
                 // We should have rewound before seeing this transaction in a block again.
+                // OR it could just be the CCTS on startup.
 
-                throw new WalletException($"Attempting to confirm already-confirmed transaction {transaction.GetHash()} in a block.");
+                this.logger.LogTrace("Confirmed spending UTXO '{0}-{1}' in block {2} is being ignored. Already confirmed in block.", spendingTransactionId, spendingTransactionIndex, blockHeight);
             }
         }
 
