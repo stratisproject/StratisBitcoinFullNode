@@ -86,7 +86,6 @@ namespace Stratis.Features.FederatedPeg.Tests.Utils
             return new Withdrawal(depositId, id, amount, targetAddress, hashHeightPair.Height, hashHeightPair.Hash);
         }
 
-
         public static IReadOnlyList<IWithdrawal> GetWithdrawals(int count)
         {
             return Enumerable.Range(0, count).Select(_ => GetWithdrawal()).ToList().AsReadOnly();

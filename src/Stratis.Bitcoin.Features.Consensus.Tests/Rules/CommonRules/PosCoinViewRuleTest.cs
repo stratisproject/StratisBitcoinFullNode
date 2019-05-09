@@ -4,9 +4,8 @@ using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
 using NBitcoin.Crypto;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.AsyncWork;
-using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
@@ -35,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         private async Task<ConsensusManager> CreateConsensusManagerAsync(Dictionary<uint256, UnspentOutputs> unspentOutputs)
         {
             this.consensusSettings = new ConsensusSettings(Configuration.NodeSettings.Default(this.network));
-            var initialBlockDownloadState = new InitialBlockDownloadState(this.chainState.Object, this.network, this.consensusSettings, new Checkpoints());
+            var initialBlockDownloadState = new InitialBlockDownloadState(this.chainState.Object, this.network, this.consensusSettings, new Checkpoints(), this.loggerFactory.Object);
             var signals = new Signals.Signals(this.loggerFactory.Object, null);
             var asyncProvider = new AsyncProvider(this.loggerFactory.Object, signals, new Mock<INodeLifetime>().Object);
 

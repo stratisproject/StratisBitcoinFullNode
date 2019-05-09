@@ -18,6 +18,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     /// </summary>
     public class PowConsensusRuleEngine : ConsensusRuleEngine
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>The consensus db, containing all unspent UTXO in the chain.</summary>
         public ICoinView UtxoSet { get; }
 
@@ -31,6 +34,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IAsyncProvider asyncProvider)
             : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, chainState, invalidBlockHashStore, nodeStats)
         {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
             this.UtxoSet = utxoSet;
             this.prefetcher = new CoinviewPrefetcher(this.UtxoSet, chainIndexer, loggerFactory, asyncProvider);
         }

@@ -14,7 +14,7 @@
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <Version>3.0.4.0-beta</Version>
+    <Version>3.0.5.0-beta</Version>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     <CodeAnalysisRuleSet>..\Stratis.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
@@ -27,8 +27,10 @@
     <PackageReference Include="ConcurrentHashSet" Version="1.0.2" />
     <PackageReference Include="DBreeze" Version="1.89.0" />
     <PackageReference Include="LiteDB" Version="4.1.4" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="2.1.1" />
     <PackageReference Include="NLog" Version="5.0.0-beta09" />
     <PackageReference Include="NLog.Extensions.Logging" Version="1.0.0-rtm-beta5" />
+    <PackageReference Include="Polly" Version="6.1.2" />
     <PackageReference Include="Stratis.FodyNlogAdapter" Version="3.0.0.4-beta" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.0.2" />
     <PackageReference Include="System.Reactive" Version="4.0.0" />

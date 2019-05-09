@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Threading.Tasks;
+using System.Threading;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.Interfaces
@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Interfaces
         /// <summary>Retrieve transactions information asynchronously using transaction ids.</summary>
         /// <param name="trxids">Ids of transactions to find.</param>
         /// <returns>List of transactions or <c>null</c> if txindexing is disabled.</returns>
-        Transaction[] GetTransactionsByIds(uint256[] trxids);
+        Transaction[] GetTransactionsByIds(uint256[] trxids, CancellationToken cancellation = default(CancellationToken));
 
         /// <summary>
         /// Get the corresponding block hash by using transaction hash.

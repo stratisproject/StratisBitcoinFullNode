@@ -3,11 +3,11 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Stratis.Features.FederatedPeg.Controllers;
+using Stratis.Bitcoin.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 
-namespace Stratis.Features.FederatedPeg.RestClients
+namespace Stratis.Features.FederatedPeg.Controllers
 {
     /// <summary>Rest client for <see cref="FederationGatewayController"/>.</summary>
     public interface IFederationGatewayClient
@@ -19,8 +19,14 @@ namespace Stratis.Features.FederatedPeg.RestClients
     /// <inheritdoc cref="IFederationGatewayClient"/>
     public class FederationGatewayClient : RestApiClientBase, IFederationGatewayClient
     {
+        /// <summary>
+        /// Currently the <paramref name="url"/> is required as it needs to be configurable for testing.
+        /// <para>
+        /// In a production/live scenario the sidechain and mainnet federation nodes should run on the same machine.
+        /// </para>
+        /// </summary>
         public FederationGatewayClient(ILoggerFactory loggerFactory, IFederationGatewaySettings settings, IHttpClientFactory httpClientFactory)
-            : base(loggerFactory, settings, httpClientFactory)
+            : base(loggerFactory, httpClientFactory, settings.CounterChainApiPort, "FederationGateway", $"http://{settings.CounterChainApiHost}")
         {
         }
 

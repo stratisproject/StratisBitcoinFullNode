@@ -611,7 +611,7 @@ namespace Stratis.Bitcoin.Consensus
             if (!isExtension)
                 disconnectedBlocks = await this.RewindToForkPointAsync(fork, oldTip).ConfigureAwait(false);
 
-            List<ChainedHeaderBlock> blocksToConnect = await this.TryGetBlocksToConnectAsync(newTip, fork.Height + 1).ConfigureAwait(false);
+            List<ChainedHeaderBlock> blocksToConnect = this.TryGetBlocksToConnect(newTip, fork.Height + 1);
 
             // Sanity check. This should never happen.
             if (blocksToConnect == null)
@@ -896,14 +896,14 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Try to find all blocks between two headers.</summary>
         /// <returns>Collection of blocks that were loaded. In case at least one block was not present <c>null</c> will be returned.</returns>
-        private async Task<List<ChainedHeaderBlock>> TryGetBlocksToConnectAsync(ChainedHeader proposedNewTip, int heightOfFirstBlock)
+        private List<ChainedHeaderBlock> TryGetBlocksToConnect(ChainedHeader proposedNewTip, int heightOfFirstBlock)
         {
             ChainedHeader currentHeader = proposedNewTip;
             var chainedHeaderBlocks = new List<ChainedHeaderBlock>();
 
             while (currentHeader.Height >= heightOfFirstBlock)
             {
-                ChainedHeaderBlock chainedHeaderBlock = await this.GetBlockDataAsync(currentHeader.HashBlock).ConfigureAwait(false);
+                ChainedHeaderBlock chainedHeaderBlock = this.GetBlockData(currentHeader.HashBlock);
 
                 if (chainedHeaderBlock?.Block == null)
                 {
@@ -1157,7 +1157,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public async Task GetOrDownloadBlocksAsync(List<uint256> blockHashes, OnBlockDownloadedCallback onBlockDownloadedCallback)
+        public void GetOrDownloadBlocks(List<uint256> blockHashes, OnBlockDownloadedCallback onBlockDownloadedCallback)
         {
             Guard.NotNull(blockHashes, nameof(blockHashes));
             Guard.NotNull(onBlockDownloadedCallback, nameof(onBlockDownloadedCallback));
@@ -1166,7 +1166,7 @@ namespace Stratis.Bitcoin.Consensus
 
             foreach (uint256 blockHash in blockHashes)
             {
-                ChainedHeaderBlock chainedHeaderBlock = await this.GetBlockDataAsync(blockHash).ConfigureAwait(false);
+                ChainedHeaderBlock chainedHeaderBlock = this.GetBlockData(blockHash);
 
                 if ((chainedHeaderBlock == null) || (chainedHeaderBlock.Block != null))
                 {
@@ -1192,7 +1192,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public async Task<ChainedHeaderBlock> GetBlockDataAsync(uint256 blockHash)
+        public ChainedHeaderBlock GetBlockData(uint256 blockHash)
         {
             Guard.NotNull(blockHash, nameof(blockHash));
 
@@ -1226,8 +1226,8 @@ namespace Stratis.Bitcoin.Consensus
                 this.logger.LogTrace("(-)[FOUND_IN_BLOCK_STORE]:'{0}'", newBlockPair);
                 return newBlockPair;
             }
-            else
-                this.logger.LogDebug("Block '{0}' was not found in block store.", blockHash);
+
+            this.logger.LogDebug("Block '{0}' was not found in block store.", blockHash);
 
             return chainedHeaderBlock;
         }

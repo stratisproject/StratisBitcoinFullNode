@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
@@ -13,7 +12,8 @@ using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.NetworkHelpers;
 using Stratis.Features.FederatedPeg.Payloads;
 
-namespace Stratis.Features.FederatedPeg.TargetChain {
+namespace Stratis.Features.FederatedPeg.TargetChain
+{
     /// <summary>
     /// Requests partial transactions from the peers and calls <see cref="ICrossChainTransferStore.MergeTransactionSignaturesAsync".
     /// </summary>
@@ -37,6 +37,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain {
 
     /// <inheritdoc />
     public class PartialTransactionRequester : IPartialTransactionRequester {
+        /// <summary>
+        /// How many transactions we want to pass around to sign at a time.
+        /// </summary>
+        private const int NumberToSignAtATime = 3;
+
         /// <summary>
         /// How often to trigger the query for and broadcasting of partial transactions.
         /// </summary>
@@ -107,20 +112,19 @@ namespace Stratis.Features.FederatedPeg.TargetChain {
             }
 
             // Broadcast the partial transaction with the earliest inputs.
-            KeyValuePair<uint256, Transaction> kv = (await this.crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.Partial, true))
-                .FirstOrDefault();
+            IEnumerable<ICrossChainTransfer> transfers = this.crossChainTransferStore.GetTransfersByStatus(new[] {CrossChainTransferStatus.Partial}, true).Take(NumberToSignAtATime);
 
-            if (kv.Key != null) {
-                await this.BroadcastAsync(new RequestPartialTransactionPayload(kv.Key).AddPartial(kv.Value));
-                this.logger.LogInformation("Partial template requested");
+            foreach (ICrossChainTransfer transfer in transfers)
+            {
+                await this.BroadcastAsync(new RequestPartialTransactionPayload(transfer.DepositTransactionId).AddPartial(transfer.PartialTransaction));
+                this.logger.LogInformation("Partial template requested for deposit ID {0}", transfer.DepositTransactionId);
             }
         }
 
         /// <inheritdoc />
         public void Start() {
-            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop(nameof(PartialTransactionRequester), token => {
-                this.BroadcastPartialTransactionsAsync().GetAwaiter().GetResult();
-                return Task.CompletedTask;
+            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop(nameof(PartialTransactionRequester), async token => {
+                await this.BroadcastPartialTransactionsAsync().ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
             TimeBetweenQueries);

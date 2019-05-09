@@ -74,6 +74,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
         }
 
+        protected override Money GetTransactionFee(UnspentOutputSet view, Transaction tx)
+        {
+            return tx.IsCoinStake ? Money.Zero : view.GetValueIn(tx) - tx.TotalOut;
+        }
+
         /// <inheritdoc />
         public override void UpdateCoinView(RuleContext context, Transaction transaction)
         {

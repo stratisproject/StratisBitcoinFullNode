@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Connection
                 return false;
             }
 
-            return peerAddresses.Any(p => p.BanUntil > this.dateTimeProvider.GetUtcNow());
+            return peerAddresses.Any(p => p.IsBanned(this.dateTimeProvider.GetUtcNow()));
         }
 
         /// <inheritdoc />

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.EventBus.CoreEvents;
@@ -32,7 +31,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         [Fact]
         public void CanScheduleAndRemoveVotes()
         {
-            this.federationManager.SetPrivatePropertyValue(nameof(this.federationManager.IsFederationMember), true);
+            this.federationManager.SetPrivatePropertyValue(typeof(FederationManagerBase), nameof(this.federationManager.IsFederationMember), true);
 
             this.votingManager.ScheduleVote(new VotingData());
 

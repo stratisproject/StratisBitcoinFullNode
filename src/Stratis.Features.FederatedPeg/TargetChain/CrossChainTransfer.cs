@@ -2,6 +2,7 @@
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
+using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
 {
@@ -79,6 +80,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// (De)serializes this object.
         /// </summary>
         /// <param name="stream">Stream to use for (de)serialization.</param>
+        [NoTrace]
         public void ReadWrite(BitcoinStream stream)
         {
             if (stream.Serializing)

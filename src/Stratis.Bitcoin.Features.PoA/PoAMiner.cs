@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.PoA
     /// Blocks can be created only for particular timestamps- once per round.
     /// Round length in seconds is equal to amount of fed members multiplied by target spacing.
     /// Miner's slot in each round is the same and is determined by the index
-    /// of current key in <see cref="FederationManager.GetFederationMembers"/>
+    /// of current key in <see cref="IFederationManager.GetFederationMembers"/>
     /// </remarks>
     public interface IPoAMiner : IDisposable
     {
@@ -55,13 +55,13 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly BlockDefinition blockDefinition;
 
-        private readonly SlotsManager slotsManager;
+        private readonly ISlotsManager slotsManager;
 
         private readonly IConnectionManager connectionManager;
 
         private readonly PoABlockHeaderValidator poaHeaderValidator;
 
-        private readonly FederationManager federationManager;
+        private readonly IFederationManager federationManager;
 
         private readonly IIntegrityValidator integrityValidator;
 
@@ -83,10 +83,10 @@ namespace Stratis.Bitcoin.Features.PoA
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState ibdState,
             BlockDefinition blockDefinition,
-            SlotsManager slotsManager,
+            ISlotsManager slotsManager,
             IConnectionManager connectionManager,
             PoABlockHeaderValidator poaHeaderValidator,
-            FederationManager federationManager,
+            IFederationManager federationManager,
             IIntegrityValidator integrityValidator,
             IWalletManager walletManager,
             INodeStats nodeStats,
@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
             // Sign block with our private key.
             var header = blockTemplate.Block.Header as PoABlockHeader;
-            this.poaHeaderValidator.Sign(this.federationManager.FederationMemberKey, header);
+            this.poaHeaderValidator.Sign(this.federationManager.CurrentFederationKey, header);
 
             ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false);
 
@@ -317,7 +317,7 @@ namespace Stratis.Bitcoin.Features.PoA
             for (int i = tip.Height; (i > 0) && (i > tip.Height - maxDepth); i--)
             {
                 // Add stats for current header.
-                string pubKeyRepresentation = this.slotsManager.GetPubKeyForTimestamp(currentTime).ToString().Substring(0, pubKeyTakeCharacters);
+                string pubKeyRepresentation = this.slotsManager.GetFederationMemberForTimestamp(currentTime).ToString().Substring(0, pubKeyTakeCharacters);
 
                 log.Append("[" + pubKeyRepresentation + "]-");
                 depthReached++;

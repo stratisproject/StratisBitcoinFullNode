@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
             LogManager.Configuration.AddTarget(mainTarget);
 
             // Default logging level is Info for all components.
-            var defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Bitcoin)}.*", settings.LogLevel, mainTarget);
+            var defaultRule = new LoggingRule($"{nameof(Stratis)}.*", settings.LogLevel, mainTarget);
 
             if (settings.DebugArgs.Any() && settings.DebugArgs[0] != "1")
             {
