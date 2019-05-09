@@ -78,6 +78,7 @@ namespace Stratis.Features.FederatedPeg
                 .Cast<CollateralFederationMember>().Where(x => x.CollateralAmount != null && x.CollateralAmount > 0))
             {
                 this.logger.LogDebug("Initializing federation member {0} with amount {1}.", federationMember.CollateralMainchainAddress, federationMember.CollateralAmount);
+
                 this.depositsByAddress.Add(federationMember.CollateralMainchainAddress, null);
             }
 
