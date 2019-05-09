@@ -196,6 +196,7 @@ namespace Stratis.Features.FederatedPeg
         {
             lock (this.locker)
             {
+                this.logger.LogTrace("Removing federation member {0}", ((CollateralFederationMember)fedMemberKicked.KickedMember).CollateralMainchainAddress);
                 this.depositsByAddress.Remove(((CollateralFederationMember)fedMemberKicked.KickedMember).CollateralMainchainAddress);
             }
         }
@@ -204,6 +205,7 @@ namespace Stratis.Features.FederatedPeg
         {
             lock (this.locker)
             {
+                this.logger.LogTrace("Adding federation member {0}", ((CollateralFederationMember)fedMemberAdded.AddedMember).CollateralMainchainAddress);
                 this.depositsByAddress.Add(((CollateralFederationMember)fedMemberAdded.AddedMember).CollateralMainchainAddress, null);
             }
         }
