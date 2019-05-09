@@ -761,7 +761,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 transfer2 = crossChainTransferStore.GetAsync(new[] { deposit2.Id }).GetAwaiter().GetResult().FirstOrDefault();
                 Assert.Equal(CrossChainTransferStatus.Partial, transfer2?.Status);
 
-                Assert.Equal(2, this.wallet.MultiSigAddress.Transactions.Count);
+                Assert.Equal(4, this.wallet.MultiSigAddress.Transactions.Count);
             }
         }
 
