@@ -146,6 +146,8 @@ namespace Stratis.Features.FederatedPeg
                 return true;
             }
 
+            this.logger.LogTrace("Addresses to check {0}.", addressesToCheck.Count);
+
             Dictionary<string, Money> collateral = await this.blockStoreClient.GetAddressBalancesAsync(addressesToCheck, RequiredConfirmations, cancellation).ConfigureAwait(false);
 
             if (collateral == null)
