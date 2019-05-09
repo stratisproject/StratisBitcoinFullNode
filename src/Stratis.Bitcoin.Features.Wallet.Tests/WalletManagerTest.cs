@@ -3030,6 +3030,93 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
+        public void ConfirmedTransactionsShouldWipeOutUnconfirmedWithSameInputs()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+            Directory.CreateDirectory(dataFolder.WalletPath);
+
+            Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password");
+            (ExtKey ExtKey, string ExtPubKey) accountKeys = WalletTestsHelpers.GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
+            (PubKey PubKey, BitcoinPubKeyAddress Address) spendingKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
+            (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
+            (PubKey PubKey, BitcoinPubKeyAddress Address) changeKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
+
+            var spendingAddress = new HdAddress
+            {
+                Index = 0,
+                HdPath = $"m/44'/0'/0'/0/0",
+                Address = spendingKeys.Address.ToString(),
+                Pubkey = spendingKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = spendingKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            var destinationAddress = new HdAddress
+            {
+                Index = 1,
+                HdPath = $"m/44'/0'/0'/0/1",
+                Address = destinationKeys.Address.ToString(),
+                Pubkey = destinationKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = destinationKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            var changeAddress = new HdAddress
+            {
+                Index = 0,
+                HdPath = $"m/44'/0'/0'/1/0",
+                Address = changeKeys.Address.ToString(),
+                Pubkey = changeKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = changeKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            // Generate a spendable transaction.
+            (ChainIndexer chain, uint256 blockhash, Block block) chainInfo = WalletTestsHelpers.CreateChainAndCreateFirstBlockWithPaymentToAddress(wallet.Network, spendingAddress);
+            TransactionData spendingTransaction = WalletTestsHelpers.CreateTransactionDataFromFirstBlock(chainInfo);
+            spendingAddress.Transactions.Add(spendingTransaction);
+
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount
+            {
+                Index = 0,
+                Name = "account1",
+                HdPath = "m/44'/0'/0'",
+                ExtendedPubKey = accountKeys.ExtPubKey,
+                ExternalAddresses = new List<HdAddress> { spendingAddress }, // Don't include destinationAddress as it will accumulate unwanted unspents that affect the test
+                InternalAddresses = new List<HdAddress>() // Don't include changeAddress as it will accumulate unwanted unspents that affect the test
+            });
+
+            // Set up a transaction that will arrive through the mempool.
+            Transaction transaction1 = WalletTestsHelpers.SetupValidTransaction(wallet, "password", spendingAddress, destinationKeys.PubKey, changeAddress, new Money(7500), new Money(5000));
+
+            // Set up a different transaction spending the same inputs, with a higher fee, that will arrive in a block.
+            Transaction transaction2 = WalletTestsHelpers.SetupValidTransaction(wallet, "password", spendingAddress, destinationKeys.PubKey, changeAddress, new Money(7500), new Money(10_000));
+
+            Assert.Equal(transaction1.Inputs[0].PrevOut, transaction2.Inputs[0].PrevOut);
+            Assert.NotEqual(transaction1.GetHash(), transaction2.GetHash());
+
+            var walletFeePolicy = new Mock<IWalletFeePolicy>();
+            walletFeePolicy.Setup(w => w.GetMinimumFee(258, 50))
+                .Returns(new Money(5000));
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chainInfo.chain, new WalletSettings(NodeSettings.Default(this.Network)),
+                dataFolder, walletFeePolicy.Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
+            walletManager.Wallets.Add(wallet);
+            walletManager.LoadKeysLookupLock();
+
+            // First add transaction 1 via mempool.
+            walletManager.ProcessTransaction(transaction1);
+
+            // Now add transaction 2 via block.
+            Block block = this.Network.CreateBlock();
+            block.AddTransaction(transaction2);
+
+            walletManager.ProcessTransaction(transaction2, 10, block);
+
+            Assert.Empty(walletManager.GetSpendableTransactionsInWallet("myWallet1", 0));
+        }
+
+        [Fact]
         public void RemoveTransactionsByIdsAlsoRemovesUnconfirmedSpendingDetailsTransactions()
         {
             // Arrange.

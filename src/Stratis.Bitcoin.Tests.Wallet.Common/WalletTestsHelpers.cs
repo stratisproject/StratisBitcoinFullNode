@@ -463,6 +463,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
                 Id = transaction.GetHash(),
                 Index = 0,
                 ScriptPubKey = transaction.Outputs[0].ScriptPubKey,
+                Inputs = transaction.Inputs.Select(o => o.PrevOut).ToArray()
             };
 
             return addressTransaction;

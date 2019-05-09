@@ -365,5 +365,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="fromDate">The date after which the transactions should be removed.</param>
         /// <returns>A list of objects made up of a transactions ID along with the time at which they were created.</returns>
         HashSet<(uint256, DateTimeOffset)> RemoveTransactionsFromDate(string walletName, DateTimeOffset fromDate);
+
+        /// <summary>
+        /// Returns the <see cref="WalletIndexData"/> in the wallet associated with a transaction ID,
+        /// allowing the transaction & all associated details to be rapidly looked up.
+        /// </summary>
+        /// <param name="txId">The ID of the transaction to retrieve index data for.</param>
+        /// <returns>The index data, including the transaction data.</returns>
+        WalletIndexData GetTransactionData(uint256 txId);
     }
 }

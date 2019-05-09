@@ -96,8 +96,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         // we keep a couple of objects in memory:
         // 1. the list of unspent outputs for checking whether inputs from a transaction are being spent by our wallet and
         // 2. the list of addresses contained in our wallet for checking whether a transaction is being paid to the wallet.
+        // 3. a mapping of all transactions in the wallet, to allow rapid lookup by txid
+        // 4. a mapping of all inputs with their corresponding transactions, to facilitate rapid lookup
         private Dictionary<OutPoint, TransactionData> outpointLookup;
         internal ScriptToAddressLookup scriptToAddressLookup;
+        private Dictionary<uint256, WalletIndexData> txLookup;
+        private Dictionary<OutPoint, WalletIndexData> inputLookup;
 
         public WalletManager(
             ILoggerFactory loggerFactory,
@@ -146,6 +150,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.scriptToAddressLookup = this.CreateAddressFromScriptLookup();
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
+            this.txLookup = new Dictionary<uint256, WalletIndexData>();
+            this.inputLookup = new Dictionary<OutPoint, WalletIndexData>();
 
             this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
         }
@@ -928,8 +934,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 this.UpdateLastBlockSyncedHeight(fork);
 
-                // Reload the addresses and inputs lookup dictionaries.
+                // Reload the lookup dictionaries.
                 this.RefreshInputKeysLookupLock();
+                this.RefreshTxLookupLocked();
             }
         }
 
@@ -1003,6 +1010,42 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
+                // Do a pre-scan of the transaction inputs to see if they're used in other transactions already
+                foreach (TxIn input in transaction.Inputs)
+                {
+                    // See if this input is being used by another transaction.
+                    if (this.inputLookup.TryGetValue(input.PrevOut, out WalletIndexData indexData))
+                    {
+                        if (indexData.TransactionData.Id == hash)
+                            continue; // It's the same transaction, ignore.
+
+                        // Incoming transaction confirmed, existing transaction unconfirmed, delete existing
+                        if ((block != null) && (indexData.TransactionData.BlockHash == null))
+                        {
+                            this.RemoveTransactionsByIdsLocked(indexData.Wallet.Name, new[] { indexData.TransactionData.Id });
+                        }
+
+                        // Incoming transaction unconfirmed, existing transaction unconfirmed, delete existing (so that only 1 is left - either could be the 'correct' version)
+                        if ((block == null) && (indexData.TransactionData.BlockHash == null))
+                        {
+                            this.RemoveTransactionsByIdsLocked(indexData.Wallet.Name, new[] { indexData.TransactionData.Id });
+                        }
+
+                        // Incoming transaction unconfirmed, existing transaction confirmed, presume the existing transaction is correct and ignore incoming.
+                        if ((block == null) && indexData.TransactionData.BlockHash != null)
+                        {
+                            return false;
+                        }
+
+                        // Incoming transaction confirmed, existing transaction confirmed, something is wrong (the same UTXO cannot appear in two different confirmed transactions).
+                        // Here the existing transaction is deleted on the presumption that a more recent confirmed transaction may have resulted due to a reorg etc.
+                        if ((block != null) && (indexData.TransactionData.BlockHash == null))
+                        {
+                            this.RemoveTransactionsByIdsLocked(indexData.Wallet.Name, new[] { indexData.TransactionData.Id });
+                        }
+                    }
+                }
+
                 // Check the outputs, ignoring the ones with a 0 amount.
                 foreach (TxOut utxo in transaction.Outputs.Where(o => o.Value != Money.Zero))
                 {
@@ -1094,7 +1137,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                     Index = index,
                     ScriptPubKey = script,
                     Hex = this.walletSettings.SaveTransactionHex ? transaction.ToHex() : null,
-                    IsPropagated = isPropagated
+                    IsPropagated = isPropagated,
+                    Inputs = transaction.Inputs.Select(o => o.PrevOut).ToArray()
                 };
 
                 // Add the Merkle proof to the (non-spending) transaction.
@@ -1105,6 +1149,27 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 addressTransactions.Add(newTransaction);
                 this.AddInputKeysLookupLocked(newTransaction);
+                
+                // Workaround for now to populate index as the address lookup doesn't give us all the requisite data
+                // TODO: Either amend address lookup to provide additional fields or optimise in some other way
+                bool finish = false;
+                foreach (Wallet wallet in this.Wallets)
+                {
+                    if (finish) break;
+                    foreach (HdAccount account in wallet.GetAccounts())
+                    {
+                        if (finish) break;
+                        foreach (HdAddress address1 in account.GetCombinedAddresses())
+                        {
+                            if (finish) break;
+                            if (address == address1)
+                            {
+                                this.AddTxLookupLocked(wallet, account, address, newTransaction);
+                                finish = true;
+                            }
+                        }
+                    }
+                }
             }
             else
             {
@@ -1434,18 +1499,32 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 foreach (Wallet wallet in this.Wallets)
                 {
-                    IEnumerable<HdAddress> addresses = wallet.GetAllAddresses(a => true);
-                    foreach (HdAddress address in addresses)
+                    foreach (HdAccount account in wallet.GetAccounts())
                     {
-                        this.scriptToAddressLookup[address.ScriptPubKey] = address;
-                        if (address.Pubkey != null)
-                            this.scriptToAddressLookup[address.Pubkey] = address;
-
-                        // Get the UTXOs that are unspent or spent but not confirmed.
-                        // We only exclude from the list the confirmed spent UTXOs.
-                        foreach (TransactionData transaction in address.Transactions.Where(t => t.SpendingDetails?.BlockHeight == null))
+                        foreach (HdAddress address in account.GetCombinedAddresses())
                         {
-                            this.outpointLookup[new OutPoint(transaction.Id, transaction.Index)] = transaction;
+                            this.scriptToAddressLookup[address.ScriptPubKey] = address;
+                            if (address.Pubkey != null)
+                                this.scriptToAddressLookup[address.Pubkey] = address;
+
+                            foreach (TransactionData transaction in address.Transactions)
+                            {
+                                var indexData = new WalletIndexData(wallet, account, address, transaction);
+
+                                this.txLookup[transaction.Id] = indexData;
+
+                                foreach (OutPoint input in transaction.Inputs)
+                                {
+                                    this.inputLookup[input] = indexData;
+                                }
+
+                                // Get the UTXOs that are unspent or spent but not confirmed.
+                                // We only exclude from the list the confirmed spent UTXOs.
+                                if (transaction.SpendingDetails?.BlockHeight == null)
+                                {
+                                    this.outpointLookup[new OutPoint(transaction.Id, transaction.Index)] = transaction;
+                                }
+                            }
                         }
                     }
                 }
@@ -1518,6 +1597,62 @@ namespace Stratis.Bitcoin.Features.Wallet
                         foreach (TransactionData transaction in address.Transactions.Where(t => t.SpendingDetails?.BlockHeight == null))
                         {
                             this.outpointLookup[new OutPoint(transaction.Id, transaction.Index)] = transaction;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Add to the mapping of transactions kept in memory for faster lookups.
+        /// </summary>
+        private void AddTxLookupLocked(Wallet wallet, HdAccount account, HdAddress address, TransactionData transactionData)
+        {
+            Guard.NotNull(wallet, nameof(wallet));
+            Guard.NotNull(account, nameof(account));
+            Guard.NotNull(address, nameof(address));
+            Guard.NotNull(transactionData, nameof(transactionData));
+
+            lock (this.lockObject)
+            {
+                var indexData = new WalletIndexData(wallet, account, address, transactionData);
+
+                this.txLookup[transactionData.Id] = indexData;
+
+                foreach (OutPoint input in transactionData.Inputs)
+                {
+                    this.inputLookup[input] = indexData;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Reloads the transactions we're tracking in memory for faster lookups.
+        /// </summary>
+        private void RefreshTxLookupLocked()
+        {
+            lock (this.lockObject)
+            {
+                this.txLookup = new Dictionary<uint256, WalletIndexData>();
+                this.inputLookup = new Dictionary<OutPoint, WalletIndexData>();
+
+                foreach (Wallet wallet in this.Wallets)
+                {
+                    foreach (HdAccount account in wallet.GetAccounts())
+                    {
+                        foreach (HdAddress address in account.GetCombinedAddresses())
+                        {
+                            foreach (TransactionData transactionData in address.Transactions)
+                            {
+                                var indexData = new WalletIndexData(wallet, account, address, transactionData);
+
+                                this.txLookup[transactionData.Id] = indexData;
+
+                                foreach (OutPoint input in transactionData.Inputs)
+                                {
+                                    this.inputLookup[input] = indexData;
+                                }
+                            }
                         }
                     }
                 }
@@ -1602,8 +1737,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                     }
                 }
 
-                // Reload the addresses and inputs lookup dictionaries.
+                // Reload the lookup dictionaries.
                 this.RefreshInputKeysLookupLock();
+                this.RefreshTxLookupLocked();
             }
 
             if (result.Any())
@@ -1634,8 +1770,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                     }
                 }
 
-                // Reload the addresses and inputs lookup dictionaries.
+                // Reload the lookup dictionaries.
                 this.RefreshInputKeysLookupLock();
+                this.RefreshTxLookupLocked();
             }
 
             if (removedTransactions.Any())
@@ -1670,8 +1807,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                     }
                 }
 
-                // Reload the addresses and inputs lookup dictionaries.
+                // Reload the lookup dictionaries.
                 this.RefreshInputKeysLookupLock();
+                this.RefreshTxLookupLocked();
             }
 
             if (removedTransactions.Any())
@@ -1741,6 +1879,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return new ExtKey(privateKey, wallet.ChainCode);
+        }
+
+        /// <inheritdoc />
+        public WalletIndexData GetTransactionData(uint256 txId)
+        {
+            bool found = this.txLookup.TryGetValue(txId, out WalletIndexData result);
+            return found ? result : null;
         }
     }
 }
