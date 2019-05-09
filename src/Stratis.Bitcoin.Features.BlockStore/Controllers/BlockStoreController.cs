@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             {
                 string[] addressesArray = addresses.Split(',');
 
-                this.logger.LogDebug($"Asking data for {addressesArray.Length} addressees.");
+                this.logger.LogDebug($"Asking data for {addressesArray.Length} addresses.");
 
                 var balances = new Dictionary<string, Money>(addresses.Length);
 
