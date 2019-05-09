@@ -406,7 +406,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     if (walletData.Count != 0)
                     {
                         this.logger.LogTrace("Removing duplicates for {0}", withdrawal.DepositId);
-                        this.RemoveTransientTransactions(withdrawal.DepositId);
+                        this.RemoveWithdrawalTransactions(withdrawal.DepositId);
                     }
                 }
 
@@ -660,10 +660,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
             else
             {
-                // 4) If we have confirmed existing spending details, and this is also coming in confirmed, then something has gone wrong.
-                // We should have rewound before seeing this transaction in a block again.
+                // 4) If we have confirmed existing spending details, and this is also coming in confirmed, then update the spending details.
 
-                throw new WalletException($"Attempting to confirm already-confirmed transaction {transaction.GetHash()} in a block.");
+                this.logger.LogTrace("Spending UTXO '{0}-{1}' is being overwritten. BlockHeight={2}", spendingTransactionId, spendingTransactionIndex, blockHeight);
+
+                spentTransaction.SpendingDetails = this.BuildSpendingDetails(transaction, paidToOutputs, blockHeight, blockHash, block, withdrawal);
             }
         }
 
@@ -791,7 +792,40 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <inheritdoc />
-        public bool RemoveTransientTransactions(uint256 depositId = null)
+        public bool RemoveUnconfirmedTransactionData()
+        {
+            lock (this.lockObject)
+            {
+                bool walletUpdated = false;
+
+                foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions.ToList())
+                {
+                    // Change for unconfirmed transaction?
+                    if (transactionData.BlockHeight == null)
+                    {
+                        this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
+                    }
+                    // Spend by unconfirmed transaction?
+                    else if (transactionData.SpendingDetails != null && transactionData.SpendingDetails.BlockHeight == null)
+                    {
+                        transactionData.SpendingDetails = null;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+
+                    walletUpdated = true;
+                }
+
+                this.LoadKeysLookupLock();
+
+                return walletUpdated;
+            }
+        }
+
+        /// <inheritdoc />
+        public bool RemoveWithdrawalTransactions(uint256 depositId)
         {
             this.logger.LogTrace("Removing transient transactions. DepositId={0}", depositId);
 
@@ -802,10 +836,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 foreach ((Transaction transaction, IWithdrawal withdrawal) in this.FindWithdrawalTransactions(depositId))
                 {
-                    if (withdrawal.BlockNumber == 0)
-                    {
-                        walletUpdated |= this.RemoveTransaction(transaction);
-                    }
+                    walletUpdated |= this.RemoveTransaction(transaction);
                 }
 
                 return walletUpdated;
