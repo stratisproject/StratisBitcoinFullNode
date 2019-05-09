@@ -158,6 +158,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                 foreach (string address in addressesArray)
                     balances[address] = this.addressIndexer.GetAddressBalance(address, minConfirmations);
 
+                this.logger.LogDebug($"Sending {balances.Count} entries.");
+
                 return this.Json(balances);
             }
             catch (Exception e)
