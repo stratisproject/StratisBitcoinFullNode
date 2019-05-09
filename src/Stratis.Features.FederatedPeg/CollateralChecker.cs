@@ -155,6 +155,7 @@ namespace Stratis.Features.FederatedPeg
 
             if (collateral.Count != addressesToCheck.Count)
             {
+                this.logger.LogDebug($"Expected {addressesToCheck.Count} data entries but received {collateral.Count}.");
                 this.logger.LogTrace("(-)[INCONSISTENT_DATA]:false");
                 return false;
             }
