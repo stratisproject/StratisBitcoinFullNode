@@ -3082,8 +3082,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Name = "account1",
                 HdPath = "m/44'/0'/0'",
                 ExtendedPubKey = accountKeys.ExtPubKey,
-                ExternalAddresses = new List<HdAddress> { spendingAddress }, // Don't include destinationAddress as it will accumulate unwanted unspents that affect the test
-                InternalAddresses = new List<HdAddress>() // Don't include changeAddress as it will accumulate unwanted unspents that affect the test
+                ExternalAddresses = new List<HdAddress> { spendingAddress, destinationAddress },
+                InternalAddresses = new List<HdAddress> { changeAddress }
             });
 
             // Set up a transaction that will arrive through the mempool.
@@ -3107,13 +3107,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             // First add transaction 1 via mempool.
             walletManager.ProcessTransaction(transaction1);
 
+            // The first transaction should be present in the wallet.
+            Assert.True(destinationAddress.Transactions.Any(t => t.Id == transaction1.GetHash()));
+
             // Now add transaction 2 via block.
             Block block = this.Network.CreateBlock();
             block.AddTransaction(transaction2);
 
             walletManager.ProcessTransaction(transaction2, 10, block);
+            
+            // The first transaction should no longer be present in the wallet.
+            Assert.False(destinationAddress.Transactions.Any(t => t.Id == transaction1.GetHash()));
 
-            Assert.Empty(walletManager.GetSpendableTransactionsInWallet("myWallet1", 0));
+            // The second transaction should be present.
+            Assert.True(destinationAddress.Transactions.Any(t => t.Id == transaction2.GetHash()));
         }
 
         [Fact]
