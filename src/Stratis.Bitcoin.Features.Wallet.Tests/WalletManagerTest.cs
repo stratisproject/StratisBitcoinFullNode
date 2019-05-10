@@ -3003,10 +3003,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             uint256 trxId = uint256.Parse("d6043add63ec364fcb591cf209285d8e60f1cc06186d4dcbce496cdbb4303400");
             int counter = 0;
 
-            var trxUnconfirmed1 = new TransactionData { Amount = 10, Id = trxId >> counter++ };
-            var trxUnconfirmed2 = new TransactionData { Amount = 10, Id = trxId >> counter++ };
-            var trxConfirmed1 = new TransactionData { Amount = 10, Id = trxId >> counter++, BlockHeight = 50000 };
-            var trxConfirmed2 = new TransactionData { Amount = 10, Id = trxId >> counter++, BlockHeight = 50001 };
+            var trxUnconfirmed1 = new TransactionData { Amount = 10, Id = trxId >> counter++, Inputs = new[] { new OutPoint(new uint256(1), 1) } };
+            var trxUnconfirmed2 = new TransactionData { Amount = 10, Id = trxId >> counter++, Inputs = new[] { new OutPoint(new uint256(2), 2) } };
+            var trxConfirmed1 = new TransactionData { Amount = 10, Id = trxId >> counter++, BlockHeight = 50000, Inputs = new[] { new OutPoint(new uint256(3), 3) } };
+            var trxConfirmed2 = new TransactionData { Amount = 10, Id = trxId >> counter++, BlockHeight = 50001, Inputs = new[] { new OutPoint(new uint256(4), 4) } };
 
             firstAccount.ExternalAddresses.ElementAt(0).Transactions.Add(trxUnconfirmed1);
             firstAccount.ExternalAddresses.ElementAt(1).Transactions.Add(trxConfirmed1);
@@ -3145,15 +3145,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             // Confirmed transaction with confirmed spending.
             var confirmedSpendingDetails = new SpendingDetails { TransactionId = trxId >> counter++, BlockHeight = 500002 };
-            var trxConfirmed1 = new TransactionData { Amount = 10, Id = trxId >> counter++, BlockHeight = 50000, SpendingDetails = confirmedSpendingDetails };
+            var trxConfirmed1 = new TransactionData { Amount = 10, Id = trxId >> counter++, BlockHeight = 50000, SpendingDetails = confirmedSpendingDetails, Inputs = new[] { new OutPoint(new uint256(1), 1) } };
 
             // Confirmed transaction with unconfirmed spending.
             uint256 unconfirmedTransactionId = trxId >> counter++;
             var unconfirmedSpendingDetails1 = new SpendingDetails { TransactionId = unconfirmedTransactionId };
-            var trxConfirmed2 = new TransactionData { Amount = 10, Id = trxId >> counter++, BlockHeight = 50001, SpendingDetails = unconfirmedSpendingDetails1 };
+            var trxConfirmed2 = new TransactionData { Amount = 10, Id = trxId >> counter++, BlockHeight = 50001, SpendingDetails = unconfirmedSpendingDetails1, Inputs = new[] { new OutPoint(new uint256(2), 2) } };
 
             // Unconfirmed transaction.
-            var trxUnconfirmed1 = new TransactionData { Amount = 10, Id = unconfirmedTransactionId };
+            var trxUnconfirmed1 = new TransactionData { Amount = 10, Id = unconfirmedTransactionId, Inputs = new[] { new OutPoint(new uint256(3), 3) } };
 
             firstAccount.ExternalAddresses.ElementAt(0).Transactions.Add(trxUnconfirmed1);
             firstAccount.ExternalAddresses.ElementAt(1).Transactions.Add(trxConfirmed1);
