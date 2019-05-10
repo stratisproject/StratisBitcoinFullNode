@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                     balances[address] = balance;
                 }
 
-                this.logger.LogDebug($"Sending {balances.Count} entries.");
+                this.logger.LogDebug("Sending {0} entries.", balances.Count);
 
                 return this.Json(balances);
             }

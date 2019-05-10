@@ -77,6 +77,8 @@ namespace Stratis.Features.FederatedPeg
             foreach (CollateralFederationMember federationMember in this.federationManager.GetFederationMembers()
                 .Cast<CollateralFederationMember>().Where(x => x.CollateralAmount != null && x.CollateralAmount > 0))
             {
+                this.logger.LogDebug("Initializing federation member {0} with amount {1}.", federationMember.CollateralMainchainAddress, federationMember.CollateralAmount);
+
                 this.depositsByAddress.Add(federationMember.CollateralMainchainAddress, null);
             }
 
@@ -145,6 +147,8 @@ namespace Stratis.Features.FederatedPeg
                 return true;
             }
 
+            this.logger.LogDebug("Addresses to check {0}.", addressesToCheck.Count);
+
             Dictionary<string, Money> collateral = await this.blockStoreClient.GetAddressBalancesAsync(addressesToCheck, RequiredConfirmations, cancellation).ConfigureAwait(false);
 
             if (collateral == null)
@@ -155,7 +159,8 @@ namespace Stratis.Features.FederatedPeg
 
             if (collateral.Count != addressesToCheck.Count)
             {
-                this.logger.LogDebug($"Expected {addressesToCheck.Count} data entries but received {collateral.Count}.");
+                this.logger.LogDebug("Expected {0} data entries but received {1}.", addressesToCheck.Count, collateral.Count);
+
                 this.logger.LogTrace("(-)[INCONSISTENT_DATA]:false");
                 return false;
             }
@@ -195,6 +200,7 @@ namespace Stratis.Features.FederatedPeg
         {
             lock (this.locker)
             {
+                this.logger.LogDebug("Removing federation member {0}", ((CollateralFederationMember)fedMemberKicked.KickedMember).CollateralMainchainAddress);
                 this.depositsByAddress.Remove(((CollateralFederationMember)fedMemberKicked.KickedMember).CollateralMainchainAddress);
             }
         }
@@ -203,6 +209,7 @@ namespace Stratis.Features.FederatedPeg
         {
             lock (this.locker)
             {
+                this.logger.LogDebug("Adding federation member {0}", ((CollateralFederationMember)fedMemberAdded.AddedMember).CollateralMainchainAddress);
                 this.depositsByAddress.Add(((CollateralFederationMember)fedMemberAdded.AddedMember).CollateralMainchainAddress, null);
             }
         }
