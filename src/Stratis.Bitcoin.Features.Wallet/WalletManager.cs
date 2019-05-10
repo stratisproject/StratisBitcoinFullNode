@@ -1513,7 +1513,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                                 this.txLookup[transaction.Id] = indexData;
 
-                                foreach (OutPoint input in transaction.Inputs)
+                                foreach (OutPoint input in transaction.Inputs ?? Enumerable.Empty<OutPoint>())
                                 {
                                     this.inputLookup[input] = indexData;
                                 }
@@ -1619,7 +1619,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 this.txLookup[transactionData.Id] = indexData;
 
-                foreach (OutPoint input in transactionData.Inputs)
+                foreach (OutPoint input in transactionData.Inputs ?? Enumerable.Empty<OutPoint>())
                 {
                     this.inputLookup[input] = indexData;
                 }
@@ -1648,7 +1648,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                                 this.txLookup[transactionData.Id] = indexData;
 
-                                foreach (OutPoint input in transactionData.Inputs)
+                                foreach (OutPoint input in transactionData.Inputs ?? Enumerable.Empty<OutPoint>())
                                 {
                                     this.inputLookup[input] = indexData;
                                 }
