@@ -118,6 +118,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 xfer.SetPartialTransaction(partial);
 
                 this.signals.Publish(new CrossChainTransferTransactionFullySigned(xfer));
+                await Task.Delay(100); //the event subscriber handles the event asynchronously so let's wait a bit to give it the time to complete.
 
                 await this.broadcasterManager.Received(1).BroadcastTransactionAsync(Arg.Any<Transaction>());
             }
@@ -143,6 +144,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 xfer.SetPartialTransaction(partial);
 
                 this.signals.Publish(new CrossChainTransferTransactionFullySigned(xfer));
+                await Task.Delay(100); //the event subscriber handles the event asynchronously so let's wait a bit to give it the time to complete.
 
                 await this.broadcasterManager.Received(0).BroadcastTransactionAsync(Arg.Any<Transaction>());
             }
@@ -170,6 +172,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 xfer.SetPartialTransaction(partial);
 
                 this.signals.Publish(new CrossChainTransferTransactionFullySigned(xfer));
+                await Task.Delay(100); //the event subscriber handles the event asynchronously so let's wait a bit to give it the time to complete.
 
                 await this.broadcasterManager.Received(0).BroadcastTransactionAsync(Arg.Any<Transaction>());
             }
