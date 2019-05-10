@@ -124,6 +124,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>'non-final' error returns a <see cref="RejectNonstandard"/> reject code.</summary>
         public static MempoolError NonFinal = new MempoolError(RejectNonstandard, "non-final");
 
+        /// <summary>'txn-already-confirmed' error returns a <see cref="RejectAlreadyKnown"/> reject code.</summary>
+        public static MempoolError AlreadyConfirmed = new MempoolError(RejectAlreadyKnown, "txn-already-confirmed");
+
         /// <summary>'txn-already-in-mempool' error returns a <see cref="RejectAlreadyKnown"/> reject code.</summary>
         public static MempoolError InPool = new MempoolError(RejectAlreadyKnown, "txn-already-in-mempool");
 

@@ -438,6 +438,19 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     return;
                 }
 
+                // Dont accept transactions to the memory pool that are already known on the valid chain.
+                FetchCoinsResponse fetchCoinsResponse = this.coinView.FetchCoins(new[] { tx.GetHash() });
+                if (fetchCoinsResponse?.BlockHash != null)
+                {
+                    ChainedHeader header = this.chainIndexer.GetHeader(fetchCoinsResponse.BlockHash);
+                    if (header != null && header.IsAssumedValid)
+                    {
+                        state.Invalid(MempoolErrors.AlreadyConfirmed);
+                        this.logger.LogTrace("(-)[IGNORING_KNOWN_TRANSACTION]");
+                        return;
+                    }
+                }
+
                 // Check for conflicts with in-memory transactions
                 this.CheckConflicts(context);
 
