@@ -135,9 +135,10 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                     inactiveForSeconds = tip.Header.Time - fedMemberToActiveTime.Value;
                 }
 
-                if (inactiveForSeconds > this.federationMemberMaxIdleTimeSeconds)
+                if (inactiveForSeconds > this.federationMemberMaxIdleTimeSeconds && this.federationManager.IsFederationMember)
                 {
-                    this.logger.LogDebug("Federation member '{0}' was inactive for {1} seconds and will be scheduled to be kicked.", fedMemberToActiveTime.Key, inactiveForSeconds);
+                    // TODO avoid kicking fed members when kicking poll is already pending!
+                    this.logger.LogWarning("Federation member '{0}' was inactive for {1} seconds and will be scheduled to be kicked.", fedMemberToActiveTime.Key, inactiveForSeconds);
 
                     this.votingManager.ScheduleVote(new VotingData()
                     {
