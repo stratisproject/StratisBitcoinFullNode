@@ -1499,7 +1499,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 foreach (Wallet wallet in this.Wallets)
                 {
-                    foreach (HdAccount account in wallet.GetAccounts())
+                    foreach (HdAccount account in wallet.GetAccounts(a => true))
                     {
                         foreach (HdAddress address in account.GetCombinedAddresses())
                         {
@@ -1638,7 +1638,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 foreach (Wallet wallet in this.Wallets)
                 {
-                    foreach (HdAccount account in wallet.GetAccounts())
+                    foreach (HdAccount account in wallet.GetAccounts(a => true))
                     {
                         foreach (HdAddress address in account.GetCombinedAddresses())
                         {
@@ -1709,7 +1709,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                IEnumerable<HdAccount> accounts = wallet.GetAccounts();
+                IEnumerable<HdAccount> accounts = wallet.GetAccounts(a => true);
                 foreach (HdAccount account in accounts)
                 {
                     foreach (HdAddress address in account.GetCombinedAddresses())
