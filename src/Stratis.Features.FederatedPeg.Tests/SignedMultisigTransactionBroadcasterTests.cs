@@ -103,20 +103,24 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.federationGatewaySettings.PublicKey.Returns(PublicKey);
 
-            var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
-                this.loggerFactory,
-                this.mempoolManager,
-                this.broadcasterManager,
-                this.ibdState,
-                this.federationWalletManager,
-                this.signals);
+            using (var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+               this.loggerFactory,
+               this.mempoolManager,
+               this.broadcasterManager,
+               this.ibdState,
+               this.federationWalletManager,
+               this.signals))
+            {
+                signedMultisigTransactionBroadcaster.Start();
 
+                var partial = new Transaction();
+                var xfer = new CrossChainTransfer();
+                xfer.SetPartialTransaction(partial);
 
-            var partial = new Transaction();
-            var xfer = new CrossChainTransfer();
-            xfer.SetPartialTransaction(partial);
+                this.signals.Publish(new CrossChainTransferTransactionFullySigned(xfer));
 
-            await this.broadcasterManager.Received(1).BroadcastTransactionAsync(Arg.Any<Transaction>());
+                await this.broadcasterManager.Received(1).BroadcastTransactionAsync(Arg.Any<Transaction>());
+            }
         }
 
         [Fact]
@@ -124,21 +128,24 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.ibdState.IsInitialBlockDownload().Returns(true);
 
-            var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+            using (var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
                this.loggerFactory,
                this.mempoolManager,
                this.broadcasterManager,
                this.ibdState,
                this.federationWalletManager,
-               this.signals);
+               this.signals))
+            {
+                signedMultisigTransactionBroadcaster.Start();
 
-            var partial = new Transaction();
-            var xfer = new CrossChainTransfer();
-            xfer.SetPartialTransaction(partial);
+                var partial = new Transaction();
+                var xfer = new CrossChainTransfer();
+                xfer.SetPartialTransaction(partial);
 
-            this.signals.Publish(new CrossChainTransferTransactionFullySigned(xfer));
+                this.signals.Publish(new CrossChainTransferTransactionFullySigned(xfer));
 
-            await this.broadcasterManager.Received(0).BroadcastTransactionAsync(Arg.Any<Transaction>());
+                await this.broadcasterManager.Received(0).BroadcastTransactionAsync(Arg.Any<Transaction>());
+            }
         }
 
         [Fact]
@@ -148,21 +155,24 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.ibdState.IsInitialBlockDownload().Returns(true);
 
-            var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+            using (var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
                this.loggerFactory,
                this.mempoolManager,
                this.broadcasterManager,
                this.ibdState,
                this.federationWalletManager,
-               this.signals);
+               this.signals))
+            {
+                signedMultisigTransactionBroadcaster.Start();
 
-            var partial = new Transaction();
-            var xfer = new CrossChainTransfer();
-            xfer.SetPartialTransaction(partial);
+                var partial = new Transaction();
+                var xfer = new CrossChainTransfer();
+                xfer.SetPartialTransaction(partial);
 
-            this.signals.Publish(new CrossChainTransferTransactionFullySigned(xfer));
+                this.signals.Publish(new CrossChainTransferTransactionFullySigned(xfer));
 
-            await this.broadcasterManager.Received(0).BroadcastTransactionAsync(Arg.Any<Transaction>());
+                await this.broadcasterManager.Received(0).BroadcastTransactionAsync(Arg.Any<Transaction>());
+            }
         }
 
         public void Dispose()
