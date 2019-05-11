@@ -350,7 +350,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private BitcoinAddress GetAddressFromScriptPubKey(Script scriptPubKey)
         {
-            ScriptTemplate scriptTemplate = network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(scriptPubKey);
+            ScriptTemplate scriptTemplate = this.network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(scriptPubKey);
 
             // Ignore OP_RETURN outputs
             if (scriptTemplate.Type == TxOutType.TX_NULL_DATA)
