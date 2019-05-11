@@ -44,16 +44,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
     /// <summary>
     /// A manager providing operations on wallets.
     /// </summary>
-    public class FederationWalletManager : IFederationWalletManager
+    public class FederationWalletManager : LockProtected, IFederationWalletManager
     {
         /// <summary>Timer for saving wallet files to the file system.</summary>
         private const int WalletSavetimeIntervalInMinutes = 5;
-
-        /// <summary>
-        /// A lock object that protects access to the <see cref="FederationWallet"/>.
-        /// Any of the collections inside Wallet must be synchronized using this lock.
-        /// </summary>
-        internal object lockObject { get; private set; }
 
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
@@ -123,7 +117,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
             IFederationGatewaySettings federationGatewaySettings,
-            IWithdrawalExtractor withdrawalExtractor)
+            IWithdrawalExtractor withdrawalExtractor) :base()
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));

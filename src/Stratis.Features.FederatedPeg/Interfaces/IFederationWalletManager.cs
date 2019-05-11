@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Wallet;
 
 namespace Stratis.Features.FederatedPeg.Interfaces
@@ -8,7 +9,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
     /// <summary>
     /// Interface for a manager providing operations on wallets.
     /// </summary>
-    public interface IFederationWalletManager
+    public interface IFederationWalletManager : ILockProtected
     {
         /// <summary>
         /// Starts this wallet manager.

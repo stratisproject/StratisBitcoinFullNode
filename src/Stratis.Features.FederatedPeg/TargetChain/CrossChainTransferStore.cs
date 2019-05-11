@@ -152,7 +152,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             lock (this.lockObj)
             {
-                lock (((FederationWalletManager)this.federationWalletManager).lockObject)
+                this.federationWalletManager.Synchronous(() =>
                 {
                     // Remove all unconfirmed transaction data from the wallet to be re-added when blocks are processed.
                     bool walletUpdated = this.federationWalletManager.RemoveUnconfirmedTransactionData();
@@ -175,7 +175,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     if (walletUpdated)
                         this.federationWalletManager.SaveWallet();
 
-                }
+                });
             }
         }
 
@@ -389,7 +389,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                         return true;
                     }
 
-                    lock (((FederationWalletManager)this.federationWalletManager).lockObject)
+                    this.federationWalletManager.Synchronous(() =>
                     {
                         Guard.Assert(this.Synchronize());
 
@@ -534,7 +534,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                 }
                             }
                         }
-                    }
+                    });
 
                     // If progress was made we will check for more blocks.
                     return this.NextMatureDepositHeight != originalDepositHeight;
@@ -552,7 +552,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             {
                 lock (this.lockObj)
                 {
-                    lock (((FederationWalletManager)this.federationWalletManager).lockObject)
+                    return this.federationWalletManager.Synchronous(() =>
                     {
                         Guard.Assert(this.Synchronize());
 
@@ -624,7 +624,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                             return transfer.PartialTransaction;
                         }
-                    }
+                    });
                 }
             });
         }
@@ -951,13 +951,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             {
                 lock (this.lockObj)
                 {
-                    lock (((FederationWalletManager)this.federationWalletManager).lockObject)
+                    return this.federationWalletManager.Synchronous(() =>
                     {
                         Guard.Assert(this.Synchronize());
 
                         ICrossChainTransfer[] res = this.ValidateCrossChainTransfers(this.Get(depositIds));
                         return res;
-                    }
+                    });
                 }
             });
         }
@@ -1037,12 +1037,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             lock (this.lockObj)
             {
-                lock (((FederationWalletManager)this.federationWalletManager).lockObject)
+                return this.federationWalletManager.Synchronous(() =>
                 {
                     Guard.Assert(this.Synchronize());
 
                     return this.GetTransfersByStatusInternalLocked(statuses, sort);
-                }
+                });
             }
         }
 
