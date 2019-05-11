@@ -129,8 +129,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(federationGatewaySettings, nameof(federationGatewaySettings));
             Guard.NotNull(withdrawalExtractor, nameof(withdrawalExtractor));
 
-            this.lockObject = new object();
-
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.network = network;

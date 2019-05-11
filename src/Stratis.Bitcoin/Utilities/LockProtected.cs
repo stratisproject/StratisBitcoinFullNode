@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Utilities
 
     public class LockProtected
     {
-        protected object lockObject;
+        protected object lockObject { get; private set; }
 
         public LockProtected()
         {
