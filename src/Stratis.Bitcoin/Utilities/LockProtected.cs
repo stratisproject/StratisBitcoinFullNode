@@ -4,6 +4,7 @@ namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
     /// Supports object-level locking and allows external work in the context of the locks.
+    /// Requires "lock (this.lockObject) { ...}" inside all of the object's public methods.
     /// </summary>
     public interface ILockProtected
     {
