@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Utilities
         void Synchronous(Action action);
     }
 
-    public class LockProtected
+    public class LockProtected : ILockProtected
     {
         protected object lockObject { get; private set; }
 
@@ -23,6 +23,7 @@ namespace Stratis.Bitcoin.Utilities
             this.lockObject = new object();
         }
 
+        /// <inheritdoc />
         public void Synchronous(Action action)
         {
             lock (this.lockObject)
@@ -31,6 +32,7 @@ namespace Stratis.Bitcoin.Utilities
             }
         }
 
+        /// <inheritdoc />
         public T Synchronous<T>(Func<T> action)
         {
             lock (this.lockObject)
