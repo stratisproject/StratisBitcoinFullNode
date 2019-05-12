@@ -15,6 +15,8 @@ namespace Stratis.Features.FederatedPeg.Models
         public string Password { get; set; }
 
         public string Passphrase { get; set; }
+
+        public int? TimeoutSeconds { get; set; }
     }
 
     /// <summary>

@@ -104,10 +104,15 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         List<(Transaction, IWithdrawal)> FindWithdrawalTransactions(uint256 depositId = null, bool sort = false);
 
         /// <summary>
-        /// Removes the transient transactions associated with the corresponding deposit ids.
+        /// Removes the withdrawal transaction(s) associated with the corresponding deposit id.
         /// </summary>
-        /// <param name="depositId">The deposit id identifying the transient transactions to remove. Set to <c>null</c> to remove all.</param>
-        bool RemoveTransientTransactions(uint256 depositId = null);
+        /// <param name="depositId">The deposit id identifying the withdrawal transaction(s) to remove.</param>
+        bool RemoveWithdrawalTransactions(uint256 depositId);
+
+        /// <summary>
+        /// Removes transaction data that is still to be confirmed in a block.
+        /// </summary>
+        bool RemoveUnconfirmedTransactionData();
 
         /// <summary>
         /// Determines if federation has been activated.
