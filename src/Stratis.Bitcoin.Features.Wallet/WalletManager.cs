@@ -1010,35 +1010,43 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                // Do a pre-scan of the transaction inputs to see if they're used in other transactions already
+                // Do a pre-scan of the incoming transaction's inputs to see if they're used in other wallet transactions already.
                 foreach (TxIn input in transaction.Inputs)
                 {
-                    // See if this input is being used by another transaction.
+                    // See if this input is being used by another wallet transaction present in the index.
+                    // The inputs themselves may not belong to the wallet, but the transaction data in the index has to be for a wallet transaction.
                     if (this.inputLookup.TryGetValue(input.PrevOut, out WalletIndexData indexData))
                     {
+                        // It's the same transaction, which can occur if the transaction had been added to the wallet previously. Ignore.
                         if (indexData.TransactionData.Id == hash)
-                            continue; // It's the same transaction, ignore.
+                            continue;
 
-                        // Incoming transaction confirmed, existing transaction unconfirmed, delete existing
+                        // Note: if an existing transaction is removed due to conflicting inputs the rest of the method should add back in the 'correct' (incoming) version.
+                        // Additionally, removing an existing transaction rebuilds the indexes, so index consistency is maintained.
+
+                        // Incoming transaction confirmed in block, existing wallet transaction unconfirmed according to index data, delete existing transaction.
                         if ((block != null) && (indexData.TransactionData.BlockHash == null))
                         {
                             this.RemoveTransactionsByIdsLocked(indexData.Wallet.Name, new[] { indexData.TransactionData.Id });
                         }
 
-                        // Incoming transaction unconfirmed, existing transaction unconfirmed, delete existing (so that only 1 is left - either could be the 'correct' version)
+                        // Incoming transaction unconfirmed, existing transaction unconfirmed, delete existing (so that only 1 is left - either could be the 'correct' version).
+                        // This is expected to only be a transient condition e.g. when a transaction is replaced by another in the mempool, it should not be oscillatory.
+                        // Regardless, eventually one version should get confirmed and replace any other versions.
                         if ((block == null) && (indexData.TransactionData.BlockHash == null))
                         {
                             this.RemoveTransactionsByIdsLocked(indexData.Wallet.Name, new[] { indexData.TransactionData.Id });
                         }
 
-                        // Incoming transaction unconfirmed, existing transaction confirmed, presume the existing transaction is correct and ignore incoming.
+                        // Incoming transaction unconfirmed, existing transaction confirmed, presume the existing transaction is correct and ignore incoming completely (no change to wallet contents).
                         if ((block == null) && indexData.TransactionData.BlockHash != null)
                         {
                             return false;
                         }
 
-                        // Incoming transaction confirmed, existing transaction confirmed, something is wrong (the same UTXO cannot appear in two different confirmed transactions).
+                        // Incoming transaction confirmed, existing transaction confirmed, something is wrong (the same UTXO cannot appear in two different confirmed transactions' inputs).
                         // Here the existing transaction is deleted on the presumption that a more recent confirmed transaction may have resulted due to a reorg etc.
+                        // This is presumed to be a transient condition, it cannot oscillate between two valid transactions unless the chain itself is frequently reorging.
                         if ((block != null) && (indexData.TransactionData.BlockHash == null))
                         {
                             this.RemoveTransactionsByIdsLocked(indexData.Wallet.Name, new[] { indexData.TransactionData.Id });
@@ -1159,10 +1167,10 @@ namespace Stratis.Bitcoin.Features.Wallet
                     foreach (HdAccount account in wallet.GetAccounts())
                     {
                         if (finish) break;
-                        foreach (HdAddress address1 in account.GetCombinedAddresses())
+                        foreach (HdAddress accountAddress in account.GetCombinedAddresses())
                         {
                             if (finish) break;
-                            if (address == address1)
+                            if (address == accountAddress)
                             {
                                 this.AddTxLookupLocked(wallet, account, address, newTransaction);
                                 finish = true;
@@ -1738,6 +1746,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
 
                 // Reload the lookup dictionaries.
+                // TODO: For large wallets this might take a while. Optimise?
                 this.RefreshInputKeysLookupLock();
                 this.RefreshTxLookupLocked();
             }

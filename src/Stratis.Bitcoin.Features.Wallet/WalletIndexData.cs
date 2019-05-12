@@ -1,4 +1,6 @@
-﻿namespace Stratis.Bitcoin.Features.Wallet
+﻿using Stratis.Bitcoin.Utilities;
+
+namespace Stratis.Bitcoin.Features.Wallet
 {
     /// <summary>
     /// Allows direct lookup to each level of the wallet hierarchy without having to search
@@ -13,6 +15,11 @@
 
         public WalletIndexData(Wallet wallet, HdAccount account, HdAddress address, TransactionData transactionData)
         {
+            Guard.NotNull(wallet, nameof(wallet));
+            Guard.NotNull(account, nameof(account));
+            Guard.NotNull(address, nameof(address));
+            Guard.NotNull(transactionData, nameof(transactionData));
+
             this.Wallet = wallet;
             this.Account = account;
             this.Address = address;
