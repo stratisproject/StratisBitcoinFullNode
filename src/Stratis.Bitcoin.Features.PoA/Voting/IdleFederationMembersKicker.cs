@@ -38,6 +38,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private readonly uint federationMemberMaxIdleTimeSeconds;
 
+        private readonly PoAConsensusFactory consensusFactory;
+
         private SubscriptionToken blockConnectedToken, fedMemberAddedToken, fedMemberKickedToken;
 
         /// <remarks>Active time is updated when member is added or produced a new block.</remarks>
@@ -57,6 +59,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.votingManager = votingManager;
             this.timeProvider = timeProvider;
 
+            this.consensusFactory = this.network.Consensus.ConsensusFactory as PoAConsensusFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.federationMemberMaxIdleTimeSeconds = ((PoAConsensusOptions)network.Consensus.Options).FederationMemberMaxIdleTimeSeconds;
         }
@@ -137,14 +140,28 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
                 if (inactiveForSeconds > this.federationMemberMaxIdleTimeSeconds && this.federationManager.IsFederationMember)
                 {
-                    // TODO avoid kicking fed members when kicking poll is already pending!
-                    this.logger.LogWarning("Federation member '{0}' was inactive for {1} seconds and will be scheduled to be kicked.", fedMemberToActiveTime.Key, inactiveForSeconds);
+                    IFederationMember memberToKick = this.federationManager.GetFederationMembers().SingleOrDefault(x => x.PubKey == fedMemberToActiveTime.Key);
 
-                    this.votingManager.ScheduleVote(new VotingData()
+                    byte[] federationMemberBytes = this.consensusFactory.SerializeFederationMember(memberToKick);
+
+                    bool alreadyKicking = this.votingManager.GetFinishedPolls().Any(x => !x.IsExecuted &&
+                         x.VotingData.Key == VoteKey.KickFederationMember && x.VotingData.Data.SequenceEqual(federationMemberBytes) &&
+                         !x.PubKeysHexVotedInFavor.Contains(this.federationManager.CurrentFederationKey.PubKey.ToHex()));
+
+                    if (!alreadyKicking)
                     {
-                        Key = VoteKey.KickFederationMember,
-                        Data = fedMemberToActiveTime.Key.ToBytes()
-                    });
+                        this.logger.LogWarning("Federation member '{0}' was inactive for {1} seconds and will be scheduled to be kicked.", fedMemberToActiveTime.Key, inactiveForSeconds);
+
+                        this.votingManager.ScheduleVote(new VotingData()
+                        {
+                            Key = VoteKey.KickFederationMember,
+                            Data = fedMemberToActiveTime.Key.ToBytes()
+                        });
+                    }
+                    else
+                    {
+                        this.logger.LogDebug("Skipping because kicking is already voted for.");
+                    }
                 }
             }
         }
