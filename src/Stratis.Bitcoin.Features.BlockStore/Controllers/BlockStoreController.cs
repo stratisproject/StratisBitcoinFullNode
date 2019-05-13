@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
@@ -172,7 +174,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
                 this.logger.LogDebug("Sending {0} entries.", balances.Count);
 
-                return this.Json(balances);
+                var resolver = new DefaultContractResolver
+                {
+                    NamingStrategy = new CamelCaseNamingStrategy
+                    {
+                        ProcessDictionaryKeys = false,
+                        OverrideSpecifiedNames = true
+                    }
+                };
+
+                return this.Json(balances, new JsonSerializerSettings() { ContractResolver = resolver });
             }
             catch (Exception e)
             {
