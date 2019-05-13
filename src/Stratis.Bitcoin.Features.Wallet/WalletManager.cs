@@ -96,11 +96,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         // we keep a couple of objects in memory:
         // 1. the list of unspent outputs for checking whether inputs from a transaction are being spent by our wallet and
         // 2. the list of addresses contained in our wallet for checking whether a transaction is being paid to the wallet.
-        // 3. a mapping of all transactions in the wallet, to allow rapid lookup by txid
-        // 4. a mapping of all inputs with their corresponding transactions, to facilitate rapid lookup
+        // 3. a mapping of all inputs with their corresponding transactions, to facilitate rapid lookup
         private Dictionary<OutPoint, TransactionData> outpointLookup;
         internal ScriptToAddressLookup scriptToAddressLookup;
-        private Dictionary<uint256, WalletIndexData> txLookup;
         private Dictionary<OutPoint, WalletIndexData> inputLookup;
 
         public WalletManager(
@@ -150,7 +148,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.scriptToAddressLookup = this.CreateAddressFromScriptLookup();
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
-            this.txLookup = new Dictionary<uint256, WalletIndexData>();
             this.inputLookup = new Dictionary<OutPoint, WalletIndexData>();
 
             this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
@@ -1517,13 +1514,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                             foreach (TransactionData transaction in address.Transactions)
                             {
-                                var indexData = new WalletIndexData(wallet, account, address, transaction);
-
-                                this.txLookup[transaction.Id] = indexData;
-
                                 foreach (OutPoint input in transaction.Inputs ?? Enumerable.Empty<OutPoint>())
                                 {
-                                    this.inputLookup[input] = indexData;
+                                    this.inputLookup[input] = new WalletIndexData(wallet, account, address, transaction);
                                 }
 
                                 // Get the UTXOs that are unspent or spent but not confirmed.
@@ -1623,13 +1616,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                var indexData = new WalletIndexData(wallet, account, address, transactionData);
-
-                this.txLookup[transactionData.Id] = indexData;
-
                 foreach (OutPoint input in transactionData.Inputs ?? Enumerable.Empty<OutPoint>())
                 {
-                    this.inputLookup[input] = indexData;
+                    this.inputLookup[input] = new WalletIndexData(wallet, account, address, transactionData);
                 }
             }
         }
@@ -1641,7 +1630,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             lock (this.lockObject)
             {
-                this.txLookup = new Dictionary<uint256, WalletIndexData>();
                 this.inputLookup = new Dictionary<OutPoint, WalletIndexData>();
 
                 foreach (Wallet wallet in this.Wallets)
@@ -1652,13 +1640,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                         {
                             foreach (TransactionData transactionData in address.Transactions)
                             {
-                                var indexData = new WalletIndexData(wallet, account, address, transactionData);
-
-                                this.txLookup[transactionData.Id] = indexData;
-
                                 foreach (OutPoint input in transactionData.Inputs ?? Enumerable.Empty<OutPoint>())
                                 {
-                                    this.inputLookup[input] = indexData;
+                                    this.inputLookup[input] = new WalletIndexData(wallet, account, address, transactionData);
                                 }
                             }
                         }
@@ -1888,13 +1872,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return new ExtKey(privateKey, wallet.ChainCode);
-        }
-
-        /// <inheritdoc />
-        public WalletIndexData GetTransactionData(uint256 txId)
-        {
-            bool found = this.txLookup.TryGetValue(txId, out WalletIndexData result);
-            return found ? result : null;
         }
     }
 }
