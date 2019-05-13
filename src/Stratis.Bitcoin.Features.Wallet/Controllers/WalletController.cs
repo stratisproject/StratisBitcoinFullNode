@@ -442,7 +442,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                     // Sorting the history items by descending dates. That includes received and sent dates.
                     List<FlatHistory> items = accountHistory.History
-                                                            .OrderBy(o => (o.Transaction.SpendingDetails?.IsSpentConfirmed() ?? false) ? 1 : 0)
+                                                            .OrderBy(o => (o.Transaction.SpendingDetails?.IsSpentConfirmed() ?? true) ? 1 : 0)
                                                             .ThenByDescending(o => o.Transaction.SpendingDetails?.CreationTime ?? o.Transaction.CreationTime)
                                                             .ToList();
 
