@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -26,7 +27,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
         private readonly ISenderRetriever senderRetriever;
         private readonly IReceiptRepository receiptRepository;
         private readonly ICoinView coinView;
-      //  private readonly PoAConsensusRulesRegistration baseRuleRegistration;
+       // private readonly PoAConsensusRulesRegistration baseRuleRegistration;
         private readonly IEnumerable<IContractTransactionPartialValidationRule> partialTxValidationRules;
         private readonly IEnumerable<IContractTransactionFullValidationRule> fullTxValidationRules;
 
@@ -52,35 +53,42 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             this.fullTxValidationRules = fullTxValidationRules;
         }
 
-        public virtual void RegisterRules(IConsensus consensus)
+        public virtual void RegisterRules(IServiceCollection services)
         {
-            // this.baseRuleRegistration.RegisterRules(consensus); this should already be set
+            // TODO: this is not needed anymore as the default rules are registered in network
+            new PoAConsensusRulesRegistration().RegisterRules(services);
 
             // Add SC-Specific partial rules
             var txValidationRules = new List<IContractTransactionPartialValidationRule>(this.partialTxValidationRules)
             {
                 new SmartContractFormatLogic()
             };
-            consensus.ConsensusRules.PartialValidationRules.Add(typeof(AllowedScriptTypeRule));
-            consensus.ConsensusRules.PartialValidationRules.Add(typeof(ContractTransactionPartialValidationRule));
+            services.AddSingleton(typeof(IPartialValidationConsensusRule), typeof(AllowedScriptTypeRule));
+            //consensus.ConsensusRules.PartialValidationRules.Add(typeof(AllowedScriptTypeRule));
 
-            consensus.ConsensusRules.FullValidationRules.Add(typeof(ContractTransactionFullValidationRule));
+            services.AddSingleton(typeof(IPartialValidationConsensusRule), typeof(ContractTransactionPartialValidationRule));
+            //consensus.ConsensusRules.PartialValidationRules.Add((Type) new ContractTransactionPartialValidationRule(this.callDataSerializer, txValidationRules));
 
-            int existingCoinViewRule = consensus.ConsensusRules.FullValidationRules.FindIndex(c => c == typeof(CoinViewRule));
+            consensus.ConsensusRules.FullValidationRules.Add((Type) new ContractTransactionFullValidationRule(this.callDataSerializer, this.fullTxValidationRules));
+
+            int existingCoinViewRule = consensus.ConsensusRules.FullValidationRules
+                .FindIndex(c => c is CoinViewRule);
 
             // Replace coinview rule
-            consensus.ConsensusRules.FullValidationRules[existingCoinViewRule] = typeof(SmartContractPoACoinviewRule);
+            consensus.FullValidationRules[existingCoinViewRule] =
+                new SmartContractPoACoinviewRule(this.stateRepositoryRoot, this.executorFactory,
+                    this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView);
 
             // Add SC-specific full rules BEFORE the coinviewrule
-            var scRules = new List<Type>
+            var scRules = new List<IFullValidationConsensusRule>
             {
-                typeof(TxOutSmartContractExecRule),
-                typeof(OpSpendRule),
-                typeof(CanGetSenderRule),
-                typeof(P2PKHNotContractRule)
+                new TxOutSmartContractExecRule(),
+                new OpSpendRule(),
+                new CanGetSenderRule(this.senderRetriever),
+                new P2PKHNotContractRule(this.stateRepositoryRoot)
             };
 
-            consensus.ConsensusRules.FullValidationRules.InsertRange(existingCoinViewRule, scRules);
+            consensus.FullValidationRules.InsertRange(existingCoinViewRule, scRules);
         }
     }
 }

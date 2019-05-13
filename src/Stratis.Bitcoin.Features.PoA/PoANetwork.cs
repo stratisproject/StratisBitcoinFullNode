@@ -178,53 +178,6 @@ namespace Stratis.Bitcoin.Features.PoA
             {
                 throw new Exception("No keys for initial federation are configured!");
             }
-
-            this.RegisterRules(this.Consensus);
-        }
-
-        public void RegisterRules(IConsensus consensus)
-        {
-            consensus.ConsensusRules.HeaderValidationRules = new List<Type>()
-            {
-                typeof(HeaderTimeChecksPoARule),
-                typeof(StratisHeaderVersionRule),
-                typeof(PoAHeaderDifficultyRule),
-                typeof(PoAHeaderSignatureRule)
-            };
-
-            consensus.ConsensusRules.IntegrityValidationRules = new List<Type>()
-            {
-                typeof(BlockMerkleRootRule),
-                typeof(PoAIntegritySignatureRule)
-            };
-
-            consensus.ConsensusRules.PartialValidationRules = new List<Type>()
-            {
-                typeof(SetActivationDeploymentsPartialValidationRule),
-
-                // rules that are inside the method ContextualCheckBlock
-                typeof(TransactionLocktimeActivationRule), // implements BIP113
-                typeof(CoinbaseHeightActivationRule), // implements BIP34
-                typeof(BlockSizeRule),
-
-                // rules that are inside the method CheckBlock
-                typeof(EnsureCoinbaseRule),
-                typeof(CheckPowTransactionRule),
-                typeof(CheckSigOpsRule),
-
-                typeof(PoAVotingCoinbaseOutputFormatRule),
-            };
-
-            consensus.ConsensusRules.FullValidationRules = new List<Type>()
-            {
-                typeof(SetActivationDeploymentsFullValidationRule),
-
-                // rules that require the store to be loaded (coinview)
-                typeof(LoadCoinviewRule),
-                typeof(TransactionDuplicationActivationRule), // implements BIP30
-                typeof(PoACoinviewRule),
-                typeof(SaveCoinviewRule)
-            };
         }
 
         protected static Block CreatePoAGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)

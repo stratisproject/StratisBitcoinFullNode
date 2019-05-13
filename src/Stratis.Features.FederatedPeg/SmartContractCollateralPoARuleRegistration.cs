@@ -25,7 +25,7 @@ namespace Stratis.Features.FederatedPeg
             ICallDataSerializer callDataSerializer, ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView,
             IEnumerable<IContractTransactionPartialValidationRule> partialTxValidationRules, IEnumerable<IContractTransactionFullValidationRule> fullTxValidationRules,
             IInitialBlockDownloadState ibdState, ISlotsManager slotsManager, ICollateralChecker collateralChecker)
-        : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView, partialTxValidationRules, fullTxValidationRules)
+            : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView, partialTxValidationRules, fullTxValidationRules)
         {
             this.ibdState = ibdState;
             this.slotsManager = slotsManager;
@@ -36,7 +36,7 @@ namespace Stratis.Features.FederatedPeg
         {
             base.RegisterRules(consensus);
 
-            consensus.ConsensusRules.FullValidationRules.Add(typeof(CheckCollateralFullValidationRule));
+            consensus.FullValidationRules.Add(new CheckCollateralFullValidationRule(this.ibdState, this.collateralChecker, this.slotsManager));
         }
     }
 }
