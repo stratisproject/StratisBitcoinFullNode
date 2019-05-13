@@ -151,6 +151,8 @@ namespace Stratis.Features.FederatedPeg
 
             Dictionary<string, Money> collateral = await this.blockStoreClient.GetAddressBalancesAsync(addressesToCheck, RequiredConfirmations, cancellation).ConfigureAwait(false);
 
+            this.logger.LogDebug("Addresses received {0}.", collateral.Count);
+
             if (collateral == null)
             {
                 this.logger.LogTrace("(-)[FAILED]:false");
@@ -168,7 +170,10 @@ namespace Stratis.Features.FederatedPeg
             lock (this.locker)
             {
                 foreach (KeyValuePair<string, Money> addressMoney in collateral)
+                {
+                    this.logger.LogDebug("Setting collateral amount for {0} to {1}.", addressMoney.Key, addressMoney.Value);
                     this.depositsByAddress[addressMoney.Key] = addressMoney.Value;
+                }
             }
 
             return true;
