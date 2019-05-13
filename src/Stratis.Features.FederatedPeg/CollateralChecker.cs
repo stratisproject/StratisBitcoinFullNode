@@ -79,7 +79,7 @@ namespace Stratis.Features.FederatedPeg
             {
                 this.logger.LogDebug("Initializing federation member {0} with amount {1}.", federationMember.CollateralMainchainAddress, federationMember.CollateralAmount);
 
-                this.depositsByAddress.Add(federationMember.CollateralMainchainAddress, null);
+                this.depositsByAddress.Add(federationMember.CollateralMainchainAddress, 0);
             }
 
             while (true)
@@ -192,7 +192,7 @@ namespace Stratis.Features.FederatedPeg
 
             lock (this.locker)
             {
-                return this.depositsByAddress[member.CollateralMainchainAddress] >= member.CollateralAmount;
+                return (this.depositsByAddress[member.CollateralMainchainAddress] ?? 0) >= member.CollateralAmount;
             }
         }
 
@@ -210,7 +210,7 @@ namespace Stratis.Features.FederatedPeg
             lock (this.locker)
             {
                 this.logger.LogDebug("Adding federation member {0}", ((CollateralFederationMember)fedMemberAdded.AddedMember).CollateralMainchainAddress);
-                this.depositsByAddress.Add(((CollateralFederationMember)fedMemberAdded.AddedMember).CollateralMainchainAddress, null);
+                this.depositsByAddress.Add(((CollateralFederationMember)fedMemberAdded.AddedMember).CollateralMainchainAddress, 0);
             }
         }
 
