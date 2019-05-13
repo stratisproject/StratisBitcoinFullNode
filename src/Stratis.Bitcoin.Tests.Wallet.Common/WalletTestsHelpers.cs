@@ -414,7 +414,6 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
                             Amount = new Money(new Random().Next(500000, 1000000)),
                             SpendingDetails = new SpendingDetails(),
                             Id = new uint256(),
-                            Inputs = new[] { new OutPoint(uint256.Zero, 0) }
                         }
                     }
                 };
@@ -464,7 +463,6 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
                 Id = transaction.GetHash(),
                 Index = 0,
                 ScriptPubKey = transaction.Outputs[0].ScriptPubKey,
-                Inputs = transaction.Inputs.Select(o => o.PrevOut).ToArray()
             };
 
             return addressTransaction;

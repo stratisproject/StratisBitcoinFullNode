@@ -1003,12 +1003,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool? IsPropagated { get; set; }
 
         /// <summary>
-        /// The inputs that this transaction comprises of.
-        /// </summary>
-        [JsonProperty(PropertyName = "inputs", ItemConverterType = typeof(BitcoinSerializableJsonConverter), NullValueHandling = NullValueHandling.Ignore)]
-        public ICollection<OutPoint> Inputs { get; set; }
-
-        /// <summary>
         /// The details of the transaction in which the output referenced in this transaction is spent.
         /// </summary>
         [JsonProperty(PropertyName = "spendingDetails", NullValueHandling = NullValueHandling.Ignore)]
