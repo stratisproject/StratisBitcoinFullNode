@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             TestBase.WaitLoop(() => this.addressIndexer.IndexerTip == headers.Last());
 
-            Dictionary<string, List<AddressBalanceChange>> index = this.addressIndexer.GetAddressIndexCopy();
+            Dictionary<string, AddressIndexData> index = this.addressIndexer.GetAddressIndexCopy();
             Assert.Equal(2, index.Keys.Count);
 
             Assert.Equal(60_000, this.addressIndexer.GetAddressBalance(address1).Satoshi);

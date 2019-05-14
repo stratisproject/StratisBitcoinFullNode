@@ -1,16 +1,22 @@
 ﻿using System.Collections.Generic;
+using LiteDB;
 
 namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 {
-    public class AddressIndexerData
+    public class AddressIndexTipData
     {
         /// <summary>Id required for litedb.</summary>
         public int Id { get; set; }
 
         public byte[] TipHashBytes { get; set; }
+    }
 
-        /// <summary>Address changes by address.</summary>
-        public Dictionary<string, List<AddressBalanceChange>> AddressChanges { get; set; }
+    public class AddressIndexData
+    {
+        [BsonId]
+        public string Address { get; set; }
+
+        public List<AddressBalanceChange> BalanceChanges { get; set; }
     }
 
     public class AddressBalanceChange
