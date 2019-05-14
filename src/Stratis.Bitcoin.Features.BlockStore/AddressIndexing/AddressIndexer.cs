@@ -446,6 +446,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             };
 
             this.addressesIndex[address] = indexData;
+            this.dirtyAddresses.Add(address);
 
             return indexData.BalanceChanges;
         }
