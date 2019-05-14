@@ -342,10 +342,6 @@ namespace NBitcoin
             return a;
         }
 
-        public Money()
-        {
-        }
-
         public Money(int satoshis)
         {
             this.Satoshi = satoshis;
