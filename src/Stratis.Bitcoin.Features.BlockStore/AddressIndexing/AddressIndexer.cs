@@ -307,7 +307,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     string address = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, txOut.ScriptPubKey);
 
-                    if (address == string.Empty)
+                    if (string.IsNullOrEmpty(address))
                     {
                         // This condition need not be logged, as the address reader should be aware of all
                         // possible address formats already.
@@ -330,7 +330,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                         string address = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, txOut.ScriptPubKey);
 
-                        if (address == string.Empty)
+                        if (string.IsNullOrEmpty(address))
                         {
                             // This condition need not be logged, as the address reader should be aware of all
                             // possible address formats already.

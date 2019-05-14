@@ -9,9 +9,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc cref="IScriptAddressReader.GetAddressFromScriptPubKey"/>
         public string GetAddressFromScriptPubKey(Network network, Script script)
         {
-            var scriptTemplate = network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(script);
+            ScriptTemplate scriptTemplate = network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(script);
 
-            var destinationAddress = string.Empty;
+            string destinationAddress = null;
 
             switch (scriptTemplate?.Type)
             {
