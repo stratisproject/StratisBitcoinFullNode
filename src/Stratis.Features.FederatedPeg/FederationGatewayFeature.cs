@@ -388,6 +388,7 @@ namespace Stratis.Features.FederatedPeg
                     });
 
                     services.AddSingleton<ICollateralChecker, CollateralChecker>();
+                    services.AddSingleton<DefaultVotingController>();
                     services.AddSingleton<CollateralVotingController>();
                 });
             });
