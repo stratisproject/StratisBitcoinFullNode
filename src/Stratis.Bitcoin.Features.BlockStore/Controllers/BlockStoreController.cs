@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -158,8 +157,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
                 this.logger.LogDebug($"Asking data for {addressesArray.Length} addresses.");
 
-                var balances = new Dictionary<string, Money>(addresses.Length);
-
+                var model = new AddressBalancesModel();
                 foreach (string address in addressesArray)
                 {
                     Money balance = this.addressIndexer.GetAddressBalance(address, minConfirmations);
@@ -167,12 +165,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                     if (balance == null)
                         balance = new Money(0);
 
-                    balances[address] = balance;
+                    model.Balances.Add(new AddressBalanceModel(address, balance));
                 }
 
-                this.logger.LogDebug("Sending {0} entries.", balances.Count);
+                this.logger.LogDebug("Sending {0} entries.", model.Balances.Count);
 
-                return this.Json(balances);
+                return this.Json(model);
             }
             catch (Exception e)
             {
