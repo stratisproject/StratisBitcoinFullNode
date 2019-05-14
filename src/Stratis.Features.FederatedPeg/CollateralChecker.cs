@@ -152,13 +152,13 @@ namespace Stratis.Features.FederatedPeg
 
             AddressBalancesModel collateral = await this.blockStoreClient.GetAddressBalancesAsync(addressesToCheck, RequiredConfirmations, cancellation).ConfigureAwait(false);
 
-            this.logger.LogDebug("Addresses received {0}.", collateral.Balances.Count);
-
             if (collateral == null)
             {
                 this.logger.LogTrace("(-)[FAILED]:false");
                 return false;
             }
+
+            this.logger.LogDebug("Addresses received {0}.", collateral.Balances.Count);
 
             if (collateral.Balances.Count != addressesToCheck.Count)
             {
