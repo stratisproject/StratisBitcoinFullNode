@@ -63,6 +63,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private const string DbKey = "AddrData";
 
+        private const string DbTipDataKey = "AddrTipData";
+
         /// <summary>
         /// Time to wait before attempting to index the next block.
         /// Waiting happens after a failure to get next block to index.
@@ -123,7 +125,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             this.logger.LogDebug("TxIndexing is enabled.");
 
-            this.tipDataStore = this.db.GetCollection<AddressIndexTipData>("AddrTipData");
+            this.tipDataStore = this.db.GetCollection<AddressIndexTipData>(DbTipDataKey);
 
             this.dataStore = this.db.GetCollection<AddressIndexData>(DbKey);
 
@@ -136,6 +138,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                 foreach (AddressIndexData data in this.dataStore.FindAll())
                     this.addressesIndex[data.Address] = data;
+
+                // TODO: Investigate EnsureIndex - can it index block heights to speed up reorg processing?
 
                 if (this.tipData == null)
                 {
