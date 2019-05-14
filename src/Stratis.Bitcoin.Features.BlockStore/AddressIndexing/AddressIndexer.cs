@@ -57,6 +57,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly IConsensusManager consensusManager;
 
+        private readonly IScriptAddressReader scriptAddressReader;
+
         private readonly TimeSpan flushChangesInterval;
 
         private const string DbKey = "AddrData";
@@ -89,6 +91,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.nodeStats = nodeStats;
             this.dataFolder = dataFolder;
             this.consensusManager = consensusManager;
+            this.scriptAddressReader = new ScriptAddressReader();
 
             this.lockObject = new object();
             this.flushChangesInterval = TimeSpan.FromMinutes(5);
@@ -263,7 +266,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <returns><c>true</c> if block was processed. <c>false</c> if reorg detected and we failed to process a block.</returns>
         private bool ProcessBlock(Block block, ChainedHeader header)
         {
-            // Process inputs
+            // Process inputs.
             var inputs = new List<TxIn>();
 
             // Collect all inputs excluding coinbases.
@@ -298,23 +301,20 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     Money amountSpent = txOut.Value;
 
-                    BitcoinAddress address = this.GetAddressFromScriptPubKey(txOut.ScriptPubKey);
+                    // Transactions that don't actually change the balance just bloat the database.
+                    if (amountSpent == 0)
+                        continue;
 
-                    if (address == null)
+                    string address = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, txOut.ScriptPubKey);
+
+                    if (string.IsNullOrEmpty(address))
                     {
-                        this.logger.LogDebug("Failed to extract an address from '{0}' while parsing inputs.", txOut.ScriptPubKey);
+                        // This condition need not be logged, as the address reader should be aware of all
+                        // possible address formats already.
                         continue;
                     }
 
-                    List<AddressBalanceChange> changes = this.GetOrCreateAddressChangesCollectionLocked(address.ToString());
-
-                    // Record money being spent.
-                    changes.Add(new AddressBalanceChange()
-                    {
-                        BalanceChangedHeight = header.Height,
-                        Satoshi = amountSpent.Satoshi,
-                        Deposited = false
-                    });
+                    this.ProcessBalanceChange(header.Height, address, amountSpent, false);
                 }
 
                 // Process outputs.
@@ -324,23 +324,20 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     {
                         Money amountReceived = txOut.Value;
 
-                        BitcoinAddress address = this.GetAddressFromScriptPubKey(txOut.ScriptPubKey);
+                        // Transactions that don't actually change the balance just bloat the database.
+                        if (amountReceived == 0)
+                            continue;
 
-                        if (address == null)
+                        string address = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, txOut.ScriptPubKey);
+
+                        if (string.IsNullOrEmpty(address))
                         {
-                            this.logger.LogDebug("Failed to extract an address from '{0}' while parsing outputs.", txOut.ScriptPubKey);
+                            // This condition need not be logged, as the address reader should be aware of all
+                            // possible address formats already.
                             continue;
                         }
 
-                        List<AddressBalanceChange> changes = this.GetOrCreateAddressChangesCollectionLocked(address.ToString());
-
-                        // Record money being sent.
-                        changes.Add(new AddressBalanceChange()
-                        {
-                            BalanceChangedHeight = header.Height,
-                            Satoshi = amountReceived.Satoshi,
-                            Deposited = true
-                        });
+                        this.ProcessBalanceChange(header.Height, address, amountReceived, true);
                     }
                 }
             }
@@ -348,26 +345,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             return true;
         }
 
-        private BitcoinAddress GetAddressFromScriptPubKey(Script scriptPubKey)
+        private void ProcessBalanceChange(int height, string address, Money amount, bool deposited)
         {
-            ScriptTemplate scriptTemplate = this.network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(scriptPubKey);
+            List<AddressBalanceChange> changes = this.GetOrCreateAddressChangesCollectionLocked(address);
 
-            // Ignore OP_RETURN outputs
-            if (scriptTemplate.Type == TxOutType.TX_NULL_DATA)
-                return null;
-
-            BitcoinAddress address = scriptPubKey.GetDestinationAddress(this.network);
-
-            if (address == null)
+            // Record balance change.
+            changes.Add(new AddressBalanceChange()
             {
-                // Handle P2PK
-                PubKey[] destinationKeys = scriptPubKey.GetDestinationPublicKeys(this.network);
-
-                if (destinationKeys.Length == 1)
-                    address = destinationKeys[0].GetAddress(this.network);
-            }
-
-            return address;
+                BalanceChangedHeight = height,
+                Satoshi = amount.Satoshi,
+                Deposited = deposited
+            });
         }
 
         /// <remarks>Should be protected by <see cref="lockObject"/>.</remarks>

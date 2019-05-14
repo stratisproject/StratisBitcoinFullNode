@@ -1175,7 +1175,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     // Figure out how to retrieve the destination address.
                     string destinationAddress = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, paidToOutput.ScriptPubKey);
-                    if (destinationAddress == string.Empty)
+                    if (string.IsNullOrEmpty(destinationAddress))
                         if (this.scriptToAddressLookup.TryGetValue(paidToOutput.ScriptPubKey, out HdAddress destination))
                             destinationAddress = destination.Address;
 
