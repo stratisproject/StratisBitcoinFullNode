@@ -71,6 +71,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// </summary>
         private const int DelayTimeMs = 2000;
 
+        private const int BatchSize = 100;
+
         private LiteDatabase db;
 
         private LiteCollection<AddressIndexTipData> tipDataStore;
@@ -168,6 +170,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         private async Task IndexAddressesContinuouslyAsync()
         {
             DateTime lastFlushTime = DateTime.Now;
+            var batch = new List<AddressIndexData>();
 
             try
             {
@@ -179,12 +182,26 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                         lock (this.lockObject)
                         {
-                            // We maintain a dirty cache so that the whole address index doesn't need to be enumerated every flush
+                            // We maintain a dirty cache so that the whole address index doesn't need to be enumerated every flush.
+                            // Benchmarking of LiteDB indicates very strongly that batching has a large performance impact.
                             foreach (string key in this.dirtyAddresses)
-                                this.dataStore.Update(this.addressesIndex[key]);
+                            {
+                                batch.Add(this.addressesIndex[key]);
+
+                                if (batch.Count == BatchSize)
+                                {
+                                    this.dataStore.Update(batch);
+                                    batch.Clear();
+                                }
+                            }
+
+                            if (batch.Count > 0)
+                            {
+                                this.dataStore.Update(batch);
+                                batch.Clear();
+                            }
 
                             this.dirtyAddresses.Clear();
-
                             this.tipDataStore.Update(this.tipData);
                         }
 
@@ -224,8 +241,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                             foreach (string key in this.addressesIndex.Keys)
                             {
                                 // TODO: Possibly introduce concept of 'address index finality' and coalesce records older than maxreorg, so that we don't have to iterate everything
-                                this.addressesIndex[key].BalanceChanges.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
-                                this.dirtyAddresses.Add(key);
+                                if (this.addressesIndex[key].BalanceChanges.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height) > 0)
+                                    this.dirtyAddresses.Add(key);
                             }
                         }
 
@@ -281,8 +298,23 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 lock (this.lockObject)
                 {
                     foreach (string key in this.dirtyAddresses)
-                        this.dataStore.Update(this.addressesIndex[key]);
+                    {
+                        batch.Add(this.addressesIndex[key]);
 
+                        if (batch.Count > BatchSize)
+                        {
+                            this.dataStore.Update(batch);
+                            batch.Clear();
+                        }
+                    }
+
+                    if (batch.Count > 0)
+                    {
+                        this.dataStore.Update(batch);
+                        batch.Clear();
+                    }
+
+                    this.dirtyAddresses.Clear();
                     this.tipDataStore.Update(this.tipData);
                 }
             }
