@@ -144,9 +144,11 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
                     byte[] federationMemberBytes = this.consensusFactory.SerializeFederationMember(memberToKick);
 
-                    bool alreadyKicking = this.votingManager.GetFinishedPolls().Any(x => !x.IsExecuted &&
+                    List<Poll> finishedPolls = this.votingManager.GetFinishedPolls();
+
+                    bool alreadyKicking = finishedPolls.Any(x => !x.IsExecuted &&
                          x.VotingData.Key == VoteKey.KickFederationMember && x.VotingData.Data.SequenceEqual(federationMemberBytes) &&
-                         !x.PubKeysHexVotedInFavor.Contains(this.federationManager.CurrentFederationKey.PubKey.ToHex()));
+                         x.PubKeysHexVotedInFavor.Contains(this.federationManager.CurrentFederationKey.PubKey.ToHex()));
 
                     if (!alreadyKicking)
                     {
