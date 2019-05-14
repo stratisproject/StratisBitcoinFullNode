@@ -395,28 +395,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             });
         }
 
-        private BitcoinAddress GetAddressFromScriptPubKey(Script scriptPubKey)
-        {
-            ScriptTemplate scriptTemplate = this.network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(scriptPubKey);
-
-            // Ignore OP_RETURN outputs
-            if (scriptTemplate.Type == TxOutType.TX_NULL_DATA)
-                return null;
-
-            BitcoinAddress address = scriptPubKey.GetDestinationAddress(this.network);
-
-            if (address == null)
-            {
-                // Handle P2PK
-                PubKey[] destinationKeys = scriptPubKey.GetDestinationPublicKeys(this.network);
-
-                if (destinationKeys.Length == 1)
-                    address = destinationKeys[0].GetAddress(this.network);
-            }
-
-            return address;
-        }
-
         /// <remarks>Should be protected by <see cref="lockObject"/>.</remarks>
         private List<AddressBalanceChange> GetOrCreateAddressChangesCollectionLocked(string address)
         {
