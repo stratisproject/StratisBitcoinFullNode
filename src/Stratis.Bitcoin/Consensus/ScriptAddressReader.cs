@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Consensus
 
             var destinationAddress = string.Empty;
 
-            switch (scriptTemplate.Type)
+            switch (scriptTemplate?.Type)
             {
                 // Pay to PubKey can be found in outputs of staking transactions.
                 case TxOutType.TX_PUBKEY:
