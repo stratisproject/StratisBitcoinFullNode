@@ -383,7 +383,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         continue;
                     }
 
-                    this.dirtyAddresses.Add(address.ToString());
+                    this.dirtyAddresses.Add(address);
 
                     this.ProcessBalanceChange(header.Height, address, amountSpent, false);
                 }
