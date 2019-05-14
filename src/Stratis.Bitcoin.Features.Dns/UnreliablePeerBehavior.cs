@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Features.Dns
         private bool IsProvenHeaderActivated()
         {
             long currentHeight = this.chainState.ConsensusTip.Height;
-            return currentHeight >= this.checkpoints.GetLastCheckpointHeight(); ;
+            return (currentHeight >= this.checkpoints.GetLastCheckpointHeight()) && this.network.Consensus.IsProofOfStake;
         }
 
         /// <summary>
