@@ -58,7 +58,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly TimeSpan flushChangesInterval;
 
-        private const string DbAddressDataKeyKey = "AddrData";
+        private const string DbAddressDataKey = "AddrData";
+
+        private const string DbOutputsDataKey = "OutputsData";
 
         /// <summary>
         /// Time to wait before attempting to index the next block.
@@ -68,9 +70,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private LiteDatabase db;
 
-        private LiteCollection<AddressIndexerData> dataStore;
+        private LiteCollection<AddressIndexerData> addrIndexDbCollection;
 
         private AddressIndexerData addressesIndex;
+
+        private LiteCollection<Dictionary<OutPoint, Tuple<Script, long>>> indexedOutputsDbCollection;
 
         /// <summary>Script pub keys and amounts mapped by outpoints.</summary>
         private Dictionary<OutPoint, Tuple<Script, long>> indexedOutpoints;
@@ -113,11 +117,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             this.logger.LogDebug("AddrIndexing is enabled.");
 
-            this.dataStore = this.db.GetCollection<AddressIndexerData>(DbAddressDataKeyKey);
+            this.addrIndexDbCollection = this.db.GetCollection<AddressIndexerData>(DbAddressDataKey);
+
+            bool addrIndexCreatedFromScratch = false;
 
             lock (this.lockObject)
             {
-                this.addressesIndex = this.dataStore.FindAll().FirstOrDefault();
+                this.addressesIndex = this.addrIndexDbCollection.FindAll().FirstOrDefault();
 
                 if (this.addressesIndex == null)
                 {
@@ -128,13 +134,28 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         TipHashBytes = this.network.GenesisHash.ToBytes(),
                         AddressChanges = new Dictionary<string, List<AddressBalanceChange>>()
                     };
-                    this.dataStore.Insert(this.addressesIndex);
+
+                    this.addrIndexDbCollection.Insert(this.addressesIndex);
+                    addrIndexCreatedFromScratch = true;
                 }
 
                 this.IndexerTip = this.consensusManager.Tip.FindAncestorOrSelf(new uint256(this.addressesIndex.TipHashBytes));
+            }
 
-                // TODO load or create moneyValuesOfOutpoints
+            // Load outputs index.
+            this.indexedOutputsDbCollection = this.db.GetCollection<Dictionary<OutPoint, Tuple<Script, long>>>(DbOutputsDataKey);
+            this.indexedOutpoints = this.indexedOutputsDbCollection.FindAll().FirstOrDefault();
+
+            if (this.indexedOutpoints == null)
+            {
+                if (!addrIndexCreatedFromScratch)
+                    throw new Exception("Tx index was found but outputs index was not! Resync the indexer.");
+
+                this.logger.LogDebug("Outputs index not found. Initializing as empty.");
+
                 this.indexedOutpoints = new Dictionary<OutPoint, Tuple<Script, long>>();
+
+                this.indexedOutputsDbCollection.Insert(this.indexedOutpoints);
             }
 
             if (this.IndexerTip == null)
@@ -159,9 +180,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                         lock (this.lockObject)
                         {
-                            this.dataStore.Update(this.addressesIndex);
-                            // TODO save outpoints
+                            this.addrIndexDbCollection.Update(this.addressesIndex);
                         }
+
+                        this.indexedOutputsDbCollection.Update(this.indexedOutpoints);
 
                         lastFlushTime = DateTime.Now;
 
@@ -251,9 +273,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                 lock (this.lockObject)
                 {
-                    this.dataStore.Update(this.addressesIndex);
-                    // TODO save outpoints
+                    this.addrIndexDbCollection.Update(this.addressesIndex);
                 }
+
+                this.indexedOutputsDbCollection.Update(this.indexedOutpoints);
             }
             catch (Exception e)
             {
