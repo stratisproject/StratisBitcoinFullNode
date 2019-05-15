@@ -74,10 +74,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private AddressIndexerData addressesIndex;
 
-        private LiteCollection<Dictionary<OutPoint, Tuple<Script, long>>> indexedOutputsDbCollection;
+        private LiteCollection<OutputsIndexData> indexedOutputsDbCollection;
 
         /// <summary>Script pub keys and amounts mapped by outpoints.</summary>
-        private Dictionary<OutPoint, Tuple<Script, long>> indexedOutpoints;
+        private OutputsIndexData outpointsIndex;
 
         /// <summary>Protects access to <see cref="addressesIndex"/>.</summary>
         private readonly object lockObject;
@@ -143,19 +143,19 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             }
 
             // Load outputs index.
-            this.indexedOutputsDbCollection = this.db.GetCollection<Dictionary<OutPoint, Tuple<Script, long>>>(DbOutputsDataKey);
-            this.indexedOutpoints = this.indexedOutputsDbCollection.FindAll().FirstOrDefault();
+            this.indexedOutputsDbCollection = this.db.GetCollection<OutputsIndexData>(DbOutputsDataKey);
+            this.outpointsIndex = this.indexedOutputsDbCollection.FindAll().FirstOrDefault();
 
-            if (this.indexedOutpoints == null)
+            if (this.outpointsIndex == null)
             {
                 if (!addrIndexCreatedFromScratch)
                     throw new Exception("Tx index was found but outputs index was not! Resync the indexer.");
 
                 this.logger.LogDebug("Outputs index not found. Initializing as empty.");
 
-                this.indexedOutpoints = new Dictionary<OutPoint, Tuple<Script, long>>();
+                this.outpointsIndex = new OutputsIndexData();
 
-                this.indexedOutputsDbCollection.Insert(this.indexedOutpoints);
+                this.indexedOutputsDbCollection.Insert(this.outpointsIndex);
             }
 
             if (this.IndexerTip == null)
@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                             this.addrIndexDbCollection.Update(this.addressesIndex);
                         }
 
-                        this.indexedOutputsDbCollection.Update(this.indexedOutpoints);
+                        this.indexedOutputsDbCollection.Update(this.outpointsIndex);
 
                         lastFlushTime = DateTime.Now;
 
@@ -221,8 +221,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                             foreach (List<AddressBalanceChange> changes in this.addressesIndex.AddressChanges.Values)
                                 changes.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
                         }
-
-                        // TODO rewind outpoints
 
                         this.IndexerTip = lastCommonHeader;
                         continue;
@@ -276,7 +274,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     this.addrIndexDbCollection.Update(this.addressesIndex);
                 }
 
-                this.indexedOutputsDbCollection.Update(this.indexedOutpoints);
+                this.indexedOutputsDbCollection.Update(this.outpointsIndex);
             }
             catch (Exception e)
             {
@@ -305,7 +303,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     var outPoint = new OutPoint(tx, i);
 
-                    this.indexedOutpoints[outPoint] = new Tuple<Script, long>(tx.Outputs[i].ScriptPubKey, tx.Outputs[i].Value);
+                    this.outpointsIndex.IndexedOutpoints[outPoint] = new Tuple<Script, long>(tx.Outputs[i].ScriptPubKey, tx.Outputs[i].Value);
                 }
             }
 
@@ -322,8 +320,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 {
                     OutPoint consumedOutput = inputs[i].PrevOut;
 
-                    Tuple<Script, long> consumedOutputData = this.indexedOutpoints[consumedOutput];
-                    this.indexedOutpoints.Remove(consumedOutput);
+                    Tuple<Script, long> consumedOutputData = this.outpointsIndex.IndexedOutpoints[consumedOutput];
+                    this.outpointsIndex.IndexedOutpoints.Remove(consumedOutput);
 
                     Money amountSpent = consumedOutputData.Item2;
 
