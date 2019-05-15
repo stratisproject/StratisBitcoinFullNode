@@ -812,6 +812,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             lock (this.lockObj)
             {
                 HashHeightPair tipToChase = this.TipToChase();
+                if (this.TipHashAndHeight == null)
+                {
+                    this.logger.LogError("Failed to synchronise. Reason: TipHashAndHeight is null.");
+                    this.logger.LogTrace("(-)[SYNCHRONIZED]:false");
+                    return false;
+                }
+
                 if (tipToChase.Hash == this.TipHashAndHeight.HashBlock)
                 {
                     // Indicate that we are synchronized.
