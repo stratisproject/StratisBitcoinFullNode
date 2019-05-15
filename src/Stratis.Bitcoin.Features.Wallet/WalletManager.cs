@@ -42,6 +42,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Timer for saving wallet files to the file system.</summary>
         private const int WalletSavetimeIntervalInMinutes = 5;
 
+        private const string DownloadChainLoop = "WalletManager.DownloadChain";
+
         /// <summary>
         /// A lock object that protects access to the <see cref="Wallet"/>.
         /// Any of the collections inside Wallet must be synchronized using this lock.
@@ -1779,7 +1781,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="date">The creation date of the block with which to update the wallet.</param>
         private void UpdateWhenChainDownloaded(IEnumerable<Wallet> wallets, DateTime date)
         {
-            this.asyncProvider.CreateAndRunAsyncLoopUntil("WalletManager.DownloadChain", this.nodeLifetime.ApplicationStopping,
+            if (this.asyncProvider.IsAsyncLoopRunning(DownloadChainLoop))
+            {
+                return;
+            }
+
+            this.asyncProvider.CreateAndRunAsyncLoopUntil(DownloadChainLoop, this.nodeLifetime.ApplicationStopping,
                 () => this.ChainIndexer.IsDownloaded(),
                 () =>
                 {
