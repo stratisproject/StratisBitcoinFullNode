@@ -149,7 +149,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             if (this.outpointsIndex == null)
             {
                 if (!addrIndexCreatedFromScratch)
-                    throw new Exception("Tx index was found but outputs index was not! Resync the indexer.");
+                {
+                    this.logger.LogTrace("(-)[INCONSISTENT_STATE]");
+                    throw new Exception("Addr index was found but outputs index was not! Resync the indexer.");
+                }
 
                 this.logger.LogDebug("Outputs index not found. Initializing as empty.");
 
