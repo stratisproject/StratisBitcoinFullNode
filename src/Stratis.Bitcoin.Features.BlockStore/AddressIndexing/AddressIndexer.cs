@@ -20,7 +20,6 @@ using Script = NBitcoin.Script;
 namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 {
     /// <summary>Component that builds an index of all addresses and deposits\withdrawals that happened to\from them.</summary>
-    /// <remarks>Disabled by default. Node should be synced from scratch with txindexing enabled to build address index.</remarks>
     public interface IAddressIndexer : IDisposable
     {
         ChainedHeader IndexerTip { get; }
@@ -59,7 +58,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly TimeSpan flushChangesInterval;
 
-        private const string DbKey = "AddrData";
+        private const string DbAddressDataKeyKey = "AddrData";
 
         /// <summary>
         /// Time to wait before attempting to index the next block.
@@ -73,7 +72,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private AddressIndexerData addressesIndex;
 
-        private Dictionary<OutPoint, Tuple<Script, long>> scriptPubKeysAndAmountsOfOutpoints;
+        /// <summary>Script pub keys and amounts mapped by outpoints.</summary>
+        private Dictionary<OutPoint, Tuple<Script, long>> indexedOutpoints;
 
         /// <summary>Protects access to <see cref="addressesIndex"/>.</summary>
         private readonly object lockObject;
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         public void Initialize()
         {
-            if (!this.storeSettings.TxIndex || !this.storeSettings.AddressIndex)
+            if (!this.storeSettings.AddressIndex)
             {
                 this.logger.LogTrace("(-)[DISABLED]");
                 return;
@@ -111,9 +111,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
             this.db = new LiteDatabase(new ConnectionString() {Filename = dbPath, Mode = fileMode });
 
-            this.logger.LogDebug("TxIndexing is enabled.");
+            this.logger.LogDebug("AddrIndexing is enabled.");
 
-            this.dataStore = this.db.GetCollection<AddressIndexerData>(DbKey);
+            this.dataStore = this.db.GetCollection<AddressIndexerData>(DbAddressDataKeyKey);
 
             lock (this.lockObject)
             {
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 this.IndexerTip = this.consensusManager.Tip.FindAncestorOrSelf(new uint256(this.addressesIndex.TipHashBytes));
 
                 // TODO load or create moneyValuesOfOutpoints
-                this.scriptPubKeysAndAmountsOfOutpoints = new Dictionary<OutPoint, Tuple<Script, long>>();
+                this.indexedOutpoints = new Dictionary<OutPoint, Tuple<Script, long>>();
             }
 
             if (this.IndexerTip == null)
@@ -282,7 +282,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     var outPoint = new OutPoint(tx, i);
 
-                    this.scriptPubKeysAndAmountsOfOutpoints[outPoint] = new Tuple<Script, long>(tx.Outputs[i].ScriptPubKey, tx.Outputs[i].Value);
+                    this.indexedOutpoints[outPoint] = new Tuple<Script, long>(tx.Outputs[i].ScriptPubKey, tx.Outputs[i].Value);
                 }
             }
 
@@ -299,8 +299,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 {
                     OutPoint consumedOutput = inputs[i].PrevOut;
 
-                    Tuple<Script, long> consumedOutputData = this.scriptPubKeysAndAmountsOfOutpoints[consumedOutput];
-                    this.scriptPubKeysAndAmountsOfOutpoints.Remove(consumedOutput);
+                    Tuple<Script, long> consumedOutputData = this.indexedOutpoints[consumedOutput];
+                    this.indexedOutpoints.Remove(consumedOutput);
 
                     Money amountSpent = consumedOutputData.Item2;
 
@@ -452,7 +452,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
     public class IndexerNotInitializedException : Exception
     {
-        public IndexerNotInitializedException() : base("Component wasn't initialized and is not ready to use. Make sure -txindex is set to true.")
+        public IndexerNotInitializedException() : base("Component wasn't initialized and is not ready to use.")
         {
         }
     }
