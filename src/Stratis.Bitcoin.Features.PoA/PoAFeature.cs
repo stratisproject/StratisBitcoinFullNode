@@ -245,7 +245,8 @@ namespace Stratis.Bitcoin.Features.PoA
 
                         // Voting.
                         services.AddSingleton<VotingManager>();
-                        services.AddSingleton<VotingController>();
+                        services.AddSingleton<DefaultVotingController>();
+                        services.AddSingleton<FederationVotingController>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
                         services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
                         services.AddSingleton<IdleFederationMembersKicker>();
