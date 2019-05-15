@@ -97,14 +97,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             tx.Inputs.Add(new TxIn(new OutPoint(block5.Transactions.First().GetHash(), 0)));
             var block10 = new Block() { Transactions = new List<Transaction>() { tx } };
 
-            //this.blockStoreMock.Setup(x => x.GetTransactionsByIds(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>())).Returns((uint256[] hashes, CancellationToken token) =>
-            //{
-            //    if (hashes.Length == 1 && hashes[0] == block5.Transactions.First().GetHash())
-            //        return new Transaction[] { block5.Transactions.First() };
-            //
-            //    return null;
-            //});
-
             this.consensusManagerMock.Setup(x => x.GetBlockData(It.IsAny<uint256>())).Returns((uint256 hash) =>
             {
                 ChainedHeader header = headers.SingleOrDefault(x => x.HashBlock == hash);
