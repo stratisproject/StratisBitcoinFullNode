@@ -301,9 +301,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     if (tx.Outputs[i].Value == Money.Zero)
                         continue;
 
-                    var outPoint = new OutPointModel(tx, i);
+                    var outPoint = new OutPoint(tx, i);
 
-                    this.outpointsIndex.IndexedOutpoints[outPoint] = new Tuple<byte[], long>(tx.Outputs[i].ScriptPubKey.ToBytes(), tx.Outputs[i].Value);
+                    this.outpointsIndex.IndexedOutpoints[outPoint.ToString()] = new ScriptPubKeyMoneyPair()
+                    {
+                        ScriptPubKeyBytes = tx.Outputs[i].ScriptPubKey.ToBytes(),
+                        Money = tx.Outputs[i].Value
+                    };
                 }
             }
 
@@ -318,18 +322,18 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             {
                 for (int i = 0; i < inputs.Count; i++)
                 {
-                    var consumedOutput = new OutPointModel(inputs[i].PrevOut);
+                    string consumedOutputString = inputs[i].PrevOut.ToString();
 
-                    Tuple<byte[], long> consumedOutputData = this.outpointsIndex.IndexedOutpoints[consumedOutput];
-                    this.outpointsIndex.IndexedOutpoints.Remove(consumedOutput);
+                    ScriptPubKeyMoneyPair consumedOutputData = this.outpointsIndex.IndexedOutpoints[consumedOutputString];
+                    this.outpointsIndex.IndexedOutpoints.Remove(consumedOutputString);
 
-                    Money amountSpent = consumedOutputData.Item2;
+                    Money amountSpent = consumedOutputData.Money;
 
                     // Transactions that don't actually change the balance just bloat the database.
                     if (amountSpent == 0)
                         continue;
 
-                    string address = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, new Script(consumedOutputData.Item1));
+                    string address = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, new Script(consumedOutputData.ScriptPubKeyBytes));
 
                     if (string.IsNullOrEmpty(address))
                     {
