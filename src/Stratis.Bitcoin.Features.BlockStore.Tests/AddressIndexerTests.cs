@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
@@ -10,6 +11,7 @@ using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -23,6 +25,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         private readonly Mock<IBlockStore> blockStoreMock;
 
         private readonly Mock<IConsensusManager> consensusManagerMock;
+
+        private readonly Mock<IAsyncProvider> asyncProviderMock;
+
+        private readonly Mock<ISignals> signals;
 
         private readonly Network network;
 
@@ -40,9 +46,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.blockStoreMock = new Mock<IBlockStore>();
             var stats = new Mock<INodeStats>();
             this.consensusManagerMock = new Mock<IConsensusManager>();
+            this.asyncProviderMock = new Mock<IAsyncProvider>();
+            this.signals = new Mock<ISignals>();
 
             this.addressIndexer = new AddressIndexer(storeSettings, dataFolder, new ExtendedLoggerFactory(), this.network, this.blockStoreMock.Object,
-                stats.Object, this.consensusManagerMock.Object);
+                stats.Object, this.consensusManagerMock.Object, this.asyncProviderMock.Object, this.signals.Object);
 
             this.genesisHeader = new ChainedHeader(this.network.GetGenesis().Header, this.network.GetGenesis().Header.GetHash(), 0);
         }

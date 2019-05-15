@@ -9,10 +9,14 @@ using System.Threading.Tasks;
 using LiteDB;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using FileMode = LiteDB.FileMode;
 using Script = NBitcoin.Script;
@@ -56,7 +60,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         private readonly DataFolder dataFolder;
 
         private readonly IConsensusManager consensusManager;
-
+        private readonly IAsyncProvider asyncProvider;
+        private readonly ISignals signals;
         private readonly IScriptAddressReader scriptAddressReader;
 
         private readonly TimeSpan flushChangesInterval;
@@ -93,10 +98,21 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly CancellationTokenSource cancellation;
 
-        private Task indexingTask;
+        /// <summary>
+        /// receive block connected/disconnected event and parse them to update the address balances
+        /// </summary>
+        private IAsyncDelegateDequeuer<EventBase> blockEventsQueue;
+
+        /// <summary>
+        /// The flushing loop
+        /// </summary>
+        private IAsyncLoop flushingLoop;
+
+        private SubscriptionToken onBlockConnectedSubscription;
+        private SubscriptionToken onBlockDisconnectedSubscription;
 
         public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory,
-            Network network, IBlockStore blockStore, INodeStats nodeStats, IConsensusManager consensusManager)
+            Network network, IBlockStore blockStore, INodeStats nodeStats, IConsensusManager consensusManager, IAsyncProvider asyncProvider, ISignals signals)
         {
             this.storeSettings = storeSettings;
             this.network = network;
@@ -104,8 +120,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.nodeStats = nodeStats;
             this.dataFolder = dataFolder;
             this.consensusManager = consensusManager;
-            this.scriptAddressReader = new ScriptAddressReader();
+            this.asyncProvider = asyncProvider;
+            this.signals = signals;
 
+            this.scriptAddressReader = new ScriptAddressReader();
             this.lockObject = new object();
             this.flushChangesInterval = TimeSpan.FromMinutes(5);
             this.cancellation = new CancellationTokenSource();
@@ -162,160 +180,94 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             if (this.IndexerTip == null)
                 this.IndexerTip = this.consensusManager.Tip.GetAncestor(0);
 
-            this.indexingTask = Task.Run(async () => await this.IndexAddressesContinuouslyAsync().ConfigureAwait(false));
+            this.blockEventsQueue = this.asyncProvider.CreateAndRunAsyncDelegateDequeuer<EventBase>($"{this.GetType().Name}.blockEventsQueue", IndexAddressesAsync);
+
+            this.flushingLoop = this.asyncProvider.CreateAndRunAsyncLoop($"{this.GetType().Name}.{nameof(this.FlushDirtyAddressesAsync)}", async token =>
+                {
+                    await this.FlushDirtyAddressesAsync().ConfigureAwait(false);
+                },
+                this.cancellation.Token,
+                repeatEvery: this.flushChangesInterval,
+                startAfter: this.flushChangesInterval
+                );
+
+            this.onBlockConnectedSubscription = this.signals.Subscribe<BlockConnected>(@event => this.blockEventsQueue.Enqueue(@event));
+            this.onBlockDisconnectedSubscription = this.signals.Subscribe<BlockDisconnected>(@event => this.blockEventsQueue.Enqueue(@event));
 
             this.nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 400);
         }
 
-        private async Task IndexAddressesContinuouslyAsync()
+        private async Task FlushDirtyAddressesAsync()
         {
-            DateTime lastFlushTime = DateTime.Now;
-            var batch = new List<AddressIndexData>();
+            lock (this.lockObject)
+            {
+                this.logger.LogDebug("Flushing changes.");
+                var batch = new List<AddressIndexData>();
 
+                // We maintain a dirty cache so that the whole address index doesn't need to be enumerated every flush.
+                // Benchmarking of LiteDB indicates very strongly that batching has a large performance impact.
+                foreach (string key in this.dirtyAddresses)
+                {
+                    batch.Add(this.addressesIndex[key]);
+
+                    if (batch.Count == BatchSize)
+                    {
+                        this.dataStore.Update(batch);
+                        batch.Clear();
+                    }
+                }
+
+                if (batch.Count > 0)
+                {
+                    this.dataStore.Update(batch);
+                    batch.Clear();
+                }
+
+                this.dirtyAddresses.Clear();
+                this.tipDataStore.Update(this.tipData);
+            }
+
+            this.logger.LogDebug("Flush completed.");
+        }
+
+
+        private async Task IndexAddressesAsync(EventBase @event, CancellationToken cancellation)
+        {
             try
             {
-                while (!this.cancellation.IsCancellationRequested)
+                switch (@event)
                 {
-                    if (DateTime.Now - lastFlushTime > this.flushChangesInterval)
-                    {
-                        this.logger.LogDebug("Flushing changes.");
+                    case BlockConnected blockConnected:
+                        // a new block has been connected.
+                        bool success = this.ProcessBlock(blockConnected.ConnectedBlock.Block, blockConnected.ConnectedBlock.ChainedHeader);
 
-                        lock (this.lockObject)
+                        // TODO: did we have any valid reason for ProcessBlock to fail?
+                        if (!success)
                         {
-                            // We maintain a dirty cache so that the whole address index doesn't need to be enumerated every flush.
-                            // Benchmarking of LiteDB indicates very strongly that batching has a large performance impact.
-                            foreach (string key in this.dirtyAddresses)
-                            {
-                                batch.Add(this.addressesIndex[key]);
-
-                                if (batch.Count == BatchSize)
-                                {
-                                    this.dataStore.Update(batch);
-                                    batch.Clear();
-                                }
-                            }
-
-                            if (batch.Count > 0)
-                            {
-                                this.dataStore.Update(batch);
-                                batch.Clear();
-                            }
-
-                            this.dirtyAddresses.Clear();
-                            this.tipDataStore.Update(this.tipData);
+                            this.logger.LogError("Failed to process next block. Waiting.");
+                            throw new Exception("Unexpected error");
                         }
-
-                        lastFlushTime = DateTime.Now;
-
-                        this.logger.LogDebug("Flush completed.");
-                    }
-
-                    if (this.cancellation.IsCancellationRequested)
                         break;
+                    case BlockDisconnected blockDisconnected:
+                        // a new block has been disconnected (rewound).
+                        // when a reorg happens with multiple blocks, we'll receive BlockDisconnected events sorted from old tip to fork point.
+                        ChainedHeader previousTip = blockDisconnected.DisconnectedBlock.ChainedHeader.Previous;
 
-                    ChainedHeader nextHeader = this.consensusManager.Tip.GetAncestor(this.IndexerTip.Height + 1);
-
-                    if (nextHeader == null)
-                    {
-                        this.logger.LogDebug("Next header wasn't found. Waiting.");
-
-                        try
-                        {
-                            await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                        }
-
-                        continue;
-                    }
-
-                    if (nextHeader.Previous.HashBlock != this.IndexerTip.HashBlock)
-                    {
-                        ChainedHeader lastCommonHeader = nextHeader.FindFork(this.IndexerTip);
-
-                        this.logger.LogDebug("Reorg detected. Rewinding till '{0}'.", lastCommonHeader);
-
+                        this.logger.LogDebug("Reorg detected. Rewinding to previous block '{0}'.", previousTip);
                         lock (this.lockObject)
                         {
                             foreach (string key in this.addressesIndex.Keys)
                             {
                                 // TODO: Possibly introduce concept of 'address index finality' and coalesce records older than maxreorg, so that we don't have to iterate everything
-                                if (this.addressesIndex[key].BalanceChanges.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height) > 0)
+                                if (this.addressesIndex[key].BalanceChanges.RemoveAll(x => x.BalanceChangedHeight > previousTip.Height) > 0)
                                     this.dirtyAddresses.Add(key);
                             }
+
+                            // after having disconnected a block, our tip will be the parent of the disconnected block.
+                            this.IndexerTip = previousTip;
+                            this.tipData.TipHashBytes = this.IndexerTip.HashBlock.ToBytes(); // is it ok to update this during a reorg? on previous code this wasn't done.
                         }
-
-                        this.logger.LogDebug("Reorg processing completed.", lastCommonHeader);
-
-                        this.IndexerTip = lastCommonHeader;
-                        continue;
-                    }
-
-                    // Get next header block and process it.
-                    Block blockToProcess = this.consensusManager.GetBlockData(nextHeader.HashBlock).Block;
-
-                    if (blockToProcess == null)
-                    {
-                        this.logger.LogDebug("Next block wasn't found. Waiting.");
-
-                        try
-                        {
-                            await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                        }
-
-                        continue;
-                    }
-
-                    bool success = this.ProcessBlock(blockToProcess, nextHeader);
-
-                    if (!success)
-                    {
-                        this.logger.LogDebug("Failed to process next block. Waiting.");
-
-                        try
-                        {
-                            await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                        }
-
-                        continue;
-                    }
-
-                    this.IndexerTip = nextHeader;
-
-                    lock (this.lockObject)
-                    {
-                        this.tipData.TipHashBytes = this.IndexerTip.HashBlock.ToBytes();
-                    }
-                }
-
-                lock (this.lockObject)
-                {
-                    foreach (string key in this.dirtyAddresses)
-                    {
-                        batch.Add(this.addressesIndex[key]);
-
-                        if (batch.Count > BatchSize)
-                        {
-                            this.dataStore.Update(batch);
-                            batch.Clear();
-                        }
-                    }
-
-                    if (batch.Count > 0)
-                    {
-                        this.dataStore.Update(batch);
-                        batch.Clear();
-                    }
-
-                    this.dirtyAddresses.Clear();
-                    this.tipDataStore.Update(this.tipData);
+                        break;
                 }
             }
             catch (Exception e)
@@ -328,11 +280,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         {
             benchLog.AppendLine("AddressIndexer.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                            (this.IndexerTip.Height.ToString().PadRight(8)) +
-                           ((" AddressIndexer.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.IndexerTip.HashBlock) ));
+                           ((" AddressIndexer.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.IndexerTip.HashBlock)));
         }
 
-        /// <summary>Processes block that was added or removed from consensus chain.</summary>
-        /// <returns><c>true</c> if block was processed. <c>false</c> if reorg detected and we failed to process a block.</returns>
+        /// <summary>
+        /// Processes block that was added or removed from consensus chain.
+        /// </summary>
+        /// <param name="block">The block to process.</param>
+        /// <param name="header">The block header.</param>
+        /// <returns>
+        ///   <c>true</c> if block was processed. <c>false</c> if reorg detected and we failed to process a block.
+        /// </returns>
         private bool ProcessBlock(Block block, ChainedHeader header)
         {
             // Process inputs.
@@ -413,6 +371,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         this.ProcessBalanceChange(header.Height, address, amountReceived, true);
                     }
                 }
+
+                this.IndexerTip = header;
+                this.tipData.TipHashBytes = this.IndexerTip.HashBlock.ToBytes();
             }
 
             return true;
@@ -519,7 +480,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             {
                 this.cancellation.Cancel();
 
-                this.indexingTask.GetAwaiter().GetResult();
+                this.blockEventsQueue?.Dispose();
+
+                this.signals.Unsubscribe(this.onBlockConnectedSubscription);
+                this.signals.Unsubscribe(this.onBlockDisconnectedSubscription);
+
+                this.flushingLoop?.Dispose();
 
                 this.db.Dispose();
             }
