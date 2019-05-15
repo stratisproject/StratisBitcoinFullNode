@@ -301,9 +301,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     if (tx.Outputs[i].Value == Money.Zero)
                         continue;
 
-                    var outPoint = new OutPoint(tx, i);
+                    var outPoint = new OutPointModel(tx, i);
 
-                    this.outpointsIndex.IndexedOutpoints[outPoint] = new Tuple<Script, long>(tx.Outputs[i].ScriptPubKey, tx.Outputs[i].Value);
+                    this.outpointsIndex.IndexedOutpoints[outPoint] = new Tuple<byte[], long>(tx.Outputs[i].ScriptPubKey.ToBytes(), tx.Outputs[i].Value);
                 }
             }
 
@@ -318,9 +318,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             {
                 for (int i = 0; i < inputs.Count; i++)
                 {
-                    OutPoint consumedOutput = inputs[i].PrevOut;
+                    var consumedOutput = new OutPointModel(inputs[i].PrevOut);
 
-                    Tuple<Script, long> consumedOutputData = this.outpointsIndex.IndexedOutpoints[consumedOutput];
+                    Tuple<byte[], long> consumedOutputData = this.outpointsIndex.IndexedOutpoints[consumedOutput];
                     this.outpointsIndex.IndexedOutpoints.Remove(consumedOutput);
 
                     Money amountSpent = consumedOutputData.Item2;
@@ -329,7 +329,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     if (amountSpent == 0)
                         continue;
 
-                    string address = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, consumedOutputData.Item1);
+                    string address = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, new Script(consumedOutputData.Item1));
 
                     if (string.IsNullOrEmpty(address))
                     {
