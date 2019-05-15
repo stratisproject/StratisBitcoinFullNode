@@ -47,8 +47,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly Network network;
 
-        private readonly IBlockStore blockStore;
-
         private readonly INodeStats nodeStats;
 
         private readonly ILogger logger;
@@ -75,6 +73,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private AddressIndexerData addressesIndex;
 
+        private Dictionary<OutPoint, Tuple<Script, long>> scriptPubKeysAndAmountsOfOutpoints;
+
         /// <summary>Protects access to <see cref="addressesIndex"/>.</summary>
         private readonly object lockObject;
 
@@ -83,11 +83,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         private Task indexingTask;
 
         public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory,
-            Network network, IBlockStore blockStore, INodeStats nodeStats, IConsensusManager consensusManager)
+            Network network, INodeStats nodeStats, IConsensusManager consensusManager)
         {
             this.storeSettings = storeSettings;
             this.network = network;
-            this.blockStore = blockStore;
             this.nodeStats = nodeStats;
             this.dataFolder = dataFolder;
             this.consensusManager = consensusManager;
@@ -133,6 +132,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 }
 
                 this.IndexerTip = this.consensusManager.Tip.FindAncestorOrSelf(new uint256(this.addressesIndex.TipHashBytes));
+
+                // TODO load or create moneyValuesOfOutpoints
+                this.scriptPubKeysAndAmountsOfOutpoints = new Dictionary<OutPoint, Tuple<Script, long>>();
             }
 
             if (this.IndexerTip == null)
@@ -158,6 +160,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         lock (this.lockObject)
                         {
                             this.dataStore.Update(this.addressesIndex);
+                            // TODO save outpoints
                         }
 
                         lastFlushTime = DateTime.Now;
@@ -196,6 +199,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                             foreach (List<AddressBalanceChange> changes in this.addressesIndex.AddressChanges.Values)
                                 changes.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
                         }
+
+                        // TODO rewind outpoints
 
                         this.IndexerTip = lastCommonHeader;
                         continue;
@@ -247,6 +252,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 lock (this.lockObject)
                 {
                     this.dataStore.Update(this.addressesIndex);
+                    // TODO save outpoints
                 }
             }
             catch (Exception e)
@@ -266,6 +272,20 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <returns><c>true</c> if block was processed. <c>false</c> if reorg detected and we failed to process a block.</returns>
         private bool ProcessBlock(Block block, ChainedHeader header)
         {
+            // Record outpoints.
+            foreach (Transaction tx in block.Transactions)
+            {
+                for (int i = 0; i < tx.Outputs.Count; i++)
+                {
+                    if (tx.Outputs[i].Value == Money.Zero)
+                        continue;
+
+                    var outPoint = new OutPoint(tx, i);
+
+                    this.scriptPubKeysAndAmountsOfOutpoints[outPoint] = new Tuple<Script, long>(tx.Outputs[i].ScriptPubKey, tx.Outputs[i].Value);
+                }
+            }
+
             // Process inputs.
             var inputs = new List<TxIn>();
 
@@ -273,39 +293,22 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             foreach (TxInList inputsCollection in block.Transactions.Where(x => !x.IsCoinBase).Select(x => x.Inputs))
                 inputs.AddRange(inputsCollection);
 
-            Transaction[] transactions;
-
-            try
-            {
-                transactions = this.blockStore.GetTransactionsByIds(inputs.Select(x => x.PrevOut.Hash).ToArray(), this.cancellation.Token);
-            }
-            catch (OperationCanceledException)
-            {
-                this.logger.LogTrace("(-)[CANCELLED]:false");
-                return false;
-            }
-
-            if ((transactions == null) && (inputs.Count != 0))
-            {
-                this.logger.LogTrace("(-)[TXES_NOT_FOUND]:false");
-                return false;
-            }
-
             lock (this.lockObject)
             {
                 for (int i = 0; i < inputs.Count; i++)
                 {
-                    TxIn currentInput = inputs[i];
+                    OutPoint consumedOutput = inputs[i].PrevOut;
 
-                    TxOut txOut = transactions[i].Outputs[currentInput.PrevOut.N];
+                    Tuple<Script, long> consumedOutputData = this.scriptPubKeysAndAmountsOfOutpoints[consumedOutput];
+                    this.scriptPubKeysAndAmountsOfOutpoints.Remove(consumedOutput);
 
-                    Money amountSpent = txOut.Value;
+                    Money amountSpent = consumedOutputData.Item2;
 
                     // Transactions that don't actually change the balance just bloat the database.
                     if (amountSpent == 0)
                         continue;
 
-                    string address = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, txOut.ScriptPubKey);
+                    string address = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, consumedOutputData.Item1);
 
                     if (string.IsNullOrEmpty(address))
                     {
