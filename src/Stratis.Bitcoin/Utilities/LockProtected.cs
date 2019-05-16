@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             lock (this.lockObject)
             {
-                action.Invoke();
+                action();
             }
         }
 
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             lock (this.lockObject)
             {
-                T res = action.Invoke();
+                T res = action();
 
                 return res;
             }
