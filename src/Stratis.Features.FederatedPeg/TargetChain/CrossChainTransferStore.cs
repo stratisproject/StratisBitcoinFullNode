@@ -814,7 +814,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 HashHeightPair tipToChase = this.TipToChase();
                 if (this.TipHashAndHeight == null)
                 {
-                    this.logger.LogError("Failed to synchronise. Reason: TipHashAndHeight is null.");
+                    this.logger.LogError("Failed to synchronise. Reason: {0} is null.", nameof(this.TipHashAndHeight));
                     this.logger.LogTrace("(-)[SYNCHRONIZED]:false");
                     return false;
                 }
