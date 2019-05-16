@@ -74,7 +74,7 @@ namespace Stratis.Features.FederatedPeg
 
             if (this.FederationPublicKeys.All(p => p != new PubKey(this.PublicKey)))
             {
-                throw new ConfigurationException("Please make sure the public key passed as parameter was used to generate the multisig redeem script.");
+                throw new ConfigurationException("Please make sure the public key passed as parameter belongs to a federation member.");
             }
 
             this.CounterChainApiHost = configReader.GetOrDefault(CounterChainApiHostParam, "localhost");

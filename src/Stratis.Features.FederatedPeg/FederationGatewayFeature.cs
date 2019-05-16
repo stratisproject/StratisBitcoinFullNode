@@ -82,6 +82,8 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly ICollateralChecker collateralChecker;
 
+        private readonly IFederationManager federationManager;
+
         public FederationGatewayFeature(
             ILoggerFactory loggerFactory,
             IConnectionManager connectionManager,
@@ -97,7 +99,8 @@ namespace Stratis.Features.FederatedPeg
             ISignedMultisigTransactionBroadcaster signedBroadcaster,
             IMaturedBlocksSyncManager maturedBlocksSyncManager,
             IWithdrawalHistoryProvider withdrawalHistoryProvider,
-            ICollateralChecker collateralChecker = null)
+            ICollateralChecker collateralChecker = null,
+            IFederationManager federationManager = null)
         {
             this.loggerFactory = loggerFactory;
             this.connectionManager = connectionManager;
@@ -113,6 +116,7 @@ namespace Stratis.Features.FederatedPeg
             this.withdrawalHistoryProvider = withdrawalHistoryProvider;
             this.signedBroadcaster = signedBroadcaster;
             this.collateralChecker = collateralChecker;
+            this.federationManager = federationManager;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -126,6 +130,15 @@ namespace Stratis.Features.FederatedPeg
 
         public override async Task InitializeAsync()
         {
+            if (this.federationManager?.CurrentFederationKey?.PubKey != null &&
+                this.federationManager.CurrentFederationKey.PubKey.ToString() != this.federationGatewaySettings.PublicKey)
+            {
+                this.logger.LogError("The '-publickey={0}' mismatches `{1}` as derived from the `{2}` file.",
+                    this.federationGatewaySettings.PublicKey,
+                    this.federationManager.CurrentFederationKey.PubKey,
+                    KeyTool.KeyFileDefaultName);
+            }
+
             // Set up our database of deposit and withdrawal transactions. Needs to happen before everything else.
             this.crossChainTransferStore.Initialize();
 
