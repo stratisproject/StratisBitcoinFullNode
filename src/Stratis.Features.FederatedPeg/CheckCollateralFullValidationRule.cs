@@ -1,8 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Features.FederatedPeg
 {
@@ -16,11 +18,17 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly ISlotsManager slotsManager;
 
-        public CheckCollateralFullValidationRule(IInitialBlockDownloadState ibdState, ICollateralChecker collateralChecker, ISlotsManager slotsManager)
+        private readonly IDateTimeProvider dateTime;
+
+        /// <summary>For how many minutes the block should be banned in case collateral check failed.</summary>
+        private const int CollateralCheckBanDurationMinutes = 2;
+
+        public CheckCollateralFullValidationRule(IInitialBlockDownloadState ibdState, ICollateralChecker collateralChecker, ISlotsManager slotsManager, IDateTimeProvider dateTime)
         {
             this.ibdState = ibdState;
             this.collateralChecker = collateralChecker;
             this.slotsManager = slotsManager;
+            this.dateTime = dateTime;
         }
 
         public override Task RunAsync(RuleContext context)
@@ -35,6 +43,8 @@ namespace Stratis.Features.FederatedPeg
 
             if (!this.collateralChecker.CheckCollateral(federationMember))
             {
+                context.ValidationContext.RejectUntil = this.dateTime.GetUtcNow() + TimeSpan.FromMinutes(CollateralCheckBanDurationMinutes);
+
                 this.Logger.LogTrace("(-)[BAD_COLLATERAL]");
                 PoAConsensusErrors.InvalidCollateralAmount.Throw();
             }
