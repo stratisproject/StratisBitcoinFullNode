@@ -1197,7 +1197,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 else if (request.TransactionsIds != null)
                 {
                     IEnumerable<uint256> ids = request.TransactionsIds.Select(uint256.Parse);
-                    result = this.walletManager.RemoveTransactionsByIdsLocked(request.WalletName, ids);
+                    result = this.walletManager.RemoveTransactionsByIds(request.WalletName, ids);
                 }
                 else
                 {

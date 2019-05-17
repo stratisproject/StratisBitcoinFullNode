@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.PoA;
@@ -79,7 +80,7 @@ namespace Stratis.Features.FederatedPeg
             {
                 this.logger.LogDebug("Initializing federation member {0} with amount {1}.", federationMember.CollateralMainchainAddress, federationMember.CollateralAmount);
 
-                this.depositsByAddress.Add(federationMember.CollateralMainchainAddress, null);
+                this.depositsByAddress.Add(federationMember.CollateralMainchainAddress, 0);
             }
 
             while (true)
@@ -149,7 +150,7 @@ namespace Stratis.Features.FederatedPeg
 
             this.logger.LogDebug("Addresses to check {0}.", addressesToCheck.Count);
 
-            Dictionary<string, Money> collateral = await this.blockStoreClient.GetAddressBalancesAsync(addressesToCheck, RequiredConfirmations, cancellation).ConfigureAwait(false);
+            AddressBalancesModel collateral = await this.blockStoreClient.GetAddressBalancesAsync(addressesToCheck, RequiredConfirmations, cancellation).ConfigureAwait(false);
 
             if (collateral == null)
             {
@@ -157,9 +158,11 @@ namespace Stratis.Features.FederatedPeg
                 return false;
             }
 
-            if (collateral.Count != addressesToCheck.Count)
+            this.logger.LogDebug("Addresses received {0}.", collateral.Balances.Count);
+
+            if (collateral.Balances.Count != addressesToCheck.Count)
             {
-                this.logger.LogDebug("Expected {0} data entries but received {1}.", addressesToCheck.Count, collateral.Count);
+                this.logger.LogDebug("Expected {0} data entries but received {1}.", addressesToCheck.Count, collateral.Balances.Count);
 
                 this.logger.LogTrace("(-)[INCONSISTENT_DATA]:false");
                 return false;
@@ -167,8 +170,11 @@ namespace Stratis.Features.FederatedPeg
 
             lock (this.locker)
             {
-                foreach (KeyValuePair<string, Money> addressMoney in collateral)
-                    this.depositsByAddress[addressMoney.Key] = addressMoney.Value;
+                foreach (AddressBalanceModel addressMoney in collateral.Balances)
+                {
+                    this.logger.LogDebug("Updating federated member {0} with amount {1}.", addressMoney.Address, addressMoney.Balance);
+                    this.depositsByAddress[addressMoney.Address] = addressMoney.Balance;
+                }
             }
 
             return true;
@@ -192,7 +198,7 @@ namespace Stratis.Features.FederatedPeg
 
             lock (this.locker)
             {
-                return this.depositsByAddress[member.CollateralMainchainAddress] >= member.CollateralAmount;
+                return (this.depositsByAddress[member.CollateralMainchainAddress] ?? 0) >= member.CollateralAmount;
             }
         }
 
@@ -210,7 +216,7 @@ namespace Stratis.Features.FederatedPeg
             lock (this.locker)
             {
                 this.logger.LogDebug("Adding federation member {0}", ((CollateralFederationMember)fedMemberAdded.AddedMember).CollateralMainchainAddress);
-                this.depositsByAddress.Add(((CollateralFederationMember)fedMemberAdded.AddedMember).CollateralMainchainAddress, null);
+                this.depositsByAddress.Add(((CollateralFederationMember)fedMemberAdded.AddedMember).CollateralMainchainAddress, 0);
             }
         }
 

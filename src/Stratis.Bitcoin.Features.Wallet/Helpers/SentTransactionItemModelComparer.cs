@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Helpers
 
             foreach (PaymentDetailModel payment in obj.Payments)
             {
-                hashValue = hashValue ^ payment.Amount.GetHashCode() ^ payment.DestinationAddress.GetHashCode();
+                hashValue = hashValue ^ payment.Amount.GetHashCode() ^ (payment.DestinationAddress ?? string.Empty).GetHashCode();
             }
 
             return hashValue;

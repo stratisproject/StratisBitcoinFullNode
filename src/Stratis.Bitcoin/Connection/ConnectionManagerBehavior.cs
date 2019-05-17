@@ -99,7 +99,9 @@ namespace Stratis.Bitcoin.Connection
         protected override void DetachCore()
         {
             this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
-            this.connectionManager.PeerDisconnected(this.AttachedPeer.Connection.Id);
+
+            if (this.AttachedPeer.Connection != null)
+                this.connectionManager.PeerDisconnected(this.AttachedPeer.Connection.Id);
         }
     }
 }
