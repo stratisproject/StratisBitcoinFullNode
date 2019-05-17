@@ -13,22 +13,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         public bool MatureDepositRecorded { get; private set; }
         public List<Transaction> WithDrawalTransactions { get; private set; }
 
-        public RecordLatestMatureDepositsResult Failed()
-        {
-            this.MatureDepositRecorded = false;
-            return this;
-        }
-
         public RecordLatestMatureDepositsResult Succeeded()
         {
             this.MatureDepositRecorded = true;
             return this;
-        }
-
-        public RecordLatestMatureDepositsResult Pending()
-        {
-            var result = new RecordLatestMatureDepositsResult();
-            return result;
         }
     }
 }
