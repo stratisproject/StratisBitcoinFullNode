@@ -389,7 +389,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <summary>
         /// Tests whether the store merges signatures as expected.
         /// </summary>
-        [Fact(Skip = "Issue with creating 2 store instances, still investigating.")]
+        [Fact]
         public async Task StoreMergesSignaturesAsExpectedAsync()
         {
             var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
@@ -459,7 +459,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                     RecordLatestMatureDepositsResult recordMatureDepositResult2 = await cctsInstanceTwo.RecordLatestMatureDepositsAsync(blockDeposits);
                     foreach (Transaction withdrawalTx in recordMatureDepositResult2.WithDrawalTransactions)
                     {
-                        this.blockStore.Setup(x => x.GetTransactionById(withdrawalTx.GetHash())).Returns(withdrawalTx);
+                        testInstanceTwo.blockStore.Setup(x => x.GetTransactionById(withdrawalTx.GetHash())).Returns(withdrawalTx);
                     }
 
                     ICrossChainTransfer crossChainTransfer2 = cctsInstanceTwo.GetAsync(new[] { deposit.Id }).GetAwaiter().GetResult().SingleOrDefault();
@@ -472,7 +472,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 }
 
                 // Merges the transaction signatures.
-                cctsInstanceOne.MergeTransactionSignaturesAsync(deposit.Id, new[] { transaction2 }).GetAwaiter().GetResult();
+                Transaction mergedTransaction = await cctsInstanceOne.MergeTransactionSignaturesAsync(deposit.Id, new[] { transaction2 });
+                this.blockStore.Setup(x => x.GetTransactionById(mergedTransaction.GetHash())).Returns(mergedTransaction);
 
                 // Test the outcome.
                 crossChainTransfer = cctsInstanceOne.GetAsync(new[] { deposit.Id }).GetAwaiter().GetResult().SingleOrDefault();
@@ -704,7 +705,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.NotEqual(CrossChainTransferStatus.FullySigned, crossChainTransfer.Status);
 
                 // Should return null.
-                var signedTransactions = crossChainTransferStore.GetTransfersByStatus(new[] { CrossChainTransferStatus.FullySigned });
+                ICrossChainTransfer[] signedTransactions = crossChainTransferStore.GetTransfersByStatus(new[] { CrossChainTransferStatus.FullySigned });
                 Transaction signedTransaction = signedTransactions.Select(x => x.PartialTransaction).SingleOrDefault();
 
                 Assert.Null(signedTransaction);
