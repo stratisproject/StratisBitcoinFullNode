@@ -57,6 +57,8 @@ namespace Stratis.Features.FederatedPeg
 
         private Task updateCollateralContinuouslyTask;
 
+        private bool isInitialized;
+
         public CollateralChecker(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, FederationGatewaySettings settings,
             IFederationManager federationManager, ISignals signals)
         {
@@ -68,6 +70,7 @@ namespace Stratis.Features.FederatedPeg
             this.depositsByAddress = new Dictionary<string, Money>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.blockStoreClient = new BlockStoreClient(loggerFactory, httpClientFactory, $"http://{settings.CounterChainApiHost}", settings.CounterChainApiPort);
+            this.isInitialized = false;
         }
 
         public async Task InitializeAsync()
@@ -109,6 +112,7 @@ namespace Stratis.Features.FederatedPeg
             }
 
             this.updateCollateralContinuouslyTask = this.UpdateCollateralInfoContinuouslyAsync();
+            this.isInitialized = true;
         }
 
         /// <summary>Continuously updates info about money deposited to fed member's addresses.</summary>
@@ -182,6 +186,12 @@ namespace Stratis.Features.FederatedPeg
 
         public bool CheckCollateral(IFederationMember federationMember)
         {
+            if (!this.isInitialized)
+            {
+                this.logger.LogTrace("(-)[NOT_INITIALIZED]");
+                throw new Exception("Component is not initialized!");
+            }
+
             var member = federationMember as CollateralFederationMember;
 
             if (member == null)
