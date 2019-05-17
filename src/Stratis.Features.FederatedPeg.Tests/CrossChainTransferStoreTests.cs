@@ -587,7 +587,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             }
         }
 
-        [Fact]
+        [Fact(Skip = "Requires main chain user to be running.")]
         public void DoTest()
         {
             var transactionRequest = new BuildTransactionRequest()
