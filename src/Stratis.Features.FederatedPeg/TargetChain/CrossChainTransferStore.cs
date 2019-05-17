@@ -635,7 +635,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// identified in the blocks.
         /// </summary>
         /// <param name="blocks">The blocks used to update the store. Must be sorted by ascending height leading up to the new tip.</param>
-        private void Put(List<Block> blocks)
+        private void Put(List<Block> blocks, Dictionary<uint256, ChainedHeader> chainedHeadersSnapshot)
         {
             if (blocks.Count == 0)
                 this.logger.LogTrace("(-)[NO_BLOCKS]:0");
@@ -658,7 +658,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             if (allDepositIds.Count == 0)
             {
                 // Exiting here and saving the tip after the sync.
-                this.TipHashAndHeight = this.chainIndexer.GetHeader(blocks.Last().GetHash());
+                this.TipHashAndHeight = chainedHeadersSnapshot[blocks.Last().GetHash()];
 
                 this.logger.LogTrace("(-)[NO_DEPOSIT_IDS]");
                 return;
@@ -722,7 +722,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     this.PutTransfers(dbreezeTransaction, tracker.Keys.ToArray());
 
                     // Commit additions
-                    ChainedHeader newTip = this.chainIndexer.GetHeader(blocks.Last().GetHash());
+                    ChainedHeader newTip = chainedHeadersSnapshot[blocks.Last().GetHash()];
                     this.SaveTipHashAndHeight(dbreezeTransaction, newTip);
                     dbreezeTransaction.Commit();
 
@@ -812,6 +812,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             lock (this.lockObj)
             {
                 HashHeightPair tipToChase = this.TipToChase();
+                if (this.TipHashAndHeight == null)
+                {
+                    this.logger.LogError("Failed to synchronise. Reason: {0} is null.", nameof(this.TipHashAndHeight));
+                    this.logger.LogTrace("(-)[SYNCHRONIZED]:false");
+                    return false;
+                }
+
                 if (tipToChase.Hash == this.TipHashAndHeight.HashBlock)
                 {
                     // Indicate that we are synchronized.
@@ -853,9 +860,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private bool SynchronizeBatch()
         {
             // Get a batch of blocks.
-            var blockHashes = new List<uint256>();
             int batchSize = 0;
             HashHeightPair tipToChase = this.TipToChase();
+            Dictionary<uint256, ChainedHeader> chainedHeadersSnapshot = new Dictionary<uint256, ChainedHeader>();
 
             foreach (ChainedHeader header in this.chainIndexer.EnumerateToTip(this.TipHashAndHeight.HashBlock).Skip(1))
             {
@@ -865,13 +872,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 if (header.Height > tipToChase.Height)
                     break;
 
-                blockHashes.Add(header.HashBlock);
+                chainedHeadersSnapshot.Add(header.HashBlock, header);
 
                 if (++batchSize >= synchronizationBatchSize)
                     break;
             }
 
-            List<Block> blocks = this.blockRepository.GetBlocks(blockHashes);
+            List<Block> blocks = this.blockRepository.GetBlocks(chainedHeadersSnapshot.Select(c => c.Key).ToList());
             int availableBlocks = blocks.FindIndex(b => (b == null));
             if (availableBlocks < 0)
                 availableBlocks = blocks.Count;
@@ -879,7 +886,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             if (availableBlocks > 0)
             {
                 Block lastBlock = blocks[availableBlocks - 1];
-                this.Put(blocks.GetRange(0, availableBlocks));
+                this.Put(blocks.GetRange(0, availableBlocks), chainedHeadersSnapshot);
                 this.logger.LogInformation("Synchronized {0} blocks with cross-chain store to advance tip to block {1}", availableBlocks, this.TipHashAndHeight?.Height);
             }
 
