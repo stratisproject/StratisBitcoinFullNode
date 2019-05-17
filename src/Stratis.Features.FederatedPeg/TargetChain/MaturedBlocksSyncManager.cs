@@ -128,10 +128,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 if (matureBlockDeposits.Count > 0)
                 {
-                    bool success = await this.store.RecordLatestMatureDepositsAsync(matureBlockDeposits).ConfigureAwait(false);
+                    RecordLatestMatureDepositsResult result = await this.store.RecordLatestMatureDepositsAsync(matureBlockDeposits).ConfigureAwait(false);
 
                     // If we received a portion of blocks we can ask for new portion without any delay.
-                    if (success)
+                    if (result.MatureDepositRecorded)
                         delayRequired = false;
                 }
                 else

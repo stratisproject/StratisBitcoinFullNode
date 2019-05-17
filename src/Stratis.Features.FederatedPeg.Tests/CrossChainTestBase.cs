@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Serialization;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NBitcoin;
 using NBitcoin.Networks;
 using NSubstitute;
@@ -39,7 +41,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         protected IOpReturnDataReader opReturnDataReader;
         protected IWithdrawalExtractor withdrawalExtractor;
         protected IBlockRepository blockRepository;
-        protected IBlockStore blockStore;
+        protected Mock<IBlockStore> blockStore;
         protected IInitialBlockDownloadState ibdState;
         protected IFullNode fullNode;
         protected IFederationWalletManager federationWalletManager;
@@ -87,7 +89,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.dateTimeProvider = DateTimeProvider.Default;
             this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions);
             this.blockRepository = Substitute.For<IBlockRepository>();
-            this.blockStore = Substitute.For<IBlockStore>();
+            this.blockStore = new Mock<IBlockStore>();
             this.fullNode = Substitute.For<IFullNode>();
             this.withdrawalTransactionBuilder = Substitute.For<IWithdrawalTransactionBuilder>();
             this.federationWalletManager = Substitute.For<IFederationWalletManager>();
@@ -100,10 +102,6 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.wallet = null;
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
             this.ChainIndexer = new ChainIndexer(this.network);
-
-            //var chainState = new ChainState();
-            //var initialBlockDownloadState = new InitialBlockDownloadState(chainState,this.network, new Bitcoin.Configuration.Settings.ConsensusSettings(new))
-            //this.blockStore = new BlockStoreQueue(this.ChainIndexer, chainState, new BlockStoreQueueFlushCondition(chainState, new InitialBlockDownloadState());
 
             this.federationGatewaySettings.TransactionFee.Returns(new Money(0.01m, MoneyUnit.BTC));
 
@@ -187,7 +185,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationWalletManager = new FederationWalletManager(
                 this.loggerFactory,
                 this.network,
-                this.blockStore,
+                this.blockStore.Object,
                 this.ChainIndexer,
                 dataFolder,
                 this.walletFeePolicy,
@@ -218,10 +216,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.federationWalletManager.Secret = new WalletSecret() { WalletPassword = walletPassword };
 
-            System.Reflection.FieldInfo prop = this.federationWalletManager.GetType().GetField("isFederationActive",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-            prop.SetValue(this.federationWalletManager, true);
+            FieldInfo isFederationActiveField = this.federationWalletManager.GetType().GetField("isFederationActive", BindingFlags.NonPublic | BindingFlags.Instance);
+            isFederationActiveField.SetValue(this.federationWalletManager, true);
         }
 
         protected ICrossChainTransferStore CreateStore()

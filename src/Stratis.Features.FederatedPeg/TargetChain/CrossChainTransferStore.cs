@@ -369,13 +369,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     if (maturedBlockDeposits.Count == 0 || maturedBlockDeposits.First().BlockInfo.BlockHeight != this.NextMatureDepositHeight)
                     {
                         this.logger.LogTrace("(-)[NO_VIABLE_BLOCKS]:true");
-                        return RecordLatestMatureDepositsResult.Succeeded();
+                        return new RecordLatestMatureDepositsResult().Succeeded();
                     }
 
                     if (maturedBlockDeposits.Last().BlockInfo.BlockHeight != this.NextMatureDepositHeight + maturedBlockDeposits.Count - 1)
                     {
                         this.logger.LogTrace("(-)[DUPLICATE_BLOCKS]:true");
-                        return RecordLatestMatureDepositsResult.Succeeded();
+                        return new RecordLatestMatureDepositsResult().Succeeded();
                     }
 
                     // Paying to our own multisig is a null operation and not supported.
@@ -386,10 +386,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                         this.NextMatureDepositHeight += maturedBlockDeposits.Count;
 
                         this.logger.LogTrace("(-)[NO_DEPOSITS]:true");
-                        return RecordLatestMatureDepositsResult.Succeeded();
+                        return new RecordLatestMatureDepositsResult().Succeeded();
                     }
 
-                    var result = RecordLatestMatureDepositsResult.Pending();
+                    var recordDepositResult = new RecordLatestMatureDepositsResult();
 
                     lock (((FederationWalletManager)this.federationWalletManager).lockObject)
                     {
@@ -445,7 +445,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                                     uint blockTime = maturedDeposit.BlockInfo.BlockTime;
 
-                                    result.WithDrawalTransaction = this.withdrawalTransactionBuilder.BuildWithdrawalTransaction(deposit.Id, blockTime, recipient);
+                                    transaction = this.withdrawalTransactionBuilder.BuildWithdrawalTransaction(deposit.Id, blockTime, recipient);
 
                                     if (transaction != null)
                                     {
@@ -464,6 +464,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                         else
                                         {
                                             status = CrossChainTransferStatus.Partial;
+                                            recordDepositResult.WithDrawalTransactions.Add(transaction);
                                         }
                                     }
                                     else
@@ -541,9 +542,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                     // If progress was made we will check for more blocks.
                     if (this.NextMatureDepositHeight != originalDepositHeight)
-                        return result.Succeeded();
-                    else
-                        return result.Failed();
+                        return recordDepositResult.Succeeded();
+
+                    return recordDepositResult;
                 }
             });
         }
