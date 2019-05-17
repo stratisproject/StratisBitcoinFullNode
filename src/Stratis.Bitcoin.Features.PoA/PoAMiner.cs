@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Features.PoA
                         continue;
                     }
 
-                    uint miningTimestamp =  await this.WaitUntilMiningSlotAsync().ConfigureAwait(false);
+                    uint miningTimestamp = await this.WaitUntilMiningSlotAsync().ConfigureAwait(false);
 
                     ChainedHeader chainedHeader = await this.MineBlockAtTimestampAsync(miningTimestamp).ConfigureAwait(false);
 
@@ -159,6 +159,18 @@ namespace Stratis.Bitcoin.Features.PoA
                 }
                 catch (OperationCanceledException)
                 {
+                }
+                catch (InvalidOperationException ioe)
+                {
+                    if (ioe.Message == "Invalid oldBlockHash")
+                    {
+                        // TODO: This is a specific handling of a coinview error, we need to find the cause of this bug.
+                        this.logger.LogError("Coinview sent an Invalid oldBlockHash");
+                        continue;
+                    }
+
+                    this.logger.LogCritical("Exception occurred during mining: {0}", ioe.ToString());
+                    break;
                 }
                 catch (Exception exception)
                 {
