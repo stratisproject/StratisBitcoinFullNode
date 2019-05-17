@@ -35,7 +35,8 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="toSave">Object to save as a file.</param>
         /// <param name="fileName">Name of the file to be saved.</param>
         /// <param name="saveBackupFile">A value indicating whether to save a backup of the file.</param>
-        public void SaveToFile(T toSave, string fileName, bool saveBackupFile = false)
+        /// <param name="minimalSize">Specifies if the output file should be optimized for minimizing disk usage. If <c>true</c> the output isn't indented and null values aren't stored.</param>
+        public void SaveToFile(T toSave, string fileName, bool saveBackupFile = false, bool minimalSize = false)
         {
             Guard.NotEmpty(fileName, nameof(fileName));
             Guard.NotNull(toSave, nameof(toSave));
@@ -45,7 +46,14 @@ namespace Stratis.Bitcoin.Utilities
             string newFilePath = $"{filePath}.{uniqueId}.new";
             string tempFilePath = $"{filePath}.{uniqueId}.temp";
 
-            File.WriteAllText(newFilePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
+            if (minimalSize)
+            {
+                File.WriteAllText(newFilePath, JsonConvert.SerializeObject(toSave, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+            }
+            else
+            {
+                File.WriteAllText(newFilePath, JsonConvert.SerializeObject(toSave, Formatting.Indented));
+            }
 
             // If the file does not exist yet, create it.
             if (!File.Exists(filePath))
