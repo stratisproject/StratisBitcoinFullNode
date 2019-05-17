@@ -605,8 +605,8 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// Simulates the behaviour if someone were to come on the network and broadcast their own <see cref="RequestPartialTransactionPayload"/> message
         /// with bogus information.
         /// </summary>
-        [Fact(Skip = "Need to fix block store results in tests.")]
-        public async Task AttemptFederationInvalidWithdrawal()
+        [Fact]
+        public async Task AttemptFederationInvalidWithdrawalAsync()
         {
             var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
 

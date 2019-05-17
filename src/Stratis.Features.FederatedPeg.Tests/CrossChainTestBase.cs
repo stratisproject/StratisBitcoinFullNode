@@ -101,6 +101,10 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
             this.ChainIndexer = new ChainIndexer(this.network);
 
+            //var chainState = new ChainState();
+            //var initialBlockDownloadState = new InitialBlockDownloadState(chainState,this.network, new Bitcoin.Configuration.Settings.ConsensusSettings(new))
+            //this.blockStore = new BlockStoreQueue(this.ChainIndexer, chainState, new BlockStoreQueueFlushCondition(chainState, new InitialBlockDownloadState());
+
             this.federationGatewaySettings.TransactionFee.Returns(new Money(0.01m, MoneyUnit.BTC));
 
             // Generate the keys used by the federation members for our tests.
