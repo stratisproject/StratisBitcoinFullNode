@@ -350,7 +350,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <inheritdoc />
-        public Task<RecordLatestMatureDepositsResult> RecordLatestMatureDepositsAsync(IList<MaturedBlockDepositsModel> maturedBlockDeposits)
+        public Task<bool> RecordLatestMatureDepositsAsync(IList<MaturedBlockDepositsModel> maturedBlockDeposits)
         {
             Guard.NotNull(maturedBlockDeposits, nameof(maturedBlockDeposits));
             Guard.Assert(!maturedBlockDeposits.Any(m => m.Deposits.Any(d => d.BlockNumber != m.BlockInfo.BlockHeight || d.BlockHash != m.BlockInfo.BlockHash)));
@@ -369,27 +369,25 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     if (maturedBlockDeposits.Count == 0 || maturedBlockDeposits.First().BlockInfo.BlockHeight != this.NextMatureDepositHeight)
                     {
                         this.logger.LogTrace("(-)[NO_VIABLE_BLOCKS]:true");
-                        return new RecordLatestMatureDepositsResult().Succeeded();
+                        return true;
                     }
 
                     if (maturedBlockDeposits.Last().BlockInfo.BlockHeight != this.NextMatureDepositHeight + maturedBlockDeposits.Count - 1)
                     {
                         this.logger.LogTrace("(-)[DUPLICATE_BLOCKS]:true");
-                        return new RecordLatestMatureDepositsResult().Succeeded();
+                        return true;
                     }
 
                     // Paying to our own multisig is a null operation and not supported.
-                    bool depositFilter(IDeposit d) => d.TargetAddress != this.settings.MultiSigAddress.ToString();
+                    Func<IDeposit, bool> depositFilter = d => d.TargetAddress != this.settings.MultiSigAddress.ToString();
 
                     if (!maturedBlockDeposits.Any(md => md.Deposits.Any(depositFilter)))
                     {
                         this.NextMatureDepositHeight += maturedBlockDeposits.Count;
 
                         this.logger.LogTrace("(-)[NO_DEPOSITS]:true");
-                        return new RecordLatestMatureDepositsResult().Succeeded();
+                        return true;
                     }
-
-                    var recordDepositResult = new RecordLatestMatureDepositsResult();
 
                     lock (((FederationWalletManager)this.federationWalletManager).lockObject)
                     {
@@ -449,7 +447,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                                     if (transaction != null)
                                     {
-
                                         // Reserve the UTXOs before building the next transaction.
                                         walletUpdated |= this.federationWalletManager.ProcessTransaction(transaction);
 
@@ -464,7 +461,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                         else
                                         {
                                             status = CrossChainTransferStatus.Partial;
-                                            recordDepositResult.WithDrawalTransactions.Add(transaction);
                                         }
                                     }
                                     else
@@ -541,10 +537,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     }
 
                     // If progress was made we will check for more blocks.
-                    if (this.NextMatureDepositHeight != originalDepositHeight)
-                        return recordDepositResult.Succeeded();
-
-                    return recordDepositResult;
+                    return this.NextMatureDepositHeight != originalDepositHeight;
                 }
             });
         }

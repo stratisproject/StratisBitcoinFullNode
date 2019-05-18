@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Features.FederatedPeg.Models;
-using Stratis.Features.FederatedPeg.TargetChain;
 
 namespace Stratis.Features.FederatedPeg.Interfaces
 {
@@ -34,7 +33,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// New partial transactions are recorded in the wallet to ensure that future transactions will not
         /// attempt to re-use UTXO's.
         /// </remarks>
-        Task<RecordLatestMatureDepositsResult> RecordLatestMatureDepositsAsync(IList<MaturedBlockDepositsModel> blockDeposits);
+        Task<bool> RecordLatestMatureDepositsAsync(IList<MaturedBlockDepositsModel> blockDeposits);
 
         /// <summary>
         /// Returns transfers based on their status.

@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.Serialization;
 using Microsoft.Extensions.Logging;
-using Moq;
 using NBitcoin;
 using NBitcoin.Networks;
 using NSubstitute;
@@ -41,7 +39,6 @@ namespace Stratis.Features.FederatedPeg.Tests
         protected IOpReturnDataReader opReturnDataReader;
         protected IWithdrawalExtractor withdrawalExtractor;
         protected IBlockRepository blockRepository;
-        protected Mock<IBlockStore> blockStore;
         protected IInitialBlockDownloadState ibdState;
         protected IFullNode fullNode;
         protected IFederationWalletManager federationWalletManager;
@@ -89,7 +86,6 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.dateTimeProvider = DateTimeProvider.Default;
             this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions);
             this.blockRepository = Substitute.For<IBlockRepository>();
-            this.blockStore = new Mock<IBlockStore>();
             this.fullNode = Substitute.For<IFullNode>();
             this.withdrawalTransactionBuilder = Substitute.For<IWithdrawalTransactionBuilder>();
             this.federationWalletManager = Substitute.For<IFederationWalletManager>();
@@ -185,7 +181,6 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationWalletManager = new FederationWalletManager(
                 this.loggerFactory,
                 this.network,
-                this.blockStore.Object,
                 this.ChainIndexer,
                 dataFolder,
                 this.walletFeePolicy,
@@ -216,8 +211,10 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.federationWalletManager.Secret = new WalletSecret() { WalletPassword = walletPassword };
 
-            FieldInfo isFederationActiveField = this.federationWalletManager.GetType().GetField("isFederationActive", BindingFlags.NonPublic | BindingFlags.Instance);
-            isFederationActiveField.SetValue(this.federationWalletManager, true);
+            System.Reflection.FieldInfo prop = this.federationWalletManager.GetType().GetField("isFederationActive",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            prop.SetValue(this.federationWalletManager, true);
         }
 
         protected ICrossChainTransferStore CreateStore()
