@@ -350,7 +350,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <inheritdoc />
-        public Task<bool> RecordLatestMatureDepositsAsync(IList<MaturedBlockDepositsModel> maturedBlockDeposits)
+        public Task<RecordLatestMatureDepositsResult> RecordLatestMatureDepositsAsync(IList<MaturedBlockDepositsModel> maturedBlockDeposits)
         {
             Guard.NotNull(maturedBlockDeposits, nameof(maturedBlockDeposits));
             Guard.Assert(!maturedBlockDeposits.Any(m => m.Deposits.Any(d => d.BlockNumber != m.BlockInfo.BlockHeight || d.BlockHash != m.BlockInfo.BlockHash)));
@@ -369,25 +369,27 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     if (maturedBlockDeposits.Count == 0 || maturedBlockDeposits.First().BlockInfo.BlockHeight != this.NextMatureDepositHeight)
                     {
                         this.logger.LogTrace("(-)[NO_VIABLE_BLOCKS]:true");
-                        return true;
+                        return new RecordLatestMatureDepositsResult().Succeeded();
                     }
 
                     if (maturedBlockDeposits.Last().BlockInfo.BlockHeight != this.NextMatureDepositHeight + maturedBlockDeposits.Count - 1)
                     {
                         this.logger.LogTrace("(-)[DUPLICATE_BLOCKS]:true");
-                        return true;
+                        return new RecordLatestMatureDepositsResult().Succeeded();
                     }
 
                     // Paying to our own multisig is a null operation and not supported.
-                    Func<IDeposit, bool> depositFilter = d => d.TargetAddress != this.settings.MultiSigAddress.ToString();
+                    bool depositFilter(IDeposit d) => d.TargetAddress != this.settings.MultiSigAddress.ToString();
 
                     if (!maturedBlockDeposits.Any(md => md.Deposits.Any(depositFilter)))
                     {
                         this.NextMatureDepositHeight += maturedBlockDeposits.Count;
 
                         this.logger.LogTrace("(-)[NO_DEPOSITS]:true");
-                        return true;
+                        return new RecordLatestMatureDepositsResult().Succeeded();
                     }
+
+                    var recordDepositResult = new RecordLatestMatureDepositsResult();
 
                     this.federationWalletManager.Synchronous(() =>
                     {
@@ -447,6 +449,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                                     if (transaction != null)
                                     {
+
                                         // Reserve the UTXOs before building the next transaction.
                                         walletUpdated |= this.federationWalletManager.ProcessTransaction(transaction);
 
@@ -461,6 +464,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                         else
                                         {
                                             status = CrossChainTransferStatus.Partial;
+                                            recordDepositResult.WithDrawalTransactions.Add(transaction);
                                         }
                                     }
                                     else
@@ -537,7 +541,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     });
 
                     // If progress was made we will check for more blocks.
-                    return this.NextMatureDepositHeight != originalDepositHeight;
+                    if (this.NextMatureDepositHeight != originalDepositHeight)
+                        return recordDepositResult.Succeeded();
+
+                    return recordDepositResult;
                 }
             });
         }
@@ -635,7 +642,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// identified in the blocks.
         /// </summary>
         /// <param name="blocks">The blocks used to update the store. Must be sorted by ascending height leading up to the new tip.</param>
-        private void Put(List<Block> blocks)
+        private void Put(List<Block> blocks, Dictionary<uint256, ChainedHeader> chainedHeadersSnapshot)
         {
             if (blocks.Count == 0)
                 this.logger.LogTrace("(-)[NO_BLOCKS]:0");
@@ -658,7 +665,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             if (allDepositIds.Count == 0)
             {
                 // Exiting here and saving the tip after the sync.
-                this.TipHashAndHeight = this.chainIndexer.GetHeader(blocks.Last().GetHash());
+                this.TipHashAndHeight = chainedHeadersSnapshot[blocks.Last().GetHash()];
 
                 this.logger.LogTrace("(-)[NO_DEPOSIT_IDS]");
                 return;
@@ -722,7 +729,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     this.PutTransfers(dbreezeTransaction, tracker.Keys.ToArray());
 
                     // Commit additions
-                    ChainedHeader newTip = this.chainIndexer.GetHeader(blocks.Last().GetHash());
+                    ChainedHeader newTip = chainedHeadersSnapshot[blocks.Last().GetHash()];
                     this.SaveTipHashAndHeight(dbreezeTransaction, newTip);
                     dbreezeTransaction.Commit();
 
@@ -812,6 +819,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             lock (this.lockObj)
             {
                 HashHeightPair tipToChase = this.TipToChase();
+                if (this.TipHashAndHeight == null)
+                {
+                    this.logger.LogError("Failed to synchronise. Reason: {0} is null.", nameof(this.TipHashAndHeight));
+                    this.logger.LogTrace("(-)[SYNCHRONIZED]:false");
+                    return false;
+                }
+
                 if (tipToChase.Hash == this.TipHashAndHeight.HashBlock)
                 {
                     // Indicate that we are synchronized.
@@ -853,9 +867,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private bool SynchronizeBatch()
         {
             // Get a batch of blocks.
-            var blockHashes = new List<uint256>();
             int batchSize = 0;
             HashHeightPair tipToChase = this.TipToChase();
+            Dictionary<uint256, ChainedHeader> chainedHeadersSnapshot = new Dictionary<uint256, ChainedHeader>();
 
             foreach (ChainedHeader header in this.chainIndexer.EnumerateToTip(this.TipHashAndHeight.HashBlock).Skip(1))
             {
@@ -865,13 +879,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 if (header.Height > tipToChase.Height)
                     break;
 
-                blockHashes.Add(header.HashBlock);
+                chainedHeadersSnapshot.Add(header.HashBlock, header);
 
                 if (++batchSize >= synchronizationBatchSize)
                     break;
             }
 
-            List<Block> blocks = this.blockRepository.GetBlocks(blockHashes);
+            List<Block> blocks = this.blockRepository.GetBlocks(chainedHeadersSnapshot.Select(c => c.Key).ToList());
             int availableBlocks = blocks.FindIndex(b => (b == null));
             if (availableBlocks < 0)
                 availableBlocks = blocks.Count;
@@ -879,7 +893,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             if (availableBlocks > 0)
             {
                 Block lastBlock = blocks[availableBlocks - 1];
-                this.Put(blocks.GetRange(0, availableBlocks));
+                this.Put(blocks.GetRange(0, availableBlocks), chainedHeadersSnapshot);
                 this.logger.LogInformation("Synchronized {0} blocks with cross-chain store to advance tip to block {1}", availableBlocks, this.TipHashAndHeight?.Height);
             }
 

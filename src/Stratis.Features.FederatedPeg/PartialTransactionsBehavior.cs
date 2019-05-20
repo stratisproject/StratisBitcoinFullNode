@@ -89,19 +89,31 @@ namespace Stratis.Features.FederatedPeg
 
             if (transfer[0] == null)
             {
-                this.logger.LogTrace("OnMessageReceivedAsync: Deposit {0} does not exist.", payload.DepositId);
+                this.logger.LogDebug("{0}: Deposit {1} does not exist.", nameof(this.OnMessageReceivedAsync), payload.DepositId);
                 return;
             }
 
             if (transfer[0].Status != CrossChainTransferStatus.Partial)
             {
-                this.logger.LogTrace("OnMessageReceivedAsync: Deposit {0} is {1}.", payload.DepositId, transfer[0].Status);
+                this.logger.LogDebug("{0}: Deposit {1} is {2}.", nameof(this.OnMessageReceivedAsync), payload.DepositId, transfer[0].Status);
+                return;
+            }
+
+            if (transfer[0].PartialTransaction == null)
+            {
+                this.logger.LogDebug("{0}: Deposit {1}, PartialTransaction not found.", nameof(this.OnMessageReceivedAsync), payload.DepositId);
                 return;
             }
 
             uint256 oldHash = transfer[0].PartialTransaction.GetHash();
 
             Transaction signedTransaction = await this.crossChainTransferStore.MergeTransactionSignaturesAsync(payload.DepositId, new[] { payload.PartialTransaction }).ConfigureAwait(false);
+
+            if (signedTransaction == null)
+            {
+                this.logger.LogDebug("{0}: Deposit {1}, signedTransaction not found.", nameof(this.OnMessageReceivedAsync), payload.DepositId);
+                return;
+            }
 
             if (oldHash != signedTransaction.GetHash())
             {

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 {
@@ -28,5 +29,26 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         {
             return $"{nameof(this.Deposited)}:{this.Deposited}, {nameof(this.Satoshi)}:{this.Satoshi}, {nameof(this.BalanceChangedHeight)}:{this.BalanceChangedHeight}";
         }
+    }
+
+    public class OutputsIndexData
+    {
+        public OutputsIndexData()
+        {
+            this.IndexedOutpoints = new Dictionary<string, ScriptPubKeyMoneyPair>();
+        }
+
+        /// <summary>Id required for litedb.</summary>
+        public int Id { get; set; }
+
+        /// <summary>Script pub key bytes and amounts mapped by outpoints.</summary>
+        public Dictionary<string, ScriptPubKeyMoneyPair> IndexedOutpoints { get; set; }
+    }
+
+    public class ScriptPubKeyMoneyPair
+    {
+        public byte[] ScriptPubKeyBytes { get; set; }
+
+        public long Money { get; set; }
     }
 }

@@ -64,6 +64,15 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                 stream.ReadWrite(ref arr);
 
                 this.PubKeysHexVotedInFavor = arr.ToList();
+
+                if (this.PollExecutedBlockData.Hash == uint256.Zero)
+                    this.PollExecutedBlockData = null;
+
+                if (this.PollStartBlockData.Hash == uint256.Zero)
+                    this.PollStartBlockData = null;
+
+                if (this.PollVotedInFavorBlockData.Hash == uint256.Zero)
+                    this.PollVotedInFavorBlockData = null;
             }
         }
 

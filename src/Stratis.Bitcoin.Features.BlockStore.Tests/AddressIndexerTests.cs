@@ -20,8 +20,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
     {
         private readonly IAddressIndexer addressIndexer;
 
-        private readonly Mock<IBlockStore> blockStoreMock;
-
         private readonly Mock<IConsensusManager> consensusManagerMock;
 
         private readonly Network network;
@@ -37,12 +35,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             storeSettings.TxIndex = true;
 
             var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
-            this.blockStoreMock = new Mock<IBlockStore>();
             var stats = new Mock<INodeStats>();
             this.consensusManagerMock = new Mock<IConsensusManager>();
 
-            this.addressIndexer = new AddressIndexer(storeSettings, dataFolder, new ExtendedLoggerFactory(), this.network, this.blockStoreMock.Object,
-                stats.Object, this.consensusManagerMock.Object);
+            this.addressIndexer = new AddressIndexer(storeSettings, dataFolder, new ExtendedLoggerFactory(), this.network, stats.Object, this.consensusManagerMock.Object);
 
             this.genesisHeader = new ChainedHeader(this.network.GetGenesis().Header, this.network.GetGenesis().Header.GetHash(), 0);
         }
@@ -100,14 +96,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var tx = new Transaction();
             tx.Inputs.Add(new TxIn(new OutPoint(block5.Transactions.First().GetHash(), 0)));
             var block10 = new Block() { Transactions = new List<Transaction>() { tx } };
-
-            this.blockStoreMock.Setup(x => x.GetTransactionsByIds(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>())).Returns((uint256[] hashes, CancellationToken token) =>
-            {
-                if (hashes.Length == 1 && hashes[0] == block5.Transactions.First().GetHash())
-                    return new Transaction[] { block5.Transactions.First() };
-
-                return null;
-            });
 
             this.consensusManagerMock.Setup(x => x.GetBlockData(It.IsAny<uint256>())).Returns((uint256 hash) =>
             {

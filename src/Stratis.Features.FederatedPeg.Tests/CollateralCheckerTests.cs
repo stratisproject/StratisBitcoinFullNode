@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.PoA;
@@ -68,11 +70,14 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             var blockStoreClientMock = new Mock<IBlockStoreClient>();
 
-            var collateralData = new Dictionary<string, Money>()
+            var collateralData = new AddressBalancesModel()
             {
-                { this.collateralFederationMembers[0].CollateralMainchainAddress, this.collateralFederationMembers[0].CollateralAmount},
-                { this.collateralFederationMembers[1].CollateralMainchainAddress, this.collateralFederationMembers[1].CollateralAmount + 10},
-                { this.collateralFederationMembers[2].CollateralMainchainAddress, this.collateralFederationMembers[2].CollateralAmount - 10}
+                Balances = new List<AddressBalanceModel>()
+                {
+                    new AddressBalanceModel( this.collateralFederationMembers[0].CollateralMainchainAddress, this.collateralFederationMembers[0].CollateralAmount) ,
+                    new AddressBalanceModel(this.collateralFederationMembers[1].CollateralMainchainAddress, this.collateralFederationMembers[1].CollateralAmount + 10),
+                    new AddressBalanceModel(this.collateralFederationMembers[2].CollateralMainchainAddress, this.collateralFederationMembers[2].CollateralAmount - 10)
+                }
             };
 
             blockStoreClientMock.Setup(x => x.GetAddressBalancesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(collateralData);
@@ -86,7 +91,8 @@ namespace Stratis.Features.FederatedPeg.Tests
             Assert.False(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[2]));
 
             // Now change what the client returns and make sure collateral check fails after update.
-            collateralData[this.collateralFederationMembers[0].CollateralMainchainAddress] = this.collateralFederationMembers[0].CollateralAmount - 1;
+            AddressBalanceModel updated = collateralData.Balances.First(b => b.Address == this.collateralFederationMembers[0].CollateralMainchainAddress);
+            updated.Balance = this.collateralFederationMembers[0].CollateralAmount - 1;
 
             // Wait CollateralUpdateIntervalSeconds + 1 seconds
 

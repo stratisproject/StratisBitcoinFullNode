@@ -862,11 +862,15 @@ namespace Stratis.Bitcoin.Consensus
 
             if (validationContext.Error != null)
             {
-                List<int> badPeers;
+                var badPeers = new List<int>();
 
-                lock (this.peerLock)
+                // Ban the peers only in case block is invalid and not temporary rejected.
+                if (validationContext.RejectUntil == null)
                 {
-                    badPeers = this.chainedHeaderTree.PartialOrFullValidationFailed(blockToConnect.ChainedHeader);
+                    lock (this.peerLock)
+                    {
+                        badPeers = this.chainedHeaderTree.PartialOrFullValidationFailed(blockToConnect.ChainedHeader);
+                    }
                 }
 
                 var failureResult = new ConnectBlocksResult(false)

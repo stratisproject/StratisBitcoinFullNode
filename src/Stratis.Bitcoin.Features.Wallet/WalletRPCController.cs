@@ -422,7 +422,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         var prevTransactionScriptPubkey = prevTransaction.Outputs[txIn.PrevOut.N].ScriptPubKey;
 
                         var addressBase58 = this.scriptAddressReader.GetAddressFromScriptPubKey(this.Network, prevTransactionScriptPubkey);
-                        if (addressBase58 == null)
+                        if (string.IsNullOrEmpty(addressBase58))
                             continue;
 
                         addressGroupBase58.Add(addressBase58);
@@ -436,7 +436,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                             if (IsChange(internalAddresses, txOut.ScriptPubKey))
                             {
                                 var txOutAddressBase58 = this.scriptAddressReader.GetAddressFromScriptPubKey(this.Network, txOut.ScriptPubKey);
-                                if (txOutAddressBase58 != null)
+                                if (!string.IsNullOrEmpty(txOutAddressBase58))
                                     addressGroupBase58.Add(txOutAddressBase58);
                             }
                         }
@@ -452,8 +452,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                     {
                         var grouping = new List<string>();
 
-                        var addressBase58 = this.scriptAddressReader.GetAddressFromScriptPubKey(this.Network, txOut.ScriptPubKey);
-                        if (addressBase58 == null)
+                        string addressBase58 = this.scriptAddressReader.GetAddressFromScriptPubKey(this.Network, txOut.ScriptPubKey);
+                        if (string.IsNullOrEmpty(addressBase58))
                             continue;
 
                         grouping.Add(addressBase58);
