@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                             foreach (string address in affectedAddresses)
                             {
-                                AddressIndexerData indexData = this.addressIndexCache.GetAddress(address);
+                                AddressIndexerData indexData = this.addressIndexCache.GetOrCreateAddress(address);
                                 indexData.BalanceChanges.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
 
                                 // There should definitely have been at least one balance entry
@@ -378,7 +378,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private void ProcessBalanceChange(int height, string address, Money amount, bool deposited)
         {
-            AddressIndexerData indexData = this.addressIndexCache.GetAddress(address);
+            AddressIndexerData indexData = this.addressIndexCache.GetOrCreateAddress(address);
 
             // Record new balance change into the address index data.
             indexData.BalanceChanges.Add(new AddressBalanceChange()
@@ -399,7 +399,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             lock (this.lockObject)
             {
-                AddressIndexerData indexData = this.addressIndexCache.GetAddress(address);
+                AddressIndexerData indexData = this.addressIndexCache.GetOrCreateAddress(address);
                 if (indexData == null)
                 {
                     this.logger.LogTrace("(-)[NOT_FOUND]");
@@ -430,7 +430,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             lock (this.lockObject)
             {
-                AddressIndexerData indexData = this.addressIndexCache.GetAddress(address);
+                AddressIndexerData indexData = this.addressIndexCache.GetOrCreateAddress(address);
                 if (indexData == null)
                 {
                     this.logger.LogTrace("(-)[NOT_FOUND]");

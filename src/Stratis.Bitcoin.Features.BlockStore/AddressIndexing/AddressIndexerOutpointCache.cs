@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private const int BatchSize = 100;
 
-        public int MaxItems { get; set; }
+        public readonly int MaxItems;
 
         /// <summary>Number of outpoints currently in the cache.</summary>
         private int itemCount;
@@ -23,9 +23,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private object lockObj;
 
-        private LiteDatabase db;
+        private readonly LiteDatabase db;
 
-        private LiteCollection<ScriptPubKeyMoneyPair> addressIndexerOutPointData;
+        private readonly LiteCollection<ScriptPubKeyMoneyPair> addressIndexerOutPointData;
 
         public AddressIndexerOutpointCache(LiteDatabase db, string addressIndexerOutputCollectionName)
         {
