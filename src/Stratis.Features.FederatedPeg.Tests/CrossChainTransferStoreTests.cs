@@ -127,10 +127,6 @@ namespace Stratis.Features.FederatedPeg.Tests
                 };
 
                 RecordLatestMatureDepositsResult recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
-                foreach (Transaction withdrawalTx in recordMatureDepositResult.WithDrawalTransactions)
-                {
-                    this.blockStore.Setup(x => x.GetTransactionById(withdrawalTx.GetHash())).Returns(withdrawalTx);
-                }
 
                 Transaction[] transactions = crossChainTransferStore.GetTransfersByStatus(new[] { CrossChainTransferStatus.Partial }).Select(x => x.PartialTransaction).ToArray();
 
@@ -233,10 +229,6 @@ namespace Stratis.Features.FederatedPeg.Tests
                 };
 
                 RecordLatestMatureDepositsResult recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
-                foreach (Transaction withdrawalTx in recordMatureDepositResult.WithDrawalTransactions)
-                {
-                    this.blockStore.Setup(x => x.GetTransactionById(withdrawalTx.GetHash())).Returns(withdrawalTx);
-                }
 
                 ICrossChainTransfer[] transfers = crossChainTransferStore.GetAsync(new uint256[] { txId1, txId2 }).GetAwaiter().GetResult().ToArray();
 
@@ -280,10 +272,6 @@ namespace Stratis.Features.FederatedPeg.Tests
                 TestBase.WaitLoop(() => this.wallet.LastBlockSyncedHeight == this.ChainIndexer.Tip.Height);
 
                 recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
-                foreach (Transaction withdrawalTx in recordMatureDepositResult.WithDrawalTransactions)
-                {
-                    this.blockStore.Setup(x => x.GetTransactionById(withdrawalTx.GetHash())).Returns(withdrawalTx);
-                }
 
                 transfers = crossChainTransferStore.GetAsync(new uint256[] { txId1, txId2 }).GetAwaiter().GetResult().ToArray();
                 transactions = transfers.Select(t => t.PartialTransaction).ToArray();
@@ -363,10 +351,6 @@ namespace Stratis.Features.FederatedPeg.Tests
                 };
 
                 RecordLatestMatureDepositsResult recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
-                foreach (Transaction transaction in recordMatureDepositResult.WithDrawalTransactions)
-                {
-                    this.blockStore.Setup(x => x.GetTransactionById(transaction.GetHash())).Returns(transaction);
-                }
 
                 ICrossChainTransfer[] transfers = crossChainTransferStore.GetAsync(new uint256[] { txId1, txId2, txId3 }).GetAwaiter().GetResult().ToArray();
 
@@ -418,10 +402,6 @@ namespace Stratis.Features.FederatedPeg.Tests
                 };
 
                 RecordLatestMatureDepositsResult recordMatureDepositResult = await cctsInstanceOne.RecordLatestMatureDepositsAsync(blockDeposits);
-                foreach (Transaction transaction in recordMatureDepositResult.WithDrawalTransactions)
-                {
-                    this.blockStore.Setup(x => x.GetTransactionById(transaction.GetHash())).Returns(transaction);
-                }
 
                 ICrossChainTransfer crossChainTransfer = cctsInstanceOne.GetAsync(new[] { deposit.Id }).GetAwaiter().GetResult().SingleOrDefault();
 
@@ -457,10 +437,6 @@ namespace Stratis.Features.FederatedPeg.Tests
                     Assert.Equal(testInstanceTwo.ChainIndexer.Tip.Height, cctsInstanceTwo.TipHashAndHeight.Height);
 
                     RecordLatestMatureDepositsResult recordMatureDepositResult2 = await cctsInstanceTwo.RecordLatestMatureDepositsAsync(blockDeposits);
-                    foreach (Transaction withdrawalTx in recordMatureDepositResult2.WithDrawalTransactions)
-                    {
-                        testInstanceTwo.blockStore.Setup(x => x.GetTransactionById(withdrawalTx.GetHash())).Returns(withdrawalTx);
-                    }
 
                     ICrossChainTransfer crossChainTransfer2 = cctsInstanceTwo.GetAsync(new[] { deposit.Id }).GetAwaiter().GetResult().SingleOrDefault();
 
@@ -473,7 +449,6 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Merges the transaction signatures.
                 Transaction mergedTransaction = await cctsInstanceOne.MergeTransactionSignaturesAsync(deposit.Id, new[] { transaction2 });
-                this.blockStore.Setup(x => x.GetTransactionById(mergedTransaction.GetHash())).Returns(mergedTransaction);
 
                 // Test the outcome.
                 crossChainTransfer = cctsInstanceOne.GetAsync(new[] { deposit.Id }).GetAwaiter().GetResult().SingleOrDefault();
@@ -527,10 +502,6 @@ namespace Stratis.Features.FederatedPeg.Tests
                 };
 
                 RecordLatestMatureDepositsResult recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
-                foreach (Transaction withdrawalTx in recordMatureDepositResult.WithDrawalTransactions)
-                {
-                    this.blockStore.Setup(x => x.GetTransactionById(withdrawalTx.GetHash())).Returns(withdrawalTx);
-                }
 
                 ICrossChainTransfer[] transactions = crossChainTransferStore.GetTransfersByStatus(new[] { CrossChainTransferStatus.Partial });
 
@@ -666,10 +637,6 @@ namespace Stratis.Features.FederatedPeg.Tests
                 };
 
                 RecordLatestMatureDepositsResult recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
-                foreach (Transaction transaction in recordMatureDepositResult.WithDrawalTransactions)
-                {
-                    this.blockStore.Setup(x => x.GetTransactionById(transaction.GetHash())).Returns(transaction);
-                }
 
                 ICrossChainTransfer[] crossChainTransfers = await crossChainTransferStore.GetAsync(new[] { deposit.Id });
                 ICrossChainTransfer crossChainTransfer = crossChainTransfers.SingleOrDefault();
@@ -752,10 +719,6 @@ namespace Stratis.Features.FederatedPeg.Tests
                 };
 
                 RecordLatestMatureDepositsResult recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposit1);
-                foreach (Transaction withdrawalTx in recordMatureDepositResult.WithDrawalTransactions)
-                {
-                    this.blockStore.Setup(x => x.GetTransactionById(withdrawalTx.GetHash())).Returns(withdrawalTx);
-                }
 
                 ICrossChainTransfer transfer1 = crossChainTransferStore.GetAsync(new[] { deposit1.Id }).GetAwaiter().GetResult().FirstOrDefault();
                 Assert.Equal(CrossChainTransferStatus.Partial, transfer1?.Status);
@@ -771,10 +734,6 @@ namespace Stratis.Features.FederatedPeg.Tests
                 };
 
                 recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposit2);
-                foreach (Transaction withdrawalTx in recordMatureDepositResult.WithDrawalTransactions)
-                {
-                    this.blockStore.Setup(x => x.GetTransactionById(withdrawalTx.GetHash())).Returns(withdrawalTx);
-                }
 
                 ICrossChainTransfer transfer2 = crossChainTransferStore.GetAsync(new[] { deposit2.Id }).GetAwaiter().GetResult().FirstOrDefault();
                 Assert.Equal(CrossChainTransferStatus.Partial, transfer2?.Status);
@@ -799,10 +758,6 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Recreate the second deposit.
                 recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposit2);
-                foreach (Transaction withdrawalTx in recordMatureDepositResult.WithDrawalTransactions)
-                {
-                    this.blockStore.Setup(x => x.GetTransactionById(withdrawalTx.GetHash())).Returns(withdrawalTx);
-                }
 
                 // Check that its status is partial.
                 transfer2 = crossChainTransferStore.GetAsync(new[] { deposit2.Id }).GetAwaiter().GetResult().FirstOrDefault();
@@ -873,10 +828,6 @@ namespace Stratis.Features.FederatedPeg.Tests
                 };
 
                 RecordLatestMatureDepositsResult recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
-                foreach (Transaction withdrawalTx in recordMatureDepositResult.WithDrawalTransactions)
-                {
-                    this.blockStore.Setup(x => x.GetTransactionById(withdrawalTx.GetHash())).Returns(withdrawalTx);
-                }
 
                 Transaction[] partialTransactions = crossChainTransferStore.GetTransfersByStatus(new[] { CrossChainTransferStatus.Partial }).Select(x => x.PartialTransaction).ToArray();
                 Transaction[] suspendedTransactions = crossChainTransferStore.GetTransfersByStatus(new[] { CrossChainTransferStatus.Suspended }).Select(x => x.PartialTransaction).ToArray();
