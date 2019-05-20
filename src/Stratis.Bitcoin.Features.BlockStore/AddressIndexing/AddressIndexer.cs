@@ -75,12 +75,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private AddressIndexerTipData tipData;
         
+        /// <summary>A mapping between addresses and their balance changes.</summary>
         private AddressIndexCache addressIndexCache;
 
         /// <summary>Script pub keys and amounts mapped by outpoints.</summary>
         private AddressIndexerOutpointCache outpointsIndexCache;
 
-        // TODO: Is this still needed?
         private readonly object lockObject;
 
         private readonly CancellationTokenSource cancellation;
