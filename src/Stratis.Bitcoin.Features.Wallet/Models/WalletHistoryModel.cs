@@ -86,6 +86,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// </summary>
         [JsonProperty(PropertyName = "blockIndex", NullValueHandling = NullValueHandling.Ignore)]
         public int? BlockIndex { get; set; }
+
+        [JsonIgnore]
+        public int? OutputIndex { get; set; }
     }
 
     public class PaymentDetailModel

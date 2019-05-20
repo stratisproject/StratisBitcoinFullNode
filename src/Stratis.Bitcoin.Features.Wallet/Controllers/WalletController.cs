@@ -486,7 +486,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                     Id = transaction.SpendingDetails.TransactionId,
                                     Timestamp = transaction.SpendingDetails.CreationTime,
                                     ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
-                                    BlockIndex = transaction.SpendingDetails.BlockIndex
+                                    BlockIndex = transaction.SpendingDetails.BlockIndex,
+                                    OutputIndex = transaction.Index
                                 };
 
                                 transactionItems.Add(stakingItem);
@@ -512,7 +513,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                 Timestamp = transaction.SpendingDetails.CreationTime,
                                 ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
                                 BlockIndex = transaction.SpendingDetails.BlockIndex,
-                                Amount = Money.Zero
+                                Amount = Money.Zero,
+                                OutputIndex = transaction.Index
                             };
 
                             // If this 'send' transaction has made some external payments, i.e the funds were not sent to another address in the wallet.
@@ -568,13 +570,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                 Id = transaction.Id,
                                 Timestamp = transaction.CreationTime,
                                 ConfirmedInBlock = transaction.BlockHeight,
-                                BlockIndex = transaction.BlockIndex
+                                BlockIndex = transaction.BlockIndex,
+                                OutputIndex = transaction.Index
                             };
 
                             transactionItems.Add(receivedItem);
                             itemsCount++;
                         }
                     }
+
+                    transactionItems = transactionItems.Distinct(new SentTransactionItemModelComparer()).Select(e => e).ToList();
 
                     // Sort and filter the history items.
                     List<TransactionItemModel> itemsToInclude = transactionItems.OrderByDescending(t => t.Timestamp)

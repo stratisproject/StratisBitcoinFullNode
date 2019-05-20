@@ -31,7 +31,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Helpers
 
             bool propertiesAreEqual = (x.Id == y.Id &&
                 x.ConfirmedInBlock == y.ConfirmedInBlock &&
-                x.Type == y.Type && x.Amount == y.Amount && x.Payments.Count == y.Payments.Count);
+                x.Type == y.Type && 
+                x.Amount == y.Amount && 
+                x.Payments.Count == y.Payments.Count &&
+                x.OutputIndex == y.OutputIndex);
 
             if (!propertiesAreEqual)
             {
