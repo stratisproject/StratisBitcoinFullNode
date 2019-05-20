@@ -1,13 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
@@ -119,9 +117,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.addressIndexer.Initialize();
 
             TestBase.WaitLoop(() => this.addressIndexer.IndexerTip == headers.Last());
-
-            //Dictionary<string, List<AddressBalanceChange>> index = this.addressIndexer.GetAddressIndexCopy();
-            //Assert.Equal(2, index.Keys.Count);
 
             Assert.Equal(60_000, this.addressIndexer.GetAddressBalance(address1).Satoshi);
             Assert.Equal(2_000, this.addressIndexer.GetAddressBalance(address2).Satoshi);
