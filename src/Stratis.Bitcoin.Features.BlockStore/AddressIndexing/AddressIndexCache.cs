@@ -10,6 +10,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <summary>Default maximum number of items (addresses and balance changes) in the cache.</summary>
         public const int AddressIndexCacheMaxItemsDefault = 100000;
 
+        /// <summary>The number of records to be batched up and written out at once during cache flushes.</summary>
         private const int BatchSize = 100;
 
         /// <summary>Maximum number of items (addresses and balance changes) in the cache.</summary>
@@ -19,19 +20,19 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         private int itemCount;
 
         /// <summary>All access to the cache must be protected with <see cref="lockObj"/>.</summary>
-        private Dictionary<string, AddressIndexerData> cachedAddresses;
+        private readonly Dictionary<string, AddressIndexerData> cachedAddresses;
 
         /// <summary>The dirty address cache contains the set of addresses that have been
         /// modified since their inclusion into the cache itself. This speeds up the
         /// flushing process as only dirty addresses need to be flushed.</summary>
         /// <remarks>All access to the dirty address cache must be protected with <see cref="lockObj"/>.</remarks>
-        private HashSet<string> dirtyAddresses;
+        private readonly HashSet<string> dirtyAddresses;
 
         private object lockObj;
 
         private readonly LiteDatabase db;
 
-        private LiteCollection<AddressIndexerData> addressIndexerData;
+        private readonly LiteCollection<AddressIndexerData> addressIndexerData;
 
         public AddressIndexCache(LiteDatabase db, string addressIndexerCollectionName)
         {
