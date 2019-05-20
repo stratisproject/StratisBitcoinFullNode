@@ -1,17 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using LiteDB;
 
 namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 {
-    public class AddressIndexerData
+    public class AddressIndexerTipData
     {
-        /// <summary>Id required for litedb.</summary>
         public int Id { get; set; }
 
         public byte[] TipHashBytes { get; set; }
+    }
 
-        /// <summary>Address changes by address.</summary>
-        public Dictionary<string, List<AddressBalanceChange>> AddressChanges { get; set; }
+    public class AddressIndexerData
+    {
+        [BsonId]
+        public string Address { get; set; }
+
+        public List<AddressBalanceChange> BalanceChanges { get; set; }
     }
 
     public class AddressBalanceChange
@@ -31,22 +36,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
     }
 
-    public class OutputsIndexData
-    {
-        public OutputsIndexData()
-        {
-            this.IndexedOutpoints = new Dictionary<string, ScriptPubKeyMoneyPair>();
-        }
-
-        /// <summary>Id required for litedb.</summary>
-        public int Id { get; set; }
-
-        /// <summary>Script pub key bytes and amounts mapped by outpoints.</summary>
-        public Dictionary<string, ScriptPubKeyMoneyPair> IndexedOutpoints { get; set; }
-    }
-
     public class ScriptPubKeyMoneyPair
     {
+        [BsonId]
         public byte[] ScriptPubKeyBytes { get; set; }
 
         public long Money { get; set; }
