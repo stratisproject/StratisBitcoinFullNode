@@ -49,6 +49,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <summary>Timer for saving wallet files to the file system.</summary>
         private const int WalletSavetimeIntervalInMinutes = 5;
 
+        /// <summary>Keep at least this many transactions in the wallet despite the
+        /// max reorg age limit for spent transactions. This is so that it never
+        /// looks like the wallet has become empty to the user.</summary>
+        private const int MinimumRetainedTransactions = 100;
+
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
 
@@ -333,6 +338,30 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     if (trxFound)
                     {
                         walletUpdated = true;
+                    }
+                }
+
+                if (this.network.Consensus.MaxReorgLength > 0 && this.Wallet.MultiSigAddress.Transactions.Count > MinimumRetainedTransactions)
+                {
+                    var pastMaxReorg = new List<TransactionData>();
+                    foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions)
+                    {
+                        // Only want to remove transactions that are spent, and the spend must have passed max reorg too
+                        if (transactionData.SpendingDetails != null
+                            && transactionData.SpendingDetails.BlockHeight != null
+                            && transactionData.SpendingDetails.BlockHeight < (chainedHeader.Height - this.network.Consensus.MaxReorgLength))
+                        {
+                            pastMaxReorg.Add(transactionData);
+                        }
+                    }
+
+                    foreach (TransactionData transactionData in pastMaxReorg)
+                    {
+                        this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
+                        walletUpdated = true;
+
+                        if (this.Wallet.MultiSigAddress.Transactions.Count <= MinimumRetainedTransactions)
+                            break;
                     }
                 }
 
@@ -673,6 +702,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             List<PaymentDetails> payments = new List<PaymentDetails>();
             foreach (TxOut paidToOutput in paidToOutputs)
             {
+                // TODO: Use the ScriptAddressReader here?
                 // Figure out how to retrieve the destination address.
                 string destinationAddress = string.Empty;
                 ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate(this.network);
