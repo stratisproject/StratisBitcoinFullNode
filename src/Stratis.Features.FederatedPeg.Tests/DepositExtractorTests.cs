@@ -46,7 +46,13 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.addressHelper = new MultisigAddressHelper(this.network, this.counterChainNetwork);
 
             this.settings.MultiSigRedeemScript.Returns(this.addressHelper.PayToMultiSig);
-            this.settings.TransactionFee.Returns(FederationGatewaySettings.DefaultTransactionFee);
+            this.settings.TransactionFee(Arg.Any<int>()).ReturnsForAnyArgs((x) =>
+            {
+                int numInputs = x.ArgAt<int>(0);
+
+                return FederationGatewaySettings.DefaultTransactionFee + FederationGatewaySettings.InputsTransactionFee * numInputs;
+            });
+
             this.opReturnDataReader.TryGetTargetAddress(null, out string address).Returns(callInfo => { callInfo[1] = null; return false; });
 
             this.transactionBuilder = new TestTransactionBuilder();

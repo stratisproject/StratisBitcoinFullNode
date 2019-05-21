@@ -34,9 +34,10 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.logger = new Mock<ILogger>();
             this.loggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>()))
                 .Returns(this.logger.Object);
-
-            this.federationGatewaySettings.Setup(x => x.TransactionFee)
-                .Returns(FederationGatewaySettings.DefaultTransactionFee);
+            this.federationGatewaySettings.Setup<Money>(x => x.TransactionFee(It.IsAny<int>()))
+                .Returns<int>((numInputs) => {
+                    return FederationGatewaySettings.DefaultTransactionFee + FederationGatewaySettings.InputsTransactionFee * numInputs;
+                });
 
             this.federationWalletManager.Setup(x => x.Secret)
                 .Returns(new WalletSecret());
@@ -66,7 +67,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             Assert.NotNull(ret);
 
-            Money expectedAmountAfterFee = recipient.Amount - this.federationGatewaySettings.Object.TransactionFee;
+            Money expectedAmountAfterFee = recipient.Amount - this.federationGatewaySettings.Object.TransactionFee(ret.Inputs.Count);
 
             this.federationWalletTransactionHandler.Verify(x => x.BuildTransaction(It.Is<TransactionBuildContext>(y => y.Recipients.First().Amount == expectedAmountAfterFee)));
         }

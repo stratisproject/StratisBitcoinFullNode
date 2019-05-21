@@ -952,7 +952,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (checkSignature)
                 {
                     TransactionBuilder builder = new TransactionBuilder(this.Wallet.Network).AddCoins(coins);
-                    if (!builder.Verify(transaction, this.federationGatewaySettings.TransactionFee, out TransactionPolicyError[] errors))
+                    if (!builder.Verify(transaction, this.federationGatewaySettings.TransactionFee(coins.Count), out TransactionPolicyError[] errors))
                     {
                         // Trace the reason validation failed. Note that failure here doesn't mean an error necessarily. Just that the transaction is not fully signed.
                         foreach (TransactionPolicyError transactionPolicyError in errors)
