@@ -49,6 +49,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <summary>Timer for saving wallet files to the file system.</summary>
         private const int WalletSavetimeIntervalInMinutes = 5;
 
+        /// <summary>Keep at least this many transactions in the wallet despite the
+        /// max reorg age limit for spent transactions. This is so that it never
+        /// looks like the wallet has become empty to the user.</summary>
+        private const int MinimumRetainedTransactions = 100;
+
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
 
@@ -336,6 +341,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     }
                 }
 
+                walletUpdated |= this.CleanTransactionsPastMaxReorg(chainedHeader.Height);
+
                 // Update the wallets with the last processed block height.
                 // It's important that updating the height happens after the block processing is complete,
                 // as if the node is stopped, on re-opening it will start updating from the previous height.
@@ -459,6 +466,38 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 return foundSendingTrx || foundReceivingTrx;
             }
+        }
+
+        private bool CleanTransactionsPastMaxReorg(int height)
+        {
+            bool walletUpdated = false;
+
+            if (this.network.Consensus.MaxReorgLength == 0 || this.Wallet.MultiSigAddress.Transactions.Count <= MinimumRetainedTransactions)
+                return walletUpdated;
+
+            int finalisedHeight = height - (int)this.network.Consensus.MaxReorgLength;
+            var pastMaxReorg = new List<TransactionData>();
+            foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions)
+            {
+                // Only want to remove transactions that are spent, and the spend must have passed max reorg too
+                if (transactionData.SpendingDetails != null
+                    && transactionData.SpendingDetails.BlockHeight != null
+                    && transactionData.SpendingDetails.BlockHeight < finalisedHeight)
+                {
+                    pastMaxReorg.Add(transactionData);
+                }
+            }
+
+            foreach (TransactionData transactionData in pastMaxReorg)
+            {
+                this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
+                walletUpdated = true;
+
+                if (this.Wallet.MultiSigAddress.Transactions.Count <= MinimumRetainedTransactions)
+                    break;
+            }
+
+            return walletUpdated;
         }
 
         private bool RemoveTransaction(Transaction transaction)
@@ -673,6 +712,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             List<PaymentDetails> payments = new List<PaymentDetails>();
             foreach (TxOut paidToOutput in paidToOutputs)
             {
+                // TODO: Use the ScriptAddressReader here?
                 // Figure out how to retrieve the destination address.
                 string destinationAddress = string.Empty;
                 ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate(this.network);
