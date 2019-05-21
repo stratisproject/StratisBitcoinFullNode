@@ -85,7 +85,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
             List<TxOut> depositsToMultisig = transaction.Outputs.Where(output =>
                 output.ScriptPubKey == this.depositScript
-                && output.Value > this.settings.TransactionFee(transaction.Inputs.Count)).ToList();
+                && output.Value > FederationGatewaySettings.CrossChainTransferFee).ToList();
 
             if (!depositsToMultisig.Any())
                 return null;

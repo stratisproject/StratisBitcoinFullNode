@@ -251,7 +251,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 count++;
 
                 // Sufficient UTXOs are selected to cover the value of the outputs + fee.
-                if (sum >= (totalToSend + settings.TransactionFee(count)))
+                if (sum >= (totalToSend + settings.GetWithdrawalTransactionFee(count)))
                     break;
             }
 

@@ -65,7 +65,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 (List<Coin> coins, List<Wallet.UnspentOutputReference> unspentOutputs) =
                     FederationWalletTransactionHandler.DetermineCoins(this.federationWalletManager, this.network, multiSigContext, this.federationGatewaySettings);
 
-                Money transactionFee = this.federationGatewaySettings.TransactionFee(coins.Count);
+                Money transactionFee = this.federationGatewaySettings.GetWithdrawalTransactionFee(coins.Count);
 
                 multiSigContext.Recipients = new[] { recipient.WithPaymentReducedByFee(transactionFee) }.ToList();
                 multiSigContext.TransactionFee = transactionFee;
