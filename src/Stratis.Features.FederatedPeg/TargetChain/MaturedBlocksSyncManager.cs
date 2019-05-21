@@ -143,6 +143,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     await this.store.SaveCurrentTipAsync().ConfigureAwait(false);
                 }
             }
+            else
+                this.logger.LogWarning("Failed to fetch matured block deposits from counter chain node!");
 
             return delayRequired;
         }

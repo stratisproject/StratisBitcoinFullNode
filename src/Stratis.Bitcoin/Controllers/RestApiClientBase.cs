@@ -170,7 +170,9 @@ namespace Stratis.Bitcoin.Controllers
                         this.logger.LogDebug("Sending request to Url '{1}'.", url);
 
                         response = await client.GetAsync(url, cancellation).ConfigureAwait(false);
-                        this.logger.LogDebug("Response received: {0}", response);
+
+                        if (response != null)
+                            this.logger.LogDebug("Response received: {0}", response);
                     }, cancellation);
                 }
                 catch (OperationCanceledException)
@@ -193,7 +195,7 @@ namespace Stratis.Bitcoin.Controllers
 
         protected virtual void OnRetry(Exception exception, TimeSpan delay)
         {
-            this.logger.LogDebug("Exception while calling API method: {0}.", exception.ToString());
+            this.logger.LogWarning("Exception while calling API method: {0}. Retrying...", exception.ToString());
         }
     }
 
