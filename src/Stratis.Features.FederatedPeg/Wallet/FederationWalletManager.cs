@@ -341,29 +341,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     }
                 }
 
-                if (this.network.Consensus.MaxReorgLength > 0 && this.Wallet.MultiSigAddress.Transactions.Count > MinimumRetainedTransactions)
-                {
-                    var pastMaxReorg = new List<TransactionData>();
-                    foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions)
-                    {
-                        // Only want to remove transactions that are spent, and the spend must have passed max reorg too
-                        if (transactionData.SpendingDetails != null
-                            && transactionData.SpendingDetails.BlockHeight != null
-                            && transactionData.SpendingDetails.BlockHeight < (chainedHeader.Height - this.network.Consensus.MaxReorgLength))
-                        {
-                            pastMaxReorg.Add(transactionData);
-                        }
-                    }
-
-                    foreach (TransactionData transactionData in pastMaxReorg)
-                    {
-                        this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
-                        walletUpdated = true;
-
-                        if (this.Wallet.MultiSigAddress.Transactions.Count <= MinimumRetainedTransactions)
-                            break;
-                    }
-                }
+                walletUpdated |= this.CleanTransactionsPastMaxReorg(chainedHeader.Height);
 
                 // Update the wallets with the last processed block height.
                 // It's important that updating the height happens after the block processing is complete,
@@ -488,6 +466,38 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 return foundSendingTrx || foundReceivingTrx;
             }
+        }
+
+        private bool CleanTransactionsPastMaxReorg(int height)
+        {
+            bool walletUpdated = false;
+
+            if (this.network.Consensus.MaxReorgLength == 0 || this.Wallet.MultiSigAddress.Transactions.Count <= MinimumRetainedTransactions)
+                return walletUpdated;
+
+            int finalisedHeight = height - (int)this.network.Consensus.MaxReorgLength;
+            var pastMaxReorg = new List<TransactionData>();
+            foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions)
+            {
+                // Only want to remove transactions that are spent, and the spend must have passed max reorg too
+                if (transactionData.SpendingDetails != null
+                    && transactionData.SpendingDetails.BlockHeight != null
+                    && transactionData.SpendingDetails.BlockHeight < finalisedHeight)
+                {
+                    pastMaxReorg.Add(transactionData);
+                }
+            }
+
+            foreach (TransactionData transactionData in pastMaxReorg)
+            {
+                this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
+                walletUpdated = true;
+
+                if (this.Wallet.MultiSigAddress.Transactions.Count <= MinimumRetainedTransactions)
+                    break;
+            }
+
+            return walletUpdated;
         }
 
         private bool RemoveTransaction(Transaction transaction)
