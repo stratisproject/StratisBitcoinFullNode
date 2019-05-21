@@ -1329,7 +1329,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                this.fileStorage.SaveToFile(wallet, $"{wallet.Name}.{WalletFileExtension}");
+                this.fileStorage.SaveToFile(wallet, $"{wallet.Name}.{WalletFileExtension}", new FileStorageOption { SerializeNullValues = false });
             }
         }
 

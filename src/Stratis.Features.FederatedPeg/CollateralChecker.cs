@@ -158,6 +158,7 @@ namespace Stratis.Features.FederatedPeg
 
             if (collateral == null)
             {
+                this.logger.LogWarning("Failed to fetch address balances from counter chain node!");
                 this.logger.LogTrace("(-)[FAILED]:false");
                 return false;
             }

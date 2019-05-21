@@ -10,7 +10,6 @@ using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
@@ -55,8 +54,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncProvider asyncProvider;
-
-        private readonly IBlockStore blockStore;
 
         /// <summary>Gets the wallet.</summary>
         public FederationWallet Wallet { get; set; }
@@ -113,7 +110,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public FederationWalletManager(
             ILoggerFactory loggerFactory,
             Network network,
-            IBlockStore blockStore,
             ChainIndexer chainIndexer,
             DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,
@@ -121,7 +117,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
             IFederationGatewaySettings federationGatewaySettings,
-            IWithdrawalExtractor withdrawalExtractor) :base()
+            IWithdrawalExtractor withdrawalExtractor) : base()
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
@@ -137,7 +133,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             this.network = network;
 
-            this.blockStore = blockStore;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chainIndexer = chainIndexer;
             this.asyncProvider = asyncProvider;
@@ -717,6 +712,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? transaction.Time),
                 BlockHeight = blockHeight,
                 BlockHash = blockHash,
+                Hex = transaction.ToHex(),
                 IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true
             };
 
@@ -866,12 +862,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     if (withdrawals.Any(w => w.transaction.GetHash() == spendingDetail.TransactionId))
                         continue;
 
-                    Transaction transaction = this.blockStore.GetTransactionById(spendingDetail.TransactionId);
-                    if (transaction == null)
-                    {
-                        this.logger.LogTrace("(-)[WITHDRAWAL_TX_NULL]:{0}={1}", nameof(spendingDetail.TransactionId), spendingDetail.TransactionId);
-                        throw new ArgumentNullException(string.Format("Withdrawal transaction {0} was not found in the store, transaction indexing possibly turned off.", spendingDetail.TransactionId));
-                    }
+                    Transaction transaction = this.network.CreateTransaction(spendingDetail.Hex);
 
                     Withdrawal withdrawal = new Withdrawal(
                         spendingDetail.WithdrawalDetails.MatchingDepositId,

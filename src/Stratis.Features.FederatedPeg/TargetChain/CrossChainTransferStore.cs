@@ -12,7 +12,9 @@ using NBitcoin;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.Events;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.Wallet;
@@ -66,13 +68,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly IFederationWalletManager federationWalletManager;
         private readonly IWithdrawalTransactionBuilder withdrawalTransactionBuilder;
         private readonly IFederationGatewaySettings settings;
+        private readonly ISignals signals;
 
         /// <summary>Provider of time functions.</summary>
         private readonly object lockObj;
 
         public CrossChainTransferStore(Network network, DataFolder dataFolder, ChainIndexer chainIndexer, IFederationGatewaySettings settings, IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory, IWithdrawalExtractor withdrawalExtractor, IFullNode fullNode, IBlockRepository blockRepository,
-            IFederationWalletManager federationWalletManager, IWithdrawalTransactionBuilder withdrawalTransactionBuilder, DBreezeSerializer dBreezeSerializer)
+            IFederationWalletManager federationWalletManager, IWithdrawalTransactionBuilder withdrawalTransactionBuilder, DBreezeSerializer dBreezeSerializer, ISignals signals)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(dataFolder, nameof(dataFolder));
@@ -99,6 +102,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.NextMatureDepositHeight = 1;
             this.cancellation = new CancellationTokenSource();
             this.settings = settings;
+            this.signals = signals;
 
             // Future-proof store name.
             string depositStoreName = "federatedTransfers" + settings.MultiSigAddress.ToString();
@@ -609,6 +613,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                 {
                                     this.logger.LogInformation("Deposit: {0} collected enough signatures and is FullySigned", transfer.DepositTransactionId);
                                     transfer.SetStatus(CrossChainTransferStatus.FullySigned);
+                                    this.signals.Publish(new CrossChainTransferTransactionFullySigned(transfer));
                                 }
 
                                 this.PutTransfer(dbreezeTransaction, transfer);
