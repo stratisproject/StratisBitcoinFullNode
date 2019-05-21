@@ -50,7 +50,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             {
                 int numInputs = x.ArgAt<int>(0);
 
-                return FederationGatewaySettings.BaseTransactionFee + FederationGatewaySettings.InputsTransactionFee * numInputs;
+                return FederationGatewaySettings.BaseTransactionFee + FederationGatewaySettings.InputTransactionFee * numInputs;
             });
 
             this.opReturnDataReader.TryGetTargetAddress(null, out string address).Returns(callInfo => { callInfo[1] = null; return false; });

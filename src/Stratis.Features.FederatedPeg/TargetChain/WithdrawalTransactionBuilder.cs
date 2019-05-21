@@ -59,10 +59,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     IgnoreVerify = true,
                     WalletPassword = walletPassword,
                     Sign = sign,
-                    Time = this.network.Consensus.IsProofOfStake ? blockTime : (uint?) null,
+                    Time = this.network.Consensus.IsProofOfStake ? blockTime : (uint?) null
                 };
 
-                multiSigContext.Recipients = new[] { recipient.WithPaymentReducedByFee(FederationGatewaySettings.CrossChainTransferFee) }.ToList(); // The fee known to the user is taken.
+                multiSigContext.Recipients = new List<Recipient> { recipient.WithPaymentReducedByFee(FederationGatewaySettings.CrossChainTransferFee) }; // The fee known to the user is taken.
 
                 // TODO: Amend this so we're not picking coins twice.
                 (List<Coin> coins, List<Wallet.UnspentOutputReference> unspentOutputs) = FederationWalletTransactionHandler.DetermineCoins(this.federationWalletManager, this.network, multiSigContext, this.federationGatewaySettings);

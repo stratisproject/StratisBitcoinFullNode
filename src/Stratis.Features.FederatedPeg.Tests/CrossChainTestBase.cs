@@ -104,7 +104,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             {
                 int numInputs = x.ArgAt<int>(0);
 
-                return FederationGatewaySettings.BaseTransactionFee + FederationGatewaySettings.InputsTransactionFee * numInputs;
+                return FederationGatewaySettings.BaseTransactionFee + FederationGatewaySettings.InputTransactionFee * numInputs;
             });
 
             // Generate the keys used by the federation members for our tests.

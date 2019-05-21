@@ -38,7 +38,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 .Returns(this.logger.Object);
             this.federationGatewaySettings.Setup<Money>(x => x.GetWithdrawalTransactionFee(It.IsAny<int>()))
                 .Returns<int>((numInputs) => {
-                    return FederationGatewaySettings.BaseTransactionFee + FederationGatewaySettings.InputsTransactionFee * numInputs;
+                    return FederationGatewaySettings.BaseTransactionFee + FederationGatewaySettings.InputTransactionFee * numInputs;
                 });
 
             this.federationWalletManager.Setup(x => x.Secret)
@@ -99,7 +99,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationWalletTransactionHandler.Verify(x => x.BuildTransaction(It.Is<TransactionBuildContext>(y => y.Recipients.First().Amount == expectedAmountAfterFee)));
 
             // Fee used to send transaction should be a smaller amount.
-            Money expectedTxFee = FederationGatewaySettings.BaseTransactionFee + 1 * FederationGatewaySettings.InputsTransactionFee;
+            Money expectedTxFee = FederationGatewaySettings.BaseTransactionFee + 1 * FederationGatewaySettings.InputTransactionFee;
             this.federationWalletTransactionHandler.Verify(x => x.BuildTransaction(It.Is<TransactionBuildContext>(y => y.TransactionFee == expectedTxFee)));
         }
 
