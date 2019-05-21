@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Utilities
         internal JsonSerializerSettings GetSerializationSettings()
         {
             // get default Json serializer settings
-            JsonSerializerSettings settings = JsonConvert.DefaultSettings?.Invoke() ?? new JsonSerializerSettings();
+            var settings = new JsonSerializerSettings();
 
             settings.NullValueHandling = this.SerializeNullValues ? NullValueHandling.Include : NullValueHandling.Ignore;
 
