@@ -30,9 +30,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         // <summary>Block batch size for synchronization</summary>
         private const int synchronizationBatchSize = 1000;
 
-        /// <summary>Amount withheld from the deposit amount when creating the withdrawal transaction.</summary>
-        private const decimal fixedTransferCost = 0.01m;
-
         /// <summary>This contains deposits ids indexed by block hash of the corresponding transaction.</summary>
         private readonly Dictionary<uint256, HashSet<uint256>> depositIdsByBlockHash = new Dictionary<uint256, HashSet<uint256>>();
 
@@ -442,7 +439,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                             {
                                 var recipient = new Recipient
                                 {
-                                    Amount = deposit.Amount - new Money(fixedTransferCost, MoneyUnit.BTC),
+                                    Amount = deposit.Amount,
                                     ScriptPubKey = scriptPubKey
                                 };
 
