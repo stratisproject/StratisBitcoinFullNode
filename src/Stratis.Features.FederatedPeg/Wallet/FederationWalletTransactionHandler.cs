@@ -56,20 +56,26 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         private readonly MemoryCache privateKeyCache;
 
+        private readonly IFederationGatewaySettings settings;
+
         public FederationWalletTransactionHandler(
             ILoggerFactory loggerFactory,
             IFederationWalletManager walletManager,
             IWalletFeePolicy walletFeePolicy,
-            Network network)
+            Network network,
+            IFederationGatewaySettings settings)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
             Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));
             Guard.NotNull(network, nameof(network));
+            Guard.NotNull(settings, nameof(settings));
 
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
             this.network = network;
+            this.settings = settings;
+
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
         }
@@ -181,15 +187,31 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <param name="context">The context associated with the current transaction being built.</param>
         private void AddCoins(TransactionBuilder transactionBuilder, TransactionBuildContext context)
         {
-            context.UnspentOutputs = this.walletManager.GetSpendableTransactionsInWallet(context.MinConfirmations).ToList();
+            (List<Coin> coins, List<UnspentOutputReference> unspentOutputs) = DetermineCoins(this.walletManager, this.network, context, this.settings);
 
-            if (context.UnspentOutputs.Count == 0)
+            context.UnspentOutputs = unspentOutputs;
+
+            if (unspentOutputs.Count == 0)
             {
                 throw new WalletException(NoSpendableTransactionsMessage);
             }
 
+            transactionBuilder.AddCoins(coins);
+        }
+
+        /// <summary>
+        /// Determines the inputs/coins that will be used for the transaction.
+        /// </summary>
+        /// <param name="walletManager">The federation wallet manager.</param>
+        /// <param name="network">The network.</param>
+        /// <param name="context">The transacion build context.</param>
+        /// <returns>The coins and unspent outputs that will be used.</returns>
+        public static (List<Coin>, List<UnspentOutputReference>) DetermineCoins(IFederationWalletManager walletManager, Network network, TransactionBuildContext context, IFederationGatewaySettings settings)
+        {
+            List<UnspentOutputReference> unspentOutputs = walletManager.GetSpendableTransactionsInWallet(context.MinConfirmations).ToList();
+
             // Get total spendable balance in the account.
-            long balance = context.UnspentOutputs.Sum(t => t.Transaction.Amount);
+            long balance = unspentOutputs.Sum(t => t.Transaction.Amount);
             long totalToSend = context.Recipients.Sum(s => s.Amount);
             if (balance < totalToSend)
                 throw new WalletException(NotEnoughFundsMessage);
@@ -201,7 +223,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 // input is part of the UTXO set and filter out UTXOs that are not
                 // in the initial list if 'context.AllowOtherInputs' is false.
 
-                Dictionary<OutPoint, UnspentOutputReference> availableHashList = context.UnspentOutputs.ToDictionary(item => item.ToOutPoint(), item => item);
+                Dictionary<OutPoint, UnspentOutputReference> availableHashList = unspentOutputs.ToDictionary(item => item.ToOutPoint(), item => item);
 
                 if (!context.SelectedInputs.All(input => availableHashList.ContainsKey(input)))
                     throw new WalletException("Not all the selected inputs were found on the wallet.");
@@ -210,28 +232,30 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 {
                     foreach (KeyValuePair<OutPoint, UnspentOutputReference> unspentOutputsItem in availableHashList)
                         if (!context.SelectedInputs.Contains(unspentOutputsItem.Key))
-                            context.UnspentOutputs.Remove(unspentOutputsItem.Value);
+                            unspentOutputs.Remove(unspentOutputsItem.Value);
                 }
             }
 
             long sum = 0;
+            int count = 0;
             var coins = new List<Coin>();
 
             // We order the potential inputs now because we order them by information that the coin selector won't have access to.
-            IEnumerable<UnspentOutputReference> orderedUnspentOutputs = DeterministicCoinOrdering.GetOrderedUnspentOutputs(context);
+            IEnumerable<UnspentOutputReference> orderedUnspentOutputs = DeterministicCoinOrdering.GetOrderedUnspentOutputs(unspentOutputs);
 
             foreach (UnspentOutputReference item in orderedUnspentOutputs)
             {
-                coins.Add(ScriptCoin.Create(this.network, item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, this.walletManager.GetWallet().MultiSigAddress.RedeemScript));
+                coins.Add(ScriptCoin.Create(network, item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, walletManager.GetWallet().MultiSigAddress.RedeemScript));
                 sum += item.Transaction.Amount;
 
-                // Sufficient UTXOs are selected to cover the value of the outputs + fee.
-                if (sum >= (totalToSend + context.TransactionFee))
-                    break;
+                count++;
 
+                // Sufficient UTXOs are selected to cover the value of the outputs + fee.
+                if (sum >= (totalToSend + settings.GetWithdrawalTransactionFee(count)))
+                    break;
             }
 
-            transactionBuilder.AddCoins(coins);
+            return (coins, unspentOutputs);
         }
 
         /// <summary>

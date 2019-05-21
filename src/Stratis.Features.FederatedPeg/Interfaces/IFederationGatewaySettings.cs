@@ -52,7 +52,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// <summary>
         /// The transaction fee required for withdrawals.
         /// </summary>
-        Money TransactionFee { get; }
+        Money GetWithdrawalTransactionFee(int numInputs);
 
         /// <summary>
         /// The block number on the other chain to start retrieving deposits from.

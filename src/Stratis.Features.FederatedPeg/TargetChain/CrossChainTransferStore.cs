@@ -439,13 +439,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                 CrossChainTransferStatus status = CrossChainTransferStatus.Suspended;
                                 Script scriptPubKey = BitcoinAddress.Create(deposit.TargetAddress, this.network).ScriptPubKey;
 
-                                if (!haveSuspendedTransfers)
+                            if (!haveSuspendedTransfers)
+                            {
+                                var recipient = new Recipient
                                 {
-                                    var recipient = new Recipient
-                                    {
-                                        Amount = deposit.Amount,
-                                        ScriptPubKey = scriptPubKey
-                                    };
+                                    Amount = deposit.Amount,
+                                    ScriptPubKey = scriptPubKey
+                                };
 
                                     uint blockTime = maturedDeposit.BlockInfo.BlockTime;
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -50,12 +51,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 uint256 opReturnData = depositId;
                 string walletPassword = this.federationWalletManager.Secret.WalletPassword;
                 bool sign = (walletPassword ?? "") != "";
-                var multiSigContext = new TransactionBuildContext(new[]
+
+                var multiSigContext = new TransactionBuildContext(new List<Recipient>(), opReturnData: opReturnData.ToBytes())
                 {
-                    recipient.WithPaymentReducedByFee(this.federationGatewaySettings.TransactionFee)
-                }.ToList(), opReturnData: opReturnData.ToBytes())
-                {
-                    TransactionFee = this.federationGatewaySettings.TransactionFee,
                     MinConfirmations = MinConfirmations,
                     Shuffle = false,
                     IgnoreVerify = true,
@@ -63,6 +61,15 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     Sign = sign,
                     Time = this.network.Consensus.IsProofOfStake ? blockTime : (uint?) null
                 };
+
+                multiSigContext.Recipients = new List<Recipient> { recipient.WithPaymentReducedByFee(FederationGatewaySettings.CrossChainTransferFee) }; // The fee known to the user is taken.
+
+                // TODO: Amend this so we're not picking coins twice.
+                (List<Coin> coins, List<Wallet.UnspentOutputReference> unspentOutputs) = FederationWalletTransactionHandler.DetermineCoins(this.federationWalletManager, this.network, multiSigContext, this.federationGatewaySettings);
+
+                multiSigContext.TransactionFee = this.federationGatewaySettings.GetWithdrawalTransactionFee(coins.Count); // The "actual fee". Everything else goes to the fed.
+                multiSigContext.SelectedInputs = unspentOutputs.Select(u => u.ToOutPoint()).ToList();
+                multiSigContext.AllowOtherInputs = false;
 
                 // Build the transaction.
                 Transaction transaction = this.federationWalletTransactionHandler.BuildTransaction(multiSigContext);
@@ -73,7 +80,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
             catch (Exception error)
             {
-                if (error is WalletException walletException && 
+                if (error is WalletException walletException &&
                     (walletException.Message == FederationWalletTransactionHandler.NoSpendableTransactionsMessage
                      || walletException.Message == FederationWalletTransactionHandler.NotEnoughFundsMessage))
                 {

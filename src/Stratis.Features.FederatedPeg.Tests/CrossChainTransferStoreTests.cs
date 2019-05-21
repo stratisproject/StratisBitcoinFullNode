@@ -143,11 +143,11 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(3, transactions[0].Outputs.Count);
 
                 // Transaction[0] output value - change.
-                Assert.Equal(new Money(10m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
+                Assert.Equal(new Money(10.0006m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[0].Outputs[0].ScriptPubKey);
 
-                // Transaction[0] output value - recipient 1.
-                Assert.Equal(new Money(159.99m, MoneyUnit.BTC), transactions[0].Outputs[1].Value);
+                // Transaction[0] output value - recipient 1, but minus 0.001 for the tx fee and 0.01 for sender fee.
+                Assert.Equal(new Money(159.999m, MoneyUnit.BTC), transactions[0].Outputs[1].Value);
                 Assert.Equal(address1.ScriptPubKey, transactions[0].Outputs[1].ScriptPubKey);
 
                 // Transaction[0] output value - op_return.
@@ -163,12 +163,12 @@ namespace Stratis.Features.FederatedPeg.Tests
                 // Transaction[1] outputs.
                 Assert.Equal(3, transactions[1].Outputs.Count);
 
-                // Transaction[1] output value - change.
-                Assert.Equal(new Money(10m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
+                // Transaction[1] output value - change. Includes an extra 0.01 taken from sender deposit.
+                Assert.Equal(new Money(10.0007m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[1].Outputs[0].ScriptPubKey);
 
-                // Transaction[1] output value - recipient 2.
-                Assert.Equal(new Money(59.99m, MoneyUnit.BTC), transactions[1].Outputs[1].Value);
+                // Transaction[1] output value - recipient 2, but minus 0.001 for the tx fee and 0.01 for sender fee.
+                Assert.Equal(new Money(59.999m, MoneyUnit.BTC), transactions[1].Outputs[1].Value);
                 Assert.Equal(address2.ScriptPubKey, transactions[1].Outputs[1].ScriptPubKey);
 
                 // Transaction[1] output value - op_return.
@@ -246,12 +246,12 @@ namespace Stratis.Features.FederatedPeg.Tests
                 // Transaction[0] outputs.
                 Assert.Equal(3, transactions[0].Outputs.Count);
 
-                // Transaction[0] output value - change.
-                Assert.Equal(new Money(10m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
+                // Transaction[0] output value - Change + small profit. 2 UTXOS used as inputs.
+                Assert.Equal(new Money(10.0006m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[0].Outputs[0].ScriptPubKey);
 
-                // Transaction[0] output value - recipient 1, but minus 0.01 for the tx fee.
-                Assert.Equal(new Money(159.99m, MoneyUnit.BTC), transactions[0].Outputs[1].Value);
+                // Transaction[0] output value - recipient 1, but minus 0.001 for the constant tx fee.
+                Assert.Equal(new Money(159.999m, MoneyUnit.BTC), transactions[0].Outputs[1].Value);
                 Assert.Equal(address1.ScriptPubKey, transactions[0].Outputs[1].ScriptPubKey);
 
                 // Transaction[0] output value - op_return.
@@ -285,11 +285,11 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(3, transactions[1].Outputs.Count);
 
                 // Transaction[1] output value - change.
-                Assert.Equal(new Money(970m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
+                Assert.Equal(new Money(970.0006m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[1].Outputs[0].ScriptPubKey);
 
-                // Transaction[1] output value - recipient 2, but minus 0.01 for the tx fee.
-                Assert.Equal(new Money(99.99m, MoneyUnit.BTC), transactions[1].Outputs[1].Value);
+                // Transaction[1] output value - recipient 2, but minus 0.001 for the tx fee and 0.01 for sender fee.
+                Assert.Equal(new Money(99.999m, MoneyUnit.BTC), transactions[1].Outputs[1].Value);
                 Assert.Equal(address2.ScriptPubKey, transactions[1].Outputs[1].ScriptPubKey);
 
                 // Transaction[1] output value - op_return.
@@ -304,7 +304,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 (Money confirmed, Money unconfirmed) spendable = this.federationWalletManager.GetSpendableAmount();
 
-                Assert.Equal(new Money(980m, MoneyUnit.BTC), spendable.unconfirmed);
+                // Includes 0.0012 taken from deposit amounts - our profit.
+                Assert.Equal(new Money(980.0012m, MoneyUnit.BTC), spendable.unconfirmed);
             }
         }
 
@@ -763,7 +764,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 transfer2 = crossChainTransferStore.GetAsync(new[] { deposit2.Id }).GetAwaiter().GetResult().FirstOrDefault();
                 Assert.Equal(CrossChainTransferStatus.Partial, transfer2?.Status);
 
-                Assert.Equal(2, this.wallet.MultiSigAddress.Transactions.Count);
+                Assert.Equal(4, this.wallet.MultiSigAddress.Transactions.Count);
             }
         }
 

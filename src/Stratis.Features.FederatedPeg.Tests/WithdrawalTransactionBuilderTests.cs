@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -11,6 +12,7 @@ using Stratis.Sidechains.Networks;
 using Xunit;
 using Recipient = Stratis.Features.FederatedPeg.Wallet.Recipient;
 using TransactionBuildContext = Stratis.Features.FederatedPeg.Wallet.TransactionBuildContext;
+using UnspentOutputReference = Stratis.Features.FederatedPeg.Wallet.UnspentOutputReference;
 
 namespace Stratis.Features.FederatedPeg.Tests
 {
@@ -34,9 +36,10 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.logger = new Mock<ILogger>();
             this.loggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>()))
                 .Returns(this.logger.Object);
-
-            this.federationGatewaySettings.Setup(x => x.TransactionFee)
-                .Returns(FederationGatewaySettings.DefaultTransactionFee);
+            this.federationGatewaySettings.Setup<Money>(x => x.GetWithdrawalTransactionFee(It.IsAny<int>()))
+                .Returns<int>((numInputs) => {
+                    return FederationGatewaySettings.BaseTransactionFee + FederationGatewaySettings.InputTransactionFee * numInputs;
+                });
 
             this.federationWalletManager.Setup(x => x.Secret)
                 .Returns(new WalletSecret());
@@ -48,6 +51,31 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact]
         public void FeeIsTakenFromRecipient()
         {
+            Script redeemScript = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, new[] {new Key().PubKey, new Key().PubKey});
+
+            this.federationWalletManager.Setup(x => x.GetSpendableTransactionsInWallet(It.IsAny<int>()))
+                .Returns(new List<UnspentOutputReference>
+                {
+                    new UnspentOutputReference
+                    {
+                        Transaction = new FederatedPeg.Wallet.TransactionData
+                        {
+                            Amount = Money.Coins(105),
+                            Id = uint256.One,
+                            ScriptPubKey = redeemScript.Hash.ScriptPubKey
+                        }
+                    }
+                });
+
+            this.federationWalletManager.Setup(x => x.GetWallet())
+                .Returns(new FederationWallet
+                {
+                    MultiSigAddress = new MultiSigAddress
+                    {
+                        RedeemScript = redeemScript
+                    }
+                });
+
             var txBuilder = new WithdrawalTransactionBuilder(
                 this.loggerFactory.Object,
                 this.network,
@@ -66,9 +94,13 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             Assert.NotNull(ret);
 
-            Money expectedAmountAfterFee = recipient.Amount - this.federationGatewaySettings.Object.TransactionFee;
-
+            // Fee taken from amount should be the total fee. 
+            Money expectedAmountAfterFee = recipient.Amount - FederationGatewaySettings.CrossChainTransferFee;
             this.federationWalletTransactionHandler.Verify(x => x.BuildTransaction(It.Is<TransactionBuildContext>(y => y.Recipients.First().Amount == expectedAmountAfterFee)));
+
+            // Fee used to send transaction should be a smaller amount.
+            Money expectedTxFee = FederationGatewaySettings.BaseTransactionFee + 1 * FederationGatewaySettings.InputTransactionFee;
+            this.federationWalletTransactionHandler.Verify(x => x.BuildTransaction(It.Is<TransactionBuildContext>(y => y.TransactionFee == expectedTxFee)));
         }
 
         [Fact]
