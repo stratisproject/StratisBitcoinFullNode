@@ -291,15 +291,15 @@ namespace FederationSetup
             {
                 case "mainnet":
                     mainchainNetwork = Networks.Stratis.Mainnet();
-                    sideChainNetwork = FederatedPegNetwork.NetworksSelector.Mainnet();
+                    sideChainNetwork = CirrusNetwork.NetworksSelector.Mainnet();
                     break;
                 case "testnet":
                     mainchainNetwork = Networks.Stratis.Testnet();
-                    sideChainNetwork = FederatedPegNetwork.NetworksSelector.Testnet();
+                    sideChainNetwork = CirrusNetwork.NetworksSelector.Testnet();
                     break;
                 case "regtest":
                     mainchainNetwork = Networks.Stratis.Regtest();
-                    sideChainNetwork = FederatedPegNetwork.NetworksSelector.Regtest();
+                    sideChainNetwork = CirrusNetwork.NetworksSelector.Regtest();
                     break;
                 default:
                     throw new ArgumentException("Please specify a network such as: mainnet, testnet or regtest.");
