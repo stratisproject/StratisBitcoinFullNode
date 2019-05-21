@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
@@ -21,22 +22,25 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly ICollateralChecker collateralChecker;
 
+        private readonly IDateTimeProvider dateTime;
+
         public SmartContractCollateralPoARuleRegistration(Network network, IStateRepositoryRoot stateRepositoryRoot, IContractExecutorFactory executorFactory,
             ICallDataSerializer callDataSerializer, ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView,
             IEnumerable<IContractTransactionPartialValidationRule> partialTxValidationRules, IEnumerable<IContractTransactionFullValidationRule> fullTxValidationRules,
-            IInitialBlockDownloadState ibdState, ISlotsManager slotsManager, ICollateralChecker collateralChecker)
+            IInitialBlockDownloadState ibdState, ISlotsManager slotsManager, ICollateralChecker collateralChecker, IDateTimeProvider dateTime)
         : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView, partialTxValidationRules, fullTxValidationRules)
         {
             this.ibdState = ibdState;
             this.slotsManager = slotsManager;
             this.collateralChecker = collateralChecker;
+            this.dateTime = dateTime;
         }
 
         public override void RegisterRules(IConsensus consensus)
         {
             base.RegisterRules(consensus);
 
-            consensus.FullValidationRules.Add(new CheckCollateralFullValidationRule(this.ibdState, this.collateralChecker, this.slotsManager));
+            consensus.FullValidationRules.Add(new CheckCollateralFullValidationRule(this.ibdState, this.collateralChecker, this.slotsManager, this.dateTime));
         }
     }
 }
