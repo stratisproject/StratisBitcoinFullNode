@@ -450,9 +450,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         {
             this.cancellation.Cancel();
 
-            this.indexingTask.GetAwaiter().GetResult();
+            this.indexingTask?.GetAwaiter().GetResult();
 
-            this.db.Dispose();
+            this.db?.Dispose();
         }
     }
 

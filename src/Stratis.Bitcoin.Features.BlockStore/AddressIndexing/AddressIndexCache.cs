@@ -5,6 +5,13 @@ using LiteDB;
 
 namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 {
+    /// <summary>The basic principle behind this cache is that it is unnecessary and undesirable to have
+    /// every known address in RAM simultaneously. Typically, only a small subset of the addresses with a
+    /// nonzero balance are expected to be transacting. For example, large staking balances. Therefore
+    /// the number of balance change records that are retained in memory is bounded in order to restrict
+    /// the maximum amount of memory that the indexer consumes. Items in the cache that have been
+    /// modified are flagged as dirty, so that the periodic flushing task only needs to write these
+    /// changes to disk.</summary>
     public class AddressIndexCache
     {
         /// <summary>Default maximum number of items (addresses and balance changes) in the cache.</summary>
@@ -32,14 +39,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly LiteDatabase db;
 
-        private readonly LiteCollection<AddressIndexerData> addressIndexerData;
+        private readonly LiteCollection<AddressIndexerData> addressIndexerDataCollection;
 
         public AddressIndexCache(LiteDatabase db, string addressIndexerCollectionName)
         {
             this.lockObj = new object();
             this.db = db;
-            this.addressIndexerData = this.db.GetCollection<AddressIndexerData>(addressIndexerCollectionName);
-            this.addressIndexerData.EnsureIndex("BalanceChangedHeightIndex", "$.BalanceChanges[*].BalanceChangedHeight", false);
+            this.addressIndexerDataCollection = this.db.GetCollection<AddressIndexerData>(addressIndexerCollectionName);
+            this.addressIndexerDataCollection.EnsureIndex("BalanceChangedHeightIndex", "$.BalanceChanges[*].BalanceChangedHeight", false);
 
             this.MaxItems = AddressIndexCacheMaxItemsDefault;
             this.itemCount = 0;
@@ -83,7 +90,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     // If it's been modified it needs to be persisted first, so changes aren't lost.
                     if (this.dirtyAddresses.Contains(addressToEvict))
                     {
-                        this.addressIndexerData.Upsert(this.cachedAddresses[addressToEvict]);
+                        this.addressIndexerDataCollection.Upsert(this.cachedAddresses[addressToEvict]);
                         this.dirtyAddresses.Remove(addressToEvict);
                     }
 
@@ -115,7 +122,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 if (indexData != null)
                     return indexData;
 
-                indexData = this.addressIndexerData.FindById(address);
+                indexData = this.addressIndexerDataCollection.FindById(address);
 
                 if (indexData == null)
                     indexData = new AddressIndexerData() { Address = address, BalanceChanges = new List<AddressBalanceChange>() };
@@ -142,7 +149,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             lock (this.lockObj)
             {
                 // Need to specify index name explicitly so that it gets used for the query.
-                IEnumerable<AddressIndexerData> affectedAddresses = this.addressIndexerData.Find(Query.GT("BalanceChangedHeightIndex", height));
+                IEnumerable<AddressIndexerData> affectedAddresses = this.addressIndexerDataCollection.Find(Query.GT("BalanceChangedHeightIndex", height));
 
                 // Per LiteDb documentation:
                 // "Returning an IEnumerable your code still connected to datafile.
@@ -167,13 +174,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     if (batch.Count < BatchSize)
                         continue;
 
-                    this.addressIndexerData.Upsert(batch);
+                    this.addressIndexerDataCollection.Upsert(batch);
                     batch.Clear();
                 }
 
                 if (batch.Count > 0)
                 {
-                    this.addressIndexerData.Upsert(batch);
+                    this.addressIndexerDataCollection.Upsert(batch);
                     batch.Clear();
                 }
 

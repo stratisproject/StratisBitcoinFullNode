@@ -2,22 +2,31 @@
 using System.Collections.Generic;
 using System.Linq;
 using LiteDB;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 {
     public class AddressIndexerOutpointCache
     {
+        /// <summary>This class holds a key-value pair used to represent an item
+        /// in the LRU cache. It is necessary to maintain both values here so
+        /// that it is possible to look up items in the cache dictionary when
+        /// removing from the cache linked list.
+        /// </summary>
         private class LRUItem
         {
             public LRUItem(string outPoint, ScriptPubKeyMoneyPair outPointData)
-            { 
+            {
+                Guard.NotEmpty(outPoint, nameof(outPoint));
+                Guard.NotNull(outPointData, nameof(outPointData));
+
                 this.Key = outPoint;
                 this.Value = outPointData;
             }
 
-            public string Key { get; }
+            public readonly string Key;
 
-            public ScriptPubKeyMoneyPair Value { get; }
+            public readonly ScriptPubKeyMoneyPair Value;
         }
 
         public const int AddressIndexOutputCacheMaxItemsDefault = 100000;
