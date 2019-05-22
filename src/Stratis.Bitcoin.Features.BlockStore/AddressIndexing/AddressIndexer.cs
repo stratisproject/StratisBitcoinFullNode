@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             this.addressIndexCache = new AddressIndexCache(this.db, DbAddressDataKey, this.loggerFactory);
 
-            this.logger.LogDebug("AddrIndexing is enabled.");
+            this.logger.LogDebug("Address indexing is enabled.");
 
             this.tipDataStore = this.db.GetCollection<AddressIndexerTipData>(DbTipDataKey);
 
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     {
                         ChainedHeader lastCommonHeader = nextHeader.FindFork(this.IndexerTip);
 
-                        this.logger.LogDebug("Reorg detected. Rewinding till '{0}'.", lastCommonHeader);
+                        this.logger.LogDebug("Reorganization detected. Rewinding till '{0}'.", lastCommonHeader);
 
                         lock (this.lockObject)
                         {
@@ -327,9 +327,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             lock (this.lockObject)
             {
-                for (int i = 0; i < inputs.Count; i++)
+                foreach (TxIn input in inputs)
                 {
-                    string consumedOutputString = inputs[i].PrevOut.ToString();
+                    string consumedOutputString = input.PrevOut.ToString();
 
                     OutPointData consumedOutputData = this.outpointsIndexCache.GetOutpoint(consumedOutputString);
 
@@ -348,8 +348,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     if (string.IsNullOrEmpty(address))
                     {
-                        // This condition need not be logged, as the address reader should be aware of all
-                        // possible address formats already.
+                        // This condition need not be logged, as the address reader should be aware of all possible address formats already.
                         continue;
                     }
 

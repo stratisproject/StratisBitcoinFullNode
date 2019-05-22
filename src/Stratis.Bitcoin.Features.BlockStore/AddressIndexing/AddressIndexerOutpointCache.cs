@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <summary>The maximum number of items that can be kept in the cache until entries will start getting evicted.</summary>
         public readonly int MaxItems;
 
-        public int Count => this.outPointLinkedList.Count;
+        internal int Count => this.outPointLinkedList.Count;
 
         /// <summary>A mapping between the string representation of an outpoint and its corresponding scriptPubKey and money value. </summary>
         /// <remarks>All access to the cache must be protected with <see cref="lockObj"/>.</remarks>
