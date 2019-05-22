@@ -487,7 +487,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                     Timestamp = transaction.SpendingDetails.CreationTime,
                                     ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
                                     BlockIndex = transaction.SpendingDetails.BlockIndex,
-                                    OutputIndex = transaction.Index
+                                    OutputIndex = 0 // set index output to 0 so that it can be later on deduped
                                 };
 
                                 transactionItems.Add(stakingItem);
