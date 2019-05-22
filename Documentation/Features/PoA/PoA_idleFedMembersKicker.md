@@ -4,7 +4,7 @@ This feature kicks federation members where they have not been active for a prol
 
 To enable it you need to configure the network appropriately:
 
-First of all voting feature should be enabled because kicking is done via voting process among all federation members, kicking a member requires a majority of votes in favor of kicking a fed member. To enable voting you need to set `PoAConsensusOptions.VotingEnabled` to `true`.
+First of all voting the feature should be enabled because kicking is done via a voting process among all federation members. Kicking a member requires a majority of votes in favor of kicking a member. To enable voting you need to set `PoAConsensusOptions.VotingEnabled` to `true`.
 
 To enable kicking of idle fed members you need to set `PoAConsensusOptions.AutoKickIdleMembers` to `true` and optionally change `PoAConsensusOptions.FederationMemberMaxIdleTimeSeconds`.  `FederationMemberMaxIdleTimeSeconds` is the time that federation member has to be idle to be kicked by others. By default it is set to 7 days.
 
