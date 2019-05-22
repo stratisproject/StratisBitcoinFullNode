@@ -768,6 +768,119 @@ namespace Stratis.Features.FederatedPeg.Tests
             }
         }
 
+        /// <summary>
+        /// Test demonstrates what happens when there is a reorg. Specifically, that no FullySigned transactions are maintained,
+        /// even though we previously tried to do so.
+        /// </summary>
+        [Fact]
+        public async Task ReorgSetsAllInProgressToSuspended()
+        {
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+
+            this.Init(dataFolder);
+            this.AddFunding();
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
+
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
+            {
+                crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
+
+                TestBase.WaitLoopMessage(() => (
+                    this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height,
+                    $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
+                Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
+
+
+                // Make 10 deposits
+                const int numDeposits = 10;
+                const decimal depositSend = 1;
+
+                Deposit[] deposits = new Deposit[numDeposits];
+                BitcoinAddress address = new Script("").Hash.GetAddress(this.network);
+
+                for (int i = 0; i < numDeposits; i++)
+                {
+                    deposits[i] = new Deposit((ulong) i, new Money(depositSend, MoneyUnit.BTC), address.ToString(),
+                        crossChainTransferStore.NextMatureDepositHeight, 1);
+                }
+
+                Money[] funding = new Money[numDeposits - this.fundingTransactions.Count];
+
+                for (int i = 0; i < funding.Length; i++)
+                {
+                    funding[i] = new Money(depositSend, MoneyUnit.BTC);
+                }
+
+                (Transaction, ChainedHeader header) added = this.AddFundingTransaction(funding);
+
+                MaturedBlockDepositsModel[] blockDeposits = new[]
+                {
+                    new MaturedBlockDepositsModel(
+                        new MaturedBlockInfoModel
+                        {
+                            BlockHash = 1,
+                            BlockHeight = crossChainTransferStore.NextMatureDepositHeight
+                        },
+                        deposits)
+                };
+
+                RecordLatestMatureDepositsResult recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
+
+                // Create 1 block with all 10 withdrawals inside.
+                ChainedHeader header = this.AppendBlock(recordMatureDepositResult.WithDrawalTransactions.ToArray());
+
+                // Check that CCTS now has 10 withdrawals that are SeenInBlock.
+                ICrossChainTransfer[] seenInBlock =
+                    crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[]
+                        {CrossChainTransferStatus.SeenInBlock});
+                Assert.Equal(numDeposits, seenInBlock.Length);
+
+                // Sync our CCTS
+                recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
+
+                // Lets make 10 more deposits using the change UTXOS in the block just gone.
+                Deposit[] moreDeposits = new Deposit[numDeposits];
+                for (int i = 0; i < numDeposits; i++)
+                {
+                    ulong newId = (ulong) numDeposits + (ulong) i; // to get a unique ID.
+                    moreDeposits[i] = new Deposit(newId, new Money(depositSend, MoneyUnit.BTC), address.ToString(),
+                        crossChainTransferStore.NextMatureDepositHeight, 2);
+                }
+
+                blockDeposits = new[]
+                {
+                    new MaturedBlockDepositsModel(
+                        new MaturedBlockInfoModel
+                        {
+                            BlockHash = 2,
+                            BlockHeight = crossChainTransferStore.NextMatureDepositHeight
+                        },
+                        moreDeposits)
+                };
+                recordMatureDepositResult =
+                    await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
+
+                // We built more transctions with the UTXOs included in a block...
+                Assert.True(recordMatureDepositResult.WithDrawalTransactions.Count > 0);
+
+                // Now lets rewind.
+                this.ChainIndexer.SetTip(added.header);
+                this.federationWalletSyncManager.ProcessBlock(added.header.Block);
+                TestBase.WaitLoop(() => this.federationWalletManager.WalletTipHash == this.ChainIndexer.Tip.HashBlock);
+
+                // If we were able to keep FullySigned transactions then we would have FullySigned after this rewind.
+                ICrossChainTransfer[] fullySigned = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] {CrossChainTransferStatus.FullySigned});
+
+                // However we have none.
+                Assert.Empty(fullySigned);
+
+                // We do have 20 Suspended transactions now though.
+                ICrossChainTransfer[] suspended = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.Suspended });
+                Assert.Equal(20, suspended.Length);
+            }
+        }
+
         private Q Post<T, Q>(string url, T body)
         {
             // Request is sent to mainchain user.
