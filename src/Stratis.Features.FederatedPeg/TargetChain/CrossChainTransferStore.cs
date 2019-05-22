@@ -439,13 +439,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                 CrossChainTransferStatus status = CrossChainTransferStatus.Suspended;
                                 Script scriptPubKey = BitcoinAddress.Create(deposit.TargetAddress, this.network).ScriptPubKey;
 
-                                if (!haveSuspendedTransfers)
+                            if (!haveSuspendedTransfers)
+                            {
+                                var recipient = new Recipient
                                 {
-                                    var recipient = new Recipient
-                                    {
-                                        Amount = deposit.Amount,
-                                        ScriptPubKey = scriptPubKey
-                                    };
+                                    Amount = deposit.Amount,
+                                    ScriptPubKey = scriptPubKey
+                                };
 
                                     uint blockTime = maturedDeposit.BlockInfo.BlockTime;
 
@@ -1167,8 +1167,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 }
                 else
                 {
-                    // Transaction is no longer seen.
-                    tracker.SetTransferStatus(transfer, CrossChainTransferStatus.FullySigned);
+                    // Transaction is no longer seen and the FederationWalletManager is going to remove the transaction anyhow
+                    // So don't prolong - just set to Suspended now.
+                    tracker.SetTransferStatus(transfer, CrossChainTransferStatus.Suspended);
 
                     // Write the transfer status to the database.
                     this.PutTransfer(dbreezeTransaction, transfer);

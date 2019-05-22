@@ -99,8 +99,12 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.wallet = null;
             this.federatedPegSettings = Substitute.For<IFederatedPegSettings>();
             this.ChainIndexer = new ChainIndexer(this.network);
+            this.federatedPegSettings.GetWithdrawalTransactionFee(Arg.Any<int>()).ReturnsForAnyArgs((x) =>
+            {
+                int numInputs = x.ArgAt<int>(0);
 
-            this.federatedPegSettings.TransactionFee.Returns(new Money(0.01m, MoneyUnit.BTC));
+                return FederatedPegSettings.BaseTransactionFee + FederatedPegSettings.InputTransactionFee * numInputs;
+            });
 
             // Generate the keys used by the federation members for our tests.
             this.federationKeys = new[]
@@ -196,7 +200,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.wallet = this.federationWalletManager.GetWallet();
 
             // TODO: The transaction builder, cross-chain store and fed wallet tx handler should be tested individually.
-            this.FederationWalletTransactionHandler = new FederationWalletTransactionHandler(this.loggerFactory, this.federationWalletManager, this.walletFeePolicy, this.network);
+            this.FederationWalletTransactionHandler = new FederationWalletTransactionHandler(this.loggerFactory, this.federationWalletManager, this.walletFeePolicy, this.network, this.federatedPegSettings);
             this.withdrawalTransactionBuilder = new WithdrawalTransactionBuilder(this.loggerFactory, this.network, this.federationWalletManager, this.FederationWalletTransactionHandler, this.federatedPegSettings);
 
             var storeSettings = (StoreSettings)FormatterServices.GetUninitializedObject(typeof(StoreSettings));

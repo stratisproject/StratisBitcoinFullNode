@@ -46,7 +46,14 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.addressHelper = new MultisigAddressHelper(this.network, this.counterChainNetwork);
 
             this.settings.MultiSigRedeemScript.Returns(this.addressHelper.PayToMultiSig);
-            this.settings.TransactionFee.Returns(FederatedPegSettings.DefaultTransactionFee);
+
+            this.settings.GetWithdrawalTransactionFee(Arg.Any<int>()).ReturnsForAnyArgs((x) =>
+            {
+                int numInputs = x.ArgAt<int>(0);
+
+                return FederatedPegSettings.BaseTransactionFee + FederatedPegSettings.InputTransactionFee * numInputs;
+            });
+
             this.opReturnDataReader.TryGetTargetAddress(null, out string address).Returns(callInfo => { callInfo[1] = null; return false; });
 
             this.transactionBuilder = new TestTransactionBuilder();
@@ -164,21 +171,21 @@ namespace Stratis.Features.FederatedPeg.Tests
             byte[] opReturnBytes = Encoding.UTF8.GetBytes(targetAddress.ToString());
 
             // Set amount to be less than withdrawal fee
-            long depositAmount = FederatedPegSettings.DefaultTransactionFee - 1;
+            long depositAmount = FederatedPegSettings.CrossChainTransferFee - 1;
             Transaction depositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
                 this.addressHelper.SourceChainMultisigAddress, opReturnBytes, depositAmount);
             block.AddTransaction(depositTransaction);
             this.opReturnDataReader.TryGetTargetAddress(depositTransaction, out string unused1).Returns(callInfo => { callInfo[1] = targetAddress.ToString(); return true; });
 
             // Set amount to be exactly withdrawal fee
-            long secondDepositAmount = FederatedPegSettings.DefaultTransactionFee;
+            long secondDepositAmount = FederatedPegSettings.CrossChainTransferFee;
             Transaction secondDepositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
                 this.addressHelper.SourceChainMultisigAddress, opReturnBytes, secondDepositAmount);
             block.AddTransaction(secondDepositTransaction);
             this.opReturnDataReader.TryGetTargetAddress(secondDepositTransaction, out string unused2).Returns(callInfo => { callInfo[1] = targetAddress.ToString(); return true; });
 
             // Set amount to be greater than withdrawal fee (just)
-            long thirdDepositAmount = FederatedPegSettings.DefaultTransactionFee + 1;
+            long thirdDepositAmount = FederatedPegSettings.CrossChainTransferFee + 1;
             Transaction thirdDepositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
                 this.addressHelper.SourceChainMultisigAddress, opReturnBytes, thirdDepositAmount);
             block.AddTransaction(thirdDepositTransaction);
@@ -188,7 +195,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             // Should only be one, with the value just over the withdrawal fee.
             extractedDeposits.Count.Should().Be(1);
-            extractedDeposits.First().Amount.Should().Be(FederatedPegSettings.DefaultTransactionFee + 1);
+            extractedDeposits.First().Amount.Should().Be(FederatedPegSettings.CrossChainTransferFee + 1);
         }
     }
 }
