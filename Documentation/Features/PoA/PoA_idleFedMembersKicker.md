@@ -10,5 +10,5 @@ To enable kicking of idle fed members you need to set `PoAConsensusOptions.AutoK
 
 The component that implements the kicking functionality is `IdleFederationMembersKicker`.
 
-Federation member's inactive time is counter from the moment last block was produced by that federation member or, in case federation member never produced a single block time is counted from the time when first block after genesis was mined.
+Federation member's inactive time is counted from the moment the last block was produced by that particular federation member or, in the case where the federation member never produced a single block, time is counted from when the first block after genesis was mined.
 
