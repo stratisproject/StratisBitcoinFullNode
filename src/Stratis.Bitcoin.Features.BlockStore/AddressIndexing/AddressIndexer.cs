@@ -55,10 +55,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly TimeSpan flushChangesInterval;
 
-        private const string DbAddressDataKey = "AddrData";
-
-        private const string DbOutputsDataKey = "OutputsData";
-
         private const string DbTipDataKey = "AddrTipData";
 
         private const string AddressIndexerDatabaseFilename = "addressindex.litedb";
@@ -81,9 +77,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         /// <summary>Script pub keys and amounts mapped by outpoints.</summary>
         /// <remarks>All access should be protected by <see cref="lockObject"/>.</remarks>
-        private AddressIndexerOutpointCache outpointsIndexCache;
+        private AddressIndexerOutpointsRepository outpointsRepository;
 
-        /// <summary>Protects access to <see cref="addressIndexRepository"/> and <see cref="outpointsIndexCache"/>.</summary>
+        /// <summary>Protects access to <see cref="addressIndexRepository"/> and <see cref="outpointsRepository"/>.</summary>
         private readonly object lockObject;
 
         private readonly CancellationTokenSource cancellation;
@@ -121,7 +117,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
             this.db = new LiteDatabase(new ConnectionString() {Filename = dbPath, Mode = fileMode });
 
-            this.addressIndexRepository = new AddressIndexRepository(this.db, DbAddressDataKey, this.loggerFactory);
+            this.addressIndexRepository = new AddressIndexRepository(this.db, this.loggerFactory);
 
             this.logger.LogDebug("Address indexing is enabled.");
 
@@ -146,7 +142,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 this.IndexerTip = this.consensusManager.Tip.FindAncestorOrSelf(new uint256(this.tipData.TipHashBytes));
             }
 
-            this.outpointsIndexCache = new AddressIndexerOutpointCache(this.db, DbOutputsDataKey, this.loggerFactory);
+            this.outpointsRepository = new AddressIndexerOutpointsRepository(this.db, this.loggerFactory);
 
             if (this.IndexerTip == null)
                 this.IndexerTip = this.consensusManager.Tip.GetAncestor(0);
@@ -170,8 +166,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                         lock (this.lockObject)
                         {
-                            this.addressIndexRepository.SaveAndEvictAllItems();
-                            this.outpointsIndexCache.Flush();
+                            this.addressIndexRepository.SaveAllItems();
+                            this.outpointsRepository.SaveAllItems();
                         }
 
                         lastFlushTime = DateTime.Now;
@@ -270,8 +266,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                 lock (this.lockObject)
                 {
-                    this.addressIndexRepository.SaveAndEvictAllItems();
-                    this.outpointsIndexCache.Flush();
+                    this.addressIndexRepository.SaveAllItems();
+                    this.outpointsRepository.SaveAllItems();
                 }
             }
             catch (Exception e)
@@ -310,7 +306,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                             Money = tx.Outputs[i].Value
                         };
 
-                        this.outpointsIndexCache.AddToCache(outPointData);
+                        this.outpointsRepository.AddOutPointData(outPointData);
                     }
                 }
             }
@@ -326,16 +322,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             {
                 foreach (TxIn input in inputs)
                 {
-                    string consumedOutputString = input.PrevOut.ToString();
+                    OutPoint consumedOutput = input.PrevOut;
 
-                    OutPointData consumedOutputData = this.outpointsIndexCache.GetOutpoint(consumedOutputString);
-
-                    if (consumedOutputData == null)
-                        throw new Exception($"Missing outpoint data for {consumedOutputString}");
+                    if (!this.outpointsRepository.TryGetOutPointData(consumedOutput, out OutPointData consumedOutputData))
+                        throw new Exception($"Missing outpoint data for {consumedOutput}");
 
                     Money amountSpent = consumedOutputData.Money;
 
-                    this.outpointsIndexCache.Remove(consumedOutputString);
+                    this.outpointsRepository.RemoveOutPointData(consumedOutput);
 
                     // Transactions that don't actually change the balance just bloat the database.
                     if (amountSpent == 0)

@@ -9,14 +9,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
     /// <summary>Repository for <see cref="AddressIndexerData"/> items with cache layer built in.</summary>
     public class AddressIndexRepository : MemorySizeCache<string, AddressIndexerData>
     {
+        private const string DbAddressDataKey = "AddrData";
+
         private readonly LiteCollection<AddressIndexerData> addressIndexerDataCollection;
 
         private readonly ILogger logger;
 
-        public AddressIndexRepository(LiteDatabase db, string addressIndexerCollectionName, ILoggerFactory loggerFactory, int maxItems = 100000) : base(maxItems)
+        public AddressIndexRepository(LiteDatabase db, ILoggerFactory loggerFactory, int maxItems = 100000) : base(maxItems)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.addressIndexerDataCollection = db.GetCollection<AddressIndexerData>(addressIndexerCollectionName);
+            this.addressIndexerDataCollection = db.GetCollection<AddressIndexerData>(DbAddressDataKey);
             this.addressIndexerDataCollection.EnsureIndex("BalanceChangedHeightIndex", "$.BalanceChanges[*].BalanceChangedHeight", false);
         }
 
@@ -48,7 +50,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <returns>A list of affected addresses containing balance changes above the specified block height.</returns>
         public List<string> GetAddressesHigherThanHeight(int height)
         {
-            this.SaveAndEvictAllItems();
+            this.SaveAllItems();
 
             // Need to specify index name explicitly so that it gets used for the query.
             IEnumerable<AddressIndexerData> affectedAddresses = this.addressIndexerDataCollection.Find(Query.GT("BalanceChangedHeightIndex", height));
@@ -67,16 +69,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.addressIndexerDataCollection.Upsert(item.Value);
         }
 
-        public void SaveAndEvictAllItems()
+        public void SaveAllItems()
         {
-            // Evict all items.
             lock (this.LockObject)
             {
                 foreach (CacheItem cacheItem in this.Keys)
                     this.addressIndexerDataCollection.Upsert(cacheItem.Value);
             }
-
-            this.ClearCache();
         }
     }
 }

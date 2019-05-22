@@ -67,11 +67,13 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>An item was added to the cache.</summary>
         protected virtual void ItemAddedLocked(CacheItem item)
         {
+            this.totalSize += item.Size;
         }
 
         /// <summary>An item was removed from the cache.</summary>
         protected virtual void ItemRemovedLocked(CacheItem item)
         {
+            this.totalSize -= item.Size;
         }
 
         /// <summary>Gets the count of the current items for diagnostic purposes.</summary>

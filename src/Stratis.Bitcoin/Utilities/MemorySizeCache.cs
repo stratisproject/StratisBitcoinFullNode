@@ -52,15 +52,5 @@ namespace Stratis.Bitcoin.Utilities
         {
             return this.TotalSize > (this.maxSize - item.Size);
         }
-
-        protected override void ItemAddedLocked(CacheItem item)
-        {
-            this.totalSize += item.Size;
-        }
-
-        protected override void ItemRemovedLocked(CacheItem item)
-        {
-            this.totalSize -= item.Size;
-        }
     }
 }
