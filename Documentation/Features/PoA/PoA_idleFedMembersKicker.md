@@ -1,6 +1,6 @@
 ### Idle Federation Members Kicker
 
-This feature kicks federation members in case they were not active for a prolonged period of time. 
+This feature kicks federation members where they have not been active for a prolonged period of time. 
 
 To enable it you need to configure the network appropriately:
 
