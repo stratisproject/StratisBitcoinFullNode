@@ -28,16 +28,26 @@ namespace Stratis.Features.FederatedPeg
         private const string MinimumDepositConfirmationsParam = "mindepositconfirmations";
 
         /// <summary>
-        /// The transaction fee used by the federation to build withdrawal transactions.
+        /// The fee taken by the federation to build withdrawal transactions. The federation will keep most of this.
         /// </summary>
         /// <remarks>
-        /// Changing <see cref="TransactionFee"/> affects both the deposit threshold on this chain and the withdrawal transaction fee on this chain.
+        /// Changing <see cref="CrossChainTransferFee"/> affects both the deposit threshold on this chain and the withdrawal transaction fee on this chain.
         /// This value shouldn't be different for the 2 pegged chain nodes or deposits could be extracted that don't have the amount required to
         /// cover the withdrawal fee on the other chain.
         ///
         /// TODO: This should be configurable on the Network level in the future, but individual nodes shouldn't be tweaking it.
         /// </remarks>
-        public static readonly Money DefaultTransactionFee = Money.Coins(0.001m);
+        public static readonly Money CrossChainTransferFee = Money.Coins(0.001m);
+
+        /// <summary>
+        /// The fee always given to a withdrawal transaction.
+        /// </summary>
+        public static readonly Money BaseTransactionFee = Money.Coins(0.0002m);
+
+        /// <summary>
+        /// The extra fee given to a withdrawal transaction per input it spends. This number should be high enough such that the built transactions are always valid, yet low enough such that the federation can turn a profit.
+        /// </summary>
+        public static readonly Money InputTransactionFee = Money.Coins(0.0001m);
 
         /// <summary>
         /// Sidechains to STRAT don't need to check for deposits for the whole main chain. Only from when they begun.
@@ -69,8 +79,6 @@ namespace Stratis.Features.FederatedPeg
             this.FederationPublicKeys = payToMultisigScriptParams.PubKeys;
 
             this.PublicKey = configReader.GetOrDefault<string>(PublicKeyParam, null);
-
-            this.TransactionFee = DefaultTransactionFee;
 
             if (this.FederationPublicKeys.All(p => p != new PubKey(this.PublicKey)))
             {
@@ -118,7 +126,10 @@ namespace Stratis.Features.FederatedPeg
         public int MultiSigN { get; }
 
         /// <inheritdoc/>
-        public Money TransactionFee { get; }
+        public Money GetWithdrawalTransactionFee(int numInputs)
+        {
+            return BaseTransactionFee + numInputs * InputTransactionFee;
+        }
 
         /// <inheritdoc/>
         public int CounterChainDepositStartBlock { get; }

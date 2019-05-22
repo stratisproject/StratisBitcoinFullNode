@@ -143,15 +143,15 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(3, transactions[0].Outputs.Count);
 
                 // Transaction[0] output value - change.
-                Assert.Equal(new Money(10m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
+                Assert.Equal(new Money(10.00059999m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[0].Outputs[0].ScriptPubKey);
 
-                // Transaction[0] output value - recipient 1.
-                Assert.Equal(new Money(159.99m, MoneyUnit.BTC), transactions[0].Outputs[1].Value);
+                // Transaction[0] output value - recipient 1, but minus 0.001 for the tx fee and 0.01 for sender fee.
+                Assert.Equal(new Money(159.999m, MoneyUnit.BTC), transactions[0].Outputs[1].Value);
                 Assert.Equal(address1.ScriptPubKey, transactions[0].Outputs[1].ScriptPubKey);
 
                 // Transaction[0] output value - op_return.
-                Assert.Equal(new Money(0m, MoneyUnit.BTC), transactions[0].Outputs[2].Value);
+                Assert.Equal(new Money(1m, MoneyUnit.Satoshi), transactions[0].Outputs[2].Value);
                 new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions).TryGetTransactionId(transactions[0], out string actualDepositId);
                 Assert.Equal(deposit1.Id.ToString(), actualDepositId);
 
@@ -163,16 +163,16 @@ namespace Stratis.Features.FederatedPeg.Tests
                 // Transaction[1] outputs.
                 Assert.Equal(3, transactions[1].Outputs.Count);
 
-                // Transaction[1] output value - change.
-                Assert.Equal(new Money(10m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
+                // Transaction[1] output value - change. Includes an extra 0.01 taken from sender deposit.
+                Assert.Equal(new Money(10.00069999m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[1].Outputs[0].ScriptPubKey);
 
-                // Transaction[1] output value - recipient 2.
-                Assert.Equal(new Money(59.99m, MoneyUnit.BTC), transactions[1].Outputs[1].Value);
+                // Transaction[1] output value - recipient 2, but minus 0.001 for the tx fee and 0.01 for sender fee.
+                Assert.Equal(new Money(59.999m, MoneyUnit.BTC), transactions[1].Outputs[1].Value);
                 Assert.Equal(address2.ScriptPubKey, transactions[1].Outputs[1].ScriptPubKey);
 
                 // Transaction[1] output value - op_return.
-                Assert.Equal(new Money(0m, MoneyUnit.BTC), transactions[1].Outputs[2].Value);
+                Assert.Equal(new Money(1m, MoneyUnit.Satoshi), transactions[1].Outputs[2].Value);
                 new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions).TryGetTransactionId(transactions[1], out string actualDepositId2);
                 Assert.Equal(deposit2.Id.ToString(), actualDepositId2);
 
@@ -246,16 +246,16 @@ namespace Stratis.Features.FederatedPeg.Tests
                 // Transaction[0] outputs.
                 Assert.Equal(3, transactions[0].Outputs.Count);
 
-                // Transaction[0] output value - change.
-                Assert.Equal(new Money(10m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
+                // Transaction[0] output value - Change + small profit. 2 UTXOS used as inputs. 1 satoshi for opreturn.
+                Assert.Equal(new Money(10.00059999m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[0].Outputs[0].ScriptPubKey);
 
-                // Transaction[0] output value - recipient 1, but minus 0.01 for the tx fee.
-                Assert.Equal(new Money(159.99m, MoneyUnit.BTC), transactions[0].Outputs[1].Value);
+                // Transaction[0] output value - recipient 1, but minus 0.001 for the constant tx fee.
+                Assert.Equal(new Money(159.999m, MoneyUnit.BTC), transactions[0].Outputs[1].Value);
                 Assert.Equal(address1.ScriptPubKey, transactions[0].Outputs[1].ScriptPubKey);
 
                 // Transaction[0] output value - op_return.
-                Assert.Equal(new Money(0m, MoneyUnit.BTC), transactions[0].Outputs[2].Value);
+                Assert.Equal(new Money(1m, MoneyUnit.Satoshi), transactions[0].Outputs[2].Value);
                 new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions).TryGetTransactionId(transactions[0], out string actualDepositId);
                 Assert.Equal(deposit1.Id.ToString(), actualDepositId);
 
@@ -285,15 +285,15 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(3, transactions[1].Outputs.Count);
 
                 // Transaction[1] output value - change.
-                Assert.Equal(new Money(970m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
+                Assert.Equal(new Money(970.00059999m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[1].Outputs[0].ScriptPubKey);
 
-                // Transaction[1] output value - recipient 2, but minus 0.01 for the tx fee.
-                Assert.Equal(new Money(99.99m, MoneyUnit.BTC), transactions[1].Outputs[1].Value);
+                // Transaction[1] output value - recipient 2, but minus 0.001 for the tx fee and 0.01 for sender fee.
+                Assert.Equal(new Money(99.999m, MoneyUnit.BTC), transactions[1].Outputs[1].Value);
                 Assert.Equal(address2.ScriptPubKey, transactions[1].Outputs[1].ScriptPubKey);
 
                 // Transaction[1] output value - op_return.
-                Assert.Equal(new Money(0m, MoneyUnit.BTC), transactions[1].Outputs[2].Value);
+                Assert.Equal(new Money(1m, MoneyUnit.Satoshi), transactions[1].Outputs[2].Value);
                 new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions).TryGetTransactionId(transactions[1], out string actualDepositId2);
                 Assert.Equal(deposit2.Id.ToString(), actualDepositId2);
 
@@ -304,7 +304,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 (Money confirmed, Money unconfirmed) spendable = this.federationWalletManager.GetSpendableAmount();
 
-                Assert.Equal(new Money(980m, MoneyUnit.BTC), spendable.unconfirmed);
+                // Includes ~0.0012 taken from deposit amounts - our profit.
+                Assert.Equal(new Money(980.00119998m, MoneyUnit.BTC), spendable.unconfirmed);
             }
         }
 
@@ -763,7 +764,120 @@ namespace Stratis.Features.FederatedPeg.Tests
                 transfer2 = crossChainTransferStore.GetAsync(new[] { deposit2.Id }).GetAwaiter().GetResult().FirstOrDefault();
                 Assert.Equal(CrossChainTransferStatus.Partial, transfer2?.Status);
 
-                Assert.Equal(2, this.wallet.MultiSigAddress.Transactions.Count);
+                Assert.Equal(4, this.wallet.MultiSigAddress.Transactions.Count);
+            }
+        }
+
+        /// <summary>
+        /// Test demonstrates what happens when there is a reorg. Specifically, that no FullySigned transactions are maintained,
+        /// even though we previously tried to do so.
+        /// </summary>
+        [Fact]
+        public async Task ReorgSetsAllInProgressToSuspended()
+        {
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+
+            this.Init(dataFolder);
+            this.AddFunding();
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
+
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
+            {
+                crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
+
+                TestBase.WaitLoopMessage(() => (
+                    this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height,
+                    $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
+                Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
+
+
+                // Make 10 deposits
+                const int numDeposits = 10;
+                const decimal depositSend = 1;
+
+                Deposit[] deposits = new Deposit[numDeposits];
+                BitcoinAddress address = new Script("").Hash.GetAddress(this.network);
+
+                for (int i = 0; i < numDeposits; i++)
+                {
+                    deposits[i] = new Deposit((ulong) i, new Money(depositSend, MoneyUnit.BTC), address.ToString(),
+                        crossChainTransferStore.NextMatureDepositHeight, 1);
+                }
+
+                Money[] funding = new Money[numDeposits - this.fundingTransactions.Count];
+
+                for (int i = 0; i < funding.Length; i++)
+                {
+                    funding[i] = new Money(depositSend, MoneyUnit.BTC);
+                }
+
+                (Transaction, ChainedHeader header) added = this.AddFundingTransaction(funding);
+
+                MaturedBlockDepositsModel[] blockDeposits = new[]
+                {
+                    new MaturedBlockDepositsModel(
+                        new MaturedBlockInfoModel
+                        {
+                            BlockHash = 1,
+                            BlockHeight = crossChainTransferStore.NextMatureDepositHeight
+                        },
+                        deposits)
+                };
+
+                RecordLatestMatureDepositsResult recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
+
+                // Create 1 block with all 10 withdrawals inside.
+                ChainedHeader header = this.AppendBlock(recordMatureDepositResult.WithDrawalTransactions.ToArray());
+
+                // Check that CCTS now has 10 withdrawals that are SeenInBlock.
+                ICrossChainTransfer[] seenInBlock =
+                    crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[]
+                        {CrossChainTransferStatus.SeenInBlock});
+                Assert.Equal(numDeposits, seenInBlock.Length);
+
+                // Sync our CCTS
+                recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
+
+                // Lets make 10 more deposits using the change UTXOS in the block just gone.
+                Deposit[] moreDeposits = new Deposit[numDeposits];
+                for (int i = 0; i < numDeposits; i++)
+                {
+                    ulong newId = (ulong) numDeposits + (ulong) i; // to get a unique ID.
+                    moreDeposits[i] = new Deposit(newId, new Money(depositSend, MoneyUnit.BTC), address.ToString(),
+                        crossChainTransferStore.NextMatureDepositHeight, 2);
+                }
+
+                blockDeposits = new[]
+                {
+                    new MaturedBlockDepositsModel(
+                        new MaturedBlockInfoModel
+                        {
+                            BlockHash = 2,
+                            BlockHeight = crossChainTransferStore.NextMatureDepositHeight
+                        },
+                        moreDeposits)
+                };
+                recordMatureDepositResult =
+                    await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
+
+                // We built more transctions with the UTXOs included in a block...
+                Assert.True(recordMatureDepositResult.WithDrawalTransactions.Count > 0);
+
+                // Now lets rewind.
+                this.ChainIndexer.SetTip(added.header);
+                this.federationWalletSyncManager.ProcessBlock(added.header.Block);
+                TestBase.WaitLoop(() => this.federationWalletManager.WalletTipHash == this.ChainIndexer.Tip.HashBlock);
+
+                // If we were able to keep FullySigned transactions then we would have FullySigned after this rewind.
+                ICrossChainTransfer[] fullySigned = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] {CrossChainTransferStatus.FullySigned});
+
+                // However we have none.
+                Assert.Empty(fullySigned);
+
+                // We do have 20 Suspended transactions now though.
+                ICrossChainTransfer[] suspended = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.Suspended });
+                Assert.Equal(20, suspended.Length);
             }
         }
 

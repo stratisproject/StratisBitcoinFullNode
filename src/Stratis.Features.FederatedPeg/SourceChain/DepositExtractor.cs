@@ -79,13 +79,13 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                 return null;
 
             // Deposits have a certain structure.
-            if (transaction.Outputs.Count != ExpectedNumberOfOutputsNoChange 
+            if (transaction.Outputs.Count != ExpectedNumberOfOutputsNoChange
                 && transaction.Outputs.Count != ExpectedNumberOfOutputsChange)
                 return null;
 
             List<TxOut> depositsToMultisig = transaction.Outputs.Where(output =>
                 output.ScriptPubKey == this.depositScript
-                && output.Value > this.settings.TransactionFee).ToList();
+                && output.Value > FederationGatewaySettings.CrossChainTransferFee).ToList();
 
             if (!depositsToMultisig.Any())
                 return null;
