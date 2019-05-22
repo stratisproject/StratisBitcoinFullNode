@@ -54,7 +54,7 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly IConnectionManager connectionManager;
 
-        private readonly IFederationGatewaySettings federationGatewaySettings;
+        private readonly IFederatedPegSettings federatedPegSettings;
 
         private readonly IFullNode fullNode;
 
@@ -85,7 +85,7 @@ namespace Stratis.Features.FederatedPeg
         public FederationGatewayFeature(
             ILoggerFactory loggerFactory,
             IConnectionManager connectionManager,
-            IFederationGatewaySettings federationGatewaySettings,
+            IFederatedPegSettings federatedPegSettings,
             IFullNode fullNode,
             IFederationWalletManager federationWalletManager,
             IFederationWalletSyncManager walletSyncManager,
@@ -101,7 +101,7 @@ namespace Stratis.Features.FederatedPeg
         {
             this.loggerFactory = loggerFactory;
             this.connectionManager = connectionManager;
-            this.federationGatewaySettings = federationGatewaySettings;
+            this.federatedPegSettings = federatedPegSettings;
             this.fullNode = fullNode;
             this.chainIndexer = chainIndexer;
             this.federationWalletManager = federationWalletManager;
@@ -151,13 +151,13 @@ namespace Stratis.Features.FederatedPeg
                 await this.collateralChecker.InitializeAsync().ConfigureAwait(false);
 
             // Connect the node to the other federation members.
-            foreach (IPEndPoint federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
+            foreach (IPEndPoint federationMemberIp in this.federatedPegSettings.FederationNodeIpEndPoints)
                 this.connectionManager.AddNodeAddress(federationMemberIp);
 
             // Respond to requests to sign transactions from other nodes.
             NetworkPeerConnectionParameters networkPeerConnectionParameters = this.connectionManager.Parameters;
             networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager,
-                this.network, this.federationGatewaySettings, this.crossChainTransferStore));
+                this.network, this.federatedPegSettings, this.crossChainTransferStore));
         }
 
         public override void Dispose()
@@ -307,7 +307,7 @@ namespace Stratis.Features.FederatedPeg
                     {
                         services.AddSingleton<IHttpClientFactory, Bitcoin.Controllers.HttpClientFactory>();
                         services.AddSingleton<IMaturedBlocksProvider, MaturedBlocksProvider>();
-                        services.AddSingleton<IFederationGatewaySettings, FederationGatewaySettings>();
+                        services.AddSingleton<IFederatedPegSettings, FederatedPegSettings>();
                         services.AddSingleton<IOpReturnDataReader, OpReturnDataReader>();
                         services.AddSingleton<IDepositExtractor, DepositExtractor>();
                         services.AddSingleton<IWithdrawalExtractor, WithdrawalExtractor>();
@@ -323,7 +323,7 @@ namespace Stratis.Features.FederatedPeg
                         services.AddSingleton<IFederationGatewayClient, FederationGatewayClient>();
                         services.AddSingleton<IMaturedBlocksSyncManager, MaturedBlocksSyncManager>();
                         services.AddSingleton<IWithdrawalHistoryProvider, WithdrawalHistoryProvider>();
-                        services.AddSingleton<FederationGatewaySettings>();
+                        services.AddSingleton<FederatedPegSettings>();
 
                         // Set up events.
                         services.AddSingleton<TransactionObserver>();

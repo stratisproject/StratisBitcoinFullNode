@@ -38,7 +38,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
         private readonly IConsensusManager consensusManager;
 
-        private readonly IFederationGatewaySettings federationGatewaySettings;
+        private readonly IFederatedPegSettings federatedPegSettings;
 
         private readonly CollateralFederationManager federationManager;
 
@@ -57,7 +57,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.depositExtractor = Substitute.For<IDepositExtractor>();
             this.consensusManager = Substitute.For<IConsensusManager>();
-            this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
+            this.federatedPegSettings = Substitute.For<IFederatedPegSettings>();
             this.federationWalletManager = Substitute.For<IFederationWalletManager>();
             this.keyValueRepository = Substitute.For<IKeyValueRepository>();
             this.signals = new Signals(this.loggerFactory, null);
@@ -69,7 +69,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             var controller = new FederationGatewayController(
                 this.loggerFactory,
                 this.GetMaturedBlocksProvider(),
-                this.federationGatewaySettings,
+                this.federatedPegSettings,
                 this.federationWalletManager,
                 this.federationManager);
 
@@ -206,7 +206,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
             this.federationManager.Initialize();
 
-            var settings = new FederationGatewaySettings(nodeSettings);
+            var settings = new FederatedPegSettings(nodeSettings);
 
             var controller = new FederationGatewayController(
                 this.loggerFactory,
@@ -241,7 +241,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
             this.federationWalletManager.IsFederationWalletActive().Returns(true);
 
-            var settings = new FederationGatewaySettings(nodeSettings);
+            var settings = new FederatedPegSettings(nodeSettings);
 
             var controller = new FederationGatewayController(
                 this.loggerFactory,

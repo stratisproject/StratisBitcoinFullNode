@@ -11,7 +11,7 @@ using Stratis.Features.FederatedPeg.Interfaces;
 namespace Stratis.Features.FederatedPeg
 {
     /// <inheritdoc />
-    public sealed class FederationGatewaySettings : IFederationGatewaySettings
+    public sealed class FederatedPegSettings : IFederatedPegSettings
     {
         public const string CounterChainApiHostParam = "counterchainapihost";
 
@@ -46,7 +46,7 @@ namespace Stratis.Features.FederatedPeg
         /// </summary>
         public const int StratisMainDepositStartBlock = 1_100_000;
 
-        public FederationGatewaySettings(NodeSettings nodeSettings, FederatedPegOptions federatedPegOptions = null)
+        public FederatedPegSettings(NodeSettings nodeSettings, FederatedPegOptions federatedPegOptions = null)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 

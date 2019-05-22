@@ -7,7 +7,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
     /// <summary>
     /// Configuration settings used to initialize a FederationGateway.
     /// </summary>
-    public interface IFederationGatewaySettings
+    public interface IFederatedPegSettings
     {
         /// <summary>
         /// Indicates whether this is the main chain. Set if the "-mainchain" switch was used.

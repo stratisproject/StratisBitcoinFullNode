@@ -23,20 +23,20 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         private readonly IFederationWalletManager federationWalletManager;
         private readonly IFederationWalletTransactionHandler federationWalletTransactionHandler;
-        private readonly IFederationGatewaySettings federationGatewaySettings;
+        private readonly IFederatedPegSettings federatedPegSettings;
 
         public WithdrawalTransactionBuilder(
             ILoggerFactory loggerFactory,
             Network network,
             IFederationWalletManager federationWalletManager,
             IFederationWalletTransactionHandler federationWalletTransactionHandler,
-            IFederationGatewaySettings federationGatewaySettings)
+            IFederatedPegSettings federatedPegSettings)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.federationWalletManager = federationWalletManager;
             this.federationWalletTransactionHandler = federationWalletTransactionHandler;
-            this.federationGatewaySettings = federationGatewaySettings;
+            this.federatedPegSettings = federatedPegSettings;
         }
 
         /// <inheritdoc />
@@ -52,10 +52,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 bool sign = (walletPassword ?? "") != "";
                 var multiSigContext = new TransactionBuildContext(new[]
                 {
-                    recipient.WithPaymentReducedByFee(this.federationGatewaySettings.TransactionFee)
+                    recipient.WithPaymentReducedByFee(this.federatedPegSettings.TransactionFee)
                 }.ToList(), opReturnData: opReturnData.ToBytes())
                 {
-                    TransactionFee = this.federationGatewaySettings.TransactionFee,
+                    TransactionFee = this.federatedPegSettings.TransactionFee,
                     MinConfirmations = MinConfirmations,
                     Shuffle = false,
                     IgnoreVerify = true,

@@ -44,7 +44,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             federationMembers.Clear();
             federationMembers.AddRange(this.collateralFederationMembers);
 
-            FederationGatewaySettings settings = FedPegTestsHelper.CreateSettings(network, out NodeSettings nodeSettings);
+            FederatedPegSettings settings = FedPegTestsHelper.CreateSettings(network, out NodeSettings nodeSettings);
 
             ISignals signals = new Signals(loggerFactory, new DefaultSubscriptionErrorHandler(loggerFactory));
             IFederationManager fedManager = new CollateralFederationManager(nodeSettings, network, loggerFactory, new Mock<IKeyValueRepository>().Object, signals);

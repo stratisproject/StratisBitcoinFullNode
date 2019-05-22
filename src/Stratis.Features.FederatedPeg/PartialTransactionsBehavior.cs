@@ -22,7 +22,7 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly Network network;
 
-        private readonly IFederationGatewaySettings federationGatewaySettings;
+        private readonly IFederatedPegSettings federatedPegSettings;
 
         private readonly IPAddressComparer ipAddressComparer;
 
@@ -32,20 +32,20 @@ namespace Stratis.Features.FederatedPeg
             ILoggerFactory loggerFactory,
             IFederationWalletManager federationWalletManager,
             Network network,
-            IFederationGatewaySettings federationGatewaySettings,
+            IFederatedPegSettings federatedPegSettings,
             ICrossChainTransferStore crossChainTransferStore)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(federationWalletManager, nameof(federationWalletManager));
             Guard.NotNull(network, nameof(network));
-            Guard.NotNull(federationGatewaySettings, nameof(federationGatewaySettings));
+            Guard.NotNull(federatedPegSettings, nameof(federatedPegSettings));
             Guard.NotNull(crossChainTransferStore, nameof(crossChainTransferStore));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.federationWalletManager = federationWalletManager;
             this.network = network;
-            this.federationGatewaySettings = federationGatewaySettings;
+            this.federatedPegSettings = federatedPegSettings;
             this.crossChainTransferStore = crossChainTransferStore;
             this.ipAddressComparer = new IPAddressComparer();
         }
@@ -53,18 +53,18 @@ namespace Stratis.Features.FederatedPeg
         public override object Clone()
         {
             return new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager, this.network,
-                this.federationGatewaySettings, this.crossChainTransferStore);
+                this.federatedPegSettings, this.crossChainTransferStore);
         }
 
         protected override void AttachCore()
         {
-            if (this.federationGatewaySettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
+            if (this.federatedPegSettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
                 this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
         }
 
         protected override void DetachCore()
         {
-            if (this.federationGatewaySettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
+            if (this.federatedPegSettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
                 this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
         }
 
@@ -74,7 +74,7 @@ namespace Stratis.Features.FederatedPeg
         /// <param name="payload">The payload to broadcast.</param>
         private async Task BroadcastAsync(RequestPartialTransactionPayload payload)
         {
-            if (this.federationGatewaySettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
+            if (this.federatedPegSettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
                 await this.AttachedPeer.SendMessageAsync(payload).ConfigureAwait(false);
         }
 

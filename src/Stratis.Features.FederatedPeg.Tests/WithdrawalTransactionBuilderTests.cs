@@ -21,7 +21,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly Mock<ILogger> logger;
         private readonly Mock<IFederationWalletManager> federationWalletManager;
         private readonly Mock<IFederationWalletTransactionHandler> federationWalletTransactionHandler;
-        private readonly Mock<IFederationGatewaySettings> federationGatewaySettings;
+        private readonly Mock<IFederatedPegSettings> federationGatewaySettings;
 
         public WithdrawalTransactionBuilderTests()
         {
@@ -29,14 +29,14 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.network = CirrusNetwork.NetworksSelector.Regtest();
             this.federationWalletManager = new Mock<IFederationWalletManager>();
             this.federationWalletTransactionHandler = new Mock<IFederationWalletTransactionHandler>();
-            this.federationGatewaySettings = new Mock<IFederationGatewaySettings>();
+            this.federationGatewaySettings = new Mock<IFederatedPegSettings>();
 
             this.logger = new Mock<ILogger>();
             this.loggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>()))
                 .Returns(this.logger.Object);
 
             this.federationGatewaySettings.Setup(x => x.TransactionFee)
-                .Returns(FederationGatewaySettings.DefaultTransactionFee);
+                .Returns(FederatedPegSettings.DefaultTransactionFee);
 
             this.federationWalletManager.Setup(x => x.Secret)
                 .Returns(new WalletSecret());

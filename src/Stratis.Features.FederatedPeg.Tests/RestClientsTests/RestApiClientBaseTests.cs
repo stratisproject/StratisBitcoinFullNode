@@ -30,7 +30,7 @@ namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
         [Fact]
         public async Task TestRetriesCountAsync()
         {
-            IFederationGatewaySettings federationSettings = Substitute.For<IFederationGatewaySettings>();
+            IFederatedPegSettings federationSettings = Substitute.For<IFederatedPegSettings>();
 
             var testClient = new TestRestApiClient(this.loggerFactory, federationSettings, this.httpClientFactory);
 
@@ -45,7 +45,7 @@ namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
     {
         public int RetriesCount { get; private set; }
 
-        public TestRestApiClient(ILoggerFactory loggerFactory, IFederationGatewaySettings settings, IHttpClientFactory httpClientFactory)
+        public TestRestApiClient(ILoggerFactory loggerFactory, IFederatedPegSettings settings, IHttpClientFactory httpClientFactory)
             : base(loggerFactory, httpClientFactory, settings.CounterChainApiPort, "FederationGateway", "http://localhost")
         {
             this.RetriesCount = 0;
