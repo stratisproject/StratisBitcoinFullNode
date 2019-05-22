@@ -295,7 +295,7 @@ namespace Stratis.Features.FederatedPeg
     /// </summary>
     public static class FullNodeBuilderSidechainRuntimeFeatureExtension
     {
-        public static IFullNodeBuilder AddFederationGateway(this IFullNodeBuilder fullNodeBuilder, FederatedPegOptions options)
+        public static IFullNodeBuilder AddFederatedPeg(this IFullNodeBuilder fullNodeBuilder, FederatedPegOptions options)
         {
             LoggingConfiguration.RegisterFeatureNamespace<FederationGatewayFeature>(
                 FederationGatewayFeature.FederationGatewayFeatureNamespace);
