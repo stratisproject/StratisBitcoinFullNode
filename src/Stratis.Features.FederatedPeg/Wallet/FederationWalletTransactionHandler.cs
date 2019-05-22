@@ -39,6 +39,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         public const string NotEnoughFundsMessage = "Not enough funds.";
 
+        /// <summary>
+        /// Amount in satoshis to use as the value for the Op_Return output on the withdrawal transaction.
+        /// </summary>
+        public const decimal OpReturnSatoshis = 1;
+
         /// <summary>A threshold that if possible will limit the amount of UTXO sent to the <see cref="ICoinSelector"/>.</summary>
         /// <remarks>
         /// 500 is a safe number that if reached ensures the coin selector will not take too long to complete,
@@ -318,7 +323,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             if (context.OpReturnData == null) return;
 
             Script opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(context.OpReturnData);
-            transactionBuilder.Send(opReturnScript, Money.Zero);
+            transactionBuilder.Send(opReturnScript, Money.Satoshis(OpReturnSatoshis));
         }
     }
 
