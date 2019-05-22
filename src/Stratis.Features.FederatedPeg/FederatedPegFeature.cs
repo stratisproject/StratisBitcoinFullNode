@@ -43,7 +43,7 @@ using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg
 {
-    internal class FederationGatewayFeature : FullNodeFeature
+    internal class FederatedPegFeature : FullNodeFeature
     {
         /// <summary>
         /// Given that we can have up to 10 UTXOs going at once.
@@ -82,7 +82,7 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly ICollateralChecker collateralChecker;
 
-        public FederationGatewayFeature(
+        public FederatedPegFeature(
             ILoggerFactory loggerFactory,
             IConnectionManager connectionManager,
             IFederatedPegSettings federatedPegSettings,
@@ -297,12 +297,12 @@ namespace Stratis.Features.FederatedPeg
     {
         public static IFullNodeBuilder AddFederatedPeg(this IFullNodeBuilder fullNodeBuilder, FederatedPegOptions options)
         {
-            LoggingConfiguration.RegisterFeatureNamespace<FederationGatewayFeature>(
-                FederationGatewayFeature.FederationGatewayFeatureNamespace);
+            LoggingConfiguration.RegisterFeatureNamespace<FederatedPegFeature>(
+                FederatedPegFeature.FederationGatewayFeatureNamespace);
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
-                features.AddFeature<FederationGatewayFeature>().DependOn<BlockNotificationFeature>().FeatureServices(
+                features.AddFeature<FederatedPegFeature>().DependOn<BlockNotificationFeature>().FeatureServices(
                     services =>
                     {
                         services.AddSingleton<IHttpClientFactory, Bitcoin.Controllers.HttpClientFactory>();
@@ -340,7 +340,7 @@ namespace Stratis.Features.FederatedPeg
         {
             fullNodeBuilder.ConfigureFeature(features =>
             {
-                features.AddFeature<PoAFeature>().DependOn<FederationGatewayFeature>().FeatureServices(services =>
+                features.AddFeature<PoAFeature>().DependOn<FederatedPegFeature>().FeatureServices(services =>
                     {
                         services.AddSingleton<IFederationManager, CollateralFederationManager>();
                         services.AddSingleton<PoABlockHeaderValidator>();
@@ -354,7 +354,7 @@ namespace Stratis.Features.FederatedPeg
 
             // TODO: Consensus and Mining should be separated. Sidechain nodes don't need any of the Federation code but do need Consensus.
             // In the dependency tree as it is currently however, consensus is dependent on PoAFeature (needs SlotManager) which is in turn dependent on
-            // FederationGatewayFeature. https://github.com/stratisproject/FederatedSidechains/issues/273
+            // FederatedPegFeature. https://github.com/stratisproject/FederatedSidechains/issues/273
 
             LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
             fullNodeBuilder.ConfigureFeature(features =>
