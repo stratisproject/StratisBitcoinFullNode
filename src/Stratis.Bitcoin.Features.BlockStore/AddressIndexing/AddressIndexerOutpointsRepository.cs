@@ -64,6 +64,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 return true;
             }
 
+            // Not found in cache - try find it in database
+            outPointData = this.addressIndexerOutPointData.FindById(outPoint.ToString());
+
+            if (outPointData != null)
+            {
+                this.AddOutPointData(outPointData);
+                this.logger.LogTrace("(-)[FOUND_IN_DATABASE]:true");
+                return true;
+            }
+
             return false;
         }
 
