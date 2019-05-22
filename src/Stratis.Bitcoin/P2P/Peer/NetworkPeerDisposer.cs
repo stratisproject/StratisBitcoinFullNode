@@ -89,6 +89,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="peer">Peer which disposal should be safely handled.</param>
         public void OnPeerDisconnectedHandler(INetworkPeer peer)
         {
+            if (peer == null)
+                return;
+
             this.peersToDispose.Enqueue(peer);
         }
 
