@@ -22,7 +22,7 @@ namespace FederationSetup
         public void Run_CreateMultisigAddresses()
         {
             Network mainchainNetwork = Networks.Stratis.Testnet();
-            Network sidechainNetwork = FederatedPegNetwork.NetworksSelector.Testnet();
+            Network sidechainNetwork = CirrusNetwork.NetworksSelector.Testnet();
 
             // Create a mnemonic and get the corresponding pubKey.
             var pubKeys = new PubKey[1];
