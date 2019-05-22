@@ -316,6 +316,8 @@ namespace Stratis.Features.FederatedPeg
         {
             fullNodeBuilder.ConfigureServices(services =>
             {
+                services.AddSingleton<IHttpClientFactory, Bitcoin.Controllers.HttpClientFactory>();
+
                 services.AddSingleton<ICollateralChecker, CollateralChecker>();
                 services.AddSingleton<CollateralVotingController>();
 
@@ -342,7 +344,6 @@ namespace Stratis.Features.FederatedPeg
                 features.AddFeature<FederatedPegFeature>().DependOn<BlockNotificationFeature>().FeatureServices(
                     services =>
                     {
-                        services.AddSingleton<IHttpClientFactory, Bitcoin.Controllers.HttpClientFactory>();
                         services.AddSingleton<IMaturedBlocksProvider, MaturedBlocksProvider>();
                         services.AddSingleton<IFederatedPegSettings, FederatedPegSettings>();
                         services.AddSingleton<IOpReturnDataReader, OpReturnDataReader>();
