@@ -68,9 +68,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         }
 
         /// <summary>
-        /// Retrieves the tip height of the <see cref="addressIndexer"/>.
+        /// Retrieves the <see cref="addressIndexer"/>'s tip.
         /// </summary>
-        /// <returns>If the <see cref="addressIndexer"/> is not null this will return the tip's height.</returns>
+        /// <returns>An instance of <see cref="AddressIndexerTipModel"/> containing the tip's hash and height.</returns>
         [Route(BlockStoreRouteEndPoint.GetAddressIndexerTip)]
         [HttpGet]
         public IActionResult GetAddressIndexerTip()
