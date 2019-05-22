@@ -10,7 +10,9 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.Events;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Sidechains.Networks;
@@ -23,7 +25,6 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly ILogger logger;
         private readonly ILoggerFactory loggerFactory;
         private readonly IDisposable leaderReceiverSubscription;
-        private readonly ICrossChainTransferStore store;
         private readonly IFederationGatewaySettings federationGatewaySettings;
         private readonly IBroadcasterManager broadcasterManager;
 
@@ -41,6 +42,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
         private readonly IInitialBlockDownloadState ibdState;
         private readonly IFederationWalletManager federationWalletManager;
+        private readonly ISignals signals;
 
         private const string PublicKey = "026ebcbf6bfe7ce1d957adbef8ab2b66c788656f35896a170257d6838bda70b95c";
 
@@ -51,7 +53,6 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.leaderReceiverSubscription = Substitute.For<IDisposable>();
-            this.store = Substitute.For<ICrossChainTransferStore>();
             this.broadcasterManager = Substitute.For<IBroadcasterManager>();
             this.asyncProvider = Substitute.For<IAsyncProvider>();
             this.nodeLifetime = Substitute.For<INodeLifetime>();
@@ -59,6 +60,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.ibdState = Substitute.For<IInitialBlockDownloadState>();
             this.federationWalletManager = Substitute.For<IFederationWalletManager>();
             this.federationWalletManager.IsFederationWalletActive().Returns(true);
+            this.signals = new Signals(this.loggerFactory, null);
 
             // Setup MempoolManager.
             this.dateTimeProvider = Substitute.For<IDateTimeProvider>();
@@ -97,66 +99,29 @@ namespace Stratis.Features.FederatedPeg.Tests
         }
 
         [Fact]
-        public async Task Call_GetSignedTransactionsAsync_No_Signed_Transactions_Doesnt_Broadcast()
-        {
-            this.federationGatewaySettings.PublicKey.Returns(PublicKey);
-
-            var emptyTransactionPair = new CrossChainTransfer[0];
-
-            this.store.GetTransfersByStatus(new[]{CrossChainTransferStatus.FullySigned}).Returns(emptyTransactionPair);
-
-            var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
-                this.asyncProvider,
-                this.loggerFactory,
-                this.store,
-                this.nodeLifetime,
-                this.mempoolManager,
-                this.broadcasterManager,
-                this.ibdState,
-                this.federationWalletManager);
-
-            await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
-
-            this.store.Received().GetTransfersByStatus(Arg.Any<CrossChainTransferStatus[]>());
-
-            await this.broadcasterManager.DidNotReceive().BroadcastTransactionAsync(Arg.Any<Transaction>());
-
-            this.logger.Received().Log(LogLevel.Trace,
-                Arg.Any<EventId>(),
-                Arg.Is<object>(o => o.ToString() == "Signed multisig transactions do not exist in the CrossChainTransfer store."),
-                null,
-                Arg.Any<Func<object, Exception, string>>());
-        }
-
-        [Fact]
         public async Task Call_GetSignedTransactionsAsync_Signed_Transactions_Broadcasts()
         {
             this.federationGatewaySettings.PublicKey.Returns(PublicKey);
 
-            var partial = new Transaction();
-            var xfer = new CrossChainTransfer();
-            xfer.SetPartialTransaction(partial);
-
-            var transactionPair = new CrossChainTransfer[]
+            using (var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+               this.loggerFactory,
+               this.mempoolManager,
+               this.broadcasterManager,
+               this.ibdState,
+               this.federationWalletManager,
+               this.signals))
             {
-                xfer
-            };
+                signedMultisigTransactionBroadcaster.Start();
 
-            this.store.GetTransfersByStatus(Arg.Any<CrossChainTransferStatus[]>()).Returns(transactionPair);
+                var partial = new Transaction();
+                var xfer = new CrossChainTransfer();
+                xfer.SetPartialTransaction(partial);
 
-            var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
-                this.asyncProvider,
-                this.loggerFactory,
-                this.store,
-                this.nodeLifetime,
-                this.mempoolManager,
-                this.broadcasterManager,
-                this.ibdState,
-                this.federationWalletManager);
+                this.signals.Publish(new CrossChainTransferTransactionFullySigned(xfer));
+                await Task.Delay(100); //the event subscriber handles the event asynchronously so let's wait a bit to give it the time to complete.
 
-            await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
-            this.store.Received().GetTransfersByStatus(Arg.Any<CrossChainTransferStatus[]>());
-            await this.broadcasterManager.Received(1).BroadcastTransactionAsync(Arg.Any<Transaction>());
+                await this.broadcasterManager.Received(1).BroadcastTransactionAsync(Arg.Any<Transaction>());
+            }
         }
 
         [Fact]
@@ -164,19 +129,25 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.ibdState.IsInitialBlockDownload().Returns(true);
 
-            var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
-                this.asyncProvider,
-                this.loggerFactory,
-                this.store,
-                this.nodeLifetime,
-                this.mempoolManager,
-                this.broadcasterManager,
-                this.ibdState,
-                this.federationWalletManager);
+            using (var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+               this.loggerFactory,
+               this.mempoolManager,
+               this.broadcasterManager,
+               this.ibdState,
+               this.federationWalletManager,
+               this.signals))
+            {
+                signedMultisigTransactionBroadcaster.Start();
 
-            await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
+                var partial = new Transaction();
+                var xfer = new CrossChainTransfer();
+                xfer.SetPartialTransaction(partial);
 
-            this.store.Received(0).GetTransfersByStatus(Arg.Any<CrossChainTransferStatus[]>());
+                this.signals.Publish(new CrossChainTransferTransactionFullySigned(xfer));
+                await Task.Delay(100); //the event subscriber handles the event asynchronously so let's wait a bit to give it the time to complete.
+
+                await this.broadcasterManager.Received(0).BroadcastTransactionAsync(Arg.Any<Transaction>());
+            }
         }
 
         [Fact]
@@ -184,19 +155,27 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.federationWalletManager.IsFederationWalletActive().Returns(false);
 
-            var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
-                this.asyncProvider,
-                this.loggerFactory,
-                this.store,
-                this.nodeLifetime,
-                this.mempoolManager,
-                this.broadcasterManager,
-                this.ibdState,
-                this.federationWalletManager);
+            this.ibdState.IsInitialBlockDownload().Returns(true);
 
-            await signedMultisigTransactionBroadcaster.BroadcastTransactionsAsync().ConfigureAwait(false);
+            using (var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
+               this.loggerFactory,
+               this.mempoolManager,
+               this.broadcasterManager,
+               this.ibdState,
+               this.federationWalletManager,
+               this.signals))
+            {
+                signedMultisigTransactionBroadcaster.Start();
 
-            this.store.Received(0).GetTransfersByStatus(Arg.Any<CrossChainTransferStatus[]>());
+                var partial = new Transaction();
+                var xfer = new CrossChainTransfer();
+                xfer.SetPartialTransaction(partial);
+
+                this.signals.Publish(new CrossChainTransferTransactionFullySigned(xfer));
+                await Task.Delay(100); //the event subscriber handles the event asynchronously so let's wait a bit to give it the time to complete.
+
+                await this.broadcasterManager.Received(0).BroadcastTransactionAsync(Arg.Any<Transaction>());
+            }
         }
 
         public void Dispose()

@@ -219,7 +219,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         protected ICrossChainTransferStore CreateStore()
         {
             return new CrossChainTransferStore(this.network, this.dataFolder, this.ChainIndexer, this.federationGatewaySettings, this.dateTimeProvider,
-                this.loggerFactory, this.withdrawalExtractor, this.fullNode, this.blockRepository, this.federationWalletManager, this.withdrawalTransactionBuilder, this.dBreezeSerializer);
+                this.loggerFactory, this.withdrawalExtractor, this.fullNode, this.blockRepository, this.federationWalletManager, this.withdrawalTransactionBuilder, this.dBreezeSerializer, this.signals);
         }
 
         /// <summary>
