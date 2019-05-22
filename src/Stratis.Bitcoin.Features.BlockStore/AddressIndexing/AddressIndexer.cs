@@ -76,11 +76,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         private AddressIndexerTipData tipData;
 
         /// <summary>A mapping between addresses and their balance changes.</summary>
+        /// <remarks>All access should be protected by <see cref="lockObject"/>.</remarks>
         private AddressIndexCache addressIndexCache;
 
         /// <summary>Script pub keys and amounts mapped by outpoints.</summary>
+        /// <remarks>All access should be protected by <see cref="lockObject"/>.</remarks>
         private AddressIndexerOutpointCache outpointsIndexCache;
 
+        /// <summary>Protects access to <see cref="addressIndexCache"/> and <see cref="outpointsIndexCache"/>.</summary>
         private readonly object lockObject;
 
         private readonly CancellationTokenSource cancellation;
@@ -216,8 +219,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                                 AddressIndexerData indexData = this.addressIndexCache.GetOrCreateAddress(address);
                                 indexData.BalanceChanges.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
 
-                                // There should definitely have been at least one balance entry
-                                // modified, so mark the record as dirty.
+                                // There should definitely have been at least one balance entry modified, so mark the record as dirty.
                                 this.addressIndexCache.MarkDirty(indexData);
                             }
                         }
@@ -292,24 +294,27 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <returns><c>true</c> if block was processed.</returns>
         private bool ProcessBlock(Block block, ChainedHeader header)
         {
-            // Record outpoints.
-            foreach (Transaction tx in block.Transactions)
+            lock (this.lockObject)
             {
-                for (int i = 0; i < tx.Outputs.Count; i++)
+                // Record outpoints.
+                foreach (Transaction tx in block.Transactions)
                 {
-                    if (tx.Outputs[i].Value == Money.Zero)
-                        continue;
-
-                    var outPoint = new OutPoint(tx, i);
-
-                    var outPointData = new OutPointData()
+                    for (int i = 0; i < tx.Outputs.Count; i++)
                     {
-                        Outpoint = outPoint.ToString(),
-                        ScriptPubKeyBytes = tx.Outputs[i].ScriptPubKey.ToBytes(),
-                        Money = tx.Outputs[i].Value
-                    };
+                        if (tx.Outputs[i].Value == Money.Zero)
+                            continue;
 
-                    this.outpointsIndexCache.AddToCache(outPointData);
+                        var outPoint = new OutPoint(tx, i);
+
+                        var outPointData = new OutPointData()
+                        {
+                            Outpoint = outPoint.ToString(),
+                            ScriptPubKeyBytes = tx.Outputs[i].ScriptPubKey.ToBytes(),
+                            Money = tx.Outputs[i].Value
+                        };
+
+                        this.outpointsIndexCache.AddToCache(outPointData);
+                    }
                 }
             }
 
@@ -348,7 +353,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         continue;
                     }
 
-                    this.ProcessBalanceChange(header.Height, address, amountSpent, false);
+                    this.ProcessBalanceChangeLocked(header.Height, address, amountSpent, false);
                 }
 
                 // Process outputs.
@@ -371,7 +376,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                             continue;
                         }
 
-                        this.ProcessBalanceChange(header.Height, address, amountReceived, true);
+                        this.ProcessBalanceChangeLocked(header.Height, address, amountReceived, true);
                     }
                 }
             }
@@ -379,7 +384,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             return true;
         }
 
-        private void ProcessBalanceChange(int height, string address, Money amount, bool deposited)
+        /// <summary>Adds a new balance change entry to to the <see cref="addressIndexCache"/>.</summary>
+        /// <remarks>Should be protected by <see cref="lockObject"/>.</remarks>
+        private void ProcessBalanceChangeLocked(int height, string address, Money amount, bool deposited)
         {
             AddressIndexerData indexData = this.addressIndexCache.GetOrCreateAddress(address);
 
