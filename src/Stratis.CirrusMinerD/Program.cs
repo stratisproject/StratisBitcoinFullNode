@@ -1,23 +1,42 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg;
 using Stratis.Sidechains.Networks;
 
-namespace Stratis.CirrusD
+namespace Stratis.CirrusMinerD
 {
     class Program
     {
+        private const string MainchainArgument = "-mainchain";
+        private const string SidechainArgument = "-sidechain";
+
+        private static readonly Dictionary<NetworkType, Func<Network>> MainChainNetworks = new Dictionary<NetworkType, Func<Network>>
+        {
+            { NetworkType.Mainnet, Networks.Stratis.Mainnet },
+            { NetworkType.Testnet, Networks.Stratis.Testnet },
+            { NetworkType.Regtest, Networks.Stratis.Regtest }
+        };
+
         public static void Main(string[] args)
         {
             MainAsync(args).Wait();
@@ -27,9 +46,15 @@ namespace Stratis.CirrusD
         {
             try
             {
-                var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+                bool isMainchainNode = args.FirstOrDefault(a => a.ToLower() == MainchainArgument) != null;
+                bool isSidechainNode = args.FirstOrDefault(a => a.ToLower() == SidechainArgument) != null;
 
-                IFullNode node = GetFederatedPegFullNode(nodeSettings);
+                if (isSidechainNode == isMainchainNode)
+                {
+                    throw new ArgumentException($"Gateway node needs to be started specifying either a {SidechainArgument} or a {MainchainArgument} argument");
+                }
+
+                IFullNode node = isMainchainNode ? GetStratisNode(args) : GetCirrusMiningNode(args);
 
                 if (node != null)
                     await node.RunAsync();
@@ -40,23 +65,59 @@ namespace Stratis.CirrusD
             }
         }
 
-        private static IFullNode GetFederatedPegFullNode(NodeSettings nodeSettings)
+        private static IFullNode GetCirrusMiningNode(string[] args)
         {
+            var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args)
+            {
+                MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
+            };
+
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
+                .SetCounterChainNetwork(MainChainNetworks[nodeSettings.Network.NetworkType]())
+                .UseSmartContractPoAConsensus()
+                .UseSmartContractPoAMining()
+                .CheckForCollateral()
+                .UseTransactionNotification()
+                .UseBlockNotification()
+                .UseApi()
                 .UseMempool()
+                .AddRPC()
                 .AddSmartContracts(options =>
                 {
                     options.UseReflectionExecutor();
                     options.UsePoAWhitelistedContracts();
                 })
-                .UseSmartContractPoAConsensus()
-                .UseSmartContractPoAMining()
                 .UseSmartContractWallet()
+                .Build();
+
+            return node;
+        }
+
+        /// <summary>
+        /// Returns a standard Stratis node. Just like StratisD.
+        /// </summary>
+        private static IFullNode GetStratisNode(string[] args)
+        {
+            // TODO: Hardcode -txindex for better user experience
+
+            var nodeSettings = new NodeSettings(networksSelector: Networks.Stratis, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: args)
+            {
+                MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
+            };
+
+            IFullNode node = new FullNodeBuilder()
+                .UseNodeSettings(nodeSettings)
+                .UseBlockStore()
+                .UseTransactionNotification()
+                .UseBlockNotification()
                 .UseApi()
+                .UseMempool()
                 .AddRPC()
-                // TODO: Add voting and collateral checks.
+                .UsePosConsensus()
+                .UseWallet()
+                .AddPowPosMining()
                 .Build();
 
             return node;

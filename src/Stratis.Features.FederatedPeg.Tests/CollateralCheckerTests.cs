@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
@@ -44,7 +45,10 @@ namespace Stratis.Features.FederatedPeg.Tests
             federationMembers.Clear();
             federationMembers.AddRange(this.collateralFederationMembers);
 
-            FederatedPegSettings settings = FedPegTestsHelper.CreateSettings(network, out NodeSettings nodeSettings);
+            FederatedPegSettings fedPegSettings = FedPegTestsHelper.CreateSettings(network, out NodeSettings nodeSettings);
+
+            CounterChainSettings settings = new CounterChainSettings(nodeSettings, Networks.Stratis.Regtest());
+
 
             ISignals signals = new Signals(loggerFactory, new DefaultSubscriptionErrorHandler(loggerFactory));
             IFederationManager fedManager = new CollateralFederationManager(nodeSettings, network, loggerFactory, new Mock<IKeyValueRepository>().Object, signals);

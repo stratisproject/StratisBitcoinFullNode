@@ -30,16 +30,6 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         string PublicKey { get; }
 
         /// <summary>
-        /// The API host used to communicate with node on the counter chain.
-        /// </summary>
-        string CounterChainApiHost { get; }
-
-        /// <summary>
-        /// The API port used to communicate with node on the counter chain.
-        /// </summary>
-        int CounterChainApiPort { get; }
-
-        /// <summary>
         /// For the M of N multisig, this is the number of signers required to reach a quorum.
         /// </summary>
         int MultiSigM { get; }

@@ -29,7 +29,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.network = CirrusNetwork.NetworksSelector.Regtest();
             this.counterChainNetwork = Networks.Stratis.Regtest();
-            this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, new FederatedPegOptions(this.counterChainNetwork));
+            this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, new CounterChainNetworkWrapper(this.counterChainNetwork));
 
             this.transactionBuilder = new TestTransactionBuilder();
             this.addressHelper = new AddressHelper(this.network, this.counterChainNetwork);

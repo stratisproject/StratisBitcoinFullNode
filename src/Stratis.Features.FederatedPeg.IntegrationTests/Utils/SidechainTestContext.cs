@@ -285,8 +285,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 
         private void ApplyCounterChainAPIPort(CoreNode fromNode, CoreNode toNode)
         {
-            fromNode.AppendToConfig($"{FederatedPegSettings.CounterChainApiPortParam}={toNode.ApiPort.ToString()}");
-            toNode.AppendToConfig($"{FederatedPegSettings.CounterChainApiPortParam}={fromNode.ApiPort.ToString()}");
+            fromNode.AppendToConfig($"{CounterChainSettings.CounterChainApiPortParam}={toNode.ApiPort.ToString()}");
+            toNode.AppendToConfig($"{CounterChainSettings.CounterChainApiPortParam}={fromNode.ApiPort.ToString()}");
         }
 
         private void ApplyConfigParametersToNodes()

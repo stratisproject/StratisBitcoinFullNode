@@ -44,19 +44,21 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             var builder = new FullNodeBuilder()
                 .UseNodeSettings(settings)
                 .UseBlockStore()
+                .SetCounterChainNetwork(this.counterChainNetwork)
+                .UseFederatedPegPoAMining()
+                .AddFederatedPeg()
+                .CheckForCollateral()
+                .UseTransactionNotification()
+                .UseBlockNotification()
+                .UseApi()
+                .UseMempool()
+                .AddRPC()
                 .AddSmartContracts(options =>
                 {
                     options.UseReflectionExecutor();
                     options.UsePoAWhitelistedContracts();
                 })
                 .UseSmartContractWallet()
-                .UseFederatedPegPoAMining()
-                .AddFederatedPeg(new FederatedPegOptions(this.counterChainNetwork))
-                .UseMempool()
-                .UseTransactionNotification()
-                .UseBlockNotification()
-                .UseApi()
-                .AddRPC()
                 .MockIBD()
                 .ReplaceTimeProvider(this.timeProvider)
                 .AddFastMiningCapability();

@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Events;
 using Stratis.Bitcoin.Signals;
+using Stratis.Features.FederatedPeg.Interfaces;
 
 namespace Stratis.Features.FederatedPeg
 {
@@ -59,8 +60,11 @@ namespace Stratis.Features.FederatedPeg
 
         private bool isInitialized;
 
-        public CollateralChecker(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, FederatedPegSettings settings,
-            IFederationManager federationManager, ISignals signals)
+        public CollateralChecker(ILoggerFactory loggerFactory, 
+            IHttpClientFactory httpClientFactory,
+            ICounterChainSettings settings,
+            IFederationManager federationManager,
+            ISignals signals)
         {
             this.federationManager = federationManager;
             this.signals = signals;

@@ -79,14 +79,11 @@ namespace Stratis.CirrusPegD
                 MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
             };
 
-            var fedPegOptions = new FederatedPegOptions(
-                counterChainNetwork: SidechainNetworks[nodeSettings.Network.NetworkType]()
-            );
-
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
-                .AddFederatedPeg(fedPegOptions)
+                .SetCounterChainNetwork(SidechainNetworks[nodeSettings.Network.NetworkType]())
+                .AddFederatedPeg()
                 .UseTransactionNotification()
                 .UseBlockNotification()
                 .UseApi()
@@ -107,15 +104,13 @@ namespace Stratis.CirrusPegD
                 MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
             };
 
-            var fedPegOptions = new FederatedPegOptions(
-                counterChainNetwork: MainChainNetworks[nodeSettings.Network.NetworkType]()
-            );
-
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
+                .SetCounterChainNetwork(MainChainNetworks[nodeSettings.Network.NetworkType]())
                 .UseFederatedPegPoAMining()
-                .AddFederatedPeg(fedPegOptions)
+                .AddFederatedPeg()
+                .CheckForCollateral()
                 .UseTransactionNotification()
                 .UseBlockNotification()
                 .UseApi()

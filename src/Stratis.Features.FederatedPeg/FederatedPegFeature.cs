@@ -295,7 +295,44 @@ namespace Stratis.Features.FederatedPeg
     /// </summary>
     public static class FullNodeBuilderSidechainRuntimeFeatureExtension
     {
-        public static IFullNodeBuilder AddFederatedPeg(this IFullNodeBuilder fullNodeBuilder, FederatedPegOptions options)
+        public static IFullNodeBuilder SetCounterChainNetwork(this IFullNodeBuilder fullNodeBuilder, Network counterChainNetwork)
+        {
+            // TODO: The Collateral and FederatedPeg features should be explicitly dependent on this.
+            // They'll currently fail via some 'injected service not found' exception if this isn't included.
+
+            fullNodeBuilder.ConfigureServices(services =>
+            {
+                // Inject the counter chain network with a wrapper.
+                services.AddSingleton(new CounterChainNetworkWrapper(counterChainNetwork));
+
+                // Inject the actual counter chain settings which consume the above wrapper.
+                services.AddSingleton<ICounterChainSettings, CounterChainSettings>();
+            });
+
+            return fullNodeBuilder;
+        }
+
+        public static IFullNodeBuilder CheckForCollateral(this IFullNodeBuilder fullNodeBuilder)
+        {
+            fullNodeBuilder.ConfigureServices(services =>
+            {
+                services.AddSingleton<ICollateralChecker, CollateralChecker>();
+                services.AddSingleton<CollateralVotingController>();
+
+                services.AddSingleton<IRuleRegistration, SmartContractCollateralPoARuleRegistration>();
+                services.AddSingleton<IConsensusRuleEngine>(f =>
+                {
+                    PoAConsensusRuleEngine concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
+                    IRuleRegistration ruleRegistration = f.GetService<IRuleRegistration>();
+
+                    return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
+                });
+            });
+
+            return fullNodeBuilder;
+        }
+
+        public static IFullNodeBuilder AddFederatedPeg(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<FederatedPegFeature>(
                 FederatedPegFeature.FederationGatewayFeatureNamespace);
@@ -328,11 +365,9 @@ namespace Stratis.Features.FederatedPeg
                         // Set up events.
                         services.AddSingleton<TransactionObserver>();
                         services.AddSingleton<BlockObserver>();
-
-                        // Inject our options
-                        services.AddSingleton(options);
                     });
             });
+
             return fullNodeBuilder;
         }
 
@@ -378,18 +413,7 @@ namespace Stratis.Features.FederatedPeg
 
                     // Consensus Rules
                     services.AddSingleton<PoAConsensusRuleEngine>();
-                    services.AddSingleton<IRuleRegistration, SmartContractCollateralPoARuleRegistration>();
-                    services.AddSingleton<IConsensusRuleEngine>(f =>
-                    {
-                        var concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
-                        var ruleRegistration = f.GetService<IRuleRegistration>();
-
-                        return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
-                    });
-
-                    services.AddSingleton<ICollateralChecker, CollateralChecker>();
                     services.AddSingleton<DefaultVotingController>();
-                    services.AddSingleton<CollateralVotingController>();
                 });
             });
 
