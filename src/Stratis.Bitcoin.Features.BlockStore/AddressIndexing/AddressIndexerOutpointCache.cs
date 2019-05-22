@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// </summary>
         private class LRUItem
         {
-            public LRUItem(string outPoint, ScriptPubKeyMoneyPair outPointData)
+            public LRUItem(string outPoint, OutPointData outPointData)
             {
                 Guard.NotEmpty(outPoint, nameof(outPoint));
                 Guard.NotNull(outPointData, nameof(outPointData));
@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             public readonly string Key;
 
-            public readonly ScriptPubKeyMoneyPair Value;
+            public readonly OutPointData Value;
         }
 
         public const int AddressIndexOutputCacheMaxItemsDefault = 100000;
@@ -36,6 +36,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <summary>The maximum number of items that can be kept in the cache until
         /// entries will start getting evicted.</summary>
         public readonly int MaxItems;
+
+        public int Count => this.outPointLinkedList.Count;
 
         /// <summary>A mapping between the string representation of an outpoint and its
         /// corresponding scriptPubKey and money value.
@@ -51,35 +53,35 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly LiteDatabase db;
 
-        private readonly LiteCollection<ScriptPubKeyMoneyPair> addressIndexerOutPointData;
+        private readonly LiteCollection<OutPointData> addressIndexerOutPointData;
 
-        public AddressIndexerOutpointCache(LiteDatabase db, string addressIndexerOutputCollectionName)
+        public AddressIndexerOutpointCache(LiteDatabase db, string addressIndexerOutputCollectionName, int maxItems = 0)
         {
             this.lockObj = new object();
             this.db = db;
-            this.addressIndexerOutPointData = this.db.GetCollection<ScriptPubKeyMoneyPair>(addressIndexerOutputCollectionName);
+            this.addressIndexerOutPointData = this.db.GetCollection<OutPointData>(addressIndexerOutputCollectionName);
 
-            this.MaxItems = AddressIndexOutputCacheMaxItemsDefault;
+            this.MaxItems = maxItems == 0 ? AddressIndexOutputCacheMaxItemsDefault : maxItems;
 
             this.cachedOutPoints = new Dictionary<string, LinkedListNode<LRUItem>>();
             this.outPointLinkedList = new LinkedList<LRUItem>();
         }
 
-        public void AddToCache(string outPoint, ScriptPubKeyMoneyPair outPointData)
+        public void AddToCache(OutPointData outPointData)
         {
             lock (this.lockObj)
             {
                 // Don't bother adding the entry if it exists already.
-                if (this.cachedOutPoints.ContainsKey(outPoint))
+                if (this.cachedOutPoints.ContainsKey(outPointData.Outpoint))
                     return;
 
                 if (this.cachedOutPoints.Count >= this.MaxItems)
-                    this.RemoveOldest();
+                    this.EvictOldest();
 
-                var item = new LRUItem(outPoint, outPointData);
+                var item = new LRUItem(outPointData.Outpoint, outPointData);
                 var node = new LinkedListNode<LRUItem>(item);
                 this.outPointLinkedList.AddLast(node);
-                this.cachedOutPoints.Add(outPoint, node);
+                this.cachedOutPoints.Add(outPointData.Outpoint, node);
             }
         }
 
@@ -100,18 +102,24 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             }
         }
 
-        public void RemoveOldest()
+        /// <summary>Eviction is a distinct operation from removal. Removal
+        /// implies deletion from the underlying data store, whereas an
+        /// eviction needs to ensure that the data is still persisted in
+        /// the underlying database for later retrieval.</summary>
+        public void EvictOldest()
         {
             lock (this.lockObj)
             {
+                // Ensure the least recently used outpoint is persisted to the database.
+                this.addressIndexerOutPointData.Upsert(this.outPointLinkedList.First.Value.Value);
+
                 LinkedListNode<LRUItem> node = this.outPointLinkedList.First;
-                this.outPointLinkedList.RemoveFirst();
                 this.cachedOutPoints.Remove(node.Value.Key);
-                this.addressIndexerOutPointData.Delete(node.Value.Key);
+                this.outPointLinkedList.RemoveFirst();
             }
         }
 
-        public ScriptPubKeyMoneyPair GetOutpoint(string outPoint)
+        public OutPointData GetOutpoint(string outPoint)
         {
             lock (this.lockObj)
             {
@@ -124,10 +132,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     return outPointData.Value.Value;
                 }
 
-                ScriptPubKeyMoneyPair item = this.addressIndexerOutPointData.FindById(outPoint);
+                OutPointData item = this.addressIndexerOutPointData.FindById(outPoint);
 
                 if (item != null)
-                    this.AddToCache(outPoint, item);
+                    this.AddToCache(item);
 
                 return item;
             }
@@ -137,7 +145,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         {
             lock (this.lockObj)
             {
-                var batch = new List<ScriptPubKeyMoneyPair>();
+                var batch = new List<OutPointData>();
 
                 foreach (LRUItem outPointData in this.outPointLinkedList)
                 {

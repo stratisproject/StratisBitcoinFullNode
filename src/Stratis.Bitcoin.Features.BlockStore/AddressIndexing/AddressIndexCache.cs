@@ -41,14 +41,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly LiteCollection<AddressIndexerData> addressIndexerDataCollection;
 
-        public AddressIndexCache(LiteDatabase db, string addressIndexerCollectionName)
+        public AddressIndexCache(LiteDatabase db, string addressIndexerCollectionName, int maxItems = 0)
         {
             this.lockObj = new object();
             this.db = db;
             this.addressIndexerDataCollection = this.db.GetCollection<AddressIndexerData>(addressIndexerCollectionName);
             this.addressIndexerDataCollection.EnsureIndex("BalanceChangedHeightIndex", "$.BalanceChanges[*].BalanceChangedHeight", false);
 
-            this.MaxItems = AddressIndexCacheMaxItemsDefault;
+            this.MaxItems = maxItems == 0 ? AddressIndexCacheMaxItemsDefault : maxItems;
             this.itemCount = 0;
 
             this.dirtyAddresses = new HashSet<string>();

@@ -300,13 +300,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     var outPoint = new OutPoint(tx, i);
 
-                    var outPointData = new ScriptPubKeyMoneyPair()
+                    var outPointData = new OutPointData()
                     {
+                        Outpoint = outPoint.ToString(),
                         ScriptPubKeyBytes = tx.Outputs[i].ScriptPubKey.ToBytes(),
                         Money = tx.Outputs[i].Value
                     };
 
-                    this.outpointsIndexCache.AddToCache(outPoint.ToString(), outPointData);
+                    this.outpointsIndexCache.AddToCache(outPointData);
                 }
             }
 
@@ -323,7 +324,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 {
                     string consumedOutputString = inputs[i].PrevOut.ToString();
 
-                    ScriptPubKeyMoneyPair consumedOutputData = this.outpointsIndexCache.GetOutpoint(consumedOutputString);
+                    OutPointData consumedOutputData = this.outpointsIndexCache.GetOutpoint(consumedOutputString);
 
                     if (consumedOutputData == null)
                         throw new Exception($"Missing outpoint data for {consumedOutputString}");

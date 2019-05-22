@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using LiteDB;
 
 namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
@@ -36,9 +35,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
     }
 
-    public class ScriptPubKeyMoneyPair
+    public class OutPointData
     {
         [BsonId]
+        public string Outpoint { get; set; }
+
         public byte[] ScriptPubKeyBytes { get; set; }
 
         public long Money { get; set; }

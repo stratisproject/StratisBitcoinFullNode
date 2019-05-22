@@ -1,5 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using LiteDB;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -11,6 +14,7 @@ using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
+using FileMode = LiteDB.FileMode;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
@@ -153,6 +157,206 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             address = destinationKeys[0].GetAddress(this.network).ToString();
 
             return script;
+        }
+
+        [Fact]
+        public void LRUCacheCanRetrieveExisting()
+        {
+            const string CollectionName = "DummyCollection";
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+            string dbPath = Path.Combine(dataFolder.RootPath, CollectionName);
+            FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
+
+            var database = new LiteDatabase(new ConnectionString() { Filename = dbPath, Mode = fileMode });
+            var cache = new AddressIndexerOutpointCache(database, CollectionName);
+
+            string outPoint = "xyz";
+            var data = new OutPointData() { Outpoint = outPoint, ScriptPubKeyBytes = new byte[] {0, 0, 0, 0}, Money = Money.Coins(1) };
+
+            cache.AddToCache(data);
+
+            OutPointData retrieved = cache.GetOutpoint("xyz");
+
+            Assert.NotNull(retrieved);
+            Assert.Equal("xyz", retrieved.Outpoint);
+        }
+
+        [Fact]
+        public void LRUCacheCannotRetrieveNonexistent()
+        {
+            const string CollectionName = "DummyCollection";
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+            string dbPath = Path.Combine(dataFolder.RootPath, CollectionName);
+            FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
+
+            var database = new LiteDatabase(new ConnectionString() { Filename = dbPath, Mode = fileMode });
+            var cache = new AddressIndexerOutpointCache(database, CollectionName);
+
+            OutPointData retrieved = cache.GetOutpoint("xyz");
+
+            Assert.Null(retrieved);
+        }
+
+        [Fact]
+        public void LRUCacheEvicts()
+        {
+            const string CollectionName = "DummyCollection";
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+            string dbPath = Path.Combine(dataFolder.RootPath, CollectionName);
+            FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
+
+            var database = new LiteDatabase(new ConnectionString() { Filename = dbPath, Mode = fileMode });
+            var cache = new AddressIndexerOutpointCache(database, CollectionName, 2);
+
+            Assert.Equal(2, cache.MaxItems);
+
+            Assert.Equal(0, cache.Count);
+
+            Assert.Equal(0, database.GetCollection<OutPointData>(CollectionName).Count());
+
+            string outPoint1 = "xyz";
+            var pair1 = new OutPointData() { Outpoint = outPoint1, ScriptPubKeyBytes = new byte[] { 0, 0, 0, 0 }, Money = Money.Coins(1) };
+
+            cache.AddToCache(pair1);
+
+            Assert.Equal(1, cache.Count);
+
+            Assert.Equal(0, database.GetCollection<OutPointData>(CollectionName).Count());
+
+            string outPoint2 = "abc";
+            var pair2 = new OutPointData() { Outpoint = outPoint2, ScriptPubKeyBytes = new byte[] { 1, 1, 1, 1 }, Money = Money.Coins(2) };
+
+            cache.AddToCache(pair2);
+
+            Assert.Equal(2, cache.Count);
+
+            Assert.Equal(0, database.GetCollection<OutPointData>(CollectionName).Count());
+
+            string outPoint3 = "def";
+            var pair3 = new OutPointData() { Outpoint = outPoint3, ScriptPubKeyBytes = new byte[] { 2, 2, 2, 2 }, Money = Money.Coins(3) };
+
+            cache.AddToCache(pair3);
+
+            Assert.Equal(2, cache.Count);
+
+            // One of the cache items should have been evicted, and will therefore be persisted on disk.
+            Assert.Equal(1, database.GetCollection<OutPointData>(CollectionName).Count());
+
+            // The evicted item should be pair1.
+            Assert.Equal(pair1.ScriptPubKeyBytes, database.GetCollection<OutPointData>(CollectionName).FindAll().First().ScriptPubKeyBytes);
+
+            // It should still be possible to retrieve pair1 from the cache (it will pull it from disk).
+            OutPointData pair1AfterEviction = cache.GetOutpoint("xyz");
+
+            Assert.NotNull(pair1AfterEviction);
+            Assert.Equal(pair1.ScriptPubKeyBytes, pair1AfterEviction.ScriptPubKeyBytes);
+            Assert.Equal(pair1.Money, pair1AfterEviction.Money);
+        }
+
+        [Fact]
+        public void AddressCacheCanRetrieveExisting()
+        {
+            const string CollectionName = "DummyCollection";
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+            string dbPath = Path.Combine(dataFolder.RootPath, CollectionName);
+            FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
+
+            var database = new LiteDatabase(new ConnectionString() { Filename = dbPath, Mode = fileMode });
+            var cache = new AddressIndexCache(database, CollectionName);
+
+            string address = "xyz";
+            var balanceChanges = new List<AddressBalanceChange>();
+
+            balanceChanges.Add(new AddressBalanceChange() { BalanceChangedHeight = 1, Deposited = true, Satoshi = 1 });
+
+            var data = new AddressIndexerData() { Address = address, BalanceChanges = balanceChanges};
+
+            cache.AddToCache(data);
+
+            AddressIndexerData retrieved = cache.GetOrCreateAddress("xyz");
+
+            Assert.NotNull(retrieved);
+            Assert.Equal("xyz", retrieved.Address);
+            Assert.Equal(1, retrieved.BalanceChanges.First().BalanceChangedHeight);
+            Assert.True(retrieved.BalanceChanges.First().Deposited);
+            Assert.Equal(1, retrieved.BalanceChanges.First().Satoshi);
+        }
+
+        [Fact]
+        public void AddressCacheRetrievesBlankRecordForNonexistent()
+        {
+            const string CollectionName = "DummyCollection";
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+            string dbPath = Path.Combine(dataFolder.RootPath, CollectionName);
+            FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
+
+            var database = new LiteDatabase(new ConnectionString() { Filename = dbPath, Mode = fileMode });
+            var cache = new AddressIndexCache(database, CollectionName);
+
+            AddressIndexerData retrieved = cache.GetOrCreateAddress("xyz");
+
+            // A record will be returned with no balance changes associated, if it is new.
+            Assert.NotNull(retrieved);
+            Assert.Equal("xyz", retrieved.Address);
+            Assert.Empty(retrieved.BalanceChanges);
+        }
+
+        [Fact]
+        public void AddressCacheEvicts()
+        {
+            const string CollectionName = "DummyCollection";
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+            string dbPath = Path.Combine(dataFolder.RootPath, CollectionName);
+            FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
+
+            var database = new LiteDatabase(new ConnectionString() { Filename = dbPath, Mode = fileMode });
+            var cache = new AddressIndexCache(database, CollectionName, 4);
+
+            // Recall, each index entry counts as 1 and each balance change associated with it is an additional 1.
+            Assert.Equal(4, cache.MaxItems);
+            Assert.Equal(0, database.GetCollection<AddressIndexerData>(CollectionName).Count());
+
+            string address1 = "xyz";
+            var balanceChanges1 = new List<AddressBalanceChange>();
+            balanceChanges1.Add(new AddressBalanceChange() { BalanceChangedHeight = 1, Deposited = true, Satoshi = 1 });
+            var data1 = new AddressIndexerData() { Address = address1, BalanceChanges = balanceChanges1 };
+            cache.AddToCache(data1);
+
+            // We need to ensure this will get flushed to disk by the eviction process.
+            cache.MarkDirty(data1);
+
+            Assert.Equal(0, database.GetCollection<AddressIndexerData>(CollectionName).Count());
+
+            string address2 = "abc";
+            var balanceChanges2 = new List<AddressBalanceChange>();
+            balanceChanges2.Add(new AddressBalanceChange() { BalanceChangedHeight = 2, Deposited = false, Satoshi = 2 });
+            cache.AddToCache(new AddressIndexerData() { Address = address2, BalanceChanges = balanceChanges2 });
+
+            Assert.Equal(0, database.GetCollection<AddressIndexerData>(CollectionName).Count());
+
+            string address3 = "def";
+            var balanceChanges3 = new List<AddressBalanceChange>();
+            balanceChanges3.Add(new AddressBalanceChange() { BalanceChangedHeight = 3, Deposited = true, Satoshi = 3 });
+            cache.AddToCache(new AddressIndexerData() { Address = address3, BalanceChanges = balanceChanges3 });
+
+            // One of the cache items should have been evicted, and will therefore be persisted on disk.
+            // The others will not be flushed in this case because they were not marked as dirty.
+            Assert.Equal(1, database.GetCollection<AddressIndexerData>(CollectionName).Count());
+
+            // The evicted item should be data1.
+            Assert.Equal(data1.Address, database.GetCollection<AddressIndexerData>(CollectionName).FindAll().First().Address);
+            Assert.Equal(1, database.GetCollection<AddressIndexerData>(CollectionName).FindAll().First().BalanceChanges.First().BalanceChangedHeight);
+            Assert.True(database.GetCollection<AddressIndexerData>(CollectionName).FindAll().First().BalanceChanges.First().Deposited);
+            Assert.Equal(1, database.GetCollection<AddressIndexerData>(CollectionName).FindAll().First().BalanceChanges.First().Satoshi);
+
+            // Check that the first address can still be retrieved, it should come from disk in this case.
+            AddressIndexerData retrieved = cache.GetOrCreateAddress("xyz");
+
+            Assert.NotNull(retrieved);
+            Assert.Equal("xyz", retrieved.Address);
+            Assert.Equal(1, retrieved.BalanceChanges.First().BalanceChangedHeight);
+            Assert.True(retrieved.BalanceChanges.First().Deposited);
+            Assert.Equal(1, retrieved.BalanceChanges.First().Satoshi);
         }
     }
 }
