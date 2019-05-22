@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         private LiteCollection<AddressIndexerTipData> tipDataStore;
 
         private AddressIndexerTipData tipData;
-        
+
         /// <summary>A mapping between addresses and their balance changes.</summary>
         private AddressIndexCache addressIndexCache;
 
@@ -85,16 +85,18 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly CancellationTokenSource cancellation;
 
+        private readonly ILoggerFactory loggerFactory;
+
         private Task indexingTask;
 
-        public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory,
-            Network network, INodeStats nodeStats, IConsensusManager consensusManager)
+        public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network, INodeStats nodeStats, IConsensusManager consensusManager)
         {
             this.storeSettings = storeSettings;
             this.network = network;
             this.nodeStats = nodeStats;
             this.dataFolder = dataFolder;
             this.consensusManager = consensusManager;
+            this.loggerFactory = loggerFactory;
             this.scriptAddressReader = new ScriptAddressReader();
 
             this.lockObject = new object();
@@ -116,7 +118,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
             this.db = new LiteDatabase(new ConnectionString() {Filename = dbPath, Mode = fileMode });
 
-            this.addressIndexCache = new AddressIndexCache(this.db, DbAddressDataKey);
+            this.addressIndexCache = new AddressIndexCache(this.db, DbAddressDataKey, this.loggerFactory);
 
             this.logger.LogDebug("AddrIndexing is enabled.");
 
@@ -141,7 +143,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 this.IndexerTip = this.consensusManager.Tip.FindAncestorOrSelf(new uint256(this.tipData.TipHashBytes));
             }
 
-            this.outpointsIndexCache = new AddressIndexerOutpointCache(this.db, DbOutputsDataKey);
+            this.outpointsIndexCache = new AddressIndexerOutpointCache(this.db, DbOutputsDataKey, this.loggerFactory);
 
             if (this.IndexerTip == null)
                 this.IndexerTip = this.consensusManager.Tip.GetAncestor(0);
@@ -206,7 +208,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                             // Therefore, we leverage LiteDb's indexing capabilities to tell us
                             // which records are for the affected blocks.
                             // TODO: May also be efficient to run ProcessBlocks with inverted deposit flags instead, depending on size of reorg
-                            
+
                             List<string> affectedAddresses = this.addressIndexCache.GetAddressesHigherThanHeight(lastCommonHeader.Height);
 
                             foreach (string address in affectedAddresses)

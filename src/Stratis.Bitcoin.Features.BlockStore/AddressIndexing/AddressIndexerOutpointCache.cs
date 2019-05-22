@@ -1,18 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using LiteDB;
+using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 {
     public class AddressIndexerOutpointCache
     {
-        /// <summary>This class holds a key-value pair used to represent an item
-        /// in the LRU cache. It is necessary to maintain both values here so
-        /// that it is possible to look up items in the cache dictionary when
-        /// removing from the cache linked list.
-        /// </summary>
+        /// <summary>This class holds a key-value pair used to represent an item in the LRU cache. It is necessary to maintain both values here so
+        /// that it is possible to look up items in the cache dictionary when removing from the cache linked list.</summary>
         private class LRUItem
         {
             public LRUItem(string outPoint, OutPointData outPointData)
@@ -33,33 +29,30 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private const int BatchSize = 100;
 
-        /// <summary>The maximum number of items that can be kept in the cache until
-        /// entries will start getting evicted.</summary>
+        /// <summary>The maximum number of items that can be kept in the cache until entries will start getting evicted.</summary>
         public readonly int MaxItems;
 
         public int Count => this.outPointLinkedList.Count;
 
-        /// <summary>A mapping between the string representation of an outpoint and its
-        /// corresponding scriptPubKey and money value.
-        /// All access to the cache must be protected with <see cref="lockObj"/>.</summary>
+        /// <summary>A mapping between the string representation of an outpoint and its corresponding scriptPubKey and money value. </summary>
+        /// <remarks>All access to the cache must be protected with <see cref="lockObj"/>.</remarks>
         private readonly Dictionary<string, LinkedListNode<LRUItem>> cachedOutPoints;
 
-        /// <summary>A linked list used to efficiently determine the oldest entry
-        /// in the cache. Items get added to the cache in time order and get moved to
-        /// the back of the eviction list each time they are accessed.</summary>
+        /// <summary>A linked list used to efficiently determine the oldest entry in the cache. Items get added to the cache
+        /// in time order and get moved to the back of the eviction list each time they are accessed.</summary>
         private readonly LinkedList<LRUItem> outPointLinkedList;
 
-        private object lockObj;
-
-        private readonly LiteDatabase db;
+        private readonly object lockObj;
 
         private readonly LiteCollection<OutPointData> addressIndexerOutPointData;
 
-        public AddressIndexerOutpointCache(LiteDatabase db, string addressIndexerOutputCollectionName, int maxItems = 0)
+        private readonly ILogger logger;
+
+        public AddressIndexerOutpointCache(LiteDatabase db, string addressIndexerOutputCollectionName, ILoggerFactory loggerFactory, int maxItems = 0)
         {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.lockObj = new object();
-            this.db = db;
-            this.addressIndexerOutPointData = this.db.GetCollection<OutPointData>(addressIndexerOutputCollectionName);
+            this.addressIndexerOutPointData = db.GetCollection<OutPointData>(addressIndexerOutputCollectionName);
 
             this.MaxItems = maxItems == 0 ? AddressIndexOutputCacheMaxItemsDefault : maxItems;
 
@@ -85,16 +78,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             }
         }
 
-        /// <summary>When an output is spent there is no point retaining it
-        /// any longer in the cache or on disk.</summary>
-        /// <param name="outPoint">The string representation of the outpoint
-        /// to remove from cache & database.</param>
+        /// <summary>When an output is spent there is no point retaining it any longer in the cache or on disk.</summary>
+        /// <param name="outPoint">The string representation of the outpoint to remove from cache & database.</param>
         public void Remove(string outPoint)
         {
             lock (this.lockObj)
             {
                 if (!this.cachedOutPoints.TryGetValue(outPoint, out LinkedListNode<LRUItem> item))
+                {
+                    this.logger.LogTrace("(-)[NOT_FOUND]");
                     return;
+                }
 
                 this.outPointLinkedList.Remove(item);
                 this.cachedOutPoints.Remove(outPoint);
@@ -102,10 +96,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             }
         }
 
-        /// <summary>Eviction is a distinct operation from removal. Removal
-        /// implies deletion from the underlying data store, whereas an
-        /// eviction needs to ensure that the data is still persisted in
-        /// the underlying database for later retrieval.</summary>
+        /// <summary>Eviction is a distinct operation from removal. Removal implies deletion from the underlying data store, whereas an
+        /// eviction needs to ensure that the data is still persisted in the underlying database for later retrieval.</summary>
         public void EvictOldest()
         {
             lock (this.lockObj)
@@ -159,7 +151,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 }
 
                 if (batch.Count <= 0)
+                {
+                    this.logger.LogTrace("(-)[NOTHING_TO_BATCH]");
                     return;
+                }
 
                 this.addressIndexerOutPointData.Upsert(batch);
                 batch.Clear();

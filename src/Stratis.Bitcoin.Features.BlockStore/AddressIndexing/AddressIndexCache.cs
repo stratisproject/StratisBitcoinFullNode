@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using LiteDB;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 {
@@ -29,23 +29,22 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <summary>All access to the cache must be protected with <see cref="lockObj"/>.</summary>
         private readonly Dictionary<string, AddressIndexerData> cachedAddresses;
 
-        /// <summary>The dirty address cache contains the set of addresses that have been
-        /// modified since their inclusion into the cache itself. This speeds up the
-        /// flushing process as only dirty addresses need to be flushed.</summary>
+        /// <summary>The dirty address cache contains the set of addresses that have been modified since their inclusion into the cache itself.
+        /// This speeds up the flushing process as only dirty addresses need to be flushed.</summary>
         /// <remarks>All access to the dirty address cache must be protected with <see cref="lockObj"/>.</remarks>
         private readonly HashSet<string> dirtyAddresses;
 
-        private object lockObj;
-
-        private readonly LiteDatabase db;
+        private readonly object lockObj;
 
         private readonly LiteCollection<AddressIndexerData> addressIndexerDataCollection;
 
-        public AddressIndexCache(LiteDatabase db, string addressIndexerCollectionName, int maxItems = 0)
+        private readonly ILogger logger;
+
+        public AddressIndexCache(LiteDatabase db, string addressIndexerCollectionName, ILoggerFactory loggerFactory, int maxItems = 0)
         {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.lockObj = new object();
-            this.db = db;
-            this.addressIndexerDataCollection = this.db.GetCollection<AddressIndexerData>(addressIndexerCollectionName);
+            this.addressIndexerDataCollection = db.GetCollection<AddressIndexerData>(addressIndexerCollectionName);
             this.addressIndexerDataCollection.EnsureIndex("BalanceChangedHeightIndex", "$.BalanceChanges[*].BalanceChangedHeight", false);
 
             this.MaxItems = maxItems == 0 ? AddressIndexCacheMaxItemsDefault : maxItems;
@@ -53,12 +52,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             this.dirtyAddresses = new HashSet<string>();
 
-            // The cache is initially empty. A possible improvement could be
-            // persisting it to disk on node shutdown.
+            // The cache is initially empty. A possible improvement could be persisting it to disk on node shutdown.
             this.cachedAddresses = new Dictionary<string, AddressIndexerData>();
         }
 
-        public void AddToCache(AddressIndexerData indexData)
+        internal void AddToCache(AddressIndexerData indexData)
         {
             lock (this.lockObj)
             {
@@ -67,14 +65,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                 // Don't bother adding the entry if it exists already.
                 if (this.cachedAddresses.ContainsKey(indexData.Address))
+                {
+                    this.logger.LogTrace("(-)[ALREADY_IN_CACHE]");
                     return;
+                }
 
                 // Now check if any entries need to be evicted.
 
-                // The size is the base record plus each balance change.
-                // We need to count it this way because an address may have very
-                // few changes and should therefore have less weight than one
-                // with numerous changes.
+                // The size is the base record plus each balance change. We need to count it this way because an address may have very
+                // few changes and should therefore have less weight than one with numerous changes.
                 int newItemCount = indexData.BalanceChanges.Count + 1;
 
                 int itemsToEvict = (this.itemCount + newItemCount) - this.MaxItems;
@@ -106,12 +105,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             }
         }
 
-        /// <summary>
-        /// Retrieves address data, either the cached version if it exists,
-        /// or directly from the underlying database. If it is a previously
-        /// unseen address an empty record will be created and added to the
-        /// cache.
-        /// </summary>
+        /// <summary>Retrieves address data, either the cached version if it exists, or directly from the underlying database.
+        /// If it is a previously unseen address an empty record will be created and added to the cache.</summary>
         /// <param name="address">The address to retrieve data for.</param>
         public AddressIndexerData GetOrCreateAddress(string address)
         {
@@ -122,10 +117,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 if (indexData != null)
                     return indexData;
 
-                indexData = this.addressIndexerDataCollection.FindById(address);
-
-                if (indexData == null)
-                    indexData = new AddressIndexerData() { Address = address, BalanceChanges = new List<AddressBalanceChange>() };
+                indexData = this.addressIndexerDataCollection.FindById(address) ?? new AddressIndexerData() { Address = address, BalanceChanges = new List<AddressBalanceChange>() };
 
                 // Just add it, there is no need to mark it as dirty until it has balance changes.
                 this.AddToCache(indexData);

@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
 
             var database = new LiteDatabase(new ConnectionString() { Filename = dbPath, Mode = fileMode });
-            var cache = new AddressIndexerOutpointCache(database, CollectionName);
+            var cache = new AddressIndexerOutpointCache(database, CollectionName, new ExtendedLoggerFactory());
 
             string outPoint = "xyz";
             var data = new OutPointData() { Outpoint = outPoint, ScriptPubKeyBytes = new byte[] {0, 0, 0, 0}, Money = Money.Coins(1) };
@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
 
             var database = new LiteDatabase(new ConnectionString() { Filename = dbPath, Mode = fileMode });
-            var cache = new AddressIndexerOutpointCache(database, CollectionName);
+            var cache = new AddressIndexerOutpointCache(database, CollectionName, new ExtendedLoggerFactory());
 
             OutPointData retrieved = cache.GetOutpoint("xyz");
 
@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
 
             var database = new LiteDatabase(new ConnectionString() { Filename = dbPath, Mode = fileMode });
-            var cache = new AddressIndexerOutpointCache(database, CollectionName, 2);
+            var cache = new AddressIndexerOutpointCache(database, CollectionName, new ExtendedLoggerFactory(), 2);
 
             Assert.Equal(2, cache.MaxItems);
 
@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
 
             var database = new LiteDatabase(new ConnectionString() { Filename = dbPath, Mode = fileMode });
-            var cache = new AddressIndexCache(database, CollectionName);
+            var cache = new AddressIndexCache(database, CollectionName, new ExtendedLoggerFactory());
 
             string address = "xyz";
             var balanceChanges = new List<AddressBalanceChange>();
@@ -291,7 +291,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
 
             var database = new LiteDatabase(new ConnectionString() { Filename = dbPath, Mode = fileMode });
-            var cache = new AddressIndexCache(database, CollectionName);
+            var cache = new AddressIndexCache(database, CollectionName, new ExtendedLoggerFactory());
 
             AddressIndexerData retrieved = cache.GetOrCreateAddress("xyz");
 
@@ -310,7 +310,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
 
             var database = new LiteDatabase(new ConnectionString() { Filename = dbPath, Mode = fileMode });
-            var cache = new AddressIndexCache(database, CollectionName, 4);
+            var cache = new AddressIndexCache(database, CollectionName, new ExtendedLoggerFactory(), 4);
 
             // Recall, each index entry counts as 1 and each balance change associated with it is an additional 1.
             Assert.Equal(4, cache.MaxItems);
