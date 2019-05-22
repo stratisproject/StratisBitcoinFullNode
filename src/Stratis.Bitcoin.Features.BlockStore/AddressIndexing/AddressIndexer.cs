@@ -77,13 +77,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         /// <summary>A mapping between addresses and their balance changes.</summary>
         /// <remarks>All access should be protected by <see cref="lockObject"/>.</remarks>
-        private AddressIndexCache addressIndexCache;
+        private AddressIndexRepository addressIndexRepository;
 
         /// <summary>Script pub keys and amounts mapped by outpoints.</summary>
         /// <remarks>All access should be protected by <see cref="lockObject"/>.</remarks>
         private AddressIndexerOutpointCache outpointsIndexCache;
 
-        /// <summary>Protects access to <see cref="addressIndexCache"/> and <see cref="outpointsIndexCache"/>.</summary>
+        /// <summary>Protects access to <see cref="addressIndexRepository"/> and <see cref="outpointsIndexCache"/>.</summary>
         private readonly object lockObject;
 
         private readonly CancellationTokenSource cancellation;
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.scriptAddressReader = new ScriptAddressReader();
 
             this.lockObject = new object();
-            this.flushChangesInterval = TimeSpan.FromMinutes(5);
+            this.flushChangesInterval = TimeSpan.FromMinutes(10);
             this.cancellation = new CancellationTokenSource();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
             this.db = new LiteDatabase(new ConnectionString() {Filename = dbPath, Mode = fileMode });
 
-            this.addressIndexCache = new AddressIndexCache(this.db, DbAddressDataKey, this.loggerFactory);
+            this.addressIndexRepository = new AddressIndexRepository(this.db, DbAddressDataKey, this.loggerFactory);
 
             this.logger.LogDebug("Address indexing is enabled.");
 
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                         lock (this.lockObject)
                         {
-                            this.addressIndexCache.Flush();
+                            this.addressIndexRepository.SaveAndEvictAllItems();
                             this.outpointsIndexCache.Flush();
                         }
 
@@ -212,15 +212,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                             // which records are for the affected blocks.
                             // TODO: May also be efficient to run ProcessBlocks with inverted deposit flags instead, depending on size of reorg
 
-                            List<string> affectedAddresses = this.addressIndexCache.GetAddressesHigherThanHeight(lastCommonHeader.Height);
+                            List<string> affectedAddresses = this.addressIndexRepository.GetAddressesHigherThanHeight(lastCommonHeader.Height);
 
                             foreach (string address in affectedAddresses)
                             {
-                                AddressIndexerData indexData = this.addressIndexCache.GetOrCreateAddress(address);
+                                AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
                                 indexData.BalanceChanges.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
-
-                                // There should definitely have been at least one balance entry modified, so mark the record as dirty.
-                                this.addressIndexCache.MarkDirty(indexData);
                             }
                         }
 
@@ -273,7 +270,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                 lock (this.lockObject)
                 {
-                    this.addressIndexCache.Flush();
+                    this.addressIndexRepository.SaveAndEvictAllItems();
                     this.outpointsIndexCache.Flush();
                 }
             }
@@ -383,11 +380,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             return true;
         }
 
-        /// <summary>Adds a new balance change entry to to the <see cref="addressIndexCache"/>.</summary>
+        /// <summary>Adds a new balance change entry to to the <see cref="addressIndexRepository"/>.</summary>
         /// <remarks>Should be protected by <see cref="lockObject"/>.</remarks>
         private void ProcessBalanceChangeLocked(int height, string address, Money amount, bool deposited)
         {
-            AddressIndexerData indexData = this.addressIndexCache.GetOrCreateAddress(address);
+            AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
 
             // Record new balance change into the address index data.
             indexData.BalanceChanges.Add(new AddressBalanceChange()
@@ -396,19 +393,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 Satoshi = amount.Satoshi,
                 Deposited = deposited
             });
-
-            this.addressIndexCache.MarkDirty(indexData);
         }
 
         /// <inheritdoc />
         public Money GetAddressBalance(string address, int minConfirmations = 1)
         {
-            if (this.addressIndexCache == null)
+            if (this.addressIndexRepository == null)
                 throw new IndexerNotInitializedException();
 
             lock (this.lockObject)
             {
-                AddressIndexerData indexData = this.addressIndexCache.GetOrCreateAddress(address);
+                AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
                 if (indexData == null)
                 {
                     this.logger.LogTrace("(-)[NOT_FOUND]");
@@ -434,12 +429,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <inheritdoc />
         public Money GetReceivedByAddress(string address, int minConfirmations = 1)
         {
-            if (this.addressIndexCache == null)
+            if (this.addressIndexRepository == null)
                 throw new IndexerNotInitializedException();
 
             lock (this.lockObject)
             {
-                AddressIndexerData indexData = this.addressIndexCache.GetOrCreateAddress(address);
+                AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
                 if (indexData == null)
                 {
                     this.logger.LogTrace("(-)[NOT_FOUND]");
