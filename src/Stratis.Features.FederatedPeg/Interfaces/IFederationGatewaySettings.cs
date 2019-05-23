@@ -30,6 +30,11 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         string PublicKey { get; }
 
         /// <summary>
+        /// The API host used to communicate with node on the counter chain.
+        /// </summary>
+        string CounterChainApiHost { get; }
+
+        /// <summary>
         /// The API port used to communicate with node on the counter chain.
         /// </summary>
         int CounterChainApiPort { get; }
@@ -47,7 +52,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// <summary>
         /// The transaction fee required for withdrawals.
         /// </summary>
-        Money TransactionFee { get; }
+        Money GetWithdrawalTransactionFee(int numInputs);
 
         /// <summary>
         /// The block number on the other chain to start retrieving deposits from.

@@ -12,7 +12,6 @@ using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Tests.Wallet.Common;
-using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
@@ -92,7 +91,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
             this.walletManager.Setup(w => w.GetAccounts(walletName)).Returns(new List<HdAccount> {account});
 
             this.receiptRepository.Setup(x => x.Retrieve(It.IsAny<uint256>()))
-                .Returns(new Receipt(null, 0, new Log[0], null, null, null, uint160.Zero, true, null, null));
+                .Returns(new Receipt(null, 0, new Log[0], null, null, null, uint160.Zero, true, null, null, 1, 100000));
             this.callDataSerializer.Setup(x => x.Deserialize(It.IsAny<byte[]>()))
                 .Returns(Result.Ok(new ContractTxData(0, 0, (Stratis.SmartContracts.RuntimeObserver.Gas) 0, new uint160(0), null, null)));
 

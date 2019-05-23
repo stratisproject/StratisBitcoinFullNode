@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
@@ -20,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 BlockToValidate = block,
-                ChainedHeaderToValidate = this.ChainIndexer.GetBlock(4)
+                ChainedHeaderToValidate = this.ChainIndexer.GetHeader(4)
             };
 
             var exception = Assert.Throws<ConsensusErrorException>(() =>
@@ -37,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 BlockToValidate = block,
-                ChainedHeaderToValidate = new ChainedHeader(block.Header, block.Header.GetHash(), this.ChainIndexer.GetBlock(block.Header.HashPrevBlock))
+                ChainedHeaderToValidate = new ChainedHeader(block.Header, block.Header.GetHash(), this.ChainIndexer.GetHeader(block.Header.HashPrevBlock))
             };
 
             var exception = Assert.Throws<ConsensusErrorException>(() =>

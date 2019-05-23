@@ -222,6 +222,30 @@ namespace Stratis.Bitcoin.P2P
         public DateTime? LastDiscoveredFrom { get; private set; }
 
         /// <summary>
+        /// Determines whether the peer's attempt thresholds has been reached so that it can be reset.
+        /// <para>
+        /// Resetting this allows the <see cref="PeerSelector"/> to re-select the peer for connection.
+        /// </para>
+        /// <para>
+        /// <list>
+        /// <item>The last attempt was more than the <see cref="AttemptResetThresholdHours"/> time ago.</item>
+        /// <item>The peer has been attempted more than the maximum amount of attempts (<see cref="AttemptThreshold"/>.</item>
+        /// </list>
+        /// </para>
+        /// </summary>
+        [JsonIgnore]
+        public bool CanResetAttempts
+        {
+            get
+            {
+                return
+                    this.Attempted &&
+                    this.ConnectionAttempts >= PeerAddress.AttemptThreshold &&
+                    this.LastAttempt < DateTime.UtcNow.AddHours(-PeerAddress.AttemptResetThresholdHours);
+            }
+        }
+
+        /// <summary>
         /// Resets the amount of <see cref="ConnectionAttempts"/>.
         /// <para>
         /// This is reset when the amount of failed connection attempts reaches
@@ -232,6 +256,7 @@ namespace Stratis.Bitcoin.P2P
         internal void ResetAttempts()
         {
             this.ConnectionAttempts = 0;
+            this.LastAttempt = null;
         }
 
         /// <summary>
@@ -302,6 +327,15 @@ namespace Stratis.Bitcoin.P2P
         internal void SetLastSeen(DateTime lastSeenAt)
         {
             this.LastSeen = lastSeenAt;
+        }
+
+        /// <summary>Determines if the peer is currently banned.</summary>
+        internal bool IsBanned(DateTime currentTime)
+        {
+            if (this.BanUntil == null)
+                return false;
+
+            return this.BanUntil > currentTime;
         }
 
         /// <summary>

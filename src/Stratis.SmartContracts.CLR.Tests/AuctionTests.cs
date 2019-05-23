@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Networks;
+using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Tests

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
@@ -28,12 +27,7 @@ namespace Stratis.CirrusD
         {
             try
             {
-                if (!args.Any(a => a.Contains("apiport")))
-                {
-                    args = args.Concat(new[] { "apiport=38225" }).ToArray();
-                }
-
-                var nodeSettings = new NodeSettings(networksSelector: FederatedPegNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+                var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
                 IFullNode node = GetFederatedPegFullNode(nodeSettings);
 
@@ -55,6 +49,7 @@ namespace Stratis.CirrusD
                 .AddSmartContracts(options =>
                 {
                     options.UseReflectionExecutor();
+                    options.UsePoAWhitelistedContracts();
                 })
                 .UseSmartContractPoAConsensus()
                 .UseSmartContractPoAMining()

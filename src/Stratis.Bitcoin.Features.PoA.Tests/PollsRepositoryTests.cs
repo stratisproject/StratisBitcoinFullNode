@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Threading;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Tests.Common;
@@ -17,7 +16,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         {
             string dir = TestBase.CreateTestDir(this);
 
-            this.repository = new PollsRepository(dir, new ExtendedLoggerFactory(), new DBreezeSerializer(new TestPoANetwork()));
+            this.repository = new PollsRepository(dir, new ExtendedLoggerFactory(), new DBreezeSerializer(new TestPoANetwork().Consensus.ConsensusFactory));
             this.repository.Initialize();
         }
 

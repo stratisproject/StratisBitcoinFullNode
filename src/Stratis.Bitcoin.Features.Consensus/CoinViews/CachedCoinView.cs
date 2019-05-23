@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
@@ -376,7 +375,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 this.blockHeight = height;
                 this.blockHash = nextBlockHash;
                 var rewindData = new RewindData(oldBlockHash);
-                var indexItems = new Dictionary<string, int>();
+                var indexItems = new Dictionary<OutPoint, int>();
 
                 foreach (UnspentOutputs unspent in unspentOutputs)
                 {
@@ -422,6 +421,19 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         cacheItem.UnspentOutputs.Spend(unspent);
 
                         this.logger.LogTrace("Cache item after spend {0}:'{1}'.", nameof(cacheItem.UnspentOutputs), cacheItem.UnspentOutputs);
+
+                        if (this.rewindDataIndexCache != null)
+                        {
+                            for (int i = 0; i < unspent.Outputs.Length; i++)
+                            {
+                                // Only push to rewind data index UTXOs that are spent.
+                                if (unspent.Outputs[i] == null && clone.Outputs[i] != null)
+                                {
+                                    var key = new OutPoint(unspent.TransactionId, i);
+                                    indexItems[key] = this.blockHeight;
+                                }
+                            }
+                        }
                     }
                     else
                     {
@@ -435,15 +447,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     }
 
                     cacheItem.IsDirty = true;
-
-                    if (this.rewindDataIndexCache != null)
-                    {
-                        for (int i = 0; i < unspent.Outputs.Length; i++)
-                        {
-                            string key = $"{unspent.TransactionId}-{i}";
-                            indexItems[key] = this.blockHeight;
-                        }
-                    }
 
                     // Inner does not need to know pruned unspent that it never saw.
                     if (cacheItem.UnspentOutputs.IsPrunable && !cacheItem.ExistInInner)

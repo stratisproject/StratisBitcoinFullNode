@@ -13,6 +13,8 @@ namespace Stratis.Features.FederatedPeg
     /// <inheritdoc />
     public sealed class FederationGatewaySettings : IFederationGatewaySettings
     {
+        public const string CounterChainApiHostParam = "counterchainapihost";
+
         public const string CounterChainApiPortParam = "counterchainapiport";
 
         public const string RedeemScriptParam = "redeemscript";
@@ -26,16 +28,26 @@ namespace Stratis.Features.FederatedPeg
         private const string MinimumDepositConfirmationsParam = "mindepositconfirmations";
 
         /// <summary>
-        /// The transaction fee used by the federation to build withdrawal transactions.
+        /// The fee taken by the federation to build withdrawal transactions. The federation will keep most of this.
         /// </summary>
         /// <remarks>
-        /// Changing <see cref="TransactionFee"/> affects both the deposit threshold on this chain and the withdrawal transaction fee on this chain.
+        /// Changing <see cref="CrossChainTransferFee"/> affects both the deposit threshold on this chain and the withdrawal transaction fee on this chain.
         /// This value shouldn't be different for the 2 pegged chain nodes or deposits could be extracted that don't have the amount required to
         /// cover the withdrawal fee on the other chain.
-        /// 
+        ///
         /// TODO: This should be configurable on the Network level in the future, but individual nodes shouldn't be tweaking it.
         /// </remarks>
-        public static readonly Money DefaultTransactionFee = Money.Coins(0.01m);
+        public static readonly Money CrossChainTransferFee = Money.Coins(0.001m);
+
+        /// <summary>
+        /// The fee always given to a withdrawal transaction.
+        /// </summary>
+        public static readonly Money BaseTransactionFee = Money.Coins(0.0002m);
+
+        /// <summary>
+        /// The extra fee given to a withdrawal transaction per input it spends. This number should be high enough such that the built transactions are always valid, yet low enough such that the federation can turn a profit.
+        /// </summary>
+        public static readonly Money InputTransactionFee = Money.Coins(0.0001m);
 
         /// <summary>
         /// Sidechains to STRAT don't need to check for deposits for the whole main chain. Only from when they begun.
@@ -44,7 +56,7 @@ namespace Stratis.Features.FederatedPeg
         /// </summary>
         public const int StratisMainDepositStartBlock = 1_100_000;
 
-        public FederationGatewaySettings(NodeSettings nodeSettings)
+        public FederationGatewaySettings(NodeSettings nodeSettings, FederatedPegOptions federatedPegOptions = null)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
@@ -58,6 +70,7 @@ namespace Stratis.Features.FederatedPeg
             Console.WriteLine(redeemScriptRaw);
             if (redeemScriptRaw == null)
                 throw new ConfigurationException($"could not find {RedeemScriptParam} configuration parameter");
+
             this.MultiSigRedeemScript = new Script(redeemScriptRaw);
             this.MultiSigAddress = this.MultiSigRedeemScript.Hash.GetAddress(nodeSettings.Network);
             PayToMultiSigTemplateParameters payToMultisigScriptParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(this.MultiSigRedeemScript);
@@ -67,22 +80,19 @@ namespace Stratis.Features.FederatedPeg
 
             this.PublicKey = configReader.GetOrDefault<string>(PublicKeyParam, null);
 
-            this.TransactionFee = DefaultTransactionFee;
-
             if (this.FederationPublicKeys.All(p => p != new PubKey(this.PublicKey)))
             {
                 throw new ConfigurationException("Please make sure the public key passed as parameter was used to generate the multisig redeem script.");
             }
 
-            this.CounterChainApiPort = configReader.GetOrDefault(CounterChainApiPortParam, 0);
+            this.CounterChainApiHost = configReader.GetOrDefault(CounterChainApiHostParam, "localhost");
+            this.CounterChainApiPort = configReader.GetOrDefault(CounterChainApiPortParam, federatedPegOptions?.CounterChainNetwork.DefaultAPIPort ?? 0);
 
             // Federation IPs - These are required to receive and sign withdrawal transactions.
             string federationIpsRaw = configReader.GetOrDefault<string>(FederationIpsParam, null);
 
             if (federationIpsRaw == null)
-            {
                 throw new ConfigurationException("Federation IPs must be specified.");
-            }
 
             this.FederationNodeIpEndPoints = federationIpsRaw.Split(',').Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort));
 
@@ -107,13 +117,19 @@ namespace Stratis.Features.FederatedPeg
         public int CounterChainApiPort { get; }
 
         /// <inheritdoc/>
+        public string CounterChainApiHost { get; }
+
+        /// <inheritdoc/>
         public int MultiSigM { get; }
 
         /// <inheritdoc/>
         public int MultiSigN { get; }
 
         /// <inheritdoc/>
-        public Money TransactionFee { get; }
+        public Money GetWithdrawalTransactionFee(int numInputs)
+        {
+            return BaseTransactionFee + numInputs * InputTransactionFee;
+        }
 
         /// <inheritdoc/>
         public int CounterChainDepositStartBlock { get; }

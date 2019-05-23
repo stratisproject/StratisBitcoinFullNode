@@ -6,6 +6,7 @@ using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.IntegrationTests.Common.TestNetworks;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -26,8 +27,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var bitcoinNoValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner);
-                var minerB = builder.CreateStratisPowNode(bitcoinNoValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cmfr-1-minerA").WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner);
+                var minerB = builder.CreateStratisPowNode(bitcoinNoValidationRulesNetwork, "cmfr-1-minerB").NoValidation().WithDummyWallet().Start();
 
                 ChainedHeader minerBChainTip = null;
                 bool interceptorsEnabled = false;
@@ -94,7 +95,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Miner A continues to mine to height 14
                 TestHelper.MineBlocks(minerA, 4);
-                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 14);
+                TestBase.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 14);
                 Assert.Equal(10, minerB.FullNode.ConsensusManager().Tip.Height);
 
                 // Enable the interceptors so that they are active during the reorg.
@@ -109,16 +110,16 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Wait until Miner A disconnected its own chain so that it can connect to
                 // Miner B's longer chain.
-                TestHelper.WaitLoop(() => minerA_Disconnected_ItsOwnChain_ToConnectTo_MinerBs_LongerChain);
+                TestBase.WaitLoop(() => minerA_Disconnected_ItsOwnChain_ToConnectTo_MinerBs_LongerChain);
 
                 // Wait until Miner A has connected Miner B's chain (but failed)
-                TestHelper.WaitLoop(() => minerA_IsConnecting_To_MinerBChain);
+                TestBase.WaitLoop(() => minerA_IsConnecting_To_MinerBChain);
 
                 // Wait until Miner A has disconnected Miner B's invalid chain.
-                TestHelper.WaitLoop(() => minerA_Disconnected_MinerBsChain);
+                TestBase.WaitLoop(() => minerA_Disconnected_MinerBsChain);
 
                 // Wait until Miner A has reconnected its own chain.
-                TestHelper.WaitLoop(() => minerA_Reconnected_Its_OwnChain);
+                TestBase.WaitLoop(() => minerA_Reconnected_Its_OwnChain);
             }
         }
 
@@ -129,8 +130,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var bitcoinNoValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                var minerB = builder.CreateStratisPowNode(bitcoinNoValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cmfr-2-minerA").WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                var minerB = builder.CreateStratisPowNode(bitcoinNoValidationRulesNetwork, "cmfr-2-minerB").NoValidation().WithDummyWallet().Start();
 
                 // Miner B syncs with Miner A
                 TestHelper.ConnectAndSync(minerB, minerA);
@@ -140,7 +141,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Miner A continues to mine to height 14
                 TestHelper.MineBlocks(minerA, 4);
-                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 14);
+                TestBase.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 14);
                 Assert.Equal(10, minerB.FullNode.ConsensusManager().Tip.Height);
 
                 // Disable Miner B from sending blocks to miner A
@@ -207,16 +208,16 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Wait until Miner A disconnected its own chain so that it can connect to
                 // Miner B's longer chain.
-                TestHelper.WaitLoop(() => minerA_Disconnected_ItsOwnChain_ToConnectTo_MinerBs_LongerChain);
+                TestBase.WaitLoop(() => minerA_Disconnected_ItsOwnChain_ToConnectTo_MinerBs_LongerChain);
 
                 // Wait until Miner A has connected Miner B's chain (but failed)
-                TestHelper.WaitLoop(() => minerA_IsConnecting_To_MinerBChain);
+                TestBase.WaitLoop(() => minerA_IsConnecting_To_MinerBChain);
 
                 // Wait until Miner A has disconnected Miner B's invalid chain.
-                TestHelper.WaitLoop(() => minerA_Disconnected_MinerBsChain);
+                TestBase.WaitLoop(() => minerA_Disconnected_MinerBsChain);
 
                 // Wait until Miner A has reconnected its own chain.
-                TestHelper.WaitLoop(() => minerA_Reconnected_Its_OwnChain);
+                TestBase.WaitLoop(() => minerA_Reconnected_Its_OwnChain);
             }
         }
 
@@ -227,9 +228,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var noValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
-                var syncer = builder.CreateStratisPowNode(this.powNetwork).Start();
-                var minerB = builder.CreateStratisPowNode(noValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cmfr-3-minerA").WithDummyWallet().Start();
+                var syncer = builder.CreateStratisPowNode(this.powNetwork, "cmfr-3-syncer").Start();
+                var minerB = builder.CreateStratisPowNode(noValidationRulesNetwork, "cmfr-3-minerB").NoValidation().WithDummyWallet().Start();
 
                 // MinerA mines 5 blocks
                 TestHelper.MineBlocks(minerA, 5);
@@ -240,17 +241,17 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Disconnect minerB from miner A
                 TestHelper.Disconnect(minerB, minerA);
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(minerB));
+                TestBase.WaitLoop(() => !TestHelper.IsNodeConnected(minerB));
 
                 // Miner A continues to mine to height 9
                 TestHelper.MineBlocks(minerA, 4);
-                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 9);
-                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 5);
-                TestHelper.WaitLoop(() => syncer.FullNode.ConsensusManager().Tip.Height == 9);
+                TestBase.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 9);
+                TestBase.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 5);
+                TestBase.WaitLoop(() => syncer.FullNode.ConsensusManager().Tip.Height == 9);
 
                 // Disconnect syncer from minerA
                 TestHelper.Disconnect(syncer, minerA);
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(minerA));
+                TestBase.WaitLoop(() => !TestHelper.IsNodeConnected(minerA));
 
                 // MinerB mines 5 more blocks:
                 // Block 6,7,9,10 = valid
@@ -267,9 +268,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 TestHelper.AreNodesSynced(minerA, syncer);
 
-                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 9);
-                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 10);
-                TestHelper.WaitLoop(() => syncer.FullNode.ConsensusManager().Tip.Height == 9);
+                TestBase.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 9);
+                TestBase.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 10);
+                TestBase.WaitLoop(() => syncer.FullNode.ConsensusManager().Tip.Height == 9);
             }
         }
 
@@ -280,8 +281,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var noValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                var minerB = builder.CreateStratisPowNode(noValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cmfr-4-minerA").WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                var minerB = builder.CreateStratisPowNode(noValidationRulesNetwork, "cmfr-4-minerB").NoValidation().WithDummyWallet().Start();
 
                 // Miner B syncs with Miner A
                 TestHelper.ConnectAndSync(minerB, minerA);
@@ -291,7 +292,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Miner A continues to mine to height 14
                 TestHelper.MineBlocks(minerA, 4);
-                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 14);
+                TestBase.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 14);
 
                 // Miner B mines 5 more blocks:
                 // Block 6,7,9,10 = valid
@@ -299,13 +300,13 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var minerBTip = await TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(14, (coreNode, block) => BlockBuilder.InvalidDuplicateCoinbase(coreNode, block)).BuildAsync();
 
                 // MinerA will disconnect MinerB
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerB));
+                TestBase.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerB));
 
                 // Ensure Miner A and Miner B remains on their respective heights.
                 var badBlockOnMinerBChain = minerBTip.GetAncestor(14);
                 Assert.Null(minerA.FullNode.ConsensusManager().Tip.FindAncestorOrSelf(badBlockOnMinerBChain));
-                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 14);
-                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 15);
+                TestBase.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 14);
+                TestBase.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 15);
             }
         }
 
@@ -316,8 +317,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var noValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-                var minerB = builder.CreateStratisPowNode(noValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cmfr-5-minerA").WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                var minerB = builder.CreateStratisPowNode(noValidationRulesNetwork, "cmfr-5-minerB").NoValidation().WithDummyWallet().Start();
 
                 // Miner B syncs with Miner A
                 TestHelper.ConnectAndSync(minerB, minerA);
@@ -327,7 +328,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Miner A continues to mine to height 14
                 TestHelper.MineBlocks(minerA, 4);
-                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 14);
+                TestBase.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 14);
 
                 // Miner B mines 5 more blocks:
                 // Block 6,7,9,10 = valid
@@ -338,13 +339,13 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.ConnectNoCheck(minerA, minerB);
 
                 // Miner A will disconnect Miner B
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerB));
+                TestBase.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerB));
 
                 // Ensure Miner A and Miner B remains on their respective heights.
                 var badBlockOnMinerBChain = minerBTip.GetAncestor(14);
                 Assert.Null(minerA.FullNode.ConsensusManager().Tip.FindAncestorOrSelf(badBlockOnMinerBChain));
-                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 14);
-                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 15);
+                TestBase.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 14);
+                TestBase.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 15);
 
             }
         }
@@ -368,13 +369,13 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var noValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
-                var minerB = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
-                var minerC = builder.CreateStratisPowNode(noValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork, "cmfr-6-minerA").WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPowNode(this.powNetwork, "cmfr-6-minerB").WithDummyWallet().Start();
+                var minerC = builder.CreateStratisPowNode(noValidationRulesNetwork, "cmfr-6-minerC").NoValidation().WithDummyWallet().Start();
 
                 // Mine 10 blocks with minerA. We cannot use a premade chain as it adversely affects the max tip age calculation, causing sporadic sync errors.
                 TestHelper.MineBlocks(minerA, 10);
-                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 10);
+                TestBase.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 10);
 
                 // MinerB and MinerC syncs with MinerA
                 TestHelper.ConnectAndSync(minerA, minerB, minerC);
@@ -384,16 +385,16 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // MinerA continues to mine to height 14
                 TestHelper.MineBlocks(minerA, 4);
-                TestHelper.WaitLoopMessage(() => { return (minerA.FullNode.ConsensusManager().Tip.Height == 14, minerA.FullNode.ConsensusManager().Tip.Height.ToString()); });
-                TestHelper.WaitLoopMessage(() => { return (minerB.FullNode.ConsensusManager().Tip.Height == 14, minerB.FullNode.ConsensusManager().Tip.Height.ToString()); });
-                TestHelper.WaitLoopMessage(() => { return (minerC.FullNode.ConsensusManager().Tip.Height == 10, minerC.FullNode.ConsensusManager().Tip.Height.ToString()); });
+                TestBase.WaitLoopMessage(() => { return (minerA.FullNode.ConsensusManager().Tip.Height == 14, minerA.FullNode.ConsensusManager().Tip.Height.ToString()); });
+                TestBase.WaitLoopMessage(() => { return (minerB.FullNode.ConsensusManager().Tip.Height == 14, minerB.FullNode.ConsensusManager().Tip.Height.ToString()); });
+                TestBase.WaitLoopMessage(() => { return (minerC.FullNode.ConsensusManager().Tip.Height == 10, minerC.FullNode.ConsensusManager().Tip.Height.ToString()); });
 
                 // MinerB continues to mine to block 13 without block propogation
                 TestHelper.DisableBlockPropagation(minerB, minerA);
                 TestHelper.MineBlocks(minerB, 4);
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 14));
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerB, 18));
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerC, 10));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 14));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerB, 18));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerC, 10));
 
                 // MinerB mines 5 more blocks:
                 // Block 6,7,9,10 = valid
@@ -404,12 +405,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.ConnectNoCheck(minerA, minerC);
 
                 // MinerC should be disconnected from MinerA
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerC));
+                TestBase.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerC));
 
                 // This will cause the reorg chain to fail at block 8 and roll back any changes.
-                TestHelper.WaitLoopMessage(() => { return (minerA.FullNode.ConsensusManager().Tip.Height == 14, minerA.FullNode.ConsensusManager().Tip.Height.ToString()); });
-                TestHelper.WaitLoopMessage(() => { return (minerB.FullNode.ConsensusManager().Tip.Height == 18, minerB.FullNode.ConsensusManager().Tip.Height.ToString()); });
-                TestHelper.WaitLoopMessage(() => { return (minerC.FullNode.ConsensusManager().Tip.Height == 15, minerC.FullNode.ConsensusManager().Tip.Height.ToString()); });
+                TestBase.WaitLoopMessage(() => { return (minerA.FullNode.ConsensusManager().Tip.Height == 14, minerA.FullNode.ConsensusManager().Tip.Height.ToString()); });
+                TestBase.WaitLoopMessage(() => { return (minerB.FullNode.ConsensusManager().Tip.Height == 18, minerB.FullNode.ConsensusManager().Tip.Height.ToString()); });
+                TestBase.WaitLoopMessage(() => { return (minerC.FullNode.ConsensusManager().Tip.Height == 15, minerC.FullNode.ConsensusManager().Tip.Height.ToString()); });
             }
         }
     }

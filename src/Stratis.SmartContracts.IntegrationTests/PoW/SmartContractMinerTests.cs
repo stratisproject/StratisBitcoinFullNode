@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using DBreeze;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
@@ -24,6 +25,7 @@ using Stratis.Bitcoin.Features.SmartContracts.PoW;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Mining;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Patricia;
@@ -161,10 +163,12 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             private ReflectionVirtualMachine reflectionVirtualMachine;
             private IContractRefundProcessor refundProcessor;
             internal StateRepositoryRoot StateRoot { get; private set; }
+
             private IContractTransferProcessor transferProcessor;
             private SmartContractValidator validator;
             private StateProcessor stateProcessor;
             private SmartContractStateFactory smartContractStateFactory;
+            public SmartContractPowConsensusFactory ConsensusFactory { get; private set; }
 
             #endregion
 
@@ -177,6 +181,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 // Note that by default, these tests run with size accounting enabled.
                 this.network = new SmartContractsRegTest();
+                this.ConsensusFactory = new SmartContractPowConsensusFactory();
                 this.PrivateKey = new Key();
                 this.scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(this.PrivateKey.PubKey);
 
@@ -209,6 +214,9 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 var receiptRepository = new PersistentReceiptRepository(new DataFolder(this.Folder));
 
+                var signals = new Signals(loggerFactory, null);
+                var asyncProvider = new AsyncProvider(loggerFactory, signals, new NodeLifetime());
+
                 this.consensusRules = new PowConsensusRuleEngine(
                         this.network,
                         this.loggerFactory,
@@ -220,7 +228,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                         this.cachedCoinView,
                         chainState,
                         new InvalidBlockHashStore(DateTimeProvider.Default),
-                        new NodeStats(new DateTimeProvider()))
+                        new NodeStats(new DateTimeProvider()),
+                        asyncProvider)
                     .Register();
 
                 var ruleRegistration = new SmartContractPowRuleRegistration(this.network, this.StateRoot,
@@ -272,7 +281,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                         block.Header.Nonce = ++this.Nonce;
 
                     // Serialization sets the BlockSize property.
-                    block = NBitcoin.Block.Load(block.ToBytes(), this.network);
+                    block = NBitcoin.Block.Load(block.ToBytes(), this.network.Consensus.ConsensusFactory);
 
                     var res = await this.consensusManager.BlockMinedAsync(block);
                     if (res == null)
@@ -686,7 +695,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             ulong fundsToSend = 1000;
             object[] testMethodParameters =  { newContractAddress.ToAddress() };
-            
+
             var transferContractCall = new ContractTxData(1, gasPrice, gasLimit, newContractAddress2, "ContractTransfer", testMethodParameters);
             blockTemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferContractCall, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
             Assert.Equal(Encoding.UTF8.GetBytes("testString"), context.StateRoot.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("test")));
@@ -807,7 +816,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             await context.InitializeAsync();
 
             // Create the transaction to be used as the input and add to mempool
-            var preTransaction = context.network.Consensus.ConsensusFactory.CreateTransaction();
+            var preTransaction = context.ConsensusFactory.CreateTransaction();
             var txIn = new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0))
             {
                 ScriptSig = context.PrivateKey.ScriptPubKey
@@ -868,7 +877,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             ulong fundsToSend = 1000;
             object[] testMethodParameters = { receiveContractAddress2.ToAddress(), fundsToSend };
-            
+
             var transferContractCallData = new ContractTxData(1, gasPrice, gasLimit, receiveContractAddress1, "SendFunds", testMethodParameters);
 
             blockTemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferContractCallData, context.txFirst[2].GetHash(), fundsToSend, gasBudget);

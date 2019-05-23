@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
@@ -13,6 +15,7 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Networks;
@@ -26,6 +29,20 @@ namespace Stratis.CirrusPegD
     {
         private const string MainchainArgument = "-mainchain";
         private const string SidechainArgument = "-sidechain";
+
+        private static readonly Dictionary<NetworkType, Func<Network>> SidechainNetworks = new Dictionary<NetworkType, Func<Network>>
+        {
+            { NetworkType.Mainnet, CirrusNetwork.NetworksSelector.Mainnet },
+            { NetworkType.Testnet, CirrusNetwork.NetworksSelector.Testnet },
+            { NetworkType.Regtest, CirrusNetwork.NetworksSelector.Regtest }
+        };
+
+        private static readonly Dictionary<NetworkType, Func<Network>> MainChainNetworks = new Dictionary<NetworkType, Func<Network>>
+        {
+            { NetworkType.Mainnet, Networks.Stratis.Mainnet },
+            { NetworkType.Testnet, Networks.Stratis.Testnet },
+            { NetworkType.Regtest, Networks.Stratis.Regtest }
+        };
 
         private static void Main(string[] args)
         {
@@ -62,8 +79,19 @@ namespace Stratis.CirrusPegD
                 MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
             };
 
+            var fedPegOptions = new FederatedPegOptions(
+                counterChainNetwork: SidechainNetworks[nodeSettings.Network.NetworkType]()
+            );
+
             IFullNode node = new FullNodeBuilder()
-                .AddCommonFeatures(nodeSettings)
+                .UseNodeSettings(nodeSettings)
+                .UseBlockStore()
+                .AddFederationGateway(fedPegOptions)
+                .UseTransactionNotification()
+                .UseBlockNotification()
+                .UseApi()
+                .UseMempool()
+                .AddRPC()
                 .UsePosConsensus()
                 .UseWallet()
                 .AddPowPosMining()
@@ -74,38 +102,34 @@ namespace Stratis.CirrusPegD
 
         private static IFullNode GetSidechainFullNode(string[] args)
         {
-            var nodeSettings = new NodeSettings(networksSelector: FederatedPegNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args)
+            var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args)
             {
                 MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
             };
 
+            var fedPegOptions = new FederatedPegOptions(
+                counterChainNetwork: MainChainNetworks[nodeSettings.Network.NetworkType]()
+            );
+
             IFullNode node = new FullNodeBuilder()
-                .AddCommonFeatures(nodeSettings)
-                .AddSmartContracts(options =>
-                {
-                    options.UseReflectionExecutor();
-                })
-                .UseSmartContractWallet()
-                .UseFederatedPegPoAMining()
-                .Build();
-
-            return node;
-        }
-    }
-
-    internal static class CommonFeaturesExtension
-    {
-        internal static IFullNodeBuilder AddCommonFeatures(this IFullNodeBuilder fullNodeBuilder, NodeSettings nodeSettings)
-        {
-            return fullNodeBuilder
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
-                .AddFederationGateway()
+                .UseFederatedPegPoAMining()
+                .AddFederationGateway(fedPegOptions)
                 .UseTransactionNotification()
                 .UseBlockNotification()
                 .UseApi()
                 .UseMempool()
-                .AddRPC();
+                .AddRPC()
+                .AddSmartContracts(options =>
+                {
+                    options.UseReflectionExecutor();
+                    options.UsePoAWhitelistedContracts();
+                })
+                .UseSmartContractWallet()
+                .Build();
+
+            return node;
         }
     }
 }

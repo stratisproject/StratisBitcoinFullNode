@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Sidechains.Networks;
 
@@ -40,7 +41,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 
         public Network MainChainNetwork { get; }
 
-        public FederatedPegRegTest SideChainNetwork { get; }
+        public CirrusRegTest SideChainNetwork { get; }
 
         // TODO: HashSets / Readonly
         public IReadOnlyList<CoreNode> MainChainNodes { get; }
@@ -48,7 +49,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
         public IReadOnlyList<CoreNode> MainChainFedNodes { get; }
         public IReadOnlyList<CoreNode> SideChainFedNodes { get; }
 
-        public CoreNode MainUser{ get; }
+        public CoreNode MainUser { get; }
         public CoreNode FedMain1 { get; }
         public CoreNode FedMain2 { get; }
         public CoreNode FedMain3 { get; }
@@ -61,7 +62,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
         public SidechainTestContext()
         {
             this.MainChainNetwork = Networks.Stratis.Regtest();
-            this.SideChainNetwork = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();
+            this.SideChainNetwork = (CirrusRegTest)CirrusNetwork.NetworksSelector.Regtest();
 
             this.mnemonics = this.SideChainNetwork.FederationMnemonics;
             this.pubKeysByMnemonic = this.mnemonics.ToDictionary(m => m, m => m.DeriveExtKey().PrivateKey.PubKey);
@@ -73,15 +74,15 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             this.nodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this);
 
             this.MainUser = this.nodeBuilder.CreateStratisPosNode(this.MainChainNetwork, nameof(this.MainUser)).WithWallet();
-            this.FedMain1 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork).WithWallet();
-            this.FedMain2 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork);
-            this.FedMain3 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork);
+            this.FedMain1 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork, this.SideChainNetwork).WithWallet();
+            this.FedMain2 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork, this.SideChainNetwork);
+            this.FedMain3 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork, this.SideChainNetwork);
 
             this.SideUser = this.nodeBuilder.CreateSidechainNode(this.SideChainNetwork).WithWallet();
 
-            this.FedSide1 = this.nodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.SideChainNetwork.FederationKeys[0]);
-            this.FedSide2 = this.nodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.SideChainNetwork.FederationKeys[1]);
-            this.FedSide3 = this.nodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.SideChainNetwork.FederationKeys[2]);
+            this.FedSide1 = this.nodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.MainChainNetwork, this.SideChainNetwork.FederationKeys[0]);
+            this.FedSide2 = this.nodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.MainChainNetwork, this.SideChainNetwork.FederationKeys[1]);
+            this.FedSide3 = this.nodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.MainChainNetwork, this.SideChainNetwork.FederationKeys[2]);
 
             this.SideChainNodes = new List<CoreNode>()
             {
@@ -121,7 +122,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             this.StartMainNodes();
             this.StartSideNodes();
 
-            TestHelper.WaitLoop(() => this.FedMain3.State == CoreNodeState.Running && this.FedSide3.State == CoreNodeState.Running);
+            TestBase.WaitLoop(() => this.FedMain3.State == CoreNodeState.Running && this.FedSide3.State == CoreNodeState.Running);
 
             this.ConnectMainChainNodes();
             this.ConnectSideChainNodes();
@@ -216,7 +217,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                 {
                     walletName = WalletName,
                     accountName = WalletAccount,
-                    password =  WalletPassword,
+                    password = WalletPassword,
                     opReturnData = sidechainDepositAddress,
                     feeAmount = "0.01",
                     allowUnconfirmed = true,
@@ -340,7 +341,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
         private void ApplyAgentPrefixToNodes()
         {
             // name assigning a little gross here - fix later.
-            string[] names = new string[] {"SideUser", "FedSide1", "FedSide2", "FedSide3", "MainUser", "FedMain1", "FedMain2", "FedMain3"};
+            string[] names = new string[] { "SideUser", "FedSide1", "FedSide2", "FedSide3", "MainUser", "FedMain1", "FedMain2", "FedMain3" };
             int index = 0;
             foreach (CoreNode n in this.SideChainNodes.Concat(this.MainChainNodes))
             {

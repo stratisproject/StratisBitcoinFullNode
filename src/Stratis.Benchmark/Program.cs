@@ -1,6 +1,4 @@
-﻿using System;
-using BenchmarkDotNet.Configs;
-using BenchmarkDotNet.Running;
+﻿using BenchmarkDotNet.Running;
 
 namespace Stratis.Benchmark
 {
@@ -10,8 +8,8 @@ namespace Stratis.Benchmark
         {
             BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
 
-            //for debug benchmark, adds "new DebugInProcessConfig()"
-            //BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, new DebugInProcessConfig());
+            // for debug benchmark, adds "new DebugInProcessConfig()"
+            // BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, new DebugInProcessConfig());
         }
     }
 }

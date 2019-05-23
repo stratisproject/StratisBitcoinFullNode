@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
@@ -22,10 +23,14 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 
         private readonly IDateTimeProvider timeProvider;
 
-        public SidechainFederationNodeRunner(string dataDir, string agent, Network network, bool testingFederation, IDateTimeProvider dateTimeProvider)
+        private readonly Network counterChainNetwork;
+
+        public SidechainFederationNodeRunner(string dataDir, string agent, Network network, Network counterChainNetwork, bool testingFederation, IDateTimeProvider dateTimeProvider)
             : base(dataDir, agent)
         {
             this.Network = network;
+
+            this.counterChainNetwork = counterChainNetwork;
 
             this.testingFederation = testingFederation;
 
@@ -42,10 +47,11 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                 .AddSmartContracts(options =>
                 {
                     options.UseReflectionExecutor();
+                    options.UsePoAWhitelistedContracts();
                 })
-                .UseSmartContractWallet()                
-                .AddFederationGateway()
+                .UseSmartContractWallet()
                 .UseFederatedPegPoAMining()
+                .AddFederationGateway(new FederatedPegOptions(this.counterChainNetwork))
                 .UseMempool()
                 .UseTransactionNotification()
                 .UseBlockNotification()

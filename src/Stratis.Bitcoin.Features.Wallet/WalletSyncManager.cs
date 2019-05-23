@@ -5,12 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
@@ -30,13 +30,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly StoreSettings storeSettings;
 
         private readonly ISignals signals;
-
+        private readonly IAsyncProvider asyncProvider;
         protected ChainedHeader walletTip;
 
         public ChainedHeader WalletTip => this.walletTip;
 
         /// <summary>Queue which contains blocks that should be processed by <see cref="WalletManager"/>.</summary>
-        private readonly AsyncQueue<Block> blocksQueue;
+        private readonly IAsyncDelegateDequeuer<Block> blocksQueue;
 
         /// <summary>Current <see cref="blocksQueue"/> size in bytes.</summary>
         private long blocksQueueSize;
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private const int MaxQueueSize = 100 * 1024 * 1024;
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ChainIndexer chainIndexer,
-            Network network, IBlockStore blockStore, StoreSettings storeSettings, ISignals signals)
+            Network network, IBlockStore blockStore, StoreSettings storeSettings, ISignals signals, IAsyncProvider asyncProvider)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
@@ -60,14 +60,16 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(blockStore, nameof(blockStore));
             Guard.NotNull(storeSettings, nameof(storeSettings));
             Guard.NotNull(signals, nameof(signals));
+            Guard.NotNull(asyncProvider, nameof(asyncProvider));
 
             this.walletManager = walletManager;
             this.chainIndexer = chainIndexer;
             this.blockStore = blockStore;
             this.storeSettings = storeSettings;
             this.signals = signals;
+            this.asyncProvider = asyncProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.blocksQueue = new AsyncQueue<Block>(this.OnProcessBlockAsync);
+            this.blocksQueue = this.asyncProvider.CreateAndRunAsyncDelegateDequeuer<Block>($"{nameof(WalletSyncManager)}-{nameof(this.blocksQueue)}", this.OnProcessBlockAsync);
 
             this.blocksQueueSize = 0;
         }
@@ -84,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.logger.LogInformation("WalletSyncManager initialized. Wallet at block {0}.", this.walletManager.LastBlockHeight());
 
-            this.walletTip = this.chainIndexer.GetBlock(this.walletManager.WalletTipHash);
+            this.walletTip = this.chainIndexer.GetHeader(this.walletManager.WalletTipHash);
             if (this.walletTip == null)
             {
                 // The wallet tip was not found in the main chain.
@@ -136,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, -block.BlockSize.Value);
             this.logger.LogTrace("Queue sized changed to {0} bytes.", currentBlockQueueSize);
 
-            ChainedHeader newTip = this.chainIndexer.GetBlock(block.GetHash());
+            ChainedHeader newTip = this.chainIndexer.GetHeader(block.GetHash());
 
             if (newTip == null)
             {
@@ -150,7 +152,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 // If previous block does not match there might have
                 // been a reorg, check if the wallet is still on the main chain.
-                ChainedHeader inBestChain = this.chainIndexer.GetBlock(this.walletTip.HashBlock);
+                ChainedHeader inBestChain = this.chainIndexer.GetHeader(this.walletTip.HashBlock);
                 if (inBestChain == null)
                 {
                     // The current wallet hash was not found on the main chain.
@@ -158,7 +160,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     ChainedHeader fork = this.walletTip;
 
                     // We walk back the chained block object to find the fork.
-                    while (this.chainIndexer.GetBlock(fork.HashBlock) == null)
+                    while (this.chainIndexer.GetHeader(fork.HashBlock) == null)
                         fork = fork.Previous;
 
                     this.logger.LogInformation("Reorg detected, going back from '{0}' to '{1}'.", this.walletTip, fork);
@@ -205,7 +207,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                                 return;
                             }
 
-                            nextblock = await this.blockStore.GetBlockAsync(next.HashBlock).ConfigureAwait(false);
+                            nextblock = this.blockStore.GetBlock(next.HashBlock);
                             if (nextblock == null)
                             {
                                 // The idea in this abandoning of the loop is to release consensus to push the block.
@@ -303,7 +305,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public virtual void SyncFromHeight(int height)
         {
-            ChainedHeader chainedHeader = this.chainIndexer.GetBlock(height);
+            ChainedHeader chainedHeader = this.chainIndexer.GetHeader(height);
             this.walletTip = chainedHeader ?? throw new WalletException("Invalid block height");
             this.walletManager.WalletTipHash = chainedHeader.HashBlock;
         }

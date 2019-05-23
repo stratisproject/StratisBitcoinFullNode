@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
@@ -24,6 +25,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -70,6 +72,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         private INodeLifetime nodeLifetime;
 
         private PeerAddressManager peerAddressManager;
+        private ISignals signals;
+        private IAsyncProvider asyncProvider;
 
         public TestContext()
         {
@@ -108,6 +112,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.ruleRegistration = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration();
             this.ruleRegistration.RegisterRules(this.Network.Consensus);
 
+            this.signals = new Bitcoin.Signals.Signals(this.loggerFactory, null);
+            this.asyncProvider = new AsyncProvider(this.loggerFactory, this.signals, this.nodeLifetime);
+
             // Dont check PoW of a header in this test.
             this.Network.Consensus.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));
 
@@ -126,19 +133,19 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.loggerFactory, new PayloadProvider().DiscoverPayloads(),
                 this.selfEndpointTracker,
                 this.ibd.Object,
-                new ConnectionManagerSettings(this.nodeSettings));
+                new ConnectionManagerSettings(this.nodeSettings), this.asyncProvider);
 
             this.peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, this.nodeSettings.DataFolder, this.loggerFactory, this.selfEndpointTracker);
-            var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(this.loggerFactory), this.loggerFactory, this.Network, this.networkPeerFactory, this.nodeLifetime, this.nodeSettings, this.peerAddressManager);
+            var peerDiscovery = new PeerDiscovery(this.asyncProvider, this.loggerFactory, this.Network, this.networkPeerFactory, this.nodeLifetime, this.nodeSettings, this.peerAddressManager);
 
             this.connectionManager = new ConnectionManager(this.dateTimeProvider, this.loggerFactory, this.Network, this.networkPeerFactory, this.nodeSettings,
                 this.nodeLifetime, new NetworkPeerConnectionParameters(), this.peerAddressManager, new IPeerConnector[] { },
-                peerDiscovery, this.selfEndpointTracker, connectionSettings, new VersionProvider(), this.nodeStats);
+                peerDiscovery, this.selfEndpointTracker, connectionSettings, new VersionProvider(), this.nodeStats, this.asyncProvider);
 
             this.deployments = new NodeDeployments(this.Network, this.chainIndexer);
 
             this.consensusRules = new PowConsensusRuleEngine(this.Network, this.loggerFactory, this.dateTimeProvider, this.chainIndexer, this.deployments, this.ConsensusSettings,
-                     this.checkpoints.Object, this.coinView, this.ChainState.Object, this.hashStore, this.nodeStats);
+                     this.checkpoints.Object, this.coinView, this.ChainState.Object, this.hashStore, this.nodeStats, this.asyncProvider);
 
             this.consensusRules.Register();
 
@@ -156,7 +163,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             ConsensusManager consensusManager = new ConsensusManager(tree, this.Network, this.loggerFactory, this.ChainState.Object, this.IntegrityValidator.Object,
                 this.PartialValidator.Object, this.FullValidator.Object, this.consensusRules,
-                this.FinalizedBlockMock.Object, new Stratis.Bitcoin.Signals.Signals(this.loggerFactory, null), this.peerBanning, this.ibd.Object, this.chainIndexer,
+                this.FinalizedBlockMock.Object, this.signals, this.peerBanning, this.ibd.Object, this.chainIndexer,
                 this.BlockPuller.Object, this.BlockStore.Object, this.connectionManager, this.nodeStats, this.nodeLifetime, this.ConsensusSettings);
 
             this.TestConsensusManager = new TestConsensusManager(consensusManager);
@@ -331,13 +338,20 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.Empty(this.TestConsensusManager.GetExpectedBlockSizes());
         }
 
+        internal void AssertExpectedBlockSizes(uint expectedSize)
+        {
+            Assert.Equal(expectedSize, this.TestConsensusManager.GetExpectedBlockSizes().Sum(s => s.Value));
+        }
 
         internal Mock<INetworkPeer> GetNetworkPeerWithConnection()
         {
             var networkPeer = new Mock<INetworkPeer>();
 
+            var signals = new Bitcoin.Signals.Signals(this.loggerFactory, null);
+            var asyncProvider = new AsyncProvider(this.loggerFactory, this.signals, new NodeLifetime());
+
             var connection = new NetworkPeerConnection(this.Network, networkPeer.Object, new TcpClient(), 0, (message, token) => Task.CompletedTask,
-            this.dateTimeProvider, this.loggerFactory, new PayloadProvider().DiscoverPayloads());
+            this.dateTimeProvider, this.loggerFactory, new PayloadProvider().DiscoverPayloads(), asyncProvider);
             networkPeer.Setup(n => n.Connection)
                 .Returns(connection);
 

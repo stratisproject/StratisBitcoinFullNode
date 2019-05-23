@@ -15,11 +15,11 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 {
     public class VotingManager : IDisposable
     {
-        private readonly FederationManager federationManager;
+        private readonly IFederationManager federationManager;
 
         private readonly VotingDataEncoder votingDataEncoder;
 
-        private readonly SlotsManager slotsManager;
+        private readonly ISlotsManager slotsManager;
 
         private readonly IPollResultExecutor pollResultExecutor;
 
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private bool isInitialized;
 
-        public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory, SlotsManager slotsManager, IPollResultExecutor pollResultExecutor,
+        public VotingManager(IFederationManager federationManager, ILoggerFactory loggerFactory, ISlotsManager slotsManager, IPollResultExecutor pollResultExecutor,
             INodeStats nodeStats, DataFolder dataFolder, DBreezeSerializer dBreezeSerializer, ISignals signals, IFinalizedBlockInfoRepository finalizedBlockInfo)
         {
             this.federationManager = Guard.NotNull(federationManager, nameof(federationManager));
@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
 
             // Pub key of a fed member that created voting data.
-            string fedMemberKeyHex = this.slotsManager.GetPubKeyForTimestamp(chBlock.Block.Header.Time).ToHex();
+            string fedMemberKeyHex = this.slotsManager.GetFederationMemberForTimestamp(chBlock.Block.Header.Time).PubKey.ToHex();
 
             List<VotingData> votingDataList = this.votingDataEncoder.Decode(rawVotingData);
 
@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                         this.logger.LogDebug("Fed member '{0}' already voted for this poll. Ignoring his vote. Poll: '{1}'.", fedMemberKeyHex, poll);
                     }
 
-                    List<string> fedMembersHex = this.federationManager.GetFederationMembers().Select(x => x.ToHex()).ToList();
+                    List<string> fedMembersHex = this.federationManager.GetFederationMembers().Select(x => x.PubKey.ToHex()).ToList();
 
                     // It is possible that there is a vote from a federation member that was deleted from the federation.
                     // Do not count votes from entities that are not active fed members.
@@ -286,7 +286,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                     }
 
                     // Pub key of a fed member that created voting data.
-                    string fedMemberKeyHex = this.slotsManager.GetPubKeyForTimestamp(chBlock.Block.Header.Time).ToHex();
+                    string fedMemberKeyHex = this.slotsManager.GetFederationMemberForTimestamp(chBlock.Block.Header.Time).PubKey.ToHex();
 
                     targetPoll.PubKeysHexVotedInFavor.Remove(fedMemberKeyHex);
 
@@ -308,7 +308,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             lock (this.locker)
             {
-                log.AppendLine($"{this.polls.Count(x => x.IsPending)} polls are pending, {this.polls.Count(x => !x.IsPending)} polls are finished.");
+                log.AppendLine($"{this.polls.Count(x => x.IsPending)} polls are pending, {this.polls.Count(x => !x.IsPending)} polls are finished, {this.polls.Count(x => x.IsExecuted)} polls are executed.");
                 log.AppendLine($"{this.scheduledVotingData.Count} votes are scheduled to be added to the next block this node mines.");
             }
         }

@@ -15,16 +15,19 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
     public class PollResultExecutor : IPollResultExecutor
     {
-        private readonly FederationManager federationManager;
+        private readonly IFederationManager federationManager;
 
         private readonly IWhitelistedHashesRepository whitelistedHashesRepository;
 
+        private readonly PoAConsensusFactory consensusFactory;
+
         private readonly ILogger logger;
 
-        public PollResultExecutor(FederationManager federationManager, ILoggerFactory loggerFactory, IWhitelistedHashesRepository whitelistedHashesRepository)
+        public PollResultExecutor(IFederationManager federationManager, ILoggerFactory loggerFactory, IWhitelistedHashesRepository whitelistedHashesRepository, Network network)
         {
             this.federationManager = federationManager;
             this.whitelistedHashesRepository = whitelistedHashesRepository;
+            this.consensusFactory = network.Consensus.ConsensusFactory as PoAConsensusFactory;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -75,20 +78,20 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        private void AddFederationMember(byte[] pubKeyBytes)
+        public void AddFederationMember(byte[] federationMemberBytes)
         {
-            var key = new PubKey(pubKeyBytes);
+            IFederationMember federationMember = this.consensusFactory.DeserializeFederationMember(federationMemberBytes);
 
-            this.logger.LogInformation("Adding new fed member: '{0}'.", key.ToHex());
-            this.federationManager.AddFederationMember(key);
+            this.logger.LogInformation("Adding new fed member: '{0}'.", federationMember);
+            this.federationManager.AddFederationMember(federationMember);
         }
 
-        private void RemoveFederationMember(byte[] pubKeyBytes)
+        public void RemoveFederationMember(byte[] federationMemberBytes)
         {
-            var key = new PubKey(pubKeyBytes);
+            IFederationMember federationMember = this.consensusFactory.DeserializeFederationMember(federationMemberBytes);
 
-            this.logger.LogInformation("Kicking fed member: '{0}'.", key.ToHex());
-            this.federationManager.RemoveFederationMember(key);
+            this.logger.LogInformation("Kicking fed member: '{0}'.", federationMember);
+            this.federationManager.RemoveFederationMember(federationMember);
         }
 
         private void AddHash(byte[] hashBytes)

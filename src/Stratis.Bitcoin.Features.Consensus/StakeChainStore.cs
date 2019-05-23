@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -50,12 +49,12 @@ namespace Stratis.Bitcoin.Features.Consensus
         public void Load()
         {
             uint256 hash = this.dBreezeCoinView.GetTipHash();
-            ChainedHeader currentHeader = this.chainIndexer.GetBlock(hash);
+            ChainedHeader currentHeader = this.chainIndexer.GetHeader(hash);
 
             while (currentHeader == null)
             {
                 hash = this.dBreezeCoinView.Rewind();
-                currentHeader = this.chainIndexer.GetBlock(hash);
+                currentHeader = this.chainIndexer.GetHeader(hash);
             }
 
             var load = new List<StakeItem>();

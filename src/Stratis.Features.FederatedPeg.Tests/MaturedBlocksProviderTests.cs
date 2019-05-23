@@ -48,7 +48,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             ChainedHeader tip = headers.Last();
 
-            this.consensusManager.GetBlockDataAsync(Arg.Any<uint256>()).Returns(delegate(CallInfo info)
+            this.consensusManager.GetBlockData(Arg.Any<uint256>()).Returns(delegate(CallInfo info)
             {
                 uint256 hash = (uint256) info[0];
                 ChainedHeaderBlock block = blocks.Single(x => x.ChainedHeader.HashBlock == hash);
@@ -63,10 +63,10 @@ namespace Stratis.Features.FederatedPeg.Tests
             // Makes every block a matured block.
             var maturedBlocksProvider = new MaturedBlocksProvider(this.loggerFactory, this.depositExtractor, this.consensusManager);
 
-            List<MaturedBlockDepositsModel> deposits = await maturedBlocksProvider.GetMaturedDepositsAsync(0, 10);
+            Result<List<MaturedBlockDepositsModel>> depositsResult = await maturedBlocksProvider.GetMaturedDepositsAsync(0, 10);
 
             // Expect the number of matured deposits to equal the number of blocks.
-            Assert.Equal(10, deposits.Count);
+            Assert.Equal(10, depositsResult.Value.Count);
         }
     }
 }

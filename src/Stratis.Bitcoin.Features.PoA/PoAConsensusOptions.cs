@@ -6,14 +6,14 @@ namespace Stratis.Bitcoin.Features.PoA
 {
     public class PoAConsensusOptions : ConsensusOptions
     {
-        /// <summary>Public keys of all federation members at the start of the chain.</summary>
+        /// <summary>Public keys and other federation members related information at the start of the chain.</summary>
         /// <remarks>
         /// Do not use this list anywhere except for at the initialization of the chain.
         /// Actual collection of the federation members can be changed with time.
-        /// Use <see cref="FederationManager.GetFederationMembers"/> as a source of
+        /// Use <see cref="IFederationManager.GetFederationMembers"/> as a source of
         /// up to date federation keys.
         /// </remarks>
-        public List<PubKey> GenesisFederationPublicKeys { get; protected set; }
+        public List<IFederationMember> GenesisFederationMembers { get; protected set; }
 
         public uint TargetSpacingSeconds { get; protected set; }
 
@@ -34,14 +34,14 @@ namespace Stratis.Bitcoin.Features.PoA
             int maxStandardTxWeight,
             int maxBlockSigopsCost,
             int maxStandardTxSigopsCost,
-            List<PubKey> federationPublicKeys,
+            List<IFederationMember> genesisFederationMembers,
             uint targetSpacingSeconds,
             bool votingEnabled,
             bool autoKickIdleMembers,
             uint federationMemberMaxIdleTimeSeconds = 60 * 60 * 24 * 7)
                 : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
-            this.GenesisFederationPublicKeys = federationPublicKeys;
+            this.GenesisFederationMembers = genesisFederationMembers;
             this.TargetSpacingSeconds = targetSpacingSeconds;
             this.VotingEnabled = votingEnabled;
             this.AutoKickIdleMembers = autoKickIdleMembers;

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -118,7 +117,7 @@ namespace Stratis.Bitcoin.Features.Dns
         private bool IsProvenHeaderActivated()
         {
             long currentHeight = this.chainState.ConsensusTip.Height;
-            return currentHeight >= this.checkpoints.GetLastCheckpointHeight(); ;
+            return (currentHeight >= this.checkpoints.GetLastCheckpointHeight()) && this.network.Consensus.IsProofOfStake;
         }
 
         /// <summary>

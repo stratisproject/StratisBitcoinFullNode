@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Features.FederatedPeg.Models;
+using Stratis.Features.FederatedPeg.TargetChain;
 
 namespace Stratis.Features.FederatedPeg.Interfaces
 {
@@ -33,13 +34,15 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// New partial transactions are recorded in the wallet to ensure that future transactions will not
         /// attempt to re-use UTXO's.
         /// </remarks>
-        Task<bool> RecordLatestMatureDepositsAsync(IList<MaturedBlockDepositsModel> blockDeposits);
+        Task<RecordLatestMatureDepositsResult> RecordLatestMatureDepositsAsync(IList<MaturedBlockDepositsModel> blockDeposits);
 
-        /// <summary>Returns transactions by status. Orders the results by UTXO selection order.</summary>
-        /// <param name="status">The status to get the transactions for.</param>
+        /// <summary>
+        /// Returns transfers based on their status.
+        /// </summary>
+        /// <param name="statuses">Set of statuses to get transfers for.</param>
         /// <param name="sort">Set to <c>true</c> to sort the transfers by their earliest inputs.</param>
-        /// <returns>An array of transactions.</returns>
-        Task<Dictionary<uint256, Transaction>> GetTransactionsByStatusAsync(CrossChainTransferStatus status, bool sort = false);
+        /// <returns>Transfers for the given statuses.</returns>
+        ICrossChainTransfer[] GetTransfersByStatus(CrossChainTransferStatus[] statuses, bool sort = false);
 
         /// <summary>
         /// Updates partial transactions in the store with signatures obtained from the passed transactions.
@@ -85,5 +88,16 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// </summary>
         /// <returns>The counter of the cross chain transfer for each <see cref="CrossChainTransferStatus"/> status</returns>
         Dictionary<CrossChainTransferStatus, int> GetCrossChainTransferStatusCounter();
+
+        /// <summary>
+        /// Get transfers by status without validating or locking. Useful for retrieving console data.
+        /// </summary>
+        ICrossChainTransfer[] QueryTransfersByStatus(CrossChainTransferStatus[] statuses);
+
+
+        /// <summary>
+        /// Get transfers by ID without validating or locking. Useful for retrieving console data.
+        /// </summary>
+        ICrossChainTransfer[] QueryTransfersById(uint256[] depositIds);
     }
 }

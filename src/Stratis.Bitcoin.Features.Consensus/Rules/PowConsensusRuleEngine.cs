@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -17,6 +18,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     /// </summary>
     public class PowConsensusRuleEngine : ConsensusRuleEngine
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>The consensus db, containing all unspent UTXO in the chain.</summary>
         public ICoinView UtxoSet { get; }
 
@@ -27,11 +31,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// </summary>
         public PowConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ChainIndexer chainIndexer,
             NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IChainState chainState,
-            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats)
+            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IAsyncProvider asyncProvider)
             : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, chainState, invalidBlockHashStore, nodeStats)
         {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
             this.UtxoSet = utxoSet;
-            this.prefetcher = new CoinviewPrefetcher(this.UtxoSet, chainIndexer, loggerFactory);
+            this.prefetcher = new CoinviewPrefetcher(this.UtxoSet, chainIndexer, loggerFactory, asyncProvider);
         }
 
         /// <inheritdoc />

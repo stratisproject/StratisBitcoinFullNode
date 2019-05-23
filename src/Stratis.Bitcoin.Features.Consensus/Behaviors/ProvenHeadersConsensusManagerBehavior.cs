@@ -22,10 +22,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
     /// </summary>
     public class ProvenHeadersConsensusManagerBehavior : ConsensusManagerBehavior
     {
-        private readonly IInitialBlockDownloadState initialBlockDownloadState;
-        private readonly IConsensusManager consensusManager;
-        private readonly IPeerBanning peerBanning;
-        private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
 
         /// <summary>Instance logger.</summary>
@@ -56,12 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             IProvenBlockHeaderStore provenBlockHeaderStore,
             ConnectionManagerSettings connectionManagerSettings) : base(chainIndexer, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
         {
-            this.ChainIndexer = chainIndexer;
-            this.initialBlockDownloadState = initialBlockDownloadState;
-            this.consensusManager = consensusManager;
-            this.peerBanning = peerBanning;
             this.network = network;
-            this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
             this.chainState = chainState;
             this.checkpoints = checkpoints;
@@ -108,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// <inheritdoc />
         protected override bool CanConsumeCache()
         {
-            int height = this.consensusManager.Tip.Height;
+            int height = this.ConsensusManager.Tip.Height;
 
             if (height == this.lastCheckpointHeight)
                 return true;
@@ -135,6 +126,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             if (!(getHeadersPayload is GetProvenHeadersPayload))
             {
                 var headersPayload = base.ConstructHeadersPayload(getHeadersPayload, out lastHeader) as HeadersPayload;
+
+                if (headersPayload == null)
+                {
+                    this.logger.LogTrace("(-)[INVALID_LOCATOR]:null");
+                    return null;
+                }
 
                 for (int i = 0; i < headersPayload.Headers.Count; i++)
                 {
@@ -213,10 +210,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         {
             return new ProvenHeadersConsensusManagerBehavior(
                 this.ChainIndexer,
-                this.initialBlockDownloadState,
-                this.consensusManager,
-                this.peerBanning,
-                this.loggerFactory,
+                this.InitialBlockDownloadState,
+                this.ConsensusManager,
+                this.PeerBanning,
+                this.LoggerFactory,
                 this.network,
                 this.chainState,
                 this.checkpoints,
@@ -242,7 +239,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// <returns> <c>true</c> if  we need to validate proven headers.</returns>
         private int GetCurrentHeight()
         {
-            int currentHeight = (this.BestReceivedTip ?? this.consensusManager.Tip).Height;
+            int currentHeight = (this.BestReceivedTip ?? this.ConsensusManager.Tip).Height;
 
             return currentHeight;
         }
@@ -287,7 +284,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             {
                 return new GetProvenHeadersPayload()
                 {
-                    BlockLocator = (this.BestReceivedTip ?? this.consensusManager.Tip).GetLocator(),
+                    BlockLocator = (this.BestReceivedTip ?? this.ConsensusManager.Tip).GetLocator(),
                     HashStop = null
                 };
             }

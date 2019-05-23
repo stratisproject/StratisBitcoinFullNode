@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -74,12 +74,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             ILoggerFactory loggerFactory,
             INetworkPeerFactory networkPeerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
-            ConnectionManagerSettings connectionManagerSettings)
+            ConnectionManagerSettings connectionManagerSettings,
+            IAsyncProvider asyncProvider)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{localEndPoint}] ");
 
             this.networkPeerFactory = networkPeerFactory;
-            this.networkPeerDisposer = new NetworkPeerDisposer(loggerFactory);
+            this.networkPeerDisposer = new NetworkPeerDisposer(loggerFactory, asyncProvider);
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.connectionManagerSettings = connectionManagerSettings;
 

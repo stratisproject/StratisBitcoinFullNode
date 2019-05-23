@@ -10,7 +10,6 @@ using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -22,11 +21,11 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
 
         private CancellationTokenSource cancellation;
 
-        private readonly SlotsManager slotsManager;
+        private readonly ISlotsManager slotsManager;
 
         private readonly IConsensusManager consensusManager;
 
-        private readonly FederationManager federationManager;
+        private readonly IFederationManager federationManager;
 
         public TestPoAMiner(
             IConsensusManager consensusManager,
@@ -36,10 +35,10 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState ibdState,
             BlockDefinition blockDefinition,
-            SlotsManager slotsManager,
+            ISlotsManager slotsManager,
             IConnectionManager connectionManager,
             PoABlockHeaderValidator poaHeaderValidator,
-            FederationManager federationManager,
+            IFederationManager federationManager,
             IIntegrityValidator integrityValidator,
             IWalletManager walletManager,
             INodeStats nodeStats,

@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using NBitcoin.Crypto;
 using NBitcoin.Rules;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
@@ -36,6 +37,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<IRuleRegistration> ruleRegistration;
         protected RuleContext ruleContext;
         protected Transaction lastAddedTransaction;
+        protected IAsyncProvider asyncProvider;
 
         protected ConsensusRuleUnitTestBase(Network network)
         {
@@ -59,6 +61,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 this.ruleContext = new PosRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset());
             else
                 this.ruleContext = new PowRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset());
+
+            this.asyncProvider = new AsyncProvider(this.loggerFactory.Object, new Mock<ISignals>().Object, new NodeLifetime());
         }
 
         protected void AddBlocksToChain(ChainIndexer chainIndexer, int blockAmount)
@@ -110,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 Logger = this.logger.Object,
                 Parent = new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.ChainIndexer, this.nodeDeployments,
                     this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object, this.stakeValidator.Object, this.chainState.Object,
-                    new InvalidBlockHashStore(new DateTimeProvider()), new NodeStats(this.dateTimeProvider.Object), this.rewindDataIndexStore.Object)
+                    new InvalidBlockHashStore(new DateTimeProvider()), new NodeStats(this.dateTimeProvider.Object), this.rewindDataIndexStore.Object, this.asyncProvider)
             };
         }
     }
@@ -127,6 +131,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<IChainState> chainState;
         protected T consensusRules;
         protected RuleContext ruleContext;
+        protected IAsyncProvider asyncProvider;
+
 
         protected ConsensusRuleUnitTestBase(Network network)
         {
@@ -149,6 +155,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             {
                 this.ruleContext = new PowRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset());
             }
+
+            this.asyncProvider = new AsyncProvider(this.loggerFactory.Object, new Mock<ISignals>().Object, new NodeLifetime());
         }
 
         public virtual T InitializeConsensusRules()
@@ -225,7 +233,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.consensusRules = InitializeConsensusRules();
 
             this.stakeValidator.Setup(s => s.CheckStakeSignature(It.IsAny<BlockSignature>(), It.IsAny<uint256>(), It.IsAny<Transaction>()))
-                .Returns((BlockSignature signature, uint256 blockHash, Transaction coinstakeTx) => {
+                .Returns((BlockSignature signature, uint256 blockHash, Transaction coinstakeTx) =>
+                {
                     var validator = new StakeValidator(this.network, this.stakeChain.Object, this.ChainIndexer, this.coinView.Object, this.loggerFactory.Object);
                     return validator.CheckStakeSignature(signature, blockHash, coinstakeTx);
                 });
@@ -235,7 +244,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         {
             return new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.ChainIndexer,
                 this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
-                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new NodeStats(this.dateTimeProvider.Object), this.rewindDataIndexStore.Object);
+                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new NodeStats(this.dateTimeProvider.Object), this.rewindDataIndexStore.Object, this.asyncProvider);
         }
     }
 

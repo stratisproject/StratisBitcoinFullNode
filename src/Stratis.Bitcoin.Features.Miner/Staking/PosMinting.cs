@@ -8,6 +8,7 @@ using NBitcoin;
 using NBitcoin.BuilderExtensions;
 using NBitcoin.Crypto;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
@@ -21,7 +22,6 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
-using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner.Staking
@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         private readonly IStakeValidator stakeValidator;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>A manager providing operations on wallets.</summary>
         private readonly IWalletManager walletManager;
@@ -229,7 +229,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             MempoolSchedulerLock mempoolLock,
             ITxMempool mempool,
             IWalletManager walletManager,
-            IAsyncLoopFactory asyncLoopFactory,
+            IAsyncProvider asyncProvider,
             ITimeSyncBehaviorState timeSyncBehaviorState,
             ILoggerFactory loggerFactory,
             MinerSettings minerSettings)
@@ -246,7 +246,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             this.stakeValidator = stakeValidator;
             this.mempoolLock = mempoolLock;
             this.mempool = mempool;
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.walletManager = walletManager;
             this.timeSyncBehaviorState = timeSyncBehaviorState;
             this.loggerFactory = loggerFactory;
@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             this.rpcGetStakingInfoModel.Enabled = true;
             this.stakeCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(new[] { this.nodeLifetime.ApplicationStopping });
 
-            this.stakingLoop = this.asyncLoopFactory.Run("PosMining.Stake", async token =>
+            this.stakingLoop = this.asyncProvider.CreateAndRunAsyncLoop("PosMining.Stake", async token =>
             {
                 try
                 {
@@ -464,7 +464,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 if ((utxo == null) || (utxo.Value < this.MinimumStakingCoinValue))
                     continue;
 
-                uint256 hashBlock = this.chainIndexer.GetBlock((int)coinSet.Height)?.HashBlock;
+                uint256 hashBlock = this.chainIndexer.GetHeader((int)coinSet.Height)?.HashBlock;
                 if (hashBlock == null)
                     continue;
 
@@ -1016,7 +1016,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// </returns>
         private async Task<int> GetDepthInMainChainAsync(UtxoStakeDescription utxoStakeDescription)
         {
-            ChainedHeader chainedBlock = this.chainIndexer.GetBlock(utxoStakeDescription.HashBlock);
+            ChainedHeader chainedBlock = this.chainIndexer.GetHeader(utxoStakeDescription.HashBlock);
 
             if (chainedBlock == null)
                 return await this.mempoolLock.ReadAsync(() => this.mempool.Exists(utxoStakeDescription.UtxoSet.TransactionId) ? 0 : -1).ConfigureAwait(false);

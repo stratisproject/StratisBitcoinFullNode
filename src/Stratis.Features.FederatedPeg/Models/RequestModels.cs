@@ -1,23 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Net.Http;
-using System.Text;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.Models;
 
 namespace Stratis.Features.FederatedPeg.Models
 {
-    /// <summary>
-    /// Helper class to interpret a string as json.
-    /// </summary>
-    public class JsonContent : StringContent
-    {
-        public JsonContent(object obj) :
-            base(JsonConvert.SerializeObject(obj), Encoding.UTF8, "application/json")
-        {
-
-        }
-    }
-
     /// <summary>
     /// Model for the "enablefederation" request.
     /// </summary>
@@ -29,6 +15,8 @@ namespace Stratis.Features.FederatedPeg.Models
         public string Password { get; set; }
 
         public string Passphrase { get; set; }
+
+        public int? TimeoutSeconds { get; set; }
     }
 
     /// <summary>

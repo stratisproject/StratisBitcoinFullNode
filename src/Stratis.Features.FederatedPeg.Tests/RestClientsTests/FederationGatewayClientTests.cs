@@ -1,51 +1,35 @@
-﻿using System;
-using System.Net.Http;
-using Microsoft.Extensions.Logging;
-using NSubstitute;
-using Stratis.Features.FederatedPeg.Interfaces;
-using Stratis.Features.FederatedPeg.RestClients;
-using Stratis.Features.FederatedPeg.Tests.Utils;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Controllers;
+using Stratis.Features.FederatedPeg.Controllers;
+using Stratis.Features.FederatedPeg.Models;
+using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
 {
-    // TODO log assertions in the tests? WYDT
-    public class FederationGatewayClientTests : IDisposable
+    public class FederationGatewayClientTests
     {
-        private IHttpClientFactory httpClientFactory;
-
-        private HttpMessageHandler messageHandler;
-
-        private HttpClient httpClient;
-
-        private readonly ILoggerFactory loggerFactory;
-
-        private readonly ILogger logger;
-
+        private readonly FederationGatewayClient client;
         public FederationGatewayClientTests()
         {
-            this.loggerFactory = Substitute.For<ILoggerFactory>();
-            this.logger = Substitute.For<ILogger>();
-            this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
+            string redeemScript = "2 02fad5f3c4fdf4c22e8be4cfda47882fff89aaa0a48c1ccad7fa80dc5fee9ccec3 02503f03243d41c141172465caca2f5cef7524f149e965483be7ce4e44107d7d35 03be943c3a31359cd8e67bedb7122a0898d2c204cf2d0119e923ded58c429ef97c 3 OP_CHECKMULTISIG";
+            string federationIps = "127.0.0.1:36201,127.0.0.1:36202,127.0.0.1:36203";
+            string multisigPubKey = "03be943c3a31359cd8e67bedb7122a0898d2c204cf2d0119e923ded58c429ef97c";
+            string[] args = new[] { "-sidechain", "-regtest", $"-federationips={federationIps}", $"-redeemscript={redeemScript}", $"-publickey={multisigPubKey}", "-mincoinmaturity=1", "-mindepositconfirmations=1" };
+
+            var nodeSettings = new NodeSettings(Sidechains.Networks.CirrusNetwork.NetworksSelector.Regtest(), NBitcoin.Protocol.ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+
+            this.client = new FederationGatewayClient(new ExtendedLoggerFactory(), new FederationGatewaySettings(nodeSettings), new HttpClientFactory());
         }
 
-        private FederationGatewayClient createClient(bool isFailingClient = false)
+        [Fact]
+        public async Task ReturnsNullIfCounterChainNodeIsOfflineAsync()
         {
-            if (isFailingClient)
-                TestingHttpClient.PrepareFailingHttpClient(ref this.messageHandler, ref this.httpClient, ref this.httpClientFactory);
-            else
-                TestingHttpClient.PrepareWorkingHttpClient(ref this.messageHandler, ref this.httpClient, ref this.httpClientFactory);
+            List<MaturedBlockDepositsModel> result = await this.client.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(100, 10));
 
-            IFederationGatewaySettings federationSettings = Substitute.For<IFederationGatewaySettings>();
-            FederationGatewayClient client = new FederationGatewayClient(this.loggerFactory, federationSettings, this.httpClientFactory);
-
-            return client;
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            this.messageHandler?.Dispose();
-            this.httpClient?.Dispose();
+            Assert.Null(result);
         }
     }
 }

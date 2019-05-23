@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using NBitcoin;
 using Xunit;
 
@@ -26,11 +25,11 @@ namespace Stratis.Bitcoin.Tests.Common
                 throw new ArgumentNullException("header");
 
             chainedHeader = null;
-            ChainedHeader prev = chainIndexer.GetBlock(header.HashPrevBlock);
+            ChainedHeader prev = chainIndexer.GetHeader(header.HashPrevBlock);
             if (prev == null)
                 return false;
 
-            chainedHeader = new ChainedHeader(header, header.GetHash(), chainIndexer.GetBlock(header.HashPrevBlock));
+            chainedHeader = new ChainedHeader(header, header.GetHash(), chainIndexer.GetHeader(header.HashPrevBlock));
             chainIndexer.SetTip(chainedHeader);
             return true;
         }
@@ -144,7 +143,7 @@ namespace Stratis.Bitcoin.Tests.Common
 
             for (int i = 0; i < chainIndexer.Tip.Height + 1; i++)
             {
-                ChainedHeader block = chainIndexer.GetBlock(i);
+                ChainedHeader block = chainIndexer.GetHeader(i);
                 stream.ReadWrite(block.HashBlock.AsBitcoinSerializable());
                 stream.ReadWrite(block.Header);
             }

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Interfaces;
@@ -29,26 +30,19 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
-
+        private readonly IAsyncProvider asyncProvider;
         protected ChainedHeader walletTip;
 
         public ChainedHeader WalletTip => this.walletTip;
 
         /// <summary>Queue which contains blocks that should be processed by <see cref="WalletManager"/>.</summary>
-        private readonly AsyncQueue<Block> blocksQueue;
+        private readonly BlockQueueProcessor blockQueueProcessor;
 
-        /// <summary>Current <see cref="blocksQueue"/> size in bytes.</summary>
-        private long blocksQueueSize;
-
-        /// <summary>Flag to determine when the <see cref="MaxQueueSize"/> is reached.</summary>
-        private bool maxQueueSizeReached;
-
-        /// <summary>Limit <see cref="blocksQueue"/> size to 100MB.</summary>
+        /// <summary>Limit <see cref="blockQueueProcessor"/> size to 100MB.</summary>
         private const int MaxQueueSize = 100 * 1024 * 1024;
 
-
         public FederationWalletSyncManager(ILoggerFactory loggerFactory, IFederationWalletManager walletManager, ChainIndexer chain,
-            Network network, IBlockStore blockStore, StoreSettings storeSettings, INodeLifetime nodeLifetime)
+            Network network, IBlockStore blockStore, StoreSettings storeSettings, INodeLifetime nodeLifetime, IAsyncProvider asyncProvider)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
@@ -57,6 +51,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(blockStore, nameof(blockStore));
             Guard.NotNull(storeSettings, nameof(storeSettings));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
+            Guard.NotNull(asyncProvider, nameof(asyncProvider));
 
             this.walletManager = walletManager;
             this.chain = chain;
@@ -64,10 +59,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.storeSettings = storeSettings;
             this.nodeLifetime = nodeLifetime;
+            this.asyncProvider = asyncProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.blocksQueue = new AsyncQueue<Block>(this.OnProcessBlockAsync);
-
-            this.blocksQueueSize = 0;
+            this.blockQueueProcessor = new BlockQueueProcessor(this.logger, this.asyncProvider, this.OnProcessBlockWrapperAsync, MaxQueueSize, nameof(FederationWalletSyncManager));
         }
 
         /// <inheritdoc />
@@ -82,7 +76,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             this.logger.LogInformation("WalletSyncManager initialized. Wallet at block {0}.", this.walletManager.LastBlockHeight());
 
-            this.walletTip = this.chain.GetBlock(this.walletManager.WalletTipHash);
+            this.walletTip = this.chain.GetHeader(this.walletManager.WalletTipHash);
             if (this.walletTip == null)
             {
                 // The wallet tip was not found in the main chain.
@@ -107,11 +101,24 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
         }
 
+        private async Task OnProcessBlockWrapperAsync(Block block, CancellationToken cancellationToken)
+        {
+            // This way the queue should continue working, but if / when it fails at least we can see why without it pushing up to AsyncProvider
+            try
+            {
+                await this.OnProcessBlockAsync(block, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError(e.ToString());
+            }
+        }
+
         private async Task OnProcessBlockAsync(Block block, CancellationToken cancellationToken)
         {
             Guard.NotNull(block, nameof(block));
 
-            ChainedHeader newTip = this.chain.GetBlock(block.GetHash());
+            ChainedHeader newTip = this.chain.GetHeader(block.GetHash());
             if (newTip == null)
             {
                 this.logger.LogTrace("(-)[NEW_TIP_REORG]");
@@ -124,7 +131,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             {
                 // If previous block does not match there might have
                 // been a reorg, check if the wallet is still on the main chain.
-                ChainedHeader inBestChain = this.chain.GetBlock(this.walletTip.HashBlock);
+                ChainedHeader inBestChain = this.chain.GetHeader(this.walletTip.HashBlock);
                 if (inBestChain == null)
                 {
                     // The current wallet hash was not found on the main chain.
@@ -132,7 +139,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     ChainedHeader fork = this.walletTip;
 
                     // We walk back the chained block object to find the fork.
-                    while (this.chain.GetBlock(fork.HashBlock) == null)
+                    while (this.chain.GetHeader(fork.HashBlock) == null)
                         fork = fork.Previous;
 
                     this.logger.LogInformation("Reorg detected, going back from '{0}' to '{1}'.", this.walletTip, fork);
@@ -179,7 +186,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                                 return;
                             }
 
-                            nextblock = this.blockStore.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+                            nextblock = this.blockStore.GetBlock(next.HashBlock);
                             if (nextblock == null)
                             {
                                 // The idea in this abandoning of the loop is to release consensus to push the block.
@@ -228,35 +235,15 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(block, nameof(block));
 
-            // If the queue reaches the maximum limit, ignore incoming blocks until the queue is empty.
-            if (!this.maxQueueSizeReached)
-            {
-                if (this.blocksQueueSize >= MaxQueueSize)
-                {
-                    this.maxQueueSizeReached = true;
-                    this.logger.LogTrace("(-)[REACHED_MAX_QUEUE_SIZE]");
-                    return;
-                }
-            }
-            else
-            {
-                // If queue is empty then reset the maxQueueSizeReached flag.
-                this.maxQueueSizeReached = this.blocksQueueSize > 0;
-            }
-
-            if (!this.maxQueueSizeReached)
-            {
-                long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, block.BlockSize.Value);
-                this.logger.LogTrace("Queue sized changed to {0} bytes.", currentBlockQueueSize);
-
-                this.blocksQueue.Enqueue(block);
-            }
+            this.blockQueueProcessor.TryEnqueue(block);
         }
 
         /// <inheritdoc />
         public virtual void ProcessTransaction(Transaction transaction)
         {
             Guard.NotNull(transaction, nameof(transaction));
+
+            this.logger.LogDebug("Processing transaction from mempool: {0}", transaction.GetHash());
 
             this.walletManager.ProcessTransaction(transaction);
         }
@@ -271,7 +258,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public virtual void SyncFromHeight(int height)
         {
-            ChainedHeader chainedBlock = this.chain.GetBlock(height);
+            ChainedHeader chainedBlock = this.chain.GetHeader(height);
             this.walletTip = chainedBlock ?? throw new WalletException("Invalid block height");
             this.walletManager.WalletTipHash = chainedBlock.HashBlock;
         }
@@ -279,7 +266,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public void Dispose()
         {
-            this.blocksQueue.Dispose();
+            this.blockQueueProcessor.Dispose();
         }
     }
 }
