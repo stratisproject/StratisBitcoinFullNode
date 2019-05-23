@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly ILogger logger;
 
-        public AddressIndexRepository(LiteDatabase db, ILoggerFactory loggerFactory, int maxBalanceChangesToKeep = 50_000) : base(maxBalanceChangesToKeep)
+        public AddressIndexRepository(LiteDatabase db, ILoggerFactory loggerFactory, int maxBalanceChangesToKeep = 20_000) : base(maxBalanceChangesToKeep)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.addressIndexerDataCollection = db.GetCollection<AddressIndexerData>(DbAddressDataKey);
