@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
+using Stratis.Features.FederatedPeg.CounterChain;
 
 namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 {

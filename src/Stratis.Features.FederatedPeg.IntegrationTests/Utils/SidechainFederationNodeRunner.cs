@@ -14,6 +14,8 @@ using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.Collateral;
+using Stratis.Features.FederatedPeg.CounterChain;
 
 namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 {

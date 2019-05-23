@@ -14,7 +14,7 @@ using Stratis.Bitcoin.Features.PoA.Events;
 using Stratis.Bitcoin.Signals;
 using Stratis.Features.FederatedPeg.Interfaces;
 
-namespace Stratis.Features.FederatedPeg
+namespace Stratis.Features.FederatedPeg.Collateral
 {
     /// <summary>Class that checks if federation members fulfill the collateral requirement.</summary>
     public interface ICollateralChecker : IDisposable

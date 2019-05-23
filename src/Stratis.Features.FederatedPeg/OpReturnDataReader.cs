@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Features.FederatedPeg.CounterChain;
 using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg

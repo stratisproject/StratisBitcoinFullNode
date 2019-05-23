@@ -3,7 +3,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 
-namespace Stratis.Features.FederatedPeg
+namespace Stratis.Features.FederatedPeg.CounterChain
 {
     public class CounterChainSettings : ICounterChainSettings
     {

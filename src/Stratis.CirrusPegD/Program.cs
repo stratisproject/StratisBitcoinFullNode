@@ -21,6 +21,8 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg;
+using Stratis.Features.FederatedPeg.Collateral;
+using Stratis.Features.FederatedPeg.CounterChain;
 using Stratis.Sidechains.Networks;
 
 namespace Stratis.CirrusPegD

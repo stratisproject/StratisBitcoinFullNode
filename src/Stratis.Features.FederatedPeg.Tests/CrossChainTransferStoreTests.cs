@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common;
+using Stratis.Features.FederatedPeg.CounterChain;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.Payloads;

@@ -1,6 +1,6 @@
 ﻿using NBitcoin;
 
-namespace Stratis.Features.FederatedPeg
+namespace Stratis.Features.FederatedPeg.CounterChain
 {
     /// <summary>
     /// Allows us to inject information about the counter chain.

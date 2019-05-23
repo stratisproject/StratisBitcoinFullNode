@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,8 +13,6 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -28,7 +25,9 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.Collateral;
 using Stratis.Features.FederatedPeg.Controllers;
+using Stratis.Features.FederatedPeg.CounterChain;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.Notifications;
@@ -80,8 +79,6 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly ILogger logger;
 
-        private readonly ICollateralChecker collateralChecker;
-
         public FederatedPegFeature(
             ILoggerFactory loggerFactory,
             IConnectionManager connectionManager,
@@ -112,7 +109,6 @@ namespace Stratis.Features.FederatedPeg
             this.maturedBlocksSyncManager = maturedBlocksSyncManager;
             this.withdrawalHistoryProvider = withdrawalHistoryProvider;
             this.signedBroadcaster = signedBroadcaster;
-            this.collateralChecker = collateralChecker;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -147,9 +143,6 @@ namespace Stratis.Features.FederatedPeg
             // Query our database for fully-signed transactions and broadcast them every N seconds.
             this.signedBroadcaster.Start();
 
-            if (this.collateralChecker != null)
-                await this.collateralChecker.InitializeAsync().ConfigureAwait(false);
-
             // Connect the node to the other federation members.
             foreach (IPEndPoint federationMemberIp in this.federatedPegSettings.FederationNodeIpEndPoints)
                 this.connectionManager.AddNodeAddress(federationMemberIp);
@@ -166,8 +159,6 @@ namespace Stratis.Features.FederatedPeg
             this.maturedBlocksSyncManager.Dispose();
 
             this.crossChainTransferStore.Dispose();
-
-            this.collateralChecker?.Dispose();
         }
 
         private void AddInlineStats(StringBuilder benchLogs)
@@ -295,45 +286,6 @@ namespace Stratis.Features.FederatedPeg
     /// </summary>
     public static class FullNodeBuilderSidechainRuntimeFeatureExtension
     {
-        public static IFullNodeBuilder SetCounterChainNetwork(this IFullNodeBuilder fullNodeBuilder, Network counterChainNetwork)
-        {
-            // TODO: The Collateral and FederatedPeg features should be explicitly dependent on this.
-            // They'll currently fail via some 'injected service not found' exception if this isn't included.
-
-            fullNodeBuilder.ConfigureServices(services =>
-            {
-                // Inject the counter chain network with a wrapper.
-                services.AddSingleton(new CounterChainNetworkWrapper(counterChainNetwork));
-
-                // Inject the actual counter chain settings which consume the above wrapper.
-                services.AddSingleton<ICounterChainSettings, CounterChainSettings>();
-            });
-
-            return fullNodeBuilder;
-        }
-
-        public static IFullNodeBuilder CheckForCollateral(this IFullNodeBuilder fullNodeBuilder)
-        {
-            fullNodeBuilder.ConfigureServices(services =>
-            {
-                services.AddSingleton<IHttpClientFactory, Bitcoin.Controllers.HttpClientFactory>();
-
-                services.AddSingleton<ICollateralChecker, CollateralChecker>();
-                services.AddSingleton<CollateralVotingController>();
-
-                services.AddSingleton<IRuleRegistration, SmartContractCollateralPoARuleRegistration>();
-                services.AddSingleton<IConsensusRuleEngine>(f =>
-                {
-                    PoAConsensusRuleEngine concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
-                    IRuleRegistration ruleRegistration = f.GetService<IRuleRegistration>();
-
-                    return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
-                });
-            });
-
-            return fullNodeBuilder;
-        }
-
         public static IFullNodeBuilder AddFederatedPeg(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<FederatedPegFeature>(
@@ -341,8 +293,10 @@ namespace Stratis.Features.FederatedPeg
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
-                features.AddFeature<FederatedPegFeature>().DependOn<BlockNotificationFeature>().FeatureServices(
-                    services =>
+                features.AddFeature<FederatedPegFeature>()
+                    .DependOn<BlockNotificationFeature>()
+                    .DependOn<CounterChainFeature>()
+                    .FeatureServices(services =>
                     {
                         services.AddSingleton<IMaturedBlocksProvider, MaturedBlocksProvider>();
                         services.AddSingleton<IFederatedPegSettings, FederatedPegSettings>();

@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Features.FederatedPeg.Controllers;
+using Stratis.Features.FederatedPeg.CounterChain;
 using Stratis.Features.FederatedPeg.Models;
 using Xunit;
 
