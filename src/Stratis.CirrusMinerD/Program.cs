@@ -101,7 +101,7 @@ namespace Stratis.CirrusMinerD
         /// </summary>
         private static IFullNode GetStratisNode(string[] args)
         {
-            // TODO: Hardcode -txindex for better user experience
+            // TODO: Hardcode -addressindex for better user experience
 
             var nodeSettings = new NodeSettings(networksSelector: Networks.Stratis, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: args)
             {

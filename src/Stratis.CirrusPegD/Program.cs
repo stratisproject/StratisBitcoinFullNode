@@ -76,6 +76,8 @@ namespace Stratis.CirrusPegD
 
         private static IFullNode GetMainchainFullNode(string[] args)
         {
+            // TODO: Hardcode -addressindex
+
             var nodeSettings = new NodeSettings(networksSelector: Networks.Stratis, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: args)
             {
                 MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
