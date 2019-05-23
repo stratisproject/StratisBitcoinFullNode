@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -90,6 +91,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private DateTime lastFlushTime;
 
+        private int blocksProcessed;
+
+        private double msPassed;
+
         public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network, INodeStats nodeStats, IConsensusManager consensusManager)
         {
             this.storeSettings = storeSettings;
@@ -105,6 +110,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.lastFlushTime = DateTime.Now;
             this.cancellation = new CancellationTokenSource();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            this.blocksProcessed = 0;
+            this.msPassed = 0;
         }
 
         public void Initialize()
@@ -240,7 +248,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         continue;
                     }
 
+                    var watch = Stopwatch.StartNew();
+
                     bool success = this.ProcessBlock(blockToProcess, nextHeader);
+
+                    this.msPassed += watch.Elapsed.TotalMilliseconds;
+                    this.blocksProcessed++;
 
                     if (!success)
                     {
@@ -279,16 +292,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private void AddInlineStats(StringBuilder benchLog)
         {
-            benchLog.AppendLine("AddressIndexer.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                           (this.IndexerTip.Height.ToString().PadRight(8)) +
-                           ((" AddressIndexer.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.IndexerTip.HashBlock)));
-
-            benchLog.AppendLine("AddressIndexer.AddressCache: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                                (this.addressIndexRepository.Count.ToString().PadRight(8)) +
-                                ((" AddressIndexer.OutPointCache: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.outpointsRepository.Count)));
-
-            benchLog.AppendLine("AddressIndexer.LastFlush: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                                (this.lastFlushTime.ToString("u").PadRight(8)));
+            benchLog.AppendLine("AddressIndexer: Height: " + this.IndexerTip.Height.ToString().PadRight(8) +
+                                "AddressCache%: " + this.addressIndexRepository.GetLoadPercentage().ToString().PadRight(8) +
+                                "OutPointCache%: " + this.outpointsRepository.GetLoadPercentage().ToString().PadRight(8) +
+                                $"Ms/block: {Math.Round(this.msPassed / this.blocksProcessed, 2)}");
         }
 
         /// <summary>Processes block that was added or removed from consensus chain.</summary>

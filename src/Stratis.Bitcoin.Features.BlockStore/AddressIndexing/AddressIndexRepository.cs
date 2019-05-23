@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using LiteDB;
 using Microsoft.Extensions.Logging;
@@ -15,7 +16,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly ILogger logger;
 
-        public AddressIndexRepository(LiteDatabase db, ILoggerFactory loggerFactory, int maxItems = 100000) : base(maxItems)
+        public AddressIndexRepository(LiteDatabase db, ILoggerFactory loggerFactory, int maxBalanceChangesToKeep = 50_000) : base(maxBalanceChangesToKeep)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.addressIndexerDataCollection = db.GetCollection<AddressIndexerData>(DbAddressDataKey);
@@ -29,14 +30,19 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         {
             if (!this.TryGetValue(address, out AddressIndexerData data))
             {
-                this.logger.LogDebug("Not found in cache.");
+                this.logger.LogTrace("Not found in cache.");
                 data = this.addressIndexerDataCollection.FindById(address) ?? new AddressIndexerData() { Address = address, BalanceChanges = new List<AddressBalanceChange>() };
             }
 
-            int size = data.BalanceChanges.Count + 1;
+            int size = 1 + data.BalanceChanges.Count / 10;
             this.AddOrUpdate(address, data, size);
 
             return data;
+        }
+
+        public double GetLoadPercentage()
+        {
+            return Math.Round(this.totalSize / (this.MaxSize / 100.0), 2);
         }
 
         /// <summary>

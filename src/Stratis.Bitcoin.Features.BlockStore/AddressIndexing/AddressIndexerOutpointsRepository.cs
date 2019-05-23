@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using LiteDB;
 using Microsoft.Extensions.Logging;
@@ -25,6 +26,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.addressIndexerOutPointData = db.GetCollection<OutPointData>(DbOutputsDataKey);
 
             this.maxCacheItems = maxItems;
+        }
+
+        public double GetLoadPercentage()
+        {
+            return Math.Round(this.totalSize / (this.maxCacheItems / 100.0), 2);
         }
 
         public void AddOutPointData(OutPointData outPointData)
