@@ -93,6 +93,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         continue;
 
                     batch.Add(cacheItem.Value);
+                    cacheItem.Dirty = false;
 
                     if (batch.Count < SaveBatchSize)
                         continue;
