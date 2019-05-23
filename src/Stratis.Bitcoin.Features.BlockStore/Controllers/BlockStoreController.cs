@@ -17,10 +17,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 {
     public static class BlockStoreRouteEndPoint
     {
-        public const string GetBlock = "block";
-        public const string GetBlockCount = "GetBlockCount";
         public const string GetAddressBalance = "getaddressbalance";
         public const string GetAddressesBalances = "getaddressesbalances";
+        public const string GetAddressIndexerTip = "addressindexertip";
+        public const string GetBlock = "block";
+        public const string GetBlockCount = "GetBlockCount";
         public const string GetReceivedByAddress = "getreceivedbyaddress";
     }
 
@@ -28,6 +29,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
     [Route("api/[controller]")]
     public class BlockStoreController : Controller
     {
+        private readonly IAddressIndexer addressIndexer;
+
         /// <see cref="IBlockStore"/>
         private readonly IBlockStore blockStore;
 
@@ -42,8 +45,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
         /// <summary>Current network for the active controller instance.</summary>
         private readonly Network network;
-
-        private readonly IAddressIndexer addressIndexer;
 
         public BlockStoreController(
             Network network,
@@ -64,6 +65,26 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             this.chainState = chainState;
             this.chainIndexer = chainIndexer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+        /// <summary>
+        /// Retrieves the <see cref="addressIndexer"/>'s tip.
+        /// </summary>
+        /// <returns>An instance of <see cref="AddressIndexerTipModel"/> containing the tip's hash and height.</returns>
+        [Route(BlockStoreRouteEndPoint.GetAddressIndexerTip)]
+        [HttpGet]
+        public IActionResult GetAddressIndexerTip()
+        {
+            try
+            {
+                ChainedHeader addressIndexerTip = this.addressIndexer.IndexerTip;
+                return this.Json(new AddressIndexerTipModel() { TipHash = addressIndexerTip?.HashBlock, TipHeight = addressIndexerTip?.Height });
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
         }
 
         /// <summary>
