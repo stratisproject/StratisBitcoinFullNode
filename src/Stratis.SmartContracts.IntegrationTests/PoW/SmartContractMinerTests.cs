@@ -112,7 +112,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 View = new MempoolCoinView(testContext.cachedCoinView, testContext.mempool, testContext.mempoolLock, null)
             };
 
-            context.View.LoadViewAsync(tx).GetAwaiter().GetResult();
+            context.View.LoadView(tx);
 
             return MempoolValidator.CheckSequenceLocks(testContext.network, chainedBlock, context, flags, uselock, false);
         }
