@@ -143,11 +143,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 {
                     this.logger.LogDebug("Tip was not found, initializing with genesis.");
 
-                    this.tipData = new AddressIndexerTipData()
-                    {
-                        TipHashBytes = this.network.GenesisHash.ToBytes()
-                    };
-
+                    this.tipData = new AddressIndexerTipData() { TipHashBytes = this.network.GenesisHash.ToBytes() };
                     this.tipDataStore.Insert(this.tipData);
                 }
 
@@ -178,6 +174,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         {
                             this.addressIndexRepository.SaveAllItems();
                             this.outpointsRepository.SaveAllItems();
+                            this.tipDataStore.Update(this.tipData);
                         }
 
                         this.lastFlushTime = DateTime.Now;
@@ -228,6 +225,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         }
 
                         this.IndexerTip = lastCommonHeader;
+
+                        lock (this.lockObject)
+                        {
+                            this.tipData.TipHashBytes = this.IndexerTip.HashBlock.ToBytes();
+                        }
+
                         continue;
                     }
 
@@ -249,7 +252,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         continue;
                     }
 
-                    var watch = Stopwatch.StartNew();
+                    Stopwatch watch = Stopwatch.StartNew();
 
                     bool success = this.ProcessBlock(blockToProcess, nextHeader);
 
@@ -283,6 +286,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 {
                     this.addressIndexRepository.SaveAllItems();
                     this.outpointsRepository.SaveAllItems();
+                    this.tipDataStore.Update(this.tipData);
                 }
             }
             catch (Exception e)
