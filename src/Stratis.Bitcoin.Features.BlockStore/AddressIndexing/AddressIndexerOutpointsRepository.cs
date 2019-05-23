@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.AddOrUpdate(new CacheItem(outPointData.Outpoint.ToString(), outPointData, 1));
         }
 
-        public void RemoveOutPointData(OutPoint outPoint)
+        public void RemoveOutPointData(OutPoint outPoint, bool alsoFromDatabase = true)
         {
             lock (this.LockObject)
             {
@@ -48,8 +48,20 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 this.totalSize -= 1;
             }
 
-            // Remove from db.
-            this.addressIndexerOutPointData.Delete(outPoint.ToString());
+            // Remove from db. We allow the caller to decide whether or not to do this (default to true for safety).
+            // This is optional to allow the caller to batch deletes for efficiency. The access patterns for
+            // outpoint data are also quite different to the address index, in that an outpoint is only in the cache
+            // until it is spent, upon which it is never used again. However, there are transactions with very large
+            // numbers of inputs, which cause inefficient deletes on the underlying database if they are not batched.
+            if (alsoFromDatabase)
+                this.addressIndexerOutPointData.Delete(outPoint.ToString());
+        }
+
+        public void BulkDelete(HashSet<string> outPoints)
+        {
+            // TODO: This is just a stub. LiteDb has no batch deletion, we need to come up with a workaround
+            foreach (string outPoint in outPoints)
+                this.addressIndexerOutPointData.Delete(outPoint);
         }
 
         protected override void ItemRemovedLocked(CacheItem item)

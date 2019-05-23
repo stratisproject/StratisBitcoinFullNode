@@ -88,6 +88,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private Task indexingTask;
 
+        private DateTime lastFlushTime;
+
         public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network, INodeStats nodeStats, IConsensusManager consensusManager)
         {
             this.storeSettings = storeSettings;
@@ -100,6 +102,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             this.lockObject = new object();
             this.flushChangesInterval = TimeSpan.FromMinutes(10);
+            this.lastFlushTime = DateTime.Now;
             this.cancellation = new CancellationTokenSource();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -154,13 +157,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private async Task IndexAddressesContinuouslyAsync()
         {
-            DateTime lastFlushTime = DateTime.Now;
-
             try
             {
                 while (!this.cancellation.IsCancellationRequested)
                 {
-                    if (DateTime.Now - lastFlushTime > this.flushChangesInterval)
+                    if (DateTime.Now - this.lastFlushTime > this.flushChangesInterval)
                     {
                         this.logger.LogDebug("Flushing changes.");
 
@@ -170,7 +171,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                             this.outpointsRepository.SaveAllItems();
                         }
 
-                        lastFlushTime = DateTime.Now;
+                        this.lastFlushTime = DateTime.Now;
 
                         this.logger.LogDebug("Flush completed.");
                     }
@@ -280,7 +281,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         {
             benchLog.AppendLine("AddressIndexer.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                            (this.IndexerTip.Height.ToString().PadRight(8)) +
-                           ((" AddressIndexer.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.IndexerTip.HashBlock) ));
+                           ((" AddressIndexer.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.IndexerTip.HashBlock)));
+
+            benchLog.AppendLine("AddressIndexer.AddressCache: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
+                                (this.addressIndexRepository.Count.ToString().PadRight(8)) +
+                                ((" AddressIndexer.OutPointCache: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.outpointsRepository.Count)));
+
+            benchLog.AppendLine("AddressIndexer.LastFlush: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
+                                (this.lastFlushTime.ToString("u").PadRight(8)) +
+                                ((" AddressIndexer.AddressDirty: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.addressIndexRepository.Dirty)));
         }
 
         /// <summary>Processes block that was added or removed from consensus chain.</summary>
@@ -320,6 +329,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             lock (this.lockObject)
             {
+                var outPointsToDelete = new HashSet<string>();
+
                 foreach (TxIn input in inputs)
                 {
                     OutPoint consumedOutput = input.PrevOut;
@@ -329,7 +340,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     Money amountSpent = consumedOutputData.Money;
 
-                    this.outpointsRepository.RemoveOutPointData(consumedOutput);
+                    this.outpointsRepository.RemoveOutPointData(consumedOutput, false);
+                    outPointsToDelete.Add(consumedOutput.ToString());
 
                     // Transactions that don't actually change the balance just bloat the database.
                     if (amountSpent == 0)
@@ -345,6 +357,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     this.ProcessBalanceChangeLocked(header.Height, address, amountSpent, false);
                 }
+
+                if (outPointsToDelete.Count > 0)
+                    this.outpointsRepository.BulkDelete(outPointsToDelete);
 
                 // Process outputs.
                 foreach (Transaction tx in block.Transactions)

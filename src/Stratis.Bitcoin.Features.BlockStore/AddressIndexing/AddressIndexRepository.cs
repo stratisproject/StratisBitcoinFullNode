@@ -18,6 +18,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly ILogger logger;
 
+        // TODO: Temporary for diagnostics, remove this 
+        public int Dirty { get; set; }
+
         public AddressIndexRepository(LiteDatabase db, ILoggerFactory loggerFactory, int maxItems = 100000) : base(maxItems)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -83,6 +86,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 {
                     if (!cacheItem.Dirty)
                         continue;
+
+                    this.Dirty++;
 
                     batch.Add(cacheItem.Value);
                     cacheItem.Dirty = false;
