@@ -11,15 +11,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
     {
         private const string DbAddressDataKey = "AddrData";
 
-        /// <summary>LiteDb performs updates more efficiently in batches.</summary>
-        private const int SaveBatchSize = 1000;
-
         private readonly LiteCollection<AddressIndexerData> addressIndexerDataCollection;
 
         private readonly ILogger logger;
-
-        // TODO: Temporary for diagnostics, remove this 
-        public int Dirty { get; set; }
 
         public AddressIndexRepository(LiteDatabase db, ILoggerFactory loggerFactory, int maxItems = 100000) : base(maxItems)
         {
@@ -80,27 +74,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         {
             lock (this.LockObject)
             {
-                var batch = new List<AddressIndexerData>();
+                CacheItem[] dirtyItems = this.Keys.Where(x => x.Dirty).ToArray();
+                this.addressIndexerDataCollection.Upsert(dirtyItems.Select(x => x.Value));
 
-                foreach (CacheItem cacheItem in this.Keys)
-                {
-                    if (!cacheItem.Dirty)
-                        continue;
-
-                    this.Dirty++;
-
-                    batch.Add(cacheItem.Value);
-                    cacheItem.Dirty = false;
-
-                    if (batch.Count < SaveBatchSize)
-                        continue;
-
-                    this.addressIndexerDataCollection.Upsert(batch);
-                    batch.Clear();
-                }
-
-                if (batch.Count > 0)
-                    this.addressIndexerDataCollection.Upsert(batch);
+                foreach (CacheItem dirtyItem in dirtyItems)
+                    dirtyItem.Dirty = false;
             }
         }
     }

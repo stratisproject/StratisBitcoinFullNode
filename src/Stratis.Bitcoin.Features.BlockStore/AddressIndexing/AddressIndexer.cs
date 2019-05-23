@@ -288,8 +288,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                                 ((" AddressIndexer.OutPointCache: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.outpointsRepository.Count)));
 
             benchLog.AppendLine("AddressIndexer.LastFlush: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                                (this.lastFlushTime.ToString("u").PadRight(8)) +
-                                ((" AddressIndexer.AddressDirty: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.addressIndexRepository.Dirty)));
+                                (this.lastFlushTime.ToString("u").PadRight(8)));
         }
 
         /// <summary>Processes block that was added or removed from consensus chain.</summary>
@@ -329,8 +328,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             lock (this.lockObject)
             {
-                var outPointsToDelete = new HashSet<string>();
-
                 foreach (TxIn input in inputs)
                 {
                     OutPoint consumedOutput = input.PrevOut;
@@ -340,8 +337,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     Money amountSpent = consumedOutputData.Money;
 
-                    this.outpointsRepository.RemoveOutPointData(consumedOutput, false);
-                    outPointsToDelete.Add(consumedOutput.ToString());
+                    this.outpointsRepository.RemoveOutPointData(consumedOutput);
 
                     // Transactions that don't actually change the balance just bloat the database.
                     if (amountSpent == 0)
@@ -357,9 +353,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     this.ProcessBalanceChangeLocked(header.Height, address, amountSpent, false);
                 }
-
-                if (outPointsToDelete.Count > 0)
-                    this.outpointsRepository.BulkDelete(outPointsToDelete);
 
                 // Process outputs.
                 foreach (Transaction tx in block.Transactions)
