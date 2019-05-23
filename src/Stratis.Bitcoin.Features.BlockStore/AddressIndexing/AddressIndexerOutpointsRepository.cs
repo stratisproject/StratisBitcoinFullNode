@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly int maxCacheItems;
 
-        public AddressIndexerOutpointsRepository(LiteDatabase db, ILoggerFactory loggerFactory, int maxItems = 100_000)
+        public AddressIndexerOutpointsRepository(LiteDatabase db, ILoggerFactory loggerFactory, int maxItems = 30_000)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.addressIndexerOutPointData = db.GetCollection<OutPointData>(DbOutputsDataKey);
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         public void AddOutPointData(OutPointData outPointData)
         {
-            this.AddOrUpdate(new CacheItem(outPointData.Outpoint.ToString(), outPointData, 1));
+            this.AddOrUpdate(new CacheItem(outPointData.Outpoint, outPointData, 1));
         }
 
         public void RemoveOutPointData(OutPoint outPoint)
@@ -40,10 +40,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 {
                     this.Cache.Remove(node.Value.Key);
                     this.Keys.Remove(node);
-                    this.ItemRemovedLocked(node.Value);
+                    this.totalSize -= 1;
                 }
-
-                this.totalSize -= 1;
             }
 
             this.addressIndexerOutPointData.Delete(outPoint.ToString());
@@ -65,7 +63,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 return true;
             }
 
-            // Not found in cache - try find it in database
+            // Not found in cache - try find it in database.
             outPointData = this.addressIndexerOutPointData.FindById(outPoint.ToString());
 
             if (outPointData != null)

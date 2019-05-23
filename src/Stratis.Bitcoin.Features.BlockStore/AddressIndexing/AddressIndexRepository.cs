@@ -27,13 +27,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <param name="address">The address to retrieve data for.</param>
         public AddressIndexerData GetOrCreateAddress(string address)
         {
-            if (this.TryGetValue(address, out AddressIndexerData data))
+            if (!this.TryGetValue(address, out AddressIndexerData data))
             {
-                this.logger.LogTrace("(-)[FOUND_IN_CACHE]");
-                return data;
+                this.logger.LogDebug("Not found in cache.");
+                data = this.addressIndexerDataCollection.FindById(address) ?? new AddressIndexerData() { Address = address, BalanceChanges = new List<AddressBalanceChange>() };
             }
-
-            data = this.addressIndexerDataCollection.FindById(address) ?? new AddressIndexerData() { Address = address, BalanceChanges = new List<AddressBalanceChange>() };
 
             int size = data.BalanceChanges.Count + 1;
             this.AddOrUpdate(address, data, size);
