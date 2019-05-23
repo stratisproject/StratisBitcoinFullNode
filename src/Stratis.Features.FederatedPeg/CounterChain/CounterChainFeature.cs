@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Net.Http;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
@@ -33,6 +34,9 @@ namespace Stratis.Features.FederatedPeg.CounterChain
 
                 // Inject the actual counter chain settings which consume the above wrapper.
                 services.AddSingleton<ICounterChainSettings, CounterChainSettings>();
+
+                // We're also going to need a http client if we're calling another node.
+                services.AddSingleton<IHttpClientFactory, Bitcoin.Controllers.HttpClientFactory>();
             });
 
             return fullNodeBuilder;

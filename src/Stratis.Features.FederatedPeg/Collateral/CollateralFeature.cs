@@ -1,5 +1,4 @@
-﻿using System.Net.Http;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -47,8 +46,6 @@ namespace Stratis.Features.FederatedPeg.Collateral
                     .DependOn<CounterChainFeature>()
                     .FeatureServices(services =>
                     {
-                        services.AddSingleton<IHttpClientFactory, Bitcoin.Controllers.HttpClientFactory>();
-
                         services.AddSingleton<ICollateralChecker, CollateralChecker>();
                         services.AddSingleton<CollateralVotingController>();
 
