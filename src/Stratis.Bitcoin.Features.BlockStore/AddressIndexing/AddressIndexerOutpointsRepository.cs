@@ -56,7 +56,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         {
             base.ItemRemovedLocked(item);
 
-            this.addressIndexerOutPointData.Upsert(item.Value);
+            if (item.Dirty)
+                this.addressIndexerOutPointData.Upsert(item.Value);
         }
 
         public bool TryGetOutPointData(OutPoint outPoint, out OutPointData outPointData)
@@ -88,13 +89,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                 foreach (CacheItem cacheItem in this.Keys)
                 {
+                    if (!cacheItem.Dirty)
+                        continue;
+
                     batch.Add(cacheItem.Value);
 
-                    if (batch.Count >= SaveBatchSize)
-                    {
-                        this.addressIndexerOutPointData.Upsert(batch);
-                        batch.Clear();
-                    }
+                    if (batch.Count < SaveBatchSize)
+                        continue;
+
+                    this.addressIndexerOutPointData.Upsert(batch);
+                    batch.Clear();
                 }
 
                 if (batch.Count > 0)

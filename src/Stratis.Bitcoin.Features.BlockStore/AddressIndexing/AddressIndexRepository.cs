@@ -69,7 +69,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         {
             base.ItemRemovedLocked(item);
 
-            this.addressIndexerDataCollection.Upsert(item.Value);
+            if (item.Dirty)
+                this.addressIndexerDataCollection.Upsert(item.Value);
         }
 
         public void SaveAllItems()
@@ -80,13 +81,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                 foreach (CacheItem cacheItem in this.Keys)
                 {
+                    if (!cacheItem.Dirty)
+                        continue;
+
                     batch.Add(cacheItem.Value);
 
-                    if (batch.Count >= SaveBatchSize)
-                    {
-                        this.addressIndexerDataCollection.Upsert(batch);
-                        batch.Clear();
-                    }
+                    if (batch.Count < SaveBatchSize)
+                        continue;
+
+                    this.addressIndexerDataCollection.Upsert(batch);
+                    batch.Clear();
                 }
 
                 if (batch.Count > 0)

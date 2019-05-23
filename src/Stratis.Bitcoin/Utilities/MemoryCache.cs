@@ -14,6 +14,9 @@ namespace Stratis.Bitcoin.Utilities
 
             public TValue Value { get; set; }
 
+            /// <summary>Indicates whether the item has been modified.</summary>
+            public bool Dirty { get; set; }
+
             /// <summary>Size of value in bytes.</summary>
             public long Size { get; set; }
 
@@ -120,6 +123,7 @@ namespace Stratis.Bitcoin.Utilities
                     this.ItemAddedLocked(item);
                 }
 
+                node.Value.Dirty = true;
                 this.Keys.AddLast(node);
             }
         }
