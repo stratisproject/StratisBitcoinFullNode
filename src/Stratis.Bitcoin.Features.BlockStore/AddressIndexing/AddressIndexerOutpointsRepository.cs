@@ -48,9 +48,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     this.Keys.Remove(node);
                     this.totalSize -= 1;
                 }
-            }
 
-            this.addressIndexerOutPointData.Delete(outPoint.ToString());
+                if (!node.Value.Dirty)
+                    this.addressIndexerOutPointData.Delete(outPoint.ToString());
+            }
         }
 
         protected override void ItemRemovedLocked(CacheItem item)
