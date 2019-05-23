@@ -11,7 +11,6 @@ using LiteDB;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -65,6 +64,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// Waiting happens after a failure to get next block to index.
         /// </summary>
         private const int DelayTimeMs = 2000;
+
+        private const int CompactingThreshold = 50;
 
         private LiteDatabase db;
 
@@ -403,53 +404,47 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 Deposited = deposited
             });
 
-            // As an approximate heuristic, there will generally only be one balance change per block.
-            // Therefore we decide whether to trigger compaction or not based on the number of balance
-            // changes. This is not a perfect approach, but enumerating the balance change list
-            // unnecessarily could slow down indexing performance substantially.
-            if ((this.network.Consensus.MaxReorgLength <= 0) || (indexData.BalanceChanges.Count <= this.network.Consensus.MaxReorgLength))
+            // Anything less than that should be compacted.
+            int heightThreshold = this.consensusManager.Tip.Height - (int)this.network.Consensus.MaxReorgLength;
+
+            bool compact = (this.network.Consensus.MaxReorgLength != 0) &&
+                           (indexData.BalanceChanges.Count > CompactingThreshold) &&
+                           (indexData.BalanceChanges[1].BalanceChangedHeight < heightThreshold);
+
+            if (!compact)
             {
                 this.logger.LogTrace("(-)[TOO_FEW_CHANGE_RECORDS]");
                 return;
             }
 
-            // The rebuilt balance change list.
-            var compacted = new List<AddressBalanceChange>();
-
-            // A standalone record for holding all the compacted changes.
-            var compactedRecord = new AddressBalanceChange()
+            var compacted = new List<AddressBalanceChange>(CompactingThreshold / 2)
             {
-                BalanceChangedHeight = 0,
-                Satoshi = 0,
-                Deposited = true
+                new AddressBalanceChange()
+                {
+                    BalanceChangedHeight = 0,
+                    Satoshi = 0,
+                    Deposited = true
+                }
             };
 
-            int threshold = this.consensusManager.Tip.Height - (int)this.network.Consensus.MaxReorgLength;
-            bool updated = false;
-            foreach (AddressBalanceChange change in indexData.BalanceChanges)
+            for (int i = 0; i < indexData.BalanceChanges.Count; i++)
             {
-                if (change.BalanceChangedHeight < threshold)
-                {
-                    updated = true;
+                AddressBalanceChange change = indexData.BalanceChanges[i];
 
+                if (change.BalanceChangedHeight < heightThreshold)
+                {
                     if (change.Deposited)
-                        compactedRecord.Satoshi += change.Satoshi;
+                        compacted[0].Satoshi += change.Satoshi;
                     else
-                        compactedRecord.Satoshi -= change.Satoshi;
+                        compacted[0].Satoshi -= change.Satoshi;
                 }
-                else
+                else if (i < indexData.BalanceChanges.Count - 1)
                 {
-                    compacted.Add(change);
+                    compacted.AddRange(indexData.BalanceChanges.Skip(i + 1));
+                    break;
                 }
             }
 
-            if (!updated)
-            {
-                this.logger.LogTrace("(-)[NO_UPDATES]");
-                return;
-            }
-
-            compacted.Add(compactedRecord);
             indexData.BalanceChanges = compacted;
             this.addressIndexRepository.AddOrUpdate(indexData.Address, indexData, indexData.BalanceChanges.Count + 1);
         }
