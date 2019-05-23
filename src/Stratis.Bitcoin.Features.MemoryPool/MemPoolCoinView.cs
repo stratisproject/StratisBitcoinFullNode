@@ -84,10 +84,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>
-        /// Load the coin view for a memory pool transaction.
+        /// Load the coin view for a memory pool transaction. This should only be called
+        /// inside the memory pool lock.
         /// </summary>
         /// <param name="trx">Memory pool transaction.</param>
-        public void LoadView(Transaction trx)
+        public void LoadViewLocked(Transaction trx)
         {
             // lookup all ids (duplicate ids are ignored in case a trx spends outputs from the same parent).
             List<uint256> ids = trx.Inputs.Select(n => n.PrevOut.Hash).Distinct().Concat(new[] { trx.GetHash() }).ToList();

@@ -404,6 +404,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 if (nTxSize > offset)
                     nTxSize -= (int)offset;
             }
+
             return nTxSize;
         }
 
@@ -426,7 +427,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // use the sequential scheduler for that.
             await this.mempoolLock.WriteAsync(() =>
             {
-                context.View.LoadView(context.Transaction);
+                context.View.LoadViewLocked(context.Transaction);
 
                 // If the transaction already exists in the mempool,
                 // we only record the state but do not throw an exception.
