@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Utilities
 
             lock (this.LockObject)
             {
-                bool incertLast = true;
+                bool insertLast = true;
 
                 if (this.Cache.TryGetValue(item.Key, out node))
                 {
@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Utilities
                     if (node.Next == null)
                     {
                         // Already last item.
-                        incertLast = false;
+                        insertLast = false;
                     }
                     else
                         this.Keys.Remove(node);
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Utilities
 
                 node.Value.Dirty = true;
 
-                if (incertLast)
+                if (insertLast)
                     this.Keys.AddLast(node);
             }
         }
