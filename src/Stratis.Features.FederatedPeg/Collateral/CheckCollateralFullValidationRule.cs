@@ -6,7 +6,7 @@ using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Features.FederatedPeg
+namespace Stratis.Features.FederatedPeg.Collateral
 {
     /// <summary>Ensures that collateral requirement on counterpart chain is fulfilled for the federation member that produced a block.</summary>
     /// <remarks>Ignored in IBD.</remarks>

@@ -16,7 +16,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly ILogger logger;
         private readonly ILoggerFactory loggerFactory;
         private readonly ICrossChainTransferStore store;
-        private readonly IFederationGatewaySettings federationGatewaySettings;
+        private readonly IFederatedPegSettings federatedPegSettings;
         private readonly IAsyncProvider asyncProvider;
         private readonly INodeLifetime nodeLifetime;
         private readonly IConnectionManager connectionManager;
@@ -28,7 +28,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.logger = Substitute.For<ILogger>();
-            this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
+            this.federatedPegSettings = Substitute.For<IFederatedPegSettings>();
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.store = Substitute.For<ICrossChainTransferStore>();
             this.asyncProvider = Substitute.For<IAsyncProvider>();
@@ -51,7 +51,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.asyncProvider,
                 this.nodeLifetime,
                 this.connectionManager,
-                this.federationGatewaySettings,
+                this.federatedPegSettings,
                 this.ibdState,
                 this.federationWalletManager);
 
@@ -71,7 +71,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.asyncProvider,
                 this.nodeLifetime,
                 this.connectionManager,
-                this.federationGatewaySettings,
+                this.federatedPegSettings,
                 this.ibdState,
                 this.federationWalletManager);
 

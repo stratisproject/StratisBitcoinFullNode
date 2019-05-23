@@ -12,8 +12,9 @@ using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Events;
 using Stratis.Bitcoin.Signals;
+using Stratis.Features.FederatedPeg.Interfaces;
 
-namespace Stratis.Features.FederatedPeg
+namespace Stratis.Features.FederatedPeg.Collateral
 {
     /// <summary>Class that checks if federation members fulfill the collateral requirement.</summary>
     public interface ICollateralChecker : IDisposable
@@ -59,8 +60,11 @@ namespace Stratis.Features.FederatedPeg
 
         private bool isInitialized;
 
-        public CollateralChecker(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, FederationGatewaySettings settings,
-            IFederationManager federationManager, ISignals signals)
+        public CollateralChecker(ILoggerFactory loggerFactory, 
+            IHttpClientFactory httpClientFactory,
+            ICounterChainSettings settings,
+            IFederationManager federationManager,
+            ISignals signals)
         {
             this.federationManager = federationManager;
             this.signals = signals;

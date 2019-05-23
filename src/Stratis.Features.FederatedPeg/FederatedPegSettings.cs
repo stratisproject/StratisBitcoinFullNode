@@ -11,12 +11,8 @@ using Stratis.Features.FederatedPeg.Interfaces;
 namespace Stratis.Features.FederatedPeg
 {
     /// <inheritdoc />
-    public sealed class FederationGatewaySettings : IFederationGatewaySettings
+    public sealed class FederatedPegSettings : IFederatedPegSettings
     {
-        public const string CounterChainApiHostParam = "counterchainapihost";
-
-        public const string CounterChainApiPortParam = "counterchainapiport";
-
         public const string RedeemScriptParam = "redeemscript";
 
         public const string PublicKeyParam = "publickey";
@@ -56,7 +52,7 @@ namespace Stratis.Features.FederatedPeg
         /// </summary>
         public const int StratisMainDepositStartBlock = 1_100_000;
 
-        public FederationGatewaySettings(NodeSettings nodeSettings, FederatedPegOptions federatedPegOptions = null)
+        public FederatedPegSettings(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
@@ -85,9 +81,6 @@ namespace Stratis.Features.FederatedPeg
                 throw new ConfigurationException("Please make sure the public key passed as parameter was used to generate the multisig redeem script.");
             }
 
-            this.CounterChainApiHost = configReader.GetOrDefault(CounterChainApiHostParam, "localhost");
-            this.CounterChainApiPort = configReader.GetOrDefault(CounterChainApiPortParam, federatedPegOptions?.CounterChainNetwork.DefaultAPIPort ?? 0);
-
             // Federation IPs - These are required to receive and sign withdrawal transactions.
             string federationIpsRaw = configReader.GetOrDefault<string>(FederationIpsParam, null);
 
@@ -112,12 +105,6 @@ namespace Stratis.Features.FederatedPeg
 
         /// <inheritdoc/>
         public PubKey[] FederationPublicKeys { get; }
-
-        /// <inheritdoc/>
-        public int CounterChainApiPort { get; }
-
-        /// <inheritdoc/>
-        public string CounterChainApiHost { get; }
 
         /// <inheritdoc/>
         public int MultiSigM { get; }

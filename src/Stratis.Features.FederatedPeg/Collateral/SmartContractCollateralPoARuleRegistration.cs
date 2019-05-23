@@ -12,7 +12,7 @@ using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 
-namespace Stratis.Features.FederatedPeg
+namespace Stratis.Features.FederatedPeg.Collateral
 {
     public class SmartContractCollateralPoARuleRegistration : SmartContractPoARuleRegistration
     {

@@ -27,7 +27,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
         private readonly ILogger logger;
 
-        private readonly IFederationGatewaySettings settings;
+        private readonly IFederatedPegSettings settings;
 
         private readonly Script depositScript;
 
@@ -35,17 +35,17 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
         public DepositExtractor(
             ILoggerFactory loggerFactory,
-            IFederationGatewaySettings federationGatewaySettings,
+            IFederatedPegSettings federatedPegSettings,
             IOpReturnDataReader opReturnDataReader)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             // Note: MultiSigRedeemScript.PaymentScript equals MultiSigAddress.ScriptPubKey
             this.depositScript =
-                federationGatewaySettings?.MultiSigRedeemScript?.PaymentScript ??
-                federationGatewaySettings?.MultiSigAddress?.ScriptPubKey;
+                federatedPegSettings?.MultiSigRedeemScript?.PaymentScript ??
+                federatedPegSettings?.MultiSigAddress?.ScriptPubKey;
             this.opReturnDataReader = opReturnDataReader;
-            this.settings = federationGatewaySettings;
-            this.MinimumDepositConfirmations = federationGatewaySettings.MinimumDepositConfirmations;
+            this.settings = federatedPegSettings;
+            this.MinimumDepositConfirmations = federatedPegSettings.MinimumDepositConfirmations;
         }
 
         /// <inheritdoc />
@@ -85,7 +85,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
             List<TxOut> depositsToMultisig = transaction.Outputs.Where(output =>
                 output.ScriptPubKey == this.depositScript
-                && output.Value > FederationGatewaySettings.CrossChainTransferFee).ToList();
+                && output.Value > FederatedPegSettings.CrossChainTransferFee).ToList();
 
             if (!depositsToMultisig.Any())
                 return null;

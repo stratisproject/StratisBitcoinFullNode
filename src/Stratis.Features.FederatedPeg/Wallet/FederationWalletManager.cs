@@ -110,7 +110,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         private Dictionary<OutPoint, TransactionData> outpointLookup;
 
         // Gateway settings picked up from the node config.
-        private readonly IFederationGatewaySettings federationGatewaySettings;
+        private readonly IFederatedPegSettings federatedPegSettings;
 
         public FederationWalletManager(
             ILoggerFactory loggerFactory,
@@ -121,7 +121,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             IAsyncProvider asyncProvider,
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
-            IFederationGatewaySettings federationGatewaySettings,
+            IFederatedPegSettings federatedPegSettings,
             IWithdrawalExtractor withdrawalExtractor) : base()
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -131,7 +131,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));
             Guard.NotNull(asyncProvider, nameof(asyncProvider));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
-            Guard.NotNull(federationGatewaySettings, nameof(federationGatewaySettings));
+            Guard.NotNull(federatedPegSettings, nameof(federatedPegSettings));
             Guard.NotNull(withdrawalExtractor, nameof(withdrawalExtractor));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -144,7 +144,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<FederationWallet>(dataFolder.WalletPath);
             this.dateTimeProvider = dateTimeProvider;
-            this.federationGatewaySettings = federationGatewaySettings;
+            this.federatedPegSettings = federatedPegSettings;
             this.withdrawalExtractor = withdrawalExtractor;
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
             this.isFederationActive = false;
@@ -992,7 +992,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (checkSignature)
                 {
                     TransactionBuilder builder = new TransactionBuilder(this.Wallet.Network).AddCoins(coins);
-                    if (!builder.Verify(transaction, this.federationGatewaySettings.GetWithdrawalTransactionFee(coins.Count), out TransactionPolicyError[] errors))
+
+                    if (!builder.Verify(transaction, this.federatedPegSettings.GetWithdrawalTransactionFee(coins.Count), out TransactionPolicyError[] errors))
                     {
                         // Trace the reason validation failed. Note that failure here doesn't mean an error necessarily. Just that the transaction is not fully signed.
                         foreach (TransactionPolicyError transactionPolicyError in errors)
@@ -1044,10 +1045,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 LastBlockSyncedHash = this.chainIndexer.Genesis.HashBlock,
                 MultiSigAddress = new MultiSigAddress
                 {
-                    Address = this.federationGatewaySettings.MultiSigAddress.ToString(),
-                    M = this.federationGatewaySettings.MultiSigM,
-                    ScriptPubKey = this.federationGatewaySettings.MultiSigAddress.ScriptPubKey,
-                    RedeemScript = this.federationGatewaySettings.MultiSigRedeemScript,
+                    Address = this.federatedPegSettings.MultiSigAddress.ToString(),
+                    M = this.federatedPegSettings.MultiSigM,
+                    ScriptPubKey = this.federatedPegSettings.MultiSigAddress.ScriptPubKey,
+                    RedeemScript = this.federatedPegSettings.MultiSigRedeemScript,
                     Transactions = new List<TransactionData>()
                 }
             };
@@ -1103,10 +1104,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     if (key == null)
                         key = Key.Parse(encryptedSeed, password, this.Wallet.Network);
 
-                    bool isValidKey = key.PubKey.ToHex() == this.federationGatewaySettings.PublicKey;
+                    bool isValidKey = key.PubKey.ToHex() == this.federatedPegSettings.PublicKey;
                     if (!isValidKey)
                     {
-                        this.logger.LogInformation("The wallet public key {0} does not match the federation member's public key {1}", key.PubKey.ToHex(), this.federationGatewaySettings.PublicKey);
+                        this.logger.LogInformation("The wallet public key {0} does not match the federation member's public key {1}", key.PubKey.ToHex(), this.federatedPegSettings.PublicKey);
                         return;
                     }
 

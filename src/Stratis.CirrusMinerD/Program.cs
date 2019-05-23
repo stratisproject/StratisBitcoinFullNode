@@ -20,24 +20,16 @@ using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Features.FederatedPeg;
 using Stratis.Features.FederatedPeg.Collateral;
 using Stratis.Features.FederatedPeg.CounterChain;
 using Stratis.Sidechains.Networks;
 
-namespace Stratis.CirrusPegD
+namespace Stratis.CirrusMinerD
 {
     class Program
     {
         private const string MainchainArgument = "-mainchain";
         private const string SidechainArgument = "-sidechain";
-
-        private static readonly Dictionary<NetworkType, Func<Network>> SidechainNetworks = new Dictionary<NetworkType, Func<Network>>
-        {
-            { NetworkType.Mainnet, CirrusNetwork.NetworksSelector.Mainnet },
-            { NetworkType.Testnet, CirrusNetwork.NetworksSelector.Testnet },
-            { NetworkType.Regtest, CirrusNetwork.NetworksSelector.Regtest }
-        };
 
         private static readonly Dictionary<NetworkType, Func<Network>> MainChainNetworks = new Dictionary<NetworkType, Func<Network>>
         {
@@ -46,12 +38,12 @@ namespace Stratis.CirrusPegD
             { NetworkType.Regtest, Networks.Stratis.Regtest }
         };
 
-        private static void Main(string[] args)
+        public static void Main(string[] args)
         {
-            RunFederationGatewayAsync(args).Wait();
+            MainAsync(args).Wait();
         }
 
-        private static async Task RunFederationGatewayAsync(string[] args)
+        public static async Task MainAsync(string[] args)
         {
             try
             {
@@ -63,7 +55,7 @@ namespace Stratis.CirrusPegD
                     throw new ArgumentException($"Gateway node needs to be started specifying either a {SidechainArgument} or a {MainchainArgument} argument");
                 }
 
-                IFullNode node = isMainchainNode ? GetMainchainFullNode(args) : GetSidechainFullNode(args);
+                IFullNode node = isMainchainNode ? GetStratisNode(args) : GetCirrusMiningNode(args);
 
                 if (node != null)
                     await node.RunAsync();
@@ -74,34 +66,7 @@ namespace Stratis.CirrusPegD
             }
         }
 
-        private static IFullNode GetMainchainFullNode(string[] args)
-        {
-            // TODO: Hardcode -addressindex
-
-            var nodeSettings = new NodeSettings(networksSelector: Networks.Stratis, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: args)
-            {
-                MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
-            };
-
-            IFullNode node = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseBlockStore()
-                .SetCounterChainNetwork(SidechainNetworks[nodeSettings.Network.NetworkType]())
-                .AddFederatedPeg()
-                .UseTransactionNotification()
-                .UseBlockNotification()
-                .UseApi()
-                .UseMempool()
-                .AddRPC()
-                .UsePosConsensus()
-                .UseWallet()
-                .AddPowPosMining()
-                .Build();
-
-            return node;
-        }
-
-        private static IFullNode GetSidechainFullNode(string[] args)
+        private static IFullNode GetCirrusMiningNode(string[] args)
         {
             var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args)
             {
@@ -112,8 +77,8 @@ namespace Stratis.CirrusPegD
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
                 .SetCounterChainNetwork(MainChainNetworks[nodeSettings.Network.NetworkType]())
-                .UseFederatedPegPoAMining()
-                .AddFederatedPeg()
+                .UseSmartContractPoAConsensus()
+                .UseSmartContractPoAMining()
                 .CheckForPoAMembersCollateral()
                 .UseTransactionNotification()
                 .UseBlockNotification()
@@ -126,6 +91,34 @@ namespace Stratis.CirrusPegD
                     options.UsePoAWhitelistedContracts();
                 })
                 .UseSmartContractWallet()
+                .Build();
+
+            return node;
+        }
+
+        /// <summary>
+        /// Returns a standard Stratis node. Just like StratisD.
+        /// </summary>
+        private static IFullNode GetStratisNode(string[] args)
+        {
+            // TODO: Hardcode -addressindex for better user experience
+
+            var nodeSettings = new NodeSettings(networksSelector: Networks.Stratis, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: args)
+            {
+                MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
+            };
+
+            IFullNode node = new FullNodeBuilder()
+                .UseNodeSettings(nodeSettings)
+                .UseBlockStore()
+                .UseTransactionNotification()
+                .UseBlockNotification()
+                .UseApi()
+                .UseMempool()
+                .AddRPC()
+                .UsePosConsensus()
+                .UseWallet()
+                .AddPowPosMining()
                 .Build();
 
             return node;
