@@ -387,6 +387,56 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 Satoshi = amount.Satoshi,
                 Deposited = deposited
             });
+
+            // As an approximate heuristic, there will generally only be one balance change per block.
+            // Therefore we decide whether to trigger compaction or not based on the number of balance
+            // changes. This is not a perfect approach, but enumerating the balance change list
+            // unnecessarily could slow down indexing performance substantially.
+            if ((this.network.Consensus.MaxReorgLength <= 0) || (indexData.BalanceChanges.Count <= this.network.Consensus.MaxReorgLength))
+            {
+                this.logger.LogTrace("(-)[TOO_FEW_CHANGE_RECORDS]");
+                return;
+            }
+
+            // The rebuilt balance change list.
+            var compacted = new List<AddressBalanceChange>();
+
+            // A standalone record for holding all the compacted changes.
+            var compactedRecord = new AddressBalanceChange()
+            {
+                BalanceChangedHeight = 0,
+                Satoshi = 0,
+                Deposited = true
+            };
+
+            int threshold = this.consensusManager.Tip.Height - (int)this.network.Consensus.MaxReorgLength;
+            bool updated = false;
+            foreach (AddressBalanceChange change in indexData.BalanceChanges)
+            {
+                if (change.BalanceChangedHeight < threshold)
+                {
+                    updated = true;
+
+                    if (change.Deposited)
+                        compactedRecord.Satoshi += change.Satoshi;
+                    else
+                        compactedRecord.Satoshi -= change.Satoshi;
+                }
+                else
+                {
+                    compacted.Add(change);
+                }
+            }
+
+            if (!updated)
+            {
+                this.logger.LogTrace("(-)[NO_UPDATES]");
+                return;
+            }
+
+            compacted.Add(compactedRecord);
+            indexData.BalanceChanges = compacted;
+            this.addressIndexRepository.AddOrUpdate(indexData.Address, indexData, indexData.BalanceChanges.Count + 1);
         }
 
         /// <inheritdoc />
