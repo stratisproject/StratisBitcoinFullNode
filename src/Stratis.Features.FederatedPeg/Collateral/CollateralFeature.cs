@@ -38,14 +38,16 @@ namespace Stratis.Features.FederatedPeg.Collateral
     /// </summary>
     public static class FullNodeBuilderCollateralFeatureExtension
     {
-        public static IFullNodeBuilder CheckForCollateral(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder CheckForPoAMembersCollateral(this IFullNodeBuilder fullNodeBuilder)
         {
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features.AddFeature<CollateralFeature>()
                     .DependOn<CounterChainFeature>()
+                    .DependOn<PoAFeature>()
                     .FeatureServices(services =>
                     {
+                        services.AddSingleton<IFederationManager, CollateralFederationManager>();
                         services.AddSingleton<ICollateralChecker, CollateralChecker>();
                         services.AddSingleton<CollateralVotingController>();
 

@@ -79,7 +79,7 @@ namespace Stratis.CirrusMinerD
                 .SetCounterChainNetwork(MainChainNetworks[nodeSettings.Network.NetworkType]())
                 .UseSmartContractPoAConsensus()
                 .UseSmartContractPoAMining()
-                .CheckForCollateral()
+                .CheckForPoAMembersCollateral()
                 .UseTransactionNotification()
                 .UseBlockNotification()
                 .UseApi()
