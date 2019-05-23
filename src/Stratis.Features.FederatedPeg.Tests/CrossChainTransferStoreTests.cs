@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common;
+using Stratis.Features.FederatedPeg.CounterChain;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.Payloads;
@@ -152,7 +153,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Transaction[0] output value - op_return.
                 Assert.Equal(new Money(1m, MoneyUnit.Satoshi), transactions[0].Outputs[2].Value);
-                new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions).TryGetTransactionId(transactions[0], out string actualDepositId);
+                new OpReturnDataReader(this.loggerFactory, this.counterChainNetworkWrapper).TryGetTransactionId(transactions[0], out string actualDepositId);
                 Assert.Equal(deposit1.Id.ToString(), actualDepositId);
 
                 // Transactions[1] inputs.
@@ -173,7 +174,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Transaction[1] output value - op_return.
                 Assert.Equal(new Money(1m, MoneyUnit.Satoshi), transactions[1].Outputs[2].Value);
-                new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions).TryGetTransactionId(transactions[1], out string actualDepositId2);
+                new OpReturnDataReader(this.loggerFactory, this.counterChainNetworkWrapper).TryGetTransactionId(transactions[1], out string actualDepositId2);
                 Assert.Equal(deposit2.Id.ToString(), actualDepositId2);
 
                 ICrossChainTransfer[] transfers = crossChainTransferStore.GetAsync(new uint256[] { 0, 1 }).GetAwaiter().GetResult().ToArray();
@@ -256,7 +257,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Transaction[0] output value - op_return.
                 Assert.Equal(new Money(1m, MoneyUnit.Satoshi), transactions[0].Outputs[2].Value);
-                new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions).TryGetTransactionId(transactions[0], out string actualDepositId);
+                new OpReturnDataReader(this.loggerFactory, this.counterChainNetworkWrapper).TryGetTransactionId(transactions[0], out string actualDepositId);
                 Assert.Equal(deposit1.Id.ToString(), actualDepositId);
 
                 Assert.Null(transactions[1]);
@@ -294,7 +295,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Transaction[1] output value - op_return.
                 Assert.Equal(new Money(1m, MoneyUnit.Satoshi), transactions[1].Outputs[2].Value);
-                new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions).TryGetTransactionId(transactions[1], out string actualDepositId2);
+                new OpReturnDataReader(this.loggerFactory, this.counterChainNetworkWrapper).TryGetTransactionId(transactions[1], out string actualDepositId2);
                 Assert.Equal(deposit2.Id.ToString(), actualDepositId2);
 
                 Assert.Equal(2, transfers.Length);
@@ -507,7 +508,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 ICrossChainTransfer[] transactions = crossChainTransferStore.GetTransfersByStatus(new[] { CrossChainTransferStatus.Partial });
 
                 var requester = new PartialTransactionRequester(this.loggerFactory, crossChainTransferStore, this.asyncProvider,
-                    this.nodeLifetime, this.connectionManager, this.federationGatewaySettings, this.ibdState, this.federationWalletManager);
+                    this.nodeLifetime, this.connectionManager, this.federatedPegSettings, this.ibdState, this.federationWalletManager);
 
                 var peerEndPoint = new IPEndPoint(System.Net.IPAddress.Parse("1.2.3.4"), 5);
                 INetworkPeer peer = Substitute.For<INetworkPeer>();
@@ -519,7 +520,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 var peers = new NetworkPeerCollection();
                 peers.Add(peer);
 
-                this.federationGatewaySettings.FederationNodeIpEndPoints.Returns(new[] { peerEndPoint });
+                this.federatedPegSettings.FederationNodeIpEndPoints.Returns(new[] { peerEndPoint });
 
                 this.connectionManager.ConnectedPeers.Returns(peers);
 
@@ -544,9 +545,9 @@ namespace Stratis.Features.FederatedPeg.Tests
             // Start querying counter-chain for deposits from first non-genesis block on main chain and a higher number on side chain.
             int depositHeight = (this.network.Name == new StratisRegTest().Name)
                 ? 1
-                : FederationGatewaySettings.StratisMainDepositStartBlock;
+                : FederatedPegSettings.StratisMainDepositStartBlock;
 
-            this.federationGatewaySettings.CounterChainDepositStartBlock.Returns(depositHeight);
+            this.federatedPegSettings.CounterChainDepositStartBlock.Returns(depositHeight);
 
             var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
 
@@ -582,8 +583,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             var transaction = new PosTransaction(model.Hex);
 
-            var reader = new OpReturnDataReader(this.loggerFactory, new FederatedPegOptions(CirrusNetwork.NetworksSelector.Testnet()));
-            var extractor = new DepositExtractor(this.loggerFactory, this.federationGatewaySettings, reader);
+            var reader = new OpReturnDataReader(this.loggerFactory, new CounterChainNetworkWrapper(CirrusNetwork.NetworksSelector.Testnet()));
+            var extractor = new DepositExtractor(this.loggerFactory, this.federatedPegSettings, reader);
             IDeposit deposit = extractor.ExtractDepositFromTransaction(transaction, 2, 1);
 
             Assert.NotNull(deposit);

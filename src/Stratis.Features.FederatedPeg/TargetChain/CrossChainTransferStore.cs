@@ -67,13 +67,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly CancellationTokenSource cancellation;
         private readonly IFederationWalletManager federationWalletManager;
         private readonly IWithdrawalTransactionBuilder withdrawalTransactionBuilder;
-        private readonly IFederationGatewaySettings settings;
+        private readonly IFederatedPegSettings settings;
         private readonly ISignals signals;
 
         /// <summary>Provider of time functions.</summary>
         private readonly object lockObj;
 
-        public CrossChainTransferStore(Network network, DataFolder dataFolder, ChainIndexer chainIndexer, IFederationGatewaySettings settings, IDateTimeProvider dateTimeProvider,
+        public CrossChainTransferStore(Network network, DataFolder dataFolder, ChainIndexer chainIndexer, IFederatedPegSettings settings, IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory, IWithdrawalExtractor withdrawalExtractor, IFullNode fullNode, IBlockRepository blockRepository,
             IFederationWalletManager federationWalletManager, IWithdrawalTransactionBuilder withdrawalTransactionBuilder, DBreezeSerializer dBreezeSerializer, ISignals signals)
         {

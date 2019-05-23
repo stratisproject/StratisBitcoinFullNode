@@ -23,7 +23,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly Mock<ILogger> logger;
         private readonly Mock<IFederationWalletManager> federationWalletManager;
         private readonly Mock<IFederationWalletTransactionHandler> federationWalletTransactionHandler;
-        private readonly Mock<IFederationGatewaySettings> federationGatewaySettings;
+        private readonly Mock<IFederatedPegSettings> federationGatewaySettings;
 
         public WithdrawalTransactionBuilderTests()
         {
@@ -31,14 +31,15 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.network = CirrusNetwork.NetworksSelector.Regtest();
             this.federationWalletManager = new Mock<IFederationWalletManager>();
             this.federationWalletTransactionHandler = new Mock<IFederationWalletTransactionHandler>();
-            this.federationGatewaySettings = new Mock<IFederationGatewaySettings>();
+            this.federationGatewaySettings = new Mock<IFederatedPegSettings>();
 
             this.logger = new Mock<ILogger>();
             this.loggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>()))
                 .Returns(this.logger.Object);
+
             this.federationGatewaySettings.Setup<Money>(x => x.GetWithdrawalTransactionFee(It.IsAny<int>()))
                 .Returns<int>((numInputs) => {
-                    return FederationGatewaySettings.BaseTransactionFee + FederationGatewaySettings.InputTransactionFee * numInputs;
+                    return FederatedPegSettings.BaseTransactionFee + FederatedPegSettings.InputTransactionFee * numInputs;
                 });
 
             this.federationWalletManager.Setup(x => x.Secret)
@@ -95,11 +96,11 @@ namespace Stratis.Features.FederatedPeg.Tests
             Assert.NotNull(ret);
 
             // Fee taken from amount should be the total fee. 
-            Money expectedAmountAfterFee = recipient.Amount - FederationGatewaySettings.CrossChainTransferFee;
+            Money expectedAmountAfterFee = recipient.Amount - FederatedPegSettings.CrossChainTransferFee;
             this.federationWalletTransactionHandler.Verify(x => x.BuildTransaction(It.Is<TransactionBuildContext>(y => y.Recipients.First().Amount == expectedAmountAfterFee)));
 
             // Fee used to send transaction should be a smaller amount.
-            Money expectedTxFee = FederationGatewaySettings.BaseTransactionFee + 1 * FederationGatewaySettings.InputTransactionFee;
+            Money expectedTxFee = FederatedPegSettings.BaseTransactionFee + 1 * FederatedPegSettings.InputTransactionFee;
             this.federationWalletTransactionHandler.Verify(x => x.BuildTransaction(It.Is<TransactionBuildContext>(y => y.TransactionFee == expectedTxFee)));
         }
 
