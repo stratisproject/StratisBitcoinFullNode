@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly int maxCacheItems;
 
-        public AddressIndexerOutpointsRepository(LiteDatabase db, ILoggerFactory loggerFactory, int maxItems = 30_000)
+        public AddressIndexerOutpointsRepository(LiteDatabase db, ILoggerFactory loggerFactory, int maxItems = 60_000)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.addressIndexerOutPointData = db.GetCollection<OutPointData>(DbOutputsDataKey);

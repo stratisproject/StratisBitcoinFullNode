@@ -92,9 +92,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private DateTime lastFlushTime;
 
-        private int blocksProcessed;
-
-        private double msPassed;
+        private readonly AverageCalculator averageTimePerBlock;
 
         public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network, INodeStats nodeStats, IConsensusManager consensusManager)
         {
@@ -112,8 +110,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.cancellation = new CancellationTokenSource();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.blocksProcessed = 0;
-            this.msPassed = 0;
+            this.averageTimePerBlock = new AverageCalculator(200);
         }
 
         public void Initialize()
@@ -164,6 +161,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         {
             try
             {
+                Stopwatch watch = Stopwatch.StartNew();
+
                 while (!this.cancellation.IsCancellationRequested)
                 {
                     if (DateTime.Now - this.lastFlushTime > this.flushChangesInterval)
@@ -252,12 +251,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         continue;
                     }
 
-                    Stopwatch watch = Stopwatch.StartNew();
+                    watch.Restart();
 
                     bool success = this.ProcessBlock(blockToProcess, nextHeader);
 
-                    this.msPassed += watch.Elapsed.TotalMilliseconds;
-                    this.blocksProcessed++;
+                    watch.Stop();
+                    this.averageTimePerBlock.AddSample(watch.Elapsed.TotalMilliseconds);
 
                     if (!success)
                     {
@@ -300,7 +299,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             benchLog.AppendLine("AddressIndexer: Height: " + this.IndexerTip.Height.ToString().PadRight(8) +
                                 "AddressCache%: " + this.addressIndexRepository.GetLoadPercentage().ToString().PadRight(8) +
                                 "OutPointCache%: " + this.outpointsRepository.GetLoadPercentage().ToString().PadRight(8) +
-                                $"Ms/block: {Math.Round(this.msPassed / this.blocksProcessed, 2)}");
+                                $"Ms/block: {Math.Round(this.averageTimePerBlock.Average, 2)}");
         }
 
         /// <summary>Processes block that was added or removed from consensus chain.</summary>
