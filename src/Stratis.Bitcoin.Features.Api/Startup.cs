@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -7,14 +8,17 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.Extensions.FileProviders;
 using Swashbuckle.AspNetCore.Swagger;
-using System.Reflection;
 
 namespace Stratis.Bitcoin.Features.Api
 {
     public class Startup
     {
+        private readonly string currentFolder;
+
         public Startup(IHostingEnvironment env)
         {
+            this.currentFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
             IConfigurationBuilder builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
@@ -111,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Api
 
             app.UseStaticFiles(new StaticFileOptions
             {
-                FileProvider = new PhysicalFileProvider(@"C:\Users\me\Source\Repos\StratisBitcoinFullNode2\src\Stratis.Bitcoin.Features.Api\wwwroot\"),
+                FileProvider = new PhysicalFileProvider(Path.Combine(this.currentFolder, "wwwroot")),
                 RequestPath = string.Empty
             });
 
@@ -126,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Api
                 options.DocumentTitle = "Stratis.Bitcoin.Api V1";
                 options.DefaultModelRendering(ModelRendering.Model);
                 options.InjectStylesheet("/css/swagger.css");
-                options.IndexStream = () => File.OpenRead(@"C:\Users\me\source\repos\StratisBitcoinFullNode2\src\Stratis.Bitcoin.Features.Api\wwwroot\swagger.default.html");
+                options.IndexStream = () => File.OpenRead(Path.Combine(this.currentFolder, "wwwroot", "swagger.default.html"));
                 //c.DocExpansion(DocExpansion.List);
                 //c.EnableDeepLinking();
                 //c.EnableFilter();
