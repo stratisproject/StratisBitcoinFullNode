@@ -241,7 +241,7 @@ namespace NBitcoin
             return new ProvenBlockHeader();
         }
 
-        public ProvenBlockHeader CreateProvenBlockHeader(PosBlock block)
+        public virtual ProvenBlockHeader CreateProvenBlockHeader(PosBlock block)
         {
             var provenBlockHeader = new ProvenBlockHeader(block);
 
