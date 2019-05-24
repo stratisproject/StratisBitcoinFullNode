@@ -25,7 +25,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
         /// In a production/live scenario the sidechain and mainnet federation nodes should run on the same machine.
         /// </para>
         /// </summary>
-        public FederationGatewayClient(ILoggerFactory loggerFactory, IFederationGatewaySettings settings, IHttpClientFactory httpClientFactory)
+        public FederationGatewayClient(ILoggerFactory loggerFactory, ICounterChainSettings settings, IHttpClientFactory httpClientFactory)
             : base(loggerFactory, httpClientFactory, settings.CounterChainApiPort, "FederationGateway", $"http://{settings.CounterChainApiHost}")
         {
         }

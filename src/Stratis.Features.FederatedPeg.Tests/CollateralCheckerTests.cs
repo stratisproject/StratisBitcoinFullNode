@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,12 +7,16 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.Collateral;
+using Stratis.Features.FederatedPeg.CounterChain;
 using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
 using Xunit;
@@ -42,7 +47,10 @@ namespace Stratis.Features.FederatedPeg.Tests
             federationMembers.Clear();
             federationMembers.AddRange(this.collateralFederationMembers);
 
-            FederationGatewaySettings settings = FedPegTestsHelper.CreateSettings(network, out NodeSettings nodeSettings);
+            FederatedPegSettings fedPegSettings = FedPegTestsHelper.CreateSettings(network, out NodeSettings nodeSettings);
+
+            CounterChainSettings settings = new CounterChainSettings(nodeSettings, Networks.Stratis.Regtest());
+
 
             ISignals signals = new Signals(loggerFactory, new DefaultSubscriptionErrorHandler(loggerFactory));
             IFederationManager fedManager = new CollateralFederationManager(nodeSettings, network, loggerFactory, new Mock<IKeyValueRepository>().Object, signals);
@@ -68,11 +76,14 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             var blockStoreClientMock = new Mock<IBlockStoreClient>();
 
-            var collateralData = new Dictionary<string, Money>()
+            var collateralData = new AddressBalancesModel()
             {
-                { this.collateralFederationMembers[0].CollateralMainchainAddress, this.collateralFederationMembers[0].CollateralAmount},
-                { this.collateralFederationMembers[1].CollateralMainchainAddress, this.collateralFederationMembers[1].CollateralAmount + 10},
-                { this.collateralFederationMembers[2].CollateralMainchainAddress, this.collateralFederationMembers[2].CollateralAmount - 10}
+                Balances = new List<AddressBalanceModel>()
+                {
+                    new AddressBalanceModel( this.collateralFederationMembers[0].CollateralMainchainAddress, this.collateralFederationMembers[0].CollateralAmount) ,
+                    new AddressBalanceModel(this.collateralFederationMembers[1].CollateralMainchainAddress, this.collateralFederationMembers[1].CollateralAmount + 10),
+                    new AddressBalanceModel(this.collateralFederationMembers[2].CollateralMainchainAddress, this.collateralFederationMembers[2].CollateralAmount - 10)
+                }
             };
 
             blockStoreClientMock.Setup(x => x.GetAddressBalancesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(collateralData);
@@ -86,7 +97,8 @@ namespace Stratis.Features.FederatedPeg.Tests
             Assert.False(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[2]));
 
             // Now change what the client returns and make sure collateral check fails after update.
-            collateralData[this.collateralFederationMembers[0].CollateralMainchainAddress] = this.collateralFederationMembers[0].CollateralAmount - 1;
+            AddressBalanceModel updated = collateralData.Balances.First(b => b.Address == this.collateralFederationMembers[0].CollateralMainchainAddress);
+            updated.Balance = this.collateralFederationMembers[0].CollateralAmount - 1;
 
             // Wait CollateralUpdateIntervalSeconds + 1 seconds
 

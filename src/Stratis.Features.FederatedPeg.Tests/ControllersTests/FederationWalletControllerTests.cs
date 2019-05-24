@@ -65,7 +65,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             this.walletManager.GetWallet().Returns(this.fedWallet);
 
             var federationWalletManager = (FederationWalletManager)FormatterServices.GetUninitializedObject(typeof(FederationWalletManager));
-            PropertyInfo lockProp = typeof(FederationWalletManager).GetProperty("lockObject", BindingFlags.NonPublic | BindingFlags.Instance);
+            PropertyInfo lockProp = typeof(LockProtected).GetProperty("lockObject", BindingFlags.NonPublic | BindingFlags.Instance);
             lockProp.SetValue(federationWalletManager, new object());
             federationWalletManager.Wallet = this.fedWallet;
             this.walletManager.GetSpendableAmount().Returns((x) => {

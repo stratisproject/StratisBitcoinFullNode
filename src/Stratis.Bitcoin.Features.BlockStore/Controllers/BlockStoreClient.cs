@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Controllers;
+using Stratis.Bitcoin.Controllers.Models;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 {
@@ -15,7 +16,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         Task<Money> GetAddressBalanceAsync(string address, int minConfirmations, CancellationToken cancellation = default(CancellationToken));
 
         /// <summary><see cref="BlockStoreController.GetAddressesBalances"/></summary>
-        Task<Dictionary<string, Money>> GetAddressBalancesAsync(IEnumerable<string> addresses, int minConfirmations, CancellationToken cancellation = default(CancellationToken));
+        Task<AddressBalancesModel> GetAddressBalancesAsync(IEnumerable<string> addresses, int minConfirmations, CancellationToken cancellation = default(CancellationToken));
     }
 
     /// <inheritdoc cref="IBlockStoreClient"/>
@@ -41,13 +42,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         }
 
         /// <inheritdoc />
-        public Task<Dictionary<string, Money>> GetAddressBalancesAsync(IEnumerable<string> addresses, int minConfirmations, CancellationToken cancellation = default(CancellationToken))
+        public Task<AddressBalancesModel> GetAddressBalancesAsync(IEnumerable<string> addresses, int minConfirmations, CancellationToken cancellation = default(CancellationToken))
         {
             string addrString = string.Join(",", addresses);
 
             string arguments = $"{nameof(addresses)}={addrString}&{nameof(minConfirmations)}={minConfirmations}";
 
-            return this.SendGetRequestAsync<Dictionary<string, Money>>(BlockStoreRouteEndPoint.GetAddressesBalances, arguments, cancellation);
+            return this.SendGetRequestAsync<AddressBalancesModel>(BlockStoreRouteEndPoint.GetAddressesBalances, arguments, cancellation);
         }
     }
 }

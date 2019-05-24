@@ -44,16 +44,15 @@ namespace Stratis.Features.FederatedPeg.Wallet
     /// <summary>
     /// A manager providing operations on wallets.
     /// </summary>
-    public class FederationWalletManager : IFederationWalletManager
+    public class FederationWalletManager : LockProtected, IFederationWalletManager
     {
         /// <summary>Timer for saving wallet files to the file system.</summary>
         private const int WalletSavetimeIntervalInMinutes = 5;
 
-        /// <summary>
-        /// A lock object that protects access to the <see cref="FederationWallet"/>.
-        /// Any of the collections inside Wallet must be synchronized using this lock.
-        /// </summary>
-        internal object lockObject { get; private set; }
+        /// <summary>Keep at least this many transactions in the wallet despite the
+        /// max reorg age limit for spent transactions. This is so that it never
+        /// looks like the wallet has become empty to the user.</summary>
+        private const int MinimumRetainedTransactions = 100;
 
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
@@ -111,7 +110,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         private Dictionary<OutPoint, TransactionData> outpointLookup;
 
         // Gateway settings picked up from the node config.
-        private readonly IFederationGatewaySettings federationGatewaySettings;
+        private readonly IFederatedPegSettings federatedPegSettings;
 
         public FederationWalletManager(
             ILoggerFactory loggerFactory,
@@ -122,8 +121,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
             IAsyncProvider asyncProvider,
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
-            IFederationGatewaySettings federationGatewaySettings,
-            IWithdrawalExtractor withdrawalExtractor)
+            IFederatedPegSettings federatedPegSettings,
+            IWithdrawalExtractor withdrawalExtractor) : base()
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
@@ -132,21 +131,20 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));
             Guard.NotNull(asyncProvider, nameof(asyncProvider));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
-            Guard.NotNull(federationGatewaySettings, nameof(federationGatewaySettings));
+            Guard.NotNull(federatedPegSettings, nameof(federatedPegSettings));
             Guard.NotNull(withdrawalExtractor, nameof(withdrawalExtractor));
-
-            this.lockObject = new object();
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.network = network;
+
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chainIndexer = chainIndexer;
             this.asyncProvider = asyncProvider;
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<FederationWallet>(dataFolder.WalletPath);
             this.dateTimeProvider = dateTimeProvider;
-            this.federationGatewaySettings = federationGatewaySettings;
+            this.federatedPegSettings = federatedPegSettings;
             this.withdrawalExtractor = withdrawalExtractor;
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
             this.isFederationActive = false;
@@ -295,7 +293,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
-
         /// <inheritdoc />
         public void ProcessBlock(Block block, ChainedHeader chainedHeader)
         {
@@ -343,6 +340,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         walletUpdated = true;
                     }
                 }
+
+                walletUpdated |= this.CleanTransactionsPastMaxReorg(chainedHeader.Height);
 
                 // Update the wallets with the last processed block height.
                 // It's important that updating the height happens after the block processing is complete,
@@ -467,6 +466,38 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 return foundSendingTrx || foundReceivingTrx;
             }
+        }
+
+        private bool CleanTransactionsPastMaxReorg(int height)
+        {
+            bool walletUpdated = false;
+
+            if (this.network.Consensus.MaxReorgLength == 0 || this.Wallet.MultiSigAddress.Transactions.Count <= MinimumRetainedTransactions)
+                return walletUpdated;
+
+            int finalisedHeight = height - (int)this.network.Consensus.MaxReorgLength;
+            var pastMaxReorg = new List<TransactionData>();
+            foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions)
+            {
+                // Only want to remove transactions that are spent, and the spend must have passed max reorg too
+                if (transactionData.SpendingDetails != null
+                    && transactionData.SpendingDetails.BlockHeight != null
+                    && transactionData.SpendingDetails.BlockHeight < finalisedHeight)
+                {
+                    pastMaxReorg.Add(transactionData);
+                }
+            }
+
+            foreach (TransactionData transactionData in pastMaxReorg)
+            {
+                this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
+                walletUpdated = true;
+
+                if (this.Wallet.MultiSigAddress.Transactions.Count <= MinimumRetainedTransactions)
+                    break;
+            }
+
+            return walletUpdated;
         }
 
         private bool RemoveTransaction(Transaction transaction)
@@ -681,6 +712,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             List<PaymentDetails> payments = new List<PaymentDetails>();
             foreach (TxOut paidToOutput in paidToOutputs)
             {
+                // TODO: Use the ScriptAddressReader here?
                 // Figure out how to retrieve the destination address.
                 string destinationAddress = string.Empty;
                 ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate(this.network);
@@ -960,7 +992,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (checkSignature)
                 {
                     TransactionBuilder builder = new TransactionBuilder(this.Wallet.Network).AddCoins(coins);
-                    if (!builder.Verify(transaction, this.federationGatewaySettings.TransactionFee, out TransactionPolicyError[] errors))
+
+                    if (!builder.Verify(transaction, this.federatedPegSettings.GetWithdrawalTransactionFee(coins.Count), out TransactionPolicyError[] errors))
                     {
                         // Trace the reason validation failed. Note that failure here doesn't mean an error necessarily. Just that the transaction is not fully signed.
                         foreach (TransactionPolicyError transactionPolicyError in errors)
@@ -1012,10 +1045,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 LastBlockSyncedHash = this.chainIndexer.Genesis.HashBlock,
                 MultiSigAddress = new MultiSigAddress
                 {
-                    Address = this.federationGatewaySettings.MultiSigAddress.ToString(),
-                    M = this.federationGatewaySettings.MultiSigM,
-                    ScriptPubKey = this.federationGatewaySettings.MultiSigAddress.ScriptPubKey,
-                    RedeemScript = this.federationGatewaySettings.MultiSigRedeemScript,
+                    Address = this.federatedPegSettings.MultiSigAddress.ToString(),
+                    M = this.federatedPegSettings.MultiSigM,
+                    ScriptPubKey = this.federatedPegSettings.MultiSigAddress.ScriptPubKey,
+                    RedeemScript = this.federatedPegSettings.MultiSigRedeemScript,
                     Transactions = new List<TransactionData>()
                 }
             };
@@ -1071,10 +1104,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     if (key == null)
                         key = Key.Parse(encryptedSeed, password, this.Wallet.Network);
 
-                    bool isValidKey = key.PubKey.ToHex() == this.federationGatewaySettings.PublicKey;
+                    bool isValidKey = key.PubKey.ToHex() == this.federatedPegSettings.PublicKey;
                     if (!isValidKey)
                     {
-                        this.logger.LogInformation("The wallet public key {0} does not match the federation member's public key {1}", key.PubKey.ToHex(), this.federationGatewaySettings.PublicKey);
+                        this.logger.LogInformation("The wallet public key {0} does not match the federation member's public key {1}", key.PubKey.ToHex(), this.federatedPegSettings.PublicKey);
                         return;
                     }
 

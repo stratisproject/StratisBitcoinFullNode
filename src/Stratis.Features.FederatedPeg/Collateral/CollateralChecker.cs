@@ -6,13 +6,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Events;
 using Stratis.Bitcoin.Signals;
+using Stratis.Features.FederatedPeg.Interfaces;
 
-namespace Stratis.Features.FederatedPeg
+namespace Stratis.Features.FederatedPeg.Collateral
 {
     /// <summary>Class that checks if federation members fulfill the collateral requirement.</summary>
     public interface ICollateralChecker : IDisposable
@@ -56,8 +58,13 @@ namespace Stratis.Features.FederatedPeg
 
         private Task updateCollateralContinuouslyTask;
 
-        public CollateralChecker(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, FederationGatewaySettings settings,
-            IFederationManager federationManager, ISignals signals)
+        private bool isInitialized;
+
+        public CollateralChecker(ILoggerFactory loggerFactory, 
+            IHttpClientFactory httpClientFactory,
+            ICounterChainSettings settings,
+            IFederationManager federationManager,
+            ISignals signals)
         {
             this.federationManager = federationManager;
             this.signals = signals;
@@ -67,6 +74,7 @@ namespace Stratis.Features.FederatedPeg
             this.depositsByAddress = new Dictionary<string, Money>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.blockStoreClient = new BlockStoreClient(loggerFactory, httpClientFactory, $"http://{settings.CounterChainApiHost}", settings.CounterChainApiPort);
+            this.isInitialized = false;
         }
 
         public async Task InitializeAsync()
@@ -79,7 +87,7 @@ namespace Stratis.Features.FederatedPeg
             {
                 this.logger.LogDebug("Initializing federation member {0} with amount {1}.", federationMember.CollateralMainchainAddress, federationMember.CollateralAmount);
 
-                this.depositsByAddress.Add(federationMember.CollateralMainchainAddress, null);
+                this.depositsByAddress.Add(federationMember.CollateralMainchainAddress, 0);
             }
 
             while (true)
@@ -108,6 +116,7 @@ namespace Stratis.Features.FederatedPeg
             }
 
             this.updateCollateralContinuouslyTask = this.UpdateCollateralInfoContinuouslyAsync();
+            this.isInitialized = true;
         }
 
         /// <summary>Continuously updates info about money deposited to fed member's addresses.</summary>
@@ -149,17 +158,20 @@ namespace Stratis.Features.FederatedPeg
 
             this.logger.LogDebug("Addresses to check {0}.", addressesToCheck.Count);
 
-            Dictionary<string, Money> collateral = await this.blockStoreClient.GetAddressBalancesAsync(addressesToCheck, RequiredConfirmations, cancellation).ConfigureAwait(false);
+            AddressBalancesModel collateral = await this.blockStoreClient.GetAddressBalancesAsync(addressesToCheck, RequiredConfirmations, cancellation).ConfigureAwait(false);
 
             if (collateral == null)
             {
+                this.logger.LogWarning("Failed to fetch address balances from counter chain node!");
                 this.logger.LogTrace("(-)[FAILED]:false");
                 return false;
             }
 
-            if (collateral.Count != addressesToCheck.Count)
+            this.logger.LogDebug("Addresses received {0}.", collateral.Balances.Count);
+
+            if (collateral.Balances.Count != addressesToCheck.Count)
             {
-                this.logger.LogDebug("Expected {0} data entries but received {1}.", addressesToCheck.Count, collateral.Count);
+                this.logger.LogDebug("Expected {0} data entries but received {1}.", addressesToCheck.Count, collateral.Balances.Count);
 
                 this.logger.LogTrace("(-)[INCONSISTENT_DATA]:false");
                 return false;
@@ -167,8 +179,11 @@ namespace Stratis.Features.FederatedPeg
 
             lock (this.locker)
             {
-                foreach (KeyValuePair<string, Money> addressMoney in collateral)
-                    this.depositsByAddress[addressMoney.Key] = addressMoney.Value;
+                foreach (AddressBalanceModel addressMoney in collateral.Balances)
+                {
+                    this.logger.LogDebug("Updating federated member {0} with amount {1}.", addressMoney.Address, addressMoney.Balance);
+                    this.depositsByAddress[addressMoney.Address] = addressMoney.Balance;
+                }
             }
 
             return true;
@@ -176,6 +191,12 @@ namespace Stratis.Features.FederatedPeg
 
         public bool CheckCollateral(IFederationMember federationMember)
         {
+            if (!this.isInitialized)
+            {
+                this.logger.LogTrace("(-)[NOT_INITIALIZED]");
+                throw new Exception("Component is not initialized!");
+            }
+
             var member = federationMember as CollateralFederationMember;
 
             if (member == null)
@@ -192,7 +213,7 @@ namespace Stratis.Features.FederatedPeg
 
             lock (this.locker)
             {
-                return this.depositsByAddress[member.CollateralMainchainAddress] >= member.CollateralAmount;
+                return (this.depositsByAddress[member.CollateralMainchainAddress] ?? 0) >= member.CollateralAmount;
             }
         }
 
@@ -210,7 +231,7 @@ namespace Stratis.Features.FederatedPeg
             lock (this.locker)
             {
                 this.logger.LogDebug("Adding federation member {0}", ((CollateralFederationMember)fedMemberAdded.AddedMember).CollateralMainchainAddress);
-                this.depositsByAddress.Add(((CollateralFederationMember)fedMemberAdded.AddedMember).CollateralMainchainAddress, null);
+                this.depositsByAddress.Add(((CollateralFederationMember)fedMemberAdded.AddedMember).CollateralMainchainAddress, 0);
             }
         }
 

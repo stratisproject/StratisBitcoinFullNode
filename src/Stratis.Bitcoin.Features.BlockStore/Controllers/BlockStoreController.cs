@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -18,10 +17,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 {
     public static class BlockStoreRouteEndPoint
     {
-        public const string GetBlock = "block";
-        public const string GetBlockCount = "GetBlockCount";
         public const string GetAddressBalance = "getaddressbalance";
         public const string GetAddressesBalances = "getaddressesbalances";
+        public const string GetAddressIndexerTip = "addressindexertip";
+        public const string GetBlock = "block";
+        public const string GetBlockCount = "GetBlockCount";
         public const string GetReceivedByAddress = "getreceivedbyaddress";
     }
 
@@ -29,6 +29,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
     [Route("api/[controller]")]
     public class BlockStoreController : Controller
     {
+        private readonly IAddressIndexer addressIndexer;
+
         /// <see cref="IBlockStore"/>
         private readonly IBlockStore blockStore;
 
@@ -43,8 +45,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
         /// <summary>Current network for the active controller instance.</summary>
         private readonly Network network;
-
-        private readonly IAddressIndexer addressIndexer;
 
         public BlockStoreController(
             Network network,
@@ -65,6 +65,26 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             this.chainState = chainState;
             this.chainIndexer = chainIndexer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+        /// <summary>
+        /// Retrieves the <see cref="addressIndexer"/>'s tip.
+        /// </summary>
+        /// <returns>An instance of <see cref="AddressIndexerTipModel"/> containing the tip's hash and height.</returns>
+        [Route(BlockStoreRouteEndPoint.GetAddressIndexerTip)]
+        [HttpGet]
+        public IActionResult GetAddressIndexerTip()
+        {
+            try
+            {
+                ChainedHeader addressIndexerTip = this.addressIndexer.IndexerTip;
+                return this.Json(new AddressIndexerTipModel() { TipHash = addressIndexerTip?.HashBlock, TipHeight = addressIndexerTip?.Height });
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
         }
 
         /// <summary>
@@ -158,8 +178,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
                 this.logger.LogDebug($"Asking data for {addressesArray.Length} addresses.");
 
-                var balances = new Dictionary<string, Money>(addresses.Length);
-
+                var model = new AddressBalancesModel();
                 foreach (string address in addressesArray)
                 {
                     Money balance = this.addressIndexer.GetAddressBalance(address, minConfirmations);
@@ -167,12 +186,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                     if (balance == null)
                         balance = new Money(0);
 
-                    balances[address] = balance;
+                    model.Balances.Add(new AddressBalanceModel(address, balance));
                 }
 
-                this.logger.LogDebug("Sending {0} entries.", balances.Count);
+                this.logger.LogDebug("Sending {0} entries.", model.Balances.Count);
 
-                return this.Json(balances);
+                return this.Json(model);
             }
             catch (Exception e)
             {

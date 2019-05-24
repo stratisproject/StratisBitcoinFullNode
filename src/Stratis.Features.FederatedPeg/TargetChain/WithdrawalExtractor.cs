@@ -43,12 +43,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         public WithdrawalExtractor(
             ILoggerFactory loggerFactory,
-            IFederationGatewaySettings federationGatewaySettings,
+            IFederatedPegSettings federatedPegSettings,
             IOpReturnDataReader opReturnDataReader,
             Network network)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.multisigAddress = federationGatewaySettings.MultiSigAddress;
+            this.multisigAddress = federatedPegSettings.MultiSigAddress;
             this.opReturnDataReader = opReturnDataReader;
             this.network = network;
         }

@@ -25,7 +25,7 @@
                            <i class="material-icons md-24">more_vert</i>
                            </button>
                            <div class="dropdown-menu dropdown-menu-right">
-                              <button data-toggle="modal" data-target="#stratisResyncCrosschain" class="dropdown-item" type="button">Resync crosschain transactions</button>
+                              <!-- <button data-toggle="modal" data-target="#stratisResyncCrosschain" class="dropdown-item" type="button">Resync crosschain transactions</button> -->
                               <button data-toggle="modal" data-target="#stratisResyncBlockchain" class="dropdown-item" type="button">Resync blockchain</button>
                               <div class="dropdown-divider"></div>
                               <button data-toggle="modal" data-target="#stratisStopNode" class="dropdown-item text-danger d-flex align-items-center" type="button">Stop Node</button>
@@ -155,7 +155,7 @@
                         <tr>
                            <td class="text-center"><i class="material-icons text-green md-18">check_circle</i></td>
                            <td class="text-center text-truncate"><code>@(transaction.withdrawal.targetAddress)</code></td>
-                           <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.id).htm" target="_blank">@transaction.withdrawal.id</a></td>
+                           <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.withdrawal.id).htm" target="_blank">@transaction.withdrawal.id</a></td>
                            <td class="text-center">@transaction.withdrawal.blockNumber</td>
                            <td class="text-right">@(((double)transaction.withdrawal.amount/100000000).ToString("N8")) @Model.StratisNode.CoinTicker</td>
                         </tr>
@@ -178,7 +178,7 @@
             <div class="card-body">
                <div class="pb-3 mb-3">
                   <div class="mr-auto d-inline-block">
-                     <h3>Apex Node</h3>
+                     <h3>Sidechain Node</h3>
                   </div>
                   <ul class="list-inline float-right d-flex align-items-center">
                      <li class="list-inline-item">
@@ -192,7 +192,7 @@
                            <i class="material-icons md-24">more_vert</i>
                            </button>
                            <div class="dropdown-menu dropdown-menu-right">
-                              <button data-toggle="modal" data-target="#sidechainResyncCrosschain" class="dropdown-item" type="button">Resync crosschain transactions</button>
+                              <!-- <button data-toggle="modal" data-target="#sidechainResyncCrosschain" class="dropdown-item" type="button">Resync crosschain transactions</button> -->
                               <button data-toggle="modal" data-target="#sidechainResyncBlockchain" class="dropdown-item" type="button">Resync blockchain</button>
                               <div class="dropdown-divider"></div>
                               <button data-toggle="modal" data-target="#sidechainStopNode" class="dropdown-item text-danger d-flex align-items-center" type="button">Stop Node</button>
@@ -212,7 +212,7 @@
                      <li class="col-12 col-xl-6">
                         <ul class="list-inline">
                            <li class="list-inline-item"><strong>Swagger :</strong></li>
-                           <li class="list-inline-item"><a target="_blank" href="@Model.StratisNode.SwaggerUrl">@Model.SidechainNode.SwaggerUrl</a></li>
+                           <li class="list-inline-item"><a target="_blank" href="@Model.SidechainNode.SwaggerUrl">@Model.SidechainNode.SwaggerUrl</a></li>
                         </ul>
                      </li>
                   </ul>
@@ -322,7 +322,7 @@
                         <tr>
                            <td class="text-center"><i class="material-icons text-green md-18">check_circle</i></td>
                            <td class="text-center text-truncate"><code>@(transaction.withdrawal.targetAddress)</code></td>
-                           <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.id).htm" target="_blank">@transaction.withdrawal.id</a></td>
+                           <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.withdrawal.id).htm" target="_blank">@transaction.withdrawal.id</a></td>
                            <td class="text-center">@transaction.withdrawal.blockNumber</td>
                            <td class="text-right">@(((double)transaction.withdrawal.amount/100000000).ToString("N8")) @Model.SidechainNode.CoinTicker</td>
                         </tr>
