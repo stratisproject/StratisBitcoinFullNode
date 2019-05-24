@@ -254,3 +254,6 @@ ModelManifest.xml
 /src/Stratis.StratisD/Logs
 /src/Stratis.BitcoinD/Logs
 /src/Stratis.Benchmark/BenchmarkDotNet.Artifacts/results
+/src/Stratis.FederatedSidechains.AdminDashboard/wwwroot/css/*.min.css
+/src/Stratis.FederatedSidechains.AdminDashboard/wwwroot/js/*.min.js
+/src/Stratis.FederatedSidechains.AdminDashboard/wwwroot/lib

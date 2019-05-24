@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.FederatedSidechains.AdminDashboard.Hubs;
-using Stratis.FederatedSidechains.AdminDashboard.Services;
+using Stratis.FederatedSidechains.AdminDashboard.HostedServices;
 using Stratis.FederatedSidechains.AdminDashboard.Settings;
 
 namespace Stratis.FederatedSidechains.AdminDashboard
