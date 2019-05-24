@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
+using Microsoft.Extensions.FileProviders;
 using Swashbuckle.AspNetCore.Swagger;
 
 namespace Stratis.Bitcoin.Features.Api
@@ -96,6 +97,12 @@ namespace Stratis.Bitcoin.Features.Api
             loggerFactory.AddDebug();
 
             app.UseCors("CorsPolicy");
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(@"C:\Users\me\Stratis\StratisBitcoinFullNode\src\Stratis.Bitcoin.Features.Api\wwwroot\"),
+                RequestPath = string.Empty
+            });
 
             app.UseMvc();
 
