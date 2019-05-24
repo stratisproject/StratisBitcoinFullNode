@@ -78,10 +78,15 @@ namespace Stratis.Bitcoin.Features.Api
                 {
                     Title = "Stratis.Bitcoin.Api",
                     Description = "Stratis API Swagger",
+                    Contact = new Contact()
+                    {
+                        Name = "Stratis Group Limited",
+                        Url = "https://stratisplatform.com"
+                    },
                     License = new License
                     {
                         Name = "MIT License",
-                        Url = "https://github.com/clintnetwork/StratisBitcoinFullNode/blob/master/LICENSE"
+                        Url = "https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/LICENSE"
                     },
                     Version = "v1"
                 });
