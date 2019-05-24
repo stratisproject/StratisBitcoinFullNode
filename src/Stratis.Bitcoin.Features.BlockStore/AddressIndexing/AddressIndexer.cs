@@ -274,7 +274,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     // Schedule prefetching of the next block;
                     ChainedHeader headerToPrefetch = this.consensusManager.Tip.GetAncestor(nextHeader.Height + 1);
-                    this.prefetchingTask = Task.Run(() => this.consensusManager.GetBlockData(headerToPrefetch.HashBlock));
+
+                    if (headerToPrefetch != null)
+                        this.prefetchingTask = Task.Run(() => this.consensusManager.GetBlockData(headerToPrefetch.HashBlock));
 
                     watch.Restart();
 

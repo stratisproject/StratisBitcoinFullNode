@@ -136,14 +136,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             // Now trigger rewind to see if indexer can handle reorgs.
             ChainedHeader forkPoint = headers.Single(x => x.Height == 8);
 
-            List<ChainedHeader> headersFork =
-                ChainedHeadersHelper.CreateConsecutiveHeaders(100, forkPoint, false, null, this.network);
+            List<ChainedHeader> headersFork = ChainedHeadersHelper.CreateConsecutiveHeaders(100, forkPoint, false, null, this.network);
 
             this.consensusManagerMock.Setup(x => x.GetBlockData(It.IsAny<uint256>())).Returns((uint256 hash) =>
             {
                 ChainedHeader header = headersFork.SingleOrDefault(x => x.HashBlock == hash);
                 return new ChainedHeaderBlock(new Block(), header);
-                ;
             });
 
             this.consensusManagerMock.Setup(x => x.Tip).Returns(() => headersFork.Last());
