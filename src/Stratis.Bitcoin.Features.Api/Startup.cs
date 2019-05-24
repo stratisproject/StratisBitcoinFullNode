@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.Extensions.FileProviders;
 using Swashbuckle.AspNetCore.Swagger;
+using System.Reflection;
 
 namespace Stratis.Bitcoin.Features.Api
 {
@@ -110,7 +111,7 @@ namespace Stratis.Bitcoin.Features.Api
 
             app.UseStaticFiles(new StaticFileOptions
             {
-                FileProvider = new PhysicalFileProvider(@"C:\Users\me\Stratis\StratisBitcoinFullNode\src\Stratis.Bitcoin.Features.Api\wwwroot\"),
+                FileProvider = new PhysicalFileProvider(@"C:\Users\me\Source\Repos\StratisBitcoinFullNode2\src\Stratis.Bitcoin.Features.Api\wwwroot\"),
                 RequestPath = string.Empty
             });
 
@@ -120,11 +121,19 @@ namespace Stratis.Bitcoin.Features.Api
             app.UseSwagger();
 
             // Enable middleware to serve swagger-ui (HTML, JS, CSS etc.), specifying the Swagger JSON endpoint.
-            app.UseSwaggerUI(c =>
+            app.UseSwaggerUI(options =>
             {
-                c.DocumentTitle = "Stratis.Bitcoin.Api V1";
-                c.DefaultModelRendering(ModelRendering.Model);
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Stratis.Bitcoin.Api V1");
+                options.DocumentTitle = "Stratis.Bitcoin.Api V1";
+                options.DefaultModelRendering(ModelRendering.Model);
+                options.InjectStylesheet("/css/swagger.css");
+                options.IndexStream = () => File.OpenRead(@"C:\Users\me\source\repos\StratisBitcoinFullNode2\src\Stratis.Bitcoin.Features.Api\wwwroot\swagger.default.html");
+                //c.DocExpansion(DocExpansion.List);
+                //c.EnableDeepLinking();
+                //c.EnableFilter();
+                //c.MaxDisplayedTags(5);
+                //c.ShowExtensions();
+                //c.EnableValidator();
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "Stratis.Bitcoin.Api V1");
             });
         }
     }
