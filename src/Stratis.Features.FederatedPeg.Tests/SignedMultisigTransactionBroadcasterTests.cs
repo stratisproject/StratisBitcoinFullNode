@@ -25,7 +25,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly ILogger logger;
         private readonly ILoggerFactory loggerFactory;
         private readonly IDisposable leaderReceiverSubscription;
-        private readonly IFederationGatewaySettings federationGatewaySettings;
+        private readonly IFederatedPegSettings federatedPegSettings;
         private readonly IBroadcasterManager broadcasterManager;
 
         private readonly IAsyncProvider asyncProvider;
@@ -50,7 +50,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.logger = Substitute.For<ILogger>();
-            this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
+            this.federatedPegSettings = Substitute.For<IFederatedPegSettings>();
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.leaderReceiverSubscription = Substitute.For<IDisposable>();
             this.broadcasterManager = Substitute.For<IBroadcasterManager>();
@@ -101,7 +101,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact]
         public async Task Call_GetSignedTransactionsAsync_Signed_Transactions_Broadcasts()
         {
-            this.federationGatewaySettings.PublicKey.Returns(PublicKey);
+            this.federatedPegSettings.PublicKey.Returns(PublicKey);
 
             using (var signedMultisigTransactionBroadcaster = new SignedMultisigTransactionBroadcaster(
                this.loggerFactory,

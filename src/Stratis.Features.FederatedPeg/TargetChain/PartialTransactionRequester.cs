@@ -52,7 +52,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly IAsyncProvider asyncProvider;
         private readonly INodeLifetime nodeLifetime;
         private readonly IConnectionManager connectionManager;
-        private readonly IFederationGatewaySettings federationGatewaySettings;
+        private readonly IFederatedPegSettings federatedPegSettings;
 
         private readonly IInitialBlockDownloadState ibdState;
         private readonly IFederationWalletManager federationWalletManager;
@@ -65,21 +65,21 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             IAsyncProvider asyncProvider,
             INodeLifetime nodeLifetime,
             IConnectionManager connectionManager,
-            IFederationGatewaySettings federationGatewaySettings,
+            IFederatedPegSettings federatedPegSettings,
             IInitialBlockDownloadState ibdState,
             IFederationWalletManager federationWalletManager) {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(crossChainTransferStore, nameof(crossChainTransferStore));
             Guard.NotNull(asyncProvider, nameof(asyncProvider));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
-            Guard.NotNull(federationGatewaySettings, nameof(federationGatewaySettings));
+            Guard.NotNull(federatedPegSettings, nameof(federatedPegSettings));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.crossChainTransferStore = crossChainTransferStore;
             this.asyncProvider = asyncProvider;
             this.nodeLifetime = nodeLifetime;
             this.connectionManager = connectionManager;
-            this.federationGatewaySettings = federationGatewaySettings;
+            this.federatedPegSettings = federatedPegSettings;
             this.ibdState = ibdState;
             this.federationWalletManager = federationWalletManager;
         }
@@ -95,7 +95,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 if (!peer.IsConnected)
                     continue;
 
-                if (this.federationGatewaySettings.FederationNodeIpEndPoints.Any(e => ipAddressComparer.Equals(e.Address, peer.PeerEndPoint.Address))) {
+                if (this.federatedPegSettings.FederationNodeIpEndPoints.Any(e => ipAddressComparer.Equals(e.Address, peer.PeerEndPoint.Address))) {
                     try {
                         await peer.SendMessageAsync(payload).ConfigureAwait(false);
                     }

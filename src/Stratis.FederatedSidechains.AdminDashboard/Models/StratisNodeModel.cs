@@ -1,4 +1,7 @@
 using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
+using Stratis.FederatedSidechains.AdminDashboard.Entities;
+using Stratis.FederatedSidechains.AdminDashboard.Services;
 
 namespace Stratis.FederatedSidechains.AdminDashboard.Models
 {
@@ -16,5 +19,6 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Models
         public List<Peer> FederationMembers { get; set; }
         public object History { get; set; }
         public string CoinTicker { get; set; }
+        public List<LogRule> LogRules { get; set; }
     }
 }

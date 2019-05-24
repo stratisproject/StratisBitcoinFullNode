@@ -61,14 +61,14 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         private readonly MemoryCache privateKeyCache;
 
-        private readonly IFederationGatewaySettings settings;
+        private readonly IFederatedPegSettings settings;
 
         public FederationWalletTransactionHandler(
             ILoggerFactory loggerFactory,
             IFederationWalletManager walletManager,
             IWalletFeePolicy walletFeePolicy,
             Network network,
-            IFederationGatewaySettings settings)
+            IFederatedPegSettings settings)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
@@ -211,7 +211,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <param name="network">The network.</param>
         /// <param name="context">The transacion build context.</param>
         /// <returns>The coins and unspent outputs that will be used.</returns>
-        public static (List<Coin>, List<UnspentOutputReference>) DetermineCoins(IFederationWalletManager walletManager, Network network, TransactionBuildContext context, IFederationGatewaySettings settings)
+        public static (List<Coin>, List<UnspentOutputReference>) DetermineCoins(IFederationWalletManager walletManager, Network network, TransactionBuildContext context, IFederatedPegSettings settings)
         {
             List<UnspentOutputReference> unspentOutputs = walletManager.GetSpendableTransactionsInWallet(context.MinConfirmations).ToList();
 

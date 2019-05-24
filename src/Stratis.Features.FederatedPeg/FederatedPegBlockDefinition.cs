@@ -44,11 +44,11 @@ namespace Stratis.Features.FederatedPeg
             IStateRepositoryRoot stateRoot,
             ICoinbaseSplitter premineSplitter,
             MinerSettings minerSettings,
-            FederationGatewaySettings federationGatewaySettings)
+            FederatedPegSettings federatedPegSettings)
             : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool, mempoolLock, network, senderRetriever, stateRoot, minerSettings)
         {
-            this.payToMultisigScript = federationGatewaySettings.MultiSigAddress.ScriptPubKey;
-            this.payToMemberScript = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(new PubKey(federationGatewaySettings.PublicKey));
+            this.payToMultisigScript = federatedPegSettings.MultiSigAddress.ScriptPubKey;
+            this.payToMemberScript = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(new PubKey(federatedPegSettings.PublicKey));
 
             this.premineSplitter = premineSplitter;
         }

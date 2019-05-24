@@ -24,20 +24,20 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         private readonly IFederationWalletManager federationWalletManager;
         private readonly IFederationWalletTransactionHandler federationWalletTransactionHandler;
-        private readonly IFederationGatewaySettings federationGatewaySettings;
+        private readonly IFederatedPegSettings federatedPegSettings;
 
         public WithdrawalTransactionBuilder(
             ILoggerFactory loggerFactory,
             Network network,
             IFederationWalletManager federationWalletManager,
             IFederationWalletTransactionHandler federationWalletTransactionHandler,
-            IFederationGatewaySettings federationGatewaySettings)
+            IFederatedPegSettings federatedPegSettings)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.federationWalletManager = federationWalletManager;
             this.federationWalletTransactionHandler = federationWalletTransactionHandler;
-            this.federationGatewaySettings = federationGatewaySettings;
+            this.federatedPegSettings = federatedPegSettings;
         }
 
         /// <inheritdoc />
@@ -62,12 +62,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     Time = this.network.Consensus.IsProofOfStake ? blockTime : (uint?) null
                 };
 
-                multiSigContext.Recipients = new List<Recipient> { recipient.WithPaymentReducedByFee(FederationGatewaySettings.CrossChainTransferFee) }; // The fee known to the user is taken.
+                multiSigContext.Recipients = new List<Recipient> { recipient.WithPaymentReducedByFee(FederatedPegSettings.CrossChainTransferFee) }; // The fee known to the user is taken.
 
                 // TODO: Amend this so we're not picking coins twice.
-                (List<Coin> coins, List<Wallet.UnspentOutputReference> unspentOutputs) = FederationWalletTransactionHandler.DetermineCoins(this.federationWalletManager, this.network, multiSigContext, this.federationGatewaySettings);
+                (List<Coin> coins, List<Wallet.UnspentOutputReference> unspentOutputs) = FederationWalletTransactionHandler.DetermineCoins(this.federationWalletManager, this.network, multiSigContext, this.federatedPegSettings);
 
-                multiSigContext.TransactionFee = this.federationGatewaySettings.GetWithdrawalTransactionFee(coins.Count); // The "actual fee". Everything else goes to the fed.
+                multiSigContext.TransactionFee = this.federatedPegSettings.GetWithdrawalTransactionFee(coins.Count); // The "actual fee". Everything else goes to the fed.
                 multiSigContext.SelectedInputs = unspentOutputs.Select(u => u.ToOutPoint()).ToList();
                 multiSigContext.AllowOtherInputs = false;
 

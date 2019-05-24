@@ -1,4 +1,4 @@
-﻿namespace Stratis.FederatedSidechains.AdminDashboard.Rest
+﻿namespace Stratis.FederatedSidechains.AdminDashboard.Services
 {
     public class ApiResponse
     {

@@ -1,19 +1,19 @@
 ﻿using NBitcoin;
 
-namespace Stratis.Features.FederatedPeg
+namespace Stratis.Features.FederatedPeg.CounterChain
 {
     /// <summary>
-    /// Holds information about the peg, including the details of the network on the other side of the peg.
+    /// Allows us to inject information about the counter chain.
     /// </summary>
-    public class FederatedPegOptions
+    public class CounterChainNetworkWrapper
     {
         /// <summary>
-        /// The chain that we are connecting to from this node.
+        /// The "other" network that we are connecting to from this node.
         /// E.g. if this is a Cirrus sidechain gateway node, the counter-chain would be Stratis and vice versa.
         /// </summary>
         public Network CounterChainNetwork { get; }
 
-        public FederatedPegOptions(Network counterChainNetwork)
+        public CounterChainNetworkWrapper(Network counterChainNetwork)
         {
             this.CounterChainNetwork = counterChainNetwork;
         }
