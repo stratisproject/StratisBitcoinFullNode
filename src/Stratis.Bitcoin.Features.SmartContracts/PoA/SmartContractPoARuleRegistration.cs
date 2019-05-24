@@ -63,8 +63,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             consensus.PartialValidationRules.Add(new AllowedScriptTypeRule(this.network));
             consensus.PartialValidationRules.Add(new ContractTransactionPartialValidationRule(this.callDataSerializer, txValidationRules));
 
-            consensus.FullValidationRules.Add(new ContractTransactionFullValidationRule(this.callDataSerializer, this.fullTxValidationRules));
-
             int existingCoinViewRule = consensus.FullValidationRules
                 .FindIndex(c => c is CoinViewRule);
 
@@ -83,6 +81,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             };
 
             consensus.FullValidationRules.InsertRange(existingCoinViewRule, scRules);
+
+            // SaveCoinviewRule must be the last rule executed because actually it calls CachedCoinView.SaveChanges that causes internal CachedCoinView to be updated
+            // see https://dev.azure.com/Stratisplatformuk/StratisBitcoinFullNode/_workitems/edit/3770
+            // TODO: re-design how rules gets called, which order they have and prevent a rule to change internal service statuses (rules should just check)
+            int saveCoinviewRulePosition = consensus.FullValidationRules.FindIndex(c => c is SaveCoinviewRule);
+            consensus.FullValidationRules.Insert(saveCoinviewRulePosition, new ContractTransactionFullValidationRule(this.callDataSerializer, this.fullTxValidationRules));
         }
     }
 }
