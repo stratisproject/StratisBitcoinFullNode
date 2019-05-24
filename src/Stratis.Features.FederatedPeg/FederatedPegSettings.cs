@@ -36,6 +36,11 @@ namespace Stratis.Features.FederatedPeg
         public static readonly Money CrossChainTransferFee = Money.Coins(0.001m);
 
         /// <summary>
+        /// Only look for deposits above a certain value. This avoids issues with dust lingering around or fees not being covered.
+        /// </summary>
+        public static readonly Money CrossChainTransferMinimum = Money.Coins(1m);
+
+        /// <summary>
         /// The fee always given to a withdrawal transaction.
         /// </summary>
         public static readonly Money BaseTransactionFee = Money.Coins(0.0002m);
