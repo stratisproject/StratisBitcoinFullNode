@@ -69,7 +69,17 @@ namespace Stratis.Bitcoin.Features.Api
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(setup =>
             {
-                setup.SwaggerDoc("v1", new Info { Title = "Stratis.Bitcoin.Api", Version = "v1" });
+                setup.SwaggerDoc("v1", new Info
+                {
+                    Title = "Stratis.Bitcoin.Api",
+                    Description = "Stratis API Swagger",
+                    License = new License
+                    {
+                        Name = "MIT License",
+                        Url = "https://github.com/clintnetwork/StratisBitcoinFullNode/blob/master/LICENSE"
+                    },
+                    Version = "v1"
+                });
 
                 //Set the comments path for the swagger json and ui.
                 string basePath = PlatformServices.Default.Application.ApplicationBasePath;
