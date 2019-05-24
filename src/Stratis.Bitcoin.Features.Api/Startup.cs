@@ -131,12 +131,6 @@ namespace Stratis.Bitcoin.Features.Api
                 options.DefaultModelRendering(ModelRendering.Model);
                 options.InjectStylesheet("/css/swagger.css");
                 options.IndexStream = () => File.OpenRead(Path.Combine(this.currentFolder, "wwwroot", "swagger.default.html"));
-                //c.DocExpansion(DocExpansion.List);
-                //c.EnableDeepLinking();
-                //c.EnableFilter();
-                //c.MaxDisplayedTags(5);
-                //c.ShowExtensions();
-                //c.EnableValidator();
                 options.SwaggerEndpoint("/swagger/v1/swagger.json", "Stratis.Bitcoin.Api V1");
             });
         }
