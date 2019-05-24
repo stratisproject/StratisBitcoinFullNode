@@ -122,6 +122,7 @@ namespace Stratis.Bitcoin.Features.Api
             // Enable middleware to serve swagger-ui (HTML, JS, CSS etc.), specifying the Swagger JSON endpoint.
             app.UseSwaggerUI(c =>
             {
+                c.DocumentTitle = "Stratis.Bitcoin.Api V1";
                 c.DefaultModelRendering(ModelRendering.Model);
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Stratis.Bitcoin.Api V1");
             });
