@@ -9,7 +9,7 @@
 }
 
 .swagger-ui img {
-    content: url("/images/logo_white.svg");
+    content: url("/images/logo-white.png");
     margin-right: 10px;
 }
 
@@ -762,7 +762,7 @@
     font-weight: 700;
     margin: 0 0 5px;
     font-family: Titillium Web, sans-serif;
-    color: #3b4151
+    color: #FFFFFF
 }
 
 .swagger-ui input[type=email], .swagger-ui input[type=password], .swagger-ui input[type=search], .swagger-ui input[type=text] {
@@ -1609,7 +1609,7 @@
 }
 
     .swagger-ui .opblock.opblock-get .opblock-summary-method {
-        background: #34495E;
+        background: #1188cb;
     }
 
     .swagger-ui .opblock.opblock-get .opblock-summary {
@@ -1657,7 +1657,7 @@
 
 .swagger-ui .topbar {
     padding: 8px 30px;
-    background-color: #2C3E50;
+    background-color: #1188cb;
 }
 
     .swagger-ui .topbar .download-url-wrapper input[type=text] {
