@@ -33,8 +33,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Helpers
                 x.ConfirmedInBlock == y.ConfirmedInBlock &&
                 x.Type == y.Type && 
                 x.Amount == y.Amount && 
-                x.Payments.Count == y.Payments.Count &&
-                x.OutputIndex == y.OutputIndex);
+                x.Payments.Count == y.Payments.Count);
 
             if (!propertiesAreEqual)
             {
