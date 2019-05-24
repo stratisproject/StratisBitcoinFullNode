@@ -8,6 +8,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         public int Id { get; set; }
 
         public byte[] TipHashBytes { get; set; }
+
+        public int Height { get; set; }
     }
 
     public class AddressIndexerData
