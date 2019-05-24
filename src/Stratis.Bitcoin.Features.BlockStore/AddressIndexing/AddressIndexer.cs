@@ -344,7 +344,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     OutPoint consumedOutput = input.PrevOut;
 
                     if (!this.outpointsRepository.TryGetOutPointData(consumedOutput, out OutPointData consumedOutputData))
+                    {
+                        this.logger.LogError("Missing outpoint data for {0}.", consumedOutput);
+                        this.logger.LogTrace("(-)[MISSING OUTPOINTS_DATA]");
                         throw new Exception($"Missing outpoint data for {consumedOutput}");
+                    }
 
                     Money amountSpent = consumedOutputData.Money;
 
