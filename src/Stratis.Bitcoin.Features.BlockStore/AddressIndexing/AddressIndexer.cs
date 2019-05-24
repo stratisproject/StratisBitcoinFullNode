@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using LiteDB;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
@@ -50,6 +51,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         private readonly DataFolder dataFolder;
 
         private readonly IConsensusManager consensusManager;
+
+        private readonly IAsyncProvider asyncProvider;
 
         private readonly IScriptAddressReader scriptAddressReader;
 
@@ -94,13 +97,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly AverageCalculator averageTimePerBlock;
 
-        public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network, INodeStats nodeStats, IConsensusManager consensusManager)
+        public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network, INodeStats nodeStats, IConsensusManager consensusManager, IAsyncProvider asyncProvider)
         {
             this.storeSettings = storeSettings;
             this.network = network;
             this.nodeStats = nodeStats;
             this.dataFolder = dataFolder;
             this.consensusManager = consensusManager;
+            this.asyncProvider = asyncProvider;
             this.loggerFactory = loggerFactory;
             this.scriptAddressReader = new ScriptAddressReader();
 
@@ -124,7 +128,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             string dbPath = Path.Combine(this.dataFolder.RootPath, AddressIndexerDatabaseFilename);
 
             FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
-            this.db = new LiteDatabase(new ConnectionString() {Filename = dbPath, Mode = fileMode });
+            this.db = new LiteDatabase(new ConnectionString() { Filename = dbPath, Mode = fileMode });
 
             this.addressIndexRepository = new AddressIndexRepository(this.db, this.loggerFactory);
 
@@ -154,143 +158,138 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             this.indexingTask = Task.Run(async () => await this.IndexAddressesContinuouslyAsync().ConfigureAwait(false));
 
+            this.asyncProvider.RegisterTask($"{nameof(AddressIndexer)}.{nameof(this.indexingTask)}", this.indexingTask);
+
             this.nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 400);
         }
 
         private async Task IndexAddressesContinuouslyAsync()
         {
-            try
+            Stopwatch watch = Stopwatch.StartNew();
+
+            while (!this.cancellation.IsCancellationRequested)
             {
-                Stopwatch watch = Stopwatch.StartNew();
-
-                while (!this.cancellation.IsCancellationRequested)
+                if (DateTime.Now - this.lastFlushTime > this.flushChangesInterval)
                 {
-                    if (DateTime.Now - this.lastFlushTime > this.flushChangesInterval)
+                    this.logger.LogDebug("Flushing changes.");
+
+                    lock (this.lockObject)
                     {
-                        this.logger.LogDebug("Flushing changes.");
-
-                        lock (this.lockObject)
-                        {
-                            this.addressIndexRepository.SaveAllItems();
-                            this.outpointsRepository.SaveAllItems();
-                            this.tipDataStore.Update(this.tipData);
-                        }
-
-                        this.lastFlushTime = DateTime.Now;
-
-                        this.logger.LogDebug("Flush completed.");
+                        this.addressIndexRepository.SaveAllItems();
+                        this.outpointsRepository.SaveAllItems();
+                        this.tipDataStore.Update(this.tipData);
                     }
 
-                    if (this.cancellation.IsCancellationRequested)
-                        break;
+                    this.lastFlushTime = DateTime.Now;
 
-                    ChainedHeader nextHeader = this.consensusManager.Tip.GetAncestor(this.IndexerTip.Height + 1);
+                    this.logger.LogDebug("Flush completed.");
+                }
 
-                    if (nextHeader == null)
+                if (this.cancellation.IsCancellationRequested)
+                    break;
+
+                ChainedHeader nextHeader = this.consensusManager.Tip.GetAncestor(this.IndexerTip.Height + 1);
+
+                if (nextHeader == null)
+                {
+                    this.logger.LogDebug("Next header wasn't found. Waiting.");
+
+                    try
                     {
-                        this.logger.LogDebug("Next header wasn't found. Waiting.");
-
-                        try
-                        {
-                            await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                        }
-
-                        continue;
+                        await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
                     }
 
-                    if (nextHeader.Previous.HashBlock != this.IndexerTip.HashBlock)
+                    continue;
+                }
+
+                if (nextHeader.Previous.HashBlock != this.IndexerTip.HashBlock)
+                {
+                    ChainedHeader lastCommonHeader = nextHeader.FindFork(this.IndexerTip);
+
+                    this.logger.LogDebug("Reorganization detected. Rewinding till '{0}'.", lastCommonHeader);
+
+                    lock (this.lockObject)
                     {
-                        ChainedHeader lastCommonHeader = nextHeader.FindFork(this.IndexerTip);
+                        // The cache doesn't really lend itself to handling a reorg very well.
+                        // Therefore, we leverage LiteDb's indexing capabilities to tell us
+                        // which records are for the affected blocks.
+                        // TODO: May also be efficient to run ProcessBlocks with inverted deposit flags instead, depending on size of reorg
 
-                        this.logger.LogDebug("Reorganization detected. Rewinding till '{0}'.", lastCommonHeader);
+                        List<string> affectedAddresses = this.addressIndexRepository.GetAddressesHigherThanHeight(lastCommonHeader.Height);
 
-                        lock (this.lockObject)
+                        foreach (string address in affectedAddresses)
                         {
-                            // The cache doesn't really lend itself to handling a reorg very well.
-                            // Therefore, we leverage LiteDb's indexing capabilities to tell us
-                            // which records are for the affected blocks.
-                            // TODO: May also be efficient to run ProcessBlocks with inverted deposit flags instead, depending on size of reorg
-
-                            List<string> affectedAddresses = this.addressIndexRepository.GetAddressesHigherThanHeight(lastCommonHeader.Height);
-
-                            foreach (string address in affectedAddresses)
-                            {
-                                AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
-                                indexData.BalanceChanges.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
-                            }
+                            AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
+                            indexData.BalanceChanges.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
                         }
-
-                        this.IndexerTip = lastCommonHeader;
-
-                        lock (this.lockObject)
-                        {
-                            this.tipData.TipHashBytes = this.IndexerTip.HashBlock.ToBytes();
-                        }
-
-                        continue;
                     }
 
-                    // Get next header block and process it.
-                    Block blockToProcess = this.consensusManager.GetBlockData(nextHeader.HashBlock).Block;
-
-                    if (blockToProcess == null)
-                    {
-                        this.logger.LogDebug("Next block wasn't found. Waiting.");
-
-                        try
-                        {
-                            await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                        }
-
-                        continue;
-                    }
-
-                    watch.Restart();
-
-                    bool success = this.ProcessBlock(blockToProcess, nextHeader);
-
-                    watch.Stop();
-                    this.averageTimePerBlock.AddSample(watch.Elapsed.TotalMilliseconds);
-
-                    if (!success)
-                    {
-                        this.logger.LogDebug("Failed to process next block. Waiting.");
-
-                        try
-                        {
-                            await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                        }
-
-                        continue;
-                    }
-
-                    this.IndexerTip = nextHeader;
+                    this.IndexerTip = lastCommonHeader;
 
                     lock (this.lockObject)
                     {
                         this.tipData.TipHashBytes = this.IndexerTip.HashBlock.ToBytes();
                     }
+
+                    continue;
                 }
+
+                // Get next header block and process it.
+                Block blockToProcess = this.consensusManager.GetBlockData(nextHeader.HashBlock).Block;
+
+                if (blockToProcess == null)
+                {
+                    this.logger.LogDebug("Next block wasn't found. Waiting.");
+
+                    try
+                    {
+                        await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                    }
+
+                    continue;
+                }
+
+                watch.Restart();
+
+                bool success = this.ProcessBlock(blockToProcess, nextHeader);
+
+                watch.Stop();
+                this.averageTimePerBlock.AddSample(watch.Elapsed.TotalMilliseconds);
+
+                if (!success)
+                {
+                    this.logger.LogDebug("Failed to process next block. Waiting.");
+
+                    try
+                    {
+                        await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                    }
+
+                    continue;
+                }
+
+                this.IndexerTip = nextHeader;
 
                 lock (this.lockObject)
                 {
-                    this.addressIndexRepository.SaveAllItems();
-                    this.outpointsRepository.SaveAllItems();
-                    this.tipDataStore.Update(this.tipData);
+                    this.tipData.TipHashBytes = this.IndexerTip.HashBlock.ToBytes();
                 }
             }
-            catch (Exception e)
+
+            lock (this.lockObject)
             {
-                this.logger.LogCritical(e.ToString());
+                this.addressIndexRepository.SaveAllItems();
+                this.outpointsRepository.SaveAllItems();
+                this.tipDataStore.Update(this.tipData);
             }
         }
 
