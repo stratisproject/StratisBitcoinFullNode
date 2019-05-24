@@ -13,6 +13,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 using FileMode = LiteDB.FileMode;
 using Script = NBitcoin.Script;
@@ -98,11 +99,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly ILoggerFactory loggerFactory;
 
+        private readonly AverageCalculator averageTimePerBlock;
+
         private Task indexingTask;
 
         private DateTime lastFlushTime;
 
-        private readonly AverageCalculator averageTimePerBlock;
+        private Task<ChainedHeaderBlock> prefetchingTask;
 
         public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network, INodeStats nodeStats, IConsensusManager consensusManager)
         {
@@ -244,8 +247,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         continue;
                     }
 
-                    // Get next header block and process it.
-                    Block blockToProcess = this.consensusManager.GetBlockData(nextHeader.HashBlock).Block;
+                    // First try to see if it's prefetched.
+                    ChainedHeaderBlock prefetchedBlock = this.prefetchingTask == null ? null : await this.prefetchingTask.ConfigureAwait(false);
+
+                    Block blockToProcess;
+
+                    if (prefetchedBlock != null && prefetchedBlock.ChainedHeader == nextHeader)
+                        blockToProcess = prefetchedBlock.Block;
+                    else
+                        blockToProcess = this.consensusManager.GetBlockData(nextHeader.HashBlock).Block;
 
                     if (blockToProcess == null)
                     {
@@ -261,6 +271,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                         continue;
                     }
+
+                    // Schedule prefetching of the next block;
+                    ChainedHeader headerToPrefetch = this.consensusManager.Tip.GetAncestor(nextHeader.Height + 1);
+                    this.prefetchingTask = Task.Run(() => this.consensusManager.GetBlockData(headerToPrefetch.HashBlock));
 
                     watch.Restart();
 
