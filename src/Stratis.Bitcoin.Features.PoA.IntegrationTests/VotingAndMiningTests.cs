@@ -327,10 +327,12 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
 
                 long toMineCount = network.Consensus.PremineHeight + network.Consensus.CoinbaseMaturity + 1 - nodeA.GetTip().Height;
 
+                // Get coins on nodeA via the premine.
                 await nodeA.MineBlocksAsync((int)toMineCount).ConfigureAwait(false);
 
                 CoreNodePoAExtensions.WaitTillSynced(nodeA, nodeB);
 
+                // Will send funds to one of nodeB's addresses.
                 Script destination = nodeB.FullNode.WalletManager().GetUnusedAddress().ScriptPubKey;
 
                 var context = new TransactionBuildContext(network)
@@ -339,7 +341,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
                     MinConfirmations = 0,
                     FeeType = FeeType.High,
                     WalletPassword = walletPassword,
-                    Recipients = new[] { new Recipient { Amount = Money.Coins(1), ScriptPubKey = destination } }.ToList()
+                    Recipients = new[] { new Recipient { Amount = transferAmount, ScriptPubKey = destination } }.ToList()
                 };
 
                 Transaction trx = nodeA.FullNode.WalletTransactionHandler().BuildTransaction(context);
@@ -354,6 +356,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
 
                 IWalletManager walletManager = nodeB.FullNode.NodeService<IWalletManager>();
                 long balance = walletManager.GetBalances(walletName, walletAccount).Sum(x => x.AmountConfirmed);
+                
                 Assert.True(balance == transferAmount + feeAmount);
             }
         }
