@@ -60,7 +60,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
         private bool isInitialized;
 
-        public CollateralChecker(ILoggerFactory loggerFactory, 
+        public CollateralChecker(ILoggerFactory loggerFactory,
             IHttpClientFactory httpClientFactory,
             ICounterChainSettings settings,
             IFederationManager federationManager,
