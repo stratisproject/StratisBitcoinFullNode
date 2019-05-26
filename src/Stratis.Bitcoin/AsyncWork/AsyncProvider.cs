@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.AsyncWork
                 this.registeredTasks.Add(taskToRegister, new AsyncTaskInfo(name, AsyncTaskInfo.AsyncTaskType.RegisteredTask));
             }
 
-            // task will continue with onAsyncDelegateUnhandledException if @delegate had unhandled exceptions
+            // task will continue with OnRegisteredTaskUnhandledException if @delegate had unhandled exceptions
             taskToRegister.ContinueWith(
                 this.OnRegisteredTaskUnhandledException,
                 CancellationToken.None,
