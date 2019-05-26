@@ -234,7 +234,7 @@ namespace Stratis.Bitcoin.AsyncWork
         }
 
         /// <inheritdoc />
-        public bool IsRegisteredTask(string name)
+        public bool IsRegisteredTaskRunning(string name)
         {
             lock (this.lockRegisteredTasks)
             {

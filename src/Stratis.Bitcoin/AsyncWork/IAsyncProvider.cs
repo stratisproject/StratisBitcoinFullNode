@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.AsyncWork
         /// <remarks>
         /// Names are not guaranteed to be unique, consider adding prefixes to names when <see cref="IAsyncLoop" /> are transient and does not act like singletons. This method is mostly used for tests.
         /// </remarks>
-        bool IsRegisteredTask(string name);
+        bool IsRegisteredTaskRunning(string name);
 
         /// <summary>
         /// returns statistics about running or faulted async loops.
