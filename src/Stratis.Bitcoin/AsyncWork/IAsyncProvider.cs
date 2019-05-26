@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.AsyncWork
         ///   <c>true</c> if the specified <see cref="IAsyncDelegate" /> is currently running, otherwise, <c>false</c>.
         /// </returns>
         /// <remarks>
-        /// Names are not granted to be unique, consider adding prefixes to names when loops are transient and does not act like singletons.
+        /// Names are not guaranteed to be unique, consider adding prefixes to names when loops are transient and does not act like singletons.
         /// This method is mostly used for tests.
         /// state can be either of type <see cref="IAsyncDelegateDequeuer{T}" /> or <see cref="IAsyncLoop" />
         /// </remarks>
@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.AsyncWork
         ///   <c>true</c> if a <see cref="Task" /> with the specified name is currently running, otherwise, <c>false</c>.
         /// </returns>
         /// <remarks>
-        /// Names are not granted to be unique, consider adding prefixes to names when <see cref="IAsyncLoop" /> are transient and does not act like singletons. This method is mostly used for tests.
+        /// Names are not guaranteed to be unique, consider adding prefixes to names when <see cref="IAsyncLoop" /> are transient and does not act like singletons. This method is mostly used for tests.
         /// </remarks>
         bool IsRegisteredTask(string name);
 
