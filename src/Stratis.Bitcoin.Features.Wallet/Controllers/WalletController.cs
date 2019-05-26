@@ -1390,8 +1390,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         {
             TransactionItemModel existingTransaction = items.FirstOrDefault(i => i.Id == transaction.Id &&
                                                                                  i.Type == TransactionItemType.Received &&
-                                                                                 i.ConfirmedInBlock == transaction.BlockHeight &&
-                                                                                 i.Amount == transaction.Amount);
+                                                                                 i.ConfirmedInBlock == transaction.BlockHeight);
             return existingTransaction;
         }
     }
