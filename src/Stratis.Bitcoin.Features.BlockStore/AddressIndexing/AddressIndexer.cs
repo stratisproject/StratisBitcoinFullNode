@@ -14,6 +14,7 @@ using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 using FileMode = LiteDB.FileMode;
 using Script = NBitcoin.Script;
@@ -29,11 +30,18 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         /// <summary>Returns balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
         /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed or doesn't exists.</returns>
+        /// <exception cref="IndexerNotInitializedException">Thrown if component wasn't initialized.</exception>
+        /// <exception cref="OutOfSyncException">Thrown if indexer isn't synced.</exception>
         Money GetAddressBalance(string address, int minConfirmations = 0);
 
         /// <summary>Returns the total amount received by the given address in transactions with at least <paramref name="minConfirmations"/> confirmations.</summary>
         /// <returns>Total amount received by a given address or <c>null</c> if address wasn't indexed.</returns>
+        /// <exception cref="IndexerNotInitializedException">Thrown if component wasn't initialized.</exception>
+        /// <exception cref="OutOfSyncException">Thrown if indexer isn't synced.</exception>
         Money GetReceivedByAddress(string address, int minConfirmations = 0);
+
+        /// <summary>Returns <c>true</c> if indexer's tip is close to consensus tip; <c>false</c> otherwise.</summary>
+        bool IsSynced();
     }
 
     public class AddressIndexer : IAddressIndexer
@@ -70,6 +78,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private const int CompactingThreshold = 50;
 
+        /// <summary>Max distance between consensus and indexer tip to consider indexer synced.</summary>
+        private const int ConsiderSyncedMaxDistance = 10;
+
         private LiteDatabase db;
 
         private LiteCollection<AddressIndexerTipData> tipDataStore;
@@ -91,11 +102,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly ILoggerFactory loggerFactory;
 
+        private readonly AverageCalculator averageTimePerBlock;
+
         private Task indexingTask;
 
         private DateTime lastFlushTime;
 
-        private readonly AverageCalculator averageTimePerBlock;
+        private Task<ChainedHeaderBlock> prefetchingTask;
 
         public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network, INodeStats nodeStats, IConsensusManager consensusManager, IAsyncProvider asyncProvider)
         {
@@ -144,7 +157,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 {
                     this.logger.LogDebug("Tip was not found, initializing with genesis.");
 
-                    this.tipData = new AddressIndexerTipData() { TipHashBytes = this.network.GenesisHash.ToBytes() };
+                    this.tipData = new AddressIndexerTipData() { TipHashBytes = this.network.GenesisHash.ToBytes(), Height = 0 };
                     this.tipDataStore.Insert(this.tipData);
                 }
 
@@ -232,13 +245,21 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     lock (this.lockObject)
                     {
                         this.tipData.TipHashBytes = this.IndexerTip.HashBlock.ToBytes();
+                        this.tipData.Height = this.IndexerTip.Height;
                     }
 
                     continue;
                 }
 
-                // Get next header block and process it.
-                Block blockToProcess = this.consensusManager.GetBlockData(nextHeader.HashBlock).Block;
+                // First try to see if it's prefetched.
+                ChainedHeaderBlock prefetchedBlock = this.prefetchingTask == null ? null : await this.prefetchingTask.ConfigureAwait(false);
+
+                Block blockToProcess;
+
+                if (prefetchedBlock != null && prefetchedBlock.ChainedHeader == nextHeader)
+                    blockToProcess = prefetchedBlock.Block;
+                else
+                    blockToProcess = this.consensusManager.GetBlockData(nextHeader.HashBlock).Block;
 
                 if (blockToProcess == null)
                 {
@@ -254,6 +275,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     continue;
                 }
+
+                // Schedule prefetching of the next block;
+                ChainedHeader headerToPrefetch = this.consensusManager.Tip.GetAncestor(nextHeader.Height + 1);
+
+                if (headerToPrefetch != null)
+                    this.prefetchingTask = Task.Run(() => this.consensusManager.GetBlockData(headerToPrefetch.HashBlock));
 
                 watch.Restart();
 
@@ -282,6 +309,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 lock (this.lockObject)
                 {
                     this.tipData.TipHashBytes = this.IndexerTip.HashBlock.ToBytes();
+                    this.tipData.Height = this.IndexerTip.Height;
                 }
             }
 
@@ -456,10 +484,28 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
 
         /// <inheritdoc />
+        public bool IsSynced()
+        {
+            lock (this.lockObject)
+            {
+                return this.consensusManager.Tip.Height - this.tipData.Height <= ConsiderSyncedMaxDistance;
+            }
+        }
+
+        /// <inheritdoc />
         public Money GetAddressBalance(string address, int minConfirmations = 1)
         {
             if (this.addressIndexRepository == null)
+            {
+                this.logger.LogTrace("(-)[NOT_INITIALIZED]");
                 throw new IndexerNotInitializedException();
+            }
+
+            if (!this.IsSynced())
+            {
+                this.logger.LogTrace("(-)[NOT_SYNCED]");
+                throw new OutOfSyncException();
+            }
 
             lock (this.lockObject)
             {
@@ -490,7 +536,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         public Money GetReceivedByAddress(string address, int minConfirmations = 1)
         {
             if (this.addressIndexRepository == null)
+            {
+                this.logger.LogTrace("(-)[NOT_INITIALIZED]");
                 throw new IndexerNotInitializedException();
+            }
+
+            if (!this.IsSynced())
+            {
+                this.logger.LogTrace("(-)[NOT_SYNCED]");
+                throw new OutOfSyncException();
+            }
 
             lock (this.lockObject)
             {
@@ -522,8 +577,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
     public class IndexerNotInitializedException : Exception
     {
-        public IndexerNotInitializedException() : base("Component wasn't initialized and is not ready to use.")
-        {
-        }
+        public IndexerNotInitializedException() : base("Component wasn't initialized and is not ready to use.") { }
+    }
+
+    public class OutOfSyncException : Exception
+    {
+        public OutOfSyncException() : base("Component is not ready to use. Wait till it's synced.") { }
     }
 }
