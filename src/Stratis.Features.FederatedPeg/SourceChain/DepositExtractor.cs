@@ -27,25 +27,22 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
         private readonly ILogger logger;
 
-        private readonly IFederationGatewaySettings settings;
-
         private readonly Script depositScript;
 
         public uint MinimumDepositConfirmations { get; private set; }
 
         public DepositExtractor(
             ILoggerFactory loggerFactory,
-            IFederationGatewaySettings federationGatewaySettings,
+            IFederatedPegSettings federatedPegSettings,
             IOpReturnDataReader opReturnDataReader)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             // Note: MultiSigRedeemScript.PaymentScript equals MultiSigAddress.ScriptPubKey
             this.depositScript =
-                federationGatewaySettings?.MultiSigRedeemScript?.PaymentScript ??
-                federationGatewaySettings?.MultiSigAddress?.ScriptPubKey;
+                federatedPegSettings.MultiSigRedeemScript?.PaymentScript ??
+                federatedPegSettings.MultiSigAddress?.ScriptPubKey;
             this.opReturnDataReader = opReturnDataReader;
-            this.settings = federationGatewaySettings;
-            this.MinimumDepositConfirmations = federationGatewaySettings.MinimumDepositConfirmations;
+            this.MinimumDepositConfirmations = federatedPegSettings.MinimumDepositConfirmations;
         }
 
         /// <inheritdoc />
@@ -79,13 +76,13 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                 return null;
 
             // Deposits have a certain structure.
-            if (transaction.Outputs.Count != ExpectedNumberOfOutputsNoChange 
+            if (transaction.Outputs.Count != ExpectedNumberOfOutputsNoChange
                 && transaction.Outputs.Count != ExpectedNumberOfOutputsChange)
                 return null;
 
             List<TxOut> depositsToMultisig = transaction.Outputs.Where(output =>
                 output.ScriptPubKey == this.depositScript
-                && output.Value > this.settings.TransactionFee).ToList();
+                && output.Value >= FederatedPegSettings.CrossChainTransferMinimum).ToList();
 
             if (!depositsToMultisig.Any())
                 return null;

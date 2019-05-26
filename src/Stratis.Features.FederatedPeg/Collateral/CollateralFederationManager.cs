@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Features.FederatedPeg
+namespace Stratis.Features.FederatedPeg.Collateral
 {
     public class CollateralFederationManager : FederationManagerBase
     {

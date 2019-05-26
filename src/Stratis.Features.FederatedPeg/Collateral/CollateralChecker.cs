@@ -12,8 +12,9 @@ using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Events;
 using Stratis.Bitcoin.Signals;
+using Stratis.Features.FederatedPeg.Interfaces;
 
-namespace Stratis.Features.FederatedPeg
+namespace Stratis.Features.FederatedPeg.Collateral
 {
     /// <summary>Class that checks if federation members fulfill the collateral requirement.</summary>
     public interface ICollateralChecker : IDisposable
@@ -57,8 +58,13 @@ namespace Stratis.Features.FederatedPeg
 
         private Task updateCollateralContinuouslyTask;
 
-        public CollateralChecker(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, FederationGatewaySettings settings,
-            IFederationManager federationManager, ISignals signals)
+        private bool isInitialized;
+
+        public CollateralChecker(ILoggerFactory loggerFactory,
+            IHttpClientFactory httpClientFactory,
+            ICounterChainSettings settings,
+            IFederationManager federationManager,
+            ISignals signals)
         {
             this.federationManager = federationManager;
             this.signals = signals;
@@ -68,6 +74,7 @@ namespace Stratis.Features.FederatedPeg
             this.depositsByAddress = new Dictionary<string, Money>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.blockStoreClient = new BlockStoreClient(loggerFactory, httpClientFactory, $"http://{settings.CounterChainApiHost}", settings.CounterChainApiPort);
+            this.isInitialized = false;
         }
 
         public async Task InitializeAsync()
@@ -109,6 +116,7 @@ namespace Stratis.Features.FederatedPeg
             }
 
             this.updateCollateralContinuouslyTask = this.UpdateCollateralInfoContinuouslyAsync();
+            this.isInitialized = true;
         }
 
         /// <summary>Continuously updates info about money deposited to fed member's addresses.</summary>
@@ -154,6 +162,7 @@ namespace Stratis.Features.FederatedPeg
 
             if (collateral == null)
             {
+                this.logger.LogWarning("Failed to fetch address balances from counter chain node!");
                 this.logger.LogTrace("(-)[FAILED]:false");
                 return false;
             }
@@ -182,6 +191,12 @@ namespace Stratis.Features.FederatedPeg
 
         public bool CheckCollateral(IFederationMember federationMember)
         {
+            if (!this.isInitialized)
+            {
+                this.logger.LogTrace("(-)[NOT_INITIALIZED]");
+                throw new Exception("Component is not initialized!");
+            }
+
             var member = federationMember as CollateralFederationMember;
 
             if (member == null)

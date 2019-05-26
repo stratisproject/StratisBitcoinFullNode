@@ -7,6 +7,8 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.Collateral;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests
@@ -38,7 +40,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.ruleContext = new RuleContext(new ValidationContext(), DateTimeOffset.Now);
             this.ruleContext.ValidationContext.BlockToValidate = new Block(new BlockHeader() { Time = 5234 });
 
-            this.rule = new CheckCollateralFullValidationRule(this.ibdMock.Object, this.collateralCheckerMock.Object, this.slotsManagerMock.Object);
+            this.rule = new CheckCollateralFullValidationRule(this.ibdMock.Object, this.collateralCheckerMock.Object, this.slotsManagerMock.Object, new Mock<IDateTimeProvider>().Object);
             this.rule.Logger = new ExtendedLoggerFactory().CreateLogger(this.rule.GetType().FullName);
             this.rule.Initialize();
         }

@@ -14,6 +14,8 @@ using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.Collateral;
+using Stratis.Features.FederatedPeg.CounterChain;
 
 namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 {
@@ -44,19 +46,21 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             var builder = new FullNodeBuilder()
                 .UseNodeSettings(settings)
                 .UseBlockStore()
+                .SetCounterChainNetwork(this.counterChainNetwork)
+                .UseFederatedPegPoAMining()
+                .AddFederatedPeg()
+                .CheckForPoAMembersCollateral()
+                .UseTransactionNotification()
+                .UseBlockNotification()
+                .UseApi()
+                .UseMempool()
+                .AddRPC()
                 .AddSmartContracts(options =>
                 {
                     options.UseReflectionExecutor();
                     options.UsePoAWhitelistedContracts();
                 })
                 .UseSmartContractWallet()
-                .UseFederatedPegPoAMining()
-                .AddFederationGateway(new FederatedPegOptions(this.counterChainNetwork))
-                .UseMempool()
-                .UseTransactionNotification()
-                .UseBlockNotification()
-                .UseApi()
-                .AddRPC()
                 .MockIBD()
                 .ReplaceTimeProvider(this.timeProvider)
                 .AddFastMiningCapability();

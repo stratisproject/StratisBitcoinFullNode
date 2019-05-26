@@ -2,9 +2,9 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
-using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Xunit;
 
@@ -30,9 +30,9 @@ namespace Stratis.Features.FederatedPeg.Tests
         public async Task BlocksAreRequestedIfThereIsSomethingToRequestAsync()
         {
             this.crossChainTransferStore.NextMatureDepositHeight.Returns(5);
-            this.crossChainTransferStore.RecordLatestMatureDepositsAsync(null).ReturnsForAnyArgs(true);
+            this.crossChainTransferStore.RecordLatestMatureDepositsAsync(null).ReturnsForAnyArgs(new RecordLatestMatureDepositsResult().Succeeded());
 
-            var models = new List<MaturedBlockDepositsModel>() { new MaturedBlockDepositsModel(new MaturedBlockInfoModel(), new List<IDeposit>())};
+            var models = new List<MaturedBlockDepositsModel>() { new MaturedBlockDepositsModel(new MaturedBlockInfoModel(), new List<IDeposit>()) };
             this.federationGatewayClient.GetMaturedBlockDepositsAsync(null).ReturnsForAnyArgs(Task.FromResult(models));
 
             bool delayRequired = await this.syncManager.ExposedSyncBatchOfBlocksAsync();
@@ -40,7 +40,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             Assert.False(delayRequired);
 
             // Now provide empty list.
-            this.federationGatewayClient.GetMaturedBlockDepositsAsync(null).ReturnsForAnyArgs(Task.FromResult(new List<MaturedBlockDepositsModel>() {}));
+            this.federationGatewayClient.GetMaturedBlockDepositsAsync(null).ReturnsForAnyArgs(Task.FromResult(new List<MaturedBlockDepositsModel>() { }));
 
             bool delayRequired2 = await this.syncManager.ExposedSyncBatchOfBlocksAsync();
             // Delay is required because empty list was provided.

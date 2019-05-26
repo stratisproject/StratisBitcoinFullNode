@@ -404,6 +404,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 if (nTxSize > offset)
                     nTxSize -= (int)offset;
             }
+
             return nTxSize;
         }
 
@@ -421,12 +422,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             // create the MemPoolCoinView and load relevant utxoset
             context.View = new MempoolCoinView(this.coinView, this.memPool, this.mempoolLock, this);
-            await context.View.LoadViewAsync(context.Transaction).ConfigureAwait(false);
 
             // adding to the mem pool can only be done sequentially
             // use the sequential scheduler for that.
             await this.mempoolLock.WriteAsync(() =>
             {
+                context.View.LoadViewLocked(context.Transaction);
+
                 // If the transaction already exists in the mempool,
                 // we only record the state but do not throw an exception.
                 // This is because the caller will check if the state is invalid

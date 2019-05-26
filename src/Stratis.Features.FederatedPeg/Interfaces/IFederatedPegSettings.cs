@@ -7,7 +7,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
     /// <summary>
     /// Configuration settings used to initialize a FederationGateway.
     /// </summary>
-    public interface IFederationGatewaySettings
+    public interface IFederatedPegSettings
     {
         /// <summary>
         /// Indicates whether this is the main chain. Set if the "-mainchain" switch was used.
@@ -30,16 +30,6 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         string PublicKey { get; }
 
         /// <summary>
-        /// The API host used to communicate with node on the counter chain.
-        /// </summary>
-        string CounterChainApiHost { get; }
-
-        /// <summary>
-        /// The API port used to communicate with node on the counter chain.
-        /// </summary>
-        int CounterChainApiPort { get; }
-
-        /// <summary>
         /// For the M of N multisig, this is the number of signers required to reach a quorum.
         /// </summary>
         int MultiSigM { get; }
@@ -52,7 +42,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// <summary>
         /// The transaction fee required for withdrawals.
         /// </summary>
-        Money TransactionFee { get; }
+        Money GetWithdrawalTransactionFee(int numInputs);
 
         /// <summary>
         /// The block number on the other chain to start retrieving deposits from.
