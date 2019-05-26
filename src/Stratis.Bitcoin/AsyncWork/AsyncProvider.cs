@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.AsyncWork
         {
             lock (this.lockRegisteredTasks)
             {
-                // task in the dictionaries are either running or faulted so we just look for a dequeuer with the given name and status not faulted.
+                // task in the dictionaries are either running or faulted so we just look for a registered task with the given name and status not faulted.
                 return this.registeredTasks.Values.Any(@delegate => @delegate.FriendlyName == name && @delegate.Status != TaskStatus.Faulted && @delegate.Type == AsyncTaskInfo.AsyncTaskType.RegisteredTask);
             }
         }
