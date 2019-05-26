@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.AsyncWork
                 TaskScheduler.Default
                 );
 
-            // task will continue with onAsyncDelegateCompleted if @delegate completed or was canceled
+            // task will continue with OnRegisteredTaskCompleted if @delegate completed or was canceled
             taskToRegister.ContinueWith(
                 this.OnRegisteredTaskCompleted,
                 CancellationToken.None,
