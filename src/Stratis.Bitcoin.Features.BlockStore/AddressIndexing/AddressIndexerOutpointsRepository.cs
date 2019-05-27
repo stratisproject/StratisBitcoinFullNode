@@ -13,8 +13,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
     {
         private const string DbOutputsDataKey = "OutputsData";
 
+        private const string DbOutputsRewindDataKey = "OutputsRewindData";
+
         /// <remarks>Should be protected by <see cref="LockObject"/></remarks>
         private readonly LiteCollection<OutPointData> addressIndexerOutPointData;
+
+        /// <remarks>Should be protected by <see cref="LockObject"/></remarks>
+        private readonly LiteCollection<AddressIndexerRewindData> addressIndexerRewindData;
 
         private readonly ILogger logger;
 
@@ -24,7 +29,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.addressIndexerOutPointData = db.GetCollection<OutPointData>(DbOutputsDataKey);
-
+            this.addressIndexerRewindData = db.GetCollection<AddressIndexerRewindData>(DbOutputsRewindDataKey);
+            this.addressIndexerRewindData.EnsureIndex("BlockHeightIndex", "$.BlockHeight", true);
             this.maxCacheItems = maxItems;
         }
 
@@ -93,6 +99,41 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 foreach (CacheItem dirtyItem in dirtyItems)
                     dirtyItem.Dirty = false;
             }
+        }
+
+        /// <summary>Persists rewind data into the repository.</summary>
+        /// <param name="rewindData">The data to be persisted.</param>
+        public void RecordRewindData(AddressIndexerRewindData rewindData)
+        {
+            lock (this.LockObject)
+            {
+                this.addressIndexerRewindData.Insert(rewindData);
+            }
+        }
+
+        /// <summary>Deletes rewind data that is more than maxReorg blocks old.</summary>
+        /// <param name="height">The threshold below which data will be deleted.</param>
+        public void PurgeOldRewindData(int height)
+        {
+            lock (this.LockObject)
+            {
+                // Generally there will only be one result here at most, as this should be getting called once per block.
+                foreach (AddressIndexerRewindData rewindData in this.addressIndexerRewindData.Find(Query.LT("BlockHeightIndex", height)))
+                {
+                    this.addressIndexerRewindData.Delete(rewindData.BlockHash);
+                }
+            }
+        }
+
+        public void Rewind(uint256 blockHash)
+        {
+            AddressIndexerRewindData rewindData = this.addressIndexerRewindData.FindById(blockHash.ToString());
+
+            // Put the spent outputs back into the cache.
+            foreach (OutPointData outPointData in rewindData.SpentOutputs)
+                this.AddOutPointData(outPointData);
+
+            this.addressIndexerRewindData.Delete(rewindData.BlockHash);
         }
 
         /// <inheritdoc />

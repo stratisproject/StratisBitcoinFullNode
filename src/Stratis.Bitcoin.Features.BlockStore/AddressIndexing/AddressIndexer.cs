@@ -70,6 +70,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private const string AddressIndexerDatabaseFilename = "addressindex.litedb";
 
+        private const int FallBackMaxReorg = 200;
+
         /// <summary>
         /// Time to wait before attempting to index the next block.
         /// Waiting happens after a failure to get next block to index.
@@ -102,8 +104,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly ILoggerFactory loggerFactory;
 
-        private readonly IBlockStore blockStore;
-
         private readonly AverageCalculator averageTimePerBlock;
 
         private Task indexingTask;
@@ -112,7 +112,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private Task<ChainedHeaderBlock> prefetchingTask;
 
-        public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network, INodeStats nodeStats, IConsensusManager consensusManager, IBlockStore blockStore, IAsyncProvider asyncProvider)
+        private readonly int maxReorg;
+
+        public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network, INodeStats nodeStats, IConsensusManager consensusManager, IAsyncProvider asyncProvider)
         {
             this.storeSettings = storeSettings;
             this.network = network;
@@ -121,7 +123,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.consensusManager = consensusManager;
             this.asyncProvider = asyncProvider;
             this.loggerFactory = loggerFactory;
-            this.blockStore = blockStore;
             this.scriptAddressReader = new ScriptAddressReader();
 
             this.lockObject = new object();
@@ -131,6 +132,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.averageTimePerBlock = new AverageCalculator(200);
+            this.maxReorg = this.network.Consensus.MaxReorgLength == 0 ? (int)this.network.Consensus.MaxReorgLength : FallBackMaxReorg;
         }
 
         public void Initialize()
@@ -244,16 +246,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         }
 
                         // Also need to rewind the outpoint repository.
+                        this.outpointsRepository.Rewind(this.IndexerTip.HashBlock);
+
+                        // Rewind all the way back to the fork point.
                         while (this.IndexerTip.HashBlock != lastCommonHeader.HashBlock)
                         {
-                            this.RewindOutPointRepository(this.IndexerTip.Previous.HashBlock);
-
+                            this.outpointsRepository.Rewind(this.IndexerTip.Previous.HashBlock);
                             this.IndexerTip = this.IndexerTip.Previous;
                         }
-                    }
 
-                    lock (this.lockObject)
-                    {
                         this.tipData.TipHashBytes = this.IndexerTip.HashBlock.ToBytes();
                         this.tipData.Height = this.IndexerTip.Height;
                     }
@@ -331,81 +332,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             }
         }
 
-        private void RewindOutPointRepository(uint256 hashToReorg)
-        {
-            Block blockToReorg = this.consensusManager.GetBlockData(hashToReorg).Block;
-
-            // For efficiency, only do one lookup to the block store. So we accumulate all needed transactions first.
-            var previousTransactionsToRetrieve = new HashSet<uint256>();
-
-            foreach (Transaction tx in blockToReorg.Transactions)
-            {
-                // A coinbase by definition has no previous transaction(s) that it spends from.
-                if (tx.IsCoinBase)
-                    continue;
-
-                foreach (TxIn input in tx.Inputs)
-                {
-                    previousTransactionsToRetrieve.Add(input.PrevOut.Hash);
-                }
-            }
-
-            // This is highly unlikely in practice outside of a unit test.
-            if (previousTransactionsToRetrieve.Count == 0)
-            {
-                return;
-            }
-
-            Transaction[] previousTransactionArray = this.blockStore.GetTransactionsByIds(previousTransactionsToRetrieve.ToArray());
-
-            if (previousTransactionArray == null)
-            {
-                this.logger.LogError("Missing previous transaction data for block {0}.", blockToReorg.GetHash());
-                this.logger.LogTrace("(-)[MISSING_TRANSACTION_DATA]");
-                throw new Exception($"Unable to retrieve previous transaction data for block {blockToReorg.GetHash()}.");
-            }
-
-            var previousTransactions = new Dictionary<uint256, Transaction>();
-
-            foreach (Transaction tx in previousTransactionArray)
-            {
-                previousTransactions.TryAdd(tx.GetHash(), tx);
-            }
-
-            // Now unwind the effect of each transaction on the outpoint repository.
-            foreach (Transaction tx in blockToReorg.Transactions)
-            {
-                // A coinbase by definition has no previous transaction(s) that it spends from.
-                if (tx.IsCoinBase)
-                    continue;
-
-                foreach (TxIn input in tx.Inputs)
-                {
-                    OutPoint previouslyConsumedOutput = input.PrevOut;
-
-                    // Look up previous transaction to determine amount.
-                    previousTransactions.TryGetValue(previouslyConsumedOutput.Hash, out Transaction previousTransaction);
-
-                    if (previousTransaction == null)
-                    {
-                        this.logger.LogError("Missing transaction data for {0}.", previouslyConsumedOutput.Hash);
-                        this.logger.LogTrace("(-)[PREVIOUS_TRANSACTION_MISSING]");
-                        throw new Exception($"Unable to retrieve transaction data for {previouslyConsumedOutput.Hash}.");
-                    }
-
-                    var reconstructedOutPointData = new OutPointData()
-                    {
-                        Outpoint = previouslyConsumedOutput.ToString(),
-                        ScriptPubKeyBytes = previousTransaction.Outputs[previouslyConsumedOutput.N].ScriptPubKey.ToBytes(),
-                        Money = previousTransaction.Outputs[previouslyConsumedOutput.N].Value
-                    };
-
-                    // Place outpoint that is now unspent back in the repository.
-                    this.outpointsRepository.AddOutPointData(reconstructedOutPointData);
-                }
-            }
-        }
-
         private void AddInlineStats(StringBuilder benchLog)
         {
             benchLog.AppendLine("AddressIndexer: Height: " + this.IndexerTip.Height.ToString().PadRight(8) +
@@ -437,6 +363,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                             Money = tx.Outputs[i].Value
                         };
 
+                        // TODO: When the outpoint cache is full, adding outpoints singly causes overhead writing evicted entries out to the repository
                         this.outpointsRepository.AddOutPointData(outPointData);
                     }
                 }
@@ -451,6 +378,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             lock (this.lockObject)
             {
+                var rewindData = new AddressIndexerRewindData() { BlockHash = header.HashBlock.ToString(), BlockHeight = header.Height, SpentOutputs = new List<OutPointData>() };
+
                 foreach (TxIn input in inputs)
                 {
                     OutPoint consumedOutput = input.PrevOut;
@@ -464,6 +393,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     Money amountSpent = consumedOutputData.Money;
 
+                    rewindData.SpentOutputs.Add(consumedOutputData);
                     this.outpointsRepository.RemoveOutPointData(consumedOutput);
 
                     // Transactions that don't actually change the balance just bloat the database.
@@ -504,6 +434,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         this.ProcessBalanceChangeLocked(header.Height, address, amountReceived, true);
                     }
                 }
+
+                this.outpointsRepository.RecordRewindData(rewindData);
+                this.outpointsRepository.PurgeOldRewindData(this.consensusManager.Tip.Height - this.maxReorg);
             }
 
             return true;
@@ -524,10 +457,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             });
 
             // Anything less than that should be compacted.
-            int heightThreshold = this.consensusManager.Tip.Height - (int)this.network.Consensus.MaxReorgLength;
+            int heightThreshold = this.consensusManager.Tip.Height - this.maxReorg;
 
-            bool compact = (this.network.Consensus.MaxReorgLength != 0) &&
-                           (indexData.BalanceChanges.Count > CompactingThreshold) &&
+            bool compact = (indexData.BalanceChanges.Count > CompactingThreshold) &&
                            (indexData.BalanceChanges[1].BalanceChangedHeight < heightThreshold);
 
             if (!compact)
