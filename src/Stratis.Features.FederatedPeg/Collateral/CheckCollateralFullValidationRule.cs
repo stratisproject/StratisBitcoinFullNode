@@ -41,10 +41,16 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
             IFederationMember federationMember = this.slotsManager.GetFederationMemberForTimestamp(context.ValidationContext.BlockToValidate.Header.Time);
 
-            if (!this.collateralChecker.CheckCollateral(federationMember))
+            CheckCollateralResult result = this.collateralChecker.CheckCollateral(federationMember);
+
+            if (!result.IsInitialized)
+            {
+                PoAConsensusErrors.CollateralCheckerNotReady.Throw();
+            }
+
+            if (!result.Succeeded)
             {
                 context.ValidationContext.RejectUntil = this.dateTime.GetUtcNow() + TimeSpan.FromMinutes(CollateralCheckBanDurationMinutes);
-
                 this.Logger.LogTrace("(-)[BAD_COLLATERAL]");
                 PoAConsensusErrors.InvalidCollateralAmount.Throw();
             }

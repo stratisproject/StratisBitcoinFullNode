@@ -92,9 +92,9 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             await this.collateralChecker.InitializeAsync();
 
-            Assert.True(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[0]));
-            Assert.True(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[1]));
-            Assert.False(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[2]));
+            Assert.True(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[0]).Succeeded);
+            Assert.True(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[1]).Succeeded);
+            Assert.False(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[2]).Succeeded);
 
             // Now change what the client returns and make sure collateral check fails after update.
             AddressBalanceModel updated = collateralData.Balances.First(b => b.Address == this.collateralFederationMembers[0].CollateralMainchainAddress);
@@ -103,7 +103,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             // Wait CollateralUpdateIntervalSeconds + 1 seconds
 
             await Task.Delay(21_000);
-            Assert.False(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[0]));
+            Assert.False(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[0]).Succeeded);
 
             this.collateralChecker.Dispose();
         }

@@ -22,7 +22,12 @@ namespace Stratis.Features.FederatedPeg.Collateral
         Task InitializeAsync();
 
         /// <summary>Checks if given federation member fulfills the collateral requirement.</summary>
-        bool CheckCollateral(IFederationMember federationMember);
+        /// <param name="federationMember">The federation member to check.</param>
+        /// <returns>
+        /// A result class indicating whether or not the collateral check was able to be done due to the it's initialization status
+        /// and if the check succeeded (i.e. the federation member has enough collateral).
+        /// </returns>
+        CheckCollateralResult CheckCollateral(IFederationMember federationMember);
     }
 
     public class CollateralChecker : ICollateralChecker
@@ -189,12 +194,13 @@ namespace Stratis.Features.FederatedPeg.Collateral
             return true;
         }
 
-        public bool CheckCollateral(IFederationMember federationMember)
+        /// <inheritdoc />
+        public CheckCollateralResult CheckCollateral(IFederationMember federationMember)
         {
             if (!this.isInitialized)
             {
                 this.logger.LogTrace("(-)[NOT_INITIALIZED]");
-                throw new Exception("Component is not initialized!");
+                return CheckCollateralResult.NotInitialized();
             }
 
             var member = federationMember as CollateralFederationMember;
@@ -208,12 +214,13 @@ namespace Stratis.Features.FederatedPeg.Collateral
             if ((member.CollateralAmount == null) || (member.CollateralAmount == 0))
             {
                 this.logger.LogTrace("(-)[NO_COLLATERAL_REQUIREMENT]:true");
-                return true;
+                return CheckCollateralResult.Passed();
             }
 
             lock (this.locker)
             {
-                return (this.depositsByAddress[member.CollateralMainchainAddress] ?? 0) >= member.CollateralAmount;
+                Money depositAmount = this.depositsByAddress[member.CollateralMainchainAddress] ?? 0;
+                return depositAmount >= member.CollateralAmount ? CheckCollateralResult.Passed() : CheckCollateralResult.Failed();
             }
         }
 
