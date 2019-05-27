@@ -99,6 +99,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly ILoggerFactory loggerFactory;
 
+        private readonly IBlockStore blockStore;
+
         private readonly AverageCalculator averageTimePerBlock;
 
         private Task indexingTask;
@@ -107,7 +109,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private Task<ChainedHeaderBlock> prefetchingTask;
 
-        public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network, INodeStats nodeStats, IConsensusManager consensusManager)
+        public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network, INodeStats nodeStats, IConsensusManager consensusManager, IBlockStore blockStore)
         {
             this.storeSettings = storeSettings;
             this.network = network;
@@ -115,6 +117,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.dataFolder = dataFolder;
             this.consensusManager = consensusManager;
             this.loggerFactory = loggerFactory;
+            this.blockStore = blockStore;
             this.scriptAddressReader = new ScriptAddressReader();
 
             this.lockObject = new object();
@@ -221,7 +224,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         this.logger.LogDebug("Reorganization detected. Rewinding till '{0}'.", lastCommonHeader);
 
                         lock (this.lockObject)
-                        {
+                        { 
                             // The cache doesn't really lend itself to handling a reorg very well.
                             // Therefore, we leverage LiteDb's indexing capabilities to tell us
                             // which records are for the affected blocks.
@@ -234,10 +237,71 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                                 AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
                                 indexData.BalanceChanges.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
                             }
+
+                            // Also need to rewind the outpoint repository.
+                            while (this.IndexerTip.HashBlock != lastCommonHeader.HashBlock)
+                            {
+                                Block blockToReorg = this.consensusManager.GetBlockData(this.IndexerTip.Previous.HashBlock).Block;
+
+                                // For efficiency, only do one lookup to the block store. So we accumulate all needed transactions first.
+                                var previousTransactionsToRetrieve = new HashSet<uint256>();
+
+                                foreach (Transaction tx in blockToReorg.Transactions)
+                                {
+                                    if (tx.IsCoinBase)
+                                        continue;
+
+                                    foreach (TxIn input in tx.Inputs)
+                                    {
+                                        previousTransactionsToRetrieve.Add(input.PrevOut.Hash);
+                                    }
+                                }
+
+                                // This is highly unlikely in practice outside of a unit test.
+                                if (previousTransactionsToRetrieve.Count == 0)
+                                {
+                                    this.IndexerTip = this.IndexerTip.Previous;
+                                    continue;
+                                }
+
+                                Transaction[] previousTransactionArray = this.blockStore.GetTransactionsByIds(previousTransactionsToRetrieve.ToArray());
+
+                                if (previousTransactionArray == null)
+                                    throw new Exception("Unable to retrieve transaction data");
+
+                                var previousTransactions = new Dictionary<uint256, Transaction>();
+
+                                foreach (Transaction tx in previousTransactionArray)
+                                {
+                                    previousTransactions.TryAdd(tx.GetHash(), tx);
+                                }
+
+                                // Now unwind the effect of each transaction on the outpoint repository.
+                                foreach (Transaction tx in blockToReorg.Transactions)
+                                {
+                                    foreach (TxIn input in tx.Inputs)
+                                    {
+                                        OutPoint previouslyConsumedOutput = input.PrevOut;
+
+                                        // Look up previous transaction to determine amount.
+                                        previousTransactions.TryGetValue(previouslyConsumedOutput.Hash, out Transaction previousTransaction);
+
+                                        var reconstructedOutPointData = new OutPointData()
+                                        {
+                                            Outpoint = previouslyConsumedOutput.ToString(),
+                                            ScriptPubKeyBytes = previousTransaction.Outputs[previouslyConsumedOutput.N].ScriptPubKey.ToBytes(),
+                                            Money = previousTransaction.Outputs[previouslyConsumedOutput.N].Value
+                                        };
+
+                                        // Place outpoint that is now unspent back in the repository.
+                                        this.outpointsRepository.AddOutPointData(reconstructedOutPointData);
+                                    }
+                                }
+
+                                this.IndexerTip = this.IndexerTip.Previous;
+                            }
                         }
-
-                        this.IndexerTip = lastCommonHeader;
-
+                        
                         lock (this.lockObject)
                         {
                             this.tipData.TipHashBytes = this.IndexerTip.HashBlock.ToBytes();

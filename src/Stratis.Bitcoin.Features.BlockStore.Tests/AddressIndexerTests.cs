@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using LiteDB;
 using Moq;
 using NBitcoin;
@@ -9,6 +10,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
@@ -23,6 +25,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         private readonly IAddressIndexer addressIndexer;
 
         private readonly Mock<IConsensusManager> consensusManagerMock;
+
+        private readonly Mock<IBlockStore> blockStoreMock;
 
         private readonly Network network;
 
@@ -39,12 +43,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
             var stats = new Mock<INodeStats>();
             this.consensusManagerMock = new Mock<IConsensusManager>();
+            this.blockStoreMock = new Mock<IBlockStore>();
 
             this.addressIndexer = new AddressIndexer(storeSettings, dataFolder, new ExtendedLoggerFactory(),
-                this.network, stats.Object, this.consensusManagerMock.Object);
+                this.network, stats.Object, this.consensusManagerMock.Object, this.blockStoreMock.Object);
 
-            this.genesisHeader = new ChainedHeader(this.network.GetGenesis().Header,
-                this.network.GetGenesis().Header.GetHash(), 0);
+            this.genesisHeader = new ChainedHeader(this.network.GetGenesis().Header, this.network.GetGenesis().Header.GetHash(), 0);
         }
 
         [Fact]
@@ -59,8 +63,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void CanIndexAddresses()
         {
-            List<ChainedHeader> headers =
-                ChainedHeadersHelper.CreateConsecutiveHeaders(100, null, false, null, this.network);
+            List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(100, null, false, null, this.network);
             this.consensusManagerMock.Setup(x => x.Tip).Returns(() => headers.Last());
 
             Script p2pk1 = this.GetRandomP2PKScript(out string address1);
@@ -100,7 +103,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             var tx = new Transaction();
             tx.Inputs.Add(new TxIn(new OutPoint(block5.Transactions.First().GetHash(), 0)));
-            var block10 = new Block() {Transactions = new List<Transaction>() {tx}};
+            var block10 = new Block() { Transactions = new List<Transaction>() { tx } };
 
             this.consensusManagerMock.Setup(x => x.GetBlockData(It.IsAny<uint256>())).Returns((uint256 hash) =>
             {
@@ -113,15 +116,20 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
                     case 5:
                         return new ChainedHeaderBlock(block5, header);
-                        ;
 
                     case 10:
                         return new ChainedHeaderBlock(block10, header);
-                        ;
                 }
 
                 return new ChainedHeaderBlock(new Block(), header);
-                ;
+            });
+
+            this.blockStoreMock.Setup(x => x.GetTransactionsByIds(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>())).Returns((uint256[] hashes, CancellationToken token) =>
+            {
+                if (hashes.Length == 1 && hashes[0] == block5.Transactions.First().GetHash())
+                    return new Transaction[] { block5.Transactions.First() };
+
+                return null;
             });
 
             this.addressIndexer.Initialize();
@@ -140,8 +148,23 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             this.consensusManagerMock.Setup(x => x.GetBlockData(It.IsAny<uint256>())).Returns((uint256 hash) =>
             {
-                ChainedHeader header = headersFork.SingleOrDefault(x => x.HashBlock == hash);
-                return new ChainedHeaderBlock(new Block(), header);
+                // Since we wind backwards we actually need to check if the requested header is on the original chain or fork chain.
+                ChainedHeader header = headers.SingleOrDefault(x => x.HashBlock == hash);
+
+                // If it is on the original chain, we need to intercept block 10 as it has the transaction we need to unwind inside it.
+                if (header != null)
+                {
+                    if (hash == block10.GetHash())
+                        return new ChainedHeaderBlock(block10, header);
+
+                    // No special handling of any other blocks in original chain - we only rewind to height 8 so 1 and 5 are irrelevant.
+                    return new ChainedHeaderBlock(new Block(), header);
+                }
+
+                // It wasn't on the original chain, so it should be on the fork chain.
+                ChainedHeader headerFork = headersFork.SingleOrDefault(x => x.HashBlock == hash);
+                
+                return new ChainedHeaderBlock(new Block(), headerFork);
             });
 
             this.consensusManagerMock.Setup(x => x.Tip).Returns(() => headersFork.Last());
