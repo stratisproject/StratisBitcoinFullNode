@@ -1609,7 +1609,7 @@
 }
 
     .swagger-ui .opblock.opblock-get .opblock-summary-method {
-        background: #1188cb;
+        background: #1387c9;
     }
 
     .swagger-ui .opblock.opblock-get .opblock-summary {
@@ -1657,7 +1657,7 @@
 
 .swagger-ui .topbar {
     padding: 17px 30px 15px;
-    background-color: #1188cb;
+    background-color: #1387c9;
 }
 
     .swagger-ui .topbar .download-url-wrapper input[type=text] {
