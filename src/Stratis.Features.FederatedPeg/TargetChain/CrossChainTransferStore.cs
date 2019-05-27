@@ -615,12 +615,16 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                     transfer.SetStatus(CrossChainTransferStatus.FullySigned);
                                     this.signals.Publish(new CrossChainTransferTransactionFullySigned(transfer));
                                 }
+                                else
+                                {
+                                    this.logger.LogInformation("Deposit: {0} did not collect enough signatures and is Partial", transfer.DepositTransactionId);
+                                }
 
                                 this.PutTransfer(dbreezeTransaction, transfer);
                                 dbreezeTransaction.Commit();
 
                                 // Do this last to maintain DB integrity. We are assuming that this won't throw.
-                                this.logger.LogInformation("Deposit: {0} did not collected enough signatures and is Partial", transfer.DepositTransactionId);
+                                // This will remove the transaction from the Partial dictionary, and re-insert it, either as Partial again or FullySigned dependent on what happened above.
                                 this.TransferStatusUpdated(transfer, CrossChainTransferStatus.Partial);
                             }
                             catch (Exception err)
