@@ -230,7 +230,18 @@ namespace Stratis.Bitcoin.Features.Wallet
                         }
 
                         this.walletTip = next;
-                        this.walletManager.ProcessBlock(nextblock, next);
+
+                        try
+                        {
+                            this.walletManager.ProcessBlock(nextblock, next);
+                        }
+                        catch (WalletException e)
+                        {
+                            // Just return since most likely this is due to a reorg. Wallet will recover on the next block.
+                            this.logger.LogDebug("Wallet manager failed to process a block: {0}.", e.ToString());
+                            this.logger.LogTrace("(-)[FAILED]");
+                            return;
+                        }
                     }
                 }
                 else
