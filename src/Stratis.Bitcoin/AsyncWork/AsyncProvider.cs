@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.AsyncWork
         private Dictionary<IAsyncDelegate, AsyncTaskInfo> asyncDelegates;
 
         /// <summary>
-        /// Holds a list of currently registered tasks with their healthy status.
+        /// Holds a list of currently registered tasks with their health status.
         /// Protected by <see cref="lockRegisteredTasks"/> lock
         /// </summary>
         private Dictionary<Task, AsyncTaskInfo> registeredTasks;

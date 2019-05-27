@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.AsyncWork
         IAsyncLoop CreateAndRunAsyncLoopUntil(string name, CancellationToken cancellation, Func<bool> condition, Action action, Action<Exception> onException, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
 
         /// <summary>
-        /// Registers the passed task to be able to monitor it's healthy status.
+        /// Registers the passed task to be able to monitor it's health status.
         /// It doesn't perform any schedule on the task, it's all up to the caller to handle the task life-cycle.
         /// </summary>
         /// <param name="name">The name assigned to the task.</param>
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.AsyncWork
         ///   <c>true</c> if an <see cref="IAsyncLoop" /> with the specified name is currently running, otherwise, <c>false</c>.
         /// </returns>
         /// <remarks>
-        /// Names are not granted to be unique, consider adding prefixes to names when <see cref="IAsyncLoop" /> are transient and does not act like singletons. This method is mostly used for tests.
+        /// Names are not guaranteed to be unique, consider adding prefixes to names when <see cref="IAsyncLoop" /> are transient and does not act like singletons. This method is mostly used for tests.
         /// </remarks>
         bool IsAsyncLoopRunning(string name);
 
