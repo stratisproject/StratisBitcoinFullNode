@@ -6,6 +6,7 @@ using System.Threading;
 using LiteDB;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
@@ -13,6 +14,7 @@ using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -27,6 +29,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         private readonly Mock<IConsensusManager> consensusManagerMock;
 
         private readonly Mock<IBlockStore> blockStoreMock;
+
+        private readonly Mock<IAsyncProvider> asyncProviderMock;
 
         private readonly Network network;
 
@@ -43,10 +47,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
             var stats = new Mock<INodeStats>();
             this.consensusManagerMock = new Mock<IConsensusManager>();
+
             this.blockStoreMock = new Mock<IBlockStore>();
 
-            this.addressIndexer = new AddressIndexer(storeSettings, dataFolder, new ExtendedLoggerFactory(),
-                this.network, stats.Object, this.consensusManagerMock.Object, this.blockStoreMock.Object);
+            this.asyncProviderMock = new Mock<IAsyncProvider>();
+
+            this.addressIndexer = new AddressIndexer(storeSettings, dataFolder, new ExtendedLoggerFactory(), this.network, stats.Object, this.consensusManagerMock.Object, this.blockStoreMock.Object, this.asyncProviderMock.Object);
 
             this.genesisHeader = new ChainedHeader(this.network.GetGenesis().Header, this.network.GetGenesis().Header.GetHash(), 0);
         }
@@ -201,7 +207,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             var outPoint = new OutPoint(uint256.Parse("0000af9ab2c8660481328d0444cf167dfd31f24ca2dbba8e5e963a2434cffa93"), 0);
 
-            var data = new OutPointData() { Outpoint = outPoint.ToString(), ScriptPubKeyBytes = new byte[] {0, 0, 0, 0}, Money = Money.Coins(1) };
+            var data = new OutPointData() { Outpoint = outPoint.ToString(), ScriptPubKeyBytes = new byte[] { 0, 0, 0, 0 }, Money = Money.Coins(1) };
 
             cache.AddOutPointData(data);
 
@@ -293,7 +299,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             balanceChanges.Add(new AddressBalanceChange() { BalanceChangedHeight = 1, Deposited = true, Satoshi = 1 });
 
-            var data = new AddressIndexerData() { Address = address, BalanceChanges = balanceChanges};
+            var data = new AddressIndexerData() { Address = address, BalanceChanges = balanceChanges };
 
             cache.AddOrUpdate(data.Address, data, data.BalanceChanges.Count + 1);
 
