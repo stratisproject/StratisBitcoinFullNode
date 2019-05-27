@@ -24,7 +24,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
         /// <summary>Checks if given federation member fulfills the collateral requirement.</summary>
         /// <param name="federationMember">The federation member to check.</param>
         /// <returns>
-        /// A result class indicating whether or not the collateral check was able to be done due to the it's initialization status
+        /// A result class indicating whether or not the collateral check was able to be done due to it's initialization status
         /// and if the check succeeded (i.e. the federation member has enough collateral).
         /// </returns>
         CheckCollateralResult CheckCollateral(IFederationMember federationMember);
