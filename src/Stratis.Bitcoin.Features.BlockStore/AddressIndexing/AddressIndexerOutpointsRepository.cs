@@ -127,13 +127,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         public void Rewind(uint256 blockHash)
         {
-            AddressIndexerRewindData rewindData = this.addressIndexerRewindData.FindById(blockHash.ToString());
+            lock (this.LockObject)
+            {
+                AddressIndexerRewindData rewindData = this.addressIndexerRewindData.FindById(blockHash.ToString());
 
-            // Put the spent outputs back into the cache.
-            foreach (OutPointData outPointData in rewindData.SpentOutputs)
-                this.AddOutPointData(outPointData);
+                // Put the spent outputs back into the cache.
+                foreach (OutPointData outPointData in rewindData.SpentOutputs)
+                    this.AddOutPointData(outPointData);
 
-            this.addressIndexerRewindData.Delete(rewindData.BlockHash);
+                this.addressIndexerRewindData.Delete(rewindData.BlockHash);
+            }
         }
 
         /// <inheritdoc />
