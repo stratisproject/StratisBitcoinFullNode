@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.PoA
                     builder.AppendLine("<<==============================================================>>");
                     this.logger.LogInformation(builder.ToString());
                 }
-                catch (ConsensusException err) when (err.Message == "collateral checker is not ready")
+                catch (ConsensusException err) when (err.Message == PoAConsensusErrors.CollateralCheckerNotReady.Message)
                 {
                     // Retry.
                 }
