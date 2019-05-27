@@ -341,6 +341,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             foreach (Transaction tx in blockToReorg.Transactions)
             {
+                // A coinbase by definition has no previous transaction(s) that it spends from.
                 if (tx.IsCoinBase)
                     continue;
 
@@ -375,6 +376,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             // Now unwind the effect of each transaction on the outpoint repository.
             foreach (Transaction tx in blockToReorg.Transactions)
             {
+                // A coinbase by definition has no previous transaction(s) that it spends from.
+                if (tx.IsCoinBase)
+                    continue;
+
                 foreach (TxIn input in tx.Inputs)
                 {
                     OutPoint previouslyConsumedOutput = input.PrevOut;
