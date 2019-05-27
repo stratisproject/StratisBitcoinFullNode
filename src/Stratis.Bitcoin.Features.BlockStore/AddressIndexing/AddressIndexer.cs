@@ -131,7 +131,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         public void Initialize()
         {
-            if (!this.storeSettings.AddressIndex)
+            // The transaction index is needed in the event of a reorg.
+            if (!this.storeSettings.AddressIndex || !this.storeSettings.TxIndex)
             {
                 this.logger.LogTrace("(-)[DISABLED]");
                 return;
@@ -267,7 +268,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                                 Transaction[] previousTransactionArray = this.blockStore.GetTransactionsByIds(previousTransactionsToRetrieve.ToArray());
 
                                 if (previousTransactionArray == null)
-                                    throw new Exception("Unable to retrieve transaction data");
+                                {
+                                    this.logger.LogError("Missing previous transaction data for block {0}.", blockToReorg.GetHash());
+                                    this.logger.LogTrace("(-)[MISSING_TRANSACTION_DATA]");
+                                    throw new Exception($"Unable to retrieve previous transaction data for block {blockToReorg.GetHash()}.");
+                                }
 
                                 var previousTransactions = new Dictionary<uint256, Transaction>();
 
@@ -438,7 +443,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     if (!this.outpointsRepository.TryGetOutPointData(consumedOutput, out OutPointData consumedOutputData))
                     {
                         this.logger.LogError("Missing outpoint data for {0}.", consumedOutput);
-                        this.logger.LogTrace("(-)[MISSING OUTPOINTS_DATA]");
+                        this.logger.LogTrace("(-)[MISSING_OUTPOINTS_DATA]");
                         throw new Exception($"Missing outpoint data for {consumedOutput}");
                     }
 
@@ -642,7 +647,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
     public class IndexerNotInitializedException : Exception
     {
-        public IndexerNotInitializedException() : base("Component wasn't initialized and is not ready to use.") { }
+        public IndexerNotInitializedException() : base("Component wasn't initialized and is not ready to use. Make sure both -addressindex and -txindex are enabled.") { }
     }
 
     public class OutOfSyncException : Exception
