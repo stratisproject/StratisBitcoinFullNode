@@ -20,5 +20,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         // Collateral related errors.
         public static ConsensusError InvalidCollateralAmount => new ConsensusError("invalid-collateral-amount", "collateral requirement is not fulfilled");
+
+        public static ConsensusError CollateralCheckerNotReady => new ConsensusError("collateral-checker-not-ready", "collateral checker is not ready");
     }
 }

@@ -194,7 +194,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
             if (!this.isInitialized)
             {
                 this.logger.LogTrace("(-)[NOT_INITIALIZED]");
-                throw new Exception("Component is not initialized!");
+                PoAConsensusErrors.CollateralCheckerNotReady.Throw();
             }
 
             var member = federationMember as CollateralFederationMember;
