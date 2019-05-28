@@ -257,4 +257,3 @@ ModelManifest.xml
 /src/Stratis.FederatedSidechains.AdminDashboard/wwwroot/css/*.min.css
 /src/Stratis.FederatedSidechains.AdminDashboard/wwwroot/js/*.min.js
 /src/Stratis.FederatedSidechains.AdminDashboard/wwwroot/lib
-/src/Stratis.SmartContracts.IntegrationTests/SmartContracts/ValidationResults.csv
