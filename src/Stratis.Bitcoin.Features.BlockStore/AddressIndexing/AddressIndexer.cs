@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         public void Initialize()
         {
             // The transaction index is needed in the event of a reorg.
-            if (!this.storeSettings.AddressIndex || !this.storeSettings.TxIndex)
+            if (!this.storeSettings.AddressIndex)
             {
                 this.logger.LogTrace("(-)[DISABLED]");
                 return;
@@ -594,7 +594,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
     public class IndexerNotInitializedException : Exception
     {
-        public IndexerNotInitializedException() : base("Component wasn't initialized and is not ready to use. Make sure both -addressindex and -txindex are enabled.") { }
+        public IndexerNotInitializedException() : base("Component wasn't initialized and is not ready to use. Make sure -addressindex is enabled.") { }
     }
 
     public class OutOfSyncException : Exception
