@@ -84,6 +84,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 this.TryRemoveWithdrawal(transactionData);
 
+                transactionData.Subscribe(null);
+
                 return res;
             }
         }
