@@ -70,6 +70,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private const string AddressIndexerDatabaseFilename = "addressindex.litedb";
 
+        /// <summary>Max supported reorganization length for networks without max reorg property.</summary>
+        private const int FallBackMaxReorg = 200;
+
         /// <summary>
         /// Time to wait before attempting to index the next block.
         /// Waiting happens after a failure to get next block to index.
@@ -110,7 +113,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private Task<ChainedHeaderBlock> prefetchingTask;
 
-        public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network, INodeStats nodeStats, IConsensusManager consensusManager, IAsyncProvider asyncProvider)
+        /// <summary>Maximum supported reorganization length.</summary>
+        private readonly int maxReorgLength;
+
+        public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network,
+            INodeStats nodeStats, IConsensusManager consensusManager, IAsyncProvider asyncProvider)
         {
             this.storeSettings = storeSettings;
             this.network = network;
@@ -128,10 +135,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.averageTimePerBlock = new AverageCalculator(200);
+            this.maxReorgLength = this.network.Consensus.MaxReorgLength == 0 ? (int)this.network.Consensus.MaxReorgLength : FallBackMaxReorg;
         }
 
         public void Initialize()
         {
+            // The transaction index is needed in the event of a reorg.
             if (!this.storeSettings.AddressIndex)
             {
                 this.logger.LogTrace("(-)[DISABLED]");
@@ -238,12 +247,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                             AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
                             indexData.BalanceChanges.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
                         }
-                    }
 
-                    this.IndexerTip = lastCommonHeader;
+                        // Rewind all the way back to the fork point.
+                        while (this.IndexerTip.HashBlock != lastCommonHeader.HashBlock)
+                        {
+                            this.outpointsRepository.Rewind(this.IndexerTip.HashBlock);
+                            this.IndexerTip = this.IndexerTip.Previous;
+                        }
 
-                    lock (this.lockObject)
-                    {
                         this.tipData.TipHashBytes = this.IndexerTip.HashBlock.ToBytes();
                         this.tipData.Height = this.IndexerTip.Height;
                     }
@@ -352,6 +363,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                             Money = tx.Outputs[i].Value
                         };
 
+                        // TODO: When the outpoint cache is full, adding outpoints singly causes overhead writing evicted entries out to the repository
                         this.outpointsRepository.AddOutPointData(outPointData);
                     }
                 }
@@ -366,6 +378,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             lock (this.lockObject)
             {
+                var rewindData = new AddressIndexerRewindData() { BlockHash = header.HashBlock.ToString(), BlockHeight = header.Height, SpentOutputs = new List<OutPointData>() };
+
                 foreach (TxIn input in inputs)
                 {
                     OutPoint consumedOutput = input.PrevOut;
@@ -373,12 +387,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     if (!this.outpointsRepository.TryGetOutPointData(consumedOutput, out OutPointData consumedOutputData))
                     {
                         this.logger.LogError("Missing outpoint data for {0}.", consumedOutput);
-                        this.logger.LogTrace("(-)[MISSING OUTPOINTS_DATA]");
+                        this.logger.LogTrace("(-)[MISSING_OUTPOINTS_DATA]");
                         throw new Exception($"Missing outpoint data for {consumedOutput}");
                     }
 
                     Money amountSpent = consumedOutputData.Money;
 
+                    rewindData.SpentOutputs.Add(consumedOutputData);
                     this.outpointsRepository.RemoveOutPointData(consumedOutput);
 
                     // Transactions that don't actually change the balance just bloat the database.
@@ -419,6 +434,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         this.ProcessBalanceChangeLocked(header.Height, address, amountReceived, true);
                     }
                 }
+
+                this.outpointsRepository.RecordRewindData(rewindData);
+                this.outpointsRepository.PurgeOldRewindData(this.consensusManager.Tip.Height - this.maxReorgLength);
             }
 
             return true;
@@ -439,10 +457,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             });
 
             // Anything less than that should be compacted.
-            int heightThreshold = this.consensusManager.Tip.Height - (int)this.network.Consensus.MaxReorgLength;
+            int heightThreshold = this.consensusManager.Tip.Height - this.maxReorgLength;
 
-            bool compact = (this.network.Consensus.MaxReorgLength != 0) &&
-                           (indexData.BalanceChanges.Count > CompactingThreshold) &&
+            bool compact = (indexData.BalanceChanges.Count > CompactingThreshold) &&
                            (indexData.BalanceChanges[1].BalanceChangedHeight < heightThreshold);
 
             if (!compact)
@@ -577,7 +594,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
     public class IndexerNotInitializedException : Exception
     {
-        public IndexerNotInitializedException() : base("Component wasn't initialized and is not ready to use.") { }
+        public IndexerNotInitializedException() : base("Component wasn't initialized and is not ready to use. Make sure -addressindex is enabled.") { }
     }
 
     public class OutOfSyncException : Exception

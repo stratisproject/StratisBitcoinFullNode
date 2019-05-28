@@ -46,4 +46,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         public long Money { get; set; }
     }
+
+    public class AddressIndexerRewindData
+    {
+        [BsonId]
+        public string BlockHash { get; set; }
+
+        public int BlockHeight { get; set; }
+
+        public List<OutPointData> SpentOutputs { get; set; }
+    }
 }
