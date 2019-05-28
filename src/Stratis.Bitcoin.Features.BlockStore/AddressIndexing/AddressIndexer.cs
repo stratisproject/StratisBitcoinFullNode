@@ -70,6 +70,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private const string AddressIndexerDatabaseFilename = "addressindex.litedb";
 
+        /// <summary>Max supported reorganization length for networks without max reorg property.</summary>
         private const int FallBackMaxReorg = 200;
 
         /// <summary>
@@ -112,9 +113,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private Task<ChainedHeaderBlock> prefetchingTask;
 
-        private readonly int maxReorg;
+        /// <summary>Maximum supported reorganization length.</summary>
+        private readonly int maxReorgLength;
 
-        public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network, INodeStats nodeStats, IConsensusManager consensusManager, IAsyncProvider asyncProvider)
+        public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network,
+            INodeStats nodeStats, IConsensusManager consensusManager, IAsyncProvider asyncProvider)
         {
             this.storeSettings = storeSettings;
             this.network = network;
@@ -132,7 +135,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.averageTimePerBlock = new AverageCalculator(200);
-            this.maxReorg = this.network.Consensus.MaxReorgLength == 0 ? (int)this.network.Consensus.MaxReorgLength : FallBackMaxReorg;
+            this.maxReorgLength = this.network.Consensus.MaxReorgLength == 0 ? (int)this.network.Consensus.MaxReorgLength : FallBackMaxReorg;
         }
 
         public void Initialize()
@@ -245,13 +248,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                             indexData.BalanceChanges.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
                         }
 
-                        // Also need to rewind the outpoint repository.
-                        this.outpointsRepository.Rewind(this.IndexerTip.HashBlock);
-
                         // Rewind all the way back to the fork point.
                         while (this.IndexerTip.HashBlock != lastCommonHeader.HashBlock)
                         {
-                            this.outpointsRepository.Rewind(this.IndexerTip.Previous.HashBlock);
+                            this.outpointsRepository.Rewind(this.IndexerTip.HashBlock);
                             this.IndexerTip = this.IndexerTip.Previous;
                         }
 
@@ -436,7 +436,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 }
 
                 this.outpointsRepository.RecordRewindData(rewindData);
-                this.outpointsRepository.PurgeOldRewindData(this.consensusManager.Tip.Height - this.maxReorg);
+                this.outpointsRepository.PurgeOldRewindData(this.consensusManager.Tip.Height - this.maxReorgLength);
             }
 
             return true;
@@ -457,7 +457,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             });
 
             // Anything less than that should be compacted.
-            int heightThreshold = this.consensusManager.Tip.Height - this.maxReorg;
+            int heightThreshold = this.consensusManager.Tip.Height - this.maxReorgLength;
 
             bool compact = (indexData.BalanceChanges.Count > CompactingThreshold) &&
                            (indexData.BalanceChanges[1].BalanceChangedHeight < heightThreshold);

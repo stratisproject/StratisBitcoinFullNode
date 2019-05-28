@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             }
         }
 
-        /// <summary>Deletes rewind data that is more than maxReorg blocks old.</summary>
+        /// <summary>Deletes rewind data originated at height lower than <paramref name="height"/>.</summary>
         /// <param name="height">The threshold below which data will be deleted.</param>
         public void PurgeOldRewindData(int height)
         {
@@ -119,12 +119,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             {
                 // Generally there will only be one result here at most, as this should be getting called once per block.
                 foreach (AddressIndexerRewindData rewindData in this.addressIndexerRewindData.Find(Query.LT("BlockHeightIndex", height)))
-                {
                     this.addressIndexerRewindData.Delete(rewindData.BlockHash);
-                }
             }
         }
 
+        /// <summary>Reverts changes made by processing a block with <param name="blockHash"> hash.</param></summary>
         public void Rewind(uint256 blockHash)
         {
             lock (this.LockObject)
