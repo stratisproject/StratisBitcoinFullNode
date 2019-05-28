@@ -833,10 +833,10 @@
     border: none;
     border-radius: 4px;
     outline: none;
-    background: hsla(0, 0%, 100%, .8);
+    background: #41444e;
+    color: white;
     font-family: Source Code Pro, monospace;
     font-weight: 600;
-    color: #3b4151
 }
 
     .swagger-ui textarea:focus {
