@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
             if (walletManager != null)
             {
-                HashHeightPair hashHeightPair = walletManager.LastReceivedBlockHash();
+                HashHeightPair hashHeightPair = walletManager.LastReceivedBlockInfo();
 
                 benchLogs.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                (walletManager.ContainsWallets ? hashHeightPair.Height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +

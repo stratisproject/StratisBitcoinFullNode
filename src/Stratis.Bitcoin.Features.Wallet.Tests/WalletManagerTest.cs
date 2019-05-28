@@ -1117,7 +1117,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new WalletManager(this.LoggerFactory.Object, KnownNetworks.StratisMain, chain, new WalletSettings(NodeSettings.Default(this.Network)),
                 CreateDataFolder(this), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
 
-            uint256 result = walletManager.LastReceivedBlockHash().Hash;
+            uint256 result = walletManager.LastReceivedBlockInfo().Hash;
 
             Assert.Equal(chain.Tip.HashBlock, result);
         }
@@ -1132,7 +1132,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             wallet.AccountsRoot.ElementAt(0).CoinType = CoinType.Stratis;
             walletManager.Wallets.Add(wallet);
 
-            uint256 result = walletManager.LastReceivedBlockHash().Hash;
+            uint256 result = walletManager.LastReceivedBlockInfo().Hash;
             Assert.Equal(chainIndexer.Tip.HashBlock, result);
         }
 

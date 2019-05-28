@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.LoadKeysLookupLock();
 
             // Find the last chain block received by the wallet manager.
-            HashHeightPair hashHeightPair = this.LastReceivedBlockHash();
+            HashHeightPair hashHeightPair = this.LastReceivedBlockInfo();
             this.WalletTipHash = hashHeightPair.Hash;
             this.WalletTipHeight= hashHeightPair.Height;
 
@@ -832,7 +832,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Gets the hash of the last block received by the wallets.
         /// </summary>
         /// <returns>Hash of the last block received by the wallets.</returns>
-        public HashHeightPair LastReceivedBlockHash()
+        public HashHeightPair LastReceivedBlockInfo()
         {
             if (!this.Wallets.Any())
             {
