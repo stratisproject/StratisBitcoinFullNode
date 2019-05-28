@@ -167,6 +167,12 @@ namespace Stratis.Features.FederatedPeg.Collateral
                 return false;
             }
 
+            if (!string.IsNullOrEmpty(collateral.Reason))
+            {
+                this.logger.LogWarning("Failed to fetch address balances from counter chain node : reason {0}", collateral.Reason);
+                this.logger.LogTrace("(-)[FAILED]:{0}", collateral.Reason);
+            }
+
             this.logger.LogDebug("Addresses received {0}.", collateral.Balances.Count);
 
             if (collateral.Balances.Count != addressesToCheck.Count)

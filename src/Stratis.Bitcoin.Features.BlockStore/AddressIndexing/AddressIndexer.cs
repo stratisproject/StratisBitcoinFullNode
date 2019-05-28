@@ -13,6 +13,7 @@ using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
@@ -29,19 +30,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         void Initialize();
 
         /// <summary>Returns balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
+        /// <param name="addresses">The set of addresses that will be queried.</param>
         /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed or doesn't exists.</returns>
-        /// <exception cref="IndexerNotInitializedException">Thrown if component wasn't initialized.</exception>
-        /// <exception cref="OutOfSyncException">Thrown if indexer isn't synced.</exception>
-        Money GetAddressBalance(string address, int minConfirmations = 0);
+        AddressBalancesModel GetAddressBalances(string[] addresses, int minConfirmations = 0);
 
-        /// <summary>Returns the total amount received by the given address in transactions with at least <paramref name="minConfirmations"/> confirmations.</summary>
-        /// <returns>Total amount received by a given address or <c>null</c> if address wasn't indexed.</returns>
-        /// <exception cref="IndexerNotInitializedException">Thrown if component wasn't initialized.</exception>
-        /// <exception cref="OutOfSyncException">Thrown if indexer isn't synced.</exception>
-        Money GetReceivedByAddress(string address, int minConfirmations = 0);
-
-        /// <summary>Returns <c>true</c> if indexer's tip is close to consensus tip; <c>false</c> otherwise.</summary>
-        bool IsSynced();
+        ///// <summary>Returns the total amount received by the given address in transactions with at least <paramref name="minConfirmations"/> confirmations.</summary>
+        ///// <returns>Total amount received by a given address or <c>null</c> if address wasn't indexed.</returns>
+        //Money GetReceivedByAddress(string address, int minConfirmations = 0);
     }
 
     public class AddressIndexer : IAddressIndexer
@@ -484,83 +479,91 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
 
         /// <inheritdoc />
-        public bool IsSynced()
+        public AddressBalancesModel GetAddressBalances(string[] addresses, int minConfirmations = 1)
+        {
+            var (isQuerable, reason) = this.IsQuerable();
+            if (!isQuerable)
+                return AddressBalancesModel.IndexerNotQueryable(reason);
+
+            var result = new AddressBalancesModel();
+
+            lock (this.lockObject)
+            {
+                foreach (var address in addresses)
+                {
+                    AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
+                    if (indexData == null)
+                    {
+                        this.logger.LogDebug("{0} was not found in the indexer.", address);
+                        result.Balances.Add(new AddressBalanceModel(address, new Money(0)));
+                        continue;
+                    }
+
+                    long balance = 0;
+
+                    int maxAllowedHeight = this.consensusManager.Tip.Height - minConfirmations + 1;
+
+                    foreach (AddressBalanceChange change in indexData.BalanceChanges.Where(x => x.BalanceChangedHeight <= maxAllowedHeight))
+                    {
+                        if (change.Deposited)
+                            balance += change.Satoshi;
+                        else
+                            balance -= change.Satoshi;
+                    }
+
+                    result.Balances.Add(new AddressBalanceModel(address, new Money(balance)));
+                };
+
+                return result;
+            }
+        }
+
+        ///// <inheritdoc />
+        //public AddressBalancesModel GetReceivedByAddress(string address, int minConfirmations = 1)
+        //{
+        //    var (isQuerable, reason) = this.IsQuerable();
+        //    if (!isQuerable)
+        //        return AddressBalancesModel.IndexerNotQueryable(reason);
+
+        //    lock (this.lockObject)
+        //    {
+        //        AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
+        //        if (indexData == null)
+        //        {
+        //            this.logger.LogTrace("(-)[NOT_FOUND]");
+        //            return null;
+        //        }
+
+        //        int maxAllowedHeight = this.consensusManager.Tip.Height - minConfirmations + 1;
+
+        //        long deposited = indexData.BalanceChanges.Where(x => x.Deposited && x.BalanceChangedHeight <= maxAllowedHeight).Sum(x => x.Satoshi);
+
+        //        return new Money(deposited);
+        //    }
+        //}
+
+        private (bool isQuerable, string reason) IsQuerable()
+        {
+            if (this.addressIndexRepository == null)
+            {
+                this.logger.LogTrace("(-)[NOT_INITIALIZED]");
+                return (false, "Address indexer is not initialized.");
+            }
+
+            if (!this.IsSynced())
+            {
+                this.logger.LogTrace("(-)[NOT_SYNCED]");
+                return (false, "Address indexer is not synced.");
+            }
+
+            return (true, string.Empty);
+        }
+
+        private bool IsSynced()
         {
             lock (this.lockObject)
             {
                 return this.consensusManager.Tip.Height - this.tipData.Height <= ConsiderSyncedMaxDistance;
-            }
-        }
-
-        /// <inheritdoc />
-        public Money GetAddressBalance(string address, int minConfirmations = 1)
-        {
-            if (this.addressIndexRepository == null)
-            {
-                this.logger.LogTrace("(-)[NOT_INITIALIZED]");
-                throw new IndexerNotInitializedException();
-            }
-
-            if (!this.IsSynced())
-            {
-                this.logger.LogTrace("(-)[NOT_SYNCED]");
-                throw new OutOfSyncException();
-            }
-
-            lock (this.lockObject)
-            {
-                AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
-                if (indexData == null)
-                {
-                    this.logger.LogTrace("(-)[NOT_FOUND]");
-                    return null;
-                }
-
-                long balance = 0;
-
-                int maxAllowedHeight = this.consensusManager.Tip.Height - minConfirmations + 1;
-
-                foreach (AddressBalanceChange change in indexData.BalanceChanges.Where(x => x.BalanceChangedHeight <= maxAllowedHeight))
-                {
-                    if (change.Deposited)
-                        balance += change.Satoshi;
-                    else
-                        balance -= change.Satoshi;
-                }
-
-                return new Money(balance);
-            }
-        }
-
-        /// <inheritdoc />
-        public Money GetReceivedByAddress(string address, int minConfirmations = 1)
-        {
-            if (this.addressIndexRepository == null)
-            {
-                this.logger.LogTrace("(-)[NOT_INITIALIZED]");
-                throw new IndexerNotInitializedException();
-            }
-
-            if (!this.IsSynced())
-            {
-                this.logger.LogTrace("(-)[NOT_SYNCED]");
-                throw new OutOfSyncException();
-            }
-
-            lock (this.lockObject)
-            {
-                AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
-                if (indexData == null)
-                {
-                    this.logger.LogTrace("(-)[NOT_FOUND]");
-                    return null;
-                }
-
-                int maxAllowedHeight = this.consensusManager.Tip.Height - minConfirmations + 1;
-
-                long deposited = indexData.BalanceChanges.Where(x => x.Deposited && x.BalanceChangedHeight <= maxAllowedHeight).Sum(x => x.Satoshi);
-
-                return new Money(deposited);
             }
         }
 

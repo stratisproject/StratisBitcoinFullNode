@@ -13,6 +13,13 @@ namespace Stratis.Bitcoin.Controllers.Models
         }
 
         public List<AddressBalanceModel> Balances { get; set; }
+
+        public string Reason { get; private set; }
+
+        public static AddressBalancesModel IndexerNotQueryable(string reason)
+        {
+            return new AddressBalancesModel() { Reason = reason };
+        }
     }
 
     public sealed class AddressBalanceModel
