@@ -91,6 +91,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         private bool isFederationActive;
 
         public uint256 WalletTipHash { get; set; }
+        public int WalletTipHeight { get; set; }
 
         public bool ContainsWallets => throw new NotImplementedException();
 
@@ -168,7 +169,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 this.LoadKeysLookupLock();
 
                 // find the last chain block received by the wallet manager.
-                this.WalletTipHash = this.LastReceivedBlockHash();
+                HashHeightPair hashHeightPair = this.LastReceivedBlockHash();
+                this.WalletTipHash = hashHeightPair.Hash;
+                this.WalletTipHeight = hashHeightPair.Height;
 
                 // save the wallets file every 5 minutes to help against crashes.
                 this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop("wallet persist job", token =>
@@ -228,7 +231,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// Gets the hash of the last block received by the wallets.
         /// </summary>
         /// <returns>Hash of the last block received by the wallets.</returns>
-        public uint256 LastReceivedBlockHash()
+        public HashHeightPair LastReceivedBlockHash()
         {
             lock (this.lockObject)
             {
@@ -236,17 +239,17 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 {
                     uint256 hash = this.chainIndexer.Tip.HashBlock;
                     this.logger.LogTrace("(-)[NO_WALLET]:'{0}'", hash);
-                    return hash;
+                    return new HashHeightPair(this.chainIndexer.Tip);
                 }
 
                 uint256 lastBlockSyncedHash = this.Wallet.LastBlockSyncedHash;
 
                 if (lastBlockSyncedHash == null)
                 {
-                    lastBlockSyncedHash = this.chainIndexer.Tip.HashBlock;
+                    return new HashHeightPair(this.chainIndexer.Tip);
                 }
 
-                return lastBlockSyncedHash;
+                return new HashHeightPair(this.Wallet.LastBlockSyncedHash, this.Wallet.LastBlockSyncedHeight.Value); 
             }
         }
 
@@ -305,6 +308,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (this.Wallet == null)
                 {
                     this.WalletTipHash = chainedHeader.HashBlock;
+                    this.WalletTipHeight = chainedHeader.Height;
                     this.logger.LogTrace("(-)[NO_WALLET]");
                     return;
                 }
@@ -314,17 +318,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 {
                     this.logger.LogTrace("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
 
-                    // Are we still on the main chain.
-                    ChainedHeader current = this.chainIndexer.GetHeader(this.WalletTipHash);
-                    if (current == null)
-                    {
-                        this.logger.LogTrace("(-)[REORG]");
-                        throw new WalletException("Reorg");
-                    }
-
                     // The block coming in to the wallet should never be ahead of the wallet.
                     // If the block is behind, let it pass.
-                    if (chainedHeader.Height > current.Height)
+                    if (chainedHeader.Height > this.WalletTipHeight)
                     {
                         this.logger.LogTrace("(-)[BLOCK_TOO_FAR]");
                         throw new WalletException("block too far in the future has arrived to the wallet");
@@ -1024,6 +1020,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 this.Wallet.LastBlockSyncedHeight = chainedHeader.Height;
                 this.Wallet.LastBlockSyncedHash = chainedHeader.HashBlock;
                 this.WalletTipHash = chainedHeader.HashBlock;
+                this.WalletTipHeight = chainedHeader.Height;
             }
         }
 
