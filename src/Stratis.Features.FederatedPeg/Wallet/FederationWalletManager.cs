@@ -858,22 +858,24 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 foreach ((uint256 _, List<TransactionData> txList) in this.Wallet.MultiSigAddress.Transactions.GetSpendingTransactionsByDepositId(depositId))
                 {
-                    if (txList.Count == 0)
-                        continue;
+                    foreach (SpendingDetails spendingDetail in txList.Select(tx => tx.SpendingDetails))
+                    {
+                        // Multiple UTXOs may be spent by the one withdrawal, so if it's already added then no need to add it again.
+                        if (withdrawals.Any(w => w.withdrawal.Id == spendingDetail.TransactionId))
+                            continue;
 
-                    SpendingDetails spendingDetail = txList[0].SpendingDetails;
+                        var withdrawal = new Withdrawal(
+                            spendingDetail.WithdrawalDetails.MatchingDepositId,
+                            spendingDetail.TransactionId,
+                            spendingDetail.WithdrawalDetails.Amount,
+                            spendingDetail.WithdrawalDetails.TargetAddress,
+                            spendingDetail.BlockHeight ?? 0,
+                            spendingDetail.BlockHash);
 
-                    Withdrawal withdrawal = new Withdrawal(
-                        spendingDetail.WithdrawalDetails.MatchingDepositId,
-                        spendingDetail.TransactionId,
-                        spendingDetail.WithdrawalDetails.Amount,
-                        spendingDetail.WithdrawalDetails.TargetAddress,
-                        spendingDetail.BlockHeight ?? 0,
-                        spendingDetail.BlockHash);
+                        Transaction transaction = this.network.CreateTransaction(spendingDetail.Hex);
 
-                    Transaction transaction = this.network.CreateTransaction(spendingDetail.Hex);
-
-                    withdrawals.Add((transaction, withdrawal));
+                        withdrawals.Add((transaction, withdrawal));
+                    }
                 }
 
                 if (sort)
