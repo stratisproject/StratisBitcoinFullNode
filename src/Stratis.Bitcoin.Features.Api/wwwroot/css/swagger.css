@@ -1,7 +1,7 @@
 ﻿@charset "UTF-8";
 
-.swagger-ui .wrapper {
-    max-width: 1200px !important;
+.swagger-ui .wrapper, body > div > .wrapper {
+    max-width: 1300px !important;
 }
 
 .swagger-ui .topbar a span {
