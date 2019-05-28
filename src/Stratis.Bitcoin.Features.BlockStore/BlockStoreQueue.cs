@@ -186,6 +186,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // Start dequeuing.
             this.currentBatchSizeBytes = 0;
             this.dequeueLoopTask = this.DequeueBlocksContinuouslyAsync();
+
+            this.asyncProvider.RegisterTask($"{nameof(BlockStoreQueue)}.{nameof(this.dequeueLoopTask)}", this.dequeueLoopTask);
         }
 
         /// <inheritdoc/>
