@@ -6,11 +6,24 @@ using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg.Wallet
 {
+    public interface ITransactionDataObserver
+    {
+        void BeforeSpendingDetailsChanged(TransactionData transactionData);
+        void AfterSpendingDetailsChanged(TransactionData transactionData);
+    }
+
+    public interface ITransactionDataObservable
+    {
+        void Subscribe(ITransactionDataObserver observer);
+    }
+
     /// <summary>
     /// An object containing transaction data.
     /// </summary>
-    public class TransactionData
+    public class TransactionData : ITransactionDataObservable
     {
+        ITransactionDataObserver parent;
+
         [JsonProperty(PropertyName = "id")]
         [JsonConverter(typeof(UInt256JsonConverter))]
         public uint256 Id { get; set; }
@@ -49,8 +62,25 @@ namespace Stratis.Features.FederatedPeg.Wallet
         [JsonProperty(PropertyName = "hex", NullValueHandling = NullValueHandling.Ignore)]
         public string Hex { get; set; }
 
+        public OutPoint Key => new OutPoint(this.Id, this.Index);
+
+        private SpendingDetails spendingDetails;
+
         [JsonProperty(PropertyName = "spendingDetails", NullValueHandling = NullValueHandling.Ignore)]
-        public SpendingDetails SpendingDetails { get; set; }
+        public SpendingDetails SpendingDetails
+        {
+            get
+            {
+                return this.spendingDetails;
+            }
+
+            set
+            {
+                this.parent?.BeforeSpendingDetailsChanged(this);
+                this.spendingDetails = value;
+                this.parent?.AfterSpendingDetailsChanged(this);
+            }
+        }
 
         public bool IsConfirmed()
         {
@@ -74,14 +104,18 @@ namespace Stratis.Features.FederatedPeg.Wallet
             // This method only returns a UTXO that has no spending output.
             // If a spending output exists (even if its not confirmed) this will return as zero balance.
             if (!this.IsSpendable()) return Money.Zero;
-            
+
             if (confirmedOnly && !this.IsConfirmed())
             {
                 return Money.Zero;
             }
 
             return this.Amount;
+        }
 
+        public void Subscribe(ITransactionDataObserver observer)
+        {
+            this.parent = observer;
         }
     }
 }

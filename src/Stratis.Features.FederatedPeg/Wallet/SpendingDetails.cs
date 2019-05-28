@@ -64,12 +64,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public WithdrawalDetails WithdrawalDetails { get; set; }
 
         /// <summary>
-        /// Gets or sets the full transaction object.
-        /// </summary>
-        [JsonIgnore]
-        public Transaction Transaction => Transaction.Parse(this.Hex, RawFormat.BlockExplorer);
-
-        /// <summary>
         /// Determines whether this transaction being spent is confirmed.
         /// </summary>
         public bool IsSpentConfirmed()
