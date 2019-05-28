@@ -852,7 +852,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 // If details about the last block synced are not present in the wallet,
                 // find out which is the oldest wallet and set the last block synced to be the one at this date.
-                if (accountRoot == null)
+                if (accountRoot == null || accountRoot.LastBlockSyncedHash == null)
                 {
                     this.logger.LogWarning("There were no details about the last block synced in the wallets.");
                     DateTimeOffset earliestWalletDate = this.Wallets.Min(c => c.CreationTime);
