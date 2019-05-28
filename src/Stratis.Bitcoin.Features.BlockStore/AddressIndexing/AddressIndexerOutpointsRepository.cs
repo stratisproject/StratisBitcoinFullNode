@@ -130,6 +130,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             {
                 AddressIndexerRewindData rewindData = this.addressIndexerRewindData.FindById(blockHash.ToString());
 
+                if (rewindData == null)
+                {
+                    this.logger.LogTrace("(-)[NOT_FOUND]");
+                    throw new Exception($"Rewind data not found for {blockHash}.");
+                }
+
                 // Put the spent outputs back into the cache.
                 foreach (OutPointData outPointData in rewindData.SpentOutputs)
                     this.AddOutPointData(outPointData);
