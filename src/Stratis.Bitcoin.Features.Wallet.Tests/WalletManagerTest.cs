@@ -2376,9 +2376,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 dataFolder, walletFeePolicy.Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
             walletManager.Wallets.Add(wallet);
             walletManager.LoadKeysLookupLock();
-            walletManager.WalletTipHash = block.Header.GetHash();
 
             ChainedHeader chainedBlock = chainInfo.chain.GetHeader(block.GetHash());
+            walletManager.WalletTipHash = block.Header.GetHash();
+            walletManager.WalletTipHeight = chainedBlock.Height;
+
             walletManager.ProcessBlock(block, chainedBlock);
 
             HdAddress spentAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);
