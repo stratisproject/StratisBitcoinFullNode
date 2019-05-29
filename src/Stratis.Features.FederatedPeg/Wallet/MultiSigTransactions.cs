@@ -235,11 +235,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
-        public (int?, List<TransactionData>)[] SpentTransactionsBetweenHeights(int lessThanHeight, int startHeight = 0)
+        public (int?, List<TransactionData>)[] SpentTransactionsBeforeHeight(int lessThanHeight)
         {
             lock (this.lockObject)
             {
-                return this.spentTransactionsByHeightDict.Where(x => x.Key >= startHeight && x.Key < lessThanHeight).Select(x => (x.Key, x.Value)).ToArray();
+                return this.spentTransactionsByHeightDict.TakeWhile(x => x.Key < lessThanHeight).Select(x => (x.Key, x.Value)).ToArray();
             }
         }
 
