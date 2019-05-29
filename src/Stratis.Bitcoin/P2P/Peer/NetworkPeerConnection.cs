@@ -149,15 +149,18 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.MessageProducer.PushMessage(incomingMessage);
                 }
             }
-            catch (OperationCanceledException)
-            {
-                this.logger.LogTrace("Receiving cancelled.");
-                this.peer.Disconnect("Receiving cancelled.");
-            }
             catch (Exception ex)
             {
-                this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
-                this.peer.Disconnect("Unexpected failure while waiting for a message", ex);
+                if ((ex is IOException) || (ex is OperationCanceledException) || (ex is ObjectDisposedException))
+                {
+                    this.logger.LogTrace("Receiving cancelled.");
+                    this.peer.Disconnect("Receiving cancelled.");
+                }
+                else
+                {
+                    this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
+                    this.peer.Disconnect("Unexpected failure while waiting for a message", ex);
+                }
             }
         }
 
@@ -301,10 +304,11 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
                 catch (Exception e)
                 {
-                    if ((e is IOException) || (e is OperationCanceledException))
+                    if ((e is IOException) || (e is OperationCanceledException) || (e is ObjectDisposedException))
                     {
                         this.logger.LogTrace("Connection has been terminated.");
                         if (e is IOException) this.logger.LogTrace("(-)[IO_EXCEPTION]");
+                        else if(e is ObjectDisposedException) this.logger.LogTrace("(-)[DISPOSED]");
                         else this.logger.LogTrace("(-)[CANCELLED]");
                         throw new OperationCanceledException();
                     }
