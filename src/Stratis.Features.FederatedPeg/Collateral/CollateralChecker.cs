@@ -22,6 +22,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
         Task InitializeAsync();
 
         /// <summary>Checks if given federation member fulfills the collateral requirement.</summary>
+        /// <param name="federationMember">The federation member whose collateral will be checked.</param>
         bool CheckCollateral(IFederationMember federationMember);
     }
 
@@ -58,7 +59,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
         private Task updateCollateralContinuouslyTask;
 
-        private bool isInitialized;
+        private bool collateralUpdated;
 
         public CollateralChecker(ILoggerFactory loggerFactory,
             IHttpClientFactory httpClientFactory,
@@ -74,7 +75,6 @@ namespace Stratis.Features.FederatedPeg.Collateral
             this.depositsByAddress = new Dictionary<string, Money>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.blockStoreClient = new BlockStoreClient(loggerFactory, httpClientFactory, $"http://{settings.CounterChainApiHost}", settings.CounterChainApiPort);
-            this.isInitialized = false;
         }
 
         public async Task InitializeAsync()
@@ -86,62 +86,48 @@ namespace Stratis.Features.FederatedPeg.Collateral
                 .Cast<CollateralFederationMember>().Where(x => x.CollateralAmount != null && x.CollateralAmount > 0))
             {
                 this.logger.LogDebug("Initializing federation member {0} with amount {1}.", federationMember.CollateralMainchainAddress, federationMember.CollateralAmount);
-
                 this.depositsByAddress.Add(federationMember.CollateralMainchainAddress, 0);
             }
 
-            while (true)
+            while (!this.cancellationSource.IsCancellationRequested && !this.collateralUpdated)
             {
-                bool success = await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
+                await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
 
-                if (!success)
-                {
-                    this.logger.LogWarning("Failed to update collateral. Ensure that mainnet gateway node is running and API is enabled. " +
-                                       "Node will not continue initialization before another gateway node responds.");
+                this.logger.LogWarning("Node initialization will not continue until the gateway node responds.");
 
-                    try
-                    {
-                        await Task.Delay(CollateralInitializationUpdateIntervalSeconds * 1000, this.cancellationSource.Token).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        this.logger.LogTrace("(-)[CANCELLED]");
-                        return;
-                    }
-                }
-                else
-                {
-                    break;
-                }
+                await this.DelayCollateralCheckAsync().ConfigureAwait(false);
             }
 
             this.updateCollateralContinuouslyTask = this.UpdateCollateralInfoContinuouslyAsync();
-            this.isInitialized = true;
         }
 
         /// <summary>Continuously updates info about money deposited to fed member's addresses.</summary>
         private async Task UpdateCollateralInfoContinuouslyAsync()
         {
-            while (!this.cancellationSource.Token.IsCancellationRequested)
+            while (!this.cancellationSource.IsCancellationRequested)
             {
-                try
-                {
-                    await Task.Delay(CollateralUpdateIntervalSeconds * 1000, this.cancellationSource.Token).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    this.logger.LogTrace("(-)[CANCELLED]");
-                    return;
-                }
+                await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
 
-                bool success = await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
-
-                if (!success)
-                    this.logger.LogWarning("Failed to update collateral. Ensure that mainnet gateway node is running and API is enabled.");
+                await this.DelayCollateralCheckAsync().ConfigureAwait(false);
             }
         }
 
-        private async Task<bool> UpdateCollateralInfoAsync(CancellationToken cancellation = default(CancellationToken))
+        /// <summary>
+        /// Delay checking the federation member's collateral with <see cref="CollateralUpdateIntervalSeconds"/> seconds.
+        /// </summary>
+        private async Task DelayCollateralCheckAsync()
+        {
+            try
+            {
+                await Task.Delay(CollateralUpdateIntervalSeconds * 1000, this.cancellationSource.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                this.logger.LogTrace("(-)[CANCELLED]");
+            }
+        }
+
+        private async Task UpdateCollateralInfoAsync(CancellationToken cancellation)
         {
             List<string> addressesToCheck;
 
@@ -152,46 +138,49 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
             if (addressesToCheck.Count == 0)
             {
+                this.collateralUpdated = true;
+
+                this.logger.LogInformation("None of the federation members has a collateral requirement configured.");
                 this.logger.LogTrace("(-)[NOTHING_TO_CHECK]:true");
-                return true;
+                return;
             }
 
             this.logger.LogDebug("Addresses to check {0}.", addressesToCheck.Count);
 
-            AddressBalancesModel collateral = await this.blockStoreClient.GetAddressBalancesAsync(addressesToCheck, RequiredConfirmations, cancellation).ConfigureAwait(false);
+            AddressBalancesModel collateralBalances = await this.blockStoreClient.GetAddressBalancesAsync(addressesToCheck, RequiredConfirmations, cancellation).ConfigureAwait(false);
 
-            if (collateral == null)
+            if (collateralBalances == null)
             {
-                this.logger.LogWarning("Failed to fetch address balances from counter chain node!");
-                this.logger.LogTrace("(-)[FAILED]:false");
-                return false;
+                this.logger.LogWarning("Failed to update collateral, please ensure that the mainnet gateway node is running and it's API feature is enabled.");
+                this.logger.LogTrace("(-)[CALL_RETURNED_NULL_RESULT]:false");
+                return;
             }
 
-            this.logger.LogDebug("Addresses received {0}.", collateral.Balances.Count);
+            this.logger.LogDebug("Addresses received {0}.", collateralBalances.Balances.Count);
 
-            if (collateral.Balances.Count != addressesToCheck.Count)
+            if (collateralBalances.Balances.Count != addressesToCheck.Count)
             {
-                this.logger.LogDebug("Expected {0} data entries but received {1}.", addressesToCheck.Count, collateral.Balances.Count);
-
-                this.logger.LogTrace("(-)[INCONSISTENT_DATA]:false");
-                return false;
+                this.logger.LogDebug("Expected {0} data entries but received {1}.", addressesToCheck.Count, collateralBalances.Balances.Count);
+                this.logger.LogTrace("(-)[CALL_RETURNED_INCONSISTENT_DATA]:false");
+                return;
             }
 
             lock (this.locker)
             {
-                foreach (AddressBalanceModel addressMoney in collateral.Balances)
+                foreach (AddressBalanceModel addressMoney in collateralBalances.Balances)
                 {
-                    this.logger.LogDebug("Updating federated member {0} with amount {1}.", addressMoney.Address, addressMoney.Balance);
+                    this.logger.LogDebug("Updating federation member {0} with amount {1}.", addressMoney.Address, addressMoney.Balance);
                     this.depositsByAddress[addressMoney.Address] = addressMoney.Balance;
                 }
             }
 
-            return true;
+            this.collateralUpdated = true;
         }
 
+        /// <inheritdoc />
         public bool CheckCollateral(IFederationMember federationMember)
         {
-            if (!this.isInitialized)
+            if (!this.collateralUpdated)
             {
                 this.logger.LogTrace("(-)[NOT_INITIALIZED]");
                 throw new Exception("Component is not initialized!");
