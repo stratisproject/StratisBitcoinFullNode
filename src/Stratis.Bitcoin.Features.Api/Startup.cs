@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Features.Api
                 setup.SwaggerDoc("v1", new Info
                 {
                     Title = "Stratis.Bitcoin.Api",
-                    Description = "Stratis API Swagger",
+                    Description = "Stratis Full Node API Swagger",
                     Contact = new Contact()
                     {
                         Name = "Stratis Group Limited",
