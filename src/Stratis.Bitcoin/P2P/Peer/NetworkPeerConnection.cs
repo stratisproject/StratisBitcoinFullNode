@@ -286,7 +286,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             using (await this.writeLock.LockAsync(cancellation).ConfigureAwait(false))
             {
-                if (this.stream == null)
+                NetworkStream innerStream = this.stream;
+
+                if (innerStream == null)
                 {
                     this.logger.LogTrace("Connection has been terminated.");
                     this.logger.LogTrace("(-)[NO_STREAM]");
@@ -295,7 +297,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 try
                 {
-                    await this.stream.WriteAsync(data, 0, data.Length, cancellation).ConfigureAwait(false);
+                    await innerStream.WriteAsync(data, 0, data.Length, cancellation).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -404,9 +406,18 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <exception cref="OperationCanceledException">Thrown if the operation was cancelled or the end of the stream was reached.</exception>
         private async Task ReadBytesAsync(byte[] buffer, int offset, int bytesToRead, CancellationToken cancellation = default(CancellationToken))
         {
+            NetworkStream innerStream = this.stream;
+
+            if (innerStream == null)
+            {
+                this.logger.LogTrace("Connection has been terminated.");
+                this.logger.LogTrace("(-)[NO_STREAM]");
+                throw new OperationCanceledException();
+            }
+
             while (bytesToRead > 0)
             {
-                int chunkSize = await this.stream.ReadAsync(buffer, offset, bytesToRead, cancellation).ConfigureAwait(false);
+                int chunkSize = await innerStream.ReadAsync(buffer, offset, bytesToRead, cancellation).ConfigureAwait(false);
                 if (chunkSize == 0)
                 {
                     this.logger.LogTrace("(-)[STREAM_END]");
