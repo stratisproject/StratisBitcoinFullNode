@@ -190,7 +190,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
-        public (uint256 depositId, List<TransactionData>)[] GetSpendingTransactionsByDepositId(uint256 depositId = null)
+        public (uint256 depositId, List<TransactionData> txList)[] GetSpendingTransactionsByDepositId(uint256 depositId = null)
         {
             lock (this.lockObject)
             {
