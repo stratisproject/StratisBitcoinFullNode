@@ -458,13 +458,12 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             int finalisedHeight = height - (int)this.network.Consensus.MaxReorgLength;
             var pastMaxReorg = new List<TransactionData>();
-            foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions)
+
+            foreach ((int? _, List<TransactionData> txList) in this.Wallet.MultiSigAddress.Transactions.SpentTransactionsBetweenHeights(0, finalisedHeight))
             {
-                // Only want to remove transactions that are spent, and the spend must have passed max reorg too
-                if (transactionData.SpendingDetails != null
-                    && transactionData.SpendingDetails.BlockHeight != null
-                    && transactionData.SpendingDetails.BlockHeight < finalisedHeight)
+                foreach (TransactionData transactionData in txList)
                 {
+                    // Only want to remove transactions that are spent, and the spend must have passed max reorg too
                     pastMaxReorg.Add(transactionData);
                 }
             }

@@ -11,6 +11,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         private Dictionary<OutPoint, TransactionData> transactionDict;
         private Dictionary<OutPoint, TransactionData> spendableTransactionDict;
         private Dictionary<uint256, List<TransactionData>> withdrawalsByDepositDict;
+        private SortedDictionary<int?, List<TransactionData>> spentTransactionsByHeightDict;
 
         public int Count => this.transactionDict.Count;
 
@@ -22,6 +23,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.transactionDict = new Dictionary<OutPoint, TransactionData>();
             this.spendableTransactionDict = new Dictionary<OutPoint, TransactionData>();
             this.withdrawalsByDepositDict = new Dictionary<uint256, List<TransactionData>>();
+            this.spentTransactionsByHeightDict = new SortedDictionary<int?, List<TransactionData>>();
         }
 
         private bool TryAddWithdrawal(TransactionData transactionData)
@@ -58,6 +60,31 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
+        private void AddSpentTransactionByHeight(TransactionData transactionData)
+        {
+            if (!transactionData.IsSpendable())
+                return;
+
+            if (!this.spentTransactionsByHeightDict.TryGetValue(transactionData.BlockHeight, out List<TransactionData> txList))
+            {
+                txList = new List<TransactionData>();
+                this.spentTransactionsByHeightDict.Add(transactionData.BlockHeight, txList);
+            }
+
+            txList.Add(transactionData);
+        }
+
+        private void RemoveSpentTransactionByHeight(TransactionData transactionData)
+        {
+            if (this.spentTransactionsByHeightDict.TryGetValue(transactionData.BlockHeight, out List<TransactionData> txList))
+            {
+                txList.Remove(transactionData);
+
+                if (txList.Count == 0)
+                    this.spentTransactionsByHeightDict.Remove(transactionData.BlockHeight);
+            }
+        }
+
         public void Add(TransactionData transactionData)
         {
             lock (this.lockObject)
@@ -68,6 +95,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     this.spendableTransactionDict.Add(transactionData.Key, transactionData);
 
                 this.TryAddWithdrawal(transactionData);
+
+                this.AddSpentTransactionByHeight(transactionData);
 
                 transactionData.Subscribe(this);
             }
@@ -83,6 +112,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     this.spendableTransactionDict.Remove(transactionData.Key);
 
                 this.TryRemoveWithdrawal(transactionData);
+
+                this.RemoveSpentTransactionByHeight(transactionData);
 
                 transactionData.Subscribe(null);
 
@@ -120,6 +151,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (transactionData.IsSpendable())
                     this.spendableTransactionDict.Remove(transactionData.Key);
 
+                this.RemoveSpentTransactionByHeight(transactionData);
+
                 this.TryRemoveWithdrawal(transactionData);
             }
         }
@@ -131,7 +164,25 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (transactionData.IsSpendable())
                     this.spendableTransactionDict.Add(transactionData.Key, transactionData);
 
+                this.AddSpentTransactionByHeight(transactionData);
+
                 this.TryAddWithdrawal(transactionData);
+            }
+        }
+
+        public void BeforeBlockHeightChanged(TransactionData transactionData)
+        {
+            lock (this.lockObject)
+            {
+                RemoveSpentTransactionByHeight(transactionData);
+            }
+        }
+
+        public void AfterBlockHeightChanged(TransactionData transactionData)
+        {
+            lock (this.lockObject)
+            {
+                AddSpentTransactionByHeight(transactionData);
             }
         }
 
@@ -181,6 +232,14 @@ namespace Stratis.Features.FederatedPeg.Wallet
             lock (this.lockObject)
             {
                 this.transactionDict.Values.CopyTo(array, arrayIndex);
+            }
+        }
+
+        public (int?, List<TransactionData>)[] SpentTransactionsBetweenHeights(int lessThanHeight, int startHeight = 0)
+        {
+            lock (this.lockObject)
+            {
+                return this.spentTransactionsByHeightDict.Where(x => x.Key >= startHeight && x.Key < lessThanHeight).Select(x => (x.Key, x.Value)).ToArray();
             }
         }
 

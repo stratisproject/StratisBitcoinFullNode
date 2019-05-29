@@ -10,6 +10,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
     {
         void BeforeSpendingDetailsChanged(TransactionData transactionData);
         void AfterSpendingDetailsChanged(TransactionData transactionData);
+        void BeforeBlockHeightChanged(TransactionData transactionData);
+        void AfterBlockHeightChanged(TransactionData transactionData);
     }
 
     public interface ITransactionDataObservable
@@ -41,8 +43,23 @@ namespace Stratis.Features.FederatedPeg.Wallet
         [JsonProperty(PropertyName = "index", NullValueHandling = NullValueHandling.Ignore)]
         public int Index { get; set; }
 
+        private int? blockHeight;
+
         [JsonProperty(PropertyName = "blockHeight", NullValueHandling = NullValueHandling.Ignore)]
-        public int? BlockHeight { get; set; }
+        public int? BlockHeight
+        {
+            get
+            {
+                return this.blockHeight;
+            }
+
+            set
+            {
+                this.parent?.BeforeBlockHeightChanged(this);
+                this.blockHeight = value;
+                this.parent?.AfterBlockHeightChanged(this);
+            }
+        }
 
         [JsonProperty(PropertyName = "blockHash", NullValueHandling = NullValueHandling.Ignore)]
         [JsonConverter(typeof(UInt256JsonConverter))]
