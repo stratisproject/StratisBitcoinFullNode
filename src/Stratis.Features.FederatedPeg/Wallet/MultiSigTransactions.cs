@@ -144,6 +144,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 this.transactionDict.Clear();
                 this.spendableTransactionDict.Clear();
                 this.withdrawalsByDepositDict.Clear();
+                this.spentTransactionsByHeightDict.Clear();
             }
         }
 
