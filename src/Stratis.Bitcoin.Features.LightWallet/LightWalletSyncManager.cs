@@ -107,6 +107,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                     ChainedHeader fork = this.chainIndexer.FindFork(blockLocator);
                     this.walletManager.RemoveBlocks(fork);
                     this.walletManager.WalletTipHash = fork.HashBlock;
+                    this.walletManager.WalletTipHeight = fork.Height;
                     this.walletTip = fork;
                     this.logger.LogWarning($"Wallet tip was out of sync, wallet tip reverted back to Height = {this.walletTip.Height} hash = {this.walletTip.HashBlock}.");
                 }
@@ -370,6 +371,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             ChainedHeader chainedHeader = this.chainIndexer.GetHeader(height);
             this.walletTip = chainedHeader ?? throw new WalletException("Invalid block height");
             this.walletManager.WalletTipHash = chainedHeader.HashBlock;
+            this.walletManager.WalletTipHeight = chainedHeader.Height;
             this.blockNotification.SyncFrom(chainedHeader.HashBlock);
         }
     }

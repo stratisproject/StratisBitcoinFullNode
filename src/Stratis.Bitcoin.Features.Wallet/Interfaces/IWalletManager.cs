@@ -27,6 +27,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         uint256 WalletTipHash { get; set; }
 
         /// <summary>
+        /// The last processed block height.
+        /// </summary>
+        int WalletTipHeight { get; set; }
+
+        /// <summary>
         /// Lists all spendable transactions from all accounts in the wallet.
         /// </summary>
         /// <returns>A collection of spendable outputs</returns>
