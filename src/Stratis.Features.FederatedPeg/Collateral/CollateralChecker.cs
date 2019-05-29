@@ -89,14 +89,14 @@ namespace Stratis.Features.FederatedPeg.Collateral
                 this.depositsByAddress.Add(federationMember.CollateralMainchainAddress, 0);
             }
 
-            this.depositsByAddress.Add("test", new Money(0));
-
-            while (!this.cancellationSource.IsCancellationRequested && !this.collateralUpdated)
+            while (!this.cancellationSource.IsCancellationRequested)
             {
                 await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
 
-                this.logger.LogWarning("Node initialization will not continue until the gateway node responds.");
+                if (this.collateralUpdated)
+                    break;
 
+                this.logger.LogWarning("Node initialization will not continue until the gateway node responds.");
                 await this.DelayCollateralCheckAsync().ConfigureAwait(false);
             }
 
