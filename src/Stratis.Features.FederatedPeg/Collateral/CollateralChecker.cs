@@ -149,7 +149,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
             this.logger.LogDebug("Addresses to check {0}.", addressesToCheck.Count);
 
-            AddressIndexerBalancesResult addressBalanceResult = await this.blockStoreClient.GetAddressBalancesAsync(addressesToCheck, RequiredConfirmations, cancellation).ConfigureAwait(false);
+            AddressBalancesResult addressBalanceResult = await this.blockStoreClient.GetAddressBalancesAsync(addressesToCheck, RequiredConfirmations, cancellation).ConfigureAwait(false);
 
             if (addressBalanceResult == null)
             {
@@ -176,7 +176,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
             lock (this.locker)
             {
-                foreach (AddressIndexerBalanceResult addressMoney in addressBalanceResult.Balances)
+                foreach (AddressBalanceResult addressMoney in addressBalanceResult.Balances)
                 {
                     this.logger.LogDebug("Updating federation member {0} with amount {1}.", addressMoney.Address, addressMoney.Balance);
                     this.depositsByAddress[addressMoney.Address] = addressMoney.Balance;
