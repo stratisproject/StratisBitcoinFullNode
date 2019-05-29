@@ -535,30 +535,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             }
         }
 
-        ///// <inheritdoc />
-        //public AddressBalancesModel GetReceivedByAddress(string address, int minConfirmations = 1)
-        //{
-        //    var (isQuerable, reason) = this.IsQuerable();
-        //    if (!isQuerable)
-        //        return AddressBalancesModel.IndexerNotQueryable(reason);
-
-        //    lock (this.lockObject)
-        //    {
-        //        AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
-        //        if (indexData == null)
-        //        {
-        //            this.logger.LogTrace("(-)[NOT_FOUND]");
-        //            return null;
-        //        }
-
-        //        int maxAllowedHeight = this.consensusManager.Tip.Height - minConfirmations + 1;
-
-        //        long deposited = indexData.BalanceChanges.Where(x => x.Deposited && x.BalanceChangedHeight <= maxAllowedHeight).Sum(x => x.Satoshi);
-
-        //        return new Money(deposited);
-        //    }
-        //}
-
         private (bool isQuerable, string reason) IsQuerable()
         {
             if (this.addressIndexRepository == null)

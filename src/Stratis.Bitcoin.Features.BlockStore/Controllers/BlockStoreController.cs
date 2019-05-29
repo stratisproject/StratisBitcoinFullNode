@@ -21,7 +21,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         public const string GetAddressIndexerTip = "addressindexertip";
         public const string GetBlock = "block";
         public const string GetBlockCount = "GetBlockCount";
-        //public const string GetReceivedByAddress = "getreceivedbyaddress";
     }
 
     /// <summary>Controller providing operations on a blockstore.</summary>
@@ -170,21 +169,5 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-
-        ///// <summary>Returns the total amount received by the given address in transactions with at least<paramref name= "minConfirmations" /> confirmations.</ summary >
-        //[Route(BlockStoreRouteEndPoint.GetReceivedByAddress)]
-        //[HttpGet]
-        //public IActionResult GetReceivedByAddress([FromQuery] string address, int minConfirmations)
-        //{
-        //    try
-        //    {
-        //        return this.Json(this.addressIndexer.GetReceivedByAddress(address, minConfirmations));
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        this.logger.LogError("Exception occurred: {0}", e.ToString());
-        //        return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-        //    }
-        //}
     }
 }

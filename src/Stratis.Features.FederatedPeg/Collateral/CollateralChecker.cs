@@ -147,27 +147,33 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
             this.logger.LogDebug("Addresses to check {0}.", addressesToCheck.Count);
 
-            AddressBalancesModel collateralBalances = await this.blockStoreClient.GetAddressBalancesAsync(addressesToCheck, RequiredConfirmations, cancellation).ConfigureAwait(false);
+            AddressBalancesModel collateral = await this.blockStoreClient.GetAddressBalancesAsync(addressesToCheck, RequiredConfirmations, cancellation).ConfigureAwait(false);
 
-            if (collateralBalances == null)
+            if (collateral == null)
             {
                 this.logger.LogWarning("Failed to update collateral, please ensure that the mainnet gateway node is running and it's API feature is enabled.");
                 this.logger.LogTrace("(-)[CALL_RETURNED_NULL_RESULT]:false");
                 return;
             }
 
-            this.logger.LogDebug("Addresses received {0}.", collateralBalances.Balances.Count);
-
-            if (collateralBalances.Balances.Count != addressesToCheck.Count)
+            if (!string.IsNullOrEmpty(collateral.Reason))
             {
-                this.logger.LogDebug("Expected {0} data entries but received {1}.", addressesToCheck.Count, collateralBalances.Balances.Count);
+                this.logger.LogWarning("Failed to fetch address balances from counter chain node : reason {0}", collateral.Reason);
+                this.logger.LogTrace("(-)[FAILED]:{0}", collateral.Reason);
+            }
+
+            this.logger.LogDebug("Addresses received {0}.", collateral.Balances.Count);
+
+            if (collateral.Balances.Count != addressesToCheck.Count)
+            {
+                this.logger.LogDebug("Expected {0} data entries but received {1}.", addressesToCheck.Count, collateral.Balances.Count);
                 this.logger.LogTrace("(-)[CALL_RETURNED_INCONSISTENT_DATA]:false");
                 return;
             }
 
             lock (this.locker)
             {
-                foreach (AddressBalanceModel addressMoney in collateralBalances.Balances)
+                foreach (AddressBalanceModel addressMoney in collateral.Balances)
                 {
                     this.logger.LogDebug("Updating federation member {0} with amount {1}.", addressMoney.Address, addressMoney.Balance);
                     this.depositsByAddress[addressMoney.Address] = addressMoney.Balance;
