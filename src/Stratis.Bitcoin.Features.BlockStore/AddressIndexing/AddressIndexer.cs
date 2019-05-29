@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <summary>Returns balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
         /// <param name="addresses">The set of addresses that will be queried.</param>
         /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed or doesn't exists.</returns>
-        AddressBalancesModel GetAddressBalances(string[] addresses, int minConfirmations = 0);
+        AddressIndexerBalancesResult GetAddressBalances(string[] addresses, int minConfirmations = 0);
     }
 
     public class AddressIndexer : IAddressIndexer
@@ -500,13 +500,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
 
         /// <inheritdoc />
-        public AddressBalancesModel GetAddressBalances(string[] addresses, int minConfirmations = 1)
+        public AddressIndexerBalancesResult GetAddressBalances(string[] addresses, int minConfirmations = 1)
         {
             var (isQuerable, reason) = this.IsQuerable();
             if (!isQuerable)
-                return AddressBalancesModel.IndexerNotQueryable(reason);
+                return AddressIndexerBalancesResult.IndexerNotQueryable(reason);
 
-            var result = new AddressBalancesModel();
+            var result = new AddressIndexerBalancesResult();
 
             lock (this.lockObject)
             {
@@ -516,7 +516,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     if (indexData == null)
                     {
                         this.logger.LogDebug("{0} was not found in the indexer.", address);
-                        result.Balances.Add(new AddressBalanceModel(address, new Money(0)));
+                        result.Balances.Add(new AddressIndexerBalanceResult(address, new Money(0)));
                         continue;
                     }
 
@@ -532,7 +532,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                             balance -= change.Satoshi;
                     }
 
-                    result.Balances.Add(new AddressBalanceModel(address, new Money(balance)));
+                    result.Balances.Add(new AddressIndexerBalanceResult(address, new Money(balance)));
                 };
 
                 return result;

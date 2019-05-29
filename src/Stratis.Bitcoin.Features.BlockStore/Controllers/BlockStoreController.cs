@@ -155,13 +155,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             {
                 string[] addressesArray = addresses.Split(',');
 
-                this.logger.LogDebug($"Asking data for {addressesArray.Length} addresses.");
+                this.logger.LogDebug("Asking data for {0} addresses.", addressesArray.Length);
 
-                var model = this.addressIndexer.GetAddressBalances(addressesArray, minConfirmations);
+                var result = this.addressIndexer.GetAddressBalances(addressesArray, minConfirmations);
 
-                this.logger.LogDebug("Sending data for {0} addresses.", model.Balances.Count);
+                this.logger.LogDebug("Sending data for {0} addresses.", result.Balances.Count);
 
-                return this.Json(model);
+                return this.Json(result);
             }
             catch (Exception e)
             {
