@@ -8,6 +8,10 @@
     display: none;
 }
 
+#swagger-ui > section > div.swagger-ui {
+    padding-top: 40px;
+}
+
 .swagger-ui img {
     content: url("/images/logo-white.png");
     margin-right: 10px;
@@ -30,12 +34,38 @@
     background: #fafafa
 }
 
-.swagger-ui .wrapper {
+.swagger-ui .wrapper, body > div > .wrapper {
     width: 100%;
     max-width: 1460px;
     margin: 0 auto;
     padding: 0 20px
 }
+
+
+.featurebar {
+    width: 100%;
+    background: white;
+    height: 40px;
+    line-height: 40px;
+    position: absolute;
+    box-shadow: rgba(0, 0, 0, 0.075) 0px 0.0825rem 0.2425rem;
+    font-family: Open Sans,sans-serif;
+    font-size: 9pt;
+    color: #3b4151;
+    top: 60px;
+}
+
+    .featurebar a {
+        float: right;
+        text-decoration: inherit;
+        color: #1387c9;
+    }
+
+        .featurebar a img {
+            width: 17px;
+            vertical-align: middle;
+            margin-right: 5px;
+        }
 
 .swagger-ui .opblock-tag-section {
     display: -webkit-box;
