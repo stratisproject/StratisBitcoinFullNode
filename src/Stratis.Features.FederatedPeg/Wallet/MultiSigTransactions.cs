@@ -220,7 +220,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         public bool TryGetTransaction(uint256 transactionId, uint transactionIndex, out TransactionData transactionData)
         {
-            return this.transactionDict.TryGetValue(new OutPoint(transactionId, transactionIndex), out transactionData);
+            lock (this.lockObject)
+            {
+                return this.transactionDict.TryGetValue(new OutPoint(transactionId, transactionIndex), out transactionData);
+            }
         }
 
         public bool Contains(TransactionData item)
