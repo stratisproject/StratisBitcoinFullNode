@@ -33,10 +33,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <param name="addresses">The set of addresses that will be queried.</param>
         /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed or doesn't exists.</returns>
         AddressBalancesModel GetAddressBalances(string[] addresses, int minConfirmations = 0);
-
-        ///// <summary>Returns the total amount received by the given address in transactions with at least <paramref name="minConfirmations"/> confirmations.</summary>
-        ///// <returns>Total amount received by a given address or <c>null</c> if address wasn't indexed.</returns>
-        //Money GetReceivedByAddress(string address, int minConfirmations = 0);
     }
 
     public class AddressIndexer : IAddressIndexer
@@ -495,6 +491,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.addressIndexRepository.AddOrUpdate(indexData.Address, indexData, indexData.BalanceChanges.Count + 1);
         }
 
+        private bool IsSynced()
+        {
+            lock (this.lockObject)
+            {
+                return this.consensusManager.Tip.Height - this.tipData.Height <= ConsiderSyncedMaxDistance;
+            }
+        }
+
         /// <inheritdoc />
         public AddressBalancesModel GetAddressBalances(string[] addresses, int minConfirmations = 1)
         {
@@ -550,14 +554,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             }
 
             return (true, string.Empty);
-        }
-
-        private bool IsSynced()
-        {
-            lock (this.lockObject)
-            {
-                return this.consensusManager.Tip.Height - this.tipData.Height <= ConsiderSyncedMaxDistance;
-            }
         }
 
         /// <inheritdoc/>
