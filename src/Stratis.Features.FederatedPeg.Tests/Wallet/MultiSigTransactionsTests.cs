@@ -16,13 +16,13 @@ namespace Stratis.Features.FederatedPeg.Tests.Wallet
                 for (int mask = 0; mask < 64; mask++)
                 {
                     yield return new object[] {
-                    (mask & 32) != 0,
-                    (mask & 16) != 0,
-                    (mask & 8) != 0,
-                    (mask & 4) != 0,
-                    (mask & 2) != 0,
-                    (mask & 1) != 0
-                };
+                        (mask & 32) != 0,
+                        (mask & 16) != 0,
+                        (mask & 8) != 0,
+                        (mask & 4) != 0,
+                        (mask & 2) != 0,
+                        (mask & 1) != 0
+                    };
                 }
             }
 
@@ -100,11 +100,10 @@ namespace Stratis.Features.FederatedPeg.Tests.Wallet
 
             transactions.Remove(transactionData);
 
-            Assert.DoesNotContain(transactionData, transactions);
-
+            Assert.Empty(transactions);
             Assert.Empty(transactions.SpentTransactionsBeforeHeight(int.MaxValue));
             Assert.Empty(transactions.GetUnspentTransactions());
-            Assert.Empty(transactions.GetSpendingTransactionsByDepositId(spendingDepositId).First().txList);
+            Assert.Empty(transactions.GetSpendingTransactionsByDepositId(spendingDepositId).Single().txList);
         }
     }
 }
