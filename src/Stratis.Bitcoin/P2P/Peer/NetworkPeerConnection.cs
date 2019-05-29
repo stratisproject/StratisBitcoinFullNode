@@ -153,12 +153,12 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 if ((ex is IOException) || (ex is OperationCanceledException) || (ex is ObjectDisposedException))
                 {
-                    this.logger.LogTrace("Receiving cancelled.");
+                    this.logger.LogDebug("Receiving cancelled.");
                     this.peer.Disconnect("Receiving cancelled.");
                 }
                 else
                 {
-                    this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
+                    this.logger.LogDebug("Exception occurred: '{0}'", ex.ToString());
                     this.peer.Disconnect("Unexpected failure while waiting for a message", ex);
                 }
             }
@@ -200,7 +200,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (OperationCanceledException)
             {
-                this.logger.LogTrace("Connecting to '{0}' cancelled.", endPoint);
+                this.logger.LogDebug("Connecting to '{0}' cancelled.", endPoint);
                 this.logger.LogTrace("(-)[CANCELLED]");
                 throw;
             }
@@ -266,7 +266,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception ex)
             {
-                this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
+                this.logger.LogDebug("Exception occurred: '{0}'", ex.ToString());
 
                 this.peer.Disconnect("Unexpected exception while sending a message", ex);
 
@@ -293,7 +293,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 if (innerStream == null)
                 {
-                    this.logger.LogTrace("Connection has been terminated.");
+                    this.logger.LogDebug("Connection has been terminated.");
                     this.logger.LogTrace("(-)[NO_STREAM]");
                     throw new OperationCanceledException();
                 }
@@ -308,13 +308,13 @@ namespace Stratis.Bitcoin.P2P.Peer
                     {
                         this.logger.LogTrace("Connection has been terminated.");
                         if (e is IOException) this.logger.LogTrace("(-)[IO_EXCEPTION]");
-                        else if(e is ObjectDisposedException) this.logger.LogTrace("(-)[DISPOSED]");
+                        else if (e is ObjectDisposedException) this.logger.LogTrace("(-)[DISPOSED]");
                         else this.logger.LogTrace("(-)[CANCELLED]");
                         throw new OperationCanceledException();
                     }
                     else
                     {
-                        this.logger.LogTrace("Exception occurred: {0}", e.ToString());
+                        this.logger.LogDebug("Exception occurred: {0}", e.ToString());
                         this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
                         throw;
                     }
@@ -414,7 +414,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             if (innerStream == null)
             {
-                this.logger.LogTrace("Connection has been terminated.");
+                this.logger.LogDebug("Connection has been terminated.");
                 this.logger.LogTrace("(-)[NO_STREAM]");
                 throw new OperationCanceledException();
             }
@@ -441,6 +441,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>Binary message received from the connected counterparty.</returns>
         /// <exception cref="OperationCanceledException">Thrown if the operation was cancelled or the end of the stream was reached.</exception>
         /// <exception cref="FormatException">Thrown if the incoming message is too big.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown if the connection has been disposed.</exception>
+        /// <exception cref="IOException">Thrown if the I/O operation has been aborted because of either a thread exit or an application request.</exception>
         /// <remarks>
         /// TODO: Currently we rely on <see cref="Message.ReadNext(System.IO.Stream, Network, ProtocolVersion, CancellationToken, byte[], out PerformanceCounter)"/>
         /// for parsing the message from binary data. That method need stream to read from, so to achieve that we create a memory stream from our data,
