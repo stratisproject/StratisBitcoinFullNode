@@ -627,7 +627,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         private void AddSpendingTransactionToWallet(Transaction transaction,
             IEnumerable<TxOut> paidToOutputs,
             uint256 spendingTransactionId,
-            int? spendingTransactionIndex,
+            int spendingTransactionIndex,
             int? blockHeight = null,
             uint256 blockHash = null,
             Block block = null,
@@ -638,7 +638,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.Assert(blockHash == (blockHash ?? block?.GetHash()));
 
             // Get the transaction being spent.
-            if (spendingTransactionIndex == null || !this.Wallet.MultiSigAddress.Transactions.TryGetTransaction(spendingTransactionId, (uint)spendingTransactionIndex, out TransactionData spentTransaction))
+            if (!this.Wallet.MultiSigAddress.Transactions.TryGetTransaction(spendingTransactionId, spendingTransactionIndex, out TransactionData spentTransaction))
             {
                 // Strange, why would it be null?
                 this.logger.LogTrace("(-)[TX_NULL]");

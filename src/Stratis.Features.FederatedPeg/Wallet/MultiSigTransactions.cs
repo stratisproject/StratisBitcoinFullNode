@@ -218,7 +218,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
-        public bool TryGetTransaction(uint256 transactionId, uint transactionIndex, out TransactionData transactionData)
+        public bool TryGetTransaction(uint256 transactionId, int transactionIndex, out TransactionData transactionData)
         {
             lock (this.lockObject)
             {
