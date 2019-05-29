@@ -93,7 +93,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
             {
                 await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
 
-                await this.DelayCollateralCheckAsync();
+                await this.DelayCollateralCheckAsync().ConfigureAwait(false);
             }
 
             this.updateCollateralContinuouslyTask = this.UpdateCollateralInfoContinuouslyAsync();
@@ -108,10 +108,13 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
                 this.logger.LogWarning("Node initialization will not continue until the gateway node responds.");
 
-                await this.DelayCollateralCheckAsync();
+                await this.DelayCollateralCheckAsync().ConfigureAwait(false);
             }
         }
 
+        /// <summary>
+        /// Delay checking the federation member's collateral with <see cref="CollateralUpdateIntervalSeconds"/> seconds.
+        /// </summary>
         private async Task DelayCollateralCheckAsync()
         {
             try
