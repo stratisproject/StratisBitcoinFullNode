@@ -404,17 +404,27 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <exception cref="OperationCanceledException">Thrown if the operation was cancelled or the end of the stream was reached.</exception>
         private async Task ReadBytesAsync(byte[] buffer, int offset, int bytesToRead, CancellationToken cancellation = default(CancellationToken))
         {
-            while (bytesToRead > 0)
+            using (await this.writeLock.LockAsync(cancellation).ConfigureAwait(false))
             {
-                int chunkSize = await this.stream.ReadAsync(buffer, offset, bytesToRead, cancellation).ConfigureAwait(false);
-                if (chunkSize == 0)
+                if (this.stream == null)
                 {
-                    this.logger.LogTrace("(-)[STREAM_END]");
+                    this.logger.LogTrace("Connection has been terminated.");
+                    this.logger.LogTrace("(-)[NO_STREAM]");
                     throw new OperationCanceledException();
                 }
 
-                offset += chunkSize;
-                bytesToRead -= chunkSize;
+                while (bytesToRead > 0)
+                {
+                    int chunkSize = await this.stream.ReadAsync(buffer, offset, bytesToRead, cancellation).ConfigureAwait(false);
+                    if (chunkSize == 0)
+                    {
+                        this.logger.LogTrace("(-)[STREAM_END]");
+                        throw new OperationCanceledException();
+                    }
+
+                    offset += chunkSize;
+                    bytesToRead -= chunkSize;
+                }
             }
         }
 
@@ -472,14 +482,17 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         public void Disconnect()
         {
-            NetworkStream disposeStream = this.stream;
-            TcpClient disposeTcpClient = this.tcpClient;
+            lock (this.writeLock.Lock())
+            {
+                NetworkStream disposeStream = this.stream;
+                TcpClient disposeTcpClient = this.tcpClient;
 
-            this.stream = null;
-            this.tcpClient = null;
+                this.stream = null;
+                this.tcpClient = null;
 
-            disposeStream?.Dispose();
-            disposeTcpClient?.Dispose();
+                disposeStream?.Dispose();
+                disposeTcpClient?.Dispose();
+            }
         }
     }
 }
