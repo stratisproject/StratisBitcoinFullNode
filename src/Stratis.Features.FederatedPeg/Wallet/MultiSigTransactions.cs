@@ -155,12 +155,17 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// List all spendable transactions in a multisig address.
         /// </summary>
         /// <returns></returns>
-        public TransactionData[] UnspentTransactions()
+        public TransactionData[] GetUnspentTransactions()
         {
             lock (this.lockObject)
             {
                 return this.spendableTransactionDict.Select(kv => kv.Value).ToArray();
             }
+        }
+
+        public bool TryGetTransaction(uint256 transactionId, uint transactionIndex, out TransactionData transactionData)
+        {
+            return this.transactionDict.TryGetValue(new OutPoint(transactionId, transactionIndex), out transactionData);
         }
 
         public bool Contains(TransactionData item)

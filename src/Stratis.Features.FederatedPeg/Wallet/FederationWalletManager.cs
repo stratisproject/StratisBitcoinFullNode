@@ -639,8 +639,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.Assert(blockHash == (blockHash ?? block?.GetHash()));
 
             // Get the transaction being spent.
-            TransactionData spentTransaction = this.Wallet.MultiSigAddress.Transactions.SingleOrDefault(t => (t.Id == spendingTransactionId) && (t.Index == spendingTransactionIndex));
-            if (spentTransaction == null)
+            if (spendingTransactionIndex == null || !this.Wallet.MultiSigAddress.Transactions.TryGetTransaction(spendingTransactionId, (uint)spendingTransactionIndex, out TransactionData spentTransaction))
             {
                 // Strange, why would it be null?
                 this.logger.LogTrace("(-)[TX_NULL]");
@@ -939,7 +938,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 // Verify that there are no earlier unspent UTXOs.
                 Comparer<TransactionData> comparer = Comparer<TransactionData>.Create(DeterministicCoinOrdering.CompareTransactionData);
-                TransactionData earliestUnspent = this.Wallet.MultiSigAddress.Transactions.UnspentTransactions().OrderBy(t => t, comparer).FirstOrDefault();
+                TransactionData earliestUnspent = this.Wallet.MultiSigAddress.Transactions.GetUnspentTransactions().OrderBy(t => t, comparer).FirstOrDefault();
                 if (earliestUnspent != null)
                 {
                     TransactionData oldestInput = transaction.Inputs
@@ -1109,7 +1108,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             // When calculating the confirmations the tip must be advanced by one.
 
             int countFrom = currentChainHeight + 1;
-            foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions.UnspentTransactions())
+            foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions.GetUnspentTransactions())
             {
                 int? confirmationCount = 0;
                 if (transactionData.BlockHeight != null)
@@ -1130,7 +1129,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             lock (this.lockObject)
             {
-                IEnumerable<TransactionData> transactions = this.Wallet.MultiSigAddress.Transactions.UnspentTransactions();
+                IEnumerable<TransactionData> transactions = this.Wallet.MultiSigAddress.Transactions.GetUnspentTransactions();
 
                 long confirmed = transactions.Sum(t => t.SpendableAmount(true));
                 long total = transactions.Sum(t => t.SpendableAmount(false));
