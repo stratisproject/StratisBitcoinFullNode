@@ -62,7 +62,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         private void AddSpentTransactionByHeight(TransactionData transactionData)
         {
-            if (!transactionData.IsSpendable() || transactionData.BlockHeight == null)
+            if (transactionData.IsSpendable() || transactionData.BlockHeight == null)
                 return;
 
             if (!this.spentTransactionsByHeightDict.TryGetValue((int)transactionData.BlockHeight, out List<TransactionData> txList))
