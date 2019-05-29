@@ -93,6 +93,8 @@ namespace Stratis.Features.FederatedPeg.Collateral
             {
                 await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
 
+                this.logger.LogWarning("Node initialization will not continue until the gateway node responds.");
+
                 await this.DelayCollateralCheckAsync().ConfigureAwait(false);
             }
 
@@ -105,8 +107,6 @@ namespace Stratis.Features.FederatedPeg.Collateral
             while (!this.cancellationSource.IsCancellationRequested)
             {
                 await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
-
-                this.logger.LogWarning("Node initialization will not continue until the gateway node responds.");
 
                 await this.DelayCollateralCheckAsync().ConfigureAwait(false);
             }
