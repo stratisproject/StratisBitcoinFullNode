@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         {
             lock (this.LockObject)
             {
-                this.addressIndexerRewindData.Insert(rewindData);
+                this.addressIndexerRewindData.Upsert(rewindData);
             }
         }
 
