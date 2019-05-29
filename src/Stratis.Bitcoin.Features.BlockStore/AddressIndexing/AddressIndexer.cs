@@ -502,8 +502,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <inheritdoc />
         public AddressBalancesResult GetAddressBalances(string[] addresses, int minConfirmations = 1)
         {
-            var (isQuerable, reason) = this.IsQuerable();
-            if (!isQuerable)
+            var (isQueryable, reason) = this.IsQueryable();
+            if (!isQueryable)
                 return AddressBalancesResult.RequestFailed(reason);
 
             var result = new AddressBalancesResult();
@@ -513,12 +513,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 foreach (var address in addresses)
                 {
                     AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
-                    if (indexData == null)
-                    {
-                        this.logger.LogDebug("{0} was not found in the indexer.", address);
-                        result.Balances.Add(new AddressBalanceResult(address, new Money(0)));
-                        continue;
-                    }
 
                     long balance = 0;
 
@@ -539,7 +533,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             }
         }
 
-        private (bool isQuerable, string reason) IsQuerable()
+        private (bool isQueryable, string reason) IsQueryable()
         {
             if (this.addressIndexRepository == null)
             {
