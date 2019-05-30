@@ -519,7 +519,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     {
                         this.logger.LogTrace("Removing UTXO {0}-{1}", foundTransaction.Id, foundTransaction.Index);
 
-                        this.RemoveInputKeysLookupLock(foundTransaction);
                         this.Wallet.MultiSigAddress.Transactions.Remove(foundTransaction);
                         updatedWallet = true;
                     }
@@ -590,7 +589,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 };
 
                 this.Wallet.MultiSigAddress.Transactions.Add(newTransaction);
-                this.AddInputKeysLookupLock(newTransaction);
             }
             else
             {
@@ -746,28 +744,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
 
             return spendingDetails;
-        }
-
-        /// <summary>
-        /// Adds a <see cref="TransactionData"/> to <see cref="outpointLookup"/>.
-        /// </summary>
-        private void AddInputKeysLookupLock(TransactionData transactionData)
-        {
-            Guard.NotNull(transactionData, nameof(transactionData));
-
-            // Locked in containing methods.
-            this.outpointLookup[new OutPoint(transactionData.Id, transactionData.Index)] = transactionData;
-        }
-
-        /// <summary>
-        /// Remove a <see cref="TransactionData"/> from <see cref="outpointLookup"/>.
-        /// </summary>
-        private void RemoveInputKeysLookupLock(TransactionData transactionData)
-        {
-            Guard.NotNull(transactionData, nameof(transactionData));
-
-            // Locked in containing methods.
-            this.outpointLookup.Remove(new OutPoint(transactionData.Id, transactionData.Index));
         }
 
         public void TransactionFoundInternal(Script script)
