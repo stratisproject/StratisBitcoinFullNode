@@ -9,6 +9,9 @@ namespace Stratis.Features.FederatedPeg.Tests.Wallet
 {
     public class MultiSigTransactionsTests
     {
+        /// <summary>
+        /// This class creates all possible <c>true</c>/<c>false</c> combinations for input to <see cref="TransactionDataAddedToMultiSigTransactionsExistsInExpectedLookups(bool, bool, bool, bool, bool, bool)"/>.
+        /// </summary>
         private class TestData : IEnumerable<object[]>
         {
             public IEnumerator<object[]> GetEnumerator()
