@@ -14,7 +14,6 @@ using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
-using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -130,10 +129,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             TestBase.WaitLoop(() => this.addressIndexer.IndexerTip == headers.Last());
 
-            Assert.Equal(60_000, this.addressIndexer.GetAddressBalance(address1).Satoshi);
-            Assert.Equal(2_000, this.addressIndexer.GetAddressBalance(address2).Satoshi);
+            Assert.Equal(60_000, this.addressIndexer.GetAddressBalances(new[] { address1 }).Balances.First().Balance.Satoshi);
+            Assert.Equal(2_000, this.addressIndexer.GetAddressBalances(new[] { address2 }).Balances.First().Balance.Satoshi);
 
-            Assert.Equal(70_000, this.addressIndexer.GetAddressBalance(address1, 93).Satoshi);
+            Assert.Equal(70_000, this.addressIndexer.GetAddressBalances(new[] { address1 }, 93).Balances.First().Balance.Satoshi);
 
             // Now trigger rewind to see if indexer can handle reorgs.
             ChainedHeader forkPoint = headers.Single(x => x.Height == 8);
@@ -150,7 +149,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.consensusManagerMock.Setup(x => x.Tip).Returns(() => headersFork.Last());
             TestBase.WaitLoop(() => this.addressIndexer.IndexerTip == headersFork.Last());
 
-            Assert.Equal(70_000, this.addressIndexer.GetAddressBalance(address1).Satoshi);
+            Assert.Equal(70_000, this.addressIndexer.GetAddressBalances(new[] { address1 }).Balances.First().Balance.Satoshi);
 
             this.addressIndexer.Dispose();
         }

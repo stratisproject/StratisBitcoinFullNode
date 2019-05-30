@@ -17,12 +17,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 {
     public static class BlockStoreRouteEndPoint
     {
-        public const string GetAddressBalance = "getaddressbalance";
         public const string GetAddressesBalances = "getaddressesbalances";
         public const string GetAddressIndexerTip = "addressindexertip";
         public const string GetBlock = "block";
         public const string GetBlockCount = "GetBlockCount";
-        public const string GetReceivedByAddress = "getreceivedbyaddress";
     }
 
     /// <summary>Controller providing operations on a blockstore.</summary>
@@ -146,28 +144,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             }
         }
 
-        /// <summary>Provides balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
-        [Route(BlockStoreRouteEndPoint.GetAddressBalance)]
-        [HttpGet]
-        public IActionResult GetAddressBalance([FromQuery] string address, int minConfirmations)
-        {
-            try
-            {
-                Money balance = this.addressIndexer.GetAddressBalance(address, minConfirmations);
-
-                if (balance == null)
-                    balance = new Money(0);
-
-                return this.Json(balance);
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }
-
         /// <summary>Provides balance of the given addresses confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
+        /// <param name="addresses">A comma delimited set of addresses that will be queried.</param>
+        /// <returns>A result object containing the balance for each requested address and if so, a meesage stating why the indexer is not queryable.</returns>
         [Route(BlockStoreRouteEndPoint.GetAddressesBalances)]
         [HttpGet]
         public IActionResult GetAddressesBalances(string addresses, int minConfirmations)
@@ -176,38 +155,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             {
                 string[] addressesArray = addresses.Split(',');
 
-                this.logger.LogDebug($"Asking data for {addressesArray.Length} addresses.");
+                this.logger.LogDebug("Asking data for {0} addresses.", addressesArray.Length);
 
-                var model = new AddressBalancesModel();
-                foreach (string address in addressesArray)
-                {
-                    Money balance = this.addressIndexer.GetAddressBalance(address, minConfirmations);
+                var result = this.addressIndexer.GetAddressBalances(addressesArray, minConfirmations);
 
-                    if (balance == null)
-                        balance = new Money(0);
+                this.logger.LogDebug("Sending data for {0} addresses.", result.Balances.Count);
 
-                    model.Balances.Add(new AddressBalanceModel(address, balance));
-                }
-
-                this.logger.LogDebug("Sending {0} entries.", model.Balances.Count);
-
-                return this.Json(model);
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }
-
-        /// <summary>Returns the total amount received by the given address in transactions with at least<paramref name= "minConfirmations" /> confirmations.</ summary >
-        [Route(BlockStoreRouteEndPoint.GetReceivedByAddress)]
-        [HttpGet]
-        public IActionResult GetReceivedByAddress([FromQuery] string address, int minConfirmations)
-        {
-            try
-            {
-                return this.Json(this.addressIndexer.GetReceivedByAddress(address, minConfirmations));
+                return this.Json(result);
             }
             catch (Exception e)
             {
