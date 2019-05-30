@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
@@ -72,6 +73,7 @@ namespace Stratis.Bitcoin.Features.PoA
         private readonly VotingDataEncoder votingDataEncoder;
 
         private readonly PoAMinerSettings settings;
+        private readonly IAsyncProvider asyncProvider;
 
         private Task miningTask;
 
@@ -91,7 +93,8 @@ namespace Stratis.Bitcoin.Features.PoA
             IWalletManager walletManager,
             INodeStats nodeStats,
             VotingManager votingManager,
-            PoAMinerSettings poAMinerSettings)
+            PoAMinerSettings poAMinerSettings,
+            IAsyncProvider asyncProvider)
         {
             this.consensusManager = consensusManager;
             this.dateTimeProvider = dateTimeProvider;
@@ -106,6 +109,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.walletManager = walletManager;
             this.votingManager = votingManager;
             this.settings = poAMinerSettings;
+            this.asyncProvider = asyncProvider;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.cancellation = CancellationTokenSource.CreateLinkedTokenSource(new[] { nodeLifetime.ApplicationStopping });
@@ -120,6 +124,7 @@ namespace Stratis.Bitcoin.Features.PoA
             if (this.miningTask == null)
             {
                 this.miningTask = this.CreateBlocksAsync();
+                this.asyncProvider.RegisterTask($"{nameof(PoAMiner)}.{nameof(this.miningTask)}", this.miningTask);
             }
         }
 
