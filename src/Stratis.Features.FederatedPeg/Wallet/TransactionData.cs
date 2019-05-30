@@ -23,7 +23,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
     public interface ITransactionDataObservable
     {
         /// <summary>
-        /// Used by the parent/container oblect to subscribe to changes in the <see cref="TransactionData"/> child object.
+        /// Used by the parent/container object to subscribe to changes in the <see cref="TransactionData"/> child object.
         /// </summary>
         /// <param name="observer">The parent that wishes to observe the child.</param>
         void Subscribe(ITransactionDataObserver observer);
