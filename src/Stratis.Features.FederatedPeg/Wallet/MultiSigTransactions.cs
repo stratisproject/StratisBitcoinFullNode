@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Features.FederatedPeg.Wallet
 {
@@ -9,11 +10,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
     /// Maintains and observes a collection of <see cref="TransactionData"/> objects.
     /// Automatically updates the lookups when certain fields of the child objects change.
     /// </summary>
-    public class MultiSigTransactions : ICollection<TransactionData>, ITransactionDataObserver
+    public class MultiSigTransactions : LockProtected, ICollection<TransactionData>, ITransactionDataObserver
     {
-        // Locks this object.
-        private readonly object lockObject;
-
         private readonly Dictionary<OutPoint, TransactionData> transactionDict;
         private readonly Dictionary<OutPoint, TransactionData> spendableTransactionDict;
         private readonly Dictionary<uint256, List<TransactionData>> withdrawalsByDepositDict;
@@ -23,9 +21,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         public bool IsReadOnly => false;
 
-        public MultiSigTransactions()
+        public MultiSigTransactions() : base()
         {
-            this.lockObject = new object();
             this.transactionDict = new Dictionary<OutPoint, TransactionData>();
             this.spendableTransactionDict = new Dictionary<OutPoint, TransactionData>();
             this.withdrawalsByDepositDict = new Dictionary<uint256, List<TransactionData>>();
