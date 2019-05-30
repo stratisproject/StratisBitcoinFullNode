@@ -342,7 +342,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 {
                     for (int i = 0; i < tx.Outputs.Count; i++)
                     {
-                        if (tx.Outputs[i].Value == Money.Zero)
+                        // OP_RETURN outputs and empty outputs cannot be spent and therefore do not need to be put into the cache.
+                        if (tx.Outputs[i].IsEmpty || tx.Outputs[i].ScriptPubKey.IsUnspendable)
                             continue;
 
                         var outPoint = new OutPoint(tx, i);
@@ -410,7 +411,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         Money amountReceived = txOut.Value;
 
                         // Transactions that don't actually change the balance just bloat the database.
-                        if (amountReceived == 0)
+                        if (amountReceived == 0 || txOut.IsEmpty || txOut.ScriptPubKey.IsUnspendable)
                             continue;
 
                         string address = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, txOut.ScriptPubKey);
