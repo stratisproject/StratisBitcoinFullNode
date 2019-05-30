@@ -80,6 +80,8 @@ namespace Stratis.Bitcoin
 
         private IAsyncLoop periodicBenchmarkLoop;
 
+        private NodeRunningLock nodeRunningLock;
+
         /// <inheritdoc />
         public INodeLifetime NodeLifetime
         {
@@ -160,10 +162,17 @@ namespace Stratis.Bitcoin
             Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
             this.Services = serviceProvider;
-
             this.logger = this.Services.ServiceProvider.GetService<ILoggerFactory>().CreateLogger(this.GetType().FullName);
-
             this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
+
+            this.nodeRunningLock = new NodeRunningLock(this.DataFolder);
+
+            if (!this.nodeRunningLock.TryLockNodeFolder())
+            {
+                this.logger.LogCritical("Node folder is being used by another instance of the application!");
+                throw new Exception("Node folder is being used!");
+            }
+
             this.DateTimeProvider = this.Services.ServiceProvider.GetService<IDateTimeProvider>();
             this.Network = this.Services.ServiceProvider.GetService<Network>();
             this.Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
@@ -291,6 +300,8 @@ namespace Stratis.Bitcoin
             // Fire INodeLifetime.Stopped.
             this.logger.LogInformation("Notify application has stopped.");
             this.nodeLifetime.NotifyStopped();
+
+            this.nodeRunningLock.UnlockNodeFolder();
 
             this.State = FullNodeState.Disposed;
         }
