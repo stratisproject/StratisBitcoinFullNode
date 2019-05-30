@@ -5,13 +5,19 @@ using NBitcoin;
 
 namespace Stratis.Features.FederatedPeg.Wallet
 {
+    /// <summary>
+    /// Maintains and observes a collection of <see cref="TransactionData"/> objects.
+    /// Automatically updates the lookups when certain fields of the child objects change.
+    /// </summary>
     public class MultiSigTransactions : ICollection<TransactionData>, ITransactionDataObserver
     {
+        // Locks this object.
         private readonly object lockObject;
-        private Dictionary<OutPoint, TransactionData> transactionDict;
-        private Dictionary<OutPoint, TransactionData> spendableTransactionDict;
-        private Dictionary<uint256, List<TransactionData>> withdrawalsByDepositDict;
-        private SortedDictionary<int, List<TransactionData>> spentTransactionsByHeightDict;
+
+        private readonly Dictionary<OutPoint, TransactionData> transactionDict;
+        private readonly Dictionary<OutPoint, TransactionData> spendableTransactionDict;
+        private readonly Dictionary<uint256, List<TransactionData>> withdrawalsByDepositDict;
+        private readonly SortedDictionary<int, List<TransactionData>> spentTransactionsByHeightDict;
 
         public int Count => this.transactionDict.Count;
 
@@ -26,12 +32,12 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.spentTransactionsByHeightDict = new SortedDictionary<int, List<TransactionData>>();
         }
 
-        private bool TryAddWithdrawal(TransactionData transactionData)
+        private void AddWithdrawal(TransactionData transactionData)
         {
             uint256 matchingDepositId = transactionData.SpendingDetails?.WithdrawalDetails?.MatchingDepositId;
 
             if (matchingDepositId == null)
-                return false;
+                return;
 
             if (!this.withdrawalsByDepositDict.TryGetValue(matchingDepositId, out List<TransactionData> txList))
             {
@@ -40,11 +46,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
 
             txList.Add(transactionData);
-
-            return true;
         }
 
-        private void TryRemoveWithdrawal(TransactionData transactionData)
+        private void RemoveWithdrawal(TransactionData transactionData)
         {
             uint256 matchingDepositId = transactionData.SpendingDetails?.WithdrawalDetails?.MatchingDepositId;
 
@@ -88,6 +92,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
+        /// <summary>
+        /// Adds a <see cref="TransactionData"/> object to the collection and updates the lookups.
+        /// </summary>
+        /// <param name="transactionData">The <see cref="TransactionData"/> object to add to the collection</param>.
         public void Add(TransactionData transactionData)
         {
             lock (this.lockObject)
@@ -97,7 +105,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (transactionData.IsSpendable())
                     this.spendableTransactionDict.Add(transactionData.Key, transactionData);
 
-                this.TryAddWithdrawal(transactionData);
+                this.AddWithdrawal(transactionData);
 
                 this.AddSpentTransactionByHeight(transactionData);
 
@@ -105,6 +113,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
+        /// <summary>
+        /// Removes a <see cref="TransactionData"/> object from the collection and updates the lookups.
+        /// </summary>
+        /// <param name="transactionData">The <see cref="TransactionData"/> object to remove from the collection.</param>
         public bool Remove(TransactionData transactionData)
         {
             lock (this.lockObject)
@@ -114,7 +126,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (this.spendableTransactionDict.ContainsKey(transactionData.Key))
                     this.spendableTransactionDict.Remove(transactionData.Key);
 
-                this.TryRemoveWithdrawal(transactionData);
+                this.RemoveWithdrawal(transactionData);
 
                 this.RemoveSpentTransactionByHeight(transactionData);
 
@@ -124,6 +136,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
+        /// <summary>
+        /// Gets an enumerator for the collection.
+        /// </summary>
+        /// <returns>Returns an enumerator for the collection.</returns>
         public IEnumerator<TransactionData> GetEnumerator()
         {
             lock (this.lockObject)
@@ -132,11 +148,18 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
+        /// <summary>
+        /// Gets an enumerator for the collection.
+        /// </summary>
+        /// <returns>Returns an enumerator for the collection.</returns>
         IEnumerator IEnumerable.GetEnumerator()
         {
             return this.transactionDict.Values.ToList().GetEnumerator();
         }
 
+        /// <summary>
+        /// Clears the collection and lookups.
+        /// </summary>
         public void Clear()
         {
             lock (this.lockObject)
@@ -148,6 +171,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
+        /// <summary>
+        /// Called by the <see cref="TransactionData"/> child object to let us know
+        /// that its <see cref="TransactionData.SpendingDetails"/> is about to change.
+        /// </summary>
+        /// <param name="transactionData">The <see cref="TransactionData"/> object notifying us.</param>
         public void BeforeSpendingDetailsChanged(TransactionData transactionData)
         {
             lock (this.lockObject)
@@ -157,10 +185,15 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 this.RemoveSpentTransactionByHeight(transactionData);
 
-                this.TryRemoveWithdrawal(transactionData);
+                this.RemoveWithdrawal(transactionData);
             }
         }
 
+        /// <summary>
+        /// Called by the <see cref="TransactionData"/> child object to let us know
+        /// that its <see cref="TransactionData.SpendingDetails"/> has changed.
+        /// </summary>
+        /// <param name="transactionData">The <see cref="TransactionData"/> object notifying us.</param>
         public void AfterSpendingDetailsChanged(TransactionData transactionData)
         {
             lock (this.lockObject)
@@ -170,26 +203,41 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 this.AddSpentTransactionByHeight(transactionData);
 
-                this.TryAddWithdrawal(transactionData);
+                this.AddWithdrawal(transactionData);
             }
         }
 
+        /// <summary>
+        /// Called by the <see cref="TransactionData"/> child object to let us know
+        /// that its <see cref="TransactionData.BlockHeight"/> is about to change.
+        /// </summary>
+        /// <param name="transactionData">The <see cref="TransactionData"/> object notifying us.</param>
         public void BeforeBlockHeightChanged(TransactionData transactionData)
         {
             lock (this.lockObject)
             {
-                RemoveSpentTransactionByHeight(transactionData);
+                this.RemoveSpentTransactionByHeight(transactionData);
             }
         }
 
+        /// <summary>
+        /// Called by the <see cref="TransactionData"/> child object to let us know
+        /// that its <see cref="TransactionData.BlockHeight"/> has changed.
+        /// </summary>
+        /// <param name="transactionData">The <see cref="TransactionData"/> object notifying us.</param>
         public void AfterBlockHeightChanged(TransactionData transactionData)
         {
             lock (this.lockObject)
             {
-                AddSpentTransactionByHeight(transactionData);
+                this.AddSpentTransactionByHeight(transactionData);
             }
         }
 
+        /// <summary>
+        /// Gets the <see cref="TransactionData"/> objects related to a specific deposit or all if none is specified.
+        /// </summary>
+        /// <param name="depositId">The deposit id of the deposit.</param>
+        /// <returns>The <see cref="TransactionData"/> objects related to the provided deposit id. Returns all if not specified.</returns>
         public (uint256 depositId, List<TransactionData> txList)[] GetSpendingTransactionsByDepositId(uint256 depositId = null)
         {
             lock (this.lockObject)
@@ -209,7 +257,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <summary>
         /// List all spendable transactions in a multisig address.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Returns all the unspent <see cref="TransactionData"/> objects.</returns>
         public TransactionData[] GetUnspentTransactions()
         {
             lock (this.lockObject)
@@ -218,6 +266,13 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
+        /// <summary>
+        /// Attempts to retrieve a <see cref="TransactionData"/> object identified by transaction id and index.
+        /// </summary>
+        /// <param name="transactionId">The transaction id of the object to retrieve.</param>
+        /// <param name="transactionIndex">The transaction index og the object to retrieve.</param>
+        /// <param name="transactionData">The retrieved object if any.</param>
+        /// <returns><c>True</c> if the object was found and <c>false</c> otherwise.</returns>
         public bool TryGetTransaction(uint256 transactionId, int transactionIndex, out TransactionData transactionData)
         {
             lock (this.lockObject)
@@ -226,6 +281,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
+        /// <summary>
+        /// Determines if the collection contains a particular <see cref="TransactionData"/> object.
+        /// </summary>
+        /// <param name="item">The  <see cref="TransactionData"/> object to find in the collection.</param>
+        /// <returns><c>True</c> if the object was found and <c>false</c> otherwise.</returns>
         public bool Contains(TransactionData item)
         {
             lock (this.lockObject)
@@ -234,6 +294,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
+        /// <summary>
+        /// Copies the contents of the collection to an array at a specified index.
+        /// </summary>
+        /// <param name="array">The array to copy the collection to.</param>
+        /// <param name="arrayIndex">The array position to copy the collection to.</param>
         public void CopyTo(TransactionData[] array, int arrayIndex)
         {
             lock (this.lockObject)
@@ -242,6 +307,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
+        /// <summary>
+        /// Finds all <see cref="TransactionData" objects that have block heights below the specified value.
+        /// </summary>
+        /// <param name="lessThanHeight">The block height to find objects below.</param>
+        /// <returns>The <see cref="TransactionData" objects that have block heights below the specified value.</returns>
         public (int, List<TransactionData>)[] SpentTransactionsBeforeHeight(int lessThanHeight)
         {
             lock (this.lockObject)
@@ -250,9 +320,13 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
-        public static implicit operator Dictionary<OutPoint, TransactionData>(MultiSigTransactions transactions)
+        /// <summary>
+        /// Provides dictionary access to the collection of <see cref="TransactionData"/> objects keyed on <see cref="OutPoint"/>.
+        /// </summary>
+        /// <returns>A dictionary of <see cref="TransactionData"/> objects keyed on <see cref="OutPoint"/>.</returns>
+        public Dictionary<OutPoint, TransactionData> GetOutpointLookup()
         {
-            return transactions.transactionDict;
+            return this.transactionDict;
         }
     }
 }

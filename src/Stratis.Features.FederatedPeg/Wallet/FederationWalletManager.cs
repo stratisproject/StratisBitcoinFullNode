@@ -107,7 +107,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <summary>
         /// Creates a mapping from (TransactionData.Id, TransactionData.Index) to TransactionData.
         /// </summary>
-        private Dictionary<OutPoint, TransactionData> outpointLookup => this.Wallet.MultiSigAddress.Transactions;
+        private Dictionary<OutPoint, TransactionData> outpointLookup => this.Wallet.MultiSigAddress.Transactions.GetOutpointLookup();
 
         // Gateway settings picked up from the node config.
         private readonly IFederatedPegSettings federatedPegSettings;

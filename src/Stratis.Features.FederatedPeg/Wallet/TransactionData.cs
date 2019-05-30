@@ -6,6 +6,9 @@ using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg.Wallet
 {
+    /// <summary>
+    /// Defines the interface to be supported by observers of <see cref="TransactionData"/>.
+    /// </summary>
     public interface ITransactionDataObserver
     {
         void BeforeSpendingDetailsChanged(TransactionData transactionData);
@@ -14,8 +17,15 @@ namespace Stratis.Features.FederatedPeg.Wallet
         void AfterBlockHeightChanged(TransactionData transactionData);
     }
 
+    /// <summary>
+    /// Defines the interface to be supported by the <see cref="TransactionData"/> observable.
+    /// </summary>
     public interface ITransactionDataObservable
     {
+        /// <summary>
+        /// Used by the parent/container oblect to subscribe to changes in the <see cref="TransactionData"/> child object.
+        /// </summary>
+        /// <param name="observer">The parent that wishes to observe the child.</param>
         void Subscribe(ITransactionDataObserver observer);
     }
 
