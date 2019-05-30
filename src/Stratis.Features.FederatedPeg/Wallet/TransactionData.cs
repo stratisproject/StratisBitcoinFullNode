@@ -1,6 +1,7 @@
 ﻿using System;
 using NBitcoin;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonConverters;
 using TracerAttributes;
 
@@ -9,7 +10,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
     /// <summary>
     /// Defines the interface to be supported by observers of <see cref="TransactionData"/>.
     /// </summary>
-    public interface ITransactionDataObserver
+    public interface ITransactionDataObserver : ILockProtected
     {
         void BeforeSpendingDetailsChanged(TransactionData transactionData);
         void AfterSpendingDetailsChanged(TransactionData transactionData);
@@ -65,9 +66,19 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             set
             {
-                this.parent?.BeforeBlockHeightChanged(this);
-                this.blockHeight = value;
-                this.parent?.AfterBlockHeightChanged(this);
+                if (this.parent != null)
+                {
+                    this.parent.Synchronous(() =>
+                    {
+                        this.parent.BeforeBlockHeightChanged(this);
+                        this.blockHeight = value;
+                        this.parent.AfterBlockHeightChanged(this);
+                    });
+                }
+                else
+                {
+                    this.blockHeight = value;
+                }
             }
         }
 
@@ -103,9 +114,19 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             set
             {
-                this.parent?.BeforeSpendingDetailsChanged(this);
-                this.spendingDetails = value;
-                this.parent?.AfterSpendingDetailsChanged(this);
+                if (this.parent != null)
+                {
+                    this.parent.Synchronous(() =>
+                    {
+                        this.parent.BeforeSpendingDetailsChanged(this);
+                        this.spendingDetails = value;
+                        this.parent.AfterSpendingDetailsChanged(this);
+                    });
+                }
+                else
+                {
+                    this.spendingDetails = value;
+                }
             }
         }
 
