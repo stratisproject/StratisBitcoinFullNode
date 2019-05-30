@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin
@@ -36,6 +37,7 @@ namespace Stratis.Bitcoin
         private readonly ILogger logger;
 
         private readonly IKeyValueRepository keyValueRepo;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>Database key under which the block height of the last finalized block height is stored.</summary>
         private const string FinalizedBlockKey = "finalizedBlock";
@@ -57,7 +59,7 @@ namespace Stratis.Bitcoin
 
         private readonly AsyncManualResetEvent queueUpdatedEvent;
 
-        public FinalizedBlockInfoRepository(IKeyValueRepository keyValueRepo, ILoggerFactory loggerFactory)
+        public FinalizedBlockInfoRepository(IKeyValueRepository keyValueRepo, ILoggerFactory loggerFactory, IAsyncProvider asyncProvider)
         {
             Guard.NotNull(keyValueRepo, nameof(keyValueRepo));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -65,12 +67,15 @@ namespace Stratis.Bitcoin
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.keyValueRepo = keyValueRepo;
+            this.asyncProvider = asyncProvider;
             this.finalizedBlockInfosToSave = new Queue<HashHeightPair>();
             this.queueLock = new object();
 
             this.queueUpdatedEvent = new AsyncManualResetEvent(false);
             this.cancellation = new CancellationTokenSource();
             this.finalizedBlockInfoPersistingTask = this.PersistFinalizedBlockInfoContinuouslyAsync();
+
+            this.asyncProvider.RegisterTask($"{nameof(FinalizedBlockInfoRepository)}.{nameof(this.finalizedBlockInfoPersistingTask)}", this.finalizedBlockInfoPersistingTask);
         }
 
         private async Task PersistFinalizedBlockInfoContinuouslyAsync()
