@@ -114,6 +114,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// Removes a <see cref="TransactionData"/> object from the collection and updates the lookups.
         /// </summary>
         /// <param name="transactionData">The <see cref="TransactionData"/> object to remove from the collection.</param>
+        /// <returns><c>True</c> if the object existed and <c>false</c> otherwise.</returns>
         public bool Remove(TransactionData transactionData)
         {
             lock (this.lockObject)
