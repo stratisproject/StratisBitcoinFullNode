@@ -913,7 +913,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 // Verify that there are no earlier unspent UTXOs.
                 Comparer<TransactionData> comparer = Comparer<TransactionData>.Create(DeterministicCoinOrdering.CompareTransactionData);
-                TransactionData earliestUnspent = this.Wallet.MultiSigAddress.Transactions.GetUnspentTransactions().OrderBy(t => t, comparer).FirstOrDefault();
+                TransactionData earliestUnspent = this.Wallet.MultiSigAddress.Transactions.GetUnspentTransactions().FirstOrDefault();
                 if (earliestUnspent != null)
                 {
                     TransactionData oldestInput = transaction.Inputs
