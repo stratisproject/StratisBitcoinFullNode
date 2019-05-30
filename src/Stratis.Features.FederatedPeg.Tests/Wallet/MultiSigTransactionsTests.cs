@@ -10,7 +10,7 @@ namespace Stratis.Features.FederatedPeg.Tests.Wallet
     public class MultiSigTransactionsTests
     {
         /// <summary>
-        /// This class creates all possible <c>true</c>/<c>false</c> combinations for input to <see cref="TransactionDataAddedToMultiSigTransactionsExistsInExpectedLookups(bool, bool, bool, bool, bool, bool)"/>.
+        /// This class creates all valid <c>true</c>/<c>false</c> combinations for input to <see cref="TransactionDataAddedToMultiSigTransactionsExistsInExpectedLookups(bool, bool, bool, bool, bool, bool)"/>.
         /// </summary>
         private class TestData : IEnumerable<object[]>
         {
@@ -18,14 +18,21 @@ namespace Stratis.Features.FederatedPeg.Tests.Wallet
             {
                 for (int mask = 0; mask < 64; mask++)
                 {
-                    yield return new object[] {
-                        (mask & 32) != 0,
-                        (mask & 16) != 0,
-                        (mask & 8) != 0,
-                        (mask & 4) != 0,
-                        (mask & 2) != 0,
-                        (mask & 1) != 0
-                    };
+                    bool hasBlockHeight = (mask ^ 32) != 0;
+                    bool hasSpendingDetails = (mask & 16) != 0;
+                    bool hasWithdrawalDetails = (mask & 8) != 0;
+                    bool flipBlockHeight = (mask & 4) != 0;
+                    bool flipSpendingDetails = (mask & 2) != 0;
+                    bool flipWithdrawalDetails = (mask & 1) != 0;
+
+                    // Can't have withdrawal details without spending details.
+                    if (!hasSpendingDetails && hasWithdrawalDetails)
+                        continue;
+
+                    if (!(hasSpendingDetails ^ flipSpendingDetails) && (hasWithdrawalDetails ^ flipWithdrawalDetails))
+                        continue;
+
+                    yield return new object[] { hasBlockHeight, hasSpendingDetails, hasWithdrawalDetails, flipBlockHeight, flipSpendingDetails, flipWithdrawalDetails };
                 }
             }
 
