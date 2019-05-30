@@ -100,12 +100,11 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (walletManager != null)
             {
-                int height = walletManager.LastBlockHeight();
-                uint256 hash = walletManager.LastReceivedBlockHash();
+                HashHeightPair hashHeightPair = walletManager.LastReceivedBlockInfo();
 
                 log.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                                        (walletManager.ContainsWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
-                                        (walletManager.ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hash) : string.Empty));
+                                        (walletManager.ContainsWallets ? hashHeightPair.Height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
+                                        (walletManager.ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashHeightPair.Hash) : string.Empty));
             }
         }
 

@@ -76,13 +76,13 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             var blockStoreClientMock = new Mock<IBlockStoreClient>();
 
-            var collateralData = new AddressBalancesModel()
+            var collateralData = new AddressBalancesResult()
             {
-                Balances = new List<AddressBalanceModel>()
+                Balances = new List<AddressBalanceResult>()
                 {
-                    new AddressBalanceModel( this.collateralFederationMembers[0].CollateralMainchainAddress, this.collateralFederationMembers[0].CollateralAmount) ,
-                    new AddressBalanceModel(this.collateralFederationMembers[1].CollateralMainchainAddress, this.collateralFederationMembers[1].CollateralAmount + 10),
-                    new AddressBalanceModel(this.collateralFederationMembers[2].CollateralMainchainAddress, this.collateralFederationMembers[2].CollateralAmount - 10)
+                    new AddressBalanceResult( this.collateralFederationMembers[0].CollateralMainchainAddress, this.collateralFederationMembers[0].CollateralAmount) ,
+                    new AddressBalanceResult(this.collateralFederationMembers[1].CollateralMainchainAddress, this.collateralFederationMembers[1].CollateralAmount + 10),
+                    new AddressBalanceResult(this.collateralFederationMembers[2].CollateralMainchainAddress, this.collateralFederationMembers[2].CollateralAmount - 10)
                 }
             };
 
@@ -97,7 +97,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             Assert.False(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[2]));
 
             // Now change what the client returns and make sure collateral check fails after update.
-            AddressBalanceModel updated = collateralData.Balances.First(b => b.Address == this.collateralFederationMembers[0].CollateralMainchainAddress);
+            AddressBalanceResult updated = collateralData.Balances.First(b => b.Address == this.collateralFederationMembers[0].CollateralMainchainAddress);
             updated.Balance = this.collateralFederationMembers[0].CollateralAmount - 1;
 
             // Wait CollateralUpdateIntervalSeconds + 1 seconds
