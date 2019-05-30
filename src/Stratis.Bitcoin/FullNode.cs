@@ -165,14 +165,6 @@ namespace Stratis.Bitcoin
             this.logger = this.Services.ServiceProvider.GetService<ILoggerFactory>().CreateLogger(this.GetType().FullName);
             this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
 
-            this.nodeRunningLock = new NodeRunningLock(this.DataFolder);
-
-            if (!this.nodeRunningLock.TryLockNodeFolder())
-            {
-                this.logger.LogCritical("Node folder is being used by another instance of the application!");
-                throw new Exception("Node folder is being used!");
-            }
-
             this.DateTimeProvider = this.Services.ServiceProvider.GetService<IDateTimeProvider>();
             this.Network = this.Services.ServiceProvider.GetService<Network>();
             this.Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
@@ -202,6 +194,14 @@ namespace Stratis.Bitcoin
 
             if (this.State == FullNodeState.Disposing || this.State == FullNodeState.Disposed)
                 throw new ObjectDisposedException(nameof(FullNode));
+
+            this.nodeRunningLock = new NodeRunningLock(this.DataFolder);
+
+            if (!this.nodeRunningLock.TryLockNodeFolder())
+            {
+                this.logger.LogCritical("Node folder is being used by another instance of the application!");
+                throw new Exception("Node folder is being used!");
+            }
 
             this.nodeLifetime = this.Services.ServiceProvider.GetRequiredService<INodeLifetime>() as NodeLifetime;
             this.fullNodeFeatureExecutor = this.Services.ServiceProvider.GetRequiredService<FullNodeFeatureExecutor>();
