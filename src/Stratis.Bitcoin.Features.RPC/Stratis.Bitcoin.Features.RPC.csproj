@@ -46,7 +46,7 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <NoWarn>1701;1702;1705;IDE0008;</NoWarn>
-    <DocumentationFile></DocumentationFile>
+    <DocumentationFile>bin\Debug\netstandard2.0\Stratis.Bitcoin.Features.RPC.xml</DocumentationFile>
   </PropertyGroup>
 
 </Project>
