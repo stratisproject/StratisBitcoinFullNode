@@ -144,7 +144,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 }
             }
             else
-                this.logger.LogWarning("Failed to fetch matured block deposits from counter chain node!");
+                this.logger.LogWarning("Failed to fetch matured block deposits from counter chain node! {0} doesn't respond!", this.federationGatewayClient.EndpointUrl);
 
             return delayRequired;
         }

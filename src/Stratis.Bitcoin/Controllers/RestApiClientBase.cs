@@ -13,8 +13,14 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Controllers
 {
+    public interface IRestApiClientBase
+    {
+        /// <summary>Api endpoint URL that client uses to make calls.</summary>
+        string EndpointUrl { get; }
+    }
+
     /// <summary>Client for making API calls for methods provided by controllers.</summary>
-    public abstract class RestApiClientBase
+    public abstract class RestApiClientBase : IRestApiClientBase
     {
         private readonly IHttpClientFactory httpClientFactory;
 
@@ -31,6 +37,9 @@ namespace Stratis.Bitcoin.Controllers
         public const int TimeoutMs = 60_000;
 
         private readonly RetryPolicy policy;
+
+        /// <inheritdoc />
+        public string EndpointUrl => this.endpointUrl;
 
         public RestApiClientBase(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, int port, string controllerName, string url)
         {
