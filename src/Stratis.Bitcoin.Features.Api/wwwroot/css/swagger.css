@@ -58,6 +58,9 @@
     .featurebar a {
         float: right;
         text-decoration: inherit;
+    }
+
+    .featurebar a, .featurebar span {
         color: #1387c9;
     }
 

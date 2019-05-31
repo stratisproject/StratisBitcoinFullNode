@@ -1,7 +1,11 @@
-﻿using System.IO;
+﻿using System;
+using System.Text;
+using System.Linq;
+using System.IO;
 using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -135,9 +139,11 @@ namespace Stratis.Bitcoin.Features.Api
                 options.DocumentTitle = "Stratis.Bitcoin.Api V1";
                 options.DefaultModelRendering(ModelRendering.Model);
                 options.InjectStylesheet("/css/swagger.css");
-                options.IndexStream = () => File.OpenRead(Path.Combine(this.currentFolder, "wwwroot", "swagger.default.html"));
+                options.IndexStream = GetDefaultTemplate(app.ServerFeatures.Get<IServerAddressesFeature>().Addresses.First());
                 options.SwaggerEndpoint("/swagger/v1/swagger.json", "Stratis.Bitcoin.Api V1");
             });
         }
+
+        private Func<Stream> GetDefaultTemplate(string endpoint) => () => new MemoryStream(Encoding.UTF8.GetBytes(File.ReadAllText(Path.Combine(this.currentFolder, "wwwroot", "swagger.default.html")).Replace("$endpoint", string.Concat(endpoint, "api"))));
     }
 }
