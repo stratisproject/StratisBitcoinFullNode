@@ -95,8 +95,8 @@ namespace Stratis.Bitcoin.Controllers
                 }
                 catch (HttpRequestException ex)
                 {
-                    this.logger.LogError("Target node is not ready to receive API calls at this time ({0})", publicationUri);
-                    this.logger.LogError("Failed to send a message. Exception: '{0}'.", ex);
+                    this.logger.LogError("Target node is not ready to receive API calls at this time on {0}. Reason: {1}.", publicationUri, ex.Message);
+                    this.logger.LogDebug("Failed to send a message. Exception: '{0}'.", ex);
                     return new HttpResponseMessage() { ReasonPhrase = ex.Message, StatusCode = HttpStatusCode.InternalServerError };
                 }
             }
@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.Controllers
 
         protected virtual void OnRetry(Exception exception, TimeSpan delay)
         {
-            this.logger.LogWarning("Exception while calling API method: {0}. Retrying...", exception.ToString());
+            this.logger.LogDebug("Exception while calling API method: {0}. Retrying...", exception.ToString());
         }
     }
 
