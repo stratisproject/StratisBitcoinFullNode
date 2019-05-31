@@ -5,6 +5,7 @@ using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Features.PoA.Models;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -33,6 +34,30 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.network = network;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+        /// <summary>
+        /// For simplicity have put this here. It's currently the only place to get information about the current mining key on CirrusMinerD.
+        /// </summary>
+        [Route("info")]
+        [HttpGet]
+        public IActionResult GetInfo()
+        {
+            try
+            {
+                var model = new PoAInfoModel
+                {
+                    MiningPublicKey = this.fedManager.CurrentFederationKey?.PubKey.ToString(),
+                    FederationMiningPubKeys = this.fedManager.GetFederationMembers().Select(k => k.ToString()),
+                };
+
+                return this.Json(model);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
         }
 
         [Route("fedmembers")]
