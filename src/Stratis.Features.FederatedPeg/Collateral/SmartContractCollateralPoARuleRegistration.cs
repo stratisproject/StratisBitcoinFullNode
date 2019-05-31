@@ -45,7 +45,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
             // see https://dev.azure.com/Stratisplatformuk/StratisBitcoinFullNode/_workitems/edit/3770
             // TODO: re-design how rules gets called, which order they have and prevent a rule to change internal service statuses (rules should just check)
             int saveCoinviewRulePosition = consensus.FullValidationRules.FindIndex(c => c is SaveCoinviewRule);
-            consensus.FullValidationRules.Insert(saveCoinviewRulePosition, new CheckCollateralFullValidationRule(this.ibdState, this.collateralChecker, this.slotsManager, this.dateTime));
+            consensus.FullValidationRules.Insert(saveCoinviewRulePosition, new CheckCollateralFullValidationRule(this.ibdState, this.collateralChecker, this.slotsManager, this.dateTime, this.network));
         }
     }
 }
