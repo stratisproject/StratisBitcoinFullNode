@@ -57,6 +57,7 @@ namespace Stratis.Features.FederatedPeg.Tests.Wallet
                     WithdrawalDetails = hasWithdrawalDetails ? new WithdrawalDetails() {
                          MatchingDepositId = spendingDepositId
                     } : null,
+                    BlockHeight = spendingBlockHeight(),
                     TransactionId = spendingTransactionId
                 };
             }
@@ -64,6 +65,11 @@ namespace Stratis.Features.FederatedPeg.Tests.Wallet
             int? blockHeight()
             {
                 return hasBlockHeight ? 3 : (int?)null;
+            }
+
+            int? spendingBlockHeight()
+            {
+                return hasBlockHeight ? 4 : (int?)null;
             }
 
             var transactionData = new TransactionData()
@@ -82,7 +88,7 @@ namespace Stratis.Features.FederatedPeg.Tests.Wallet
             void Validate()
             {
                 if (hasBlockHeight && hasSpendingDetails)
-                    Assert.Single(transactions.SpentTransactionsBeforeHeight(int.MaxValue), x => x.Item1 == blockHeight());
+                    Assert.Single(transactions.SpentTransactionsBeforeHeight(int.MaxValue), x => x.Item1 == spendingBlockHeight());
                 else
                     Assert.Empty(transactions.SpentTransactionsBeforeHeight(int.MaxValue));
 
