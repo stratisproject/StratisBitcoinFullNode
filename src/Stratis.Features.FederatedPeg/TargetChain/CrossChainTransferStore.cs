@@ -439,13 +439,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                 CrossChainTransferStatus status = CrossChainTransferStatus.Suspended;
                                 Script scriptPubKey = BitcoinAddress.Create(deposit.TargetAddress, this.network).ScriptPubKey;
 
-                            if (!haveSuspendedTransfers)
-                            {
-                                var recipient = new Recipient
+                                if (!haveSuspendedTransfers)
                                 {
-                                    Amount = deposit.Amount,
-                                    ScriptPubKey = scriptPubKey
-                                };
+                                    var recipient = new Recipient
+                                    {
+                                        Amount = deposit.Amount,
+                                        ScriptPubKey = scriptPubKey
+                                    };
 
                                     uint blockTime = maturedDeposit.BlockInfo.BlockTime;
 
@@ -797,18 +797,38 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     dbreezeTransaction.ValuesLazyLoadingIsOn = false;
 
                     ChainedHeader prevTip = this.TipHashAndHeight;
+                    int prevDepositHeight = this.NextMatureDepositHeight;
 
                     try
                     {
                         StatusChangeTracker tracker = this.OnDeleteBlocks(dbreezeTransaction, fork.Height);
+
+                        int newDepositHeight = Math.Min(prevDepositHeight, tracker
+                            .Select(kv => kv.Key)
+                            .Where(transfer => transfer.Status == CrossChainTransferStatus.Suspended)
+                            .Min(transfer => transfer.DepositHeight) ?? int.MaxValue);
+
+                        this.SaveNextMatureHeight(dbreezeTransaction, newDepositHeight);
                         this.SaveTipHashAndHeight(dbreezeTransaction, fork);
+
                         dbreezeTransaction.Commit();
+
+                        // Remove any remnants of suspended transactions from the wallet.
+                        bool walletUpdated = false;
+                        foreach (KeyValuePair<ICrossChainTransfer, CrossChainTransferStatus?> kv in tracker)
+                            if (kv.Key.Status == CrossChainTransferStatus.Suspended)
+                                walletUpdated |= this.federationWalletManager.RemoveWithdrawalTransactions(kv.Key.DepositTransactionId);
+
+                        if (walletUpdated)
+                            this.federationWalletManager.SaveWallet();
+
                         this.UndoLookups(tracker);
                     }
                     catch (Exception err)
                     {
                         // Restore expected store state in case the calling code retries / continues using the store.
                         this.TipHashAndHeight = prevTip;
+                        this.NextMatureDepositHeight = prevDepositHeight;
                         this.RollbackAndThrowTransactionError(dbreezeTransaction, err, "REWIND_ERROR");
                     }
                 }
