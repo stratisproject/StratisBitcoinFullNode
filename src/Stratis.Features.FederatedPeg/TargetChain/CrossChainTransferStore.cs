@@ -159,26 +159,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 this.federationWalletManager.Synchronous(() =>
                 {
                     // Remove all unconfirmed transaction data from the wallet to be re-added when blocks are processed.
-                    bool walletUpdated = this.federationWalletManager.RemoveUnconfirmedTransactionData();
-
-                    Guard.Assert(this.Synchronize());
-
-                    // Any transactions seen in blocks must also be present in the wallet.
-                    FederationWallet wallet = this.federationWalletManager.GetWallet();
-                    ICrossChainTransfer[] transfers = this.GetTransfersByStatusInternalLocked(new[] { CrossChainTransferStatus.SeenInBlock }, false, false).ToArray();
-
-                    foreach (ICrossChainTransfer transfer in transfers.OrderBy(t => t.BlockHeight))
-                    {
-                        (Transaction tran, _) = this.federationWalletManager.FindWithdrawalTransactions(transfer.DepositTransactionId).FirstOrDefault();
-                        if (tran == null && wallet.LastBlockSyncedHeight >= transfer.BlockHeight)
-                        {
-                            walletUpdated |= this.federationWalletManager.ProcessTransaction(transfer.PartialTransaction, transfer.BlockHeight, transfer.BlockHash);
-                        }
-                    }
-
-                    if (walletUpdated)
+                    if (this.federationWalletManager.RemoveUnconfirmedTransactionData())
                         this.federationWalletManager.SaveWallet();
 
+                    Guard.Assert(this.Synchronize());
                 });
             }
         }
@@ -261,9 +245,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                     this.logger.LogDebug("Templates don't match for {0} and {1}.", walletTran.GetHash(), partialTransfer.PartialTransaction.GetHash());
                 }
-
-                // Remove any invalid withdrawal transactions.
-                this.federationWalletManager.RemoveWithdrawalTransactions(partialTransfer.DepositTransactionId);
 
                 // The chain may have been rewound so that this transaction or its UTXO's have been lost.
                 // Rewind our recorded chain A tip to ensure the transaction is re-built once UTXO's become available.
@@ -439,13 +420,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                 CrossChainTransferStatus status = CrossChainTransferStatus.Suspended;
                                 Script scriptPubKey = BitcoinAddress.Create(deposit.TargetAddress, this.network).ScriptPubKey;
 
-                            if (!haveSuspendedTransfers)
-                            {
-                                var recipient = new Recipient
+                                if (!haveSuspendedTransfers)
                                 {
-                                    Amount = deposit.Amount,
-                                    ScriptPubKey = scriptPubKey
-                                };
+                                    var recipient = new Recipient
+                                    {
+                                        Amount = deposit.Amount,
+                                        ScriptPubKey = scriptPubKey
+                                    };
 
                                     uint blockTime = maturedDeposit.BlockInfo.BlockTime;
 
