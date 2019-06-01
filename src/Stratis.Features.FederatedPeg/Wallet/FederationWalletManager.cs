@@ -232,7 +232,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     return new HashHeightPair(this.chainIndexer.Tip);
                 }
 
-                return new HashHeightPair(this.Wallet.LastBlockSyncedHash, this.Wallet.LastBlockSyncedHeight.Value); 
+                return new HashHeightPair(this.Wallet.LastBlockSyncedHash, this.Wallet.LastBlockSyncedHeight.Value);
             }
         }
 
@@ -486,20 +486,16 @@ namespace Stratis.Features.FederatedPeg.Wallet
             // Check the inputs - include those that have a reference to a transaction containing one of our scripts and the same index.
             foreach (TxIn input in transaction.Inputs)
             {
-                if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData tTx))
+                if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData spentTransaction))
                 {
                     continue;
                 }
 
                 // Get the transaction being spent and unspend it.
-                TransactionData spentTransaction = this.Wallet.MultiSigAddress.Transactions.SingleOrDefault(t => (t.Id == tTx.Id) && (t.Index == tTx.Index));
-                if (spentTransaction != null)
-                {
-                    this.logger.LogTrace("Unspending {0}-{1}", spentTransaction.Id, spentTransaction.Index);
+                this.logger.LogTrace("Unspending {0}-{1}", spentTransaction.Id, spentTransaction.Index);
 
-                    spentTransaction.SpendingDetails = null;
-                    updatedWallet = true;
-                }
+                spentTransaction.SpendingDetails = null;
+                updatedWallet = true;
             }
 
             foreach (TxOut utxo in transaction.Outputs)
