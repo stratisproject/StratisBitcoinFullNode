@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Interfaces;
@@ -20,11 +21,14 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
         private readonly IDateTimeProvider dateTime;
 
-        /// <summary>For how many minutes the block should be banned in case collateral check failed.</summary>
-        private const int CollateralCheckBanDurationMinutes = 2;
+        /// <summary>For how many seconds the block should be banned in case collateral check failed.</summary>
+        private readonly int collateralCheckBanDurationSeconds;
 
-        public CheckCollateralFullValidationRule(IInitialBlockDownloadState ibdState, ICollateralChecker collateralChecker, ISlotsManager slotsManager, IDateTimeProvider dateTime)
+        public CheckCollateralFullValidationRule(IInitialBlockDownloadState ibdState, ICollateralChecker collateralChecker,
+            ISlotsManager slotsManager, IDateTimeProvider dateTime, Network network)
         {
+            this.collateralCheckBanDurationSeconds = (int)(network.Consensus.Options as PoAConsensusOptions).TargetSpacingSeconds / 2;
+
             this.ibdState = ibdState;
             this.collateralChecker = collateralChecker;
             this.slotsManager = slotsManager;
@@ -43,7 +47,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
             if (!this.collateralChecker.CheckCollateral(federationMember))
             {
-                context.ValidationContext.RejectUntil = this.dateTime.GetUtcNow() + TimeSpan.FromMinutes(CollateralCheckBanDurationMinutes);
+                context.ValidationContext.RejectUntil = this.dateTime.GetUtcNow() + TimeSpan.FromSeconds(this.collateralCheckBanDurationSeconds);
 
                 this.Logger.LogTrace("(-)[BAD_COLLATERAL]");
                 PoAConsensusErrors.InvalidCollateralAmount.Throw();
