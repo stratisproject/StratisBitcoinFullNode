@@ -254,6 +254,11 @@ namespace NBitcoin
     public class PosBlockHeader : BlockHeader
 #pragma warning restore 618
     {
+        /// <summary>
+        /// Optional injectable custom PoW hash function.
+        /// </summary>
+        public static Func<byte[], uint256> CustomPoWHash;
+
         /// <inheritdoc />
         public override int CurrentVersion => 7;
 
@@ -294,11 +299,14 @@ namespace NBitcoin
         /// <inheritdoc />
         public override uint256 GetPoWHash()
         {
+            byte[] serialized;
+
             using (var ms = new MemoryStream())
             {
                 this.ReadWriteHashingStream(new BitcoinStream(ms, true));
-                return HashX13.Instance.Hash(ms.ToArray());
+                serialized = ms.ToArray();
             }
+            return CustomPoWHash == null ? HashX13.Instance.Hash(serialized) : CustomPoWHash(serialized);
         }
     }
 
