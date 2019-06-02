@@ -841,7 +841,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(numDeposits, seenInBlock.Length);
 
                 // Sync our CCTS
-                // TODO: This does nothing.
+                // TODO: This does nothing. Remove?
                 recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[1]);
 
                 // Lets make 10 more deposits using the change UTXOS in the block just gone.
