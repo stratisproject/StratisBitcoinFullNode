@@ -64,13 +64,13 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         private void AddSpentTransactionByHeight(TransactionData transactionData)
         {
-            if (transactionData.IsSpendable() || transactionData.BlockHeight == null)
+            if (transactionData.IsSpendable() || transactionData.SpendingDetails.BlockHeight == null)
                 return;
 
-            if (!this.spentTransactionsByHeightDict.TryGetValue((int)transactionData.BlockHeight, out List<TransactionData> txList))
+            if (!this.spentTransactionsByHeightDict.TryGetValue((int)transactionData.SpendingDetails.BlockHeight, out List<TransactionData> txList))
             {
                 txList = new List<TransactionData>();
-                this.spentTransactionsByHeightDict.Add((int)transactionData.BlockHeight, txList);
+                this.spentTransactionsByHeightDict.Add((int)transactionData.SpendingDetails.BlockHeight, txList);
             }
 
             txList.Add(transactionData);
@@ -78,15 +78,15 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         private void RemoveSpentTransactionByHeight(TransactionData transactionData)
         {
-            if (transactionData.BlockHeight == null)
+            if (transactionData.SpendingDetails?.BlockHeight == null)
                 return;
 
-            if (this.spentTransactionsByHeightDict.TryGetValue((int)transactionData.BlockHeight, out List<TransactionData> txList))
+            if (this.spentTransactionsByHeightDict.TryGetValue((int)transactionData.SpendingDetails.BlockHeight, out List<TransactionData> txList))
             {
                 txList.Remove(transactionData);
 
                 if (txList.Count == 0)
-                    this.spentTransactionsByHeightDict.Remove((int)transactionData.BlockHeight);
+                    this.spentTransactionsByHeightDict.Remove((int)transactionData.SpendingDetails.BlockHeight);
             }
         }
 

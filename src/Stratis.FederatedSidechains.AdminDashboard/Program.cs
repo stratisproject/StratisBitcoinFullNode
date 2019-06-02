@@ -12,7 +12,6 @@ namespace Stratis.FederatedSidechains.AdminDashboard
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseUrls("http://localhost:37000")
                 .UseStartup<Startup>();
     }
 }
