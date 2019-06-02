@@ -879,6 +879,9 @@ namespace Stratis.Features.FederatedPeg.Tests
                 // We do have 20 Suspended transactions now though.
                 ICrossChainTransfer[] suspended = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.Suspended });
                 Assert.Equal(20, suspended.Length);
+
+                // Check that the store has been rewound to re-process the suspended transfers.
+                Assert.Equal(1, crossChainTransferStore.NextMatureDepositHeight);
             }
         }
 
