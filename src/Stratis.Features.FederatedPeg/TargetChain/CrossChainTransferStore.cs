@@ -282,7 +282,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     // Remove any remnants of suspended transactions from the wallet.
                     foreach (KeyValuePair<ICrossChainTransfer, CrossChainTransferStatus?> kv in tracker)
                     {
-                        if (kv.Value == CrossChainTransferStatus.Suspended)
+                        if (kv.Key.Status == CrossChainTransferStatus.Suspended)
                         {
                             this.federationWalletManager.RemoveWithdrawalTransactions(kv.Key.DepositTransactionId);
                         }
