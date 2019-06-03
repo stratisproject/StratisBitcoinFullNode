@@ -100,6 +100,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         [JsonProperty(PropertyName = "hex", NullValueHandling = NullValueHandling.Ignore)]
         public string Hex { get; set; }
 
+        [JsonIgnore]
         public OutPoint Key => new OutPoint(this.Id, this.Index);
 
         private SpendingDetails spendingDetails;
