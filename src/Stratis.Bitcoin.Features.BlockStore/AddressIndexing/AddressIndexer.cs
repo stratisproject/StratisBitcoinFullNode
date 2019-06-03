@@ -470,22 +470,21 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 }
             };
 
-            for (int i = 0; i < indexData.BalanceChanges.Count; i++)
+            foreach (AddressBalanceChange change in indexData.BalanceChanges)
             {
-                AddressBalanceChange change = indexData.BalanceChanges[i];
-
                 if (change.BalanceChangedHeight < heightThreshold)
                 {
+                    this.logger.LogDebug("Balance change: {0} was selected for compaction. Compacted balance now: {1}.", change, compacted[0].Satoshi);
+
                     if (change.Deposited)
                         compacted[0].Satoshi += change.Satoshi;
                     else
                         compacted[0].Satoshi -= change.Satoshi;
+
+                    this.logger.LogDebug("New compacted balance: {0}.", compacted[0].Satoshi);
                 }
-                else if (i < indexData.BalanceChanges.Count - 1)
-                {
-                    compacted.AddRange(indexData.BalanceChanges.Skip(i + 1));
-                    break;
-                }
+                else
+                    compacted.Add(change);
             }
 
             indexData.BalanceChanges = compacted;
@@ -504,6 +503,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         public AddressBalancesResult GetAddressBalances(string[] addresses, int minConfirmations = 1)
         {
             var (isQueryable, reason) = this.IsQueryable();
+
             if (!isQueryable)
                 return AddressBalancesResult.RequestFailed(reason);
 
@@ -527,6 +527,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                             balance -= change.Satoshi;
                     }
 
+                    this.logger.LogTrace("Address: {0}, balance: {1}.", address, balance);
                     result.Balances.Add(new AddressBalanceResult(address, new Money(balance)));
                 };
 
