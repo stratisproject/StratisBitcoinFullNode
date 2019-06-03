@@ -9,7 +9,7 @@ using Stratis.Bitcoin.Controllers.Models;
 namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 {
     /// <summary>Rest client for <see cref="BlockStoreController"/>.</summary>
-    public interface IBlockStoreClient
+    public interface IBlockStoreClient : IRestApiClientBase
     {
         /// <summary><see cref="BlockStoreController.GetAddressesBalances"/></summary>
         Task<AddressBalancesResult> GetAddressBalancesAsync(IEnumerable<string> addresses, int minConfirmations, CancellationToken cancellation = default(CancellationToken));
