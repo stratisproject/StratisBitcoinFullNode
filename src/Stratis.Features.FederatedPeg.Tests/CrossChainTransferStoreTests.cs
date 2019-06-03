@@ -802,7 +802,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 for (int i = 0; i < numDeposits; i++)
                 {
-                    deposits[i] = new Deposit((ulong) i, new Money(depositSend, MoneyUnit.BTC), address.ToString(),
+                    deposits[i] = new Deposit((ulong)i, new Money(depositSend, MoneyUnit.BTC), address.ToString(),
                         crossChainTransferStore.NextMatureDepositHeight, 1);
                 }
 
@@ -815,7 +815,9 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 (Transaction, ChainedHeader header) added = this.AddFundingTransaction(funding);
 
-                MaturedBlockDepositsModel[] blockDeposits = new[]
+                var blockDeposits = new Dictionary<int, MaturedBlockDepositsModel[]>();
+
+                blockDeposits[crossChainTransferStore.NextMatureDepositHeight] = new[]
                 {
                     new MaturedBlockDepositsModel(
                         new MaturedBlockInfoModel
@@ -826,7 +828,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                         deposits)
                 };
 
-                RecordLatestMatureDepositsResult recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
+                RecordLatestMatureDepositsResult recordMatureDepositResult =
+                    await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[crossChainTransferStore.NextMatureDepositHeight]);
 
                 // Create 1 block with all 10 withdrawals inside.
                 ChainedHeader header = this.AppendBlock(recordMatureDepositResult.WithDrawalTransactions.ToArray());
@@ -838,18 +841,19 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(numDeposits, seenInBlock.Length);
 
                 // Sync our CCTS
-                recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
+                // TODO: This does nothing. Remove?
+                recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[1]);
 
                 // Lets make 10 more deposits using the change UTXOS in the block just gone.
                 Deposit[] moreDeposits = new Deposit[numDeposits];
                 for (int i = 0; i < numDeposits; i++)
                 {
-                    ulong newId = (ulong) numDeposits + (ulong) i; // to get a unique ID.
+                    ulong newId = (ulong)numDeposits + (ulong)i; // to get a unique ID.
                     moreDeposits[i] = new Deposit(newId, new Money(depositSend, MoneyUnit.BTC), address.ToString(),
                         crossChainTransferStore.NextMatureDepositHeight, 2);
                 }
 
-                blockDeposits = new[]
+                blockDeposits[crossChainTransferStore.NextMatureDepositHeight] = new[]
                 {
                     new MaturedBlockDepositsModel(
                         new MaturedBlockInfoModel
@@ -859,11 +863,16 @@ namespace Stratis.Features.FederatedPeg.Tests
                         },
                         moreDeposits)
                 };
+
                 recordMatureDepositResult =
-                    await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
+                    await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[crossChainTransferStore.NextMatureDepositHeight]);
 
                 // We built more transctions with the UTXOs included in a block...
                 Assert.True(recordMatureDepositResult.WithDrawalTransactions.Count > 0);
+
+                int expectedPartials = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.Partial }).Length;
+                int expectedSuspends = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.Suspended }).Length;
+                int expectedSeenInBlocks = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.SeenInBlock }).Length;
 
                 // Now lets rewind.
                 this.ChainIndexer.SetTip(added.header);
@@ -871,7 +880,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 TestBase.WaitLoop(() => this.federationWalletManager.WalletTipHash == this.ChainIndexer.Tip.HashBlock);
 
                 // If we were able to keep FullySigned transactions then we would have FullySigned after this rewind.
-                ICrossChainTransfer[] fullySigned = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] {CrossChainTransferStatus.FullySigned});
+                ICrossChainTransfer[] fullySigned = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.FullySigned });
 
                 // However we have none.
                 Assert.Empty(fullySigned);
@@ -879,6 +888,24 @@ namespace Stratis.Features.FederatedPeg.Tests
                 // We do have 20 Suspended transactions now though.
                 ICrossChainTransfer[] suspended = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.Suspended });
                 Assert.Equal(20, suspended.Length);
+
+                // See if we will recover to the point where the reorg occurred.
+                while (crossChainTransferStore.NextMatureDepositHeight <= blockDeposits.Max(kv => kv.Key))
+                {
+                    recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(
+                        blockDeposits[crossChainTransferStore.NextMatureDepositHeight]);
+
+                    if (!recordMatureDepositResult.MatureDepositRecorded)
+                        break;
+
+                    // Makes the withdrawals seen and makes their UTXOs spendable.
+                    this.AppendBlock(recordMatureDepositResult.WithDrawalTransactions.ToArray());
+                }
+
+                // Verify our expectations.
+                Assert.Equal(expectedPartials, crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.Partial }).Length);
+                Assert.Equal(expectedSuspends, crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.Suspended }).Length);
+                Assert.Equal(expectedSeenInBlocks, crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.SeenInBlock }).Length);
             }
         }
 
