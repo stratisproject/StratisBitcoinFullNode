@@ -506,8 +506,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     int index = transaction.Outputs.IndexOf(utxo);
 
                     // Remove any UTXO's that were provided by this transaction from wallet.
-                    TransactionData foundTransaction = this.Wallet.MultiSigAddress.Transactions.FirstOrDefault(t => (t.Id == hash) && (t.Index == index));
-                    if (foundTransaction != null)
+                    if (this.Wallet.MultiSigAddress.Transactions.TryGetTransaction(hash, index, out TransactionData foundTransaction))
                     {
                         this.logger.LogTrace("Removing UTXO {0}-{1}", foundTransaction.Id, foundTransaction.Index);
 
