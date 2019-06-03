@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Features.Api
 
             app.UseStaticFiles(new StaticFileOptions
             {
-                FileProvider = new PhysicalFileProvider(Path.Combine(this.currentFolder, "wwwroot")),
+                FileProvider = new ResourceFileProvider(Assembly.GetExecutingAssembly(), "wwwroot"),
                 RequestPath = string.Empty
             });
 
@@ -139,11 +139,10 @@ namespace Stratis.Bitcoin.Features.Api
                 options.DocumentTitle = "Stratis.Bitcoin.Api V1";
                 options.DefaultModelRendering(ModelRendering.Model);
                 options.InjectStylesheet("/css/swagger.css");
-                options.IndexStream = GetDefaultTemplate(app.ServerFeatures.Get<IServerAddressesFeature>().Addresses.First());
+                options.IndexStream = GetDefaultTemplateFromResource(app.ServerFeatures.Get<IServerAddressesFeature>().Addresses.First());
                 options.SwaggerEndpoint("/swagger/v1/swagger.json", "Stratis.Bitcoin.Api V1");
             });
         }
-
-        private Func<Stream> GetDefaultTemplate(string endpoint) => () => new MemoryStream(Encoding.UTF8.GetBytes(File.ReadAllText(Path.Combine(this.currentFolder, "wwwroot", "swagger.default.html")).Replace("$endpoint", string.Concat(endpoint, "api"))));
+        private Func<Stream> GetDefaultTemplateFromResource(string endpoint) => () => new MemoryStream(Encoding.UTF8.GetBytes(new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(Assembly.GetExecutingAssembly().GetName().Name + ".wwwroot.swagger.default.html")).ReadToEnd().Replace("$endpoint", string.Concat(endpoint, "api"))));
     }
 }
