@@ -49,6 +49,9 @@ namespace Stratis.Features.FederatedPeg
         /// </summary>
         private const int TransfersToDisplay = 10;
 
+        /// <summary>
+        /// The maximum number of pending transactions to display in the console logging.
+        /// </summary>
         private const int PendingToDisplay = 25;
 
         public const string FederationGatewayFeatureNamespace = "federationgateway";
