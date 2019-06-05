@@ -117,7 +117,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             foreach (ICrossChainTransfer transfer in transfers)
             {
                 await this.BroadcastAsync(new RequestPartialTransactionPayload(transfer.DepositTransactionId).AddPartial(transfer.PartialTransaction));
-                this.logger.LogInformation("Partial template requested for deposit ID {0}", transfer.DepositTransactionId);
+                this.logger.LogDebug("Partial template requested for deposit ID {0}", transfer.DepositTransactionId);
             }
         }
 

@@ -548,12 +548,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     {
                         Guard.Assert(this.Synchronize());
 
-                        this.logger.LogInformation("ValidateCrossChainTransfers : {0}", depositId);
+                        this.logger.LogDebug("ValidateCrossChainTransfers : {0}", depositId);
                         ICrossChainTransfer transfer = this.ValidateCrossChainTransfers(this.Get(new[] { depositId })).FirstOrDefault();
 
                         if (transfer == null)
                         {
-                            this.logger.LogInformation("FAILED ValidateCrossChainTransfers : {0}", depositId);
+                            this.logger.LogDebug("FAILED ValidateCrossChainTransfers : {0}", depositId);
 
                             this.logger.LogTrace("(-)[MERGE_NOT_FOUND]:null");
                             return null;
@@ -575,7 +575,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                             // We will finish dealing with the request here if an invalid signature is sent.
                             // The incoming partial transaction will not have the same inputs / outputs as what our node has generated
                             // so would have failed CrossChainTransfer.TemplatesMatch() and leave through here.
-                            this.logger.LogInformation("FAILED to combineSignatures : {0}", transfer.DepositTransactionId);
+                            this.logger.LogDebug("FAILED to combineSignatures : {0}", transfer.DepositTransactionId);
 
                             this.logger.LogTrace("(-)[MERGE_UNCHANGED]");
                             return transfer.PartialTransaction;
@@ -592,13 +592,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                                 if (this.ValidateTransaction(transfer.PartialTransaction, true))
                                 {
-                                    this.logger.LogInformation("Deposit: {0} collected enough signatures and is FullySigned", transfer.DepositTransactionId);
+                                    this.logger.LogDebug("Deposit: {0} collected enough signatures and is FullySigned", transfer.DepositTransactionId);
                                     transfer.SetStatus(CrossChainTransferStatus.FullySigned);
                                     this.signals.Publish(new CrossChainTransferTransactionFullySigned(transfer));
                                 }
                                 else
                                 {
-                                    this.logger.LogInformation("Deposit: {0} did not collect enough signatures and is Partial", transfer.DepositTransactionId);
+                                    this.logger.LogDebug("Deposit: {0} did not collect enough signatures and is Partial", transfer.DepositTransactionId);
                                 }
 
                                 this.PutTransfer(dbreezeTransaction, transfer);
