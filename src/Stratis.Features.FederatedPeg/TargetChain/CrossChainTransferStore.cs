@@ -1073,19 +1073,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <inheritdoc />
         public ICrossChainTransfer[] QueryTransfersByStatus(CrossChainTransferStatus[] statuses)
         {
-            lock (this.lockObj)
-            {
-                var depositIds = new HashSet<uint256>();
-
-                foreach (CrossChainTransferStatus status in statuses)
-                    depositIds.UnionWith(this.depositsIdsByStatus[status]);
-
-                uint256[] partialTransferHashes = depositIds.ToArray();
-                ICrossChainTransfer[] partialTransfers = this.Get(partialTransferHashes).Where(t => t != null).ToArray();
-
-                return partialTransfers.OrderBy(t => this.EarliestOutput(t.PartialTransaction), Comparer<OutPoint>.Create((x, y) =>
-                ((FederationWalletManager)this.federationWalletManager).CompareOutpoints(x, y))).ToArray();
-            }
+            return this.GetTransfersByStatusInternalLocked(statuses, true, false);
         }
 
         /// <inheritdoc />
