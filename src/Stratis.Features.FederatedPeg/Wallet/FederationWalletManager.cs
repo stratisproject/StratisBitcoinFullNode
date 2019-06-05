@@ -164,8 +164,17 @@ namespace Stratis.Features.FederatedPeg.Wallet
             {
                 SpendingDetails spendingDetail = transactionData.SpendingDetails;
 
-                if (string.IsNullOrEmpty(spendingDetail?.Hex) || spendingDetail.TransactionId == null)
+                if (spendingDetail?.TransactionId == null || !string.IsNullOrEmpty(spendingDetail.Hex))
                     continue;
+
+                // Some SpendingDetail.BlockHash values may bet set to (uint256)0, so fix that too.
+                if (spendingDetail.BlockHash == 0)
+                {
+                    if (spendingDetail.BlockHeight == null || (spendingDetail.BlockHeight > this.chainIndexer.Tip.Height))
+                        continue;
+
+                    spendingDetail.BlockHash = this.chainIndexer[(int)spendingDetail.BlockHeight].HashBlock;
+                }
 
                 if (!spendTxsByBlockId.TryGetValue(spendingDetail.BlockHash, out Dictionary<uint256, List<TransactionData>> spentOutputsBySpendTxId))
                 {
