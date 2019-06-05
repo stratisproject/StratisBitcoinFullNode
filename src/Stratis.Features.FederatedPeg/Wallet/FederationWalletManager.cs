@@ -10,6 +10,7 @@ using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
@@ -87,6 +88,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
+        private readonly IBlockStore blockStore;
+
         /// <summary>Indicates whether the federation is active.</summary>
         private bool isFederationActive;
 
@@ -123,7 +126,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
             IFederatedPegSettings federatedPegSettings,
-            IWithdrawalExtractor withdrawalExtractor) : base()
+            IWithdrawalExtractor withdrawalExtractor,
+            IBlockStore blockStore) : base()
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
@@ -134,6 +138,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(federatedPegSettings, nameof(federatedPegSettings));
             Guard.NotNull(withdrawalExtractor, nameof(withdrawalExtractor));
+            Guard.NotNull(blockStore, nameof(blockStore));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -148,6 +153,78 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.federatedPegSettings = federatedPegSettings;
             this.withdrawalExtractor = withdrawalExtractor;
             this.isFederationActive = false;
+            this.blockStore = blockStore;
+        }
+
+        private void FixSpendingDetails()
+        {
+            // Record all non-null spending details that have null Hex values.
+            var detailsToFix = new Dictionary<uint256, List<SpendingDetails>>();
+            foreach ((uint256 _, List<TransactionData> txList) in this.Wallet.MultiSigAddress.Transactions.GetSpendingTransactionsByDepositId())
+            {
+                foreach (SpendingDetails spendingDetail in txList.Select(tx => tx.SpendingDetails))
+                {
+                    if (string.IsNullOrEmpty(spendingDetail.Hex) && spendingDetail.TransactionId != null)
+                    {
+                        if (!detailsToFix.TryGetValue(spendingDetail.TransactionId, out List<SpendingDetails> spendingList))
+                        {
+                            spendingList = new List<SpendingDetails>();
+                            detailsToFix[spendingDetail.TransactionId] = spendingList;
+                        }
+
+                        spendingList.Add(spendingDetail);
+                    }
+                }
+            }
+
+            // Will keep track of the height of spending details we're unable to fix.
+            int firstMissingTransactionHeight = this.LastBlockHeight() + 1;
+
+            // Try to fix the spending details transaction Hex values.
+            foreach (KeyValuePair<uint256, List<SpendingDetails>> kv in detailsToFix)
+            {
+                uint256 blockId = this.blockStore.GetBlockIdByTransactionId(kv.Key);
+
+                if (blockId != null)
+                {
+                    Block block = this.blockStore.GetBlock(blockId);
+
+                    if (block != null)
+                    {
+                        Transaction transaction = block.Transactions.FirstOrDefault(t => t.GetHash() == kv.Key);
+
+                        if (transaction != null)
+                        {
+                            string hex = transaction.ToHex();
+
+                            foreach (SpendingDetails spendingDetails in kv.Value)
+                            {
+                                spendingDetails.Hex = hex;
+                            }
+
+                            continue;
+                        }
+                    }
+                }
+
+                // The spending transaction could not be found in the consensus chain.
+                // Set the maxValidHeight to the block before where the spending transaction occurred.
+                foreach (SpendingDetails spendingDetails in kv.Value)
+                {
+                    Guard.Assert(spendingDetails.BlockHeight != null);
+
+                    if (spendingDetails.BlockHeight < firstMissingTransactionHeight)
+                        firstMissingTransactionHeight = (int)spendingDetails.BlockHeight;
+                }
+            }
+
+            // If there are unresolvable spending details the re-sync from that point onwards.
+            if (firstMissingTransactionHeight <= this.LastBlockHeight())
+            {
+                ChainedHeader fork = this.chainIndexer.GetHeader(Math.Min(firstMissingTransactionHeight - 1, this.chainIndexer.Height));
+
+                this.RemoveBlocks(fork);
+            }
         }
 
         public void Start()
@@ -156,13 +233,18 @@ namespace Stratis.Features.FederatedPeg.Wallet
             {
                 // Find the wallet and load it in memory.
                 if (this.fileStorage.Exists(WalletFileName))
+                {
                     this.Wallet = this.fileStorage.LoadByFileName(WalletFileName);
+                    this.RemoveUnconfirmedTransactionData();
+                }
                 else
                 {
                     // Create the multisig wallet file if it doesn't exist
                     this.Wallet = this.GenerateWallet();
                     this.SaveWallet();
                 }
+
+                this.FixSpendingDetails();
 
                 // find the last chain block received by the wallet manager.
                 HashHeightPair hashHeightPair = this.LastReceivedBlockHash();
@@ -575,8 +657,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     Id = transactionHash,
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? transaction.Time),
                     Index = index,
-                    ScriptPubKey = script,
-                    Hex = transaction.ToHex()
+                    ScriptPubKey = script
                 };
 
                 this.Wallet.MultiSigAddress.Transactions.Add(newTransaction);
