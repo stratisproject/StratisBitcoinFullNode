@@ -159,7 +159,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         private void FixSpendingDetails()
         {
             // Record all the transaction data spent by a given spending transaction located in a given block.
-            var detailsToFix = new Dictionary<uint256, Dictionary<uint256, List<TransactionData>>>();
+            var spendTxsByBlockId = new Dictionary<uint256, Dictionary<uint256, List<TransactionData>>>();
             foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions)
             {
                 SpendingDetails spendingDetail = transactionData.SpendingDetails;
@@ -167,50 +167,45 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (string.IsNullOrEmpty(spendingDetail?.Hex) || spendingDetail.TransactionId == null)
                     continue;
 
-                if (!detailsToFix.TryGetValue(spendingDetail.BlockHash, out Dictionary<uint256, List<TransactionData>> spendingDict))
+                if (!spendTxsByBlockId.TryGetValue(spendingDetail.BlockHash, out Dictionary<uint256, List<TransactionData>> spentOutputsBySpendTxId))
                 {
-                    spendingDict = new Dictionary<uint256, List<TransactionData>>();
-                    detailsToFix[spendingDetail.BlockHash] = spendingDict;
+                    spentOutputsBySpendTxId = new Dictionary<uint256, List<TransactionData>>();
+                    spendTxsByBlockId[spendingDetail.BlockHash] = spentOutputsBySpendTxId;
                 }
 
-                if (!spendingDict.TryGetValue(spendingDetail.TransactionId, out List<TransactionData> details))
+                if (!spentOutputsBySpendTxId.TryGetValue(spendingDetail.TransactionId, out List<TransactionData> spentOutputs))
                 {
-                    details = new List<TransactionData>();
-                    spendingDict[spendingDetail.TransactionId] = details;
+                    spentOutputs = new List<TransactionData>();
+                    spentOutputsBySpendTxId[spendingDetail.TransactionId] = spentOutputs;
                 }
 
-                details.Add(transactionData);
+                spentOutputs.Add(transactionData);
             }
 
             // Will keep track of the height of spending details we're unable to fix.
             int firstMissingTransactionHeight = this.LastBlockHeight() + 1;
 
             // Try to fix the spending details transaction Hex values.
-            foreach (KeyValuePair<uint256, Dictionary<uint256, List<TransactionData>>> kv in detailsToFix)
+            foreach ((uint256 blockId, Dictionary<uint256, List<TransactionData>> spentOutputsBySpendTxId) in spendTxsByBlockId)
             {
-                uint256 blockId = kv.Key;
                 Block block = this.blockStore.GetBlock(blockId);
 
-                foreach (KeyValuePair<uint256, List<TransactionData>> kv2 in kv.Value)
+                foreach ((uint256 spendTxId, List<TransactionData> spentOutputs) in spentOutputsBySpendTxId)
                 {
-                    Transaction transaction = block.Transactions.FirstOrDefault(t => t.GetHash() == kv2.Key);
+                    Transaction spendTransaction = block.Transactions.FirstOrDefault(t => t.GetHash() == spendTxId);
 
-                    if (transaction != null)
+                    if (spendTransaction != null)
                     {
-                        string hex = transaction.ToHex();
+                        string hex = spendTransaction.ToHex();
 
-                        foreach (TransactionData transactionData in kv2.Value)
-                        {
+                        foreach (TransactionData transactionData in spentOutputs)
                             transactionData.SpendingDetails.Hex = hex;
-
-                            continue;
-                        }
                     }
                     else
                     {
                         // The spending transaction could not be found in the consensus chain.
                         // Set the maxValidHeight to the block before where the spending transaction occurred.
-                        foreach (TransactionData transactionData in kv2.Value)
+                        foreach (TransactionData transactionData in spentOutputs)
                         {
                             SpendingDetails spendingDetails = transactionData.SpendingDetails;
 
@@ -223,7 +218,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 }
             }
 
-            // If there are unresolvable spending details the re-sync from that point onwards.
+            // If there are unresolvable spending details then re-sync from that point onwards.
             if (firstMissingTransactionHeight <= this.LastBlockHeight())
             {
                 ChainedHeader fork = this.chainIndexer.GetHeader(Math.Min(firstMissingTransactionHeight - 1, this.chainIndexer.Height));
