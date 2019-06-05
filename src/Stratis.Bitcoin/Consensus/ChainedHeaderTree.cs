@@ -146,6 +146,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>The block and its chained header (the <see cref="ChainedHeaderBlock.Block"/> can be <c>null</c> or the <see cref="ChainedHeaderBlock"/> result can be <c>null</c>).</returns>
         ChainedHeaderBlock GetChainedHeaderBlock(uint256 blockHash);
 
+        ChainedHeaderBlock[] GetChainedHeaderBlocks(List<uint256> blockHashes);
+
         /// <summary>Get the chained header.</summary>
         /// <returns>Chained header for specified block hash if it exists, <c>null</c> otherwise.</returns>
         ChainedHeader GetChainedHeader(uint256 blockHash);
@@ -284,6 +286,20 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             return chainedHeaderBlock;
+        }
+
+        public ChainedHeaderBlock[] GetChainedHeaderBlocks(List<uint256> blockHashes)
+        {
+            var chainedHeaderBlocks = blockHashes.ToDictionary(x => x, x => (ChainedHeaderBlock)null);
+
+            foreach (uint256 key in blockHashes.Intersect(this.chainedHeadersByHash.Keys))
+            {
+                var chainedHeader = this.chainedHeadersByHash[key];
+
+                chainedHeaderBlocks[key] = new ChainedHeaderBlock(chainedHeader.Block, chainedHeader);
+            }
+
+            return blockHashes.Select(x => chainedHeaderBlocks[x]).ToArray();
         }
 
         /// <inheritdoc />
