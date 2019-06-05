@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -1234,6 +1235,22 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogDebug("Block '{0}' was not found in block store.", blockHash);
 
             return chainedHeaderBlock;
+        }
+
+        public ChainedHeaderBlock[] GetBlockData(List<uint256> blockHashes)
+        {
+            Dictionary<uint256, ChainedHeaderBlock> chainedHeaderBlocks;
+
+            lock (this.peerLock)
+            {
+                chainedHeaderBlocks = this.chainedHeaderTree.GetChainedHeaderBlocks(blockHashes).ToDictionary(chb => chb.ChainedHeader.HashBlock, chb => chb);
+            }
+
+            List<uint256> getFromStore = chainedHeaderBlocks.Where(kv => kv.Value != null && kv.Value.Block == null).Select(kv => kv.Key).ToList();
+            foreach ((Block block, int index) in this.blockStore.GetBlocks(getFromStore).Select((b, n) => (b, n)))
+                chainedHeaderBlocks[getFromStore[index]] = new ChainedHeaderBlock(block, chainedHeaderBlocks[getFromStore[index]].ChainedHeader);
+
+            return blockHashes.Select(h => chainedHeaderBlocks[h]).ToArray();
         }
 
         /// <summary>
