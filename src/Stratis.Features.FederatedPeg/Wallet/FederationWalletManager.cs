@@ -158,63 +158,68 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         private void FixSpendingDetails()
         {
-            // Record all non-null spending details that have null Hex values.
-            var detailsToFix = new Dictionary<uint256, List<SpendingDetails>>();
-            foreach ((uint256 _, List<TransactionData> txList) in this.Wallet.MultiSigAddress.Transactions.GetSpendingTransactionsByDepositId())
+            // Record all the transaction data spent by a given spending transaction located in a given block.
+            var detailsToFix = new Dictionary<uint256, Dictionary<uint256, List<TransactionData>>>();
+            foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions)
             {
-                foreach (SpendingDetails spendingDetail in txList.Select(tx => tx.SpendingDetails))
-                {
-                    if (string.IsNullOrEmpty(spendingDetail.Hex) && spendingDetail.TransactionId != null)
-                    {
-                        if (!detailsToFix.TryGetValue(spendingDetail.TransactionId, out List<SpendingDetails> spendingList))
-                        {
-                            spendingList = new List<SpendingDetails>();
-                            detailsToFix[spendingDetail.TransactionId] = spendingList;
-                        }
+                SpendingDetails spendingDetail = transactionData.SpendingDetails;
 
-                        spendingList.Add(spendingDetail);
-                    }
+                if (string.IsNullOrEmpty(spendingDetail?.Hex) || spendingDetail.TransactionId == null)
+                    continue;
+
+                if (!detailsToFix.TryGetValue(spendingDetail.BlockHash, out Dictionary<uint256, List<TransactionData>> spendingDict))
+                {
+                    spendingDict = new Dictionary<uint256, List<TransactionData>>();
+                    detailsToFix[spendingDetail.BlockHash] = spendingDict;
                 }
+
+                if (!spendingDict.TryGetValue(spendingDetail.TransactionId, out List<TransactionData> details))
+                {
+                    details = new List<TransactionData>();
+                    spendingDict[spendingDetail.TransactionId] = details;
+                }
+
+                details.Add(transactionData);
             }
 
             // Will keep track of the height of spending details we're unable to fix.
             int firstMissingTransactionHeight = this.LastBlockHeight() + 1;
 
             // Try to fix the spending details transaction Hex values.
-            foreach (KeyValuePair<uint256, List<SpendingDetails>> kv in detailsToFix)
+            foreach (KeyValuePair<uint256, Dictionary<uint256, List<TransactionData>>> kv in detailsToFix)
             {
-                uint256 blockId = this.blockStore.GetBlockIdByTransactionId(kv.Key);
+                uint256 blockId = kv.Key;
+                Block block = this.blockStore.GetBlock(blockId);
 
-                if (blockId != null)
+                foreach (KeyValuePair<uint256, List<TransactionData>> kv2 in kv.Value)
                 {
-                    Block block = this.blockStore.GetBlock(blockId);
+                    Transaction transaction = block.Transactions.FirstOrDefault(t => t.GetHash() == kv2.Key);
 
-                    if (block != null)
+                    if (transaction != null)
                     {
-                        Transaction transaction = block.Transactions.FirstOrDefault(t => t.GetHash() == kv.Key);
+                        string hex = transaction.ToHex();
 
-                        if (transaction != null)
+                        foreach (TransactionData transactionData in kv2.Value)
                         {
-                            string hex = transaction.ToHex();
-
-                            foreach (SpendingDetails spendingDetails in kv.Value)
-                            {
-                                spendingDetails.Hex = hex;
-                            }
+                            transactionData.SpendingDetails.Hex = hex;
 
                             continue;
                         }
                     }
-                }
+                    else
+                    {
+                        // The spending transaction could not be found in the consensus chain.
+                        // Set the maxValidHeight to the block before where the spending transaction occurred.
+                        foreach (TransactionData transactionData in kv2.Value)
+                        {
+                            SpendingDetails spendingDetails = transactionData.SpendingDetails;
 
-                // The spending transaction could not be found in the consensus chain.
-                // Set the maxValidHeight to the block before where the spending transaction occurred.
-                foreach (SpendingDetails spendingDetails in kv.Value)
-                {
-                    Guard.Assert(spendingDetails.BlockHeight != null);
+                            Guard.Assert(spendingDetails.BlockHeight != null);
 
-                    if (spendingDetails.BlockHeight < firstMissingTransactionHeight)
-                        firstMissingTransactionHeight = (int)spendingDetails.BlockHeight;
+                            if (spendingDetails.BlockHeight < firstMissingTransactionHeight)
+                                firstMissingTransactionHeight = (int)spendingDetails.BlockHeight;
+                        }
+                    }
                 }
             }
 
