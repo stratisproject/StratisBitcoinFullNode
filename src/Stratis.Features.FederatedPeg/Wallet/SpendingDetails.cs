@@ -54,7 +54,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <summary>
         /// Hexadecimal representation of this spending transaction.
         /// </summary>
-        [JsonProperty(PropertyName = "hex", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonIgnore]
         public string Hex { get; set; }
 
         /// <summary>
