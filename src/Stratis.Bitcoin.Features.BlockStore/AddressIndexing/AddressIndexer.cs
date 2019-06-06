@@ -33,6 +33,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <param name="addresses">The set of addresses that will be queried.</param>
         /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed or doesn't exists.</returns>
         AddressBalancesResult GetAddressBalances(string[] addresses, int minConfirmations = 0);
+
+        /// <summary>Returns verbose balances data.</summary>
+        /// <param name="addresses">The set of addresses that will be queried.</param>
+        VerboseAddressBalancesResult GetVerboseAddressBalancesData(string[] addresses);
     }
 
     public class AddressIndexer : IAddressIndexer
@@ -542,6 +546,39 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                 return result;
             }
+        }
+
+        /// <inheritdoc />
+        public VerboseAddressBalancesResult GetVerboseAddressBalancesData(string[] addresses)
+        {
+            (bool isQueryable, string reason) = this.IsQueryable();
+
+            if (!isQueryable)
+                return VerboseAddressBalancesResult.RequestFailed(reason);
+
+            var result = new VerboseAddressBalancesResult();
+
+            lock (this.lockObject)
+            {
+                foreach (var address in addresses)
+                {
+                    AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
+
+                    var copy = new AddressIndexerData()
+                    {
+                        Address = indexData.Address,
+                        BalanceChanges = new List<AddressBalanceChange>(indexData.BalanceChanges)
+                    };
+
+                    result.BalancesData.Add(copy);
+                }
+
+                result.AddressIndexerHeight = this.tipData.Height;
+            }
+
+            result.ConsensusTipHeight = this.consensusManager.Tip.Height;
+
+            return result;
         }
 
         private (bool isQueryable, string reason) IsQueryable()
