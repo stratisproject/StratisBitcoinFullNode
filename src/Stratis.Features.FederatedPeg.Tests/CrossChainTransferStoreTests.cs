@@ -909,6 +909,67 @@ namespace Stratis.Features.FederatedPeg.Tests
             }
         }
 
+        // This will be useful in the future to test the InputConsolidator functionality
+        [Fact]
+        public async Task BuildMultipleTransactionsForSingleWithdrawal()
+        {
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+
+            this.Init(dataFolder);
+            this.AddFunding();
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
+
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
+            {
+                crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
+
+                TestBase.WaitLoopMessage(() => (
+                    this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height,
+                    $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
+                Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
+
+                // Lets set the funding transactions to hundreds of really small outputs
+                const int numUtxos = 500;
+                const decimal individualAmount = 0.1m;
+                const decimal depositAmount = numUtxos * individualAmount - 1; // Large amount minus some for fees.
+                BitcoinAddress address = new Script("").Hash.GetAddress(this.network);
+
+                this.wallet.MultiSigAddress.Transactions.Clear();
+                this.fundingTransactions.Clear();
+
+                Money[] funding = new Money[numUtxos];
+
+                for (int i = 0; i < funding.Length; i++)
+                {
+                    funding[i] = new Money(individualAmount, MoneyUnit.BTC);
+                }
+
+                this.AddFundingTransaction(funding);
+
+                Deposit deposit = new Deposit(1uL, new Money(depositAmount, MoneyUnit.BTC), address.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+
+                var blockDeposits = new Dictionary<int, MaturedBlockDepositsModel[]>();
+
+                blockDeposits[crossChainTransferStore.NextMatureDepositHeight] = new[]
+                {
+                    new MaturedBlockDepositsModel(
+                        new MaturedBlockInfoModel
+                        {
+                            BlockHash = 1,
+                            BlockHeight = crossChainTransferStore.NextMatureDepositHeight
+                        },
+                        new []{deposit})
+                };
+
+                RecordLatestMatureDepositsResult recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[crossChainTransferStore.NextMatureDepositHeight]);
+
+                int txSize = recordMatureDepositResult.WithDrawalTransactions[0].GetSerializedSize();
+                Assert.True(txSize < 100_000);
+                Assert.True(recordMatureDepositResult.WithDrawalTransactions.Count > 1);
+            }
+        }
+
         private Q Post<T, Q>(string url, T body)
         {
             // Request is sent to mainchain user.
