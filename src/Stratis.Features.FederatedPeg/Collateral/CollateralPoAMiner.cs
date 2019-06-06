@@ -17,6 +17,11 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Features.FederatedPeg.Collateral
 {
+    /// <summary>
+    /// Collateral aware version of <see cref="PoAMiner"/>. At the block template creation it will check our own collateral at a commitment height which is
+    /// calculated in a following way: <c>counter chain height - maxReorgLength - AddressIndexer.SyncBuffer</c>. Then commitment height is encoded in
+    /// OP_RETURN output of a coinbase transaction.
+    /// </summary>
     public class CollateralPoAMiner : PoAMiner
     {
         private readonly CollateralHeightCommitmentEncoder encoder;
