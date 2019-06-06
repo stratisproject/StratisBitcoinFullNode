@@ -254,7 +254,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
                 this.logger.LogDebug("Calculated balance at {0} is {1}, collateral requirement is {2}.", heightToCheckAt, balance, member.CollateralAmount);
 
-                return balance >= member.CollateralAmount;
+                return balance >= member.CollateralAmount.Satoshi;
             }
         }
 

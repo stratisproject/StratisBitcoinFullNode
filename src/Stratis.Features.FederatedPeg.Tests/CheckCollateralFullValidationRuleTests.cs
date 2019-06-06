@@ -56,7 +56,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact]
         public async Task PassesIfCollateralIsOkAsync()
         {
-            this.collateralCheckerMock.Setup(x => x.CheckCollateral(It.IsAny<IFederationMember>())).Returns(true);
+            this.collateralCheckerMock.Setup(x => x.CheckCollateral(It.IsAny<IFederationMember>(), It.IsAny<int>())).Returns(true);
 
             await this.rule.RunAsync(this.ruleContext);
         }
@@ -64,7 +64,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         [Fact]
         public async Task ThrowsIfCollateralCheckFailsAsync()
         {
-            this.collateralCheckerMock.Setup(x => x.CheckCollateral(It.IsAny<IFederationMember>())).Returns(false);
+            this.collateralCheckerMock.Setup(x => x.CheckCollateral(It.IsAny<IFederationMember>(), It.IsAny<int>())).Returns(false);
 
             await Assert.ThrowsAsync<ConsensusErrorException>(() => this.rule.RunAsync(this.ruleContext));
         }
