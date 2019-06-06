@@ -1073,7 +1073,15 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <inheritdoc />
         public ICrossChainTransfer[] QueryTransfersByStatus(CrossChainTransferStatus[] statuses)
         {
-            return this.GetTransfersByStatusInternalLocked(statuses, true, false);
+            lock (this.lockObj)
+            {
+                return this.federationWalletManager.Synchronous(() =>
+                {
+                    Guard.Assert(this.Synchronize());
+
+                    return this.GetTransfersByStatusInternalLocked(statuses, true, false);
+                });
+            }
         }
 
         /// <inheritdoc />
