@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     context.FeeType = FeeParser.Parse(request.FeeType);
                 }
 
-                Transaction transactionResult = this.multisigTransactionHandler.BuildTransaction(context, request.Mnemonics);
+                Transaction transactionResult = this.multisigTransactionHandler.BuildTransaction(context, request.Secrets);
 
                 var model = new WalletBuildTransactionModel
                 {

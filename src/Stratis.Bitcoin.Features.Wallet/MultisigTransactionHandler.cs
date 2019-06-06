@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet
@@ -35,9 +36,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public Transaction BuildTransaction(TransactionBuildContext context, string[] mnemonics)
+        public Transaction BuildTransaction(TransactionBuildContext context, SecretModel[] secrets)
         {
-            if (mnemonics == null || mnemonics.Length == 0)
+            if (secrets == null || secrets.Length == 0)
                throw new WalletException("Could not build the transaction. Details: no private keys provided");
 
             this.InitializeTransactionBuilder(context);
@@ -47,12 +48,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             Transaction unsignedTransaction = context.TransactionBuilder.BuildTransaction(false);
             var signedTransactions = new List<Transaction>();
-            foreach (string secret in mnemonics)
+            foreach (SecretModel secret in secrets)
             {
                 TransactionBuildContext contextCopy = context.Clone(this.network);
                 this.InitializeTransactionBuilder(contextCopy);
-                var mnemonic = new Mnemonic(secret);
-                ExtKey extKey = mnemonic.DeriveExtKey();
+                var mnemonic = new Mnemonic(secret.Mnemonic);
+                ExtKey extKey = mnemonic.DeriveExtKey(secret.Passphrase);
                 Transaction transaction = contextCopy.TransactionBuilder.AddKeys(extKey.PrivateKey).SignTransaction(unsignedTransaction);
                 signedTransactions.Add(transaction);
             }

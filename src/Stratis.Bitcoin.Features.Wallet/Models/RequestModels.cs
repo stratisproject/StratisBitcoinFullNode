@@ -404,7 +404,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     public class BuildMultisigTransactionRequest : BuildTransactionRequest
     {
         [Required(ErrorMessage = "Mnemonic phrases are required.")]
-        public string[] Mnemonics { get; set; }
+        public SecretModel[] Secrets { get; set; }
+    }
+
+    public class SecretModel
+    {
+        [Required(ErrorMessage = "Mnemonic is required.")]
+        public string Mnemonic { get; set; }
+
+        [Required(ErrorMessage = "Passphrase is required.")]
+        public string Passphrase { get; set; }
     }
 
     /// <summary>
