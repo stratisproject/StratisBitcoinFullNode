@@ -104,8 +104,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private Task<ChainedHeaderBlock> prefetchingTask;
 
-        /// <summary>Maximum supported reorganization length.</summary>
-        private readonly int maxReorgLength;
+        /// <summary>Distance in blocks from consensus tip at which compaction should start.</summary>
+        /// <remarks>It can't be lower than maxReorg since compacted data can't be converted back to uncompacted state for partial reversion.</remarks>
+        private readonly int compactionTriggerDistance;
+
+        /// <summary>
+        /// This is a window of some blocks that is needed to reduce the consequences of nodes having different view of consensus chain.
+        /// We assume that nodes usually don't have view that is different from other nodes by that constant of blocks.
+        /// </summary>
+        private const int SyncBuffer = 50;
 
         public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network,
             INodeStats nodeStats, IConsensusManager consensusManager, IAsyncProvider asyncProvider)
@@ -126,7 +133,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.averageTimePerBlock = new AverageCalculator(200);
-            this.maxReorgLength = this.network.Consensus.MaxReorgLength == 0 ? (int)this.network.Consensus.MaxReorgLength : FallBackMaxReorg;
+            int maxReorgLength = this.network.Consensus.MaxReorgLength == 0 ? (int)this.network.Consensus.MaxReorgLength : FallBackMaxReorg;
+
+            this.compactionTriggerDistance = maxReorgLength * 2 + SyncBuffer;
         }
 
         public void Initialize()
@@ -428,7 +437,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 }
 
                 this.outpointsRepository.RecordRewindData(rewindData);
-                this.outpointsRepository.PurgeOldRewindData(this.consensusManager.Tip.Height - this.maxReorgLength);
+                this.outpointsRepository.PurgeOldRewindData(this.consensusManager.Tip.Height - this.compactionTriggerDistance);
             }
 
             return true;
@@ -449,7 +458,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             });
 
             // Anything less than that should be compacted.
-            int heightThreshold = this.consensusManager.Tip.Height - this.maxReorgLength;
+            int heightThreshold = this.consensusManager.Tip.Height - this.compactionTriggerDistance;
 
             bool compact = (indexData.BalanceChanges.Count > CompactingThreshold) &&
                            (indexData.BalanceChanges[1].BalanceChangedHeight < heightThreshold);
