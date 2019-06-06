@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// This is a window of some blocks that is needed to reduce the consequences of nodes having different view of consensus chain.
         /// We assume that nodes usually don't have view that is different from other nodes by that constant of blocks.
         /// </summary>
-        private const int SyncBuffer = 50;
+        public const int SyncBuffer = 50;
 
         public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network,
             INodeStats nodeStats, IConsensusManager consensusManager, IAsyncProvider asyncProvider)

@@ -1,8 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
+using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Voting;
@@ -15,25 +19,116 @@ namespace Stratis.Features.FederatedPeg.Collateral
 {
     public class CollateralPoAMiner : PoAMiner
     {
-        /// <summary>Prefix used to identify OP_RETURN output with mainchain consensus height commitment.</summary>
-        public static readonly byte[] HeightCommitmentOutputPrefixBytes = new byte[] { 121, 13, 6, 253 };
+        private readonly CollateralHeightCommitmentEncoder encoder;
+
+        private readonly CollateralChecker collateralChecker;
 
         public CollateralPoAMiner(IConsensusManager consensusManager, IDateTimeProvider dateTimeProvider, Network network, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory,
             IInitialBlockDownloadState ibdState, BlockDefinition blockDefinition, ISlotsManager slotsManager, IConnectionManager connectionManager,
             PoABlockHeaderValidator poaHeaderValidator, IFederationManager federationManager, IIntegrityValidator integrityValidator, IWalletManager walletManager,
-            INodeStats nodeStats, VotingManager votingManager, PoAMinerSettings poAMinerSettings)
+            INodeStats nodeStats, VotingManager votingManager, PoAMinerSettings poAMinerSettings, CollateralChecker collateralChecker)
             : base(consensusManager, dateTimeProvider, network, nodeLifetime, loggerFactory, ibdState, blockDefinition, slotsManager, connectionManager,
             poaHeaderValidator, federationManager, integrityValidator, walletManager,nodeStats, votingManager, poAMinerSettings)
         {
-            // TODO consensus rule to check commitment is correct
+            this.collateralChecker = collateralChecker;
+            this.encoder = new CollateralHeightCommitmentEncoder();
         }
 
         /// <inheritdoc />
-        protected override void FillBlockTemplate(BlockTemplate blockTemplate)
+        protected override void FillBlockTemplate(BlockTemplate blockTemplate, out bool dropTemplate)
         {
-            base.FillBlockTemplate(blockTemplate);
+            base.FillBlockTemplate(blockTemplate, out dropTemplate);
 
-            // TODO add commitment
+            int counterChainHeight = this.collateralChecker.GetCounterChainConsensusHeight();
+            int maxReorgLength = this.network.Consensus.MaxReorgLength == 0 ? (int)this.network.Consensus.MaxReorgLength : AddressIndexer.FallBackMaxReorg;
+
+            int commitmentHeight = counterChainHeight - maxReorgLength - AddressIndexer.SyncBuffer;
+
+            if (commitmentHeight <= 0)
+            {
+                dropTemplate = true;
+                this.logger.LogWarning("Counter chain should first advance at least at {0}! Block can't bee produced.", maxReorgLength + AddressIndexer.SyncBuffer);
+                this.logger.LogTrace("(-)[LOW_COMMITMENT_HEIGHT]");
+                return;
+            }
+
+            IFederationMember currentMember = this.federationManager.GetCurrentFederationMember();
+
+            if (currentMember == null)
+            {
+                dropTemplate = true;
+                this.logger.LogWarning("Unable to get this node's federation member!");
+                this.logger.LogTrace("(-)[CANT_GET_FED_MEMBER]");
+                return;
+            }
+
+            // Check our own collateral at a given commitment height.
+            bool success = this.collateralChecker.CheckCollateral(currentMember, commitmentHeight);
+
+            if (!success)
+            {
+                dropTemplate = true;
+                this.logger.LogWarning("Failed to fulfill collateral requirement for mining!");
+                this.logger.LogTrace("(-)[BAD_COLLATERAL]");
+                return;
+            }
+
+            // Add height commitment.
+            byte[] encodedHeight = this.encoder.Encode(commitmentHeight);
+
+            var votingOutputScript = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(encodedHeight));
+            blockTemplate.Block.Transactions[0].AddOutput(Money.Zero, votingOutputScript);
+        }
+    }
+
+    public class CollateralHeightCommitmentEncoder
+    {
+        /// <summary>Prefix used to identify OP_RETURN output with mainchain consensus height commitment.</summary>
+        public static readonly byte[] HeightCommitmentOutputPrefixBytes = { 121, 13, 6, 253 };
+
+        public byte[] Encode(int height)
+        {
+            var bytes = new List<byte>(HeightCommitmentOutputPrefixBytes);
+
+            bytes.AddRange(BitConverter.GetBytes(height));
+
+            return bytes.ToArray();
+        }
+
+        /// <summary>Provides commitment data from transaction's coinbase height commitment output.</summary>
+        /// <returns>Commitment script or <c>null</c> if commitment script wasn't found.</returns>
+        public byte[] ExtractRawCommitmentData(Transaction tx)
+        {
+            IEnumerable<Script> opReturnOutputs = tx.Outputs.Where(x => (x.ScriptPubKey.Length > 0) && (x.ScriptPubKey.ToBytes(true)[0] == (byte)OpcodeType.OP_RETURN)).Select(x => x.ScriptPubKey);
+
+            byte[] commitmentData = null;
+
+            foreach (Script script in opReturnOutputs)
+            {
+                IEnumerable<Op> ops = script.ToOps();
+
+                if (ops.Count() != 2)
+                    continue;
+
+                byte[] data = ops.Last().PushData;
+
+                bool correctPrefix = data.Take(HeightCommitmentOutputPrefixBytes.Length).SequenceEqual(HeightCommitmentOutputPrefixBytes);
+
+                if (!correctPrefix)
+                    continue;
+
+                commitmentData = data.Skip(HeightCommitmentOutputPrefixBytes.Length).ToArray();
+                break;
+            }
+
+            return commitmentData;
+        }
+
+        public int Decode(byte[] rawData)
+        {
+            int height = BitConverter.ToInt32(rawData);
+
+            return height;
         }
     }
 }

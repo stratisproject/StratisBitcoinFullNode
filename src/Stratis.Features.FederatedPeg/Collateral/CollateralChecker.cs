@@ -26,6 +26,8 @@ namespace Stratis.Features.FederatedPeg.Collateral
         /// <param name="federationMember">The federation member whose collateral will be checked.</param>
         /// <param name="heightToCheckAt">Counter chain height at which collateral should be checked.</param>
         bool CheckCollateral(IFederationMember federationMember, int heightToCheckAt);
+
+        int GetCounterChainConsensusHeight();
     }
 
     public class CollateralChecker : ICollateralChecker
@@ -102,6 +104,14 @@ namespace Stratis.Features.FederatedPeg.Collateral
             }
 
             this.updateCollateralContinuouslyTask = this.UpdateCollateralInfoContinuouslyAsync();
+        }
+
+        public int GetCounterChainConsensusHeight()
+        {
+            lock (this.locker)
+            {
+                return this.counterChainConsensusTipHeight;
+            }
         }
 
         /// <summary>Continuously updates info about money deposited to fed member's addresses.</summary>
