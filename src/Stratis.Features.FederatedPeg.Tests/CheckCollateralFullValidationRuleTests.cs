@@ -40,6 +40,16 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.ruleContext = new RuleContext(new ValidationContext(), DateTimeOffset.Now);
             this.ruleContext.ValidationContext.BlockToValidate = new Block(new BlockHeader() { Time = 5234 });
 
+            Block block = this.ruleContext.ValidationContext.BlockToValidate;
+            block.AddTransaction(new Transaction());
+
+            CollateralHeightCommitmentEncoder encoder = new CollateralHeightCommitmentEncoder();
+
+            byte[] encodedHeight = encoder.Encode(1000);
+
+            var votingOutputScript = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(encodedHeight));
+            block.Transactions[0].AddOutput(Money.Zero, votingOutputScript);
+
             this.rule = new CheckCollateralFullValidationRule(this.ibdMock.Object, this.collateralCheckerMock.Object, this.slotsManagerMock.Object, new Mock<IDateTimeProvider>().Object, new PoANetwork());
             this.rule.Logger = new ExtendedLoggerFactory().CreateLogger(this.rule.GetType().FullName);
             this.rule.Initialize();
@@ -57,6 +67,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         public async Task PassesIfCollateralIsOkAsync()
         {
             this.collateralCheckerMock.Setup(x => x.CheckCollateral(It.IsAny<IFederationMember>(), It.IsAny<int>())).Returns(true);
+            this.collateralCheckerMock.Setup(x => x.GetCounterChainConsensusHeight()).Returns(5000);
 
             await this.rule.RunAsync(this.ruleContext);
         }
