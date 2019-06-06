@@ -221,6 +221,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                     {
                         services.AddSingleton<IWalletSyncManager, LightWalletSyncManager>();
                         services.AddSingleton<IWalletTransactionHandler, WalletTransactionHandler>();
+                        services.AddSingleton<IMultisigTransactionHandler, MultisigTransactionHandler>();
                         services.AddSingleton<IWalletManager, WalletManager>();
                         if (fullNodeBuilder.Network.IsBitcoin())
                             services.AddSingleton<IWalletFeePolicy, LightWalletBitcoinExternalFeePolicy>();
