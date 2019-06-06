@@ -23,6 +23,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.transactionHandler = transactionHandler;
         }
 
+        // TODO: Watch the wallet somewhere to check that the transaction has come through, so this component can be reset - we don't need it anymore.
+
         public void StartConsolidation()
         {
             if (this.signingInProgress)
