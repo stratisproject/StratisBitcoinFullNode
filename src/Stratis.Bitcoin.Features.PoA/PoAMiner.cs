@@ -226,8 +226,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
             BlockTemplate blockTemplate = this.blockDefinition.Build(tip, walletScriptPubKey);
 
-            if (this.network.ConsensusOptions.VotingEnabled)
-                this.AddVotingData(blockTemplate);
+            this.FillBlockTemplate(blockTemplate);
 
             blockTemplate.Block.Header.Time = timestamp;
 
@@ -254,6 +253,13 @@ namespace Stratis.Bitcoin.Features.PoA
             }
 
             return chainedHeader;
+        }
+
+        /// <summary>Fills block template with custom non-standard data.</summary>
+        protected virtual void FillBlockTemplate(BlockTemplate blockTemplate)
+        {
+            if (this.network.ConsensusOptions.VotingEnabled)
+                this.AddVotingData(blockTemplate);
         }
 
         /// <summary>Gets scriptPubKey from the wallet.</summary>
