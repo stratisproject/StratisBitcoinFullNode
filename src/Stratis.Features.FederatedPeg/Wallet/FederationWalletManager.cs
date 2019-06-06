@@ -164,7 +164,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             {
                 SpendingDetails spendingDetail = transactionData.SpendingDetails;
 
-                if (spendingDetail?.TransactionId == null || !string.IsNullOrEmpty(spendingDetail.Hex))
+                if (spendingDetail?.TransactionId == null || spendingDetail.Transaction != null)
                     continue;
 
                 // Some SpendingDetail.BlockHash values may bet set to (uint256)0, so fix that too.
@@ -205,10 +205,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                     if (spendTransaction != null)
                     {
-                        string hex = spendTransaction.ToHex();
-
                         foreach (TransactionData transactionData in spentOutputs)
-                            transactionData.SpendingDetails.Hex = hex;
+                            transactionData.SpendingDetails.Transaction = spendTransaction;
                     }
                     else
                     {
@@ -810,7 +808,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? transaction.Time),
                 BlockHeight = blockHeight,
                 BlockHash = blockHash,
-                Hex = transaction.ToHex(),
+                Transaction = transaction,
                 IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true
             };
 
@@ -927,7 +925,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                             spendingDetail.BlockHeight ?? 0,
                             spendingDetail.BlockHash);
 
-                        Transaction transaction = this.network.CreateTransaction(spendingDetail.Hex);
+                        Transaction transaction = spendingDetail.Transaction;
 
                         withdrawals.Add((transaction, withdrawal));
                     }
