@@ -10,6 +10,7 @@ using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Networks;
@@ -18,6 +19,7 @@ using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 using FileMode = LiteDB.FileMode;
+using Script = NBitcoin.Script;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
@@ -26,7 +28,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         private readonly IAddressIndexer addressIndexer;
 
         private readonly Mock<IConsensusManager> consensusManagerMock;
-        
+
         private readonly Mock<IAsyncProvider> asyncProviderMock;
 
         private readonly Network network;
@@ -44,7 +46,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
             var stats = new Mock<INodeStats>();
             this.consensusManagerMock = new Mock<IConsensusManager>();
-            
+
             this.asyncProviderMock = new Mock<IAsyncProvider>();
 
             this.addressIndexer = new AddressIndexer(storeSettings, dataFolder, new ExtendedLoggerFactory(), this.network, stats.Object, this.consensusManagerMock.Object, this.asyncProviderMock.Object);
@@ -142,7 +144,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.consensusManagerMock.Setup(x => x.GetBlockData(It.IsAny<uint256>())).Returns((uint256 hash) =>
             {
                 ChainedHeader headerFork = headersFork.SingleOrDefault(x => x.HashBlock == hash);
-                
+
                 return new ChainedHeaderBlock(new Block(), headerFork);
             });
 
