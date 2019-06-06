@@ -11,6 +11,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
     {
         private bool signingInProgress;
 
+        /// <summary>
+        ///  TODO store in-progress signing here.
+        /// </summary>
         private Transaction partialTransaction;
 
         private IFederationWalletTransactionHandler transactionHandler;
@@ -32,18 +35,25 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
             // Store it somewhere on this component
 
-            // Send it around to be signed
+            // Send it around to be signed - See code in PartialTransactionsRequester
 
         }
 
+
         public void CombineSignatures()
         {
+            // Call into here from PartialTransactionsBehaviour. Have a special template, maybe null deposit id, that directs here.
+
+            // TODO: Lock?
+
             if (!this.signingInProgress)
                 return;
 
-            // Check templates match
+            // Check templates match - see code in CrossChainTransferStore
 
             // Sign
+
+            // Store again
 
             // Send back
         }
