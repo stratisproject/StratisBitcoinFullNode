@@ -64,8 +64,6 @@ namespace Stratis.Bitcoin.Controllers.Models
 
         public List<AddressIndexerData> BalancesData { get; set; }
 
-        public int AddressIndexerHeight { get; set; }
-
         public int ConsensusTipHeight { get; set; }
 
         [JsonProperty("reason")]

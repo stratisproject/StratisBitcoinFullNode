@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         private const string AddressIndexerDatabaseFilename = "addressindex.litedb";
 
         /// <summary>Max supported reorganization length for networks without max reorg property.</summary>
-        private const int FallBackMaxReorg = 200;
+        public const int FallBackMaxReorg = 200;
 
         /// <summary>
         /// Time to wait before attempting to index the next block.
@@ -572,8 +572,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     result.BalancesData.Add(copy);
                 }
-
-                result.AddressIndexerHeight = this.tipData.Height;
             }
 
             result.ConsensusTipHeight = this.consensusManager.Tip.Height;

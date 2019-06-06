@@ -57,7 +57,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             fedManager.Initialize();
 
-            this.collateralChecker = new CollateralChecker(loggerFactory, clientFactory, settings, fedManager, signals);
+            this.collateralChecker = new CollateralChecker(loggerFactory, clientFactory, settings, fedManager, signals, network);
         }
 
         [Fact]
