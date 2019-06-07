@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -15,6 +16,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly IFederationWalletTransactionHandler transactionHandler;
         private readonly IFederationWalletManager walletManager;
         private readonly IBroadcasterManager broadcasterManager;
+        private readonly IFederatedPegSettings settings;
         private readonly Network network;
 
         private bool signingInProgress;
@@ -27,7 +29,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private object lockObj = new object();
 
         /// <summary>
-        ///  TODO store in-progress signing here.
+        ///  The signing-in-progress consolidation transaction.
         /// </summary>
         private Transaction partialTransaction;
 
@@ -35,6 +37,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             IFederationWalletTransactionHandler transactionHandler,
             IFederationWalletManager walletManager,
             IBroadcasterManager broadcasterManager,
+            IFederatedPegSettings settings,
             Network network)
         {
             this.federatedPegBroadcaster = federatedPegBroadcaster;
@@ -42,6 +45,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.walletManager = walletManager;
             this.broadcasterManager = broadcasterManager;
             this.network = network;
+            this.settings = settings;
         }
 
         // TODO: Watch the wallet somewhere to check that the transaction has come through, so this component can be reset - we don't need it anymore.
@@ -59,7 +63,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 this.signingInProgress = true;
 
                 // Build condensing transaction in deterministic way
-                this.partialTransaction = this.BuildCondensingTransaction();
+                this.partialTransaction = this.BuildConsolidatingTransaction();
 
                 // Send it around to be signed
                 RequestPartialTransactionPayload payload = new RequestPartialTransactionPayload(RequestPartialTransactionPayload.ConsolidationDepositId).AddPartial(this.partialTransaction);
@@ -100,9 +104,44 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
         }
 
-        public Transaction BuildCondensingTransaction()
+        public Transaction BuildConsolidatingTransaction()
         {
-            throw new NotImplementedException();
+            List<UnspentOutputReference> unspentOutputs = this.walletManager.GetSpendableTransactionsInWallet(WithdrawalTransactionBuilder.MinConfirmations).ToList();
+
+            if (unspentOutputs.Count < WithdrawalTransactionBuilder.MaxInputs)
+                throw new Exception("We shouldn't be consolidating transactions if we have less than 50 UTXOs to spend.");
+
+            IEnumerable<UnspentOutputReference> orderedUnspentOutputs = DeterministicCoinOrdering.GetOrderedUnspentOutputs(unspentOutputs);
+            IEnumerable<UnspentOutputReference> selectedInputs = orderedUnspentOutputs.Take(WithdrawalTransactionBuilder.MaxInputs);
+            string walletPassword = this.walletManager.Secret.WalletPassword;
+            bool sign = (walletPassword ?? "") != "";
+
+            var multiSigContext = new TransactionBuildContext(new List<Recipient>())
+            {
+                MinConfirmations = WithdrawalTransactionBuilder.MinConfirmations,
+                Shuffle = false,
+                IgnoreVerify = true,
+                WalletPassword = walletPassword,
+                Sign = sign,
+                Recipients = new List<Recipient>
+                {
+                    new Recipient
+                    {
+                        ScriptPubKey = this.settings.MultiSigAddress.ScriptPubKey,
+                        Amount = Money.Coins(0.001m) // The amount doesn't actually matter cos we're sending to ourselves.
+                    }
+                },
+                TransactionFee = Money.Coins(0.0025m), // 50 inputs. This is roughly half the withdrawal fee. TODO: Consider this number
+                SelectedInputs = unspentOutputs.Select(u => u.ToOutPoint()).ToList(),
+                AllowOtherInputs = false
+            };
+
+
+            Transaction transaction = this.transactionHandler.BuildTransaction(multiSigContext);
+
+            //this.logger.LogDebug("Consolidating transaction = {0}", transaction.ToString(this.network, RawFormat.BlockExplorer));
+
+            return transaction;
         }
     }
 
