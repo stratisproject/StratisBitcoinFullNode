@@ -45,7 +45,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             CollateralHeightCommitmentEncoder encoder = new CollateralHeightCommitmentEncoder();
 
-            byte[] encodedHeight = encoder.Encode(1000);
+            byte[] encodedHeight = encoder.EncodeWithPrefix(1000);
 
             var votingOutputScript = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(encodedHeight));
             block.Transactions[0].AddOutput(Money.Zero, votingOutputScript);

@@ -79,7 +79,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
             }
 
             // Add height commitment.
-            byte[] encodedHeight = this.encoder.Encode(commitmentHeight);
+            byte[] encodedHeight = this.encoder.EncodeWithPrefix(commitmentHeight);
 
             var votingOutputScript = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(encodedHeight));
             blockTemplate.Block.Transactions[0].AddOutput(Money.Zero, votingOutputScript);
@@ -91,7 +91,8 @@ namespace Stratis.Features.FederatedPeg.Collateral
         /// <summary>Prefix used to identify OP_RETURN output with mainchain consensus height commitment.</summary>
         public static readonly byte[] HeightCommitmentOutputPrefixBytes = { 121, 13, 6, 253 };
 
-        public byte[] Encode(int height)
+        /// <summary>Converts <paramref name="height"/> to a byte array which has a prefix of <see cref="HeightCommitmentOutputPrefixBytes"/>.</summary>
+        public byte[] EncodeWithPrefix(int height)
         {
             var bytes = new List<byte>(HeightCommitmentOutputPrefixBytes);
 
