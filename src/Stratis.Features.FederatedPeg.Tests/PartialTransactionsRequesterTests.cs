@@ -16,10 +16,9 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly ILogger logger;
         private readonly ILoggerFactory loggerFactory;
         private readonly ICrossChainTransferStore store;
-        private readonly IFederatedPegSettings federatedPegSettings;
         private readonly IAsyncProvider asyncProvider;
         private readonly INodeLifetime nodeLifetime;
-        private readonly IConnectionManager connectionManager;
+        private readonly IFederatedPegBroadcaster federatedPegBroadcaster;
 
         private readonly IInitialBlockDownloadState ibdState;
         private readonly IFederationWalletManager federationWalletManager;
@@ -28,11 +27,11 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.logger = Substitute.For<ILogger>();
-            this.federatedPegSettings = Substitute.For<IFederatedPegSettings>();
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.store = Substitute.For<ICrossChainTransferStore>();
             this.asyncProvider = Substitute.For<IAsyncProvider>();
             this.nodeLifetime = Substitute.For<INodeLifetime>();
+            this.federatedPegBroadcaster = Substitute.For<IFederatedPegBroadcaster>();
 
             this.ibdState = Substitute.For<IInitialBlockDownloadState>();
             this.federationWalletManager = Substitute.For<IFederationWalletManager>();
@@ -50,8 +49,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.store,
                 this.asyncProvider,
                 this.nodeLifetime,
-                this.connectionManager,
-                this.federatedPegSettings,
+                this.federatedPegBroadcaster,
                 this.ibdState,
                 this.federationWalletManager);
 
@@ -70,8 +68,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.store,
                 this.asyncProvider,
                 this.nodeLifetime,
-                this.connectionManager,
-                this.federatedPegSettings,
+                this.federatedPegBroadcaster,
                 this.ibdState,
                 this.federationWalletManager);
 

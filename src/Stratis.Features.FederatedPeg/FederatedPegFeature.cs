@@ -77,6 +77,8 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly IWithdrawalHistoryProvider withdrawalHistoryProvider;
 
+        private readonly IInputConsolidator inputConsolidator;
+
         private readonly ILogger logger;
 
         public FederatedPegFeature(
@@ -94,6 +96,7 @@ namespace Stratis.Features.FederatedPeg
             ISignedMultisigTransactionBroadcaster signedBroadcaster,
             IMaturedBlocksSyncManager maturedBlocksSyncManager,
             IWithdrawalHistoryProvider withdrawalHistoryProvider,
+            IInputConsolidator inputConsolidator,
             ICollateralChecker collateralChecker = null)
         {
             this.loggerFactory = loggerFactory;
@@ -150,7 +153,7 @@ namespace Stratis.Features.FederatedPeg
             // Respond to requests to sign transactions from other nodes.
             NetworkPeerConnectionParameters networkPeerConnectionParameters = this.connectionManager.Parameters;
             networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager,
-                this.network, this.federatedPegSettings, this.crossChainTransferStore));
+                this.network, this.federatedPegSettings, this.crossChainTransferStore, this.inputConsolidator));
         }
 
         public override void Dispose()

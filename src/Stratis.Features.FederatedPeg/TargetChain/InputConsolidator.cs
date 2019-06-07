@@ -2,67 +2,131 @@
 using System.Collections.Generic;
 using System.Text;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Features.FederatedPeg.Interfaces;
+using Stratis.Features.FederatedPeg.Payloads;
 using Stratis.Features.FederatedPeg.Wallet;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
 {
     public class InputConsolidator : IInputConsolidator
     {
+        private readonly IFederatedPegBroadcaster federatedPegBroadcaster;
+        private readonly IFederationWalletTransactionHandler transactionHandler;
+        private readonly IFederationWalletManager walletManager;
+        private readonly IBroadcasterManager broadcasterManager;
+        private readonly Network network;
+
         private bool signingInProgress;
+
+        private bool fullySigned;
+
+        /// <summary>
+        /// Used to ensure only one operation is happening at a time.
+        /// </summary>
+        private object lockObj = new object();
 
         /// <summary>
         ///  TODO store in-progress signing here.
         /// </summary>
         private Transaction partialTransaction;
 
-        private IFederationWalletTransactionHandler transactionHandler;
-
-        public InputConsolidator(IFederationWalletTransactionHandler transactionHandler)
+        public InputConsolidator(IFederatedPegBroadcaster federatedPegBroadcaster,
+            IFederationWalletTransactionHandler transactionHandler,
+            IFederationWalletManager walletManager,
+            IBroadcasterManager broadcasterManager,
+            Network network)
         {
+            this.federatedPegBroadcaster = federatedPegBroadcaster;
             this.transactionHandler = transactionHandler;
+            this.walletManager = walletManager;
+            this.broadcasterManager = broadcasterManager;
+            this.network = network;
         }
 
         // TODO: Watch the wallet somewhere to check that the transaction has come through, so this component can be reset - we don't need it anymore.
 
+        // TODO: Add logging.
+
         public void StartConsolidation()
         {
-            if (this.signingInProgress)
-                return;
+            // TODO: Should be in task
+            lock (this.lockObj)
+            {
+                if (this.signingInProgress)
+                    return;
 
-            this.signingInProgress = true;
+                this.signingInProgress = true;
 
-            // Build condensing transaction in deterministic way
-            Transaction transaction = this.BuildCondensingTransaction();
+                // Build condensing transaction in deterministic way
+                this.partialTransaction = this.BuildCondensingTransaction();
 
-            // Store it somewhere on this component
-
-            // Send it around to be signed - See code in PartialTransactionsRequester
-
+                // Send it around to be signed
+                RequestPartialTransactionPayload payload = new RequestPartialTransactionPayload(RequestPartialTransactionPayload.ConsolidationDepositId).AddPartial(this.partialTransaction);
+                this.federatedPegBroadcaster.BroadcastAsync(payload).GetAwaiter().GetResult(); // TODO: fix async
+            }
         }
 
 
-        public void CombineSignatures()
+        public ConsolidationSignatureResult CombineSignatures(Transaction incomingPartialTransaction)
         {
-            // Call into here from PartialTransactionsBehaviour. Have a special template, maybe null deposit id, that directs here.
+            lock (this.lockObj)
+            {
+                // No need to sign in these cases.
+                if (!this.signingInProgress || this.fullySigned)
+                    return ConsolidationSignatureResult.Failed();
 
-            // TODO: Lock?
+                // Attempt to merge signatures
+                var builder = new TransactionBuilder(this.network);
+                Transaction oldTransaction = this.partialTransaction;
 
-            if (!this.signingInProgress)
-                return;
+                SigningUtils.CombineSignatures(builder, this.partialTransaction, new []{incomingPartialTransaction});
 
-            // Check templates match - see code in CrossChainTransferStore
+                if (oldTransaction.GetHash() == this.partialTransaction.GetHash())
+                {
+                    // Signing didn't work if the hash is still the same
+                    return ConsolidationSignatureResult.Failed();
+                }
 
-            // Sign
+                // NOTE: We don't need to reserve the transaction. The wallet will be at a standstill whilst this is happening.
 
-            // Store again
+                // If it is FullySigned, broadcast.
+                if (this.walletManager.ValidateTransaction(this.partialTransaction, true))
+                {
+                    this.broadcasterManager.BroadcastTransactionAsync(this.partialTransaction);
+                }
 
-            // Send back
+                return ConsolidationSignatureResult.Succeeded(this.partialTransaction);
+            }
         }
 
-        private Transaction BuildCondensingTransaction()
+        public Transaction BuildCondensingTransaction()
         {
             throw new NotImplementedException();
+        }
+    }
+
+    public class ConsolidationSignatureResult
+    {
+        public bool Signed { get; set; }
+        public Transaction TransactionResult { get; set; }
+
+        public static ConsolidationSignatureResult Failed()
+        {
+            return new ConsolidationSignatureResult
+            {
+                Signed = false,
+                TransactionResult = null
+            };
+        }
+
+        public static ConsolidationSignatureResult Succeeded(Transaction result)
+        {
+            return new ConsolidationSignatureResult
+            {
+                Signed = true,
+                TransactionResult = result
+            };
         }
     }
 }

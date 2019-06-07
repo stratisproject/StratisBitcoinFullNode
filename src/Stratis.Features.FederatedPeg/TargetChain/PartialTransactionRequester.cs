@@ -19,12 +19,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
     /// </summary>
     public interface IPartialTransactionRequester {
         /// <summary>
-        /// Broadcast the partial transaction request to federation members.
-        /// </summary>
-        /// <param name="payload">The payload to broadcast.</param>
-        Task BroadcastAsync(RequestPartialTransactionPayload payload);
-
-        /// <summary>
         /// Starts the broadcasting of partial transaction requests.
         /// </summary>
         void Start();
@@ -51,8 +45,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly ICrossChainTransferStore crossChainTransferStore;
         private readonly IAsyncProvider asyncProvider;
         private readonly INodeLifetime nodeLifetime;
-        private readonly IConnectionManager connectionManager;
-        private readonly IFederatedPegSettings federatedPegSettings;
+        private readonly IFederatedPegBroadcaster federatedPegBroadcaster;
 
         private readonly IInitialBlockDownloadState ibdState;
         private readonly IFederationWalletManager federationWalletManager;
@@ -64,45 +57,21 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             ICrossChainTransferStore crossChainTransferStore,
             IAsyncProvider asyncProvider,
             INodeLifetime nodeLifetime,
-            IConnectionManager connectionManager,
-            IFederatedPegSettings federatedPegSettings,
+            IFederatedPegBroadcaster federatedPegBroadcaster,
             IInitialBlockDownloadState ibdState,
             IFederationWalletManager federationWalletManager) {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(crossChainTransferStore, nameof(crossChainTransferStore));
             Guard.NotNull(asyncProvider, nameof(asyncProvider));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
-            Guard.NotNull(federatedPegSettings, nameof(federatedPegSettings));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.crossChainTransferStore = crossChainTransferStore;
             this.asyncProvider = asyncProvider;
             this.nodeLifetime = nodeLifetime;
-            this.connectionManager = connectionManager;
-            this.federatedPegSettings = federatedPegSettings;
             this.ibdState = ibdState;
+            this.federatedPegBroadcaster = federatedPegBroadcaster;
             this.federationWalletManager = federationWalletManager;
-        }
-
-        /// <inheritdoc />
-        public async Task BroadcastAsync(RequestPartialTransactionPayload payload) {
-            List<INetworkPeer> peers = this.connectionManager.ConnectedPeers.ToList();
-
-            var ipAddressComparer = new IPAddressComparer();
-
-            foreach (INetworkPeer peer in peers) {
-                // Broadcast to peers.
-                if (!peer.IsConnected)
-                    continue;
-
-                if (this.federatedPegSettings.FederationNodeIpEndPoints.Any(e => ipAddressComparer.Equals(e.Address, peer.PeerEndPoint.Address))) {
-                    try {
-                        await peer.SendMessageAsync(payload).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException) {
-                    }
-                }
-            }
         }
 
         public async Task BroadcastPartialTransactionsAsync() {
@@ -116,7 +85,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
             foreach (ICrossChainTransfer transfer in transfers)
             {
-                await this.BroadcastAsync(new RequestPartialTransactionPayload(transfer.DepositTransactionId).AddPartial(transfer.PartialTransaction));
+                await this.federatedPegBroadcaster.BroadcastAsync(new RequestPartialTransactionPayload(transfer.DepositTransactionId).AddPartial(transfer.PartialTransaction));
                 this.logger.LogDebug("Partial template requested for deposit ID {0}", transfer.DepositTransactionId);
             }
         }

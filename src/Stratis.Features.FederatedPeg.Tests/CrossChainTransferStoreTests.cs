@@ -508,7 +508,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 ICrossChainTransfer[] transactions = crossChainTransferStore.GetTransfersByStatus(new[] { CrossChainTransferStatus.Partial });
 
                 var requester = new PartialTransactionRequester(this.loggerFactory, crossChainTransferStore, this.asyncProvider,
-                    this.nodeLifetime, this.connectionManager, this.federatedPegSettings, this.ibdState, this.federationWalletManager);
+                    this.nodeLifetime, this.federatedPegBroadcaster, this.ibdState, this.federationWalletManager);
 
                 var peerEndPoint = new IPEndPoint(System.Net.IPAddress.Parse("1.2.3.4"), 5);
                 INetworkPeer peer = Substitute.For<INetworkPeer>();

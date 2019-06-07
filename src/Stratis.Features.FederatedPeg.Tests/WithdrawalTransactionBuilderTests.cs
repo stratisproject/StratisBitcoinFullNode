@@ -24,6 +24,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly Mock<IFederationWalletManager> federationWalletManager;
         private readonly Mock<IFederationWalletTransactionHandler> federationWalletTransactionHandler;
         private readonly Mock<IFederatedPegSettings> federationGatewaySettings;
+        private readonly Mock<IInputConsolidator> inputConsolidator;
 
         public WithdrawalTransactionBuilderTests()
         {
@@ -32,6 +33,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationWalletManager = new Mock<IFederationWalletManager>();
             this.federationWalletTransactionHandler = new Mock<IFederationWalletTransactionHandler>();
             this.federationGatewaySettings = new Mock<IFederatedPegSettings>();
+            this.inputConsolidator = new Mock<IInputConsolidator>();
 
             this.logger = new Mock<ILogger>();
             this.loggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>()))
@@ -82,7 +84,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.network,
                 this.federationWalletManager.Object,
                 this.federationWalletTransactionHandler.Object,
-                this.federationGatewaySettings.Object
+                this.federationGatewaySettings.Object,
+                this.inputConsolidator.Object
                 );
 
             var recipient = new Recipient
@@ -116,7 +119,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.network,
                 this.federationWalletManager.Object,
                 this.federationWalletTransactionHandler.Object,
-                this.federationGatewaySettings.Object
+                this.federationGatewaySettings.Object,
+                this.inputConsolidator.Object
             );
 
             var recipient = new Recipient
@@ -143,7 +147,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.network,
                 this.federationWalletManager.Object,
                 this.federationWalletTransactionHandler.Object,
-                this.federationGatewaySettings.Object
+                this.federationGatewaySettings.Object,
+                this.inputConsolidator.Object
             );
 
             var recipient = new Recipient
