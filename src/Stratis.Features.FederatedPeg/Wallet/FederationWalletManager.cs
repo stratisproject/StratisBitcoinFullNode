@@ -156,6 +156,13 @@ namespace Stratis.Features.FederatedPeg.Wallet
             this.blockStore = blockStore;
         }
 
+        /// <summary>
+        /// The purpose of this method is to retrieve <see cref="Transaction"/> objects for each <see cref="SpendingDetails.TransactionId"/>.
+        /// If any transaction can't be resolved the wallet is rewound to remove the corrupt <see cref="TransactionData"/> record containing
+        /// the <see cref="SpendingDetails"/>.
+        /// </summary>
+        /// <param name="transactions">The <see cref="TransactionData"/> records for which to retrieve the transactions.</param>
+        /// <returns>Retrieved <see cref="Transaction"/> objects for each <see cref="SpendingDetails.TransactionId"/></returns>
         private Dictionary<TransactionData, Transaction> GetSpendingTransactions(IEnumerable<TransactionData> transactions)
         {
             var res = new Dictionary<TransactionData, Transaction>();
