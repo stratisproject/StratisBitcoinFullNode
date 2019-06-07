@@ -137,9 +137,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.averageTimePerBlock = new AverageCalculator(200);
-            int maxReorgLength = this.network.Consensus.MaxReorgLength == 0 ? (int)this.network.Consensus.MaxReorgLength : FallBackMaxReorg;
+            int maxReorgLength = GetMaxReorgOrFallbackMaxReorg(this.network);
 
             this.compactionTriggerDistance = maxReorgLength * 2 + SyncBuffer;
+        }
+
+        /// <summary>Returns maxReorg of <see cref="FallBackMaxReorg"/> in case maxReorg is <c>0</c>.</summary>
+        public static int GetMaxReorgOrFallbackMaxReorg(Network network)
+        {
+            int maxReorgLength = network.Consensus.MaxReorgLength == 0 ? FallBackMaxReorg : (int)network.Consensus.MaxReorgLength;
+
+            return maxReorgLength;
         }
 
         public void Initialize()

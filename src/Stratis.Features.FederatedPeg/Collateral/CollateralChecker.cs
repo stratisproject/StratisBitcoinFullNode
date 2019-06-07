@@ -72,7 +72,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
             this.federationManager = federationManager;
             this.signals = signals;
 
-            this.maxReorgLength = network.Consensus.MaxReorgLength == 0 ? (int)network.Consensus.MaxReorgLength : AddressIndexer.FallBackMaxReorg;
+            this.maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(network);
             this.cancellationSource = new CancellationTokenSource();
             this.locker = new object();
             this.balancesDataByAddress = new Dictionary<string, AddressIndexerData>();

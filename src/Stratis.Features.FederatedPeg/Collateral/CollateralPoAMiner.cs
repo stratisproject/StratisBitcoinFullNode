@@ -45,7 +45,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
             base.FillBlockTemplate(blockTemplate, out dropTemplate);
 
             int counterChainHeight = this.collateralChecker.GetCounterChainConsensusHeight();
-            int maxReorgLength = this.network.Consensus.MaxReorgLength == 0 ? (int)this.network.Consensus.MaxReorgLength : AddressIndexer.FallBackMaxReorg;
+            int maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(this.network);
 
             int commitmentHeight = counterChainHeight - maxReorgLength - AddressIndexer.SyncBuffer;
 

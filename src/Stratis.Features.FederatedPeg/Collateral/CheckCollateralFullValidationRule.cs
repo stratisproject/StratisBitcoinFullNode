@@ -67,7 +67,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
             this.Logger.LogDebug("Commitment is: {0}.", commitmentHeight);
 
             int counterChainHeight = this.collateralChecker.GetCounterChainConsensusHeight();
-            int maxReorgLength = this.network.Consensus.MaxReorgLength == 0 ? (int)this.network.Consensus.MaxReorgLength : AddressIndexer.FallBackMaxReorg;
+            int maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(this.network);
 
             // Check if commitment height is less than `mainchain consensus tip height - MaxReorg`.
             if (commitmentHeight > counterChainHeight - maxReorgLength)
