@@ -222,16 +222,13 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     else
                     {
                         // The spending transaction could not be found in the consensus chain.
-                        // Set the maxValidHeight to the block before where the spending transaction occurred.
-                        foreach (TransactionData transactionData in spentOutputs)
-                        {
-                            SpendingDetails spendingDetails = transactionData.SpendingDetails;
+                        // Set the firstMissingTransactionHeight to the block of the spending transaction.
+                        SpendingDetails spendingDetails = spentOutputs.Where(td => td.BlockHeight != null).Select(td => td.SpendingDetails).FirstOrDefault();
 
-                            Guard.Assert(spendingDetails.BlockHeight != null);
+                        Guard.Assert(spendingDetails != null);
 
-                            if (spendingDetails.BlockHeight < firstMissingTransactionHeight)
-                                firstMissingTransactionHeight = (int)spendingDetails.BlockHeight;
-                        }
+                        if (spendingDetails.BlockHeight < firstMissingTransactionHeight)
+                            firstMissingTransactionHeight = (int)spendingDetails.BlockHeight;
                     }
                 }
             }
