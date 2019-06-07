@@ -94,12 +94,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         [JsonConverter(typeof(ScriptJsonConverter))]
         public Script ScriptPubKey { get; set; }
 
-        /// <summary>
-        /// Hexadecimal representation of this transaction.
-        /// </summary>
-        [JsonProperty(PropertyName = "hex", NullValueHandling = NullValueHandling.Ignore)]
-        public string Hex { get; set; }
-
         [JsonIgnore]
         public OutPoint Key => new OutPoint(this.Id, this.Index);
 
@@ -134,12 +128,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public bool IsConfirmed()
         {
             return this.BlockHeight != null;
-        }
-
-        [NoTrace]
-        public Transaction GetFullTransaction(Network network)
-        {
-            return network.CreateTransaction(this.Hex);
         }
 
         public bool IsSpendable()

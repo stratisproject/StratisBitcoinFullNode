@@ -52,10 +52,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public DateTimeOffset CreationTime { get; set; }
 
         /// <summary>
-        /// Hexadecimal representation of this spending transaction.
+        /// Spending transaction.
         /// </summary>
-        [JsonProperty(PropertyName = "hex", NullValueHandling = NullValueHandling.Ignore)]
-        public string Hex { get; set; }
+        [JsonIgnore]
+        public Transaction Transaction { get; set; }
 
         /// <summary>
         /// If this spending transaction is a withdrawal, this contains its details.
