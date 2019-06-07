@@ -26,7 +26,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <summary>
         /// Used to ensure only one operation is happening at a time.
         /// </summary>
-        private object lockObj = new object();
+        private readonly object lockObj = new object();
 
         /// <summary>
         ///  The signing-in-progress consolidation transaction.
@@ -94,8 +94,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 // If it is FullySigned, broadcast.
                 if (this.walletManager.ValidateTransaction(this.partialTransaction, true))
                 {
-                    this.fullySigned = true;
                     this.broadcasterManager.BroadcastTransactionAsync(this.partialTransaction);
+                    this.fullySigned = true;
                 }
 
                 return ConsolidationSignatureResult.Succeeded(this.partialTransaction);
