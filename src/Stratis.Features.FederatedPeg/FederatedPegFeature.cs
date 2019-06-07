@@ -320,6 +320,9 @@ namespace Stratis.Features.FederatedPeg
                         services.AddSingleton<IWithdrawalHistoryProvider, WithdrawalHistoryProvider>();
                         services.AddSingleton<FederatedPegSettings>();
 
+                        services.AddSingleton<IFederatedPegBroadcaster, FederatedPegBroadcaster>();
+                        services.AddSingleton<IInputConsolidator, InputConsolidator>();
+
                         // Set up events.
                         services.AddSingleton<TransactionObserver>();
                         services.AddSingleton<BlockObserver>();
