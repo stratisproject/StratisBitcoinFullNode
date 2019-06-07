@@ -360,5 +360,21 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             Assert.True(retrieved.BalanceChanges.First().Deposited);
             Assert.Equal(1, retrieved.BalanceChanges.First().Satoshi);
         }
+
+        [Fact]
+        public void MaxReorgIsCalculatedProperly()
+        {
+            var btc = new BitcoinMain();
+
+            int maxReorgBtc = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(btc);
+
+            Assert.Equal(maxReorgBtc, AddressIndexer.FallBackMaxReorg);
+
+            var stratis = new StratisMain();
+
+            int maxReorgStratis = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(stratis);
+
+            Assert.Equal(maxReorgStratis, (int)stratis.Consensus.MaxReorgLength);
+        }
     }
 }
