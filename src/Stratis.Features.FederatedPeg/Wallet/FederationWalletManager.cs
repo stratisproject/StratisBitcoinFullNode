@@ -175,7 +175,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 if (spendingDetail?.TransactionId == null || spendingDetail.Transaction != null)
                 {
-                    res.Add(transactionData, spendingDetail.Transaction);
+                    res.Add(transactionData, spendingDetail?.Transaction);
                     continue;
                 }
 
