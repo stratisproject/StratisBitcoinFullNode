@@ -71,7 +71,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
         }
 
-
         public ConsolidationSignatureResult CombineSignatures(Transaction incomingPartialTransaction)
         {
             lock (this.lockObj)
@@ -97,6 +96,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 // If it is FullySigned, broadcast.
                 if (this.walletManager.ValidateTransaction(this.partialTransaction, true))
                 {
+                    this.fullySigned = true;
                     this.broadcasterManager.BroadcastTransactionAsync(this.partialTransaction);
                 }
 
@@ -132,7 +132,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     }
                 },
                 TransactionFee = Money.Coins(0.0025m), // 50 inputs. This is roughly half the withdrawal fee. TODO: Consider this number
-                SelectedInputs = unspentOutputs.Select(u => u.ToOutPoint()).ToList(),
+                SelectedInputs = selectedInputs.Select(u => u.ToOutPoint()).ToList(),
                 AllowOtherInputs = false
             };
 
@@ -142,6 +142,19 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             //this.logger.LogDebug("Consolidating transaction = {0}", transaction.ToString(this.network, RawFormat.BlockExplorer));
 
             return transaction;
+        }
+
+        public void ProcessBlock()
+        {
+            lock (this.lockObj)
+            {
+                if (!this.signingInProgress)
+                    return;
+
+                // If a consolidation transaction comes through, remove our progress.
+
+                // Check that the consolidation transaction that we've built is still valid. In case of a reorg.
+            }
         }
     }
 
