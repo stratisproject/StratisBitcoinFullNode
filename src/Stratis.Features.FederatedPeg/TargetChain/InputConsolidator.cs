@@ -48,8 +48,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.settings = settings;
         }
 
-        // TODO: Watch the wallet somewhere to check that the transaction has come through, so this component can be reset - we don't need it anymore.
-
         // TODO: Add logging.
 
         public void StartConsolidation()
@@ -144,7 +142,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             return transaction;
         }
 
-        public void ProcessBlock()
+        // TODO: Register Block signals
+        public void ProcessBlock(Block block)
         {
             lock (this.lockObj)
             {
@@ -154,6 +153,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 // If a consolidation transaction comes through, remove our progress.
 
                 // Check that the consolidation transaction that we've built is still valid. In case of a reorg.
+
+                throw new NotImplementedException();
             }
         }
     }
