@@ -133,6 +133,18 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 return blocks;
             });
+
+            this.blockRepository.GetBlock(Arg.Any<uint256>()).ReturnsForAnyArgs((x) =>
+            {
+                uint256 hash = x.ArgAt<uint256>(0);
+                this.blockDict.TryGetValue(hash, out Block block);
+
+                return block;
+            });
+
+            this.blockRepository.TipHashAndHeight.Returns((x) => {
+                return new HashHeightPair(this.blockDict.Last().Value.GetHash(), this.blockDict.Count - 1);
+            });
         }
 
         /// <summary>
@@ -194,7 +206,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 new NodeLifetime(),
                 this.dateTimeProvider,
                 this.federatedPegSettings,
-                this.withdrawalExtractor);
+                this.withdrawalExtractor,
+                this.blockRepository);
 
             // Starts and creates the wallet.
             this.federationWalletManager.Start();

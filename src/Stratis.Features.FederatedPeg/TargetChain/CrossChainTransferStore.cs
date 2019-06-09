@@ -157,11 +157,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             lock (this.lockObj)
             {
                 this.federationWalletManager.Synchronous(() =>
-                {
-                    // Remove all unconfirmed transaction data from the wallet to be re-added when blocks are processed.
-                    if (this.federationWalletManager.RemoveUnconfirmedTransactionData())
-                        this.federationWalletManager.SaveWallet();
-
+                {                    
                     Guard.Assert(this.Synchronize());
                 });
             }
