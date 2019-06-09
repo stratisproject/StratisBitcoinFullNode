@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly ILogger logger;
 
         private readonly Network network;
-        
+
         private readonly StandardTransactionPolicy transactionPolicy;
 
         private readonly IWalletManager walletManager;
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public Transaction BuildTransaction(TransactionBuildContext context, SecretModel[] secrets)
         {
             if (secrets == null || secrets.Length == 0)
-               throw new WalletException("Could not build the transaction. Details: no private keys provided");
+                throw new WalletException("Could not build the transaction. Details: no private keys provided");
 
             this.InitializeTransactionBuilder(context);
 
@@ -47,14 +47,18 @@ namespace Stratis.Bitcoin.Features.Wallet
                 context.TransactionBuilder.Shuffle();
 
             Transaction unsignedTransaction = context.TransactionBuilder.BuildTransaction(false);
+
             var signedTransactions = new List<Transaction>();
             foreach (SecretModel secret in secrets)
             {
                 TransactionBuildContext contextCopy = context.Clone(this.network);
+
                 this.InitializeTransactionBuilder(contextCopy);
+
                 var mnemonic = new Mnemonic(secret.Mnemonic);
                 ExtKey extKey = mnemonic.DeriveExtKey(secret.Passphrase);
                 Transaction transaction = contextCopy.TransactionBuilder.AddKeys(extKey.PrivateKey).SignTransaction(unsignedTransaction);
+
                 signedTransactions.Add(transaction);
             }
 
