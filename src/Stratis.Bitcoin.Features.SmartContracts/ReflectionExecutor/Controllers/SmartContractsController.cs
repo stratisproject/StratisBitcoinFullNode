@@ -95,6 +95,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         {
             uint160 addressNumeric = address.ToUint160(this.network);
             byte[] contractCode = this.stateRoot.GetCode(addressNumeric);
+            string typeName = this.stateRoot.GetContractType(addressNumeric);
 
             if (contractCode == null || !contractCode.Any())
             {
@@ -110,6 +111,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             {
                 Message = string.Format("Contract execution code retrieved at {0}", address),
                 Bytecode = contractCode.ToHexString(),
+                Type = typeName,
                 CSharp = sourceResult.IsSuccess ? sourceResult.Value : sourceResult.Error // Show the source, or the reason why the source couldn't be retrieved.
             });
         }
