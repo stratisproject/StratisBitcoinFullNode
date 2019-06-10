@@ -124,17 +124,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 IgnoreVerify = true,
                 WalletPassword = walletPassword,
                 Sign = sign,
-                Recipients = new List<Recipient>
-                {
-                    new Recipient
-                    {
-                        ScriptPubKey = this.settings.MultiSigAddress.ScriptPubKey,
-                        Amount = Money.Coins(0.001m) // The amount doesn't actually matter cos we're sending to ourselves.
-                    }
-                },
                 TransactionFee = Money.Coins(0.0025m), // 50 inputs. This is roughly half the withdrawal fee. TODO: Consider this number
                 SelectedInputs = selectedInputs.Select(u => u.ToOutPoint()).ToList(),
-                AllowOtherInputs = false
+                AllowOtherInputs = false,
+                IsConsolidatingTransaction = true
             };
 
 
