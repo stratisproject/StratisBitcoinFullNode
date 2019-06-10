@@ -17,6 +17,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 {
     public class InputConsolidator : IInputConsolidator
     {
+        public static readonly Money ConsolidationFee = Money.Coins(0.0025m); // 50 inputs. This is roughly half the withdrawal fee. TODO: Consider this number
+
         private readonly IFederatedPegBroadcaster federatedPegBroadcaster;
         private readonly IFederationWalletTransactionHandler transactionHandler;
         private readonly IFederationWalletManager walletManager;
@@ -105,7 +107,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 // NOTE: We don't need to reserve the transaction. The wallet will be at a standstill whilst this is happening.
 
                 // If it is FullySigned, broadcast.
-                if (this.walletManager.ValidateTransaction(this.partialTransaction, true))
+                if (this.walletManager.ValidateConsolidatingTransaction(this.partialTransaction, true))
                 {
                     this.logger.LogDebug("Consolidation transaction is fully signed. Broadcasting {0}", this.partialTransaction.GetHash());
                     this.broadcasterManager.BroadcastTransactionAsync(this.partialTransaction);
@@ -118,6 +120,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         public Transaction BuildConsolidatingTransaction()
         {
+            // TODO: try catch
             List<UnspentOutputReference> unspentOutputs = this.walletManager.GetSpendableTransactionsInWallet(WithdrawalTransactionBuilder.MinConfirmations).ToList();
 
             if (unspentOutputs.Count < WithdrawalTransactionBuilder.MaxInputs)
@@ -135,7 +138,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 IgnoreVerify = true,
                 WalletPassword = walletPassword,
                 Sign = sign,
-                TransactionFee = Money.Coins(0.0025m), // 50 inputs. This is roughly half the withdrawal fee. TODO: Consider this number
+                TransactionFee = ConsolidationFee,
                 SelectedInputs = selectedInputs.Select(u => u.ToOutPoint()).ToList(),
                 AllowOtherInputs = false,
                 IsConsolidatingTransaction = true
@@ -172,7 +175,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 }
 
                 // Check that the consolidation transaction that we've built is still valid. In case of a reorg.
-                if (!this.walletManager.ValidateTransaction(this.partialTransaction))
+                if (!this.walletManager.ValidateConsolidatingTransaction(this.partialTransaction))
                 {
                     this.logger.LogDebug("Consolidation transaction {0} failed validation", this. partialTransaction.GetHash());
                     this.partialTransaction = null;
