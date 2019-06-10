@@ -224,6 +224,21 @@ namespace Stratis.Features.FederatedPeg
 
             List<WithdrawalModel> pendingWithdrawals = this.withdrawalHistoryProvider.GetPending();
 
+            Transaction consolidationPartial = this.inputConsolidator.PartialTransaction;
+            if (consolidationPartial != null)
+            {
+                benchLog.AppendLine("--- Consolidation Transaction ---");
+                benchLog.Append(
+                        string.Format("Tran#={0} TotalOut={1,12} Signatures=({2}/{3})",
+                        consolidationPartial.ToString().Substring(0, 6),
+                        consolidationPartial.TotalOut.ToString(),
+                        consolidationPartial.GetSignatureCount(this.network),
+                        this.federatedPegSettings.MultiSigM
+                    )
+                );
+                benchLog.AppendLine();
+            }
+
             if (pendingWithdrawals.Count > 0)
             {
                 benchLog.AppendLine("--- Pending Withdrawals ---");

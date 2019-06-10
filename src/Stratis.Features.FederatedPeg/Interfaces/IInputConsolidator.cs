@@ -13,6 +13,11 @@ namespace Stratis.Features.FederatedPeg.Interfaces
     public interface IInputConsolidator
     {
         /// <summary>
+        /// The transaction being signed to consolidate inputs.
+        /// </summary>
+        Transaction PartialTransaction { get; }
+
+        /// <summary>
         /// Trigger the building and signing of a consolidation transaction.
         /// </summary>
         void StartConsolidation();

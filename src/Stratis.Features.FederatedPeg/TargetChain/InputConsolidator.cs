@@ -36,10 +36,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// </summary>
         private readonly object lockObj = new object();
 
-        /// <summary>
-        ///  The signing-in-progress consolidation transaction.
-        /// </summary>
-        private Transaction partialTransaction;
+        /// <inheritdoc />
+        public Transaction PartialTransaction { get; private set; }
 
         public InputConsolidator(IFederatedPegBroadcaster federatedPegBroadcaster,
             IFederationWalletTransactionHandler transactionHandler,
@@ -77,10 +75,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 this.logger.LogInformation("Building consolidation transaction for federation wallet inputs.");
 
                 // Build condensing transaction in deterministic way
-                this.partialTransaction = this.BuildConsolidatingTransaction();
+                this.PartialTransaction = this.BuildConsolidatingTransaction();
 
                 // Something went wrong building the transaction.
-                if (this.partialTransaction == null)
+                if (this.PartialTransaction == null)
                     return;
 
                 this.signingInProgress = true;
@@ -95,7 +93,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// </summary>
         private void BroadcastPartial()
         {
-            RequestPartialTransactionPayload payload = new RequestPartialTransactionPayload(RequestPartialTransactionPayload.ConsolidationDepositId).AddPartial(this.partialTransaction);
+            RequestPartialTransactionPayload payload = new RequestPartialTransactionPayload(RequestPartialTransactionPayload.ConsolidationDepositId).AddPartial(this.PartialTransaction);
             this.federatedPegBroadcaster.BroadcastAsync(payload).GetAwaiter().GetResult();
         }
 
@@ -110,13 +108,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 // Attempt to merge signatures
                 var builder = new TransactionBuilder(this.network);
-                Transaction oldTransaction = this.partialTransaction;
+                Transaction oldTransaction = this.PartialTransaction;
 
-                this.logger.LogDebug("Attempting to merge signatures for {0} and {1}.", this.partialTransaction.GetHash(), incomingPartialTransaction.GetHash());
+                this.logger.LogDebug("Attempting to merge signatures for {0} and {1}.", this.PartialTransaction.GetHash(), incomingPartialTransaction.GetHash());
 
-                this.partialTransaction = SigningUtils.CombineSignatures(builder, this.partialTransaction, new []{incomingPartialTransaction});
+                this.PartialTransaction = SigningUtils.CombineSignatures(builder, this.PartialTransaction, new []{incomingPartialTransaction});
 
-                if (oldTransaction.GetHash() == this.partialTransaction.GetHash())
+                if (oldTransaction.GetHash() == this.PartialTransaction.GetHash())
                 {
                     // Signing didn't work if the hash is still the same
                     this.logger.LogDebug("Signing failed.");
@@ -128,14 +126,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 // NOTE: We don't need to reserve the transaction. The wallet will be at a standstill whilst this is happening.
 
                 // If it is FullySigned, broadcast.
-                if (this.walletManager.ValidateConsolidatingTransaction(this.partialTransaction, true))
+                if (this.walletManager.ValidateConsolidatingTransaction(this.PartialTransaction, true))
                 {
-                    this.logger.LogDebug("Consolidation transaction is fully signed. Broadcasting {0}", this.partialTransaction.GetHash());
-                    this.broadcasterManager.BroadcastTransactionAsync(this.partialTransaction);
+                    this.logger.LogDebug("Consolidation transaction is fully signed. Broadcasting {0}", this.PartialTransaction.GetHash());
+                    this.broadcasterManager.BroadcastTransactionAsync(this.PartialTransaction);
                     this.fullySigned = true;
                 }
 
-                return ConsolidationSignatureResult.Succeeded(this.partialTransaction);
+                return ConsolidationSignatureResult.Succeeded(this.PartialTransaction);
             }
         }
 
@@ -200,7 +198,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                         && transaction.Outputs[0].ScriptPubKey == this.settings.MultiSigAddress.ScriptPubKey)
                     {
                         this.logger.LogDebug("Saw condensing transaction {0}, resetting InputConsolidator", transaction.GetHash());
-                        this.partialTransaction = null;
+                        this.PartialTransaction = null;
                         this.fullySigned = false;
                         this.signingInProgress = false;
                         return;
@@ -208,10 +206,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 }
 
                 // Check that the consolidation transaction that we've built is still valid. In case of a reorg.
-                if (!this.walletManager.ValidateConsolidatingTransaction(this.partialTransaction))
+                if (!this.walletManager.ValidateConsolidatingTransaction(this.PartialTransaction))
                 {
-                    this.logger.LogDebug("Consolidation transaction {0} failed validation", this. partialTransaction.GetHash());
-                    this.partialTransaction = null;
+                    this.logger.LogDebug("Consolidation transaction {0} failed validation", this.PartialTransaction.GetHash());
+                    this.PartialTransaction = null;
                     this.fullySigned = false;
                     this.signingInProgress = false;
                 }
