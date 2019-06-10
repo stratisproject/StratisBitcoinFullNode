@@ -35,6 +35,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.federationWalletManager,
                 broadcasterManager.Object,
                 this.federatedPegSettings,
+                this.loggerFactory,
                 this.network);
 
             Assert.ThrowsAny<Exception>(() => inputConsolidator.BuildConsolidatingTransaction());
@@ -55,6 +56,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.federationWalletManager,
                 broadcasterManager.Object,
                 this.federatedPegSettings,
+                this.loggerFactory,
                 this.network);
 
             // Lets set the funding transactions to many really small outputs
