@@ -95,7 +95,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         {
             uint160 addressNumeric = address.ToUint160(this.network);
             byte[] contractCode = this.stateRoot.GetCode(addressNumeric);
-            string typeName = this.stateRoot.GetContractType(addressNumeric);
 
             if (contractCode == null || !contractCode.Any())
             {
@@ -104,6 +103,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                     Message = string.Format("No contract execution code exists at {0}", address)
                 });
             }
+
+            string typeName = this.stateRoot.GetContractType(addressNumeric);
 
             Result<string> sourceResult = this.contractDecompiler.GetSource(contractCode);
 
