@@ -49,6 +49,11 @@ namespace Stratis.Features.FederatedPeg
         /// </summary>
         private const int TransfersToDisplay = 10;
 
+        /// <summary>
+        /// The maximum number of pending transactions to display in the console logging.
+        /// </summary>
+        private const int PendingToDisplay = 25;
+
         public const string FederationGatewayFeatureNamespace = "federationgateway";
 
         private readonly IConnectionManager connectionManager;
@@ -223,8 +228,12 @@ namespace Stratis.Features.FederatedPeg
             if (pendingWithdrawals.Count > 0)
             {
                 benchLog.AppendLine("--- Pending Withdrawals ---");
-                foreach (WithdrawalModel withdrawal in pendingWithdrawals)
+                foreach (WithdrawalModel withdrawal in pendingWithdrawals.Take(PendingToDisplay))
                     benchLog.AppendLine(withdrawal.ToString());
+
+                if (pendingWithdrawals.Count > PendingToDisplay)
+                    benchLog.AppendLine($"And {pendingWithdrawals.Count - PendingToDisplay} more...");
+
                 benchLog.AppendLine();
             }
 
@@ -333,7 +342,7 @@ namespace Stratis.Features.FederatedPeg
                 features.AddFeature<PoAFeature>().DependOn<FederatedPegFeature>().FeatureServices(services =>
                     {
                         services.AddSingleton<PoABlockHeaderValidator>();
-                        services.AddSingleton<IPoAMiner, PoAMiner>();
+                        services.AddSingleton<IPoAMiner, CollateralPoAMiner>();
                         services.AddSingleton<ISlotsManager, SlotsManager>();
                         services.AddSingleton<BlockDefinition, FederatedPegBlockDefinition>();
                         services.AddSingleton<ICoinbaseSplitter, PremineCoinbaseSplitter>();

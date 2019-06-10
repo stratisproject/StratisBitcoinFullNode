@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {
     public class SmartContractPoARuleRegistration : IRuleRegistration
     {
-        private readonly Network network;
+        protected readonly Network network;
         private readonly IStateRepositoryRoot stateRepositoryRoot;
         private readonly IContractExecutorFactory executorFactory;
         private readonly ICallDataSerializer callDataSerializer;

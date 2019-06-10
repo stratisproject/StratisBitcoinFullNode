@@ -77,7 +77,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 return;
             }
 
-            this.logger.LogInformation("Broadcasting deposit-id={0} a signed multisig transaction {1} to the network.", @event.Transfer.DepositTransactionId, @event.Transfer.PartialTransaction.GetHash());
+            this.logger.LogDebug("Broadcasting deposit-id={0} a signed multisig transaction {1} to the network.", @event.Transfer.DepositTransactionId, @event.Transfer.PartialTransaction.GetHash());
 
             await this.broadcasterManager.BroadcastTransactionAsync(@event.Transfer.PartialTransaction).ConfigureAwait(false);
         }
