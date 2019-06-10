@@ -68,10 +68,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 this.logger.LogInformation("Building consolidation transaction for federation wallet inputs.");
 
-                this.signingInProgress = true;
-
                 // Build condensing transaction in deterministic way
                 this.partialTransaction = this.BuildConsolidatingTransaction();
+
+                // Something went wrong building the transaction.
+                if (this.partialTransaction == null)
+                    return;
+
+                this.signingInProgress = true;
 
                 // Send it around to be signed
                 RequestPartialTransactionPayload payload = new RequestPartialTransactionPayload(RequestPartialTransactionPayload.ConsolidationDepositId).AddPartial(this.partialTransaction);
@@ -124,36 +128,44 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// </summary>
         public Transaction BuildConsolidatingTransaction()
         {
-            // TODO: try catch
-            List<UnspentOutputReference> unspentOutputs = this.walletManager.GetSpendableTransactionsInWallet(WithdrawalTransactionBuilder.MinConfirmations).ToList();
-
-            if (unspentOutputs.Count < WithdrawalTransactionBuilder.MaxInputs)
-                throw new Exception("We shouldn't be consolidating transactions if we have less than 50 UTXOs to spend.");
-
-            IEnumerable<UnspentOutputReference> orderedUnspentOutputs = DeterministicCoinOrdering.GetOrderedUnspentOutputs(unspentOutputs); // TODO: We shouldn't have to remove these any more?
-            IEnumerable<UnspentOutputReference> selectedInputs = orderedUnspentOutputs.Take(WithdrawalTransactionBuilder.MaxInputs);
-            string walletPassword = this.walletManager.Secret.WalletPassword;
-            bool sign = (walletPassword ?? "") != "";
-
-            var multiSigContext = new TransactionBuildContext(new List<Recipient>())
+            try
             {
-                MinConfirmations = WithdrawalTransactionBuilder.MinConfirmations,
-                Shuffle = false,
-                IgnoreVerify = true,
-                WalletPassword = walletPassword,
-                Sign = sign,
-                TransactionFee = ConsolidationFee,
-                SelectedInputs = selectedInputs.Select(u => u.ToOutPoint()).ToList(),
-                AllowOtherInputs = false,
-                IsConsolidatingTransaction = true
-            };
+                // TODO: Confifm that we can remove the ordering below.
 
+                List<UnspentOutputReference> unspentOutputs = this.walletManager.GetSpendableTransactionsInWallet(WithdrawalTransactionBuilder.MinConfirmations).ToList();
 
-            Transaction transaction = this.transactionHandler.BuildTransaction(multiSigContext);
+                if (unspentOutputs.Count < WithdrawalTransactionBuilder.MaxInputs)
+                    throw new Exception("We shouldn't be consolidating transactions if we have less than 50 UTXOs to spend.");
 
-            this.logger.LogDebug("Consolidating transaction = {0}", transaction.ToString(this.network, RawFormat.BlockExplorer));
+                IEnumerable<UnspentOutputReference> orderedUnspentOutputs = DeterministicCoinOrdering.GetOrderedUnspentOutputs(unspentOutputs);
+                IEnumerable<UnspentOutputReference> selectedInputs = orderedUnspentOutputs.Take(WithdrawalTransactionBuilder.MaxInputs);
+                string walletPassword = this.walletManager.Secret.WalletPassword;
+                bool sign = (walletPassword ?? "") != "";
 
-            return transaction;
+                var multiSigContext = new TransactionBuildContext(new List<Recipient>())
+                {
+                    MinConfirmations = WithdrawalTransactionBuilder.MinConfirmations,
+                    Shuffle = false,
+                    IgnoreVerify = true,
+                    WalletPassword = walletPassword,
+                    Sign = sign,
+                    TransactionFee = ConsolidationFee,
+                    SelectedInputs = selectedInputs.Select(u => u.ToOutPoint()).ToList(),
+                    AllowOtherInputs = false,
+                    IsConsolidatingTransaction = true
+                };
+
+                Transaction transaction = this.transactionHandler.BuildTransaction(multiSigContext);
+
+                this.logger.LogDebug("Consolidating transaction = {0}", transaction.ToString(this.network, RawFormat.BlockExplorer));
+
+                return transaction;
+            }
+            catch (Exception e)
+            {
+                this.logger.LogWarning("Exception when building consolidating transaction. Wallet state likely changed before calling: " + e);
+                return null;
+            }
         }
 
         /// <inheritdoc />
@@ -193,7 +205,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
     public class ConsolidationSignatureResult
     {
+        /// <summary>
+        /// Whether the transaction was successfully signed.
+        /// </summary>
         public bool Signed { get; set; }
+
+        /// <summary>
+        /// The resulting transaction after signing.
+        /// </summary>
         public Transaction TransactionResult { get; set; }
 
         public static ConsolidationSignatureResult Failed()
