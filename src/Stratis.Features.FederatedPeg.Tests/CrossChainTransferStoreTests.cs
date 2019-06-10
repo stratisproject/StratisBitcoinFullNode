@@ -909,9 +909,8 @@ namespace Stratis.Features.FederatedPeg.Tests
             }
         }
 
-        // This will be useful in the future to test the InputConsolidator functionality
         [Fact]
-        public async Task BuildMultipleTransactionsForSingleWithdrawal()
+        public async Task CrossChainTransferStoreDoesntCreateMassiveTransactions()
         {
             var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
 
@@ -963,10 +962,9 @@ namespace Stratis.Features.FederatedPeg.Tests
                 };
 
                 RecordLatestMatureDepositsResult recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[crossChainTransferStore.NextMatureDepositHeight]);
-
-                int txSize = recordMatureDepositResult.WithDrawalTransactions[0].GetSerializedSize();
-                Assert.True(txSize < 100_000);
-                Assert.True(recordMatureDepositResult.WithDrawalTransactions.Count > 1);
+                
+                // The CCTS won't create any transactions until the InputConsolidator consolidates some inputs
+                Assert.Empty(recordMatureDepositResult.WithDrawalTransactions);
             }
         }
 

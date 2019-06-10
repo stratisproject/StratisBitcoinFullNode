@@ -41,7 +41,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             IFederationWalletManager walletManager,
             IBroadcasterManager broadcasterManager,
             IFederatedPegSettings settings,
-            ISignals signals,
             Network network)
         {
             this.federatedPegBroadcaster = federatedPegBroadcaster;
@@ -50,7 +49,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.broadcasterManager = broadcasterManager;
             this.network = network;
             this.settings = settings;
-            signals.Subscribe<BlockConnected>(ev => this.ProcessBlock(ev.ConnectedBlock));
         }
 
         // TODO: Add logging.
