@@ -162,7 +162,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             Guard.Assert(this.status == CrossChainTransferStatus.Partial);
 
-            SigningUtils.CombineSignatures(builder, this.partialTransaction, partialTransactions);
+            this.partialTransaction = SigningUtils.CombineSignatures(builder, this.partialTransaction, partialTransactions);
         }
 
         /// <inheritdoc />

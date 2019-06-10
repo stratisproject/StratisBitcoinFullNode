@@ -91,7 +91,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 this.logger.LogDebug("Attempting to merge signatures for {0} and {1}.", this.partialTransaction.GetHash(), incomingPartialTransaction.GetHash());
 
-                SigningUtils.CombineSignatures(builder, this.partialTransaction, new []{incomingPartialTransaction});
+                this.partialTransaction = SigningUtils.CombineSignatures(builder, this.partialTransaction, new []{incomingPartialTransaction});
 
                 if (oldTransaction.GetHash() == this.partialTransaction.GetHash())
                 {

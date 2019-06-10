@@ -30,7 +30,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             return result?.Count(s => s != null) ?? 0;
         }
 
-        public static void CombineSignatures(TransactionBuilder builder, Transaction existingTransaction, Transaction[] partialTransactions)
+        public static Transaction CombineSignatures(TransactionBuilder builder, Transaction existingTransaction, Transaction[] partialTransactions)
         {
             Transaction[] validPartials = partialTransactions.Where(p => TemplatesMatch(builder.Network, p, existingTransaction) && p.GetHash() != existingTransaction.GetHash()).ToArray();
             if (validPartials.Any())
@@ -41,6 +41,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 existingTransaction = builder.CombineSignatures(allPartials);
             }
+
+            return existingTransaction;
         }
 
 
