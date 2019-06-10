@@ -112,6 +112,7 @@ namespace Stratis.Features.FederatedPeg
             this.maturedBlocksSyncManager = maturedBlocksSyncManager;
             this.withdrawalHistoryProvider = withdrawalHistoryProvider;
             this.signedBroadcaster = signedBroadcaster;
+            this.inputConsolidator = inputConsolidator;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
