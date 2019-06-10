@@ -242,15 +242,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
                     return 0 >= member.CollateralAmount;
                 }
 
-                long balance = 0;
-
-                foreach (AddressBalanceChange change in balanceData.BalanceChanges.Where(x => x.BalanceChangedHeight <= heightToCheckAt))
-                {
-                    if (change.Deposited)
-                        balance += change.Satoshi;
-                    else
-                        balance -= change.Satoshi;
-                }
+                long balance = balanceData.BalanceChanges.Where(x => x.BalanceChangedHeight <= heightToCheckAt).CalculateBalance();
 
                 this.logger.LogDebug("Calculated balance at {0} is {1}, collateral requirement is {2}.", heightToCheckAt, balance, member.CollateralAmount);
 

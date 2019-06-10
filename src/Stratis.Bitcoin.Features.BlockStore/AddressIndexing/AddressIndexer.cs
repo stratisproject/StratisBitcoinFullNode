@@ -536,21 +536,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 {
                     AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
 
-                    long balance = 0;
-
                     int maxAllowedHeight = this.consensusManager.Tip.Height - minConfirmations + 1;
 
-                    foreach (AddressBalanceChange change in indexData.BalanceChanges.Where(x => x.BalanceChangedHeight <= maxAllowedHeight))
-                    {
-                        if (change.Deposited)
-                            balance += change.Satoshi;
-                        else
-                            balance -= change.Satoshi;
-                    }
+                    long balance = indexData.BalanceChanges.Where(x => x.BalanceChangedHeight <= maxAllowedHeight).CalculateBalance();
 
                     this.logger.LogTrace("Address: {0}, balance: {1}.", address, balance);
                     result.Balances.Add(new AddressBalanceResult(address, new Money(balance)));
-                };
+                }
 
                 return result;
             }

@@ -99,4 +99,22 @@ namespace Stratis.Bitcoin.Controllers.Models
             return $"{nameof(this.Deposited)}:{this.Deposited}, {nameof(this.Satoshi)}:{this.Satoshi}, {nameof(this.BalanceChangedHeight)}:{this.BalanceChangedHeight}";
         }
     }
+
+    public static class AddressBalanceChangeExtensions
+    {
+        public static long CalculateBalance(this IEnumerable<AddressBalanceChange> balanceChanges)
+        {
+            long balance = 0;
+
+            foreach (AddressBalanceChange change in balanceChanges)
+            {
+                if (change.Deposited)
+                    balance += change.Satoshi;
+                else
+                    balance -= change.Satoshi;
+            }
+
+            return balance;
+        }
+    }
 }
