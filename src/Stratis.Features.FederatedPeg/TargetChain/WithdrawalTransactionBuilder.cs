@@ -6,11 +6,19 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Wallet;
+using Stratis.SmartContracts.Core.State;
 using Recipient = Stratis.Features.FederatedPeg.Wallet.Recipient;
 using TransactionBuildContext = Stratis.Features.FederatedPeg.Wallet.TransactionBuildContext;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
 {
+    public class BuildWithdrawalTransactionResult
+    {
+        public bool Success => this.Transaction != null;
+        public bool Reject { get; set; }
+        public Transaction Transaction { get; set; }
+    }
+
     public class WithdrawalTransactionBuilder : IWithdrawalTransactionBuilder
     {
         /// <summary>
@@ -25,27 +33,41 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly IFederationWalletManager federationWalletManager;
         private readonly IFederationWalletTransactionHandler federationWalletTransactionHandler;
         private readonly IFederatedPegSettings federatedPegSettings;
+        private readonly IStateRepositoryRoot stateRepositoryRoot;
 
         public WithdrawalTransactionBuilder(
             ILoggerFactory loggerFactory,
             Network network,
             IFederationWalletManager federationWalletManager,
             IFederationWalletTransactionHandler federationWalletTransactionHandler,
-            IFederatedPegSettings federatedPegSettings)
+            IFederatedPegSettings federatedPegSettings,
+            IStateRepositoryRoot stateRepositoryRoot = null)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.federationWalletManager = federationWalletManager;
             this.federationWalletTransactionHandler = federationWalletTransactionHandler;
             this.federatedPegSettings = federatedPegSettings;
+            this.stateRepositoryRoot = stateRepositoryRoot;
         }
 
         /// <inheritdoc />
-        public Transaction BuildWithdrawalTransaction(uint256 depositId, uint blockTime, Recipient recipient)
+        public BuildWithdrawalTransactionResult BuildWithdrawalTransaction(uint256 depositId, uint blockTime, Recipient recipient)
         {
             try
             {
                 this.logger.LogDebug("BuildDeterministicTransaction depositId(opReturnData)={0} recipient.ScriptPubKey={1} recipient.Amount={2}", depositId, recipient.ScriptPubKey, recipient.Amount);
+
+                // Can't send funds to known contract address.
+                if (this.stateRepositoryRoot != null)
+                {
+                    KeyId p2pkhParams = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(recipient.ScriptPubKey);
+
+                    if (this.stateRepositoryRoot.GetAccountState(new uint160(p2pkhParams.ToBytes())) != null)
+                    {
+                        return new BuildWithdrawalTransactionResult() { Reject = true };
+                    }
+                }
 
                 // Build the multisig transaction template.
                 uint256 opReturnData = depositId;
@@ -76,10 +98,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 this.logger.LogDebug("transaction = {0}", transaction.ToString(this.network, RawFormat.BlockExplorer));
 
-                return transaction;
+                return new BuildWithdrawalTransactionResult() { Transaction = transaction };
             }
             catch (Exception error)
             {
+                var res = new BuildWithdrawalTransactionResult();
+
                 if (error is WalletException walletException &&
                     (walletException.Message == FederationWalletTransactionHandler.NoSpendableTransactionsMessage
                      || walletException.Message == FederationWalletTransactionHandler.NotEnoughFundsMessage))
@@ -90,10 +114,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 {
                     this.logger.LogError("Could not create transaction for deposit {0}: {1}", depositId, error.Message);
                 }
-            }
 
-            this.logger.LogTrace("(-)[FAIL]");
-            return null;
+                this.logger.LogTrace("(-)[FAIL]");
+                return res;
+            }
         }
     }
 }

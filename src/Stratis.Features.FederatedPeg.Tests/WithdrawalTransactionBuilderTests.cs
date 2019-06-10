@@ -91,11 +91,11 @@ namespace Stratis.Features.FederatedPeg.Tests
                 ScriptPubKey = new Script()
             };
 
-            Transaction ret = txBuilder.BuildWithdrawalTransaction(uint256.One, 100, recipient);
+            Transaction ret = txBuilder.BuildWithdrawalTransaction(uint256.One, 100, recipient).Transaction;
 
             Assert.NotNull(ret);
 
-            // Fee taken from amount should be the total fee. 
+            // Fee taken from amount should be the total fee.
             Money expectedAmountAfterFee = recipient.Amount - FederatedPegSettings.CrossChainTransferFee;
             this.federationWalletTransactionHandler.Verify(x => x.BuildTransaction(It.Is<TransactionBuildContext>(y => y.Recipients.First().Amount == expectedAmountAfterFee)));
 
@@ -125,7 +125,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 ScriptPubKey = new Script()
             };
 
-            Transaction ret = txBuilder.BuildWithdrawalTransaction(uint256.One, 100, recipient);
+            Transaction ret = txBuilder.BuildWithdrawalTransaction(uint256.One, 100, recipient).Transaction;
 
             // Log out a warning in this case, not an error.
             this.logger.Verify(x=>x.Log<object>(LogLevel.Warning, It.IsAny<EventId>(), It.IsAny<object>(), null, It.IsAny<Func<object, Exception, string>>()));
@@ -152,7 +152,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 ScriptPubKey = new Script()
             };
 
-            Transaction ret = txBuilder.BuildWithdrawalTransaction(uint256.One, 100, recipient);
+            Transaction ret = txBuilder.BuildWithdrawalTransaction(uint256.One, 100, recipient).Transaction;
 
             // Log out a warning in this case, not an error.
             this.logger.Verify(x => x.Log<object>(LogLevel.Warning, It.IsAny<EventId>(), It.IsAny<object>(), null, It.IsAny<Func<object, Exception, string>>()));

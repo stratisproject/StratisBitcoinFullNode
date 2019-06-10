@@ -157,7 +157,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             lock (this.lockObj)
             {
                 this.federationWalletManager.Synchronous(() =>
-                {                    
+                {
                     Guard.Assert(this.Synchronize());
                 });
             }
@@ -426,7 +426,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                                     uint blockTime = maturedDeposit.BlockInfo.BlockTime;
 
-                                    transaction = this.withdrawalTransactionBuilder.BuildWithdrawalTransaction(deposit.Id, blockTime, recipient);
+                                    BuildWithdrawalTransactionResult res = this.withdrawalTransactionBuilder.BuildWithdrawalTransaction(deposit.Id, blockTime, recipient);
+
+                                    transaction = res.Transaction;
 
                                     if (transaction != null)
                                     {
@@ -450,7 +452,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                     }
                                     else
                                     {
-                                        haveSuspendedTransfers = true;
+                                        if (!res.Reject)
+                                        {
+                                            haveSuspendedTransfers = true;
+                                        }
+                                        else
+                                        {
+                                            status = CrossChainTransferStatus.Rejected;
+                                        }
                                     }
                                 }
 

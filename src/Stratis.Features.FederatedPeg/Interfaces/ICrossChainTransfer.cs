@@ -10,7 +10,8 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         Suspended = 'U',
         Partial = 'P',
         FullySigned = 'F',
-        SeenInBlock = 'S'
+        SeenInBlock = 'S',
+        Rejected = 'R'
     }
 
     public interface ICrossChainTransfer : IBitcoinSerializable
