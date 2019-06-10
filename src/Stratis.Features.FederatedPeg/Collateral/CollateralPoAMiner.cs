@@ -27,12 +27,12 @@ namespace Stratis.Features.FederatedPeg.Collateral
     {
         private readonly CollateralHeightCommitmentEncoder encoder;
 
-        private readonly CollateralChecker collateralChecker;
+        private readonly ICollateralChecker collateralChecker;
 
         public CollateralPoAMiner(IConsensusManager consensusManager, IDateTimeProvider dateTimeProvider, Network network, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory,
             IInitialBlockDownloadState ibdState, BlockDefinition blockDefinition, ISlotsManager slotsManager, IConnectionManager connectionManager,
             PoABlockHeaderValidator poaHeaderValidator, IFederationManager federationManager, IIntegrityValidator integrityValidator, IWalletManager walletManager,
-            INodeStats nodeStats, VotingManager votingManager, PoAMinerSettings poAMinerSettings, CollateralChecker collateralChecker, IAsyncProvider asyncProvider)
+            INodeStats nodeStats, VotingManager votingManager, PoAMinerSettings poAMinerSettings, ICollateralChecker collateralChecker, IAsyncProvider asyncProvider)
             : base(consensusManager, dateTimeProvider, network, nodeLifetime, loggerFactory, ibdState, blockDefinition, slotsManager, connectionManager,
             poaHeaderValidator, federationManager, integrityValidator, walletManager,nodeStats, votingManager, poAMinerSettings, asyncProvider)
         {
