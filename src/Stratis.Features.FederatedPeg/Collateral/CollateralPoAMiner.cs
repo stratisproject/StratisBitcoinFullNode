@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
@@ -31,9 +32,9 @@ namespace Stratis.Features.FederatedPeg.Collateral
         public CollateralPoAMiner(IConsensusManager consensusManager, IDateTimeProvider dateTimeProvider, Network network, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory,
             IInitialBlockDownloadState ibdState, BlockDefinition blockDefinition, ISlotsManager slotsManager, IConnectionManager connectionManager,
             PoABlockHeaderValidator poaHeaderValidator, IFederationManager federationManager, IIntegrityValidator integrityValidator, IWalletManager walletManager,
-            INodeStats nodeStats, VotingManager votingManager, PoAMinerSettings poAMinerSettings, CollateralChecker collateralChecker)
+            INodeStats nodeStats, VotingManager votingManager, PoAMinerSettings poAMinerSettings, CollateralChecker collateralChecker, IAsyncProvider asyncProvider)
             : base(consensusManager, dateTimeProvider, network, nodeLifetime, loggerFactory, ibdState, blockDefinition, slotsManager, connectionManager,
-            poaHeaderValidator, federationManager, integrityValidator, walletManager,nodeStats, votingManager, poAMinerSettings)
+            poaHeaderValidator, federationManager, integrityValidator, walletManager,nodeStats, votingManager, poAMinerSettings, asyncProvider)
         {
             this.collateralChecker = collateralChecker;
             this.encoder = new CollateralHeightCommitmentEncoder();

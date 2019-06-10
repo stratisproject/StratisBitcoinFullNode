@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
@@ -37,6 +38,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
         private readonly IFederationManager federationManager;
 
         private readonly ISignals signals;
+        private readonly IAsyncProvider asyncProvider;
 
         private readonly ILogger logger;
 
@@ -67,10 +69,11 @@ namespace Stratis.Features.FederatedPeg.Collateral
         private bool collateralUpdated;
 
         public CollateralChecker(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, ICounterChainSettings settings,
-            IFederationManager federationManager, ISignals signals, Network network)
+            IFederationManager federationManager, ISignals signals, Network network, IAsyncProvider asyncProvider)
         {
             this.federationManager = federationManager;
             this.signals = signals;
+            this.asyncProvider = asyncProvider;
 
             this.maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(network);
             this.cancellationSource = new CancellationTokenSource();
@@ -104,6 +107,10 @@ namespace Stratis.Features.FederatedPeg.Collateral
             }
 
             this.updateCollateralContinuouslyTask = this.UpdateCollateralInfoContinuouslyAsync();
+
+#pragma warning disable 4014
+            this.asyncProvider.RegisterTask($"{nameof(CollateralChecker)}.{nameof(this.updateCollateralContinuouslyTask)}", this.updateCollateralContinuouslyTask);
+#pragma warning restore 4014
         }
 
         public int GetCounterChainConsensusHeight()
