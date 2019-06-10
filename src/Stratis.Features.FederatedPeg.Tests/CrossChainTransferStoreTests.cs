@@ -928,8 +928,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                     $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
                 Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
 
-                // Lets set the funding transactions to hundreds of really small outputs
-                const int numUtxos = 500;
+                // Lets set the funding transactions to many really small outputs
+                const int numUtxos = WithdrawalTransactionBuilder.MaxInputs * 2;
                 const decimal individualAmount = 0.1m;
                 const decimal depositAmount = numUtxos * individualAmount - 1; // Large amount minus some for fees.
                 BitcoinAddress address = new Script("").Hash.GetAddress(this.network);
@@ -965,6 +965,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 
                 // The CCTS won't create any transactions until the InputConsolidator consolidates some inputs
                 Assert.Empty(recordMatureDepositResult.WithDrawalTransactions);
+
+                this.inputConsolidator.Received().StartConsolidation();
             }
         }
 
