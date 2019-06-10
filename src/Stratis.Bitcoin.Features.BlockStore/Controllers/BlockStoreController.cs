@@ -18,6 +18,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
     public static class BlockStoreRouteEndPoint
     {
         public const string GetAddressesBalances = "getaddressesbalances";
+        public const string GetVerboseAddressesBalances = "getverboseaddressesbalances";
         public const string GetAddressIndexerTip = "addressindexertip";
         public const string GetBlock = "block";
         public const string GetBlockCount = "GetBlockCount";
@@ -157,9 +158,34 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
                 this.logger.LogDebug("Asking data for {0} addresses.", addressesArray.Length);
 
-                var result = this.addressIndexer.GetAddressBalances(addressesArray, minConfirmations);
+                AddressBalancesResult result = this.addressIndexer.GetAddressBalances(addressesArray, minConfirmations);
 
                 this.logger.LogDebug("Sending data for {0} addresses.", result.Balances.Count);
+
+                return this.Json(result);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+
+        /// <summary>Provides verbose balance data of the given addresses.</summary>
+        /// <param name="addresses">A comma delimited set of addresses that will be queried.</param>
+        /// <returns>A result object containing the balance for each requested address and if so, a meesage stating why the indexer is not queryable.</returns>
+        [Route(BlockStoreRouteEndPoint.GetVerboseAddressesBalances)]
+        [HttpGet]
+        public IActionResult GetVerboseAddressesBalancesData(string addresses)
+        {
+            try
+            {
+                string[] addressesArray = addresses.Split(',');
+
+                this.logger.LogDebug("Asking data for {0} addresses.", addressesArray.Length);
+
+                VerboseAddressBalancesResult result = this.addressIndexer.GetVerboseAddressBalancesData(addressesArray);
 
                 return this.Json(result);
             }

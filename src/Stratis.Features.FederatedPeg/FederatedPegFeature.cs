@@ -342,7 +342,7 @@ namespace Stratis.Features.FederatedPeg
                 features.AddFeature<PoAFeature>().DependOn<FederatedPegFeature>().FeatureServices(services =>
                     {
                         services.AddSingleton<PoABlockHeaderValidator>();
-                        services.AddSingleton<IPoAMiner, PoAMiner>();
+                        services.AddSingleton<IPoAMiner, CollateralPoAMiner>();
                         services.AddSingleton<ISlotsManager, SlotsManager>();
                         services.AddSingleton<BlockDefinition, FederatedPegBlockDefinition>();
                         services.AddSingleton<ICoinbaseSplitter, PremineCoinbaseSplitter>();

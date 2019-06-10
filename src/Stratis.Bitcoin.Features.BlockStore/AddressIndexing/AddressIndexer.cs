@@ -33,6 +33,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <param name="addresses">The set of addresses that will be queried.</param>
         /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed or doesn't exists.</returns>
         AddressBalancesResult GetAddressBalances(string[] addresses, int minConfirmations = 0);
+
+        /// <summary>Returns verbose balances data.</summary>
+        /// <param name="addresses">The set of addresses that will be queried.</param>
+        VerboseAddressBalancesResult GetVerboseAddressBalancesData(string[] addresses);
     }
 
     public class AddressIndexer : IAddressIndexer
@@ -62,7 +66,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         private const string AddressIndexerDatabaseFilename = "addressindex.litedb";
 
         /// <summary>Max supported reorganization length for networks without max reorg property.</summary>
-        private const int FallBackMaxReorg = 200;
+        public const int FallBackMaxReorg = 200;
 
         /// <summary>
         /// Time to wait before attempting to index the next block.
@@ -104,8 +108,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private Task<ChainedHeaderBlock> prefetchingTask;
 
-        /// <summary>Maximum supported reorganization length.</summary>
-        private readonly int maxReorgLength;
+        /// <summary>Distance in blocks from consensus tip at which compaction should start.</summary>
+        /// <remarks>It can't be lower than maxReorg since compacted data can't be converted back to uncompacted state for partial reversion.</remarks>
+        private readonly int compactionTriggerDistance;
+
+        /// <summary>
+        /// This is a window of some blocks that is needed to reduce the consequences of nodes having different view of consensus chain.
+        /// We assume that nodes usually don't have view that is different from other nodes by that constant of blocks.
+        /// </summary>
+        public const int SyncBuffer = 50;
 
         public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network,
             INodeStats nodeStats, IConsensusManager consensusManager, IAsyncProvider asyncProvider)
@@ -126,7 +137,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.averageTimePerBlock = new AverageCalculator(200);
-            this.maxReorgLength = this.network.Consensus.MaxReorgLength == 0 ? (int)this.network.Consensus.MaxReorgLength : FallBackMaxReorg;
+            int maxReorgLength = GetMaxReorgOrFallbackMaxReorg(this.network);
+
+            this.compactionTriggerDistance = maxReorgLength * 2 + SyncBuffer;
+        }
+
+        /// <summary>Returns maxReorg of <see cref="FallBackMaxReorg"/> in case maxReorg is <c>0</c>.</summary>
+        public static int GetMaxReorgOrFallbackMaxReorg(Network network)
+        {
+            int maxReorgLength = network.Consensus.MaxReorgLength == 0 ? FallBackMaxReorg : (int)network.Consensus.MaxReorgLength;
+
+            return maxReorgLength;
         }
 
         public void Initialize()
@@ -428,7 +449,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 }
 
                 this.outpointsRepository.RecordRewindData(rewindData);
-                this.outpointsRepository.PurgeOldRewindData(this.consensusManager.Tip.Height - this.maxReorgLength);
+                this.outpointsRepository.PurgeOldRewindData(this.consensusManager.Tip.Height - this.compactionTriggerDistance);
             }
 
             return true;
@@ -449,7 +470,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             });
 
             // Anything less than that should be compacted.
-            int heightThreshold = this.consensusManager.Tip.Height - this.maxReorgLength;
+            int heightThreshold = this.consensusManager.Tip.Height - this.compactionTriggerDistance;
 
             bool compact = (indexData.BalanceChanges.Count > CompactingThreshold) &&
                            (indexData.BalanceChanges[1].BalanceChangedHeight < heightThreshold);
@@ -515,24 +536,47 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 {
                     AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
 
-                    long balance = 0;
-
                     int maxAllowedHeight = this.consensusManager.Tip.Height - minConfirmations + 1;
 
-                    foreach (AddressBalanceChange change in indexData.BalanceChanges.Where(x => x.BalanceChangedHeight <= maxAllowedHeight))
-                    {
-                        if (change.Deposited)
-                            balance += change.Satoshi;
-                        else
-                            balance -= change.Satoshi;
-                    }
+                    long balance = indexData.BalanceChanges.Where(x => x.BalanceChangedHeight <= maxAllowedHeight).CalculateBalance();
 
                     this.logger.LogTrace("Address: {0}, balance: {1}.", address, balance);
                     result.Balances.Add(new AddressBalanceResult(address, new Money(balance)));
-                };
+                }
 
                 return result;
             }
+        }
+
+        /// <inheritdoc />
+        public VerboseAddressBalancesResult GetVerboseAddressBalancesData(string[] addresses)
+        {
+            (bool isQueryable, string reason) = this.IsQueryable();
+
+            if (!isQueryable)
+                return VerboseAddressBalancesResult.RequestFailed(reason);
+
+            var result = new VerboseAddressBalancesResult();
+
+            lock (this.lockObject)
+            {
+                foreach (var address in addresses)
+                {
+                    AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
+
+                    var copy = new AddressIndexerData()
+                    {
+                        Address = indexData.Address,
+                        BalanceChanges = new List<AddressBalanceChange>(indexData.BalanceChanges)
+                    };
+
+                    result.BalancesData.Add(copy);
+                }
+            }
+
+            result.ConsensusTipHeight = this.consensusManager.Tip.Height;
+
+            return result;
         }
 
         private (bool isQueryable, string reason) IsQueryable()

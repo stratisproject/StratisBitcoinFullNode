@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         protected readonly ILogger logger;
 
-        private readonly PoANetwork network;
+        protected readonly PoANetwork network;
 
         /// <summary>
         /// A cancellation token source that can cancel the mining processes and is linked to the <see cref="INodeLifetime.ApplicationStopping"/>.
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly PoABlockHeaderValidator poaHeaderValidator;
 
-        private readonly IFederationManager federationManager;
+        protected readonly IFederationManager federationManager;
 
         private readonly IIntegrityValidator integrityValidator;
 
@@ -213,6 +213,7 @@ namespace Stratis.Bitcoin.Features.PoA
             {
                 // Can happen only when target spacing had crazy low value or key was compromised and someone is mining with our key.
                 this.logger.LogWarning("Somehow another block was connected with greater timestamp. Dropping current block.");
+                this.logger.LogTrace("(-)[ANOTHER_BLOCK_CONNECTED]:null");
                 return null;
             }
 
@@ -226,8 +227,13 @@ namespace Stratis.Bitcoin.Features.PoA
 
             BlockTemplate blockTemplate = this.blockDefinition.Build(tip, walletScriptPubKey);
 
-            if (this.network.ConsensusOptions.VotingEnabled)
-                this.AddVotingData(blockTemplate);
+            this.FillBlockTemplate(blockTemplate, out bool dropTemplate);
+
+            if (dropTemplate)
+            {
+                this.logger.LogTrace("(-)[DROPPED]:null");
+                return null;
+            }
 
             blockTemplate.Block.Header.Time = timestamp;
 
@@ -243,6 +249,7 @@ namespace Stratis.Bitcoin.Features.PoA
             if (chainedHeader == null)
             {
                 // Block wasn't accepted because we already connected block from the network.
+                this.logger.LogTrace("(-)[FAILED_TO_CONNECT]:null");
                 return null;
             }
 
@@ -250,10 +257,20 @@ namespace Stratis.Bitcoin.Features.PoA
             if (result.Error != null)
             {
                 // Sanity check. Should never happen.
+                this.logger.LogTrace("(-)[INTEGRITY_FAILURE]");
                 throw new Exception(result.Error.ToString());
             }
 
             return chainedHeader;
+        }
+
+        /// <summary>Fills block template with custom non-standard data.</summary>
+        protected virtual void FillBlockTemplate(BlockTemplate blockTemplate, out bool dropTemplate)
+        {
+            if (this.network.ConsensusOptions.VotingEnabled)
+                this.AddVotingData(blockTemplate);
+
+            dropTemplate = false;
         }
 
         /// <summary>Gets scriptPubKey from the wallet.</summary>

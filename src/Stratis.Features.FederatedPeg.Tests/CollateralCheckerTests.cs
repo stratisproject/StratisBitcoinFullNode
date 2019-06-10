@@ -29,6 +29,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
         private readonly List<CollateralFederationMember> collateralFederationMembers;
 
+        private readonly int collateralCheckHeight = 2000;
+
         public CollateralCheckerTests()
         {
             var loggerFactory = new LoggerFactory();
@@ -57,7 +59,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             fedManager.Initialize();
 
-            this.collateralChecker = new CollateralChecker(loggerFactory, clientFactory, settings, fedManager, signals);
+            this.collateralChecker = new CollateralChecker(loggerFactory, clientFactory, settings, fedManager, signals, network);
         }
 
         [Fact]
@@ -76,34 +78,47 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             var blockStoreClientMock = new Mock<IBlockStoreClient>();
 
-            var collateralData = new AddressBalancesResult()
+            var collateralData = new VerboseAddressBalancesResult()
             {
-                Balances = new List<AddressBalanceResult>()
+                ConsensusTipHeight = this.collateralCheckHeight + 1000,
+                BalancesData = new List<AddressIndexerData>()
                 {
-                    new AddressBalanceResult( this.collateralFederationMembers[0].CollateralMainchainAddress, this.collateralFederationMembers[0].CollateralAmount) ,
-                    new AddressBalanceResult(this.collateralFederationMembers[1].CollateralMainchainAddress, this.collateralFederationMembers[1].CollateralAmount + 10),
-                    new AddressBalanceResult(this.collateralFederationMembers[2].CollateralMainchainAddress, this.collateralFederationMembers[2].CollateralAmount - 10)
+                    new AddressIndexerData()
+                    {
+                        Address = this.collateralFederationMembers[0].CollateralMainchainAddress,
+                        BalanceChanges = new List<AddressBalanceChange>() { new AddressBalanceChange() { BalanceChangedHeight = 0, Deposited = true, Satoshi = this.collateralFederationMembers[0].CollateralAmount } }
+                    },
+                    new AddressIndexerData()
+                    {
+                        Address = this.collateralFederationMembers[1].CollateralMainchainAddress,
+                        BalanceChanges = new List<AddressBalanceChange>() { new AddressBalanceChange() { BalanceChangedHeight = 0, Deposited = true, Satoshi = this.collateralFederationMembers[1].CollateralAmount + 10 } }
+                    },
+                    new AddressIndexerData()
+                    {
+                        Address = this.collateralFederationMembers[2].CollateralMainchainAddress,
+                        BalanceChanges = new List<AddressBalanceChange>() { new AddressBalanceChange() { BalanceChangedHeight = 0, Deposited = true, Satoshi = this.collateralFederationMembers[2].CollateralAmount - 10 } }
+                    }
                 }
             };
 
-            blockStoreClientMock.Setup(x => x.GetAddressBalancesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(collateralData);
+            blockStoreClientMock.Setup(x => x.GetVerboseAddressesBalancesDataAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync(collateralData);
 
             this.collateralChecker.SetPrivateVariableValue("blockStoreClient", blockStoreClientMock.Object);
 
             await this.collateralChecker.InitializeAsync();
 
-            Assert.True(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[0]));
-            Assert.True(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[1]));
-            Assert.False(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[2]));
+            Assert.True(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[0], this.collateralCheckHeight));
+            Assert.True(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[1], this.collateralCheckHeight));
+            Assert.False(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[2], this.collateralCheckHeight));
 
             // Now change what the client returns and make sure collateral check fails after update.
-            AddressBalanceResult updated = collateralData.Balances.First(b => b.Address == this.collateralFederationMembers[0].CollateralMainchainAddress);
-            updated.Balance = this.collateralFederationMembers[0].CollateralAmount - 1;
+            AddressIndexerData updated = collateralData.BalancesData.First(b => b.Address == this.collateralFederationMembers[0].CollateralMainchainAddress);
+            updated.BalanceChanges.First().Satoshi = this.collateralFederationMembers[0].CollateralAmount - 1;
 
             // Wait CollateralUpdateIntervalSeconds + 1 seconds
 
             await Task.Delay(21_000);
-            Assert.False(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[0]));
+            Assert.False(this.collateralChecker.CheckCollateral(this.collateralFederationMembers[0], this.collateralCheckHeight));
 
             this.collateralChecker.Dispose();
         }
