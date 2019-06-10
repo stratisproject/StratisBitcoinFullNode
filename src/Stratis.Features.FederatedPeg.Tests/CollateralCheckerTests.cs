@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.EventBus;
@@ -52,14 +53,15 @@ namespace Stratis.Features.FederatedPeg.Tests
             FederatedPegSettings fedPegSettings = FedPegTestsHelper.CreateSettings(network, out NodeSettings nodeSettings);
 
             CounterChainSettings settings = new CounterChainSettings(nodeSettings, Networks.Stratis.Regtest());
-
+            var asyncMock = new Mock<IAsyncProvider>();
+            asyncMock.Setup(a => a.RegisterTask(It.IsAny<string>(), It.IsAny<Task>()));
 
             ISignals signals = new Signals(loggerFactory, new DefaultSubscriptionErrorHandler(loggerFactory));
             IFederationManager fedManager = new CollateralFederationManager(nodeSettings, network, loggerFactory, new Mock<IKeyValueRepository>().Object, signals);
 
             fedManager.Initialize();
 
-            this.collateralChecker = new CollateralChecker(loggerFactory, clientFactory, settings, fedManager, signals, network);
+            this.collateralChecker = new CollateralChecker(loggerFactory, clientFactory, settings, fedManager, signals, network, asyncMock.Object);
         }
 
         [Fact]
