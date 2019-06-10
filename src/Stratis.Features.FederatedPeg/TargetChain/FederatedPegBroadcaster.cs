@@ -16,7 +16,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly IConnectionManager connectionManager;
         private readonly IFederatedPegSettings federatedPegSettings;
 
-
         public FederatedPegBroadcaster(
             IConnectionManager connectionManager,
             IFederatedPegSettings federatedPegSettings)
@@ -25,10 +24,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.federatedPegSettings = federatedPegSettings;
         }
 
-
+        /// <inheritdoc />
         public async Task BroadcastAsync(Payload payload)
         {
-            // TODO: This needs to be optimised
+            // TODO: Optimize how federation peers are identified.
 
             List<INetworkPeer> peers = this.connectionManager.ConnectedPeers.ToList();
 

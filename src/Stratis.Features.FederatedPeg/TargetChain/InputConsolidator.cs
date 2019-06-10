@@ -27,7 +27,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly ILogger logger;
         private readonly Network network;
 
-
         private bool signingInProgress;
 
         private bool fullySigned;
@@ -59,6 +58,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
+        /// <inheritdoc />
         public void StartConsolidation()
         {
             lock (this.lockObj)
@@ -79,6 +79,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
         }
 
+        /// <inheritdoc />
         public ConsolidationSignatureResult CombineSignatures(Transaction incomingPartialTransaction)
         {
             lock (this.lockObj)
@@ -118,6 +119,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
         }
 
+        /// <summary>
+        /// Build a consolidating transaction. This method isn't called publicly at the moment, purely for testing.
+        /// </summary>
         public Transaction BuildConsolidatingTransaction()
         {
             // TODO: try catch
@@ -152,6 +156,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             return transaction;
         }
 
+        /// <inheritdoc />
         public void ProcessBlock(ChainedHeaderBlock chainedHeaderBlock)
         {
             lock (this.lockObj)
