@@ -15,11 +15,6 @@ namespace Stratis.Features.FederatedPeg.Tests
 {
     public class InputConsolidatorTests : CrossChainTestBase
     {
-        public InputConsolidatorTests()
-        {
-
-        }
-
         [Fact]
         public void ConsolidationTransactionOnlyBuiltWhenWalletHasManyInputs()
         {

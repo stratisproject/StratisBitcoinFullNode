@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.EventBus.CoreEvents;
@@ -58,7 +59,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         public void StartConsolidation()
         {
-            // TODO: Should be in task
             lock (this.lockObj)
             {
                 if (this.signingInProgress)
@@ -73,7 +73,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 // Send it around to be signed
                 RequestPartialTransactionPayload payload = new RequestPartialTransactionPayload(RequestPartialTransactionPayload.ConsolidationDepositId).AddPartial(this.partialTransaction);
-                this.federatedPegBroadcaster.BroadcastAsync(payload).GetAwaiter().GetResult(); // TODO: fix async
+                this.federatedPegBroadcaster.BroadcastAsync(payload).GetAwaiter().GetResult();
             }
         }
 
