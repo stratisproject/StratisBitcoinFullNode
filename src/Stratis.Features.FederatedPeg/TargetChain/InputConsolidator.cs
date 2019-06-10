@@ -63,8 +63,16 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             lock (this.lockObj)
             {
-                if (this.signingInProgress)
+                // Has done it's work and broadcasted the tx to mempool. Just need to be patient now.
+                if (this.signingInProgress && this.fullySigned)
                     return;
+
+                // Re-trigger signing rounds if we're hitting this a second time and we're not fully signed yet.
+                if (this.signingInProgress)
+                {
+                    this.BroadcastPartial();
+                    return;
+                }
 
                 this.logger.LogInformation("Building consolidation transaction for federation wallet inputs.");
 
@@ -78,9 +86,17 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 this.signingInProgress = true;
 
                 // Send it around to be signed
-                RequestPartialTransactionPayload payload = new RequestPartialTransactionPayload(RequestPartialTransactionPayload.ConsolidationDepositId).AddPartial(this.partialTransaction);
-                this.federatedPegBroadcaster.BroadcastAsync(payload).GetAwaiter().GetResult();
+                this.BroadcastPartial();
             }
+        }
+
+        /// <summary>
+        /// Broadcast our partial to be signed by the other federation nodes.
+        /// </summary>
+        private void BroadcastPartial()
+        {
+            RequestPartialTransactionPayload payload = new RequestPartialTransactionPayload(RequestPartialTransactionPayload.ConsolidationDepositId).AddPartial(this.partialTransaction);
+            this.federatedPegBroadcaster.BroadcastAsync(payload).GetAwaiter().GetResult();
         }
 
         /// <inheritdoc />
@@ -124,7 +140,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <summary>
-        /// Build a consolidating transaction. This method isn't called publicly at the moment, purely for testing.
+        /// Build a consolidating transaction.
         /// </summary>
         public Transaction BuildConsolidatingTransaction()
         {
