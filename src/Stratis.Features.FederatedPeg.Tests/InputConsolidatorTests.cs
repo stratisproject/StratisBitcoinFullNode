@@ -33,7 +33,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.loggerFactory,
                 this.network);
 
-            Assert.ThrowsAny<Exception>(() => inputConsolidator.BuildConsolidatingTransaction());
+            Assert.Null(inputConsolidator.BuildConsolidatingTransaction());
         }
 
         [Fact]
