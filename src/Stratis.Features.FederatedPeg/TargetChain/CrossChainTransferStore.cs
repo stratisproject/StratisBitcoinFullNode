@@ -1071,15 +1071,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             lock (this.lockObj)
             {
-                var depositIds = new HashSet<uint256>();
+                return this.federationWalletManager.Synchronous(() =>
+                {
+                    Guard.Assert(this.Synchronize());
 
-                foreach (CrossChainTransferStatus status in statuses)
-                    depositIds.UnionWith(this.depositsIdsByStatus[status]);
-
-                uint256[] partialTransferHashes = depositIds.ToArray();
-                ICrossChainTransfer[] partialTransfers = this.Get(partialTransferHashes).Where(t => t != null).ToArray();
-
-                return partialTransfers;
+                    return this.GetTransfersByStatusInternalLocked(statuses, true, false);
+                });
             }
         }
 
