@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NBitcoin;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Signals;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Payloads;
 using Stratis.Features.FederatedPeg.Wallet;
@@ -38,6 +41,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             IFederationWalletManager walletManager,
             IBroadcasterManager broadcasterManager,
             IFederatedPegSettings settings,
+            ISignals signals,
             Network network)
         {
             this.federatedPegBroadcaster = federatedPegBroadcaster;
@@ -46,6 +50,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.broadcasterManager = broadcasterManager;
             this.network = network;
             this.settings = settings;
+            signals.Subscribe<BlockConnected>(ev => this.ProcessBlock(ev.ConnectedBlock));
         }
 
         // TODO: Add logging.
@@ -109,7 +114,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             if (unspentOutputs.Count < WithdrawalTransactionBuilder.MaxInputs)
                 throw new Exception("We shouldn't be consolidating transactions if we have less than 50 UTXOs to spend.");
 
-            IEnumerable<UnspentOutputReference> orderedUnspentOutputs = DeterministicCoinOrdering.GetOrderedUnspentOutputs(unspentOutputs);
+            IEnumerable<UnspentOutputReference> orderedUnspentOutputs = DeterministicCoinOrdering.GetOrderedUnspentOutputs(unspentOutputs); // TODO: We shouldn't have to remove these any more?
             IEnumerable<UnspentOutputReference> selectedInputs = orderedUnspentOutputs.Take(WithdrawalTransactionBuilder.MaxInputs);
             string walletPassword = this.walletManager.Secret.WalletPassword;
             bool sign = (walletPassword ?? "") != "";
@@ -142,8 +147,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             return transaction;
         }
 
-        // TODO: Register Block signals
-        public void ProcessBlock(Block block)
+        public void ProcessBlock(ChainedHeaderBlock chainedHeaderBlock)
         {
             lock (this.lockObj)
             {
@@ -151,10 +155,26 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     return;
 
                 // If a consolidation transaction comes through, remove our progress.
+                foreach (Transaction transaction in chainedHeaderBlock.Block.Transactions)
+                {
+                    if (transaction.Inputs.Count == WithdrawalTransactionBuilder.MaxInputs
+                        && transaction.Outputs.Count == 1
+                        && transaction.Outputs[0].ScriptPubKey == this.settings.MultiSigAddress.ScriptPubKey)
+                    {
+                        this.partialTransaction = null;
+                        this.fullySigned = false;
+                        this.signingInProgress = false;
+                        return;
+                    }
+                }
 
                 // Check that the consolidation transaction that we've built is still valid. In case of a reorg.
-
-                throw new NotImplementedException();
+                if (!this.walletManager.ValidateTransaction(this.partialTransaction))
+                {
+                    this.partialTransaction = null;
+                    this.fullySigned = false;
+                    this.signingInProgress = false;
+                }
             }
         }
     }
