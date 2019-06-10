@@ -394,7 +394,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 BitcoinAddress address = (new Key()).PubKey.Hash.GetAddress(this.network);
 
-                var deposit = new Deposit(0, new Money(160m, MoneyUnit.BTC), address.ToString(), cctsInstanceOne.NextMatureDepositHeight, 1);
+                var deposit = new Deposit(1, new Money(160m, MoneyUnit.BTC), address.ToString(), cctsInstanceOne.NextMatureDepositHeight, 1);
 
                 MaturedBlockDepositsModel[] blockDeposits = new[] { new MaturedBlockDepositsModel(
                     new MaturedBlockInfoModel() {
@@ -493,8 +493,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
                 BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
 
-                var deposit1 = new Deposit(0, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
-                var deposit2 = new Deposit(1, new Money(60m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                var deposit1 = new Deposit(1, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                var deposit2 = new Deposit(2, new Money(60m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
 
                 MaturedBlockDepositsModel[] blockDeposits = new[] { new MaturedBlockDepositsModel(
                     new MaturedBlockInfoModel() {
@@ -510,30 +510,20 @@ namespace Stratis.Features.FederatedPeg.Tests
                 var requester = new PartialTransactionRequester(this.loggerFactory, crossChainTransferStore, this.asyncProvider,
                     this.nodeLifetime, this.federatedPegBroadcaster, this.ibdState, this.federationWalletManager);
 
-                var peerEndPoint = new IPEndPoint(System.Net.IPAddress.Parse("1.2.3.4"), 5);
-                INetworkPeer peer = Substitute.For<INetworkPeer>();
-                peer.RemoteSocketAddress.Returns(peerEndPoint.Address);
-                peer.RemoteSocketPort.Returns(peerEndPoint.Port);
-                peer.PeerEndPoint.Returns(peerEndPoint);
-                peer.IsConnected.Returns(true);
-
-                var peers = new NetworkPeerCollection();
-                peers.Add(peer);
-
-                this.federatedPegSettings.FederationNodeIpEndPoints.Returns(new[] { peerEndPoint });
-
-                this.connectionManager.ConnectedPeers.Returns(peers);
-
                 requester.Start();
 
                 Thread.Sleep(2000);
 
                 // Receives all of the requests. We broadcast multiple at a time.
-                peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
-                    o.DepositId == 0 && o.PartialTransaction.GetHash() == transactions[0].PartialTransaction.GetHash())).GetAwaiter().GetResult();
+                this.federatedPegBroadcaster.Received().BroadcastAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
+                        o.DepositId == 1 && o.PartialTransaction.GetHash() ==
+                        transactions[0].PartialTransaction.GetHash()))
+                    .GetAwaiter().GetResult();
 
-                peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
-                    o.DepositId == 1 && o.PartialTransaction.GetHash() == transactions[1].PartialTransaction.GetHash())).GetAwaiter().GetResult();
+                this.federatedPegBroadcaster.Received().BroadcastAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
+                        o.DepositId == 2 && o.PartialTransaction.GetHash() ==
+                        transactions[1].PartialTransaction.GetHash()))
+                    .GetAwaiter().GetResult();
             }
         }
 
