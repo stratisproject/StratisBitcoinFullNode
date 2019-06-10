@@ -885,7 +885,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <returns><c>True</c> if UTXO's are valid and <c>false</c> otherwise.</returns>
         private bool TransactionIsSpendingUnspentUTXOs(Transaction transaction, List<Coin> coins = null)
         {
-            // All the input UTXO's should be present in spending details of the multi-sig address.
+            // All the input UTXO's should be present but not be spent by anything yet.
             foreach (TxIn input in transaction.Inputs)
             {
                 if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData transactionData))
@@ -965,10 +965,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             lock (this.lockObject)
             {
-                // All the input UTXO's should be present in spending details of the multi-sig address.
                 List<Coin> coins = checkSignature ? new List<Coin>() : null;
 
-                // Verify that the transaction has valid UTXOs.
+                // Verify that the transaction's UTXOs aren't used yet.
                 if (!this.TransactionIsSpendingUnspentUTXOs(transaction, coins))
                     return false;
 
