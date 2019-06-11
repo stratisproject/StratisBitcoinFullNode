@@ -14,8 +14,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 {
     public class BuildWithdrawalTransactionResult
     {
+        /// <summary>Set if the transaction was successfully built.</summary>
         public bool Success => this.Transaction != null;
+
+        /// <summary>Set if the transaction can't be retried - e.g. not simply a balance issue.</summary>
         public bool Reject { get; set; }
+
+        /// <summary>The transaction that was built or <c>null</c> otherwise.</summary>
         public Transaction Transaction { get; set; }
     }
 
