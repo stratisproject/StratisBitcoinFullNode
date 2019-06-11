@@ -101,9 +101,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                         break;
 
                     default:
-                        switch (transactionBroadCastEntry.MempoolError.ConsensusError.Code)
+                        switch (transactionBroadCastEntry.MempoolError.ConsensusError?.Code)
                         {
-                            // Add any exceptions here.
+                            // Don't act on new MempoolError() raised by MempoolValidator.CheckAllInputs.
+                            case null:
+                                break;
+
                             default:
                                 // Includes "p2pkh-to-contract".
                                 this.logger.LogWarning("Deposit ID '{0}' rejected due to '{1}'.", @event.Transfer.DepositTransactionId, transactionBroadCastEntry.ErrorMessage);
