@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
 using DBreeze.Utils;
+using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin;
@@ -1052,8 +1053,15 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 return partialTransfers;
             }
 
-            return partialTransfers.OrderBy(t => this.EarliestOutput(t.PartialTransaction), Comparer<OutPoint>.Create((x, y) =>
-                ((FederationWalletManager)this.federationWalletManager).CompareOutpoints(x, y))).ToArray();
+            // When sorting, Suspended transactions will have null PartialTransactions. Just put them last in the order they're in.
+            // TODO: This is gross, fix.
+            IEnumerable<ICrossChainTransfer> suspended = partialTransfers.Where(x => x.Status == CrossChainTransferStatus.Suspended);
+            IEnumerable<ICrossChainTransfer> notSuspended = partialTransfers.Where(x => x.Status != CrossChainTransferStatus.Suspended);
+
+            return notSuspended.OrderBy(t => this.EarliestOutput(t.PartialTransaction), Comparer<OutPoint>.Create((x, y) =>
+                ((FederationWalletManager)this.federationWalletManager).CompareOutpoints(x, y)))
+                .Concat(suspended)
+                .ToArray();
         }
 
         /// <inheritdoc />
