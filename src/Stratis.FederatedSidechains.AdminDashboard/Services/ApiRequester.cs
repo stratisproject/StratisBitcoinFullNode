@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using RestSharp;
+using Stratis.FederatedSidechains.AdminDashboard.Entities;
 using Stratis.FederatedSidechains.AdminDashboard.Helpers;
 
 namespace Stratis.FederatedSidechains.AdminDashboard.Services
