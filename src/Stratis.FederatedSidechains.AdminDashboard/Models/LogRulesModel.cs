@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Stratis.FederatedSidechains.AdminDashboard.Entities;
 using Stratis.FederatedSidechains.AdminDashboard.Helpers;

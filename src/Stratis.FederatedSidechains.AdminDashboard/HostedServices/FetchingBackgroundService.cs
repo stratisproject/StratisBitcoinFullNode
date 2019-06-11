@@ -21,6 +21,9 @@ using Stratis.FederatedSidechains.AdminDashboard.Settings;
 
 namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
 {
+    /// <summary>
+    /// This Background Service fetch APIs an cache content
+    /// </summary>
     public class FetchingBackgroundService : IHostedService, IDisposable
     {
         private readonly DefaultEndpointsSettings defaultEndpointsSettings;
@@ -211,6 +214,9 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// When the service is disposed, the timer is disposed too
+        /// </summary>
         public void Dispose()
         {
             this.dataRetrieverTimer?.Dispose();
