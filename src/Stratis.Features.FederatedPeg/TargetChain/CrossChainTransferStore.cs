@@ -331,6 +331,50 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <inheritdoc />
+        public void RejectTransfer(ICrossChainTransfer crossChainTransfer)
+        {
+            Guard.Assert(crossChainTransfer.Status == CrossChainTransferStatus.FullySigned);
+
+            lock (this.lockObj)
+            {
+                var tracker = new StatusChangeTracker();
+
+                tracker.SetTransferStatus(crossChainTransfer, CrossChainTransferStatus.Rejected);
+
+                this.federationWalletManager.Synchronous(() =>
+                {
+                    Guard.Assert(this.Synchronize());
+
+                    using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
+                    {
+                        try
+                        {
+                            dbreezeTransaction.SynchronizeTables(transferTableName, commonTableName);
+
+                            // Update new or modified transfers.
+                            foreach (KeyValuePair<ICrossChainTransfer, CrossChainTransferStatus?> kv in tracker)
+                                this.PutTransfer(dbreezeTransaction, kv.Key);
+
+                            dbreezeTransaction.Commit();
+                            this.UpdateLookups(tracker);
+
+                            foreach (KeyValuePair<ICrossChainTransfer, CrossChainTransferStatus?> kv in tracker)
+                                this.federationWalletManager.RemoveWithdrawalTransactions(kv.Key.DepositTransactionId);
+
+                            this.federationWalletManager.SaveWallet();
+                        }
+                        catch (Exception err)
+                        {
+                            this.logger.LogError("An error occurred when processing deposits {0}", err);
+
+                            this.RollbackAndThrowTransactionError(dbreezeTransaction, err, "REJECT_ERROR");
+                        }
+                    }
+                });
+            }
+        }
+
+        /// <inheritdoc />
         public Task<RecordLatestMatureDepositsResult> RecordLatestMatureDepositsAsync(IList<MaturedBlockDepositsModel> maturedBlockDeposits)
         {
             Guard.NotNull(maturedBlockDeposits, nameof(maturedBlockDeposits));
