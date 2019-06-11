@@ -68,7 +68,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 {
                     KeyId p2pkhParams = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(recipient.ScriptPubKey);
 
-                    if (this.stateRepositoryRoot.GetAccountState(new uint160(p2pkhParams.ToBytes())) != null)
+                    if (p2pkhParams != null && this.stateRepositoryRoot.GetAccountState(new uint160(p2pkhParams.ToBytes())) != null)
                     {
                         return new BuildWithdrawalTransactionResult() { Reject = true };
                     }

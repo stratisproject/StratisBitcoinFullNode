@@ -24,6 +24,7 @@ using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
 using Stratis.Sidechains.Networks;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Features.FederatedPeg.Tests
 {
@@ -48,6 +49,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         protected IFederationWalletSyncManager federationWalletSyncManager;
         protected IFederationWalletTransactionHandler FederationWalletTransactionHandler;
         protected IWithdrawalTransactionBuilder withdrawalTransactionBuilder;
+        protected IStateRepositoryRoot stateRepositoryRoot;
         protected DataFolder dataFolder;
         protected IWalletFeePolicy walletFeePolicy;
         protected IAsyncProvider asyncProvider;
@@ -215,7 +217,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             // TODO: The transaction builder, cross-chain store and fed wallet tx handler should be tested individually.
             this.FederationWalletTransactionHandler = new FederationWalletTransactionHandler(this.loggerFactory, this.federationWalletManager, this.walletFeePolicy, this.network, this.federatedPegSettings);
-            this.withdrawalTransactionBuilder = new WithdrawalTransactionBuilder(this.loggerFactory, this.network, this.federationWalletManager, this.FederationWalletTransactionHandler, this.federatedPegSettings);
+            this.stateRepositoryRoot = Substitute.For<IStateRepositoryRoot>();
+            this.withdrawalTransactionBuilder = new WithdrawalTransactionBuilder(this.loggerFactory, this.network, this.federationWalletManager, this.FederationWalletTransactionHandler, this.federatedPegSettings, this.stateRepositoryRoot);
 
             var storeSettings = (StoreSettings)FormatterServices.GetUninitializedObject(typeof(StoreSettings));
 
