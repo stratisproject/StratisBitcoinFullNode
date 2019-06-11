@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 
         public State State { get; set; }
 
-        public string ErrorMessage => this.MempoolError?.ConsensusError?.Message ?? this.MempoolError?.Code ?? "Failed";
+        public string ErrorMessage => (this.MempoolError == null) ? string.Empty : (this.MempoolError.ConsensusError?.Message ?? this.MempoolError.Code ?? "Failed");
 
         public MempoolError MempoolError { get; set; }
 
