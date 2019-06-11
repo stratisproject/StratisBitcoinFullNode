@@ -90,7 +90,28 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
             if (transactionBroadCastEntry?.State == State.CantBroadcast)
             {
-                this.store.RejectTransfer(@event.Transfer);
+                switch (transactionBroadCastEntry.MempoolError.RejectCode)
+                {
+                    // Can recover from inputs already spent.
+                    case MempoolErrors.RejectDuplicate:
+                        break;
+
+                    // Duplicates should not make the transfer fail.
+                    case MempoolErrors.RejectAlreadyKnown:
+                        break;
+
+                    default:
+                        switch (transactionBroadCastEntry.MempoolError.ConsensusError.Code)
+                        {
+                            // Add any exceptions here.
+                            default:
+                                // Includes "p2pkh-to-contract".
+                                this.logger.LogWarning("Deposit ID '{0}' rejected due to '{1}'.", @event.Transfer.DepositTransactionId, transactionBroadCastEntry.ErrorMessage);
+                                this.store.RejectTransfer(@event.Transfer);
+                                break;
+                        }
+                        break;
+                }
             }
         }
 
