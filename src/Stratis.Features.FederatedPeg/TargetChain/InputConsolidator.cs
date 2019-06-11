@@ -166,7 +166,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     TransactionFee = ConsolidationFee,
                     SelectedInputs = selectedInputs.Select(u => u.ToOutPoint()).ToList(),
                     AllowOtherInputs = false,
-                    IsConsolidatingTransaction = true
+                    IsConsolidatingTransaction = true,
+                    Time = (uint?) selectedInputs.First().Transaction.CreationTime.ToUnixTimeSeconds() // TODO: Confirm this is the best answer
                 };
 
                 Transaction transaction = this.transactionHandler.BuildTransaction(multiSigContext);
