@@ -12,6 +12,7 @@ using NBitcoin;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Events;
@@ -1306,6 +1307,37 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 }
 
                 return result;
+            }
+        }
+
+        /// <summary>
+        /// Determines if a mempool error would NOT be recoverable by waiting or rebuilding the transaction.
+        /// </summary>
+        /// <param name="mempoolError">The error to evailuate.</param>
+        /// <returns><c>true</c> if its irrecoverble or <c>false</c> otherwise.</returns>
+        public static bool IsMempoolErrorRecoverable(MempoolError mempoolError)
+        {
+            switch (mempoolError.RejectCode)
+            {
+                // Can recover from inputs already spent.
+                case MempoolErrors.RejectDuplicate:
+                    return true;
+
+                // Duplicates should not make the transfer fail.
+                case MempoolErrors.RejectAlreadyKnown:
+                    return true;
+
+                default:
+                    switch (mempoolError.ConsensusError?.Code)
+                    {
+                        // Don't act on new MempoolError() raised by MempoolValidator.CheckAllInputs.
+                        case null:
+                            return true;
+
+                        default:
+                            // Includes "p2pkh-to-contract".
+                            return false;
+                    }
             }
         }
 

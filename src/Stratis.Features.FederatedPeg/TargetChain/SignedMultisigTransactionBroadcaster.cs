@@ -88,33 +88,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             // Check if transaction was actually added to a mempool.
             TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(@event.Transfer.PartialTransaction.GetHash());
 
-            if (transactionBroadCastEntry?.State == State.CantBroadcast)
+            if (transactionBroadCastEntry?.State == State.CantBroadcast && !CrossChainTransferStore.IsMempoolErrorRecoverable(transactionBroadCastEntry.MempoolError))
             {
-                switch (transactionBroadCastEntry.MempoolError.RejectCode)
-                {
-                    // Can recover from inputs already spent.
-                    case MempoolErrors.RejectDuplicate:
-                        break;
-
-                    // Duplicates should not make the transfer fail.
-                    case MempoolErrors.RejectAlreadyKnown:
-                        break;
-
-                    default:
-                        switch (transactionBroadCastEntry.MempoolError.ConsensusError?.Code)
-                        {
-                            // Don't act on new MempoolError() raised by MempoolValidator.CheckAllInputs.
-                            case null:
-                                break;
-
-                            default:
-                                // Includes "p2pkh-to-contract".
-                                this.logger.LogWarning("Deposit ID '{0}' rejected due to '{1}'.", @event.Transfer.DepositTransactionId, transactionBroadCastEntry.ErrorMessage);
-                                this.store.RejectTransfer(@event.Transfer);
-                                break;
-                        }
-                        break;
-                }
+                this.logger.LogWarning("Deposit ID '{0}' rejected due to '{1}'.", @event.Transfer.DepositTransactionId, transactionBroadCastEntry.ErrorMessage);
+                this.store.RejectTransfer(@event.Transfer);
             }
         }
 
