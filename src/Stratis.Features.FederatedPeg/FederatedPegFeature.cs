@@ -191,7 +191,6 @@ namespace Stratis.Features.FederatedPeg
             catch (Exception e)
             {
                 this.logger.LogError(e.ToString());
-                throw;
             }
         }
 
@@ -223,18 +222,27 @@ namespace Stratis.Features.FederatedPeg
                 benchLog.AppendLine();
             }
 
-            List<WithdrawalModel> pendingWithdrawals = this.withdrawalHistoryProvider.GetPending();
+            try
+            {
+                List<WithdrawalModel> pendingWithdrawals = this.withdrawalHistoryProvider.GetPending();
 
-            if (pendingWithdrawals.Count > 0)
+                if (pendingWithdrawals.Count > 0)
+                {
+                    benchLog.AppendLine("--- Pending Withdrawals ---");
+                    foreach (WithdrawalModel withdrawal in pendingWithdrawals.Take(PendingToDisplay))
+                        benchLog.AppendLine(withdrawal.ToString());
+
+                    if (pendingWithdrawals.Count > PendingToDisplay)
+                        benchLog.AppendLine($"And {pendingWithdrawals.Count - PendingToDisplay} more...");
+
+                    benchLog.AppendLine();
+                }
+            }
+            catch (Exception exception)
             {
                 benchLog.AppendLine("--- Pending Withdrawals ---");
-                foreach (WithdrawalModel withdrawal in pendingWithdrawals.Take(PendingToDisplay))
-                    benchLog.AppendLine(withdrawal.ToString());
-
-                if (pendingWithdrawals.Count > PendingToDisplay)
-                    benchLog.AppendLine($"And {pendingWithdrawals.Count - PendingToDisplay} more...");
-
-                benchLog.AppendLine();
+                benchLog.AppendLine("Failed to retrieve data");
+                this.logger.LogDebug("Exception occurred while getting pending withdrawals: '{0}'.", exception.ToString());
             }
 
             List<WithdrawalModel> completedWithdrawals = this.withdrawalHistoryProvider.GetHistory(TransfersToDisplay);
