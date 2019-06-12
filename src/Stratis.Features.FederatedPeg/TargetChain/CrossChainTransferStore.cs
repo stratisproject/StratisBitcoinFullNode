@@ -1345,18 +1345,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     return true;
 
                 default:
-                    {
-                        switch (mempoolError.ConsensusError?.Code)
-                        {
-                            // Don't act on new MempoolError() raised by MempoolValidator.CheckAllInputs.
-                            case null:
-                                return true;
-
-                            default:
-                                // Includes "p2pkh-to-contract".
-                                return false;
-                        }
-                    }
+                    return mempoolError.ConsensusError == null;
             }
         }
 
