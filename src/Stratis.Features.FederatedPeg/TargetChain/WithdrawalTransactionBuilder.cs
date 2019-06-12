@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Wallet;
 using Stratis.SmartContracts.Core.State;
@@ -48,6 +49,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             IFederatedPegSettings federatedPegSettings,
             IStateRepositoryRoot stateRepositoryRoot = null)
         {
+            if (!federatedPegSettings.IsMainChain)
+            {
+                Guard.NotNull(stateRepositoryRoot, nameof(stateRepositoryRoot));
+            }
+
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.federationWalletManager = federationWalletManager;

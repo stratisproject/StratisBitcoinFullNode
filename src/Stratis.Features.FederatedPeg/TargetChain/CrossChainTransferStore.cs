@@ -475,9 +475,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                                     transaction = res.Transaction;
 
-                                    if (transaction != null)
+                                    if (res.Success)
                                     {
-
                                         // Reserve the UTXOs before building the next transaction.
                                         walletUpdated |= this.federationWalletManager.ProcessTransaction(transaction);
 
@@ -495,16 +494,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                             recordDepositResult.WithDrawalTransactions.Add(transaction);
                                         }
                                     }
+                                    else if (res.Reject)
+                                    {
+                                        status = CrossChainTransferStatus.Rejected;
+                                    }
                                     else
                                     {
-                                        if (!res.Reject)
-                                        {
-                                            haveSuspendedTransfers = true;
-                                        }
-                                        else
-                                        {
-                                            status = CrossChainTransferStatus.Rejected;
-                                        }
+                                        haveSuspendedTransfers = true;
                                     }
                                 }
 
@@ -1328,15 +1324,17 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     return true;
 
                 default:
-                    switch (mempoolError.ConsensusError?.Code)
                     {
-                        // Don't act on new MempoolError() raised by MempoolValidator.CheckAllInputs.
-                        case null:
-                            return true;
+                        switch (mempoolError.ConsensusError?.Code)
+                        {
+                            // Don't act on new MempoolError() raised by MempoolValidator.CheckAllInputs.
+                            case null:
+                                return true;
 
-                        default:
-                            // Includes "p2pkh-to-contract".
-                            return false;
+                            default:
+                                // Includes "p2pkh-to-contract".
+                                return false;
+                        }
                     }
             }
         }

@@ -203,8 +203,6 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.AddFunding();
             this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
 
-            MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
-
             using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
                 crossChainTransferStore.Initialize();
