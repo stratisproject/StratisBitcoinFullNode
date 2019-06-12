@@ -18,14 +18,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 {
     public class InputConsolidator : IInputConsolidator
     {
-        public static readonly Money ConsolidationFee = Money.Coins(0.0025m); // 50 inputs. This is roughly half the withdrawal fee. TODO: Consider this number
+        public static readonly Money ConsolidationFee = Money.Coins(0.005m); // 50 inputs. This is roughly half the same as fee on withdrawals
 
         private readonly IFederatedPegBroadcaster federatedPegBroadcaster;
         private readonly IFederationWalletTransactionHandler transactionHandler;
         private readonly IFederationWalletManager walletManager;
         private readonly IBroadcasterManager broadcasterManager;
         private readonly IFederatedPegSettings settings;
-        private readonly ISignals signals;
         private readonly ILogger logger;
         private readonly Network network;
 
