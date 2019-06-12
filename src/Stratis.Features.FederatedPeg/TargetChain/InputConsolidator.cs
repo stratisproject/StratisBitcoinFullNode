@@ -63,33 +63,38 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <inheritdoc />
         public void StartConsolidation(WalletNeedsConsolidation trigger)
         {
-            lock (this.lockObj)
+            // TODO: This is feral is there a better way
+
+            Task.Run(() =>
             {
-                // Has done it's work and broadcasted the tx to mempool. Just need to be patient now.
-                if (this.signingInProgress && this.fullySigned)
-                    return;
-
-                // Re-trigger signing rounds if we're hitting this a second time and we're not fully signed yet.
-                if (this.signingInProgress)
+                lock (this.lockObj)
                 {
+                    // Has done it's work and broadcasted the tx to mempool. Just need to be patient now.
+                    if (this.signingInProgress && this.fullySigned)
+                        return;
+
+                    // Re-trigger signing rounds if we're hitting this a second time and we're not fully signed yet.
+                    if (this.signingInProgress)
+                    {
+                        this.BroadcastPartial();
+                        return;
+                    }
+
+                    this.logger.LogInformation("Building consolidation transaction for federation wallet inputs.");
+
+                    // Build condensing transaction in deterministic way
+                    this.PartialTransaction = this.BuildConsolidatingTransaction();
+
+                    // Something went wrong building the transaction.
+                    if (this.PartialTransaction == null)
+                        return;
+
+                    this.signingInProgress = true;
+
+                    // Send it around to be signed
                     this.BroadcastPartial();
-                    return;
                 }
-
-                this.logger.LogInformation("Building consolidation transaction for federation wallet inputs.");
-
-                // Build condensing transaction in deterministic way
-                this.PartialTransaction = this.BuildConsolidatingTransaction();
-
-                // Something went wrong building the transaction.
-                if (this.PartialTransaction == null)
-                    return;
-
-                this.signingInProgress = true;
-
-                // Send it around to be signed
-                this.BroadcastPartial();
-            }
+            });
         }
 
         /// <summary>
