@@ -93,6 +93,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// </summary>
         private void BroadcastPartial()
         {
+            this.logger.LogDebug("Broadcasting partial consolidation transaction to federation.");
             RequestPartialTransactionPayload payload = new RequestPartialTransactionPayload(RequestPartialTransactionPayload.ConsolidationDepositId).AddPartial(this.PartialTransaction);
             this.federatedPegBroadcaster.BroadcastAsync(payload).GetAwaiter().GetResult();
         }

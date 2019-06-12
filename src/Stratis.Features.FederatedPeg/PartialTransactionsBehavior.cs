@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -139,12 +140,19 @@ namespace Stratis.Features.FederatedPeg
 
         private async Task HandleConsolidationTransactionRequest(INetworkPeer peer, RequestPartialTransactionPayload payload)
         {
-            ConsolidationSignatureResult result = this.inputConsolidator.CombineSignatures(payload.PartialTransaction);
-
-            if (result.Signed)
+            try
             {
-                this.logger.LogDebug("Signed consolidating transaction to produce {0} from {1}", result.TransactionResult.GetHash(), payload.PartialTransaction.GetHash());
-                await this.BroadcastAsync(payload.AddPartial(result.TransactionResult));
+                ConsolidationSignatureResult result = this.inputConsolidator.CombineSignatures(payload.PartialTransaction);
+
+                if (result.Signed)
+                {
+                    this.logger.LogDebug("Signed consolidating transaction to produce {0} from {1}", result.TransactionResult.GetHash(), payload.PartialTransaction.GetHash());
+                    await this.BroadcastAsync(payload.AddPartial(result.TransactionResult));
+                }
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError(e.ToString());
             }
         }
     }
