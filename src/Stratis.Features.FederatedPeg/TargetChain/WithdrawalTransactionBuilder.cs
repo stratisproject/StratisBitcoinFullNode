@@ -4,10 +4,8 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Wallet;
-using Stratis.SmartContracts.Core.State;
 using Recipient = Stratis.Features.FederatedPeg.Wallet.Recipient;
 using TransactionBuildContext = Stratis.Features.FederatedPeg.Wallet.TransactionBuildContext;
 
@@ -92,10 +90,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 {
                     this.logger.LogError("Could not create transaction for deposit {0}: {1}", depositId, error.Message);
                 }
-
-                this.logger.LogTrace("(-)[FAIL]");
-                return null;
             }
+
+            this.logger.LogTrace("(-)[FAIL]");
+            return null;
         }
     }
 }
