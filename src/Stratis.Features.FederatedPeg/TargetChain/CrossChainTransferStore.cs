@@ -1328,10 +1328,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <summary>
-        /// Determines if a mempool error would NOT be recoverable by waiting or rebuilding the transaction.
+        /// Determines if a mempool error would be recoverable by waiting or rebuilding the transaction.
         /// </summary>
         /// <param name="mempoolError">The error to evaluate.</param>
-        /// <returns><c>true</c> if its irrecoverble or <c>false</c> otherwise.</returns>
+        /// <returns><c>True</c> if its recoverble or <c>false</c> otherwise.</returns>
         public static bool IsMempoolErrorRecoverable(MempoolError mempoolError)
         {
             switch (mempoolError.RejectCode)
