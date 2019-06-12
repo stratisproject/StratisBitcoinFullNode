@@ -30,15 +30,18 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
         private readonly IDistributedCache distributedCache;
         private readonly IHubContext<DataUpdaterHub> updaterHub;
         private readonly ILogger<FetchingBackgroundService> logger;
+        private readonly ApiRequester apiRequester;
+
         private bool successfullyBuilt;
         private Timer dataRetrieverTimer;
 
-        public FetchingBackgroundService(IDistributedCache distributedCache, IOptions<DefaultEndpointsSettings> defaultEndpointsSettings, IHubContext<DataUpdaterHub> hubContext, ILogger<FetchingBackgroundService> logger)
+        public FetchingBackgroundService(IDistributedCache distributedCache, IOptions<DefaultEndpointsSettings> defaultEndpointsSettings, IHubContext<DataUpdaterHub> hubContext, ILogger<FetchingBackgroundService> logger, ApiRequester apiRequester)
         {
             this.defaultEndpointsSettings = defaultEndpointsSettings.Value;
             this.distributedCache = distributedCache;
             this.updaterHub = hubContext;
             this.logger = logger;
+            this.apiRequester = apiRequester;
         }
 
         /// <summary>
@@ -63,23 +66,23 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
             this.logger.LogInformation($"Refresh the Dashboard Data");
 
             #region Stratis Node
-            ApiResponse stratisStatus = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Node/status");
-            ApiResponse stratisLogRules = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Node/logrules");
-            ApiResponse stratisRawmempool = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Mempool/getrawmempool");
-            ApiResponse stratisBestBlock = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Consensus/getbestblockhash");
-            ApiResponse stratisWalletBalances = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/FederationWallet/balance");
-            ApiResponse stratisWalletHistory = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/FederationWallet/history", "maxEntriesToReturn=30");
-            ApiResponse stratisFederationInfo = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/FederationGateway/info");
+            ApiResponse stratisStatus = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Node/status");
+            ApiResponse stratisLogRules = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Node/logrules");
+            ApiResponse stratisRawmempool = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Mempool/getrawmempool");
+            ApiResponse stratisBestBlock = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Consensus/getbestblockhash");
+            ApiResponse stratisWalletBalances = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/FederationWallet/balance");
+            ApiResponse stratisWalletHistory = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/FederationWallet/history", "maxEntriesToReturn=30");
+            ApiResponse stratisFederationInfo = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/FederationGateway/info");
             #endregion
 
             #region Sidechain Node
-            ApiResponse sidechainStatus = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Node/status");
-            ApiResponse sidechainLogRules = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Node/logrules");
-            ApiResponse sidechainRawmempool = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Mempool/getrawmempool");
-            ApiResponse sidechainBestBlock = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Consensus/getbestblockhash");
-            ApiResponse sidechainWalletBalances = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/FederationWallet/balance");
-            ApiResponse sidechainWalletHistory = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/FederationWallet/history", "maxEntriesToReturn=30");
-            ApiResponse sidechainFederationInfo = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/FederationGateway/info");
+            ApiResponse sidechainStatus = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Node/status");
+            ApiResponse sidechainLogRules = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Node/logrules");
+            ApiResponse sidechainRawmempool = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Mempool/getrawmempool");
+            ApiResponse sidechainBestBlock = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Consensus/getbestblockhash");
+            ApiResponse sidechainWalletBalances = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/FederationWallet/balance");
+            ApiResponse sidechainWalletHistory = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/FederationWallet/history", "maxEntriesToReturn=30");
+            ApiResponse sidechainFederationInfo = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/FederationGateway/info");
             #endregion
 
             var stratisPeers = new List<Peer>();

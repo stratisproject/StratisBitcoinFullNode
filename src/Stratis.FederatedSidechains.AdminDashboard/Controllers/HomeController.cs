@@ -21,12 +21,14 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
         private readonly IDistributedCache distributedCache;
         private readonly DefaultEndpointsSettings defaultEndpointsSettings;
         private readonly IHubContext<DataUpdaterHub> updaterHub;
+        private readonly ApiRequester apiRequester;
 
-        public HomeController(IDistributedCache distributedCache, IHubContext<DataUpdaterHub> hubContext, IOptions<DefaultEndpointsSettings> defaultEndpointsSettings)
+        public HomeController(IDistributedCache distributedCache, IHubContext<DataUpdaterHub> hubContext, IOptions<DefaultEndpointsSettings> defaultEndpointsSettings, ApiRequester apiRequester)
         {
             this.distributedCache = distributedCache;
             this.defaultEndpointsSettings = defaultEndpointsSettings.Value;
             this.updaterHub = hubContext;
+            this.apiRequester = apiRequester;
         }
 
         /// <summary>
@@ -37,7 +39,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
         [Route("check-federation")]
         public async Task<IActionResult> CheckFederationAsync()
         {
-            ApiResponse getMainchainFederationInfo = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/FederationGateway/info");
+            ApiResponse getMainchainFederationInfo = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/FederationGateway/info");
             if (getMainchainFederationInfo.IsSuccess)
             {
                 return Json(getMainchainFederationInfo.Content.active);
