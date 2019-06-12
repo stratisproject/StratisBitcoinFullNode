@@ -83,6 +83,9 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
             if (!this.collateralChecker.CheckCollateral(federationMember, commitmentHeight))
             {
+                // By rejecting we are avoiding banning a peer that provided that block.
+                context.ValidationContext.RejectUntil = this.dateTime.GetUtcNow() + TimeSpan.FromSeconds(this.collateralCheckBanDurationSeconds);
+
                 this.Logger.LogTrace("(-)[BAD_COLLATERAL]");
                 PoAConsensusErrors.InvalidCollateralAmount.Throw();
             }
