@@ -25,7 +25,11 @@
             <img src="~/images/logo_white.svg" width="30" height="30" class="d-inline-block align-top" alt="Stratis" />
         </a>
         <div class="navbar-text text-white">Stratis Federation Members Dashboard</div>
-        <span class="badge badge-purple ml-auto">Status: <span class="status">@(ViewBag.Status ?? "Warning")</span></span>
+        <div class="navbar-text text-white ml-auto mr-4 small">
+            <img src="~/images/logo_white.svg" width="17" height="17" class="d-inline-block align-top mr-1" alt="Stratis" />
+            <a href="https://stratisplatform.com" target="_blank">stratisplatform.com</a>
+        </div>
+        <span class="badge badge-purple">Status: <span class="status">@(ViewBag.Status ?? "Warning")</span></span>
     </nav>
     <nav class="navbar navbar-light bg-white py-1 fixed-top d-flex align-items-center" style="margin-top:56px;">
         <div class="navbar-text d-inline">
