@@ -32,6 +32,10 @@ body {
     background-color: #F5F9FF;
 }
 
+.navbar.navbar-light.bg-white.fixed-top {
+    margin-top: 56px;
+}
+
 .dropdown-item.active,
 .dropdown-item:active {
     background-color: #1387c9 !important;
