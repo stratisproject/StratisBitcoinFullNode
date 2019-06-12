@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
@@ -60,7 +59,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
         /// <returns><see cref="IActionResult"/>OK on success.</returns>
         [Route(FederationGatewayRouteEndPoint.GetMaturedBlockDeposits)]
         [HttpPost]
-        public IActionResult GetMaturedBlockDepositsAsync([FromBody] MaturedBlockRequestModel blockRequest)
+        public IActionResult GetMaturedBlockDeposits([FromBody] MaturedBlockRequestModel blockRequest)
         {
             Guard.NotNull(blockRequest, nameof(blockRequest));
 

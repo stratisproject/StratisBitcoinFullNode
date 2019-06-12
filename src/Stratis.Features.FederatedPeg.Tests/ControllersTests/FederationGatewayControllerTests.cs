@@ -112,7 +112,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
                 return new ChainedHeaderBlock(new Block(), tip);
             });
 
-            IActionResult result = controller.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(1, 1000));
+            IActionResult result = controller.GetMaturedBlockDeposits(new MaturedBlockRequestModel(1, 1000));
 
             var jsonResult = result as JsonResult;
             var apiResult = jsonResult.Value as ApiResult<List<MaturedBlockDepositsModel>>;
@@ -139,7 +139,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             ChainedHeader earlierBlock = tip.GetAncestor(maturedHeight + 1);
 
             // Mature height = 2 (Chain header height (4) - Minimum deposit confirmations (2))
-            IActionResult result = controller.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(earlierBlock.Height, 1000));
+            IActionResult result = controller.GetMaturedBlockDeposits(new MaturedBlockRequestModel(earlierBlock.Height, 1000));
 
             // Block height (3) > Mature height (2) - returns error message
             var jsonResult = result as JsonResult;
@@ -174,7 +174,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
                 return new ChainedHeaderBlock(new Block(), earlierBlock);
             });
 
-            IActionResult result = controller.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(earlierBlock.Height, 1000));
+            IActionResult result = controller.GetMaturedBlockDeposits(new MaturedBlockRequestModel(earlierBlock.Height, 1000));
 
             result.Should().BeOfType<JsonResult>();
 

@@ -12,7 +12,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
     /// <summary>Rest client for <see cref="FederationGatewayController"/>.</summary>
     public interface IFederationGatewayClient : IRestApiClientBase
     {
-        /// <summary><see cref="FederationGatewayController.GetMaturedBlockDepositsAsync"/></summary>
+        /// <summary><see cref="FederationGatewayController.GetMaturedBlockDeposits"/></summary>
         /// <param name="model">A model containing the block height at which to start checking for matured blocks.</param>
         /// <param name="cancellation">A cancellation token to ensure that the task exists should it take too long.</param>
         /// <returns>An API result class containing a list of matured block deposits from a given height.</returns>
