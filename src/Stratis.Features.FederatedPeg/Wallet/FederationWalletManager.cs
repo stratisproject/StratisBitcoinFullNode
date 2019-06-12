@@ -1074,6 +1074,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             lock (this.lockObject)
             {
+                this.logger.LogDebug("Validating consolidating transaction.");
+
                 List<Coin> coins = checkSignature ? new List<Coin>() : null;
 
                 // Verify that the transaction's UTXOs aren't used yet.
