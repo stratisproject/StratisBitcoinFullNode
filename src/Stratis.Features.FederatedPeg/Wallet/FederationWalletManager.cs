@@ -992,16 +992,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
             foreach (TxIn input in transaction.Inputs)
             {
                 if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData transactionData))
-                {
-                    this.logger.LogDebug(input.PrevOut.Hash + "not found");
                     return false;
-                }
 
                 if (transactionData.SpendingDetails != null)
-                {
-                    this.logger.LogDebug(transactionData.Id + "is already spent.");
                     return false;
-                }
 
                 coins?.Add(new Coin(transactionData.Id, (uint)transactionData.Index, transactionData.Amount, transactionData.ScriptPubKey));
             }
@@ -1072,12 +1066,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public bool ValidateConsolidatingTransaction(Transaction transaction, bool checkSignature = false)
         {
-            this.logger.LogDebug("Validating consolidating transaction pre-lock");
-
             lock (this.lockObject)
             {
-                this.logger.LogDebug("Validating consolidating transaction.");
-
                 List<Coin> coins = checkSignature ? new List<Coin>() : null;
 
                 // Verify that the transaction's UTXOs aren't used yet.
@@ -1094,7 +1084,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         // Trace the reason validation failed. Note that failure here doesn't mean an error necessarily. Just that the transaction is not fully signed.
                         foreach (TransactionPolicyError transactionPolicyError in errors)
                         {
-                            this.logger.LogInformation("TransactionBuilder.Verify FAILED - {0}", transactionPolicyError.ToString());
+                            this.logger.LogDebug("TransactionBuilder.Verify FAILED - {0}", transactionPolicyError.ToString());
                         }
 
                         return false;
