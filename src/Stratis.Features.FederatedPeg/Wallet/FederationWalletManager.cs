@@ -889,10 +889,16 @@ namespace Stratis.Features.FederatedPeg.Wallet
             foreach (TxIn input in transaction.Inputs)
             {
                 if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData transactionData))
+                {
+                    this.logger.LogDebug(input.PrevOut.Hash + "not found");
                     return false;
+                }
 
                 if (transactionData.SpendingDetails != null)
+                {
+                    this.logger.LogDebug(transactionData.Id + "is already spent.");
                     return false;
+                }
 
                 coins?.Add(new Coin(transactionData.Id, (uint)transactionData.Index, transactionData.Amount, transactionData.ScriptPubKey));
             }

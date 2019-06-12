@@ -197,68 +197,74 @@ namespace Stratis.Features.FederatedPeg
         [NoTrace]
         private string CollectStats()
         {
-            StringBuilder benchLog = new StringBuilder();
-            benchLog.AppendLine();
-            benchLog.AppendLine("====== Federation Wallet ======");
+            this.logger.LogDebug("CollectStats");
 
-            (Money ConfirmedAmount, Money UnConfirmedAmount) balances = this.federationWalletManager.GetSpendableAmount();
-            bool isFederationActive = this.federationWalletManager.IsFederationWalletActive();
-            benchLog.AppendLine("Federation Wallet: ".PadRight(LoggingConfiguration.ColumnLength)
-                                + " Confirmed balance: " + balances.ConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)
-                                + " Reserved for withdrawals: " + balances.UnConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)
-                                + " Federation Status: " + (isFederationActive ? "Active" : "Inactive"));
-            benchLog.AppendLine();
+            // TODO: These changes are temporary for debugging.
 
-            if (!isFederationActive)
+            try
             {
-                var apiSettings = (ApiSettings)this.fullNode.Services.ServiceProvider.GetService(typeof(ApiSettings));
-
-                benchLog.AppendLine("".PadRight(59, '=') + " W A R N I N G " + "".PadRight(59, '='));
+                StringBuilder benchLog = new StringBuilder();
                 benchLog.AppendLine();
-                benchLog.AppendLine("This federation node is not enabled. You will not be able to store or participate in signing of transactions until you enable it.");
-                benchLog.AppendLine("If not done previously, please enable your federation node using " + $"{apiSettings.ApiUri}/api/FederationWallet/{FederationWalletRouteEndPoint.EnableFederation}.");
+                benchLog.AppendLine("====== Federation Wallet ======");
+
+                (Money ConfirmedAmount, Money UnConfirmedAmount) balances = this.federationWalletManager.GetSpendableAmount();
+                bool isFederationActive = this.federationWalletManager.IsFederationWalletActive();
+                benchLog.AppendLine("Federation Wallet: ".PadRight(LoggingConfiguration.ColumnLength)
+                                    + " Confirmed balance: " + balances.ConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)
+                                    + " Reserved for withdrawals: " + balances.UnConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)
+                                    + " Federation Status: " + (isFederationActive ? "Active" : "Inactive"));
                 benchLog.AppendLine();
-                benchLog.AppendLine("".PadRight(133, '='));
-                benchLog.AppendLine();
-            }
 
-            List<WithdrawalModel> pendingWithdrawals = this.withdrawalHistoryProvider.GetPending();
+                if (!isFederationActive)
+                {
+                    var apiSettings = (ApiSettings)this.fullNode.Services.ServiceProvider.GetService(typeof(ApiSettings));
 
-            Transaction consolidationPartial = this.inputConsolidator.PartialTransaction;
-            if (consolidationPartial != null)
-            {
-                benchLog.AppendLine("--- Consolidation Transaction ---");
-                benchLog.Append(
-                        string.Format("Tran#={0} TotalOut={1,12} Signatures=({2}/{3})",
-                        consolidationPartial.ToString().Substring(0, 6),
-                        consolidationPartial.TotalOut.ToString(),
-                        consolidationPartial.GetSignatureCount(this.network),
-                        this.federatedPegSettings.MultiSigM
-                    )
-                );
-                benchLog.AppendLine();
-            }
+                    benchLog.AppendLine("".PadRight(59, '=') + " W A R N I N G " + "".PadRight(59, '='));
+                    benchLog.AppendLine();
+                    benchLog.AppendLine("This federation node is not enabled. You will not be able to store or participate in signing of transactions until you enable it.");
+                    benchLog.AppendLine("If not done previously, please enable your federation node using " + $"{apiSettings.ApiUri}/api/FederationWallet/{FederationWalletRouteEndPoint.EnableFederation}.");
+                    benchLog.AppendLine();
+                    benchLog.AppendLine("".PadRight(133, '='));
+                    benchLog.AppendLine();
+                }
 
-            if (pendingWithdrawals.Count > 0)
-            {
-                benchLog.AppendLine("--- Pending Withdrawals ---");
-                foreach (WithdrawalModel withdrawal in pendingWithdrawals)
-                    benchLog.AppendLine(withdrawal.ToString());
-                benchLog.AppendLine();
-            }
+                List<WithdrawalModel> pendingWithdrawals = this.withdrawalHistoryProvider.GetPending();
 
-            List<WithdrawalModel> completedWithdrawals = this.withdrawalHistoryProvider.GetHistory(TransfersToDisplay);
+                Transaction consolidationPartial = this.inputConsolidator.PartialTransaction;
+                if (consolidationPartial != null)
+                {
+                    benchLog.AppendLine("--- Consolidation Transaction ---");
+                    benchLog.Append(
+                            string.Format("Tran#={0} TotalOut={1,12} Signatures=({2}/{3})",
+                            consolidationPartial.ToString().Substring(0, 6),
+                            consolidationPartial.TotalOut.ToString(),
+                            consolidationPartial.GetSignatureCount(this.network),
+                            this.federatedPegSettings.MultiSigM
+                        )
+                    );
+                    benchLog.AppendLine();
+                }
 
-            if (completedWithdrawals.Count > 0)
-            {
-                benchLog.AppendLine("--- Recently Completed Withdrawals ---");
-                foreach (WithdrawalModel withdrawal in completedWithdrawals)
-                    benchLog.AppendLine(withdrawal.ToString());
-                benchLog.AppendLine();
-            }
+                if (pendingWithdrawals.Count > 0)
+                {
+                    benchLog.AppendLine("--- Pending Withdrawals ---");
+                    foreach (WithdrawalModel withdrawal in pendingWithdrawals)
+                        benchLog.AppendLine(withdrawal.ToString());
+                    benchLog.AppendLine();
+                }
 
-            benchLog.AppendLine("====== NodeStore ======");
-            this.AddBenchmarkLine(benchLog, new (string, int)[] {
+                List<WithdrawalModel> completedWithdrawals = this.withdrawalHistoryProvider.GetHistory(TransfersToDisplay);
+
+                if (completedWithdrawals.Count > 0)
+                {
+                    benchLog.AppendLine("--- Recently Completed Withdrawals ---");
+                    foreach (WithdrawalModel withdrawal in completedWithdrawals)
+                        benchLog.AppendLine(withdrawal.ToString());
+                    benchLog.AppendLine();
+                }
+
+                benchLog.AppendLine("====== NodeStore ======");
+                this.AddBenchmarkLine(benchLog, new (string, int)[] {
                 ("Height:", LoggingConfiguration.ColumnLength),
                 (this.crossChainTransferStore.TipHashAndHeight.Height.ToString(), LoggingConfiguration.ColumnLength),
                 ("Hash:",LoggingConfiguration.ColumnLength),
@@ -268,17 +274,23 @@ namespace Stratis.Features.FederatedPeg
                 ("HasSuspended:",LoggingConfiguration.ColumnLength),
                 (this.crossChainTransferStore.HasSuspended().ToString(), 0)
             },
-            4);
-
-            this.AddBenchmarkLine(benchLog,
-                this.crossChainTransferStore.GetCrossChainTransferStatusCounter().SelectMany(item => new (string, int)[]{
-                    (item.Key.ToString()+":", LoggingConfiguration.ColumnLength),
-                    (item.Value.ToString(), LoggingConfiguration.ColumnLength)
-                    }).ToArray(),
                 4);
 
-            benchLog.AppendLine();
-            return benchLog.ToString();
+                this.AddBenchmarkLine(benchLog,
+                    this.crossChainTransferStore.GetCrossChainTransferStatusCounter().SelectMany(item => new (string, int)[]{
+                    (item.Key.ToString()+":", LoggingConfiguration.ColumnLength),
+                    (item.Value.ToString(), LoggingConfiguration.ColumnLength)
+                        }).ToArray(),
+                    4);
+
+                benchLog.AppendLine();
+                return benchLog.ToString();
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError(e.ToString());
+                return "";
+            }
         }
 
         private void AddBenchmarkLine(StringBuilder benchLog, (string Value, int ValuePadding)[] items, int maxItemsPerLine = int.MaxValue)
