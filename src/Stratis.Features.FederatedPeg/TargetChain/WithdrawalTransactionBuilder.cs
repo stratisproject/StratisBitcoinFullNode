@@ -4,6 +4,8 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Signals;
+using Stratis.Features.FederatedPeg.Events;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Wallet;
 using Recipient = Stratis.Features.FederatedPeg.Wallet.Recipient;
@@ -30,7 +32,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly IFederationWalletManager federationWalletManager;
         private readonly IFederationWalletTransactionHandler federationWalletTransactionHandler;
         private readonly IFederatedPegSettings federatedPegSettings;
-        private readonly IInputConsolidator inputConsolidator;
+        private readonly ISignals signals;
 
         public WithdrawalTransactionBuilder(
             ILoggerFactory loggerFactory,
@@ -38,14 +40,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             IFederationWalletManager federationWalletManager,
             IFederationWalletTransactionHandler federationWalletTransactionHandler,
             IFederatedPegSettings federatedPegSettings,
-            IInputConsolidator inputConsolidator)
+            ISignals signals)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.federationWalletManager = federationWalletManager;
             this.federationWalletTransactionHandler = federationWalletTransactionHandler;
             this.federatedPegSettings = federatedPegSettings;
-            this.inputConsolidator = inputConsolidator;
+            this.signals = signals;
         }
 
         /// <inheritdoc />
@@ -77,8 +79,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 if (coins.Count > MaxInputs)
                 {
-                    this.logger.LogDebug("Too many inputs. Starting the consolidation process.");
-                    this.inputConsolidator.StartConsolidation();
+                    this.logger.LogDebug("Too many inputs. Triggering the consolidation process.");
+                    this.signals.Publish(new WalletNeedsConsolidation());
                     this.logger.LogTrace("(-)[CONSOLIDATING_INPUTS]");
                     return null;
                 }

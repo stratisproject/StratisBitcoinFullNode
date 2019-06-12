@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Primitives;
+using Stratis.Features.FederatedPeg.Events;
 using Stratis.Features.FederatedPeg.TargetChain;
 
 namespace Stratis.Features.FederatedPeg.Interfaces
@@ -20,7 +21,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// <summary>
         /// Trigger the building and signing of a consolidation transaction.
         /// </summary>
-        void StartConsolidation();
+        void StartConsolidation(WalletNeedsConsolidation trigger);
 
         /// <summary>
         /// Attempt to merge the signatures of the incoming transaction and the current consolidation transaction.

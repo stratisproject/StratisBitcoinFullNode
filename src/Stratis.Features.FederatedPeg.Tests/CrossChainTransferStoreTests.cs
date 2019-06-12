@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Features.FederatedPeg.CounterChain;
+using Stratis.Features.FederatedPeg.Events;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.Payloads;
@@ -956,7 +957,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 // The CCTS won't create any transactions until the InputConsolidator consolidates some inputs
                 Assert.Empty(recordMatureDepositResult.WithDrawalTransactions);
 
-                this.inputConsolidator.Received().StartConsolidation();
+                this.signals.Received().Publish(Arg.Any<WalletNeedsConsolidation>());
             }
         }
 

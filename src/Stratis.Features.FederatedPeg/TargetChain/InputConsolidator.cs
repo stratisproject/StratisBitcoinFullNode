@@ -9,6 +9,7 @@ using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
+using Stratis.Features.FederatedPeg.Events;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Payloads;
 using Stratis.Features.FederatedPeg.Wallet;
@@ -24,6 +25,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly IFederationWalletManager walletManager;
         private readonly IBroadcasterManager broadcasterManager;
         private readonly IFederatedPegSettings settings;
+        private readonly ISignals signals;
         private readonly ILogger logger;
         private readonly Network network;
 
@@ -45,6 +47,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             IBroadcasterManager broadcasterManager,
             IFederatedPegSettings settings,
             ILoggerFactory loggerFactory,
+            ISignals signals,
             Network network)
         {
             this.federatedPegBroadcaster = federatedPegBroadcaster;
@@ -54,10 +57,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.network = network;
             this.settings = settings;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            signals.Subscribe<WalletNeedsConsolidation>(this.StartConsolidation);
         }
 
         /// <inheritdoc />
-        public void StartConsolidation()
+        public void StartConsolidation(WalletNeedsConsolidation trigger)
         {
             lock (this.lockObj)
             {

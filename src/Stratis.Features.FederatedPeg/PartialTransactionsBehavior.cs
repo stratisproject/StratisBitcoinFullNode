@@ -140,19 +140,12 @@ namespace Stratis.Features.FederatedPeg
 
         private async Task HandleConsolidationTransactionRequest(INetworkPeer peer, RequestPartialTransactionPayload payload)
         {
-            try
-            {
-                ConsolidationSignatureResult result = this.inputConsolidator.CombineSignatures(payload.PartialTransaction);
+            ConsolidationSignatureResult result = this.inputConsolidator.CombineSignatures(payload.PartialTransaction);
 
-                if (result.Signed)
-                {
-                    this.logger.LogDebug("Signed consolidating transaction to produce {0} from {1}", result.TransactionResult.GetHash(), payload.PartialTransaction.GetHash());
-                    await this.BroadcastAsync(payload.AddPartial(result.TransactionResult));
-                }
-            }
-            catch (Exception e)
+            if (result.Signed)
             {
-                this.logger.LogError(e.ToString());
+                this.logger.LogDebug("Signed consolidating transaction to produce {0} from {1}", result.TransactionResult.GetHash(), payload.PartialTransaction.GetHash());
+                await this.BroadcastAsync(payload.AddPartial(result.TransactionResult));
             }
         }
     }

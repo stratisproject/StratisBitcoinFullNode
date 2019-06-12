@@ -31,6 +31,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 broadcasterManager.Object,
                 this.federatedPegSettings,
                 this.loggerFactory,
+                this.signals,
                 this.network);
 
             Assert.Null(inputConsolidator.BuildConsolidatingTransaction());
@@ -52,6 +53,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 broadcasterManager.Object,
                 this.federatedPegSettings,
                 this.loggerFactory,
+                this.signals,
                 this.network);
 
             // Lets set the funding transactions to many really small outputs
