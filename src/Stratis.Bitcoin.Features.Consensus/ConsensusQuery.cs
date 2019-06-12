@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -32,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
+        public UnspentOutputs GetUnspentTransaction(uint256 trxid)
         {
             FetchCoinsResponse response = this.coinView.FetchCoins(new[] { trxid });
 

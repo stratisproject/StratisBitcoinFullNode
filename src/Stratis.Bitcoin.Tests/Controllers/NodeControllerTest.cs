@@ -341,7 +341,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             uint vout = 0;
             bool includeMemPool = false;
 
-            IActionResult result = await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
+            IActionResult result = await this.controller.GetTxOut(txid, vout, includeMemPool).ConfigureAwait(false);
 
             var errorResult = Assert.IsType<ErrorResult>(result);
             var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -357,12 +357,12 @@ namespace Stratis.Bitcoin.Tests.Controllers
             var txId = new uint256(1243124);
             Transaction transaction = this.CreateTransaction();
             var unspentOutputs = new UnspentOutputs(1, transaction);
-            this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
+            this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransaction(txId))
                 .ReturnsAsync(unspentOutputs)
                 .Verifiable();
             string txid = txId.ToString();
 
-            var json = (JsonResult)await this.controller.GetTxOutAsync(txid).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetTxOut(txid).ConfigureAwait(false);
             var resultModel = (GetTxOutModel)json.Value;
 
             this.getUnspentTransaction.Verify();
@@ -377,14 +377,14 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public async Task GetTxOutAsync_NotIncludeInMempool_UnspentTransactionNotFound_ReturnsNullAsync()
         {
             var txId = new uint256(1243124);
-            this.getUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
+            this.getUnspentTransaction.Setup(s => s.GetUnspentTransaction(txId))
                 .ReturnsAsync((UnspentOutputs)null)
                 .Verifiable();
             string txid = txId.ToString();
             uint vout = 0;
             bool includeMemPool = false;
 
-            var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetTxOut(txid, vout, includeMemPool).ConfigureAwait(false);
 
             Assert.Null(json.Value);
             this.getUnspentTransaction.Verify();
@@ -402,7 +402,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             uint vout = 0;
             bool includeMemPool = false;
 
-            var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetTxOut(txid, vout, includeMemPool).ConfigureAwait(false);
 
             Assert.Null(json.Value);
         }
@@ -411,7 +411,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public async Task GetTxOutAsync_IncludeMempool_UnspentTransactionNotFound_ReturnsNullAsync()
         {
             var txId = new uint256(1243124);
-            this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
+            this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransaction(txId))
                 .ReturnsAsync((UnspentOutputs)null)
                 .Verifiable();
             this.controller = new NodeController(this.chainIndexer, this.chainState.Object,
@@ -422,7 +422,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             uint vout = 0;
             bool includeMemPool = true;
 
-            var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(true);
+            var json = (JsonResult)await this.controller.GetTxOut(txid, vout, includeMemPool).ConfigureAwait(true);
 
             Assert.Null(json.Value);
             this.pooledGetUnspentTransaction.Verify();
@@ -440,7 +440,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             uint vout = 0;
             bool includeMemPool = true;
 
-            var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetTxOut(txid, vout, includeMemPool).ConfigureAwait(false);
 
             Assert.Null(json.Value);
         }
@@ -451,7 +451,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             var txId = new uint256(1243124);
             Transaction transaction = this.CreateTransaction();
             var unspentOutputs = new UnspentOutputs(1, transaction);
-            this.getUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
+            this.getUnspentTransaction.Setup(s => s.GetUnspentTransaction(txId))
                 .ReturnsAsync(unspentOutputs)
                 .Verifiable();
             this.controller = new NodeController(this.chainIndexer, this.chainState.Object,
@@ -462,7 +462,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             uint vout = 0;
             bool includeMemPool = false;
 
-            var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetTxOut(txid, vout, includeMemPool).ConfigureAwait(false);
             var resultModel = (GetTxOutModel)json.Value;
 
             this.getUnspentTransaction.Verify();
@@ -479,7 +479,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             var txId = new uint256(1243124);
             Transaction transaction = this.CreateTransaction();
             var unspentOutputs = new UnspentOutputs(1, transaction);
-            this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
+            this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransaction(txId))
                 .ReturnsAsync(unspentOutputs)
                 .Verifiable();
             this.controller = new NodeController(this.chainIndexer, this.chainState.Object,
@@ -490,7 +490,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             uint vout = 0;
             bool includeMemPool = true;
 
-            var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetTxOut(txid, vout, includeMemPool).ConfigureAwait(false);
             var resultModel = (GetTxOutModel)json.Value;
 
             this.pooledGetUnspentTransaction.Verify();
@@ -507,14 +507,14 @@ namespace Stratis.Bitcoin.Tests.Controllers
             var txId = new uint256(1243124);
             Transaction transaction = this.CreateTransaction();
             var unspentOutputs = new UnspentOutputs(1, transaction);
-            this.getUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
+            this.getUnspentTransaction.Setup(s => s.GetUnspentTransaction(txId))
                 .ReturnsAsync(unspentOutputs)
                 .Verifiable();
             string txid = txId.ToString();
             uint vout = 13;
             bool includeMemPool = false;
 
-            var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetTxOut(txid, vout, includeMemPool).ConfigureAwait(false);
             var resultModel = (GetTxOutModel)json.Value;
 
             this.getUnspentTransaction.Verify();
@@ -531,14 +531,14 @@ namespace Stratis.Bitcoin.Tests.Controllers
             var txId = new uint256(1243124);
             Transaction transaction = this.CreateTransaction();
             var unspentOutputs = new UnspentOutputs(1, transaction);
-            this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
+            this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransaction(txId))
                 .ReturnsAsync(unspentOutputs)
                 .Verifiable();
             string txid = txId.ToString();
             uint vout = 13;
             bool includeMemPool = true;
 
-            var json = (JsonResult)await this.controller.GetTxOutAsync(txid, vout, includeMemPool).ConfigureAwait(false);
+            var json = (JsonResult)await this.controller.GetTxOut(txid, vout, includeMemPool).ConfigureAwait(false);
             var resultModel = (GetTxOutModel)json.Value;
 
             this.pooledGetUnspentTransaction.Verify();

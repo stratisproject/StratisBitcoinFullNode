@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <exception cref="ArgumentException">Thrown if txid is invalid.</exception>"
         [ActionName("gettxout")]
         [ActionDescription("Gets the unspent outputs of a transaction id and vout number.")]
-        public async Task<GetTxOutModel> GetTxOutAsync(string txid, uint vout, bool includeMemPool = true)
+        public GetTxOutModel GetTxOut(string txid, uint vout, bool includeMemPool = true)
         {
             uint256 trxid;
             if (!uint256.TryParse(txid, out trxid))
@@ -206,11 +206,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             UnspentOutputs unspentOutputs = null;
             if (includeMemPool)
             {
-                unspentOutputs = this.pooledGetUnspentTransaction != null ? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid).ConfigureAwait(false) : null;
+                unspentOutputs = this.pooledGetUnspentTransaction?.GetUnspentTransaction(trxid);
             }
             else
             {
-                unspentOutputs = this.getUnspentTransaction != null ? await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid).ConfigureAwait(false) : null;
+                unspentOutputs = this.getUnspentTransaction?.GetUnspentTransaction(trxid);
             }
 
             if (unspentOutputs == null)
@@ -340,7 +340,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                     result.IsScript = true;
                 }
             }
-            catch(NotImplementedException)
+            catch (NotImplementedException)
             {
                 result.IsValid = false;
             }

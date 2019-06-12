@@ -364,7 +364,7 @@ namespace Stratis.Bitcoin.Controllers
         /// <exception cref="ArgumentException">Thrown if trxid is empty or not a valid <see cref="uint256"/></exception>
         [Route("gettxout")]
         [HttpGet]
-        public async Task<IActionResult> GetTxOutAsync([FromQuery] string trxid, uint vout = 0, bool includeMemPool = true)
+        public IActionResult GetTxOut([FromQuery] string trxid, uint vout = 0, bool includeMemPool = true)
         {
             try
             {
@@ -379,11 +379,11 @@ namespace Stratis.Bitcoin.Controllers
                 UnspentOutputs unspentOutputs = null;
                 if (includeMemPool)
                 {
-                    unspentOutputs = this.pooledGetUnspentTransaction != null ? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(txid).ConfigureAwait(false) : null;
+                    unspentOutputs = this.pooledGetUnspentTransaction != null ? this.pooledGetUnspentTransaction.GetUnspentTransaction(txid) : null;
                 }
                 else
                 {
-                    unspentOutputs = this.getUnspentTransaction != null ? await this.getUnspentTransaction.GetUnspentTransactionAsync(txid).ConfigureAwait(false) : null;
+                    unspentOutputs = this.getUnspentTransaction != null ? this.getUnspentTransaction.GetUnspentTransaction(txid) : null;
                 }
 
                 if (unspentOutputs == null)
