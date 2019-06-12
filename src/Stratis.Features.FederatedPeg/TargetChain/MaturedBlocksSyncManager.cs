@@ -115,39 +115,40 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
             bool delayRequired = true;
 
-            if (matureBlockDepositsResult.Value != null)
+            if (matureBlockDepositsResult == null)
+                this.logger.LogInformation("Unable to fetch mature block deposits from the counter chain node; {0} didn't respond.", this.federationGatewayClient.EndpointUrl);
+
+            if (!matureBlockDepositsResult.Succeeded)
+                this.logger.LogInformation("Unable to fetch mature block deposits from the counter chain node; {0}.", matureBlockDepositsResult.ErrorMessage);
+
+            // Log what we've received.
+            foreach (MaturedBlockDepositsModel maturedBlockDeposit in matureBlockDepositsResult.Value)
             {
-                // Log what we've received.
-                foreach (MaturedBlockDepositsModel maturedBlockDeposit in matureBlockDepositsResult.Value)
+                // Order transactions in block deterministically
+                maturedBlockDeposit.Deposits = maturedBlockDeposit.Deposits.OrderBy(x => x.Id, Comparer<uint256>.Create(DeterministicCoinOrdering.CompareUint256)).ToList();
+
+                foreach (IDeposit deposit in maturedBlockDeposit.Deposits)
                 {
-                    // Order transactions in block deterministically
-                    maturedBlockDeposit.Deposits = maturedBlockDeposit.Deposits.OrderBy(x => x.Id, Comparer<uint256>.Create(DeterministicCoinOrdering.CompareUint256)).ToList();
-
-                    foreach (IDeposit deposit in maturedBlockDeposit.Deposits)
-                    {
-                        this.logger.LogDebug("New deposit received BlockNumber={0}, TargetAddress='{1}', depositId='{2}', Amount='{3}'.", deposit.BlockNumber, deposit.TargetAddress, deposit.Id, deposit.Amount);
-                    }
-                }
-
-                if (matureBlockDepositsResult.Value.Count > 0)
-                {
-                    RecordLatestMatureDepositsResult result = await this.store.RecordLatestMatureDepositsAsync(matureBlockDepositsResult.Value).ConfigureAwait(false);
-
-                    // If we received a portion of blocks we can ask for new portion without any delay.
-                    if (result.MatureDepositRecorded)
-                        delayRequired = false;
-                }
-                else
-                {
-                    this.logger.LogDebug("Considering ourselves fully synced since no blocks were received");
-
-                    // If we've received nothing we assume we are at the tip and should flush.
-                    // Same mechanic as with syncing headers protocol.
-                    await this.store.SaveCurrentTipAsync().ConfigureAwait(false);
+                    this.logger.LogDebug("New deposit received BlockNumber={0}, TargetAddress='{1}', depositId='{2}', Amount='{3}'.", deposit.BlockNumber, deposit.TargetAddress, deposit.Id, deposit.Amount);
                 }
             }
+
+            if (matureBlockDepositsResult.Value.Count > 0)
+            {
+                RecordLatestMatureDepositsResult result = await this.store.RecordLatestMatureDepositsAsync(matureBlockDepositsResult.Value).ConfigureAwait(false);
+
+                // If we received a portion of blocks we can ask for new portion without any delay.
+                if (result.MatureDepositRecorded)
+                    delayRequired = false;
+            }
             else
-                this.logger.LogDebug("Unable to fetch mature block deposits from the counter chain node, {0} didn't respond.", this.federationGatewayClient.EndpointUrl);
+            {
+                this.logger.LogDebug("Considering ourselves fully synced since no blocks were received.");
+
+                // If we've received nothing we assume we are at the tip and should flush.
+                // Same mechanic as with syncing headers protocol.
+                await this.store.SaveCurrentTipAsync().ConfigureAwait(false);
+            }
 
             return delayRequired;
         }
