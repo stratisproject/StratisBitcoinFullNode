@@ -95,5 +95,12 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
             }
             return NoContent();
         }
+
+        [Route("shutdown")]
+        public IActionResult Shutdown()
+        {
+            Environment.Exit(0);
+            return Ok();
+        }
     }
 }
