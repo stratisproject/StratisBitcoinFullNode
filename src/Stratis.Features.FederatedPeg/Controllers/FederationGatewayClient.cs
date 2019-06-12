@@ -2,7 +2,6 @@
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
@@ -14,7 +13,10 @@ namespace Stratis.Features.FederatedPeg.Controllers
     public interface IFederationGatewayClient : IRestApiClientBase
     {
         /// <summary><see cref="FederationGatewayController.GetMaturedBlockDepositsAsync"/></summary>
-        Task<Result<List<MaturedBlockDepositsModel>>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model, CancellationToken cancellation = default(CancellationToken));
+        /// <param name="model">A model containing the block height at which to start checking for matured blocks.</param>
+        /// <param name="cancellation">A cancellation token to ensure that the task exists should it take too long.</param>
+        /// <returns>An API result class containing a list of matured block deposits from a given height.</returns>
+        Task<ApiResult<List<MaturedBlockDepositsModel>>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model, CancellationToken cancellation);
     }
 
     /// <inheritdoc cref="IFederationGatewayClient"/>
@@ -32,9 +34,9 @@ namespace Stratis.Features.FederatedPeg.Controllers
         }
 
         /// <inheritdoc />
-        public Task<Result<List<MaturedBlockDepositsModel>>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model, CancellationToken cancellation = default(CancellationToken))
+        public Task<ApiResult<List<MaturedBlockDepositsModel>>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model, CancellationToken cancellation)
         {
-            return this.SendPostRequestAsync<MaturedBlockRequestModel, Result<List<MaturedBlockDepositsModel>>>(model, FederationGatewayRouteEndPoint.GetMaturedBlockDeposits, cancellation);
+            return this.SendPostRequestAsync<MaturedBlockRequestModel, ApiResult<List<MaturedBlockDepositsModel>>>(model, FederationGatewayRouteEndPoint.GetMaturedBlockDeposits, cancellation);
         }
     }
 }

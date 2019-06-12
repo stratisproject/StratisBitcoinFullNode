@@ -18,11 +18,14 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         /// <param name="blockHeight">The block height at which to start retrieving blocks.</param>
         /// <param name="maxBlocks">The number of blocks to retrieve.</param>
         /// <returns>A list of mature block deposits.</returns>
-        Result<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int blockHeight, int maxBlocks);
+        ApiResult<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int blockHeight, int maxBlocks);
     }
 
     public sealed class MaturedBlocksProvider : IMaturedBlocksProvider
     {
+        public const string BlockHeightNotMatureEnoughMessage = "The submitted block height of {0} is not mature enough, only blocks at a height less than {1} can be processed.";
+        public const string UnableToGetDepositsAtHeightMessage = "Unable to get deposits for block at height {0}.";
+
         private readonly IConsensusManager consensusManager;
 
         private readonly IDepositExtractor depositExtractor;
@@ -37,18 +40,14 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         }
 
         /// <inheritdoc />
-        public Result<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int blockHeight, int maxBlocks)
+        public ApiResult<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int startBlockHeight, int maxBlocks)
         {
             ChainedHeader consensusTip = this.consensusManager.Tip;
 
             int matureTipHeight = (consensusTip.Height - (int)this.depositExtractor.MinimumDepositConfirmations);
 
-            if (blockHeight > matureTipHeight)
-            {
-                // We need to return a Result type here to explicitly indicate failure and the reason for failure.
-                // This is an expected condition so we can avoid throwing an exception here.
-                return Result<List<MaturedBlockDepositsModel>>.Fail($"Block height {blockHeight} submitted is not mature enough, only blocks at a height less than {matureTipHeight} can be processed.");
-            }
+            if (startBlockHeight > matureTipHeight)
+                return ApiResult<List<MaturedBlockDepositsModel>>.Fail(string.Format(BlockHeightNotMatureEnoughMessage, startBlockHeight, matureTipHeight));
 
             var maturedBlocks = new List<MaturedBlockDepositsModel>();
 
@@ -56,34 +55,45 @@ namespace Stratis.Features.FederatedPeg.SourceChain
             int maxTimeCollectionCanTakeMs = RestApiClientBase.TimeoutMs / 2;
             var cancellation = new CancellationTokenSource(maxTimeCollectionCanTakeMs);
 
-            for (int i = blockHeight; (i <= matureTipHeight) && (i < blockHeight + maxBlocks); i++)
+            for (int currentBlockHeight = startBlockHeight; (currentBlockHeight <= matureTipHeight) && (currentBlockHeight < startBlockHeight + maxBlocks); currentBlockHeight++)
             {
-                ChainedHeader currentHeader = consensusTip.GetAncestor(i);
+                ChainedHeader currentHeader = consensusTip.GetAncestor(currentBlockHeight);
 
-                ChainedHeaderBlock block = this.consensusManager.GetBlockData(currentHeader.HashBlock);
+                ChainedHeaderBlock chainedHeaderBlock = this.consensusManager.GetBlockData(currentHeader.HashBlock);
 
-                if (block?.Block?.Transactions == null)
+                if (chainedHeaderBlock == null)
                 {
-                    // Report unexpected results from consenus manager.
-                    this.logger.LogWarning("Matured blocks collection stopped at {0} due to consensus manager integrity failure. Sending what has been collected up until this point.", currentHeader);
+                    this.logger.LogWarning("Get block data for {0} returned null; stopping matured blocks collection and sending what has been collected up until this point.", currentHeader);
                     break;
                 }
 
-                MaturedBlockDepositsModel maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(block);
+                if (chainedHeaderBlock.Block == null)
+                {
+                    this.logger.LogWarning("Get block data for {0} returned null block; stopping matured blocks collection and sending what has been collected up until this point.", currentHeader);
+                    break;
+                }
+
+                if (chainedHeaderBlock.Block.Transactions == null)
+                {
+                    this.logger.LogWarning("Get block data for {0} returned null transactions on block; stopping matured blocks collection and sending what has been collected up until this point.", currentHeader);
+                    break;
+                }
+
+                MaturedBlockDepositsModel maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(chainedHeaderBlock);
 
                 if (maturedBlockDeposits == null)
-                    return Result<List<MaturedBlockDepositsModel>>.Fail($"Unable to get deposits for block at height {currentHeader.Height}");
+                    return ApiResult<List<MaturedBlockDepositsModel>>.Fail(string.Format(UnableToGetDepositsAtHeightMessage, currentHeader.Height));
 
                 maturedBlocks.Add(maturedBlockDeposits);
 
                 if (cancellation.IsCancellationRequested && maturedBlocks.Count > 0)
                 {
-                    this.logger.LogDebug("Stop matured blocks collection because it's taking too long, sending what has been collected.");
+                    this.logger.LogDebug("Matured blocks collection has been cancelled because it is taking too long, sending what has been collected up until this point.");
                     break;
                 }
             }
 
-            return Result<List<MaturedBlockDepositsModel>>.Ok(maturedBlocks);
+            return ApiResult<List<MaturedBlockDepositsModel>>.Ok(maturedBlocks);
         }
     }
 }

@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
+using Stratis.Bitcoin.Controllers;
 using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
@@ -94,9 +94,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <summary>Asks for blocks from another gateway node and then processes them.</summary>
+        /// <param name="cancellationToken">A cancellation token to ensure that the task exists should it take too long.</param>
         /// <returns><c>true</c> if delay between next time we should ask for blocks is required; <c>false</c> otherwise.</returns>
         /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
-        protected async Task<bool> SyncBatchOfBlocksAsync(CancellationToken cancellationToken = default(CancellationToken))
+        protected async Task<bool> SyncBatchOfBlocksAsync(CancellationToken cancellationToken)
         {
             int blocksToRequest = 1;
 
@@ -110,11 +111,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.logger.LogDebug("Request model created: {0}:{1}, {2}:{3}.", nameof(model.BlockHeight), model.BlockHeight, nameof(model.MaxBlocksToSend), model.MaxBlocksToSend);
 
             // Ask for blocks.
-            Result<List<MaturedBlockDepositsModel>> matureBlockDepositsResult = await this.federationGatewayClient.GetMaturedBlockDepositsAsync(model, cancellationToken).ConfigureAwait(false);
+            ApiResult<List<MaturedBlockDepositsModel>> matureBlockDepositsResult = await this.federationGatewayClient.GetMaturedBlockDepositsAsync(model, cancellationToken).ConfigureAwait(false);
 
             bool delayRequired = true;
 
-            if (matureBlockDepositsResult != null)
+            if (matureBlockDepositsResult.Value != null)
             {
                 // Log what we've received.
                 foreach (MaturedBlockDepositsModel maturedBlockDeposit in matureBlockDepositsResult.Value)

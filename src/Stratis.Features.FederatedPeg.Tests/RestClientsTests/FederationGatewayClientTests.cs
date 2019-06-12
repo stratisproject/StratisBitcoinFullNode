@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -29,7 +30,7 @@ namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
         [Fact]
         public async Task ReturnsNullIfCounterChainNodeIsOfflineAsync()
         {
-            List<MaturedBlockDepositsModel> result = await this.client.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(100, 10));
+            ApiResult<List<MaturedBlockDepositsModel>> result = await this.client.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(100, 10), new CancellationToken());
 
             Assert.Null(result);
         }

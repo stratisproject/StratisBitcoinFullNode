@@ -6,6 +6,7 @@ using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -71,15 +72,9 @@ namespace Stratis.Features.FederatedPeg.Controllers
 
             try
             {
-                Result<List<MaturedBlockDepositsModel>> depositsResult = this.maturedBlocksProvider.GetMaturedDeposits(blockRequest.BlockHeight, blockRequest.MaxBlocksToSend);
+                ApiResult<List<MaturedBlockDepositsModel>> depositsResult = this.maturedBlocksProvider.GetMaturedDeposits(blockRequest.BlockHeight, blockRequest.MaxBlocksToSend);
 
-                //if (depositsResult.Succeeded)
-                //{
                 return this.Json(depositsResult);
-                //}
-
-                //this.logger.LogTrace("Error calling /api/federationgateway/{0}: {1}.", FederationGatewayRouteEndPoint.GetMaturedBlockDeposits, depositsResult.ErrorMessage);
-                //return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not re-sync matured block deposits: {depositsResult.ErrorMessage}", depositsResult.ErrorMessage);
             }
             catch (Exception e)
             {
