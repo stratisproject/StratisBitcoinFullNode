@@ -72,6 +72,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.blocksToAnnounce = asyncProvider.CreateAsyncQueue<ChainedHeader>();
             this.dequeueLoopTask = this.DequeueContinuouslyAsync();
+
+            this.asyncProvider.RegisterTask($"{nameof(BlockStoreSignaled)}.{nameof(this.dequeueLoopTask)}", this.dequeueLoopTask);
         }
 
         public void Initialize()

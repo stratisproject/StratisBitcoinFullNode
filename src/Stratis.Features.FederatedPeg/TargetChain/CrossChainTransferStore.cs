@@ -158,11 +158,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             lock (this.lockObj)
             {
                 this.federationWalletManager.Synchronous(() =>
-                {
-                    // Remove all unconfirmed transaction data from the wallet to be re-added when blocks are processed.
-                    if (this.federationWalletManager.RemoveUnconfirmedTransactionData())
-                        this.federationWalletManager.SaveWallet();
-
+                {                    
                     Guard.Assert(this.Synchronize());
                 });
             }
@@ -1083,15 +1079,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             lock (this.lockObj)
             {
-                var depositIds = new HashSet<uint256>();
+                return this.federationWalletManager.Synchronous(() =>
+                {
+                    Guard.Assert(this.Synchronize());
 
-                foreach (CrossChainTransferStatus status in statuses)
-                    depositIds.UnionWith(this.depositsIdsByStatus[status]);
-
-                uint256[] partialTransferHashes = depositIds.ToArray();
-                ICrossChainTransfer[] partialTransfers = this.Get(partialTransferHashes).Where(t => t != null).ToArray();
-
-                return partialTransfers;
+                    return this.GetTransfersByStatusInternalLocked(statuses, true, false);
+                });
             }
         }
 

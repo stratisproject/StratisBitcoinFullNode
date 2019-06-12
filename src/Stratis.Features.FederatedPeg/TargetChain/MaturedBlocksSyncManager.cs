@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
@@ -28,6 +29,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly ICrossChainTransferStore store;
 
         private readonly IFederationGatewayClient federationGatewayClient;
+        private readonly IAsyncProvider asyncProvider;
 
         private readonly ILogger logger;
 
@@ -45,10 +47,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <remarks>Needed to give other node some time to start before bombing it with requests.</remarks>
         private const int InitializationDelayMs = 10_000;
 
-        public MaturedBlocksSyncManager(ICrossChainTransferStore store, IFederationGatewayClient federationGatewayClient, ILoggerFactory loggerFactory)
+        public MaturedBlocksSyncManager(ICrossChainTransferStore store, IFederationGatewayClient federationGatewayClient, ILoggerFactory loggerFactory, IAsyncProvider asyncProvider)
         {
             this.store = store;
             this.federationGatewayClient = federationGatewayClient;
+            this.asyncProvider = asyncProvider;
 
             this.cancellation = new CancellationTokenSource();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -58,6 +61,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         public void Start()
         {
             this.blockRequestingTask = this.RequestMaturedBlocksContinouslyAsync();
+            this.asyncProvider.RegisterTask($"{nameof(MaturedBlocksSyncManager)}.{nameof(this.blockRequestingTask)}", this.blockRequestingTask);
         }
 
         /// <summary>Continuously requests matured blocks from another chain.</summary>
