@@ -322,8 +322,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             var res = new Dictionary<uint256, Block>();
 
-            foreach (uint256 key in blockHashes.Intersect(this.pendingBlocksCache.Keys))
-                res[key] = this.pendingBlocksCache[key].Block;
+            lock (this.blocksCacheLock)
+            {
+                foreach (uint256 key in blockHashes.Intersect(this.pendingBlocksCache.Keys))
+                    res[key] = this.pendingBlocksCache[key].Block;
+            }
 
             int cacheCount = res.Count;
 
