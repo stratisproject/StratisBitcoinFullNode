@@ -97,68 +97,61 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
         protected async Task<bool> SyncBatchOfBlocksAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            try
+            int blocksToRequest = 1;
+
+            // TODO why are we asking for max of 1 block and if it's not suspended then 1000? investigate this logic in maturedBlocksProvider
+            if (!this.store.HasSuspended())
+                blocksToRequest = MaxBlocksToRequest;
+
+            // API method that provides blocks should't give us blocks that are not mature!
+            var model = new MaturedBlockRequestModel(this.store.NextMatureDepositHeight, blocksToRequest);
+
+            this.logger.LogDebug("Request model created: {0}:{1}, {2}:{3}.", nameof(model.BlockHeight), model.BlockHeight,
+                nameof(model.MaxBlocksToSend), model.MaxBlocksToSend);
+
+            // Ask for blocks.
+            IList<MaturedBlockDepositsModel> matureBlockDeposits = await this.federationGatewayClient.GetMaturedBlockDepositsAsync(model, cancellationToken).ConfigureAwait(false);
+
+            bool delayRequired = true;
+
+            if (matureBlockDeposits != null)
             {
-                int blocksToRequest = 1;
-
-                // TODO why are we asking for max of 1 block and if it's not suspended then 1000? investigate this logic in maturedBlocksProvider
-                if (!this.store.HasSuspended())
-                    blocksToRequest = MaxBlocksToRequest;
-
-                // API method that provides blocks should't give us blocks that are not mature!
-                var model = new MaturedBlockRequestModel(this.store.NextMatureDepositHeight, blocksToRequest);
-
-                this.logger.LogDebug("Request model created: {0}:{1}, {2}:{3}.", nameof(model.BlockHeight), model.BlockHeight,
-                    nameof(model.MaxBlocksToSend), model.MaxBlocksToSend);
-
-                // Ask for blocks.
-                IList<MaturedBlockDepositsModel> matureBlockDeposits = await this.federationGatewayClient.GetMaturedBlockDepositsAsync(model, cancellationToken).ConfigureAwait(false);
-
-                bool delayRequired = true;
-
-                if (matureBlockDeposits != null)
+                // Log what we've received.
+                foreach (MaturedBlockDepositsModel maturedBlockDeposit in matureBlockDeposits)
                 {
-                    // Log what we've received.
-                    foreach (MaturedBlockDepositsModel maturedBlockDeposit in matureBlockDeposits)
+                    // Order transactions in block deterministically
+                    maturedBlockDeposit.Deposits = maturedBlockDeposit.Deposits.OrderBy(x => x.Id,
+                        Comparer<uint256>.Create(DeterministicCoinOrdering.CompareUint256)).ToList();
+
+                    foreach (IDeposit deposit in maturedBlockDeposit.Deposits)
                     {
-                        // Order transactions in block deterministically
-                        maturedBlockDeposit.Deposits = maturedBlockDeposit.Deposits.OrderBy(x => x.Id,
-                            Comparer<uint256>.Create(DeterministicCoinOrdering.CompareUint256)).ToList();
-
-                        foreach (IDeposit deposit in maturedBlockDeposit.Deposits)
-                        {
-                            this.logger.LogDebug("New deposit received BlockNumber={0}, TargetAddress='{1}', depositId='{2}', Amount='{3}'.",
-                                deposit.BlockNumber, deposit.TargetAddress, deposit.Id, deposit.Amount);
-                        }
-                    }
-
-                    if (matureBlockDeposits.Count > 0)
-                    {
-                        RecordLatestMatureDepositsResult result = await this.store.RecordLatestMatureDepositsAsync(matureBlockDeposits).ConfigureAwait(false);
-
-                        // If we received a portion of blocks we can ask for new portion without any delay.
-                        if (result.MatureDepositRecorded)
-                            delayRequired = false;
-                    }
-                    else
-                    {
-                        this.logger.LogDebug("Considering ourselves fully synced since no blocks were received");
-
-                        // If we've received nothing we assume we are at the tip and should flush.
-                        // Same mechanic as with syncing headers protocol.
-                        await this.store.SaveCurrentTipAsync().ConfigureAwait(false);
+                        this.logger.LogDebug("New deposit received BlockNumber={0}, TargetAddress='{1}', depositId='{2}', Amount='{3}'.",
+                            deposit.BlockNumber, deposit.TargetAddress, deposit.Id, deposit.Amount);
                     }
                 }
-                else
-                    this.logger.LogDebug("Failed to fetch matured block deposits from counter chain node! {0} doesn't respond!", this.federationGatewayClient.EndpointUrl);
 
-                return delayRequired;
+                if (matureBlockDeposits.Count > 0)
+                {
+                    RecordLatestMatureDepositsResult result = await this.store.RecordLatestMatureDepositsAsync(matureBlockDeposits).ConfigureAwait(false);
+
+                    // If we received a portion of blocks we can ask for new portion without any delay.
+                    if (result.MatureDepositRecorded)
+                        delayRequired = false;
+                }
+                else
+                {
+                    this.logger.LogDebug("Considering ourselves fully synced since no blocks were received");
+
+                    // If we've received nothing we assume we are at the tip and should flush.
+                    // Same mechanic as with syncing headers protocol.
+                    await this.store.SaveCurrentTipAsync().ConfigureAwait(false);
+                }
             }
-            catch (Exception e)
-            {
-                this.logger.LogError(e.ToString());
-                return true;
-            }
+            else
+                this.logger.LogDebug("Failed to fetch matured block deposits from counter chain node! {0} doesn't respond!", this.federationGatewayClient.EndpointUrl);
+
+            return delayRequired;
+
         }
 
         /// <inheritdoc />

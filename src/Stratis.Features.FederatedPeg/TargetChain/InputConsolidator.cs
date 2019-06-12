@@ -125,19 +125,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 this.logger.LogDebug("Successfully signed transaction.");
 
                 // NOTE: We don't need to reserve the transaction. The wallet will be at a standstill whilst this is happening.
-                try
+
+                // If it is FullySigned, broadcast.
+                if (this.walletManager.ValidateConsolidatingTransaction(this.PartialTransaction, true))
                 {
-                    // If it is FullySigned, broadcast.
-                    if (this.walletManager.ValidateConsolidatingTransaction(this.PartialTransaction, true))
-                    {
-                        this.logger.LogDebug("Consolidation transaction is fully signed. Broadcasting {0}", this.PartialTransaction.GetHash());
-                        this.broadcasterManager.BroadcastTransactionAsync(this.PartialTransaction);
-                        this.fullySigned = true;
-                    }
-                }
-                catch (Exception e)
-                {
-                    this.logger.LogError(e.ToString());
+                    this.logger.LogDebug("Consolidation transaction is fully signed. Broadcasting {0}", this.PartialTransaction.GetHash());
+                    this.broadcasterManager.BroadcastTransactionAsync(this.PartialTransaction);
+                    this.fullySigned = true;
                 }
 
                 this.logger.LogDebug("Consolidation transaction not fully signed yet.");

@@ -1072,6 +1072,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public bool ValidateConsolidatingTransaction(Transaction transaction, bool checkSignature = false)
         {
+            this.logger.LogDebug("Validating consolidating transaction pre-lock");
+
             lock (this.lockObject)
             {
                 this.logger.LogDebug("Validating consolidating transaction.");
