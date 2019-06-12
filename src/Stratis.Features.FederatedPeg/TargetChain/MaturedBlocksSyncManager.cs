@@ -113,13 +113,26 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             // Ask for blocks.
             ApiResult<List<MaturedBlockDepositsModel>> matureBlockDepositsResult = await this.federationGatewayClient.GetMaturedBlockDepositsAsync(model, cancellationToken).ConfigureAwait(false);
 
-            bool delayRequired = true;
-
             if (matureBlockDepositsResult == null)
+            {
                 this.logger.LogInformation("Unable to fetch mature block deposits from the counter chain node; {0} didn't respond.", this.federationGatewayClient.EndpointUrl);
+                this.logger.LogTrace("(-)[COUNTER_CHAIN_NODE_UNRESPONSIVE]:true");
+                return true;
+            }
+
+            if (matureBlockDepositsResult.Value == null)
+            {
+                this.logger.LogInformation("Unable to fetch mature block deposits from the counter chain node; mature deposits was null.");
+                this.logger.LogTrace("(-)[COUNTER_CHAIN_NODE_RESULT_NULL]:true");
+                return true;
+            }
 
             if (!matureBlockDepositsResult.Succeeded)
+            {
                 this.logger.LogInformation("Unable to fetch mature block deposits from the counter chain node; {0}.", matureBlockDepositsResult.ErrorMessage);
+                this.logger.LogTrace("(-)[COUNTER_CHAIN_NODE_ERROR]:true,{0}={1}", nameof(matureBlockDepositsResult.ErrorMessage), matureBlockDepositsResult.ErrorMessage);
+                return true;
+            }
 
             // Log what we've received.
             foreach (MaturedBlockDepositsModel maturedBlockDeposit in matureBlockDepositsResult.Value)
@@ -139,7 +152,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 // If we received a portion of blocks we can ask for new portion without any delay.
                 if (result.MatureDepositRecorded)
-                    delayRequired = false;
+                {
+                    this.logger.LogTrace("(-)[MATURE_DEPOSIT_RECORDED]:false");
+                    return false;
+                }
             }
             else
             {
@@ -150,7 +166,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 await this.store.SaveCurrentTipAsync().ConfigureAwait(false);
             }
 
-            return delayRequired;
+            return true;
         }
 
         /// <inheritdoc />
