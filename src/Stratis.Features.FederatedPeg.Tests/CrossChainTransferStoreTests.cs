@@ -192,7 +192,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
 
         /// <summary>
-        /// Recording deposits when the wallet UTXOs are sufficient succeeds with deterministic transactions.
+        /// Transfers sending funds to contract addresses are marked as "Rejected".
         /// </summary>
         [Fact]
         public async void StoringDepositsWhenTargetIsContractFailsWithRejectedTransferAsync()
