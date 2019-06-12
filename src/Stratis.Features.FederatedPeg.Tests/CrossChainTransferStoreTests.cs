@@ -8,7 +8,9 @@ using NBitcoin;
 using Newtonsoft.Json;
 using NSubstitute;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P.Peer;
@@ -1031,6 +1033,21 @@ namespace Stratis.Features.FederatedPeg.Tests
                 IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(partialTransactions[0], null, 1);
                 Assert.Equal((uint256)1, withdrawal.DepositId);
             }
+        }
+
+        /// <summary>
+        /// <see cref="CrossChainTransferStore.IsMempoolErrorRecoverable(MempoolError)"/> returns appropriate responses for different types of errors.
+        /// </summary>
+        [Fact]
+        public void IsMempoolErrorRecoverableReturnsTrueForRecoverableErrors()
+        {
+            Assert.True(CrossChainTransferStore.IsMempoolErrorRecoverable(new MempoolError()));
+            Assert.True(CrossChainTransferStore.IsMempoolErrorRecoverable(new MempoolError() { RejectCode = MempoolErrors.RejectDuplicate }));
+            Assert.True(CrossChainTransferStore.IsMempoolErrorRecoverable(new MempoolError() { RejectCode = MempoolErrors.RejectAlreadyKnown }));
+            Assert.False(CrossChainTransferStore.IsMempoolErrorRecoverable(new MempoolError()
+            {
+                ConsensusError = new ConsensusError("p2pkh-to-contract", "attempted send directly to contract address. use OP_CALL instead.")
+            }));
         }
     }
 }
