@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
-    /// <summary>Checks that coisntake tx from the proven header is the 2nd transaction in a block and that block has at least 2 transactions.</summary>
+    /// <summary>Checks that coinstake tx from the proven header is the 2nd transaction in a block and that the block has at least 2 transactions.</summary>
     public class PosTransactionsOrderRule : IntegrityValidationConsensusRule
     {
         /// <inheritdoc />
