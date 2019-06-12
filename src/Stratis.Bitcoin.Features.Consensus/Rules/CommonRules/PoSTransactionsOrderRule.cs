@@ -10,6 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.InvalidTxCount">Thrown in case block has less than 2 transaction.</exception>
+        /// <exception cref="ConsensusErrors.PHCoinstakeMissmatch">Thrown in case coinstake transaction from the proven header missmatches 2nd block transaction.</exception>
         public override void Run(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;
