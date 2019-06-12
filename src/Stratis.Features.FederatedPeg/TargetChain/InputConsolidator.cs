@@ -144,12 +144,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             try
             {
-                // TODO: Confifm that we can remove the ordering below.
+                // TODO: Confirm that we can remove the ordering below.
 
                 List<UnspentOutputReference> unspentOutputs = this.walletManager.GetSpendableTransactionsInWallet(WithdrawalTransactionBuilder.MinConfirmations).ToList();
 
+                // We shouldn't be consolidating transactions if we have less than 50 UTXOs to spend.
                 if (unspentOutputs.Count < WithdrawalTransactionBuilder.MaxInputs)
-                    throw new Exception("We shouldn't be consolidating transactions if we have less than 50 UTXOs to spend.");
+                    return null;
 
                 IEnumerable<UnspentOutputReference> orderedUnspentOutputs = DeterministicCoinOrdering.GetOrderedUnspentOutputs(unspentOutputs);
                 IEnumerable<UnspentOutputReference> selectedInputs = orderedUnspentOutputs.Take(WithdrawalTransactionBuilder.MaxInputs);

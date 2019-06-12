@@ -79,7 +79,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 {
                     this.logger.LogDebug("Too many inputs. Starting the consolidation process.");
                     this.inputConsolidator.StartConsolidation();
-                    this.logger.LogTrace("(-)[CONSOLIDATING INPUTS]");
+                    this.logger.LogTrace("(-)[CONSOLIDATING_INPUTS]");
                     return null;
                 }
 
