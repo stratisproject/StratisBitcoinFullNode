@@ -61,9 +61,9 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.consensusManager.Tip.Returns(tip);
 
             // Makes every block a matured block.
-            var maturedBlocksProvider = new MaturedBlocksProvider(this.loggerFactory, this.depositExtractor, this.consensusManager);
+            var maturedBlocksProvider = new MaturedBlocksProvider(this.consensusManager, this.depositExtractor, this.loggerFactory);
 
-            Result<List<MaturedBlockDepositsModel>> depositsResult = await maturedBlocksProvider.GetMaturedDepositsAsync(0, 10);
+            Result<List<MaturedBlockDepositsModel>> depositsResult = await maturedBlocksProvider.GetMaturedDeposits(0, 10);
 
             // Expect the number of matured deposits to equal the number of blocks.
             Assert.Equal(10, depositsResult.Value.Count);

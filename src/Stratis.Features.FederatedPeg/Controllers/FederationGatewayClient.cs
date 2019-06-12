@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
@@ -13,7 +14,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
     public interface IFederationGatewayClient : IRestApiClientBase
     {
         /// <summary><see cref="FederationGatewayController.GetMaturedBlockDepositsAsync"/></summary>
-        Task<List<MaturedBlockDepositsModel>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model, CancellationToken cancellation = default(CancellationToken));
+        Task<Result<List<MaturedBlockDepositsModel>>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model, CancellationToken cancellation = default(CancellationToken));
     }
 
     /// <inheritdoc cref="IFederationGatewayClient"/>
@@ -31,9 +32,9 @@ namespace Stratis.Features.FederatedPeg.Controllers
         }
 
         /// <inheritdoc />
-        public Task<List<MaturedBlockDepositsModel>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model, CancellationToken cancellation = default(CancellationToken))
+        public Task<Result<List<MaturedBlockDepositsModel>>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model, CancellationToken cancellation = default(CancellationToken))
         {
-            return this.SendPostRequestAsync<MaturedBlockRequestModel, List<MaturedBlockDepositsModel>>(model, FederationGatewayRouteEndPoint.GetMaturedBlockDeposits, cancellation);
+            return this.SendPostRequestAsync<MaturedBlockRequestModel, Result<List<MaturedBlockDepositsModel>>>(model, FederationGatewayRouteEndPoint.GetMaturedBlockDeposits, cancellation);
         }
     }
 }

@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
@@ -20,28 +18,26 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         /// <param name="blockHeight">The block height at which to start retrieving blocks.</param>
         /// <param name="maxBlocks">The number of blocks to retrieve.</param>
         /// <returns>A list of mature block deposits.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if the blocks are not mature or not found.</exception>
-        Task<Result<List<MaturedBlockDepositsModel>>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks);
+        Result<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int blockHeight, int maxBlocks);
     }
 
-    public class MaturedBlocksProvider : IMaturedBlocksProvider
+    public sealed class MaturedBlocksProvider : IMaturedBlocksProvider
     {
-        private readonly IDepositExtractor depositExtractor;
-
         private readonly IConsensusManager consensusManager;
+
+        private readonly IDepositExtractor depositExtractor;
 
         private readonly ILogger logger;
 
-        public MaturedBlocksProvider(ILoggerFactory loggerFactory, IDepositExtractor depositExtractor, IConsensusManager consensusManager)
+        public MaturedBlocksProvider(IConsensusManager consensusManager, IDepositExtractor depositExtractor, ILoggerFactory loggerFactory)
         {
-            this.depositExtractor = depositExtractor;
             this.consensusManager = consensusManager;
-
+            this.depositExtractor = depositExtractor;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <inheritdoc />
-        public async Task<Result<List<MaturedBlockDepositsModel>>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks)
+        public Result<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int blockHeight, int maxBlocks)
         {
             ChainedHeader consensusTip = this.consensusManager.Tip;
 
@@ -51,7 +47,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
             {
                 // We need to return a Result type here to explicitly indicate failure and the reason for failure.
                 // This is an expected condition so we can avoid throwing an exception here.
-                return Result<List<MaturedBlockDepositsModel>>.Fail($"Block height {blockHeight} submitted is not mature enough. Blocks less than a height of {matureTipHeight} can be processed.");
+                return Result<List<MaturedBlockDepositsModel>>.Fail($"Block height {blockHeight} submitted is not mature enough, only blocks at a height less than {matureTipHeight} can be processed.");
             }
 
             var maturedBlocks = new List<MaturedBlockDepositsModel>();
@@ -69,20 +65,20 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                 if (block?.Block?.Transactions == null)
                 {
                     // Report unexpected results from consenus manager.
-                    this.logger.LogWarning("Stop matured blocks collection due to consensus manager integrity failure. Send what we've collected.");
+                    this.logger.LogWarning("Matured blocks collection stopped at {0} due to consensus manager integrity failure. Sending what has been collected up until this point.", currentHeader);
                     break;
                 }
 
                 MaturedBlockDepositsModel maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(block);
 
                 if (maturedBlockDeposits == null)
-                    throw new InvalidOperationException($"Unable to get deposits for block at height {currentHeader.Height}");
+                    return Result<List<MaturedBlockDepositsModel>>.Fail($"Unable to get deposits for block at height {currentHeader.Height}");
 
                 maturedBlocks.Add(maturedBlockDeposits);
 
                 if (cancellation.IsCancellationRequested && maturedBlocks.Count > 0)
                 {
-                    this.logger.LogDebug("Stop matured blocks collection because it's taking too long. Send what we've collected.");
+                    this.logger.LogDebug("Stop matured blocks collection because it's taking too long, sending what has been collected.");
                     break;
                 }
             }
