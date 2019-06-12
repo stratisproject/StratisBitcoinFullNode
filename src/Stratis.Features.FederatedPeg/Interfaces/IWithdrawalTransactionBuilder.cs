@@ -13,6 +13,6 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// <param name="blockTime">Used to sign transactions in the case of PoS.</param>
         /// <param name="recipient">The address to receive the withdrawal funds.</param>
         /// <returns>The transaction ready to be signed.</returns>
-        BuildWithdrawalTransactionResult BuildWithdrawalTransaction(uint256 depositId, uint blockTime, Recipient recipient);
+        Transaction BuildWithdrawalTransaction(uint256 depositId, uint blockTime, Recipient recipient);
     }
 }

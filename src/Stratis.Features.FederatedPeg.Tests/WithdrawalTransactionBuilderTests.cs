@@ -91,7 +91,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 ScriptPubKey = new Script()
             };
 
-            Transaction ret = txBuilder.BuildWithdrawalTransaction(uint256.One, 100, recipient).Transaction;
+            Transaction ret = txBuilder.BuildWithdrawalTransaction(uint256.One, 100, recipient);
 
             Assert.NotNull(ret);
 
@@ -125,7 +125,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 ScriptPubKey = new Script()
             };
 
-            Transaction ret = txBuilder.BuildWithdrawalTransaction(uint256.One, 100, recipient).Transaction;
+            Transaction ret = txBuilder.BuildWithdrawalTransaction(uint256.One, 100, recipient);
 
             // Log out a warning in this case, not an error.
             this.logger.Verify(x=>x.Log<object>(LogLevel.Warning, It.IsAny<EventId>(), It.IsAny<object>(), null, It.IsAny<Func<object, Exception, string>>()));
@@ -152,7 +152,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 ScriptPubKey = new Script()
             };
 
-            Transaction ret = txBuilder.BuildWithdrawalTransaction(uint256.One, 100, recipient).Transaction;
+            Transaction ret = txBuilder.BuildWithdrawalTransaction(uint256.One, 100, recipient);
 
             // Log out a warning in this case, not an error.
             this.logger.Verify(x => x.Log<object>(LogLevel.Warning, It.IsAny<EventId>(), It.IsAny<object>(), null, It.IsAny<Func<object, Exception, string>>()));

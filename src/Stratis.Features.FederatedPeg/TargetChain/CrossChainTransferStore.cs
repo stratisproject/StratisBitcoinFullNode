@@ -19,6 +19,7 @@ using Stratis.Features.FederatedPeg.Events;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.Wallet;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
 {
@@ -70,14 +71,21 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly IWithdrawalTransactionBuilder withdrawalTransactionBuilder;
         private readonly IFederatedPegSettings settings;
         private readonly ISignals signals;
+        private readonly IStateRepositoryRoot stateRepositoryRoot;
 
         /// <summary>Provider of time functions.</summary>
         private readonly object lockObj;
 
         public CrossChainTransferStore(Network network, DataFolder dataFolder, ChainIndexer chainIndexer, IFederatedPegSettings settings, IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory, IWithdrawalExtractor withdrawalExtractor, IFullNode fullNode, IBlockRepository blockRepository,
-            IFederationWalletManager federationWalletManager, IWithdrawalTransactionBuilder withdrawalTransactionBuilder, DBreezeSerializer dBreezeSerializer, ISignals signals)
+            IFederationWalletManager federationWalletManager, IWithdrawalTransactionBuilder withdrawalTransactionBuilder, DBreezeSerializer dBreezeSerializer, ISignals signals,
+            IStateRepositoryRoot stateRepositoryRoot = null)
         {
+            if (!settings.IsMainChain)
+            {
+                Guard.NotNull(stateRepositoryRoot, nameof(stateRepositoryRoot));
+            }
+
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(dataFolder, nameof(dataFolder));
             Guard.NotNull(chainIndexer, nameof(chainIndexer));
@@ -104,6 +112,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.cancellation = new CancellationTokenSource();
             this.settings = settings;
             this.signals = signals;
+            this.stateRepositoryRoot = stateRepositoryRoot;
 
             // Future-proof store name.
             string depositStoreName = "federatedTransfers" + settings.MultiSigAddress.ToString();
@@ -469,38 +478,50 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                         ScriptPubKey = scriptPubKey
                                     };
 
-                                    uint blockTime = maturedDeposit.BlockInfo.BlockTime;
+                                    // Can't send funds to known contract address.
+                                    bool invalidRecipient = false;
 
-                                    BuildWithdrawalTransactionResult res = this.withdrawalTransactionBuilder.BuildWithdrawalTransaction(deposit.Id, blockTime, recipient);
-
-                                    transaction = res.Transaction;
-
-                                    if (res.Success)
+                                    if (this.stateRepositoryRoot != null)
                                     {
-                                        // Reserve the UTXOs before building the next transaction.
-                                        walletUpdated |= this.federationWalletManager.ProcessTransaction(transaction);
+                                        KeyId p2pkhParams = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(recipient.ScriptPubKey);
 
-                                        if (!this.ValidateTransaction(transaction))
+                                        if (p2pkhParams != null && this.stateRepositoryRoot.GetAccountState(new uint160(p2pkhParams.ToBytes())) != null)
                                         {
-                                            this.logger.LogTrace("Suspending transfer for deposit '{0}' to retry invalid transaction later.", deposit.Id);
-
-                                            this.federationWalletManager.RemoveWithdrawalTransactions(deposit.Id);
-                                            haveSuspendedTransfers = true;
-                                            transaction = null;
-                                        }
-                                        else
-                                        {
-                                            status = CrossChainTransferStatus.Partial;
-                                            recordDepositResult.WithDrawalTransactions.Add(transaction);
+                                            invalidRecipient = true;
                                         }
                                     }
-                                    else if (res.Reject)
+
+                                    if (invalidRecipient)
                                     {
                                         status = CrossChainTransferStatus.Rejected;
                                     }
                                     else
                                     {
-                                        haveSuspendedTransfers = true;
+                                        transaction = this.withdrawalTransactionBuilder.BuildWithdrawalTransaction(deposit.Id, maturedDeposit.BlockInfo.BlockTime, recipient);
+
+                                        if (transaction != null)
+                                        {
+                                            // Reserve the UTXOs before building the next transaction.
+                                            walletUpdated |= this.federationWalletManager.ProcessTransaction(transaction);
+
+                                            if (!this.ValidateTransaction(transaction))
+                                            {
+                                                this.logger.LogTrace("Suspending transfer for deposit '{0}' to retry invalid transaction later.", deposit.Id);
+
+                                                this.federationWalletManager.RemoveWithdrawalTransactions(deposit.Id);
+                                                haveSuspendedTransfers = true;
+                                                transaction = null;
+                                            }
+                                            else
+                                            {
+                                                status = CrossChainTransferStatus.Partial;
+                                                recordDepositResult.WithDrawalTransactions.Add(transaction);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            haveSuspendedTransfers = true;
+                                        }
                                     }
                                 }
 
