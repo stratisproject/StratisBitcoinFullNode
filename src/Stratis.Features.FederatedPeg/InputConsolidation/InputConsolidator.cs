@@ -163,8 +163,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                 return null;
 
             // Go through every set of 50 until we consume all, or find a set that works.
-            IEnumerable<UnspentOutputReference> orderedUnspentOutputs = DeterministicCoinOrdering.GetOrderedUnspentOutputs(unspentOutputs);
-            List<UnspentOutputReference> oneRound = orderedUnspentOutputs.Take(WithdrawalTransactionBuilder.MaxInputs).ToList();
+            List<UnspentOutputReference> oneRound = unspentOutputs.Take(WithdrawalTransactionBuilder.MaxInputs).ToList();
             int roundNumber = 0;
 
             List<ConsolidationTransaction> consolidationTransactions = new List<ConsolidationTransaction>();
@@ -189,7 +188,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                 });
 
                 roundNumber++;
-                oneRound = orderedUnspentOutputs
+                oneRound = unspentOutputs
                     .Skip(roundNumber * WithdrawalTransactionBuilder.MaxInputs)
                     .Take(WithdrawalTransactionBuilder.MaxInputs).ToList();
             }
@@ -204,8 +203,6 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
         {
             try
             {
-                // TODO: Confirm that we can remove the ordering below.
-
                 string walletPassword = this.walletManager.Secret.WalletPassword;
                 bool sign = (walletPassword ?? "") != "";
 
