@@ -7,6 +7,7 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.InputConsolidation;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.NetworkHelpers;
 using Stratis.Features.FederatedPeg.Payloads;
