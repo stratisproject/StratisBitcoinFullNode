@@ -1048,8 +1048,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 return partialTransfers;
             }
 
-            return partialTransfers.OrderBy(t => this.EarliestOutput(t.PartialTransaction), Comparer<OutPoint>.Create((x, y) =>
-                ((FederationWalletManager)this.federationWalletManager).CompareOutpoints(x, y))).ToArray();
+            // When sorting, Suspended transactions will have null PartialTransactions. Always put them last in the order they're in.
+            IEnumerable<ICrossChainTransfer> suspended = partialTransfers.Where(x => x.Status == CrossChainTransferStatus.Suspended);
+            IEnumerable<ICrossChainTransfer> notSuspended = partialTransfers.Where(x => x.Status != CrossChainTransferStatus.Suspended);
+
+            return notSuspended.OrderBy(t => this.EarliestOutput(t.PartialTransaction), Comparer<OutPoint>.Create((x, y) =>
+                    ((FederationWalletManager)this.federationWalletManager).CompareOutpoints(x, y)))
+                .Concat(suspended)
+                .ToArray();
         }
 
         /// <inheritdoc />
