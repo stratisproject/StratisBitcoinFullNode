@@ -1,4 +1,6 @@
-﻿namespace Stratis.Bitcoin.Controllers
+﻿using Newtonsoft.Json;
+
+namespace Stratis.Bitcoin.Controllers
 {
     /// <summary>
     /// A generic result type.
@@ -11,6 +13,11 @@
         public readonly bool Succeeded;
 
         public readonly T Value;
+
+        [JsonConstructor]
+        private ApiResult()
+        {
+        }
 
         internal ApiResult(bool succeeded, T value, string errorMessage)
         {
