@@ -3,8 +3,7 @@
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://localhost:37000/",
-      "sslPort": 37001
+      "applicationUrl": "http://localhost:37000/"
     }
   },
   "profiles": {
@@ -27,7 +26,15 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "http://localhost:37000/;http://localhost:37001/"
+      "applicationUrl": "http://localhost:37000/"
+    },
+    "Stratis.FederatedSidechains.AdminDashboard as Production": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Production"
+      },
+      "applicationUrl": "http://localhost:37000/"
     }
   }
 }
