@@ -37,6 +37,12 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         Task<RecordLatestMatureDepositsResult> RecordLatestMatureDepositsAsync(IList<MaturedBlockDepositsModel> blockDeposits);
 
         /// <summary>
+        /// Rejects a transfer.
+        /// </summary>
+        /// <param name="crossChainTransfer">The transfer to reject.</param>
+        void RejectTransfer(ICrossChainTransfer crossChainTransfer);
+
+        /// <summary>
         /// Returns transfers based on their status.
         /// </summary>
         /// <param name="statuses">Set of statuses to get transfers for.</param>
