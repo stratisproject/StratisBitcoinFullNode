@@ -43,12 +43,17 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         /// <inheritdoc />
         public ApiResult<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int startBlockHeight, int maxBlocks)
         {
+            this.logger.LogTrace("{0}:{1}", nameof(startBlockHeight), startBlockHeight);
+
             ChainedHeader consensusTip = this.consensusManager.Tip;
 
             int matureTipHeight = (consensusTip.Height - (int)this.depositExtractor.MinimumDepositConfirmations);
 
             if (startBlockHeight > matureTipHeight)
+            {
+                this.logger.LogTrace("(-)[STARTBLOCK_HEIGHT_HIGHER_THAN_MATURETIP_HEIGHT]:{0}={1}", nameof(matureTipHeight), matureTipHeight);
                 return ApiResult<List<MaturedBlockDepositsModel>>.Fail(string.Format(BlockHeightNotMatureEnoughMessage, startBlockHeight, matureTipHeight));
+            }
 
             var maturedBlocks = new List<MaturedBlockDepositsModel>();
 
@@ -83,7 +88,10 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                 MaturedBlockDepositsModel maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(chainedHeaderBlock);
 
                 if (maturedBlockDeposits == null)
+                {
+                    this.logger.LogTrace("(-)[NO_DEPOSITS_AT_HEIGHT]:{0}={1}", nameof(currentHeader.Height), currentHeader.Height);
                     return ApiResult<List<MaturedBlockDepositsModel>>.Fail(string.Format(UnableToGetDepositsAtHeightMessage, currentHeader.Height));
+                }
 
                 maturedBlocks.Add(maturedBlockDeposits);
 
@@ -95,7 +103,10 @@ namespace Stratis.Features.FederatedPeg.SourceChain
             }
 
             if (maturedBlocks.Count == 0)
+            {
+                this.logger.LogTrace("(-)[MATUREDBLOCKS_EMPTY]");
                 return ApiResult<List<MaturedBlockDepositsModel>>.Fail(string.Format(NoMatureBlocksAtHeight, nameof(startBlockHeight), startBlockHeight, nameof(matureTipHeight), matureTipHeight));
+            }
 
             return ApiResult<List<MaturedBlockDepositsModel>>.Ok(maturedBlocks);
         }

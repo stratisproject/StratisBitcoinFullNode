@@ -34,9 +34,9 @@ namespace Stratis.Features.FederatedPeg.Controllers
         }
 
         /// <inheritdoc />
-        public Task<ApiResult<List<MaturedBlockDepositsModel>>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model, CancellationToken cancellation)
+        public async Task<ApiResult<List<MaturedBlockDepositsModel>>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model, CancellationToken cancellation)
         {
-            return this.SendPostRequestAsync<MaturedBlockRequestModel, ApiResult<List<MaturedBlockDepositsModel>>>(model, FederationGatewayRouteEndPoint.GetMaturedBlockDeposits, cancellation);
+            return await this.SendPostRequestAsync<MaturedBlockRequestModel, ApiResult<List<MaturedBlockDepositsModel>>>(model, FederationGatewayRouteEndPoint.GetMaturedBlockDeposits, cancellation);
         }
     }
 }
