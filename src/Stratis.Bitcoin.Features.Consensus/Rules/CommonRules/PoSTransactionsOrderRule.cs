@@ -8,12 +8,26 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>Checks that coinstake tx from the proven header is the 2nd transaction in a block and that the block has at least 2 transactions.</summary>
     public class PosTransactionsOrderRule : IntegrityValidationConsensusRule
     {
+        private bool isGateway;
+
+        /// <inheritdoc />
+        public override void Initialize()
+        {
+            this.isGateway = this.Parent.ConnectionManagerSettings.IsGateway;
+        }
+
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.InvalidTxCount">Thrown in case block has less than 2 transaction.</exception>
         /// <exception cref="ConsensusErrors.PHCoinstakeMissmatch">Thrown in case coinstake transaction from the proven header missmatches 2nd block transaction.</exception>
         /// <exception cref="ConsensusErrors.ProofOfWorkTooHigh">Thrown in case block is a PoW block but created after the last pow height.</exception>
         public override void Run(RuleContext context)
         {
+            if (this.isGateway)
+            {
+                this.Logger.LogTrace("(-)[GATEWAY_SKIP]");
+                return;
+            }
+
             Block block = context.ValidationContext.BlockToValidate;
 
             var header = context.ValidationContext.ChainedHeaderToValidate.Header as ProvenBlockHeader;

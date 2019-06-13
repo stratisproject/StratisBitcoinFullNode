@@ -48,6 +48,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>State of the current chain that hold consensus tip.</summary>
         public IChainState ChainState { get; }
 
+        public ConnectionManagerSettings ConnectionManagerSettings { get; }
+
         /// <inheritdoc cref="IInvalidBlockHashStore"/>
         private readonly IInvalidBlockHashStore invalidBlockHashStore;
 
@@ -76,7 +78,8 @@ namespace Stratis.Bitcoin.Consensus
             ICheckpoints checkpoints,
             IChainState chainState,
             IInvalidBlockHashStore invalidBlockHashStore,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            ConnectionManagerSettings connectionSettings)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -88,6 +91,7 @@ namespace Stratis.Bitcoin.Consensus
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(invalidBlockHashStore, nameof(invalidBlockHashStore));
             Guard.NotNull(nodeStats, nameof(nodeStats));
+            Guard.NotNull(nodeStats, nameof(connectionSettings));
 
             this.Network = network;
             this.ChainIndexer = chainIndexer;
@@ -103,6 +107,7 @@ namespace Stratis.Bitcoin.Consensus
             this.LoggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.NodeDeployments = nodeDeployments;
+            this.ConnectionManagerSettings = connectionSettings;
 
             this.headerValidationRules = new List<HeaderValidationConsensusRule>();
             this.integrityValidationRules = new List<IntegrityValidationConsensusRule>();
