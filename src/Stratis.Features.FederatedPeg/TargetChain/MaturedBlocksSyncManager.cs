@@ -38,15 +38,15 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         private Task blockRequestingTask;
 
-        /// <summary>The maximum amount of blocks to request at a time from alt chain.</summary>
+        /// <summary>The maximum amount of blocks to request at a time from the counter chain.</summary>
         private const int MaxBlocksToRequest = 100;
 
         /// <summary>When we are fully synced we stop asking for more blocks for this amount of time.</summary>
-        private const int RefreshDelayMs = 10_000;
+        private const int RefreshDelayMs = 30_000;
 
         /// <summary>Delay between initialization and first request to other node.</summary>
         /// <remarks>Needed to give other node some time to start before bombing it with requests.</remarks>
-        private const int InitializationDelayMs = 10_000;
+        private const int InitializationDelayMs = 30_000;
 
         public MaturedBlocksSyncManager(ICrossChainTransferStore store, IFederationGatewayClient federationGatewayClient, ILoggerFactory loggerFactory, IAsyncProvider asyncProvider)
         {
@@ -106,30 +106,30 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 blocksToRequest = MaxBlocksToRequest;
 
             // API method that provides blocks should't give us blocks that are not mature!
-            var model = new MaturedBlockRequestModel(this.crossChainTransferStore.NextMatureDepositHeight, blocksToRequest);
+            var maturedBlockRequest = new MaturedBlockRequestModel(this.crossChainTransferStore.NextMatureDepositHeight, blocksToRequest);
 
-            this.logger.LogDebug("Request model created: {0}:{1}, {2}:{3}.", nameof(model.BlockHeight), model.BlockHeight, nameof(model.MaxBlocksToSend), model.MaxBlocksToSend);
+            this.logger.LogDebug("Mature blocks requested: {0}:{1}, {2}:{3}.", nameof(maturedBlockRequest.BlockHeight), maturedBlockRequest.BlockHeight, nameof(maturedBlockRequest.MaxBlocksToSend), maturedBlockRequest.MaxBlocksToSend);
 
             // Ask for blocks.
-            ApiResult<List<MaturedBlockDepositsModel>> matureBlockDepositsResult = await this.federationGatewayClient.GetMaturedBlockDepositsAsync(model, cancellationToken).ConfigureAwait(false);
+            ApiResult<List<MaturedBlockDepositsModel>> matureBlockDepositsResult = await this.federationGatewayClient.GetMaturedBlockDepositsAsync(maturedBlockRequest, cancellationToken).ConfigureAwait(false);
 
             if (matureBlockDepositsResult == null)
             {
-                this.logger.LogWarning("Unable to fetch mature block deposits from the counter chain node; {0} didn't respond.", this.federationGatewayClient.EndpointUrl);
+                this.logger.LogWarning("Unable to fetch mature block deposits as the counter chain node [{0}] didn't respond.", this.federationGatewayClient.EndpointUrl);
                 this.logger.LogTrace("(-)[COUNTER_CHAIN_NODE_UNRESPONSIVE]:true");
                 return true;
             }
 
             if (matureBlockDepositsResult.Value == null)
             {
-                this.logger.LogWarning("Unable to fetch mature block deposits from the counter chain node; a null list of mature deposits was returned; {0}", matureBlockDepositsResult.ErrorMessage);
+                this.logger.LogWarning("Unable to fetch mature block deposits as the counter chain node returned an empty list of matured block deposits; {0}", matureBlockDepositsResult.ErrorMessage ?? "None");
                 this.logger.LogTrace("(-)[COUNTER_CHAIN_NODE_RESULT_NULL]:true");
                 return true;
             }
 
             if (!matureBlockDepositsResult.Succeeded)
             {
-                this.logger.LogWarning("Unable to fetch mature block deposits from the counter chain node; {0}", matureBlockDepositsResult.ErrorMessage);
+                this.logger.LogWarning("Unable to fetch mature block deposits from the counter chain node. Message: {0}", matureBlockDepositsResult.ErrorMessage);
                 this.logger.LogTrace("(-)[COUNTER_CHAIN_NODE_ERROR]:true,{0}={1}", nameof(matureBlockDepositsResult.ErrorMessage), matureBlockDepositsResult.ErrorMessage);
                 return true;
             }

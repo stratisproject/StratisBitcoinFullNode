@@ -24,6 +24,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
     public sealed class MaturedBlocksProvider : IMaturedBlocksProvider
     {
         public const string BlockHeightNotMatureEnoughMessage = "The submitted block height of {0} is not mature enough, only blocks at a height less than {1} can be processed.";
+        public const string NoMatureBlocksAtHeight = "No matured blocks found; {0}={1}, {2}={3}";
         public const string UnableToGetDepositsAtHeightMessage = "Unable to get deposits for block at height {0}.";
 
         private readonly IConsensusManager consensusManager;
@@ -92,6 +93,9 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                     break;
                 }
             }
+
+            if (maturedBlocks.Count == 0)
+                return ApiResult<List<MaturedBlockDepositsModel>>.Fail(string.Format(NoMatureBlocksAtHeight, nameof(startBlockHeight), startBlockHeight, nameof(matureTipHeight), matureTipHeight));
 
             return ApiResult<List<MaturedBlockDepositsModel>>.Ok(maturedBlocks);
         }
