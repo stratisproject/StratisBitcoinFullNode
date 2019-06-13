@@ -115,21 +115,21 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
             if (matureBlockDepositsResult == null)
             {
-                this.logger.LogInformation("Unable to fetch mature block deposits from the counter chain node; {0} didn't respond.", this.federationGatewayClient.EndpointUrl);
+                this.logger.LogWarning("Unable to fetch mature block deposits from the counter chain node; {0} didn't respond.", this.federationGatewayClient.EndpointUrl);
                 this.logger.LogTrace("(-)[COUNTER_CHAIN_NODE_UNRESPONSIVE]:true");
                 return true;
             }
 
             if (matureBlockDepositsResult.Value == null)
             {
-                this.logger.LogInformation("Unable to fetch mature block deposits from the counter chain node; mature deposits was null.");
+                this.logger.LogWarning("Unable to fetch mature block deposits from the counter chain node; a null list of mature deposits was returned; {0}", matureBlockDepositsResult.ErrorMessage);
                 this.logger.LogTrace("(-)[COUNTER_CHAIN_NODE_RESULT_NULL]:true");
                 return true;
             }
 
             if (!matureBlockDepositsResult.Succeeded)
             {
-                this.logger.LogInformation("Unable to fetch mature block deposits from the counter chain node; {0}.", matureBlockDepositsResult.ErrorMessage);
+                this.logger.LogWarning("Unable to fetch mature block deposits from the counter chain node; {0}", matureBlockDepositsResult.ErrorMessage);
                 this.logger.LogTrace("(-)[COUNTER_CHAIN_NODE_ERROR]:true,{0}={1}", nameof(matureBlockDepositsResult.ErrorMessage), matureBlockDepositsResult.ErrorMessage);
                 return true;
             }
