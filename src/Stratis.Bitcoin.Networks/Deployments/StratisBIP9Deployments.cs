@@ -10,9 +10,11 @@ namespace Stratis.Bitcoin.Networks.Deployments
         // The position of each deployment in the deployments array.
         public const int TestDummy = 0;
         public const int ColdStaking = 2;
+        public const int CSV = 3;
+        public const int Segwit = 4;
 
         // The number of deployments.
-        public const int NumberOfDeployments = ColdStaking + 1;
+        public const int NumberOfDeployments = 4;
 
         /// <summary>
         /// Constructs the BIP9 deployments array.
@@ -34,6 +36,17 @@ namespace Stratis.Bitcoin.Networks.Deployments
             {
                 case ColdStaking:
                     flags.ScriptFlags |= ScriptVerify.CheckColdStakeVerify;
+                    break;
+
+                case CSV:
+                    // Start enforcing BIP68 (sequence locks), BIP112 (CHECKSEQUENCEVERIFY) and BIP113 (Median Time Past) using versionbits logic.
+                    flags.ScriptFlags = ScriptVerify.CheckSequenceVerify;
+                    flags.LockTimeFlags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
+                    break;
+
+                case Segwit:
+                    // Start enforcing WITNESS rules using versionbits logic.
+                    flags.ScriptFlags = ScriptVerify.Witness;
                     break;
             }
 

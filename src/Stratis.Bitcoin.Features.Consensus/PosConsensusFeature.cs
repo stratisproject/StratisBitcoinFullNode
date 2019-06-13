@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Behaviors;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Miner.Tests")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
@@ -100,6 +101,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConsensusManagerBehavior(this.chainIndexer, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.network, this.chainState, this.checkpoints, this.provenBlockHeaderStore, this.connectionManagerSettings));
 
             connectionParameters.TemplateBehaviors.Add(new ProvenHeadersReservedSlotsBehavior(this.connectionManager, this.loggerFactory));
+
+            // Add witness discovery as a requirement if witness is activated.
+            DeploymentFlags flags = this.nodeDeployments.GetFlags(this.consensusManager.Tip);
+            if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
+                this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
 
             return Task.CompletedTask;
         }

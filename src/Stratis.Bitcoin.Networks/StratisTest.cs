@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
+using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Networks.Deployments;
 using Stratis.Bitcoin.Networks.Policies;
@@ -72,7 +73,15 @@ namespace Stratis.Bitcoin.Networks
             {
                 [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(2,
                     new DateTime(2018, 11, 1, 0, 0, 0, DateTimeKind.Utc),
-                    new DateTime(2019, 6, 1, 0, 0, 0, DateTimeKind.Utc))
+                    new DateTime(2019, 6, 1, 0, 0, 0, DateTimeKind.Utc)),
+
+                [StratisBIP9Deployments.CSV] = new BIP9DeploymentsParameters(3,
+                    new DateTime(2019, 6, 1, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2020, 6, 1, 0, 0, 0, DateTimeKind.Utc)),
+
+                [StratisBIP9Deployments.Segwit] = new BIP9DeploymentsParameters(4,
+                    new DateTime(2019, 6, 1, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2020, 6, 1, 0, 0, 0, DateTimeKind.Utc)),
             };
 
             this.Consensus = new NBitcoin.Consensus(
@@ -113,6 +122,13 @@ namespace Stratis.Bitcoin.Networks
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (65) };
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
             this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (65 + 128) };
+
+            this.Bech32Encoders = new Bech32Encoder[2];
+            var encoder = new Bech32Encoder("bc");
+            this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
+            this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
+            this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = null;
+            this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = null;
 
             this.Checkpoints = new Dictionary<int, CheckpointInfo>
             {

@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var minerSettings = new MinerSettings(nodeSettings);
 
             // Simple block creation, nothing special yet:
-            var blockDefinition = new PowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, consensusRules);
+            var blockDefinition = new PowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, consensusRules, new NodeDeployments(network, chain));
             BlockTemplate newBlock = blockDefinition.Build(chain.Tip, scriptPubKey);
 
             await consensus.BlockMinedAsync(newBlock.Block);
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             }
 
             // Just to make sure we can still make simple blocks
-            blockDefinition = new PowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, consensusRules);
+            blockDefinition = new PowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, consensusRules, new NodeDeployments(network, chain));
             blockDefinition.Build(chain.Tip, scriptPubKey);
 
             var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, new MempoolSettings(nodeSettings), chain, inMemoryCoinView, loggerFactory, nodeSettings, consensusRules);
