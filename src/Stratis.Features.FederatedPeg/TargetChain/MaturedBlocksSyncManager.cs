@@ -27,7 +27,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
     /// <inheritdoc cref="IMaturedBlocksSyncManager"/>
     public class MaturedBlocksSyncManager : IMaturedBlocksSyncManager
     {
-        private readonly ICrossChainTransferStore store;
+        private readonly ICrossChainTransferStore crossChainTransferStore;
 
         private readonly IFederationGatewayClient federationGatewayClient;
         private readonly IAsyncProvider asyncProvider;
@@ -50,7 +50,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         public MaturedBlocksSyncManager(ICrossChainTransferStore store, IFederationGatewayClient federationGatewayClient, ILoggerFactory loggerFactory, IAsyncProvider asyncProvider)
         {
-            this.store = store;
+            this.crossChainTransferStore = store;
             this.federationGatewayClient = federationGatewayClient;
             this.asyncProvider = asyncProvider;
 
@@ -102,11 +102,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             int blocksToRequest = 1;
 
             // TODO why are we asking for max of 1 block and if it's not suspended then 1000? investigate this logic in maturedBlocksProvider
-            if (!this.store.HasSuspended())
+            if (!this.crossChainTransferStore.HasSuspended())
                 blocksToRequest = MaxBlocksToRequest;
 
             // API method that provides blocks should't give us blocks that are not mature!
-            var model = new MaturedBlockRequestModel(this.store.NextMatureDepositHeight, blocksToRequest);
+            var model = new MaturedBlockRequestModel(this.crossChainTransferStore.NextMatureDepositHeight, blocksToRequest);
 
             this.logger.LogDebug("Request model created: {0}:{1}, {2}:{3}.", nameof(model.BlockHeight), model.BlockHeight, nameof(model.MaxBlocksToSend), model.MaxBlocksToSend);
 
@@ -148,7 +148,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
             if (matureBlockDepositsResult.Value.Count > 0)
             {
-                RecordLatestMatureDepositsResult result = await this.store.RecordLatestMatureDepositsAsync(matureBlockDepositsResult.Value).ConfigureAwait(false);
+                RecordLatestMatureDepositsResult result = await this.crossChainTransferStore.RecordLatestMatureDepositsAsync(matureBlockDepositsResult.Value).ConfigureAwait(false);
 
                 // If we received a portion of blocks we can ask for new portion without any delay.
                 if (result.MatureDepositRecorded)
@@ -163,7 +163,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 // If we've received nothing we assume we are at the tip and should flush.
                 // Same mechanic as with syncing headers protocol.
-                await this.store.SaveCurrentTipAsync().ConfigureAwait(false);
+                await this.crossChainTransferStore.SaveCurrentTipAsync().ConfigureAwait(false);
             }
 
             return true;
