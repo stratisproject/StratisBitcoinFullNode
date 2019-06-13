@@ -227,19 +227,23 @@ namespace Stratis.Features.FederatedPeg
                 benchLog.AppendLine();
             }
 
-            Transaction consolidationPartial = this.inputConsolidator.PartialTransaction;
+            List<ConsolidationTransaction> consolidationPartials = this.inputConsolidator.ConsolidationTransactions;
 
-            if (consolidationPartial != null)
+            if (consolidationPartials != null)
             {
-                benchLog.AppendLine("--- Consolidation Transaction ---");
-                benchLog.Append(
-                    string.Format("Tran#={0} TotalOut={1,12} Signatures=({2}/{3})",
-                        consolidationPartial.ToString().Substring(0, 6),
-                        consolidationPartial.TotalOut.ToString(),
-                        consolidationPartial.GetSignatureCount(this.network),
-                        this.federatedPegSettings.MultiSigM
-                    )
-                );
+                benchLog.AppendLine("--- Consolidation Transactions in Memory ---");
+                foreach (ConsolidationTransaction partial in consolidationPartials)
+                {
+                    benchLog.Append(
+                        string.Format("Tran#={0} TotalOut={1,12} Status={2} Signatures=({3}/{4})",
+                            partial.PartialTransaction.ToString().Substring(0, 6),
+                            partial.PartialTransaction.TotalOut.ToString(),
+                            partial.Status,
+                            partial.PartialTransaction.GetSignatureCount(this.network),
+                            this.federatedPegSettings.MultiSigM
+                        )
+                    );
+                }
                 benchLog.AppendLine();
             }
 

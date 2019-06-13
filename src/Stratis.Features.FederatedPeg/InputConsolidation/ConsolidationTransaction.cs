@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using DBreeze.Transactions;
+using NBitcoin;
 using Stratis.Features.FederatedPeg.Interfaces;
 
 namespace Stratis.Features.FederatedPeg.InputConsolidation

@@ -1075,6 +1075,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (!this.TransactionIsSpendingUnspentUTXOs(transaction, coins))
                     return false;
 
+                // TODO: Check the inputs are in order?
+
                 // Verify that all inputs are signed.
                 if (checkSignature)
                 {

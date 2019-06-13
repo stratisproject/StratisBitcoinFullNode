@@ -35,7 +35,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.signals,
                 this.network);
 
-            Assert.Null(inputConsolidator.BuildConsolidatingTransaction());
+            Assert.Null(inputConsolidator.CreateRequiredConsolidationTransactions(Money.Coins(100m)));
         }
 
         [Fact]
@@ -75,11 +75,10 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.AddFundingTransaction(funding);
 
-            Transaction transaction = inputConsolidator.BuildConsolidatingTransaction();
+            List<ConsolidationTransaction> transactions = inputConsolidator.CreateRequiredConsolidationTransactions(Money.Coins(depositAmount));
 
-            Assert.Equal(WithdrawalTransactionBuilder.MaxInputs, transaction.Inputs.Count);
-            Assert.Equal(1, transaction.Outputs.Count);
-            Assert.Equal(this.federatedPegSettings.MultiSigAddress.ScriptPubKey, transaction.Outputs[0].ScriptPubKey);
+            Assert.Equal(2, transactions.Count);
+            Assert.Equal(this.federatedPegSettings.MultiSigAddress.ScriptPubKey, transactions[0].PartialTransaction.Outputs[0].ScriptPubKey);
         }
     }
 }
