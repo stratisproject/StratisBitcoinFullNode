@@ -165,6 +165,11 @@ namespace Stratis.Bitcoin.Features.PoA
                 catch (OperationCanceledException)
                 {
                 }
+                // TODO: Find a better way to do this.
+                catch (ConsensusErrorException ce) when (ce.ConsensusError.Code == "invalid-collateral-amount")
+                {
+                    this.logger.LogInformation("Miner failed to mine block due to: '{0}'.", ce.ConsensusError.Message);
+                }
                 catch (Exception exception)
                 {
                     this.logger.LogCritical("Exception occurred during mining: {0}", exception.ToString());
