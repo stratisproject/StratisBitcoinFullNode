@@ -1,20 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Features.FederatedPeg.Events;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Payloads;
+using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
 
-namespace Stratis.Features.FederatedPeg.TargetChain
+namespace Stratis.Features.FederatedPeg.InputConsolidation
 {
     public class InputConsolidator : IInputConsolidator
     {
@@ -148,6 +147,15 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
         }
 
+        private void CalculateRequiredConsolidation()
+        {
+            // Get all of the inputs
+
+            // Take 50 at a time, until it works or we use all the inputs
+
+            // Each time, create a consolidating transaction and store the transaction to our list.
+        }
+
         /// <summary>
         /// Build a consolidating transaction.
         /// </summary>
@@ -227,37 +235,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     this.signingInProgress = false;
                 }
             }
-        }
-    }
-
-    public class ConsolidationSignatureResult
-    {
-        /// <summary>
-        /// Whether the transaction was successfully signed.
-        /// </summary>
-        public bool Signed { get; set; }
-
-        /// <summary>
-        /// The resulting transaction after signing.
-        /// </summary>
-        public Transaction TransactionResult { get; set; }
-
-        public static ConsolidationSignatureResult Failed()
-        {
-            return new ConsolidationSignatureResult
-            {
-                Signed = false,
-                TransactionResult = null
-            };
-        }
-
-        public static ConsolidationSignatureResult Succeeded(Transaction result)
-        {
-            return new ConsolidationSignatureResult
-            {
-                Signed = true,
-                TransactionResult = result
-            };
         }
     }
 }
