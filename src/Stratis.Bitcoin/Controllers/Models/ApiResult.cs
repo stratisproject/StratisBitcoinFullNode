@@ -9,13 +9,13 @@ namespace Stratis.Bitcoin.Controllers
     public class ApiResult<T>
     {
         [JsonProperty("errorMessage")]
-        public string ErrorMessage { get; private set; }
+        public string ErrorMessage { get; set; }
 
         [JsonProperty("succeeded")]
-        public bool Succeeded { get; private set; }
+        public bool Succeeded { get; set; }
 
         [JsonProperty("value")]
-        public T Value { get; private set; }
+        public T Value { get; set; }
 
         [JsonConstructor]
         private ApiResult()

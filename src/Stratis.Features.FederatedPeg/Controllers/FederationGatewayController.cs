@@ -73,7 +73,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
             {
                 ApiResult<List<MaturedBlockDepositsModel>> depositsResult = this.maturedBlocksProvider.GetMaturedDeposits(blockRequest.BlockHeight, blockRequest.MaxBlocksToSend);
 
-                this.logger.LogTrace("{0}:{1},{2}:{3},{4}:{5}", nameof(depositsResult.ErrorMessage), depositsResult.ErrorMessage, nameof(depositsResult.Succeeded), depositsResult.Succeeded, nameof(depositsResult.Value), depositsResult.Value.Count);
+                this.logger.LogTrace("{0}:{1},{2}:{3},{4}:{5}", nameof(depositsResult.ErrorMessage), depositsResult.ErrorMessage, nameof(depositsResult.Succeeded), depositsResult.Succeeded, nameof(depositsResult.Value), depositsResult.Value);
 
                 return this.Json(depositsResult);
             }
