@@ -234,7 +234,7 @@ namespace Stratis.Features.FederatedPeg
                 benchLog.AppendLine("--- Consolidation Transactions in Memory ---");
                 foreach (ConsolidationTransaction partial in consolidationPartials)
                 {
-                    benchLog.Append(
+                    benchLog.AppendLine(
                         string.Format("Tran#={0} TotalOut={1,12} Status={2} Signatures=({3}/{4})",
                             partial.PartialTransaction.ToString().Substring(0, 6),
                             partial.PartialTransaction.TotalOut.ToString(),
