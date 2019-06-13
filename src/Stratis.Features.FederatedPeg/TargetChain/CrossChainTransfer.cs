@@ -123,7 +123,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             if (this.depositTransactionId == null || this.depositTargetAddress == null || this.depositAmount == 0)
                 return false;
 
-            if (this.status == CrossChainTransferStatus.Suspended)
+            if (this.status == CrossChainTransferStatus.Suspended || this.status == CrossChainTransferStatus.Rejected)
                 return true;
 
             if (this.PartialTransaction == null)
