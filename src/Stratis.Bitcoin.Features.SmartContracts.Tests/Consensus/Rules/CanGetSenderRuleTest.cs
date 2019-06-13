@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 new InvalidBlockHashStore(null),
                 new NodeStats(null),
                 new AsyncProvider(new Mock<ILoggerFactory>().Object, new Mock<ISignals>().Object, new NodeLifetime()),
-                new ConnectionManagerSettings(new NodeSettings()));
+                new ConnectionManagerSettings(new NodeSettings(this.network)));
 
             this.rule.Initialize();
         }
