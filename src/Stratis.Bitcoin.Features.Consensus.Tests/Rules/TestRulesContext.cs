@@ -90,8 +90,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         private RuleRegistrationHelper ruleRegistrationHelper;
 
         public TestConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ChainIndexer chainIndexer, NodeDeployments nodeDeployments,
-            ConsensusSettings consensusSettings, ICheckpoints checkpoints, IChainState chainState, IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats)
-            : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, chainState, invalidBlockHashStore, nodeStats)
+            ConsensusSettings consensusSettings, ICheckpoints checkpoints, IChainState chainState, IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, ConnectionManagerSettings connectionManagerSettings)
+            : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, chainState, invalidBlockHashStore, nodeStats, connectionManagerSettings)
         {
             this.ruleRegistrationHelper = new RuleRegistrationHelper();
         }
@@ -126,8 +126,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         public TestPosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ChainIndexer chainIndexer,
             NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView uxtoSet, IStakeChain stakeChain,
-            IStakeValidator stakeValidator, IChainState chainState, IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IRewindDataIndexCache rewindDataIndexCache, IAsyncProvider asyncProvider)
-            : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, uxtoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore, nodeStats, rewindDataIndexCache, asyncProvider)
+            IStakeValidator stakeValidator, IChainState chainState, IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IRewindDataIndexCache rewindDataIndexCache,
+            IAsyncProvider asyncProvider, ConnectionManagerSettings connectionManagerSettings)
+            : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, uxtoSet, stakeChain,
+                stakeValidator, chainState, invalidBlockHashStore, nodeStats, rewindDataIndexCache, asyncProvider, connectionManagerSettings)
         {
             this.ruleRegistrationHelper = new RuleRegistrationHelper();
         }
@@ -171,7 +173,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.ChainIndexer);
             testRulesContext.ConsensusRuleEngine = new PowConsensusRuleEngine(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider,
                 testRulesContext.ChainIndexer, deployments, consensusSettings, testRulesContext.Checkpoints, new InMemoryCoinView(new uint256()), testRulesContext.ChainState,
-                new InvalidBlockHashStore(DateTimeProvider.Default), new NodeStats(DateTimeProvider.Default), testRulesContext.AsyncProvider).Register();
+                new InvalidBlockHashStore(DateTimeProvider.Default), new NodeStats(DateTimeProvider.Default), testRulesContext.AsyncProvider, new ConnectionManagerSettings(new NodeSettings(network))).Register();
 
             return testRulesContext;
         }

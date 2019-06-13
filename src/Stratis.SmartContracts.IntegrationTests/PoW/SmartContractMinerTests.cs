@@ -229,7 +229,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                         chainState,
                         new InvalidBlockHashStore(DateTimeProvider.Default),
                         new NodeStats(new DateTimeProvider()),
-                        asyncProvider)
+                        asyncProvider,
+                        new ConnectionManagerSettings(new NodeSettings()))
                     .Register();
 
                 var ruleRegistration = new SmartContractPowRuleRegistration(this.network, this.StateRoot,

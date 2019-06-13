@@ -7,6 +7,7 @@ using NBitcoin.Crypto;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
@@ -42,7 +43,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(this.network.Consensus);
             ConsensusRuleEngine consensusRuleEngine = new PosConsensusRuleEngine(this.network, this.loggerFactory.Object, DateTimeProvider.Default,
                 this.ChainIndexer, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
-                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new Mock<INodeStats>().Object, this.rewindDataIndexStore.Object, this.asyncProvider)
+                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new Mock<INodeStats>().Object, this.rewindDataIndexStore.Object,
+                this.asyncProvider, new ConnectionManagerSettings(new NodeSettings(this.network)))
                 .Register();
 
             var headerValidator = new HeaderValidator(consensusRuleEngine, this.loggerFactory.Object);

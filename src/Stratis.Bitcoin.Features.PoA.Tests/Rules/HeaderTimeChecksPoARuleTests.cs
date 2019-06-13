@@ -3,6 +3,8 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -66,7 +68,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 
             this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, provider.Object, this.ChainIndexer, new NodeDeployments(this.network, this.ChainIndexer),
                 this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object, new ChainState(), new InvalidBlockHashStore(provider.Object),
-                new NodeStats(provider.Object), this.slotsManager, this.poaHeaderValidator, this.votingManager, this.federationManager, this.asyncProvider);
+                new NodeStats(provider.Object), this.slotsManager, this.poaHeaderValidator, this.votingManager, this.federationManager, this.asyncProvider, new ConnectionManagerSettings(new NodeSettings()));
 
             this.timeChecksRule.Parent = this.rulesEngine;
             this.timeChecksRule.Initialize();

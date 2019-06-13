@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.deployments = new NodeDeployments(this.Network, this.chainIndexer);
 
             this.consensusRules = new PowConsensusRuleEngine(this.Network, this.loggerFactory, this.dateTimeProvider, this.chainIndexer, this.deployments, this.ConsensusSettings,
-                     this.checkpoints.Object, this.coinView, this.ChainState.Object, this.hashStore, this.nodeStats, this.asyncProvider);
+                     this.checkpoints.Object, this.coinView, this.ChainState.Object, this.hashStore, this.nodeStats, this.asyncProvider, new ConnectionManagerSettings(new NodeSettings(this.Network)));
 
             this.consensusRules.Register();
 

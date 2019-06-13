@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var deployments = new NodeDeployments(testChainContext.Network, testChainContext.ChainIndexer);
             testChainContext.ConsensusRules = new PowConsensusRuleEngine(testChainContext.Network, testChainContext.LoggerFactory, testChainContext.DateTimeProvider,
                 testChainContext.ChainIndexer, deployments, consensusSettings, testChainContext.Checkpoints, cachedCoinView, testChainContext.ChainState,
-                    new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), testChainContext.AsyncProvider).Register();
+                    new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), testChainContext.AsyncProvider, new ConnectionManagerSettings(new NodeSettings(network))).Register();
 
             testChainContext.HeaderValidator = new HeaderValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
             testChainContext.IntegrityValidator = new IntegrityValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);

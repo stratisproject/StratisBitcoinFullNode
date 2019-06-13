@@ -26,8 +26,8 @@ namespace Stratis.Bitcoin.Features.PoA
         public PoAConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ChainIndexer chainIndexer,
             NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IChainState chainState,
             IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, ISlotsManager slotsManager, PoABlockHeaderValidator poaHeaderValidator,
-            VotingManager votingManager, IFederationManager federationManager, IAsyncProvider asyncProvider)
-            : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats, asyncProvider)
+            VotingManager votingManager, IFederationManager federationManager, IAsyncProvider asyncProvider, ConnectionManagerSettings connectionSettings)
+            : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats, asyncProvider,connectionSettings)
         {
             this.SlotsManager = slotsManager;
             this.PoaHeaderValidator = poaHeaderValidator;

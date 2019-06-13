@@ -102,7 +102,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                     new ConsensusSettings(NodeSettings.Default(KnownNetworks.RegTest)), new Mock<ICheckpoints>().Object, new Mock<ICoinView>().Object, new Mock<IChainState>().Object,
                     new InvalidBlockHashStore(dateTimeProvider),
                     new NodeStats(dateTimeProvider),
-                    new AsyncProvider(new LoggerFactory(), new Mock<ISignals>().Object, new Mock<NodeLifetime>().Object));
+                    new AsyncProvider(new LoggerFactory(), new Mock<ISignals>().Object, new Mock<NodeLifetime>().Object),
+                    new ConnectionManagerSettings(new NodeSettings(this.network)));
 
                 rule.Initialize();
 
