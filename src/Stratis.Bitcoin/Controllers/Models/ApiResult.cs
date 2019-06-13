@@ -8,18 +8,21 @@ namespace Stratis.Bitcoin.Controllers
     /// <typeparam name="T">The type of the value to return if the result was successful.</typeparam>
     public class ApiResult<T>
     {
-        public readonly string ErrorMessage;
+        [JsonProperty("errorMessage")]
+        public string ErrorMessage { get; private set; }
 
-        public readonly bool Succeeded;
+        [JsonProperty("succeeded")]
+        public bool Succeeded { get; private set; }
 
-        public readonly T Value;
+        [JsonProperty("value")]
+        public T Value { get; private set; }
 
         [JsonConstructor]
         private ApiResult()
         {
         }
 
-        internal ApiResult(bool succeeded, T value, string errorMessage)
+        public ApiResult(bool succeeded, T value, string errorMessage)
         {
             this.Succeeded = succeeded;
             this.Value = value;

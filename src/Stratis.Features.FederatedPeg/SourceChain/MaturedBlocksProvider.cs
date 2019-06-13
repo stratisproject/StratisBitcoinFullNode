@@ -43,15 +43,13 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         /// <inheritdoc />
         public ApiResult<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int startBlockHeight, int maxBlocks)
         {
-            this.logger.LogTrace("{0}:{1}", nameof(startBlockHeight), startBlockHeight);
-
             ChainedHeader consensusTip = this.consensusManager.Tip;
 
             int matureTipHeight = (consensusTip.Height - (int)this.depositExtractor.MinimumDepositConfirmations);
 
             if (startBlockHeight > matureTipHeight)
             {
-                this.logger.LogTrace("(-)[STARTBLOCK_HEIGHT_HIGHER_THAN_MATURETIP_HEIGHT]:{0}={1}", nameof(matureTipHeight), matureTipHeight);
+                this.logger.LogTrace("(-)[STARTBLOCK_HIGHER_THAN_MATURETIP]:{0}={1},{2}={3}", nameof(startBlockHeight), startBlockHeight, nameof(matureTipHeight), matureTipHeight);
                 return ApiResult<List<MaturedBlockDepositsModel>>.Fail(string.Format(BlockHeightNotMatureEnoughMessage, startBlockHeight, matureTipHeight));
             }
 
