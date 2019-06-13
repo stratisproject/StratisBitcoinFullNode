@@ -119,10 +119,6 @@
 
         public static ConsensusError BadBlockSignature => new ConsensusError("bad-block-signature", "bad block signature");
 
-        public static ConsensusError InvalidTxCount => new ConsensusError("bad-block-tx-count", "block has less than 2 transactions");
-
-        public static ConsensusError PHCoinstakeMissmatch => new ConsensusError("coinstake-tx-missmatch", "second transaction in the block is not equal to coinstake tx from the proven header");
-
         public static ConsensusError BlockTimeBeforeTrx => new ConsensusError("block-time-before-trx", "block timestamp earlier than transaction timestamp");
 
         public static ConsensusError ProofOfWorkTooHigh => new ConsensusError("proof-of-work-too-high", "proof of work too high");
