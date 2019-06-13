@@ -263,7 +263,10 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                 }
 
                 // Need to check all the transactions that are partial are still valid in case of a reorg.
-                List<ConsolidationTransaction> partials = this.ConsolidationTransactions.Where(x=>x.Status == CrossChainTransferStatus.Partial).ToList();
+                List<ConsolidationTransaction> partials = this.ConsolidationTransactions
+                    .Where(x=>x.Status == CrossChainTransferStatus.Partial || x.Status == CrossChainTransferStatus.FullySigned)
+                    .Take(5) // We don't actually need to validate all of them - just the next potential ones.
+                    .ToList();
 
                 foreach (ConsolidationTransaction cTransaction in partials)
                 {
