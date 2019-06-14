@@ -100,7 +100,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 if (consolidationTransactions != null)
                 {
                     // Only take one at a time. These guys are big.
-                    ConsolidationTransaction toSign = consolidationTransactions.FirstOrDefault(x => x.Status == CrossChainTransferStatus.Partial);
+                    ConsolidationTransaction toSign = consolidationTransactions.FirstOrDefault(x => x.Status == ConsolidationTransactionStatus.Partial);
 
                     if (toSign != null)
                     {

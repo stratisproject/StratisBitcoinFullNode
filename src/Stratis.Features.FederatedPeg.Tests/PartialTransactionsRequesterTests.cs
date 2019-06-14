@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Stratis.Bitcoin.AsyncWork;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;

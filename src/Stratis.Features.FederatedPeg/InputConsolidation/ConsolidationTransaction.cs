@@ -1,18 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Features.FederatedPeg.Interfaces;
 
 namespace Stratis.Features.FederatedPeg.InputConsolidation
 {
     public class ConsolidationTransaction
     {
+        /// <summary>
+        /// The physical transaction being signed and later sent.
+        /// </summary>
         public Transaction PartialTransaction { get; set; }
 
         /// <summary>
-        /// Note this should never be Suspended or Rejected. Only Partial, FullySigned or SeenInBlock
+        /// State this consolidation transaction is in.
         /// </summary>
-        public CrossChainTransferStatus Status { get; set; }
+        public ConsolidationTransactionStatus Status { get; set; }
     }
 }

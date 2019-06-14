@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
+﻿using NBitcoin;
 
 namespace Stratis.Features.FederatedPeg.InputConsolidation
 {
-    public class ConsolidationSignatureResult
+    public sealed class ConsolidationSignatureResult
     {
         /// <summary>
         /// Whether the transaction was successfully signed.
@@ -16,6 +13,8 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
         /// The resulting transaction after signing.
         /// </summary>
         public Transaction TransactionResult { get; set; }
+
+        private ConsolidationSignatureResult() { }
 
         public static ConsolidationSignatureResult Failed()
         {

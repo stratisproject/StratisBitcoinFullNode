@@ -86,7 +86,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                 ConsolidationTransaction inMemoryTransaction = this.GetInMemoryConsolidationTransaction(incomingPartialTransaction);
 
                 // Transaction doesn't exist or need signing.
-                if (inMemoryTransaction == null || inMemoryTransaction.Status != CrossChainTransferStatus.Partial)
+                if (inMemoryTransaction == null || inMemoryTransaction.Status != ConsolidationTransactionStatus.Partial)
                     return ConsolidationSignatureResult.Failed();
 
                 // Attempt to merge signatures
@@ -112,7 +112,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                 // If it is FullySigned, broadcast.
                 if (this.walletManager.ValidateConsolidatingTransaction(inMemoryTransaction.PartialTransaction, true))
                 {
-                    inMemoryTransaction.Status = CrossChainTransferStatus.FullySigned;
+                    inMemoryTransaction.Status = ConsolidationTransactionStatus.FullySigned;
                     this.logger.LogDebug("Consolidation transaction is fully signed. Broadcasting {0}", inMemoryTransaction.PartialTransaction.GetHash());
                     this.broadcasterManager.BroadcastTransactionAsync(inMemoryTransaction.PartialTransaction);
                 }
@@ -157,7 +157,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                 consolidationTransactions.Add(new ConsolidationTransaction
                 {
                     PartialTransaction = transaction,
-                    Status = CrossChainTransferStatus.Partial
+                    Status = ConsolidationTransactionStatus.Partial
                 });
 
                 roundNumber++;
@@ -222,10 +222,10 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                 {
                     ConsolidationTransaction inMemoryTransaction = this.GetInMemoryConsolidationTransaction(transaction);
 
-                    if (inMemoryTransaction != null && inMemoryTransaction.Status == CrossChainTransferStatus.Partial)
+                    if (inMemoryTransaction != null && inMemoryTransaction.Status == ConsolidationTransactionStatus.Partial)
                     {
                         this.logger.LogDebug("Saw condensing transaction {0} in mempool, updating its status to FullySigned", transaction.GetHash());
-                        inMemoryTransaction.Status = CrossChainTransferStatus.FullySigned;
+                        inMemoryTransaction.Status = ConsolidationTransactionStatus.FullySigned;
                         inMemoryTransaction.PartialTransaction = transaction;
                     }
                 }
@@ -251,14 +251,14 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                         if (inMemoryTransaction != null)
                         {
                             this.logger.LogDebug("Saw condensing transaction {0}, updating status to SeenInBlock", transaction.GetHash());
-                            inMemoryTransaction.Status = CrossChainTransferStatus.SeenInBlock;
+                            inMemoryTransaction.Status = ConsolidationTransactionStatus.SeenInBlock;
                         }
                     }
                 }
 
                 // Need to check all the transactions that are partial are still valid in case of a reorg.
                 List<ConsolidationTransaction> partials = this.ConsolidationTransactions
-                    .Where(x=>x.Status == CrossChainTransferStatus.Partial || x.Status == CrossChainTransferStatus.FullySigned)
+                    .Where(x=>x.Status == ConsolidationTransactionStatus.Partial || x.Status == ConsolidationTransactionStatus.FullySigned)
                     .Take(5) // We don't actually need to validate all of them - just the next potential ones.
                     .ToList();
 
@@ -274,7 +274,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                 }
 
                 // If all of our consolidation inputs are SeenInBlock, we can move on! Yay
-                if (this.ConsolidationTransactions.All(x => x.Status == CrossChainTransferStatus.SeenInBlock))
+                if (this.ConsolidationTransactions.All(x => x.Status == ConsolidationTransactionStatus.SeenInBlock))
                     this.ConsolidationTransactions = null;
             }
         }
