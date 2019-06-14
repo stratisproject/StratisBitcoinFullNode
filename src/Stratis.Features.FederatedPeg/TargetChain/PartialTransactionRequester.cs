@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.InputConsolidation;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.NetworkHelpers;
 using Stratis.Features.FederatedPeg.Payloads;
@@ -49,6 +50,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         private readonly IInitialBlockDownloadState ibdState;
         private readonly IFederationWalletManager federationWalletManager;
+        private readonly IInputConsolidator inputConsolidator;
 
         private IAsyncLoop asyncLoop;
 
@@ -59,7 +61,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             INodeLifetime nodeLifetime,
             IFederatedPegBroadcaster federatedPegBroadcaster,
             IInitialBlockDownloadState ibdState,
-            IFederationWalletManager federationWalletManager) {
+            IFederationWalletManager federationWalletManager,
+            IInputConsolidator inputConsolidator) {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(crossChainTransferStore, nameof(crossChainTransferStore));
             Guard.NotNull(asyncProvider, nameof(asyncProvider));
@@ -72,6 +75,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.ibdState = ibdState;
             this.federatedPegBroadcaster = federatedPegBroadcaster;
             this.federationWalletManager = federationWalletManager;
+            this.inputConsolidator = inputConsolidator;
         }
 
         public async Task BroadcastPartialTransactionsAsync() {
@@ -87,6 +91,22 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             {
                 await this.federatedPegBroadcaster.BroadcastAsync(new RequestPartialTransactionPayload(transfer.DepositTransactionId).AddPartial(transfer.PartialTransaction));
                 this.logger.LogDebug("Partial template requested for deposit ID {0}", transfer.DepositTransactionId);
+            }
+
+            // If we don't have any broadcastable transactions, check if we have any consolidating transactions to sign.
+            if (!transfers.Any())
+            {
+                List<ConsolidationTransaction> consolidationTransactions = this.inputConsolidator.ConsolidationTransactions;
+                if (consolidationTransactions != null)
+                {
+                    IEnumerable<ConsolidationTransaction> toSigns = consolidationTransactions.Where(x => x.Status == CrossChainTransferStatus.Partial).Take(NumberToSignAtATime);
+
+                    foreach (ConsolidationTransaction toSign in toSigns)
+                    {
+                        await this.federatedPegBroadcaster.BroadcastAsync(new RequestPartialTransactionPayload(RequestPartialTransactionPayload.ConsolidationDepositId).AddPartial(toSign.PartialTransaction));
+                        this.logger.LogDebug("Partial consolidating transaction requested for {0}.", toSign.PartialTransaction.GetHash());
+                    }
+                }
             }
         }
 

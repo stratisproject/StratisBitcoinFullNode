@@ -56,29 +56,16 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
             signals.Subscribe<WalletNeedsConsolidation>(this.StartConsolidation);
         }
 
-
-
         /// <inheritdoc />
         public void StartConsolidation(WalletNeedsConsolidation trigger)
         {
-            // TODO: The Task.Run is feral is there a better way
-
             Task.Run(() =>
             {
                 lock (this.lockObj)
                 {
-                    // If we're already in progress...
+                    // If we're already in progress we don't need to do anything.
                     if (this.ConsolidationTransactions != null)
-                    {
-                        // If we have any Partial transactions, re-trigger for signing again. One at a time.
-                        ConsolidationTransaction tx = this.ConsolidationTransactions.FirstOrDefault(x => x.Status == CrossChainTransferStatus.Partial);
-                        if (tx != null)
-                        {
-                            this.BroadcastPartial(tx.PartialTransaction);
-                        }
-
                         return;
-                    }
 
                     this.logger.LogInformation("Building consolidation transactions for federation wallet inputs.");
 
@@ -87,20 +74,9 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                     if (this.ConsolidationTransactions == null)
                         return;
 
-                    // Send the first one around to be signed
-                    this.BroadcastPartial(this.ConsolidationTransactions.First(x=>x.Status == CrossChainTransferStatus.Partial).PartialTransaction);
+                    this.logger.LogInformation("Successfully built {0} consolidating transactions.", this.ConsolidationTransactions.Count);
                 }
             });
-        }
-
-        /// <summary>
-        /// Broadcast our partial to be signed by the other federation nodes. Always does one at a time for now.
-        /// </summary>
-        private void BroadcastPartial(Transaction transaction)
-        {
-            this.logger.LogDebug("Broadcasting partial consolidation transaction to federation.");
-            RequestPartialTransactionPayload payload = new RequestPartialTransactionPayload(RequestPartialTransactionPayload.ConsolidationDepositId).AddPartial(transaction);
-            this.federatedPegBroadcaster.BroadcastAsync(payload).GetAwaiter().GetResult();
         }
 
         /// <inheritdoc />
@@ -193,6 +169,8 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                     .Take(WithdrawalTransactionBuilder.MaxInputs).ToList();
             }
 
+            // Loop exits when we get a set of 50 that had a high enough amount, or when we run out of UTXOs aka a round less than 50
+
             return consolidationTransactions;
         }
 
@@ -234,6 +212,30 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
         }
 
         /// <inheritdoc />
+        public void ProcessTransaction(Transaction transaction)
+        {
+            lock (this.lockObj)
+            {
+                // No work to do
+                if (this.ConsolidationTransactions == null)
+                    return;
+
+                // If we have a transaction in memory that is not FullySigned yet, set it to be as such when we receive a transaction from the mempool.
+                if (this.IsConsolidatingTransaction(transaction))
+                {
+                    ConsolidationTransaction inMemoryTransaction = this.GetInMemoryConsolidationTransaction(transaction);
+
+                    if (inMemoryTransaction != null && inMemoryTransaction.Status == CrossChainTransferStatus.Partial)
+                    {
+                        this.logger.LogDebug("Saw condensing transaction {0} in mempool, updating its status to FullySigned", transaction.GetHash());
+                        inMemoryTransaction.Status = CrossChainTransferStatus.FullySigned;
+                        inMemoryTransaction.PartialTransaction = transaction;
+                    }
+                }
+            }
+        }
+
+        /// <inheritdoc />
         public void ProcessBlock(ChainedHeaderBlock chainedHeaderBlock)
         {
             lock (this.lockObj)
@@ -245,9 +247,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                 // If a consolidation transaction comes through, set it to SeenInBlock
                 foreach (Transaction transaction in chainedHeaderBlock.Block.Transactions)
                 {
-                    if (transaction.Inputs.Count == WithdrawalTransactionBuilder.MaxInputs
-                        && transaction.Outputs.Count == 1
-                        && transaction.Outputs[0].ScriptPubKey == this.settings.MultiSigAddress.ScriptPubKey)
+                    if (this.IsConsolidatingTransaction(transaction))
                     {
                         ConsolidationTransaction inMemoryTransaction = this.GetInMemoryConsolidationTransaction(transaction);
 
@@ -280,6 +280,13 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                 if (this.ConsolidationTransactions.All(x => x.Status == CrossChainTransferStatus.SeenInBlock))
                     this.ConsolidationTransactions = null;
             }
+        }
+
+        private bool IsConsolidatingTransaction(Transaction transaction)
+        {
+            return transaction.Inputs.Count == WithdrawalTransactionBuilder.MaxInputs
+                   && transaction.Outputs.Count == 1
+                   && transaction.Outputs[0].ScriptPubKey == this.settings.MultiSigAddress.ScriptPubKey;
         }
 
         private ConsolidationTransaction GetInMemoryConsolidationTransaction(Transaction toMatch)

@@ -33,5 +33,10 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// Make any required changes to the consolidator's state as new blocks come in.
         /// </summary>
         void ProcessBlock(ChainedHeaderBlock chainedHeaderBlock);
+
+        /// <summary>
+        /// Make any required changes to the consolidator's state as new transactions come in.
+        /// </summary>
+        void ProcessTransaction(Transaction transaction);
     }
 }

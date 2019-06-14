@@ -19,6 +19,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly IAsyncProvider asyncProvider;
         private readonly INodeLifetime nodeLifetime;
         private readonly IFederatedPegBroadcaster federatedPegBroadcaster;
+        private readonly IInputConsolidator inputConsolidator;
 
         private readonly IInitialBlockDownloadState ibdState;
         private readonly IFederationWalletManager federationWalletManager;
@@ -32,7 +33,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.asyncProvider = Substitute.For<IAsyncProvider>();
             this.nodeLifetime = Substitute.For<INodeLifetime>();
             this.federatedPegBroadcaster = Substitute.For<IFederatedPegBroadcaster>();
-
+            this.inputConsolidator = Substitute.For<IInputConsolidator>();
             this.ibdState = Substitute.For<IInitialBlockDownloadState>();
             this.federationWalletManager = Substitute.For<IFederationWalletManager>();
             this.federationWalletManager.IsFederationWalletActive().Returns(true);
@@ -51,7 +52,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.nodeLifetime,
                 this.federatedPegBroadcaster,
                 this.ibdState,
-                this.federationWalletManager);
+                this.federationWalletManager,
+                this.inputConsolidator);
 
             await partialRequester.BroadcastPartialTransactionsAsync();
 
@@ -70,7 +72,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.nodeLifetime,
                 this.federatedPegBroadcaster,
                 this.ibdState,
-                this.federationWalletManager);
+                this.federationWalletManager,
+                this.inputConsolidator);
 
             await partialRequester.BroadcastPartialTransactionsAsync();
 
