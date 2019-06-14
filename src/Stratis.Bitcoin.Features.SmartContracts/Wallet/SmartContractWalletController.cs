@@ -154,14 +154,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         ///
         /// <param name="walletName">The name of the wallet holding the address.</param>
         /// <param name="address">The address to retrieve the history for.</param>
-        /// <param name="checkSmartContract">
-        /// Flag to indicate if smart contract check is required. If <c>true</c> each a check
-        /// for existence of smart contract will be performed against each tx
-        /// </param>
         /// <returns>A list of smart contract create and call transaction items as well as transaction items at a specific wallet address.</returns>
         [Route("history")]
         [HttpGet]
-        public IActionResult GetHistory(string walletName, string address, bool checkSmartContract = false)
+        public IActionResult GetHistory(string walletName, string address)
         {
             if (string.IsNullOrWhiteSpace(walletName))
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No wallet name", "No wallet name provided");
@@ -189,83 +185,57 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
                 foreach (FlatHistory item in history)
                 {
-                    bool hasSmartContract = false;
-                    if (checkSmartContract)
-                    {
-                        hasSmartContract = this.receiptRepository.Retrieve(item.Transaction.Id) != null;
-                    }
-
+                    bool hasSmartContract = this.receiptRepository.Retrieve(item.Transaction.Id) != null;
                     TransactionData transaction = item.Transaction;
 
-                    // Record a receive transaction
-                    transactionItems.Add(new ContractTransactionItem
+                    // Record a receive transaction if it has a SC
+                    if (hasSmartContract)
                     {
-                        Amount = transaction.Amount.ToUnit(MoneyUnit.Satoshi),
-                        BlockHeight = transaction.BlockHeight,
-                        Hash = transaction.Id,
-                        Type = ReceivedTransactionType(transaction),
-                        To = address,
-                        HasSmartContract = hasSmartContract
-                    });
+                        transactionItems.Add(new ContractTransactionItem
+                        {
+                            Amount = transaction.Amount.ToUnit(MoneyUnit.Satoshi),
+                            BlockHeight = transaction.BlockHeight,
+                            Hash = transaction.Id,
+                            Type = ReceivedTransactionType(transaction),
+                            To = address
+                        });
+                    }
 
                     // Add outgoing transaction details
-                    if (transaction.SpendingDetails != null)
+                    // Get if it's an SC transaction
+                    PaymentDetails scPayment = transaction.SpendingDetails?.Payments?.FirstOrDefault(x => x.DestinationScriptPubKey.IsSmartContractExec());
+
+                    if (scPayment == null) continue;
+
+                    Receipt receipt = this.receiptRepository.Retrieve(transaction.SpendingDetails.TransactionId);
+                    if (receipt == null) continue;
+
+                    if (scPayment.DestinationScriptPubKey.IsSmartContractCreate())
                     {
-                        // Get if it's an SC transaction
-                        PaymentDetails scPayment = transaction.SpendingDetails.Payments?.FirstOrDefault(x => x.DestinationScriptPubKey.IsSmartContractExec());
-
-                        if (scPayment != null)
+                        // Create a record for a Create transaction
+                        transactionItems.Add(new ContractTransactionItem
                         {
-                            Receipt receipt = this.receiptRepository.Retrieve(transaction.SpendingDetails.TransactionId);
+                            Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
+                            BlockHeight = transaction.SpendingDetails.BlockHeight,
+                            Type = ContractTransactionItemType.ContractCreate,
+                            Hash = transaction.SpendingDetails.TransactionId,
+                            To = receipt.NewContractAddress?.ToBase58Address(this.network) ?? string.Empty
+                        });
+                    }
+                    else
+                    {
+                        // Create a record for a Call transaction
+                        Result<ContractTxData> txData =
+                            this.callDataSerializer.Deserialize(scPayment.DestinationScriptPubKey.ToBytes());
 
-                            if (scPayment.DestinationScriptPubKey.IsSmartContractCreate())
-                            {
-                                // Create a record for a Create transaction
-                                transactionItems.Add(new ContractTransactionItem
-                                {
-                                    Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
-                                    BlockHeight = transaction.SpendingDetails.BlockHeight,
-                                    Type = ContractTransactionItemType.ContractCreate,
-                                    Hash = transaction.SpendingDetails.TransactionId,
-                                    To = receipt?.NewContractAddress?.ToBase58Address(this.network) ?? string.Empty,
-                                    HasSmartContract = receipt != null
-                                });
-                            }
-                            else
-                            {
-                                // Create a record for a Call transaction
-                                Result<ContractTxData> txData = this.callDataSerializer.Deserialize(scPayment.DestinationScriptPubKey.ToBytes());
-
-                                transactionItems.Add(new ContractTransactionItem
-                                {
-                                    Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
-                                    BlockHeight = transaction.SpendingDetails.BlockHeight,
-                                    Type = ContractTransactionItemType.ContractCall,
-                                    Hash = transaction.SpendingDetails.TransactionId,
-                                    To = txData.Value.ContractAddress.ToBase58Address(this.network),
-                                    HasSmartContract = receipt != null
-                                });
-                            }
-                        }
-                        else
+                        transactionItems.Add(new ContractTransactionItem
                         {
-                            // Create a record for every external payment sent
-                            if (transaction.SpendingDetails.Payments != null)
-                            {
-                                foreach (PaymentDetails payment in transaction.SpendingDetails.Payments)
-                                {
-                                    transactionItems.Add(new ContractTransactionItem
-                                    {
-                                        Amount = payment.Amount.ToUnit(MoneyUnit.Satoshi),
-                                        BlockHeight = transaction.SpendingDetails.BlockHeight,
-                                        Type = ContractTransactionItemType.Send,
-                                        Hash = transaction.SpendingDetails.TransactionId,
-                                        To = payment.DestinationAddress,
-                                        HasSmartContract = false
-                                    });
-                                }
-                            }
-                        }
+                            Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
+                            BlockHeight = transaction.SpendingDetails.BlockHeight,
+                            Type = ContractTransactionItemType.ContractCall,
+                            Hash = transaction.SpendingDetails.TransactionId,
+                            To = txData.Value.ContractAddress.ToBase58Address(this.network)
+                        });
                     }
                 }
 
