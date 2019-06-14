@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Crypto;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
@@ -228,19 +230,60 @@ namespace Stratis.Bitcoin.Features.Miner
             this.LastBlockSize = this.BlockSize;
             this.LastBlockWeight = this.BlockWeight;
 
-            if (this.IncludeWitness)
-            {
-                this.BlockTemplate.CoinbaseCommitment = this.GenerateCoinbaseCommitment(chainTip);
-            }
-
             var coinviewRule = this.ConsensusManager.ConsensusRules.GetRule<CoinViewRule>();
             this.coinbase.Outputs[0].Value = this.fees + coinviewRule.GetProofOfWorkReward(this.height);
             this.BlockTemplate.TotalFee = this.fees;
+
+            if (this.IncludeWitness)
+            {
+                AddCoinbaseCommitmentToBlock(this.block);
+            }
 
             int nSerializeSize = this.block.GetSerializedSize();
             this.logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, this.block.GetBlockWeight(this.Network.Consensus), this.BlockTx, this.fees, this.BlockSigOpsCost);
 
             this.UpdateHeaders();
+        }
+
+        /// <summary>
+        /// Adds the coinbase commitment to the coinbase transaction according to  https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki.
+        /// </summary>
+        /// <param name="block">The new block that is being mined.</param>
+        /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/validation.cpp"/>
+        static void AddCoinbaseCommitmentToBlock(Block block)
+        {
+            var wtxidCoinbase = new byte[32];       // The wtxid of the coinbase transaction is defined as to be 0x0000....0000.
+            block.Transactions[0].Inputs[0].WitScript = new WitScript(Op.GetPushOp(wtxidCoinbase));
+
+            // A witness root hash is calculated with all those wtxid as leaves, in a way similar to the hashMerkleRoot in the block header.
+            byte[] witnessRootHash = WitnessCommitmentsRule.BlockWitnessMerkleRoot(block, out var _).ToBytes();
+
+            // // Coinbase's input's witness must consist of a single 32-byte array for the witness reserved value.
+            byte[] witnessReservedValue = new byte[32];
+
+            byte[] dataToHash = new byte[64]; // witness root hash|witness reserved value
+            Buffer.BlockCopy(witnessRootHash, 0, dataToHash, 0, 32);
+            Buffer.BlockCopy(witnessReservedValue, 0, dataToHash, 32, 32);
+
+            // 32-byte - Commitment hash: Double-SHA256(witness root hash|witness reserved value)
+            byte[] commitmentHash = Hashes.Hash256(dataToHash).ToBytes();
+
+            // The commitment is recorded in a scriptPubKey of the coinbase transaction.
+            var coinbaseScriptPubKeyFiledBytes = new byte[38];   // It must be at least 38 bytes, with the first 6-byte of 0x6a24aa21a9ed.
+            coinbaseScriptPubKeyFiledBytes[0] = 0x6a;            // OP_RETURN (0x6a)
+            coinbaseScriptPubKeyFiledBytes[1] = 0x24;            // Push the following 36 bytes (0x24)
+            coinbaseScriptPubKeyFiledBytes[2] = 0xaa;            // Commitment header (0xaa21a9ed)
+            coinbaseScriptPubKeyFiledBytes[3] = 0x21;
+            coinbaseScriptPubKeyFiledBytes[4] = 0xa9;
+            coinbaseScriptPubKeyFiledBytes[5] = 0xed;
+            Buffer.BlockCopy(commitmentHash, 0, coinbaseScriptPubKeyFiledBytes, 6, 32);
+
+            // Write the coinbase commitment to a ScriptPubKey structure.
+            var txOut = new TxOut();
+            txOut.Value = Money.Zero; // the default value would be -1
+            txOut.ScriptPubKey = new Script(coinbaseScriptPubKeyFiledBytes);
+            // If there are more than one scriptPubKey matching the pattern, the one with highest output index is assumed to be the commitment.
+            block.Transactions[0].Outputs.Add(txOut);
         }
 
         /// <summary>

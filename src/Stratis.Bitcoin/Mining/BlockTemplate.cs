@@ -8,8 +8,6 @@ namespace Stratis.Bitcoin.Mining
 
         public Money TotalFee { get; set; }
 
-        public Script CoinbaseCommitment { get; set; }
-
         public BlockTemplate(Network network)
         {
             this.Block = network.CreateBlock();

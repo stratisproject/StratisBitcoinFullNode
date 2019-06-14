@@ -310,11 +310,11 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             extraNonce++;
-            int height = previousHeader.Height + 1; // Height first in coinbase required for block.version=2
-            Transaction txCoinbase = block.Transactions[0];
-            txCoinbase.Inputs[0] = TxIn.CreateCoinbase(height);
 
-            Guard.Assert(txCoinbase.Inputs[0].ScriptSig.Length <= 100);
+            int height = previousHeader.Height + 1; // Height first in coinbase required for block.version=2
+
+            block.Transactions[0].Inputs[0].ScriptSig = new Script(Op.GetPushOp(height)) + OpcodeType.OP_0; // update TxIn.ScriptSig, do not overwrite it, it can contain a WitScript
+
             block.UpdateMerkleRoot();
 
             return extraNonce;

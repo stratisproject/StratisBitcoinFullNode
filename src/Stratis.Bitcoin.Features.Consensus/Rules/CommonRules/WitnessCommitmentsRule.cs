@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 int commitpos = this.GetWitnessCommitmentIndex(block);
                 if (commitpos != -1)
                 {
-                    uint256 hashWitness = this.BlockWitnessMerkleRoot(block, out bool malleated);
+                    uint256 hashWitness = BlockWitnessMerkleRoot(block, out bool _);
 
                     // The malleation check is ignored; as the transaction tree itself
                     // already does not permit it, it is impossible to trigger in the
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <param name="block">Block which transactions witness data is used for calculation.</param>
         /// <param name="mutated"><c>true</c> if at least one leaf of the merkle tree has the same hash as any subtree. Otherwise: <c>false</c>.</param>
         /// <returns>Merkle root.</returns>
-        public uint256 BlockWitnessMerkleRoot(Block block, out bool mutated)
+        public static uint256 BlockWitnessMerkleRoot(Block block, out bool mutated)
         {
             var leaves = new List<uint256>();
             leaves.Add(uint256.Zero); // The witness hash of the coinbase is 0.
