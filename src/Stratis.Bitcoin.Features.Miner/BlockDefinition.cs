@@ -246,11 +246,28 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
+        /// Modify the coinbase commitment to the coinbase transaction according to  https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki.
+        /// </summary>
+        /// <param name="block">The new block that is being mined.</param>
+        /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/validation.cpp"/>
+        public static void UpdateCoinbaseCommitmentToBlock(Block block)
+        {
+            int commitIndex = WitnessCommitmentsRule.GetWitnessCommitmentIndex(block);
+
+            if (commitIndex != -1)
+            {
+                block.Transactions[0].Outputs.RemoveAt(commitIndex);
+            }
+
+            AddCoinbaseCommitmentToBlock(block);
+        }
+
+        /// <summary>
         /// Adds the coinbase commitment to the coinbase transaction according to  https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki.
         /// </summary>
         /// <param name="block">The new block that is being mined.</param>
         /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/validation.cpp"/>
-        static void AddCoinbaseCommitmentToBlock(Block block)
+        private static void AddCoinbaseCommitmentToBlock(Block block)
         {
             var wtxidCoinbase = new byte[32];       // The wtxid of the coinbase transaction is defined as to be 0x0000....0000.
             block.Transactions[0].Inputs[0].WitScript = new WitScript(Op.GetPushOp(wtxidCoinbase));

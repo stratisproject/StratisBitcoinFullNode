@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             bool fHaveWitness = false;
             if (deploymentFlags.ScriptFlags.HasFlag(ScriptVerify.Witness))
             {
-                int commitpos = this.GetWitnessCommitmentIndex(block);
+                int commitpos = GetWitnessCommitmentIndex(block);
                 if (commitpos != -1)
                 {
                     uint256 hashWitness = BlockWitnessMerkleRoot(block, out bool _);
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <c>-1</c> if no SegWit flags were found.
         /// If SegWit flag is found index of the last transaction's output that has SegWit flag is returned.
         /// </returns>
-        private int GetWitnessCommitmentIndex(Block block)
+        public static int GetWitnessCommitmentIndex(Block block)
         {
             int commitpos = -1;
             for (int i = 0; i < block.Transactions[0].Outputs.Count; i++)
