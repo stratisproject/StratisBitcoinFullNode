@@ -44,7 +44,7 @@ namespace Stratis.Sidechains.Networks
             // Create the genesis block.
             this.GenesisTime = 1556631677;
             this.GenesisNonce = 4286824;
-            this.GenesisBits = new Target(new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+            this.GenesisBits = new Target(new uint256("00000fffff000000000000000000000000000000000000000000000000000000"));
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
 
