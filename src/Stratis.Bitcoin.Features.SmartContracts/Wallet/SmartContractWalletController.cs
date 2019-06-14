@@ -151,14 +151,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// If this has been done, and that address is supplied to this method,
         /// a list of all smart contract interactions for a wallet will be returned.
         /// </summary>
-        /// 
+        ///
         /// <param name="walletName">The name of the wallet holding the address.</param>
         /// <param name="address">The address to retrieve the history for.</param>
-        /// 
+        /// <param name="checkSmartContract">
+        /// Flag to indicate if smart contract check is required. If <c>true</c> each a check
+        /// for existence of smart contract will be performed against each tx
+        /// </param>
         /// <returns>A list of smart contract create and call transaction items as well as transaction items at a specific wallet address.</returns>
         [Route("history")]
         [HttpGet]
-        public IActionResult GetHistory(string walletName, string address)
+        public IActionResult GetHistory(string walletName, string address, bool checkSmartContract = false)
         {
             if (string.IsNullOrWhiteSpace(walletName))
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No wallet name", "No wallet name provided");
@@ -186,6 +189,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
                 foreach (FlatHistory item in history)
                 {
+                    bool hasSmartContract = false;
+                    if (checkSmartContract)
+                    {
+                        hasSmartContract = this.receiptRepository.Retrieve(item.Transaction.Id) != null;
+                    }
+
                     TransactionData transaction = item.Transaction;
 
                     // Record a receive transaction
@@ -195,7 +204,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                         BlockHeight = transaction.BlockHeight,
                         Hash = transaction.Id,
                         Type = ReceivedTransactionType(transaction),
-                        To = address
+                        To = address,
+                        HasSmartContract = hasSmartContract
                     });
 
                     // Add outgoing transaction details
@@ -206,17 +216,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
                         if (scPayment != null)
                         {
+                            Receipt receipt = this.receiptRepository.Retrieve(transaction.SpendingDetails.TransactionId);
+
                             if (scPayment.DestinationScriptPubKey.IsSmartContractCreate())
                             {
                                 // Create a record for a Create transaction
-                                Receipt receipt = this.receiptRepository.Retrieve(transaction.SpendingDetails.TransactionId);
                                 transactionItems.Add(new ContractTransactionItem
                                 {
                                     Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
                                     BlockHeight = transaction.SpendingDetails.BlockHeight,
                                     Type = ContractTransactionItemType.ContractCreate,
                                     Hash = transaction.SpendingDetails.TransactionId,
-                                    To = receipt?.NewContractAddress?.ToBase58Address(this.network) ?? ""
+                                    To = receipt?.NewContractAddress?.ToBase58Address(this.network) ?? string.Empty,
+                                    HasSmartContract = receipt != null
                                 });
                             }
                             else
@@ -230,7 +242,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                                     BlockHeight = transaction.SpendingDetails.BlockHeight,
                                     Type = ContractTransactionItemType.ContractCall,
                                     Hash = transaction.SpendingDetails.TransactionId,
-                                    To = txData.Value.ContractAddress.ToBase58Address(this.network)
+                                    To = txData.Value.ContractAddress.ToBase58Address(this.network),
+                                    HasSmartContract = receipt != null
                                 });
                             }
                         }
@@ -247,7 +260,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                                         BlockHeight = transaction.SpendingDetails.BlockHeight,
                                         Type = ContractTransactionItemType.Send,
                                         Hash = transaction.SpendingDetails.TransactionId,
-                                        To = payment.DestinationAddress
+                                        To = payment.DestinationAddress,
+                                        HasSmartContract = false
                                     });
                                 }
                             }
@@ -263,7 +277,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-         
+
         /// <summary>
         /// Builds a transaction to create a smart contract and then broadcasts the transaction to the network.
         /// If the deployment is successful, methods on the smart contract can be subsequently called.
