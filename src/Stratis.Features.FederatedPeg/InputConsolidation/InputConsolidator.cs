@@ -235,48 +235,57 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
         /// <inheritdoc />
         public void ProcessBlock(ChainedHeaderBlock chainedHeaderBlock)
         {
-            lock (this.lockObj)
+            // Needs to be in task or it blocks other components syncing blocks.
+            Task.Run(() =>
             {
-                // No work to do
-                if (this.ConsolidationTransactions == null)
-                    return;
-
-                // If a consolidation transaction comes through, set it to SeenInBlock
-                foreach (Transaction transaction in chainedHeaderBlock.Block.Transactions)
+                lock (this.lockObj)
                 {
-                    if (this.IsConsolidatingTransaction(transaction))
-                    {
-                        ConsolidationTransaction inMemoryTransaction = this.GetInMemoryConsolidationTransaction(transaction);
+                    // No work to do
+                    if (this.ConsolidationTransactions == null)
+                        return;
 
-                        if (inMemoryTransaction != null)
+                    // If a consolidation transaction comes through, set it to SeenInBlock
+                    foreach (Transaction transaction in chainedHeaderBlock.Block.Transactions)
+                    {
+                        if (this.IsConsolidatingTransaction(transaction))
                         {
-                            this.logger.LogDebug("Saw condensing transaction {0}, updating status to SeenInBlock", transaction.GetHash());
-                            inMemoryTransaction.Status = ConsolidationTransactionStatus.SeenInBlock;
+                            ConsolidationTransaction inMemoryTransaction =
+                                this.GetInMemoryConsolidationTransaction(transaction);
+
+                            if (inMemoryTransaction != null)
+                            {
+                                this.logger.LogDebug("Saw condensing transaction {0}, updating status to SeenInBlock",
+                                    transaction.GetHash());
+                                inMemoryTransaction.Status = ConsolidationTransactionStatus.SeenInBlock;
+                            }
                         }
                     }
-                }
 
-                // Need to check all the transactions that are partial are still valid in case of a reorg.
-                List<ConsolidationTransaction> partials = this.ConsolidationTransactions
-                    .Where(x=>x.Status == ConsolidationTransactionStatus.Partial || x.Status == ConsolidationTransactionStatus.FullySigned)
-                    .Take(5) // We don't actually need to validate all of them - just the next potential ones.
-                    .ToList();
+                    // Need to check all the transactions that are partial are still valid in case of a reorg.
+                    List<ConsolidationTransaction> partials = this.ConsolidationTransactions
+                        .Where(x => x.Status == ConsolidationTransactionStatus.Partial ||
+                                    x.Status == ConsolidationTransactionStatus.FullySigned)
+                        .Take(5) // We don't actually need to validate all of them - just the next potential ones.
+                        .ToList();
 
-                foreach (ConsolidationTransaction cTransaction in partials)
-                {
-                    if (!this.walletManager.ValidateConsolidatingTransaction(cTransaction.PartialTransaction))
+                    foreach (ConsolidationTransaction cTransaction in partials)
                     {
-                        // If we find an invalid one, everything will need redoing!
-                        this.logger.LogDebug("Consolidation transaction {0} failed validation, resetting InputConsolidator", cTransaction.PartialTransaction.GetHash());
-                        this.ConsolidationTransactions = null;
-                        return;
+                        if (!this.walletManager.ValidateConsolidatingTransaction(cTransaction.PartialTransaction))
+                        {
+                            // If we find an invalid one, everything will need redoing!
+                            this.logger.LogDebug(
+                                "Consolidation transaction {0} failed validation, resetting InputConsolidator",
+                                cTransaction.PartialTransaction.GetHash());
+                            this.ConsolidationTransactions = null;
+                            return;
+                        }
                     }
-                }
 
-                // If all of our consolidation inputs are SeenInBlock, we can move on! Yay
-                if (this.ConsolidationTransactions.All(x => x.Status == ConsolidationTransactionStatus.SeenInBlock))
-                    this.ConsolidationTransactions = null;
-            }
+                    // If all of our consolidation inputs are SeenInBlock, we can move on! Yay
+                    if (this.ConsolidationTransactions.All(x => x.Status == ConsolidationTransactionStatus.SeenInBlock))
+                        this.ConsolidationTransactions = null;
+                }
+            });
         }
 
         /// <summary>
