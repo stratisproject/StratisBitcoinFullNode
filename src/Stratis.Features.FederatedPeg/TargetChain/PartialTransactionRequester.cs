@@ -99,9 +99,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 List<ConsolidationTransaction> consolidationTransactions = this.inputConsolidator.ConsolidationTransactions;
                 if (consolidationTransactions != null)
                 {
-                    IEnumerable<ConsolidationTransaction> toSigns = consolidationTransactions.Where(x => x.Status == CrossChainTransferStatus.Partial).Take(NumberToSignAtATime);
+                    // Only take one at a time. These guys are big.
+                    ConsolidationTransaction toSign = consolidationTransactions.FirstOrDefault(x => x.Status == CrossChainTransferStatus.Partial);
 
-                    foreach (ConsolidationTransaction toSign in toSigns)
+                    if (toSign != null)
                     {
                         await this.federatedPegBroadcaster.BroadcastAsync(new RequestPartialTransactionPayload(RequestPartialTransactionPayload.ConsolidationDepositId).AddPartial(toSign.PartialTransaction));
                         this.logger.LogDebug("Partial consolidating transaction requested for {0}.", toSign.PartialTransaction.GetHash());
