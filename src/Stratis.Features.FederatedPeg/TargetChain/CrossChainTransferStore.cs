@@ -1120,12 +1120,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
 
             // When sorting, Suspended transactions will have null PartialTransactions. Always put them last in the order they're in.
-            IEnumerable<ICrossChainTransfer> suspended = partialTransfers.Where(x => x.Status == CrossChainTransferStatus.Suspended);
-            IEnumerable<ICrossChainTransfer> notSuspended = partialTransfers.Where(x => x.Status != CrossChainTransferStatus.Suspended);
+            IEnumerable<ICrossChainTransfer> unsortable = partialTransfers.Where(x => x.Status == CrossChainTransferStatus.Suspended || x.Status == CrossChainTransferStatus.Rejected);
+            IEnumerable<ICrossChainTransfer> sortable = partialTransfers.Where(x => x.Status != CrossChainTransferStatus.Suspended && x.Status != CrossChainTransferStatus.Rejected);
 
-            return notSuspended.OrderBy(t => this.EarliestOutput(t.PartialTransaction), Comparer<OutPoint>.Create((x, y) =>
+            return sortable.OrderBy(t => this.EarliestOutput(t.PartialTransaction), Comparer<OutPoint>.Create((x, y) =>
                     ((FederationWalletManager)this.federationWalletManager).CompareOutpoints(x, y)))
-                .Concat(suspended)
+                .Concat(unsortable)
                 .ToArray();
         }
 
