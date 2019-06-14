@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Features.FederatedPeg.Events;
 using Stratis.Features.FederatedPeg.Interfaces;
-using Stratis.Features.FederatedPeg.Payloads;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
 
@@ -17,9 +16,6 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
 {
     public class InputConsolidator : IInputConsolidator
     {
-        public static readonly Money ConsolidationFee = Money.Coins(0.005m); // 50 inputs. This is roughly half the same as fee on withdrawals
-
-        private readonly IFederatedPegBroadcaster federatedPegBroadcaster;
         private readonly IFederationWalletTransactionHandler transactionHandler;
         private readonly IFederationWalletManager walletManager;
         private readonly IBroadcasterManager broadcasterManager;
@@ -35,10 +31,9 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
         /// <inheritdoc />
         public List<ConsolidationTransaction> ConsolidationTransactions { get; private set; }
 
-        // TODO: Do we need a dictionary here? ^^
+        // TODO: Could put a dictionary by OutPoint.
 
-        public InputConsolidator(IFederatedPegBroadcaster federatedPegBroadcaster,
-            IFederationWalletTransactionHandler transactionHandler,
+        public InputConsolidator(IFederationWalletTransactionHandler transactionHandler,
             IFederationWalletManager walletManager,
             IBroadcasterManager broadcasterManager,
             IFederatedPegSettings settings,
@@ -46,7 +41,6 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
             ISignals signals,
             Network network)
         {
-            this.federatedPegBroadcaster = federatedPegBroadcaster;
             this.transactionHandler = transactionHandler;
             this.walletManager = walletManager;
             this.broadcasterManager = broadcasterManager;
@@ -129,25 +123,28 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
             }
         }
 
+        /// <summary>
+        /// Builds a list of consolidation transactions that will need to pass before the next withdrawal transaction can come through.
+        /// </summary>
         public List<ConsolidationTransaction> CreateRequiredConsolidationTransactions(Money amount)
         {
             // Get all of the inputs
             List<UnspentOutputReference> unspentOutputs = this.walletManager.GetSpendableTransactionsInWallet(WithdrawalTransactionBuilder.MinConfirmations).ToList();
 
             // We shouldn't be consolidating transactions if we have less than 50 UTXOs to spend.
-            if (unspentOutputs.Count < WithdrawalTransactionBuilder.MaxInputs)
+            if (unspentOutputs.Count < FederatedPegSettings.MaxInputs)
                 return null;
 
             // Go through every set of 50 until we consume all, or find a set that works.
-            List<UnspentOutputReference> oneRound = unspentOutputs.Take(WithdrawalTransactionBuilder.MaxInputs).ToList();
+            List<UnspentOutputReference> oneRound = unspentOutputs.Take(FederatedPegSettings.MaxInputs).ToList();
             int roundNumber = 0;
 
             List<ConsolidationTransaction> consolidationTransactions = new List<ConsolidationTransaction>();
             
-            while (oneRound.Count == WithdrawalTransactionBuilder.MaxInputs)
+            while (oneRound.Count == FederatedPegSettings.MaxInputs)
             {
                 // We found a set of 50 that is worth enough so no more consolidation needed.
-                if (oneRound.Sum(x => x.Transaction.Amount) >= amount + this.settings.GetWithdrawalTransactionFee(WithdrawalTransactionBuilder.MaxInputs))
+                if (oneRound.Sum(x => x.Transaction.Amount) >= amount + this.settings.GetWithdrawalTransactionFee(FederatedPegSettings.MaxInputs))
                     break;
 
                 // build a transaction and add it to our list.
@@ -165,8 +162,8 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
 
                 roundNumber++;
                 oneRound = unspentOutputs
-                    .Skip(roundNumber * WithdrawalTransactionBuilder.MaxInputs)
-                    .Take(WithdrawalTransactionBuilder.MaxInputs).ToList();
+                    .Skip(roundNumber * FederatedPegSettings.MaxInputs)
+                    .Take(FederatedPegSettings.MaxInputs).ToList();
             }
 
             // Loop exits when we get a set of 50 that had a high enough amount, or when we run out of UTXOs aka a round less than 50
@@ -191,7 +188,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                     IgnoreVerify = true,
                     WalletPassword = walletPassword,
                     Sign = sign,
-                    TransactionFee = ConsolidationFee,
+                    TransactionFee = FederatedPegSettings.ConsolidationFee,
                     SelectedInputs = selectedInputs.Select(u => u.ToOutPoint()).ToList(),
                     AllowOtherInputs = false,
                     IsConsolidatingTransaction = true,
@@ -282,13 +279,19 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
             }
         }
 
+        /// <summary>
+        /// Discerns whether an incoming transaction is a consolidating transaction.
+        /// </summary>
         private bool IsConsolidatingTransaction(Transaction transaction)
         {
-            return transaction.Inputs.Count == WithdrawalTransactionBuilder.MaxInputs
+            return transaction.Inputs.Count == FederatedPegSettings.MaxInputs
                    && transaction.Outputs.Count == 1
                    && transaction.Outputs[0].ScriptPubKey == this.settings.MultiSigAddress.ScriptPubKey;
         }
 
+        /// <summary>
+        /// Gets the equivalent transaction on this node for any incoming transaction.
+        /// </summary>
         private ConsolidationTransaction GetInMemoryConsolidationTransaction(Transaction toMatch)
         {
             TxIn toMatchInput = toMatch.Inputs[0];

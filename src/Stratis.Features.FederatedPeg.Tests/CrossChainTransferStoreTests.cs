@@ -972,7 +972,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
 
                 // Lets set the funding transactions to many really small outputs
-                const int numUtxos = WithdrawalTransactionBuilder.MaxInputs * 2;
+                const int numUtxos = FederatedPegSettings.MaxInputs * 2;
                 const decimal individualAmount = 0.1m;
                 const decimal depositAmount = numUtxos * individualAmount - 1; // Large amount minus some for fees.
                 BitcoinAddress address = new Script("").Hash.GetAddress(this.network);

@@ -21,11 +21,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// </summary>
         public const int MinConfirmations = 1;
 
-        /// <summary>
-        /// The maximum number of inputs we want our built transactions to have. We don't want them to get too big for Standardness reasons.
-        /// </summary>
-        public const int MaxInputs = 50;
-
         private readonly ILogger logger;
         private readonly Network network;
 
@@ -77,7 +72,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 // TODO: Amend this so we're not picking coins twice.
                 (List<Coin> coins, List<Wallet.UnspentOutputReference> unspentOutputs) = FederationWalletTransactionHandler.DetermineCoins(this.federationWalletManager, this.network, multiSigContext, this.federatedPegSettings);
 
-                if (coins.Count > MaxInputs)
+                if (coins.Count > FederatedPegSettings.MaxInputs)
                 {
                     this.logger.LogDebug("Too many inputs. Triggering the consolidation process.");
                     this.signals.Publish(new WalletNeedsConsolidation(recipient.Amount));

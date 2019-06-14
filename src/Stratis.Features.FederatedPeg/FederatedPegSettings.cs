@@ -51,6 +51,16 @@ namespace Stratis.Features.FederatedPeg
         public static readonly Money InputTransactionFee = Money.Coins(0.0001m);
 
         /// <summary>
+        /// Fee applied to consolidating transactions. Roughly the same as the fee for withdrawals.
+        /// </summary>
+        public static readonly Money ConsolidationFee = Money.Coins(0.005m);
+
+        /// <summary>
+        /// The maximum number of inputs we want our built withdrawal transactions to have. We don't want them to get too big for Standardness reasons.
+        /// </summary>
+        public const int MaxInputs = 50;
+
+        /// <summary>
         /// Sidechains to STRAT don't need to check for deposits for the whole main chain. Only from when they begun.
         ///
         /// This block was mined on 5th Dec 2018. Further optimisations could be more specific per network.

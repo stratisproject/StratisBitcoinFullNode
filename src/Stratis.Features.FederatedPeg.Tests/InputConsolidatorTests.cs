@@ -26,7 +26,6 @@ namespace Stratis.Features.FederatedPeg.Tests
             var broadcasterManager = new Mock<IBroadcasterManager>();
 
             var inputConsolidator = new InputConsolidator(
-                this.federatedPegBroadcaster,
                 this.FederationWalletTransactionHandler,
                 this.federationWalletManager,
                 broadcasterManager.Object,
@@ -48,7 +47,6 @@ namespace Stratis.Features.FederatedPeg.Tests
             var broadcasterManager = new Mock<IBroadcasterManager>();
 
             var inputConsolidator = new InputConsolidator(
-                this.federatedPegBroadcaster,
                 this.FederationWalletTransactionHandler,
                 this.federationWalletManager,
                 broadcasterManager.Object,
@@ -58,7 +56,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.network);
 
             // Lets set the funding transactions to many really small outputs
-            const int numUtxos = WithdrawalTransactionBuilder.MaxInputs * 2;
+            const int numUtxos = FederatedPegSettings.MaxInputs * 2;
             const decimal individualAmount = 0.1m;
             const decimal depositAmount = numUtxos * individualAmount - 1; // Large amount minus some for fees.
             BitcoinAddress address = new Script("").Hash.GetAddress(this.network);

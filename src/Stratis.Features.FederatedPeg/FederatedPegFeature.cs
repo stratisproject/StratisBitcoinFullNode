@@ -237,7 +237,7 @@ namespace Stratis.Features.FederatedPeg
                     benchLog.AppendLine(
                         string.Format("Tran#={0} TotalOut={1,12} Status={2} Signatures=({3}/{4})",
                             partial.PartialTransaction.ToString().Substring(0, 6),
-                            partial.PartialTransaction.TotalOut.ToString(),
+                            partial.PartialTransaction.TotalOut,
                             partial.Status,
                             partial.PartialTransaction.GetSignatureCount(this.network),
                             this.federatedPegSettings.MultiSigM
