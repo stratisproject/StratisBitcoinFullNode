@@ -83,6 +83,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
             ApiResponse sidechainWalletBalances = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/FederationWallet/balance");
             ApiResponse sidechainWalletHistory = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/FederationWallet/history", "maxEntriesToReturn=30");
             ApiResponse sidechainFederationInfo = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/FederationGateway/info");
+            ApiResponse sidechainPoAPendingPolls = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/DefaultVoting/pendingpolls");
             #endregion
 
             var stratisPeers = new List<Peer>();
@@ -126,7 +127,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                         CoinTicker = stratisStatus.Content.coinTicker ?? "STRAT",
                         LogRules = JsonConvert.DeserializeObject<List<LogRule>>(stratisLogRules.Content.ToString())
                     },
-                    SidechainNode = new SidechainNodelModel
+                    SidechainNode = new SidechainNodeModel
                     {
                         WebAPIUrl = UriHelper.BuildUri(this.defaultEndpointsSettings.SidechainNode, "/api").ToString(),
                         SwaggerUrl = UriHelper.BuildUri(this.defaultEndpointsSettings.SidechainNode, "/swagger").ToString(),
@@ -140,7 +141,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                         ConfirmedBalance = (double)sidechainWalletBalances.Content.balances[0].amountConfirmed / 100000000,
                         UnconfirmedBalance = (double)sidechainWalletBalances.Content.balances[0].amountUnconfirmed / 100000000,
                         CoinTicker = sidechainStatus.Content.coinTicker ?? "STRAT",
-                        LogRules = JsonConvert.DeserializeObject<List<LogRule>>(sidechainLogRules.Content.ToString())
+                        LogRules = JsonConvert.DeserializeObject<List<LogRule>>(sidechainLogRules.Content.ToString()),
+                        PoAPendingPolls = ParsePendingPolls(sidechainPoAPendingPolls.Content)
                     }
                 };
             }
@@ -157,6 +159,17 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                 }
             }
             this.distributedCache.SetString("DashboardData", JsonConvert.SerializeObject(dashboardModel));
+        }
+
+        /// <summary>
+        /// Parse the output from /api/DefaultVoting/pendingpolls
+        /// </summary>
+        [Obsolete("The /api/DefaultVoting/pendingpolls output need to be replaced with JSON output")]
+        private List<PendingPoll> ParsePendingPolls(string content)
+        {
+            var pendingPolls = content.Split("\r\n");
+
+            return new List<PendingPoll>();
         }
 
         private void ParsePeers(dynamic stratisStatus, dynamic federationInfo, ref List<Peer> peers, ref List<Peer> federationMembers)

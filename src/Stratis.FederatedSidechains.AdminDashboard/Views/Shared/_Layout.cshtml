@@ -9,6 +9,7 @@
         <link rel="stylesheet" type="text/css" href="~/lib/font-awesome/css/all.css" />
         <link rel="stylesheet" type="text/css" href="~/lib/node-snackbar/dist/snackbar.css" />
         <link rel="stylesheet" type="text/css" href="~/lib/nprogress/nprogress.css" />
+        <link rel="stylesheet" type="text/css" href="~/lib/datatables/css/jquery.dataTables.min.css"/>
     </environment>
     <environment exclude="Development">
         <link rel="stylesheet" type="text/css" href="~/lib/font-awesome/css/all.min.css" />
@@ -18,6 +19,25 @@
     <link rel="icon" type="image/png" href="~/images/logo.png" />
 </head>
 <body>
+    <div class="modal fade show" id="qrcode" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Qr Code</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <img src="@Url.Action("value", "Home", new { value="MDRR" })" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary mx-auto" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <partial name="Partials/ProofOfAuthority" />
     <partial name="Partials/MiningPubKeys" model="@(ViewBag.MiningPubKeys)" />
     <partial name="Partials/LogLevels" model="@(ViewBag.LogRules)" />
     <nav class="navbar navbar-dark bg-purple fixed-top">
@@ -38,7 +58,7 @@
                 <li class="list-inline-item text-truncate">
                     @if (ViewBag.MainchainMultisigAddress != null)
                     {
-                        <span id="mainchainMultisigAddress">@ViewBag.MainchainMultisigAddress</span>
+                        <a href="#qrcode" data-toggle="modal" class="inherit text-muted" id="mainchainMultisigAddress">@ViewBag.MainchainMultisigAddress</a>
                         <i role="copy" data-id="mainchainMultisigAddress" data-message="Mainchain Multisig Address successfully copied to clipboard" class="far fa-copy"></i>
                     }
                     else
@@ -54,7 +74,7 @@
                 <li class="list-inline-item text-truncate">
                     @if (ViewBag.SidechainMultisigAddress != null)
                     {
-                        <span id="sidechainMultisigAddress">@ViewBag.SidechainMultisigAddress</span>
+                        <a href="#qrcode" data-toggle="modal" class="inherit text-muted" id="sidechainMultisigAddress">@ViewBag.SidechainMultisigAddress</a>
                         <i role="copy" data-id="sidechainMultisigAddress" data-message="Sidechain Multisig Address successfully copied to clipboard" class="far fa-copy"></i>
                     }
                     else
@@ -66,9 +86,9 @@
         </div>
         <div class="navbar-text p-0 d-inline ml-auto">
             <ul class="list-inline mb-0 d-flex align-items-center">
-                <!-- <li class="list-inline-item">
-        <a href="#"><i class="fas fa-vote-yea"></i>&nbsp; Federation Votes</a>
-    </li> -->
+                <li class="list-inline-item">
+                    <a data-toggle="modal" href="#federationVotes"><i class="fas fa-vote-yea"></i>&nbsp; Federation Votes</a>
+                </li>
                 <li class="list-inline-item ml-4">
                     <a data-toggle="modal" data-target="#logLevels"><i class="fas fa-book"></i>&nbsp; Log Levels</a>
                 </li>
@@ -91,6 +111,7 @@
         <script type="text/javascript" src="~/lib/jquery-ajax-unobtrusive/dist/jquery.unobtrusive-ajax.min.js"></script>
         <script type="text/javascript" src="~/lib/node-snackbar/dist/snackbar.min.js"></script>
         <script type="text/javascript" src="~/lib/nprogress/nprogress.js"></script>
+        <script type="text/javascript" src="~/lib/datatables/js/jquery.dataTables.min.js"></script>
         <script type="text/javascript" src="~/js/default.js"></script>
     </environment>
     <environment exclude="Development">

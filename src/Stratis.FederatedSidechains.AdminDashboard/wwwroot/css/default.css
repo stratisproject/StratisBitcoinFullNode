@@ -9092,7 +9092,7 @@ a.text-purple:hover, a.text-purple:focus {
             cursor: pointer !important;
         }
 
-    .navbar.bg-white a {
+    .navbar.bg-white a:not(.inherit) {
         color: #1387c9;
     }
 
@@ -9343,6 +9343,12 @@ a.text-purple:hover, a.text-purple:focus {
 
 i[role="copy"] {
     cursor: pointer;
+}
+
+.inherit
+{
+    color: inherit;
+    text-decoration: inherit;
 }
 
 .modal.left .modal-dialog,
