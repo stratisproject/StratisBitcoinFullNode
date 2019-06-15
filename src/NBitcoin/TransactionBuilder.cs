@@ -1915,7 +1915,7 @@ namespace NBitcoin
         /// An optional optimisation to exit early. If set and the merging of the first input doesn't change the transaction, the method will exit.
         /// </param>
         /// <returns>The combined transaction.</returns>
-        private Transaction CombineSignaturesCore(Transaction signed1, Transaction signed2)
+        private Transaction CombineSignaturesCore(Transaction signed1, Transaction signed2, bool requireFirstSigned)
         {
             if(signed1 == null)
                 return signed2;
