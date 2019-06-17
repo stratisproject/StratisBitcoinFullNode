@@ -31,10 +31,10 @@ namespace Stratis.Bitcoin.P2P
     public sealed class PeerDiscovery : IPeerDiscovery
     {
         /// <summary>The async loop for performing discovery on actual peers. We need to wait upon it before we can shut down this connector.</summary>
-        private IAsyncLoop asyncLoop;
+        private IAsyncLoop discoverFromPeersLoop;
 
         /// <summary>The async loop for discovering from DNS seeds & seed nodes. We need to wait upon it before we can shut down this connector.</summary>
-        private IAsyncLoop dnsAsyncLoop;
+        private IAsyncLoop discoverFromDnsSeedsLoop;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncProvider asyncProvider;
@@ -63,13 +63,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
-        /// <summary>Indicates the last time DNS and seed nodes were attempted.</summary>
-        private DateTime seedAndDnsAttempted;
-
         private const int TargetAmountOfPeersToDiscover = 2000;
-
-        // Only retry DNS seeds and seed nodes after an entire day has elapsed under normal circumstances.
-        private const int RetrySeedsThresholdSeconds = 86400;
 
         public PeerDiscovery(
             IAsyncProvider asyncProvider,
@@ -100,19 +94,17 @@ namespace Stratis.Bitcoin.P2P
             if (!connectionManager.Parameters.PeerAddressManagerBehaviour().Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
                 return;
 
-            this.seedAndDnsAttempted = DateTime.Now;
-
             this.currentParameters = connectionManager.Parameters.Clone(); // TODO we shouldn't add all the behaviors, only those that we need.
 
-            this.dnsAsyncLoop = this.asyncProvider.CreateAndRunAsyncLoop(nameof(this.DiscoverDNSSeedsAsync), async token =>
-                {
-                    if (this.peerAddressManager.Peers.Count < TargetAmountOfPeersToDiscover)
-                        await this.DiscoverDNSSeedsAsync();
-                },
-                this.nodeLifetime.ApplicationStopping,
-                TimeSpans.TenSeconds);
+            this.discoverFromDnsSeedsLoop = this.asyncProvider.CreateAndRunAsyncLoop(nameof(this.DiscoverFromDnsSeedsAsync), async token =>
+            {
+                if (this.peerAddressManager.Peers.Count < TargetAmountOfPeersToDiscover)
+                    await this.DiscoverFromDnsSeedsAsync();
+            },
+            this.nodeLifetime.ApplicationStopping,
+            new TimeSpan(1, 0, 0));
 
-            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop(nameof(this.DiscoverPeersAsync), async token =>
+            this.discoverFromPeersLoop = this.asyncProvider.CreateAndRunAsyncLoop(nameof(this.DiscoverPeersAsync), async token =>
             {
                 if (this.peerAddressManager.Peers.Count < TargetAmountOfPeersToDiscover)
                     await this.DiscoverPeersAsync();
@@ -124,20 +116,14 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// See <see cref="DiscoverPeers"/>. This loop deals with discovery from DNS seeds and seed nodes as opposed to peers.
         /// </summary>
-        private async Task DiscoverDNSSeedsAsync()
+        private async Task DiscoverFromDnsSeedsAsync()
         {
             var peersToDiscover = new List<IPEndPoint>();
 
-            // We need DNS discovery to happen in two main cases:
-            // 1. We have no other peers.
-            // 2. Periodically (but infrequently) so that we will have fresh alternatives to connect to if our current peers disconnect.
-            if (this.peerAddressManager.Peers.Count == 0 || (DateTime.Now - this.seedAndDnsAttempted).TotalSeconds > RetrySeedsThresholdSeconds)
+            if (this.peerAddressManager.Peers.Count == 0 || !this.peerAddressManager.Peers.Select(a => !a.Attempted).Any())
             {
                 this.AddDNSSeedNodes(peersToDiscover);
                 this.AddSeedNodes(peersToDiscover);
-                this.seedAndDnsAttempted = DateTime.Now;
-
-                // TODO: We should possibly also consider the case where all the peers we know about are Attempted and we haven't successfully Handshaked with any.
             }
             else
             {
@@ -251,8 +237,8 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc />
         public void Dispose()
         {
-            this.asyncLoop?.Dispose();
-            this.dnsAsyncLoop?.Dispose();
+            this.discoverFromPeersLoop?.Dispose();
+            this.discoverFromDnsSeedsLoop?.Dispose();
         }
     }
 }
