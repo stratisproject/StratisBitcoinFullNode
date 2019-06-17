@@ -4,6 +4,7 @@ using System.Text;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
+using Stratis.Sidechains.Networks;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -37,9 +38,9 @@ namespace FederationSetup
 
             var targets = new Dictionary<uint256, string>
             {
-                { new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"), "-- MainNet network --" },
-                { new uint256("0000ffff00000000000000000000000000000000000000000000000000000000"), "-- TestNet network --" },
-                { new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"), "-- RegTest network --" }
+                { new Target(CirrusNetwork.NetworksSelector.Mainnet().GenesisBits).ToUInt256(), "-- MainNet network --" },
+                { new Target(CirrusNetwork.NetworksSelector.Testnet().GenesisBits).ToUInt256(), "-- TestNet network --" },
+                { new Target(CirrusNetwork.NetworksSelector.Regtest().GenesisBits).ToUInt256(), "-- RegTest network --" },
             };
 
             foreach (KeyValuePair<uint256, string> target in targets)
