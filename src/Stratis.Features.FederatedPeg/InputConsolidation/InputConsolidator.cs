@@ -119,7 +119,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                 var builder = new TransactionBuilder(this.network);
                 Transaction oldTransaction = inMemoryTransaction.PartialTransaction;
 
-                this.logger.LogDebug("Attempting to merge signatures for {0} and {1}.", inMemoryTransaction.PartialTransaction.GetHash(), incomingPartialTransaction.GetHash());
+                this.logger.LogDebug("Attempting to merge signatures for '{0}' and '{1}'.", inMemoryTransaction.PartialTransaction.GetHash(), incomingPartialTransaction.GetHash());
 
                 Transaction newTransaction = SigningUtils.CombineSignatures(builder, inMemoryTransaction.PartialTransaction, new []{incomingPartialTransaction});
 
@@ -139,7 +139,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                 if (this.walletManager.ValidateConsolidatingTransaction(inMemoryTransaction.PartialTransaction, true))
                 {
                     inMemoryTransaction.Status = ConsolidationTransactionStatus.FullySigned;
-                    this.logger.LogDebug("Consolidation transaction is fully signed. Broadcasting {0}", inMemoryTransaction.PartialTransaction.GetHash());
+                    this.logger.LogDebug("Consolidation transaction is fully signed. Broadcasting '{0}'", inMemoryTransaction.PartialTransaction.GetHash());
                     this.broadcasterManager.BroadcastTransactionAsync(inMemoryTransaction.PartialTransaction).GetAwaiter().GetResult();
                     return ConsolidationSignatureResult.Succeeded(inMemoryTransaction.PartialTransaction);
                 }
@@ -349,6 +349,9 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
         /// </summary>
         private ConsolidationTransaction GetInMemoryConsolidationTransaction(Transaction toMatch)
         {
+            if (toMatch?.Inputs == null || !toMatch.Inputs.Any())
+                return null;
+
             TxIn toMatchInput = toMatch.Inputs[0];
             return this.ConsolidationTransactions.FirstOrDefault(x => x.PartialTransaction.Inputs[0].PrevOut == toMatchInput.PrevOut);
         }
