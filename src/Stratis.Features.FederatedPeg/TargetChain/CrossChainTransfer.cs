@@ -226,7 +226,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 allPartials[0] = this.partialTransaction;
                 validPartials.CopyTo(allPartials, 1);
 
-                this.partialTransaction = builder.CombineSignatures(allPartials);
+                this.partialTransaction = builder.CombineSignatures(true, allPartials);
             }
         }
 
