@@ -708,6 +708,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc/>
         public async Task VersionHandshakeAsync(NetworkPeerRequirement requirements, CancellationToken cancellationToken)
         {
+            // In stratisX, the equivalent functionality is contained in main.cpp, method ProcessMessage()
+
             requirements = requirements ?? new NetworkPeerRequirement();
             using (var listener = new NetworkPeerListener(this, this.asyncProvider))
             {
@@ -777,11 +779,8 @@ namespace Stratis.Bitcoin.P2P.Peer
                     await this.SendMessageAsync(addrPayload, cancellationToken).ConfigureAwait(false);
                 }
 
-                // We treat outbound peers as slightly more trusted, so we ask them for the peers they're aware of to aid our own discovery.
-                if (!this.Inbound)
-                {
-                    await this.SendMessageAsync(new GetAddrPayload(), cancellationToken).ConfigureAwait(false);
-                }
+                // Ask the just-handshaked peer for the peers they know about to aid in our own peer discovery.
+                await this.SendMessageAsync(new GetAddrPayload(), cancellationToken).ConfigureAwait(false);
             }
         }
 
