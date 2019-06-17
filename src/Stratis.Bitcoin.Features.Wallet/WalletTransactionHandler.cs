@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            
+
             this.TransactionPolicy = transactionPolicy;
         }
 
@@ -506,5 +506,20 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// The timestamp to set on the transaction.
         /// </summary>
         public uint? Time { get; set; }
+
+        public TransactionBuildContext Clone(Network network)
+        {
+            var copy = new TransactionBuildContext(network);
+            copy.Recipients = this.Recipients;
+            copy.WalletPassword = this.WalletPassword;
+            copy.FeeType = this.FeeType;
+            copy.MinConfirmations = this.MinConfirmations;
+            copy.SelectedInputs = this.SelectedInputs;
+            copy.AllowOtherInputs = this.AllowOtherInputs;
+            copy.Sign = this.Sign;
+            copy.CacheSecret = this.CacheSecret;
+
+            return copy;
+        }
     }
 }
