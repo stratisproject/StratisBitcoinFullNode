@@ -34,14 +34,25 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
         /// <summary>
         /// The task that is building all the consolidation transactions, if one is currently running.
         /// </summary>
+        /// <remarks>
+        /// Protected by <see cref="taskLock"/>.
+        /// </remarks>
         private Task consolidationTask;
 
         /// <summary>
-        /// Used to protect ConsolidationTransactions from write operations.
+        /// Used to protect <see cref="ConsolidationTransactions"/> from write operations.
         /// </summary>
-        private readonly object lockObj = new object();
+        private readonly object txLock = new object();
+
+        /// <summary>
+        /// Used to protect <see cref="consoli"/> from write operations.
+        /// </summary>
+        private readonly object taskLock = new object();
 
         /// <inheritdoc />
+        /// <remarks>
+        /// Protected by <see cref="txLock"/>.
+        /// </remarks>
         public List<ConsolidationTransaction> ConsolidationTransactions { get; private set; }
 
         // TODO: Could put a dictionary by OutPoint.
@@ -70,39 +81,41 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
         public void StartConsolidation(WalletNeedsConsolidation trigger)
         {
             // If there isn't already a task running, start it.
-
-            if (this.consolidationTask == null || this.consolidationTask.IsCompleted)
+            lock (this.taskLock)
             {
-                this.consolidationTask = Task.Run(() =>
+                if (this.consolidationTask == null || this.consolidationTask.IsCompleted)
                 {
-                    lock (this.lockObj)
+                    this.consolidationTask = Task.Run(() =>
                     {
-                        // If we're already in progress we don't need to do anything.
-                        if (this.ConsolidationTransactions != null)
-                            return;
-
-                        this.logger.LogInformation("Building consolidation transactions for federation wallet inputs.");
-
-                        this.ConsolidationTransactions = this.CreateRequiredConsolidationTransactions(trigger.Amount);
-
-                        if (this.ConsolidationTransactions == null)
+                        lock (this.txLock)
                         {
-                            this.logger.LogWarning("Failed to build condensing transactions.");
-                            return;
+                            // If we're already in progress we don't need to do anything.
+                            if (this.ConsolidationTransactions != null)
+                                return;
+
+                            this.logger.LogInformation("Building consolidation transactions for federation wallet inputs.");
+
+                            this.ConsolidationTransactions = this.CreateRequiredConsolidationTransactions(trigger.Amount);
+
+                            if (this.ConsolidationTransactions == null)
+                            {
+                                this.logger.LogWarning("Failed to build condensing transactions.");
+                                return;
+                            }
+
+                            this.logger.LogInformation("Successfully built {0} consolidating transactions.", this.ConsolidationTransactions.Count);
                         }
+                    });
 
-                        this.logger.LogInformation("Successfully built {0} consolidating transactions.", this.ConsolidationTransactions.Count);
-                    }
-                });
-
-                this.asyncProvider.RegisterTask($"{nameof(InputConsolidator)}-transaction building", this.consolidationTask);
+                    this.asyncProvider.RegisterTask($"{nameof(InputConsolidator)}-transaction building", this.consolidationTask);
+                }
             }
         }
 
         /// <inheritdoc />
         public ConsolidationSignatureResult CombineSignatures(Transaction incomingPartialTransaction)
         {
-            lock (this.lockObj)
+            lock (this.txLock)
             {
                 // Nothing to sign.
                 if (this.ConsolidationTransactions == null)
@@ -155,7 +168,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
         /// </summary>
         public List<ConsolidationTransaction> CreateRequiredConsolidationTransactions(Money amount)
         {
-            lock (this.lockObj)
+            lock (this.txLock)
             {
                 // Get all of the inputs
                 List<UnspentOutputReference> unspentOutputs = this.walletManager.GetSpendableTransactionsInWallet(WithdrawalTransactionBuilder.MinConfirmations).ToList();
@@ -254,7 +267,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
 
             // TODO: Could also be async to avoid blocking other components receiving future transaction details
 
-            lock (this.lockObj)
+            lock (this.txLock)
             {
                 // No work to do
                 if (this.ConsolidationTransactions == null)
@@ -283,7 +296,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
 
         private Task ProcessBlockInternal(ChainedHeaderBlock chainedHeaderBlock, CancellationToken cancellationToken)
         {
-            lock (this.lockObj)
+            lock (this.txLock)
             {
                 // No work to do
                 if (this.ConsolidationTransactions == null)
