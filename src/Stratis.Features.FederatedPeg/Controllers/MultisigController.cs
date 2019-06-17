@@ -60,7 +60,6 @@ namespace Stratis.Features.FederatedPeg.Controllers
                 var model = new WalletBuildTransactionModel
                 {
                     Hex = transactionResult.ToHex(),
-                    Fee = string.IsNullOrEmpty(request.FeeAmount) ? null : Money.Parse(request.FeeAmount),
                     TransactionId = transactionResult.GetHash()
                 };
 
