@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -6,9 +7,10 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Stratis.FederatedSidechains.AdminDashboard.Filters;
+using Stratis.FederatedSidechains.AdminDashboard.Helpers;
 using Stratis.FederatedSidechains.AdminDashboard.Hubs;
 using Stratis.FederatedSidechains.AdminDashboard.Models;
-using Stratis.FederatedSidechains.AdminDashboard.Rest;
+using Stratis.FederatedSidechains.AdminDashboard.Services;
 using Stratis.FederatedSidechains.AdminDashboard.Settings;
 
 namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
@@ -35,7 +37,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
         public async Task<IActionResult> CheckFederationAsync()
         {
             ApiResponse getMainchainFederationInfo = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/FederationGateway/info");
-            if(getMainchainFederationInfo.IsSuccess)
+            if (getMainchainFederationInfo.IsSuccess)
             {
                 return Json(getMainchainFederationInfo.Content.active);
             }
@@ -55,17 +57,18 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
                 return View("Initialization");
             }
 
-            var dashboardModel = JsonConvert.DeserializeObject<DashboardModel>(this.distributedCache.GetString("DashboardData"));
+            DashboardModel dashboardModel = JsonConvert.DeserializeObject<DashboardModel>(this.distributedCache.GetString("DashboardData"));
             this.ViewBag.DisplayLoader = true;
             this.ViewBag.History = new[] {
                 dashboardModel.StratisNode.History,
                 dashboardModel.SidechainNode.History
             };
             this.ViewBag.StratisTicker = dashboardModel.StratisNode.CoinTicker;
-            this.ViewBag.SidechainTicker= dashboardModel.SidechainNode.CoinTicker;
+            this.ViewBag.SidechainTicker = dashboardModel.SidechainNode.CoinTicker;
             this.ViewBag.MainchainMultisigAddress = dashboardModel.MainchainWalletAddress;
             this.ViewBag.SidechainMultisigAddress = dashboardModel.SidechainWalletAddress;
             this.ViewBag.MiningPubKeys = dashboardModel.MiningPublicKeys;
+            this.ViewBag.LogRules = new LogRulesModel().LoadRules(dashboardModel.StratisNode.LogRules, dashboardModel.SidechainNode.LogRules);
             this.ViewBag.Status = "OK";
 
             return View("Dashboard", dashboardModel);
@@ -78,15 +81,15 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
         [Route("update-dashboard")]
         public IActionResult UpdateDashboard()
         {
-            if(!string.IsNullOrEmpty(this.distributedCache.GetString("DashboardData")))
+            if (!string.IsNullOrEmpty(this.distributedCache.GetString("DashboardData")))
             {
-                var dashboardModel = JsonConvert.DeserializeObject<DashboardModel>(this.distributedCache.GetString("DashboardData"));
+                DashboardModel dashboardModel = JsonConvert.DeserializeObject<DashboardModel>(this.distributedCache.GetString("DashboardData"));
                 this.ViewBag.History = new[] {
                     dashboardModel.StratisNode.History,
                     dashboardModel.SidechainNode.History
                 };
                 this.ViewBag.StratisTicker = dashboardModel.StratisNode.CoinTicker;
-                this.ViewBag.SidechainTicker= dashboardModel.SidechainNode.CoinTicker;
+                this.ViewBag.SidechainTicker = dashboardModel.SidechainNode.CoinTicker;
                 return PartialView("Dashboard", dashboardModel);
             }
             return NoContent();

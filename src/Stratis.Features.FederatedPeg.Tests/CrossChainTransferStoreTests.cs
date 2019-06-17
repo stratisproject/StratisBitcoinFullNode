@@ -8,11 +8,14 @@ using NBitcoin;
 using Newtonsoft.Json;
 using NSubstitute;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common;
+using Stratis.Features.FederatedPeg.CounterChain;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.Payloads;
@@ -20,6 +23,7 @@ using Stratis.Features.FederatedPeg.SourceChain;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
 using Stratis.Sidechains.Networks;
+using Stratis.SmartContracts.Core.State;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests
@@ -152,7 +156,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Transaction[0] output value - op_return.
                 Assert.Equal(new Money(1m, MoneyUnit.Satoshi), transactions[0].Outputs[2].Value);
-                new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions).TryGetTransactionId(transactions[0], out string actualDepositId);
+                new OpReturnDataReader(this.loggerFactory, this.counterChainNetworkWrapper).TryGetTransactionId(transactions[0], out string actualDepositId);
                 Assert.Equal(deposit1.Id.ToString(), actualDepositId);
 
                 // Transactions[1] inputs.
@@ -173,7 +177,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Transaction[1] output value - op_return.
                 Assert.Equal(new Money(1m, MoneyUnit.Satoshi), transactions[1].Outputs[2].Value);
-                new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions).TryGetTransactionId(transactions[1], out string actualDepositId2);
+                new OpReturnDataReader(this.loggerFactory, this.counterChainNetworkWrapper).TryGetTransactionId(transactions[1], out string actualDepositId2);
                 Assert.Equal(deposit2.Id.ToString(), actualDepositId2);
 
                 ICrossChainTransfer[] transfers = crossChainTransferStore.GetAsync(new uint256[] { 0, 1 }).GetAwaiter().GetResult().ToArray();
@@ -185,6 +189,55 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(CrossChainTransferStatus.Partial, transfers[1].Status);
                 Assert.Equal(deposit2.Amount, new Money(transfers[1].DepositAmount));
                 Assert.Equal(address2.ScriptPubKey, transfers[1].DepositTargetAddress);
+            }
+        }
+
+
+        /// <summary>
+        /// Transfers sending funds to contract addresses are marked as "Rejected".
+        /// </summary>
+        [Fact]
+        public async void StoringDepositsWhenTargetIsContractFailsWithRejectedTransferAsync()
+        {
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+
+            this.Init(dataFolder);
+            this.AddFunding();
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
+
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
+            {
+                crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
+
+                TestBase.WaitLoopMessage(() => (this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height, $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
+                Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
+
+                BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
+                BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
+
+                var deposit1 = new Deposit(0, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                var deposit2 = new Deposit(1, new Money(60m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+
+                MaturedBlockDepositsModel[] blockDeposits = new[] { new MaturedBlockDepositsModel(
+                    new MaturedBlockInfoModel() {
+                        BlockHash = 1,
+                        BlockHeight = crossChainTransferStore.NextMatureDepositHeight },
+                    new[] { deposit1, deposit2 })
+                };
+
+                KeyId p2pkhParams = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(address1.ScriptPubKey);
+                var contractAddress = new uint160(p2pkhParams.ToBytes());
+
+                this.stateRepositoryRoot.GetAccountState(contractAddress).Returns(new AccountState()); // not null
+
+                RecordLatestMatureDepositsResult recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
+
+                ICrossChainTransfer[] transfers = await crossChainTransferStore.GetAsync(new[] { deposit1.Id, deposit2.Id });
+
+                Assert.Equal(2, transfers.Length);
+                Assert.Equal(CrossChainTransferStatus.Rejected, transfers[0].Status);
+                Assert.Equal(CrossChainTransferStatus.Partial, transfers[1].Status);
             }
         }
 
@@ -256,7 +309,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Transaction[0] output value - op_return.
                 Assert.Equal(new Money(1m, MoneyUnit.Satoshi), transactions[0].Outputs[2].Value);
-                new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions).TryGetTransactionId(transactions[0], out string actualDepositId);
+                new OpReturnDataReader(this.loggerFactory, this.counterChainNetworkWrapper).TryGetTransactionId(transactions[0], out string actualDepositId);
                 Assert.Equal(deposit1.Id.ToString(), actualDepositId);
 
                 Assert.Null(transactions[1]);
@@ -294,7 +347,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 // Transaction[1] output value - op_return.
                 Assert.Equal(new Money(1m, MoneyUnit.Satoshi), transactions[1].Outputs[2].Value);
-                new OpReturnDataReader(this.loggerFactory, this.federatedPegOptions).TryGetTransactionId(transactions[1], out string actualDepositId2);
+                new OpReturnDataReader(this.loggerFactory, this.counterChainNetworkWrapper).TryGetTransactionId(transactions[1], out string actualDepositId2);
                 Assert.Equal(deposit2.Id.ToString(), actualDepositId2);
 
                 Assert.Equal(2, transfers.Length);
@@ -507,7 +560,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 ICrossChainTransfer[] transactions = crossChainTransferStore.GetTransfersByStatus(new[] { CrossChainTransferStatus.Partial });
 
                 var requester = new PartialTransactionRequester(this.loggerFactory, crossChainTransferStore, this.asyncProvider,
-                    this.nodeLifetime, this.connectionManager, this.federationGatewaySettings, this.ibdState, this.federationWalletManager);
+                    this.nodeLifetime, this.connectionManager, this.federatedPegSettings, this.ibdState, this.federationWalletManager);
 
                 var peerEndPoint = new IPEndPoint(System.Net.IPAddress.Parse("1.2.3.4"), 5);
                 INetworkPeer peer = Substitute.For<INetworkPeer>();
@@ -519,7 +572,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 var peers = new NetworkPeerCollection();
                 peers.Add(peer);
 
-                this.federationGatewaySettings.FederationNodeIpEndPoints.Returns(new[] { peerEndPoint });
+                this.federatedPegSettings.FederationNodeIpEndPoints.Returns(new[] { peerEndPoint });
 
                 this.connectionManager.ConnectedPeers.Returns(peers);
 
@@ -544,9 +597,9 @@ namespace Stratis.Features.FederatedPeg.Tests
             // Start querying counter-chain for deposits from first non-genesis block on main chain and a higher number on side chain.
             int depositHeight = (this.network.Name == new StratisRegTest().Name)
                 ? 1
-                : FederationGatewaySettings.StratisMainDepositStartBlock;
+                : FederatedPegSettings.StratisMainDepositStartBlock;
 
-            this.federationGatewaySettings.CounterChainDepositStartBlock.Returns(depositHeight);
+            this.federatedPegSettings.CounterChainDepositStartBlock.Returns(depositHeight);
 
             var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
 
@@ -582,8 +635,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             var transaction = new PosTransaction(model.Hex);
 
-            var reader = new OpReturnDataReader(this.loggerFactory, new FederatedPegOptions(CirrusNetwork.NetworksSelector.Testnet()));
-            var extractor = new DepositExtractor(this.loggerFactory, this.federationGatewaySettings, reader);
+            var reader = new OpReturnDataReader(this.loggerFactory, new CounterChainNetworkWrapper(CirrusNetwork.NetworksSelector.Testnet()));
+            var extractor = new DepositExtractor(this.loggerFactory, this.federatedPegSettings, reader);
             IDeposit deposit = extractor.ExtractDepositFromTransaction(transaction, 2, 1);
 
             Assert.NotNull(deposit);
@@ -801,7 +854,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 for (int i = 0; i < numDeposits; i++)
                 {
-                    deposits[i] = new Deposit((ulong) i, new Money(depositSend, MoneyUnit.BTC), address.ToString(),
+                    deposits[i] = new Deposit((ulong)i, new Money(depositSend, MoneyUnit.BTC), address.ToString(),
                         crossChainTransferStore.NextMatureDepositHeight, 1);
                 }
 
@@ -814,7 +867,9 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 (Transaction, ChainedHeader header) added = this.AddFundingTransaction(funding);
 
-                MaturedBlockDepositsModel[] blockDeposits = new[]
+                var blockDeposits = new Dictionary<int, MaturedBlockDepositsModel[]>();
+
+                blockDeposits[crossChainTransferStore.NextMatureDepositHeight] = new[]
                 {
                     new MaturedBlockDepositsModel(
                         new MaturedBlockInfoModel
@@ -825,7 +880,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                         deposits)
                 };
 
-                RecordLatestMatureDepositsResult recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
+                RecordLatestMatureDepositsResult recordMatureDepositResult =
+                    await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[crossChainTransferStore.NextMatureDepositHeight]);
 
                 // Create 1 block with all 10 withdrawals inside.
                 ChainedHeader header = this.AppendBlock(recordMatureDepositResult.WithDrawalTransactions.ToArray());
@@ -837,18 +893,19 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(numDeposits, seenInBlock.Length);
 
                 // Sync our CCTS
-                recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
+                // TODO: This does nothing. Remove?
+                recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[1]);
 
                 // Lets make 10 more deposits using the change UTXOS in the block just gone.
                 Deposit[] moreDeposits = new Deposit[numDeposits];
                 for (int i = 0; i < numDeposits; i++)
                 {
-                    ulong newId = (ulong) numDeposits + (ulong) i; // to get a unique ID.
+                    ulong newId = (ulong)numDeposits + (ulong)i; // to get a unique ID.
                     moreDeposits[i] = new Deposit(newId, new Money(depositSend, MoneyUnit.BTC), address.ToString(),
                         crossChainTransferStore.NextMatureDepositHeight, 2);
                 }
 
-                blockDeposits = new[]
+                blockDeposits[crossChainTransferStore.NextMatureDepositHeight] = new[]
                 {
                     new MaturedBlockDepositsModel(
                         new MaturedBlockInfoModel
@@ -858,11 +915,16 @@ namespace Stratis.Features.FederatedPeg.Tests
                         },
                         moreDeposits)
                 };
+
                 recordMatureDepositResult =
-                    await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits);
+                    await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[crossChainTransferStore.NextMatureDepositHeight]);
 
                 // We built more transctions with the UTXOs included in a block...
                 Assert.True(recordMatureDepositResult.WithDrawalTransactions.Count > 0);
+
+                int expectedPartials = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.Partial }).Length;
+                int expectedSuspends = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.Suspended }).Length;
+                int expectedSeenInBlocks = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.SeenInBlock }).Length;
 
                 // Now lets rewind.
                 this.ChainIndexer.SetTip(added.header);
@@ -870,7 +932,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 TestBase.WaitLoop(() => this.federationWalletManager.WalletTipHash == this.ChainIndexer.Tip.HashBlock);
 
                 // If we were able to keep FullySigned transactions then we would have FullySigned after this rewind.
-                ICrossChainTransfer[] fullySigned = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] {CrossChainTransferStatus.FullySigned});
+                ICrossChainTransfer[] fullySigned = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.FullySigned });
 
                 // However we have none.
                 Assert.Empty(fullySigned);
@@ -878,6 +940,24 @@ namespace Stratis.Features.FederatedPeg.Tests
                 // We do have 20 Suspended transactions now though.
                 ICrossChainTransfer[] suspended = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.Suspended });
                 Assert.Equal(20, suspended.Length);
+
+                // See if we will recover to the point where the reorg occurred.
+                while (crossChainTransferStore.NextMatureDepositHeight <= blockDeposits.Max(kv => kv.Key))
+                {
+                    recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(
+                        blockDeposits[crossChainTransferStore.NextMatureDepositHeight]);
+
+                    if (!recordMatureDepositResult.MatureDepositRecorded)
+                        break;
+
+                    // Makes the withdrawals seen and makes their UTXOs spendable.
+                    this.AppendBlock(recordMatureDepositResult.WithDrawalTransactions.ToArray());
+                }
+
+                // Verify our expectations.
+                Assert.Equal(expectedPartials, crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.Partial }).Length);
+                Assert.Equal(expectedSuspends, crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.Suspended }).Length);
+                Assert.Equal(expectedSeenInBlocks, crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.SeenInBlock }).Length);
             }
         }
 
@@ -953,6 +1033,21 @@ namespace Stratis.Features.FederatedPeg.Tests
                 IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(partialTransactions[0], null, 1);
                 Assert.Equal((uint256)1, withdrawal.DepositId);
             }
+        }
+
+        /// <summary>
+        /// <see cref="CrossChainTransferStore.IsMempoolErrorRecoverable(MempoolError)"/> returns appropriate responses for different types of errors.
+        /// </summary>
+        [Fact]
+        public void IsMempoolErrorRecoverableReturnsTrueForRecoverableErrors()
+        {
+            Assert.True(CrossChainTransferStore.IsMempoolErrorRecoverable(new MempoolError()));
+            Assert.True(CrossChainTransferStore.IsMempoolErrorRecoverable(new MempoolError() { RejectCode = MempoolErrors.RejectDuplicate }));
+            Assert.True(CrossChainTransferStore.IsMempoolErrorRecoverable(new MempoolError() { RejectCode = MempoolErrors.RejectAlreadyKnown }));
+            Assert.False(CrossChainTransferStore.IsMempoolErrorRecoverable(new MempoolError()
+            {
+                ConsensusError = new ConsensusError("p2pkh-to-contract", "attempted send directly to contract address. use OP_CALL instead.")
+            }));
         }
     }
 }

@@ -1117,7 +1117,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new WalletManager(this.LoggerFactory.Object, KnownNetworks.StratisMain, chain, new WalletSettings(NodeSettings.Default(this.Network)),
                 CreateDataFolder(this), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
 
-            uint256 result = walletManager.LastReceivedBlockHash();
+            uint256 result = walletManager.LastReceivedBlockInfo().Hash;
 
             Assert.Equal(chain.Tip.HashBlock, result);
         }
@@ -1132,7 +1132,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             wallet.AccountsRoot.ElementAt(0).CoinType = CoinType.Stratis;
             walletManager.Wallets.Add(wallet);
 
-            uint256 result = walletManager.LastReceivedBlockHash();
+            uint256 result = walletManager.LastReceivedBlockInfo().Hash;
             Assert.Equal(chainIndexer.Tip.HashBlock, result);
         }
 
@@ -2376,9 +2376,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 dataFolder, walletFeePolicy.Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
             walletManager.Wallets.Add(wallet);
             walletManager.LoadKeysLookupLock();
-            walletManager.WalletTipHash = block.Header.GetHash();
 
             ChainedHeader chainedBlock = chainInfo.chain.GetHeader(block.GetHash());
+            walletManager.WalletTipHash = block.Header.GetHash();
+            walletManager.WalletTipHeight = chainedBlock.Height;
+
             walletManager.ProcessBlock(block, chainedBlock);
 
             HdAddress spentAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);

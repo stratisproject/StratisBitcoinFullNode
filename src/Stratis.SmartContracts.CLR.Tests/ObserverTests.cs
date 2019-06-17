@@ -192,7 +192,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             // for the method body to have finished execution while minimising the amount of time we spend 
             // running tests
             // If you're running with the debugger on this will obviously be a source of failures
-            IContractInvocationResult result = TimeoutHelper.RunCodeWithTimeout(3, () => contract.Invoke(callData));
+            IContractInvocationResult result = TimeoutHelper.RunCodeWithTimeout(5, () => contract.Invoke(callData));
 
             Assert.False(result.IsSuccess);
             Assert.Equal((RuntimeObserver.Gas)0, this.gasMeter.GasAvailable);

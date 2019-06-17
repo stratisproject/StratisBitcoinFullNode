@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,8 +13,6 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -24,11 +21,14 @@ using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.Collateral;
 using Stratis.Features.FederatedPeg.Controllers;
+using Stratis.Features.FederatedPeg.CounterChain;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.Notifications;
@@ -43,18 +43,23 @@ using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg
 {
-    internal class FederationGatewayFeature : FullNodeFeature
+    internal class FederatedPegFeature : FullNodeFeature
     {
         /// <summary>
         /// Given that we can have up to 10 UTXOs going at once.
         /// </summary>
         private const int TransfersToDisplay = 10;
 
+        /// <summary>
+        /// The maximum number of pending transactions to display in the console logging.
+        /// </summary>
+        private const int PendingToDisplay = 25;
+
         public const string FederationGatewayFeatureNamespace = "federationgateway";
 
         private readonly IConnectionManager connectionManager;
 
-        private readonly IFederationGatewaySettings federationGatewaySettings;
+        private readonly IFederatedPegSettings federatedPegSettings;
 
         private readonly IFullNode fullNode;
 
@@ -80,12 +85,10 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly ILogger logger;
 
-        private readonly ICollateralChecker collateralChecker;
-
-        public FederationGatewayFeature(
+        public FederatedPegFeature(
             ILoggerFactory loggerFactory,
             IConnectionManager connectionManager,
-            IFederationGatewaySettings federationGatewaySettings,
+            IFederatedPegSettings federatedPegSettings,
             IFullNode fullNode,
             IFederationWalletManager federationWalletManager,
             IFederationWalletSyncManager walletSyncManager,
@@ -101,7 +104,7 @@ namespace Stratis.Features.FederatedPeg
         {
             this.loggerFactory = loggerFactory;
             this.connectionManager = connectionManager;
-            this.federationGatewaySettings = federationGatewaySettings;
+            this.federatedPegSettings = federatedPegSettings;
             this.fullNode = fullNode;
             this.chainIndexer = chainIndexer;
             this.federationWalletManager = federationWalletManager;
@@ -112,7 +115,6 @@ namespace Stratis.Features.FederatedPeg
             this.maturedBlocksSyncManager = maturedBlocksSyncManager;
             this.withdrawalHistoryProvider = withdrawalHistoryProvider;
             this.signedBroadcaster = signedBroadcaster;
-            this.collateralChecker = collateralChecker;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -147,17 +149,14 @@ namespace Stratis.Features.FederatedPeg
             // Query our database for fully-signed transactions and broadcast them every N seconds.
             this.signedBroadcaster.Start();
 
-            if (this.collateralChecker != null)
-                await this.collateralChecker.InitializeAsync().ConfigureAwait(false);
-
             // Connect the node to the other federation members.
-            foreach (IPEndPoint federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
+            foreach (IPEndPoint federationMemberIp in this.federatedPegSettings.FederationNodeIpEndPoints)
                 this.connectionManager.AddNodeAddress(federationMemberIp);
 
             // Respond to requests to sign transactions from other nodes.
             NetworkPeerConnectionParameters networkPeerConnectionParameters = this.connectionManager.Parameters;
             networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager,
-                this.network, this.federationGatewaySettings, this.crossChainTransferStore));
+                this.network, this.federatedPegSettings, this.crossChainTransferStore));
         }
 
         public override void Dispose()
@@ -166,8 +165,6 @@ namespace Stratis.Features.FederatedPeg
             this.maturedBlocksSyncManager.Dispose();
 
             this.crossChainTransferStore.Dispose();
-
-            this.collateralChecker?.Dispose();
         }
 
         private void AddInlineStats(StringBuilder benchLogs)
@@ -180,9 +177,9 @@ namespace Stratis.Features.FederatedPeg
             uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
             FederationWallet federationWallet = this.federationWalletManager.GetWallet();
-            benchLogs.AppendLine("Fed. Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
+            benchLogs.AppendLine("Fed.Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                  (federationWallet != null ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
-                                 (federationWallet != null ? (" Fed. Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
+                                 (federationWallet != null ? (" Fed.Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
         }
 
         private void AddComponentStats(StringBuilder benchLog)
@@ -195,7 +192,6 @@ namespace Stratis.Features.FederatedPeg
             catch (Exception e)
             {
                 this.logger.LogError(e.ToString());
-                throw;
             }
         }
 
@@ -227,14 +223,27 @@ namespace Stratis.Features.FederatedPeg
                 benchLog.AppendLine();
             }
 
-            List<WithdrawalModel> pendingWithdrawals = this.withdrawalHistoryProvider.GetPending();
+            try
+            {
+                List<WithdrawalModel> pendingWithdrawals = this.withdrawalHistoryProvider.GetPending();
 
-            if (pendingWithdrawals.Count > 0)
+                if (pendingWithdrawals.Count > 0)
+                {
+                    benchLog.AppendLine("--- Pending Withdrawals ---");
+                    foreach (WithdrawalModel withdrawal in pendingWithdrawals.Take(PendingToDisplay))
+                        benchLog.AppendLine(withdrawal.ToString());
+
+                    if (pendingWithdrawals.Count > PendingToDisplay)
+                        benchLog.AppendLine($"And {pendingWithdrawals.Count - PendingToDisplay} more...");
+
+                    benchLog.AppendLine();
+                }
+            }
+            catch (Exception exception)
             {
                 benchLog.AppendLine("--- Pending Withdrawals ---");
-                foreach (WithdrawalModel withdrawal in pendingWithdrawals)
-                    benchLog.AppendLine(withdrawal.ToString());
-                benchLog.AppendLine();
+                benchLog.AppendLine("Failed to retrieve data");
+                this.logger.LogDebug("Exception occurred while getting pending withdrawals: '{0}'.", exception.ToString());
             }
 
             List<WithdrawalModel> completedWithdrawals = this.withdrawalHistoryProvider.GetHistory(TransfersToDisplay);
@@ -295,19 +304,20 @@ namespace Stratis.Features.FederatedPeg
     /// </summary>
     public static class FullNodeBuilderSidechainRuntimeFeatureExtension
     {
-        public static IFullNodeBuilder AddFederationGateway(this IFullNodeBuilder fullNodeBuilder, FederatedPegOptions options)
+        public static IFullNodeBuilder AddFederatedPeg(this IFullNodeBuilder fullNodeBuilder)
         {
-            LoggingConfiguration.RegisterFeatureNamespace<FederationGatewayFeature>(
-                FederationGatewayFeature.FederationGatewayFeatureNamespace);
+            LoggingConfiguration.RegisterFeatureNamespace<FederatedPegFeature>(
+                FederatedPegFeature.FederationGatewayFeatureNamespace);
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
-                features.AddFeature<FederationGatewayFeature>().DependOn<BlockNotificationFeature>().FeatureServices(
-                    services =>
+                features.AddFeature<FederatedPegFeature>()
+                    .DependOn<BlockNotificationFeature>()
+                    .DependOn<CounterChainFeature>()
+                    .FeatureServices(services =>
                     {
-                        services.AddSingleton<IHttpClientFactory, Bitcoin.Controllers.HttpClientFactory>();
                         services.AddSingleton<IMaturedBlocksProvider, MaturedBlocksProvider>();
-                        services.AddSingleton<IFederationGatewaySettings, FederationGatewaySettings>();
+                        services.AddSingleton<IFederatedPegSettings, FederatedPegSettings>();
                         services.AddSingleton<IOpReturnDataReader, OpReturnDataReader>();
                         services.AddSingleton<IDepositExtractor, DepositExtractor>();
                         services.AddSingleton<IWithdrawalExtractor, WithdrawalExtractor>();
@@ -323,16 +333,14 @@ namespace Stratis.Features.FederatedPeg
                         services.AddSingleton<IFederationGatewayClient, FederationGatewayClient>();
                         services.AddSingleton<IMaturedBlocksSyncManager, MaturedBlocksSyncManager>();
                         services.AddSingleton<IWithdrawalHistoryProvider, WithdrawalHistoryProvider>();
-                        services.AddSingleton<FederationGatewaySettings>();
+                        services.AddSingleton<FederatedPegSettings>();
 
                         // Set up events.
                         services.AddSingleton<TransactionObserver>();
                         services.AddSingleton<BlockObserver>();
-
-                        // Inject our options
-                        services.AddSingleton(options);
                     });
             });
+
             return fullNodeBuilder;
         }
 
@@ -340,11 +348,10 @@ namespace Stratis.Features.FederatedPeg
         {
             fullNodeBuilder.ConfigureFeature(features =>
             {
-                features.AddFeature<PoAFeature>().DependOn<FederationGatewayFeature>().FeatureServices(services =>
+                features.AddFeature<PoAFeature>().DependOn<FederatedPegFeature>().FeatureServices(services =>
                     {
-                        services.AddSingleton<IFederationManager, CollateralFederationManager>();
                         services.AddSingleton<PoABlockHeaderValidator>();
-                        services.AddSingleton<IPoAMiner, PoAMiner>();
+                        services.AddSingleton<IPoAMiner, CollateralPoAMiner>();
                         services.AddSingleton<ISlotsManager, SlotsManager>();
                         services.AddSingleton<BlockDefinition, FederatedPegBlockDefinition>();
                         services.AddSingleton<ICoinbaseSplitter, PremineCoinbaseSplitter>();
@@ -354,7 +361,7 @@ namespace Stratis.Features.FederatedPeg
 
             // TODO: Consensus and Mining should be separated. Sidechain nodes don't need any of the Federation code but do need Consensus.
             // In the dependency tree as it is currently however, consensus is dependent on PoAFeature (needs SlotManager) which is in turn dependent on
-            // FederationGatewayFeature. https://github.com/stratisproject/FederatedSidechains/issues/273
+            // FederatedPegFeature. https://github.com/stratisproject/FederatedSidechains/issues/273
 
             LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
             fullNodeBuilder.ConfigureFeature(features =>
@@ -378,19 +385,33 @@ namespace Stratis.Features.FederatedPeg
 
                     // Consensus Rules
                     services.AddSingleton<PoAConsensusRuleEngine>();
-                    services.AddSingleton<IRuleRegistration, SmartContractCollateralPoARuleRegistration>();
-                    services.AddSingleton<IConsensusRuleEngine>(f =>
-                    {
-                        var concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
-                        var ruleRegistration = f.GetService<IRuleRegistration>();
-
-                        return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
-                    });
-
-                    services.AddSingleton<ICollateralChecker, CollateralChecker>();
                     services.AddSingleton<DefaultVotingController>();
-                    services.AddSingleton<CollateralVotingController>();
                 });
+            });
+
+            return fullNodeBuilder;
+        }
+
+        /// <summary>
+        /// Adds mining to the smart contract node when on a proof-of-authority network with collateral enabled.
+        /// </summary>
+        public static IFullNodeBuilder UseSmartContractCollateralPoAMining(this IFullNodeBuilder fullNodeBuilder)
+        {
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                    .AddFeature<PoAFeature>()
+                    .FeatureServices(services =>
+                    {
+                        services.AddSingleton<IFederationManager, FederationManager>();
+                        services.AddSingleton<PoABlockHeaderValidator>();
+                        services.AddSingleton<IPoAMiner, CollateralPoAMiner>();
+                        services.AddSingleton<PoAMinerSettings>();
+                        services.AddSingleton<MinerSettings>();
+                        services.AddSingleton<ISlotsManager, SlotsManager>();
+                        services.AddSingleton<BlockDefinition, SmartContractPoABlockDefinition>();
+                        services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();
+                    });
             });
 
             return fullNodeBuilder;
