@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Policy;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.TargetChain;
@@ -29,8 +27,6 @@ namespace Stratis.Features.FederatedPeg
     /// </summary>
     public class MultisigTransactionHandler : IMultisigTransactionHandler
     {
-        private readonly IFederationWalletTransactionHandler federationWalletTransactionHandler;
-
         private readonly IFederationWalletManager federationWalletManager;
 
         private readonly IFederatedPegSettings federatedPegSettings;
@@ -43,14 +39,12 @@ namespace Stratis.Features.FederatedPeg
 
         public MultisigTransactionHandler(ILoggerFactory loggerFactory,
             Network network,
-            IFederationWalletTransactionHandler federationWalletTransactionHandler,
             IFederationWalletManager federationWalletManager,
             IFederatedPegSettings federatedPegSettings,
             IWalletFeePolicy walletFeePolicy)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
-            this.federationWalletTransactionHandler = federationWalletTransactionHandler;
             this.federationWalletManager = federationWalletManager;
             this.federatedPegSettings = federatedPegSettings;
             this.walletFeePolicy = walletFeePolicy;
@@ -89,10 +83,12 @@ namespace Stratis.Features.FederatedPeg
             transactionBuilder.SetChange(this.federationWalletManager.GetWallet().MultiSigAddress.ScriptPubKey);
             transactionBuilder.AddKeys(privateKeys);
             transactionBuilder.SetTimeStamp(Utils.DateTimeToUnixTime(DateTimeOffset.UtcNow));
-            Money minTrxFee = new Money(this.network.MinTxFee, MoneyUnit.Satoshi);
 
-            var feeRate = this.walletFeePolicy.GetFeeRate(FeeType.Medium.ToConfirmations());
-            var fee = Math.Max(transactionBuilder.EstimateFees(feeRate), minTrxFee);
+            var minTrxFee = new Money(this.network.MinTxFee, MoneyUnit.Satoshi);
+
+            FeeRate feeRate = this.walletFeePolicy.GetFeeRate(FeeType.Medium.ToConfirmations());
+
+            long fee = Math.Max(transactionBuilder.EstimateFees(feeRate), minTrxFee);
 
             transactionBuilder.SendFees(fee);
 
