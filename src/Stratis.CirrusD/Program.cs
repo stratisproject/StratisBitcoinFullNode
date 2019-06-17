@@ -29,7 +29,7 @@ namespace Stratis.CirrusD
             {
                 var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
-                IFullNode node = GetFederatedPegFullNode(nodeSettings);
+                IFullNode node = GetSideChainFullNode(nodeSettings);
 
                 if (node != null)
                     await node.RunAsync();
@@ -40,7 +40,7 @@ namespace Stratis.CirrusD
             }
         }
 
-        private static IFullNode GetFederatedPegFullNode(NodeSettings nodeSettings)
+        private static IFullNode GetSideChainFullNode(NodeSettings nodeSettings)
         {
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
