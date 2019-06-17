@@ -141,6 +141,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                     inMemoryTransaction.Status = ConsolidationTransactionStatus.FullySigned;
                     this.logger.LogDebug("Consolidation transaction is fully signed. Broadcasting {0}", inMemoryTransaction.PartialTransaction.GetHash());
                     this.broadcasterManager.BroadcastTransactionAsync(inMemoryTransaction.PartialTransaction);
+                    return ConsolidationSignatureResult.Succeeded(inMemoryTransaction.PartialTransaction);
                 }
 
                 this.logger.LogDebug("Consolidation transaction not fully signed yet.");
