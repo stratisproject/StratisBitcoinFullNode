@@ -41,32 +41,13 @@ namespace Stratis.Features.FederatedPeg
             this.walletFeePolicy = walletFeePolicy;
         }
 
-        public Transaction BuildTransaction(BuildMultisigTransactionRequest request)
+        public Transaction BuildTransaction(List<Recipient> recipients, Key[] privateKeys)
         {
-            // Builds a transaction on mainnet for withdrawing federation funds
-            List<Recipient> recipients = request
-                .Recipients
-                .Select(recipientModel => new Recipient
-                {
-                    ScriptPubKey = BitcoinAddress.Create(recipientModel.DestinationAddress, this.network).ScriptPubKey,
-                    Amount = recipientModel.Amount
-                })
-                .ToList();
-            
             // FederationWalletTransactionHandler only supports signing with a single key - the fed wallet key.
             // However we still want to use it to determine what coins we need, so hack this together here to pass in what FederationWalletTransactionHandler.DetermineCoins.
-            var multiSigContext = new Wallet.TransactionBuildContext(recipients)
-            {
-                MinConfirmations = WithdrawalTransactionBuilder.MinConfirmations,
-                IgnoreVerify = true
-            };
+            var multiSigContext = new Wallet.TransactionBuildContext(recipients);
 
             (List<Coin> coins, List<Wallet.UnspentOutputReference> _) = FederationWalletTransactionHandler.DetermineCoins(this.federationWalletManager, this.network, multiSigContext, this.federatedPegSettings);
-
-            Key[] privateKeys = request
-                .Secrets
-                .Select(secret => new Mnemonic(secret.Mnemonic).DeriveExtKey(secret.Passphrase).PrivateKey)
-                .ToArray();
 
             var transactionBuilder = new TransactionBuilder(this.network);
 

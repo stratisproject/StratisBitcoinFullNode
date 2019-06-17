@@ -55,7 +55,21 @@ namespace Stratis.Features.FederatedPeg.Controllers
 
             try
             {
-                Transaction transactionResult = this.fedMultiSigWithdrawalTransactionBuilder.BuildTransaction(request);
+                var recipients = request
+                    .Recipients
+                    .Select(recipientModel => new Wallet.Recipient
+                    {
+                        ScriptPubKey = BitcoinAddress.Create(recipientModel.DestinationAddress, this.network).ScriptPubKey,
+                        Amount = recipientModel.Amount
+                    })
+                    .ToList();
+
+                Key[] privateKeys = request
+                    .Secrets
+                    .Select(secret => new Mnemonic(secret.Mnemonic).DeriveExtKey(secret.Passphrase).PrivateKey)
+                    .ToArray();
+
+                Transaction transactionResult = this.fedMultiSigWithdrawalTransactionBuilder.BuildTransaction(recipients, privateKeys);
 
                 var model = new WalletBuildTransactionModel
                 {
