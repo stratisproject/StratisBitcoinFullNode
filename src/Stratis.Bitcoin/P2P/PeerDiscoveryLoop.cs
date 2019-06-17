@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.P2P
             else
             {
                 // If all attempts have failed then attempt the dns seeds again.
-                if (!this.isSeedAndDnsAttempted && foundPeers.All(peer => peer.Attempted))
+                if (foundPeers.All(peer => peer.Attempted))
                 {
                     peersToDiscover.Clear();
                     this.AddDNSSeedNodes(peersToDiscover);
