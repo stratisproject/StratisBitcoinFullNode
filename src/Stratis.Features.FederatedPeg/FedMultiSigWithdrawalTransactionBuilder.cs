@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -68,8 +69,20 @@ namespace Stratis.Features.FederatedPeg
 
             FeeRate feeRate = this.walletFeePolicy.GetFeeRate(FeeType.Medium.ToConfirmations());
 
-            long fee = Math.Max(transactionBuilder.EstimateFees(feeRate), minTrxFee);
+            Money estimatedFee = transactionBuilder.EstimateFees(feeRate);
 
+            long fee = Math.Max(estimatedFee, minTrxFee);
+
+            var coinAmount = coins.Sum(c => c.Amount);
+
+            var totalAmountWithFees = recipients.Sum(r => r.Amount) + fee;
+
+            if (coinAmount < totalAmountWithFees)
+            {
+                // Throw an exception with a useful message.
+                throw new WalletException($"Coin amount of {coinAmount} was less than total amount with fees {totalAmountWithFees}. Adjust the amount you are trying to send.");
+            }
+            
             transactionBuilder.SendFees(fee);
 
             foreach (Recipient recipient in recipients)
