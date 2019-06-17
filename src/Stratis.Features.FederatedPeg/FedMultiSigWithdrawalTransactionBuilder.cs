@@ -52,10 +52,15 @@ namespace Stratis.Features.FederatedPeg
 
             (List<Coin> coins, List<Wallet.UnspentOutputReference> _) = FederationWalletTransactionHandler.DetermineCoins(this.federationWalletManager, this.network, multiSigContext, this.federatedPegSettings);
 
+            // MultiSigAddress from the wallet is not safe. It's only pulled from multisig-wallet.json and can
+            // be different from the *actual* multisig address for the current redeem script.
+            // Instead, use the address from settings - it's derived from the redeem script provided at startup.
+            var multiSigAddress = this.federatedPegSettings.MultiSigAddress.ScriptPubKey;
+
             var transactionBuilder = new TransactionBuilder(this.network);
 
             transactionBuilder.AddCoins(coins);
-            transactionBuilder.SetChange(this.federationWalletManager.GetWallet().MultiSigAddress.ScriptPubKey);
+            transactionBuilder.SetChange(multiSigAddress);
             transactionBuilder.AddKeys(privateKeys);
             transactionBuilder.SetTimeStamp(Utils.DateTimeToUnixTime(DateTimeOffset.UtcNow));
 
