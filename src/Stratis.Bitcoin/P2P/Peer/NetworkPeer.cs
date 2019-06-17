@@ -776,6 +776,12 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                     await this.SendMessageAsync(addrPayload, cancellationToken).ConfigureAwait(false);
                 }
+
+                // We treat outbound peers as slightly more trusted, so we ask them for the peers they're aware of to aid our own discovery.
+                if (!this.Inbound)
+                {
+                    await this.SendMessageAsync(new GetAddrPayload(), cancellationToken).ConfigureAwait(false);
+                }
             }
         }
 
