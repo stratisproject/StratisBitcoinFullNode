@@ -13,19 +13,10 @@ using Recipient = Stratis.Features.FederatedPeg.Wallet.Recipient;
 
 namespace Stratis.Features.FederatedPeg
 {
-    public interface IFedMultiSigWithdrawalTransactionBuilder
-    {
-        /// <summary>
-        /// Builds a new multisig transaction based on information from the <see cref="FederatedPeg.Wallet.TransactionBuildContext"/>.
-        /// </summary>
-        /// <returns>The new transaction.</returns>
-        Transaction BuildTransaction(BuildMultisigTransactionRequest request);
-    }
-
     /// <summary>
     /// A handler that has various functionalities related to transaction operations.
     /// </summary>
-    public class FedMultiSigWithdrawalTransactionBuilder : IFedMultiSigWithdrawalTransactionBuilder
+    public class FedMultiSigWithdrawalTransactionBuilder
     {
         private readonly IFederationWalletManager federationWalletManager;
 

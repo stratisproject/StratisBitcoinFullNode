@@ -20,7 +20,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
     [Route("api/[controller]")]
     public class MultisigController : Controller
     {
-        private readonly IFedMultiSigWithdrawalTransactionBuilder fedMultiSigWithdrawalTransactionBuilder;
+        private readonly FedMultiSigWithdrawalTransactionBuilder fedMultiSigWithdrawalTransactionBuilder;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
@@ -30,7 +30,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
 
         public MultisigController(
             ILoggerFactory loggerFactory,
-            IFedMultiSigWithdrawalTransactionBuilder fedMultiSigWithdrawalTransactionBuilder,
+            FedMultiSigWithdrawalTransactionBuilder fedMultiSigWithdrawalTransactionBuilder,
             Network network)
         {
             this.fedMultiSigWithdrawalTransactionBuilder = fedMultiSigWithdrawalTransactionBuilder;
