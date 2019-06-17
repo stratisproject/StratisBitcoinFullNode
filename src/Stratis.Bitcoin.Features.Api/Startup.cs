@@ -1,18 +1,28 @@
-﻿using System.IO;
+﻿using System;
+using System.Text;
+using System.Linq;
+using System.IO;
+using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
+using Microsoft.Extensions.FileProviders;
 using Swashbuckle.AspNetCore.Swagger;
 
 namespace Stratis.Bitcoin.Features.Api
 {
     public class Startup
     {
+        private readonly string currentFolder;
+
         public Startup(IHostingEnvironment env)
         {
+            this.currentFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
             IConfigurationBuilder builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
@@ -68,7 +78,22 @@ namespace Stratis.Bitcoin.Features.Api
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(setup =>
             {
-                setup.SwaggerDoc("v1", new Info { Title = "Stratis.Bitcoin.Api", Version = "v1" });
+                setup.SwaggerDoc("v1", new Info
+                {
+                    Title = "Stratis.Bitcoin.Api",
+                    Description = "Stratis Full Node API Swagger",
+                    Contact = new Contact()
+                    {
+                        Name = "Stratis Group Limited",
+                        Url = "https://stratisplatform.com"
+                    },
+                    License = new License
+                    {
+                        Name = "MIT License",
+                        Url = "https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/LICENSE"
+                    },
+                    Version = "v1"
+                });
 
                 //Set the comments path for the swagger json and ui.
                 string basePath = PlatformServices.Default.Application.ApplicationBasePath;
@@ -97,17 +122,27 @@ namespace Stratis.Bitcoin.Features.Api
 
             app.UseCors("CorsPolicy");
 
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new ResourceFileProvider(Assembly.GetExecutingAssembly(), "wwwroot"),
+                RequestPath = string.Empty
+            });
+
             app.UseMvc();
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();
 
             // Enable middleware to serve swagger-ui (HTML, JS, CSS etc.), specifying the Swagger JSON endpoint.
-            app.UseSwaggerUI(c =>
+            app.UseSwaggerUI(options =>
             {
-                c.DefaultModelRendering(ModelRendering.Model);
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Stratis.Bitcoin.Api V1");
+                options.DocumentTitle = "Stratis.Bitcoin.Api V1";
+                options.DefaultModelRendering(ModelRendering.Model);
+                options.InjectStylesheet("/css/swagger.css");
+                options.IndexStream = GetDefaultTemplateFromResource(app.ServerFeatures.Get<IServerAddressesFeature>().Addresses.First());
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "Stratis.Bitcoin.Api V1");
             });
         }
+        private Func<Stream> GetDefaultTemplateFromResource(string endpoint) => () => new MemoryStream(Encoding.UTF8.GetBytes(new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(Assembly.GetExecutingAssembly().GetName().Name + ".wwwroot.swagger.default.html")).ReadToEnd().Replace("$endpoint", string.Concat(endpoint, "api"))));
     }
 }
