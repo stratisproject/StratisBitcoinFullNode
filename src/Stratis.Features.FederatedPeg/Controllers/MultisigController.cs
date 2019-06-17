@@ -20,7 +20,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
     [Route("api/[controller]")]
     public class MultisigController : Controller
     {
-        private readonly IMultisigTransactionHandler multisigTransactionHandler;
+        private readonly IFedMultiSigWithdrawalTransactionBuilder fedMultiSigWithdrawalTransactionBuilder;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
@@ -30,10 +30,10 @@ namespace Stratis.Features.FederatedPeg.Controllers
 
         public MultisigController(
             ILoggerFactory loggerFactory,
-            IMultisigTransactionHandler multisigTransactionHandler,
+            IFedMultiSigWithdrawalTransactionBuilder fedMultiSigWithdrawalTransactionBuilder,
             Network network)
         {
-            this.multisigTransactionHandler = multisigTransactionHandler;
+            this.fedMultiSigWithdrawalTransactionBuilder = fedMultiSigWithdrawalTransactionBuilder;
             this.network = network;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -55,7 +55,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
 
             try
             {
-                Transaction transactionResult = this.multisigTransactionHandler.BuildTransaction(request);
+                Transaction transactionResult = this.fedMultiSigWithdrawalTransactionBuilder.BuildTransaction(request);
 
                 var model = new WalletBuildTransactionModel
                 {

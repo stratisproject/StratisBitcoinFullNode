@@ -13,7 +13,7 @@ using Recipient = Stratis.Features.FederatedPeg.Wallet.Recipient;
 
 namespace Stratis.Features.FederatedPeg
 {
-    public interface IMultisigTransactionHandler
+    public interface IFedMultiSigWithdrawalTransactionBuilder
     {
         /// <summary>
         /// Builds a new multisig transaction based on information from the <see cref="FederatedPeg.Wallet.TransactionBuildContext"/>.
@@ -25,7 +25,7 @@ namespace Stratis.Features.FederatedPeg
     /// <summary>
     /// A handler that has various functionalities related to transaction operations.
     /// </summary>
-    public class MultisigTransactionHandler : IMultisigTransactionHandler
+    public class FedMultiSigWithdrawalTransactionBuilder : IFedMultiSigWithdrawalTransactionBuilder
     {
         private readonly IFederationWalletManager federationWalletManager;
 
@@ -37,7 +37,7 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly IWalletFeePolicy walletFeePolicy;
 
-        public MultisigTransactionHandler(ILoggerFactory loggerFactory,
+        public FedMultiSigWithdrawalTransactionBuilder(ILoggerFactory loggerFactory,
             Network network,
             IFederationWalletManager federationWalletManager,
             IFederatedPegSettings federatedPegSettings,
