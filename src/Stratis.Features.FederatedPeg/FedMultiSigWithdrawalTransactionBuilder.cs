@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Features.FederatedPeg.Interfaces;
-using Stratis.Features.FederatedPeg.Models;
-using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
 using Recipient = Stratis.Features.FederatedPeg.Wallet.Recipient;
 
@@ -21,20 +17,17 @@ namespace Stratis.Features.FederatedPeg
         private readonly IFederationWalletManager federationWalletManager;
 
         private readonly IFederatedPegSettings federatedPegSettings;
-
-        private readonly ILogger logger;
-
+        
         private readonly Network network;
 
         private readonly IWalletFeePolicy walletFeePolicy;
 
-        public FedMultiSigWithdrawalTransactionBuilder(ILoggerFactory loggerFactory,
+        public FedMultiSigWithdrawalTransactionBuilder(
             Network network,
             IFederationWalletManager federationWalletManager,
             IFederatedPegSettings federatedPegSettings,
             IWalletFeePolicy walletFeePolicy)
         {
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.federationWalletManager = federationWalletManager;
             this.federatedPegSettings = federatedPegSettings;
