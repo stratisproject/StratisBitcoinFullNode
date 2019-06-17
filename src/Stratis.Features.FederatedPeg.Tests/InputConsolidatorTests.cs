@@ -27,6 +27,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.federatedPegSettings,
                 this.loggerFactory,
                 this.signals,
+                this.asyncProvider,
                 this.network);
 
             Assert.Null(inputConsolidator.CreateRequiredConsolidationTransactions(Money.Coins(100m)));
@@ -48,6 +49,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.federatedPegSettings,
                 this.loggerFactory,
                 this.signals,
+                this.asyncProvider,
                 this.network);
 
             // Lets set the funding transactions to many really small outputs

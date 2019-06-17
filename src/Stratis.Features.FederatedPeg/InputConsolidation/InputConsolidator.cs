@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
@@ -22,6 +24,17 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
         private readonly IFederatedPegSettings settings;
         private readonly ILogger logger;
         private readonly Network network;
+        private readonly IAsyncProvider asyncProvider;
+
+        /// <summary>
+        /// Queue to handle incoming blocks and update state if needed.
+        /// </summary>
+        private readonly IAsyncDelegateDequeuer<ChainedHeaderBlock> blockQueue;
+
+        /// <summary>
+        /// The task that is building all the consolidation transactions, if one is currently running.
+        /// </summary>
+        private Task consolidationTask;
 
         /// <summary>
         /// Used to protect ConsolidationTransactions from write operations.
@@ -39,6 +52,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
             IFederatedPegSettings settings,
             ILoggerFactory loggerFactory,
             ISignals signals,
+            IAsyncProvider asyncProvider,
             Network network)
         {
             this.transactionHandler = transactionHandler;
@@ -47,33 +61,42 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
             this.network = network;
             this.settings = settings;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.asyncProvider = asyncProvider;
+            this.blockQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<ChainedHeaderBlock>($"{nameof(InputConsolidator)}-{nameof(this.blockQueue)}", this.ProcessBlockInternal);
             signals.Subscribe<WalletNeedsConsolidation>(this.StartConsolidation);
         }
 
         /// <inheritdoc />
         public void StartConsolidation(WalletNeedsConsolidation trigger)
         {
-            Task.Run(() =>
+            // If there isn't already a task running, start it.
+
+            if (this.consolidationTask == null || this.consolidationTask.IsCompleted)
             {
-                lock (this.lockObj)
+                this.consolidationTask = Task.Run(() =>
                 {
-                    // If we're already in progress we don't need to do anything.
-                    if (this.ConsolidationTransactions != null)
-                        return;
-
-                    this.logger.LogInformation("Building consolidation transactions for federation wallet inputs.");
-
-                    this.ConsolidationTransactions = this.CreateRequiredConsolidationTransactions(trigger.Amount);
-
-                    if (this.ConsolidationTransactions == null)
+                    lock (this.lockObj)
                     {
-                        this.logger.LogWarning("Failed to build condensing transactions.");
-                        return;
-                    }
+                        // If we're already in progress we don't need to do anything.
+                        if (this.ConsolidationTransactions != null)
+                            return;
 
-                    this.logger.LogInformation("Successfully built {0} consolidating transactions.", this.ConsolidationTransactions.Count);
-                }
-            });
+                        this.logger.LogInformation("Building consolidation transactions for federation wallet inputs.");
+
+                        this.ConsolidationTransactions = this.CreateRequiredConsolidationTransactions(trigger.Amount);
+
+                        if (this.ConsolidationTransactions == null)
+                        {
+                            this.logger.LogWarning("Failed to build condensing transactions.");
+                            return;
+                        }
+
+                        this.logger.LogInformation("Successfully built {0} consolidating transactions.", this.ConsolidationTransactions.Count);
+                    }
+                });
+
+                this.asyncProvider.RegisterTask($"{nameof(InputConsolidator)}-transaction building", this.consolidationTask);
+            }
         }
 
         /// <inheritdoc />
@@ -226,6 +249,8 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
             // TODO: It would be nice if there was a way to quickly check that the transaction coming in through here is FullySigned.
             // At the moment we know they are only coming from the mempool.
 
+            // TODO: Could also be async to avoid blocking other components receiving future transaction details
+
             lock (this.lockObj)
             {
                 // No work to do
@@ -250,57 +275,60 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
         /// <inheritdoc />
         public void ProcessBlock(ChainedHeaderBlock chainedHeaderBlock)
         {
-            // Needs to be in task or it blocks other components syncing blocks.
-            Task.Run(() =>
+            this.blockQueue.Enqueue(chainedHeaderBlock);
+        }
+
+        private Task ProcessBlockInternal(ChainedHeaderBlock chainedHeaderBlock, CancellationToken cancellationToken)
+        {
+            lock (this.lockObj)
             {
-                lock (this.lockObj)
+                // No work to do
+                if (this.ConsolidationTransactions == null)
+                    return Task.CompletedTask;
+
+                // If a consolidation transaction comes through, set it to SeenInBlock
+                foreach (Transaction transaction in chainedHeaderBlock.Block.Transactions)
                 {
-                    // No work to do
-                    if (this.ConsolidationTransactions == null)
-                        return;
-
-                    // If a consolidation transaction comes through, set it to SeenInBlock
-                    foreach (Transaction transaction in chainedHeaderBlock.Block.Transactions)
+                    if (this.IsConsolidatingTransaction(transaction))
                     {
-                        if (this.IsConsolidatingTransaction(transaction))
-                        {
-                            ConsolidationTransaction inMemoryTransaction =
-                                this.GetInMemoryConsolidationTransaction(transaction);
+                        ConsolidationTransaction inMemoryTransaction =
+                            this.GetInMemoryConsolidationTransaction(transaction);
 
-                            if (inMemoryTransaction != null)
-                            {
-                                this.logger.LogDebug("Saw condensing transaction {0}, updating status to SeenInBlock",
-                                    transaction.GetHash());
-                                inMemoryTransaction.Status = ConsolidationTransactionStatus.SeenInBlock;
-                            }
+                        if (inMemoryTransaction != null)
+                        {
+                            this.logger.LogDebug("Saw condensing transaction {0}, updating status to SeenInBlock",
+                                transaction.GetHash());
+                            inMemoryTransaction.Status = ConsolidationTransactionStatus.SeenInBlock;
                         }
                     }
-
-                    // Need to check all the transactions that are partial are still valid in case of a reorg.
-                    List<ConsolidationTransaction> partials = this.ConsolidationTransactions
-                        .Where(x => x.Status == ConsolidationTransactionStatus.Partial ||
-                                    x.Status == ConsolidationTransactionStatus.FullySigned)
-                        .Take(5) // We don't actually need to validate all of them - just the next potential ones.
-                        .ToList();
-
-                    foreach (ConsolidationTransaction cTransaction in partials)
-                    {
-                        if (!this.walletManager.ValidateConsolidatingTransaction(cTransaction.PartialTransaction))
-                        {
-                            // If we find an invalid one, everything will need redoing!
-                            this.logger.LogDebug(
-                                "Consolidation transaction {0} failed validation, resetting InputConsolidator",
-                                cTransaction.PartialTransaction.GetHash());
-                            this.ConsolidationTransactions = null;
-                            return;
-                        }
-                    }
-
-                    // If all of our consolidation inputs are SeenInBlock, we can move on! Yay
-                    if (this.ConsolidationTransactions.All(x => x.Status == ConsolidationTransactionStatus.SeenInBlock))
-                        this.ConsolidationTransactions = null;
                 }
-            });
+
+                // Need to check all the transactions that are partial are still valid in case of a reorg.
+                List<ConsolidationTransaction> partials = this.ConsolidationTransactions
+                    .Where(x => x.Status == ConsolidationTransactionStatus.Partial ||
+                                x.Status == ConsolidationTransactionStatus.FullySigned)
+                    .Take(5) // We don't actually need to validate all of them - just the next potential ones.
+                    .ToList();
+
+                foreach (ConsolidationTransaction cTransaction in partials)
+                {
+                    if (!this.walletManager.ValidateConsolidatingTransaction(cTransaction.PartialTransaction))
+                    {
+                        // If we find an invalid one, everything will need redoing!
+                        this.logger.LogDebug(
+                            "Consolidation transaction {0} failed validation, resetting InputConsolidator",
+                            cTransaction.PartialTransaction.GetHash());
+                        this.ConsolidationTransactions = null;
+                        return Task.CompletedTask;
+                    }
+                }
+
+                // If all of our consolidation inputs are SeenInBlock, we can move on! Yay
+                if (this.ConsolidationTransactions.All(x => x.Status == ConsolidationTransactionStatus.SeenInBlock))
+                    this.ConsolidationTransactions = null;
+            }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
