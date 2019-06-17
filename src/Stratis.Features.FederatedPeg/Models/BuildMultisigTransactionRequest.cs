@@ -10,9 +10,7 @@ namespace Stratis.Features.FederatedPeg.Models
     public class BuildMultisigTransactionRequest
     {
         /// <summary>
-        /// A list of transaction recipients. For each recipient, specify the Pubkey script and the amount the
-        /// recipient will receive in STRAT (or a sidechain coin). If the transaction was realized,
-        /// both the values would be used to create the UTXOs for the transaction recipients.
+        /// A list of transaction recipient addresses and amounts.
         /// </summary> 
         [Required(ErrorMessage = "A list of recipients is required.")]
         [MinLength(1)]
