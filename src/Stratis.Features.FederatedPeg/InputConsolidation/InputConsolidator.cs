@@ -121,7 +121,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
 
                 this.logger.LogDebug("Attempting to merge signatures for '{0}' and '{1}'.", inMemoryTransaction.PartialTransaction.GetHash(), incomingPartialTransaction.GetHash());
 
-                Transaction newTransaction = SigningUtils.CombineSignatures(builder, inMemoryTransaction.PartialTransaction, new []{incomingPartialTransaction});
+                Transaction newTransaction = SigningUtils.CheckTemplateAndCombineSignatures(builder, inMemoryTransaction.PartialTransaction, new []{incomingPartialTransaction});
 
                 if (oldTransaction.GetHash() == newTransaction.GetHash())
                 {
