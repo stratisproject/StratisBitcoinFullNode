@@ -39,7 +39,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 allPartials[0] = existingTransaction;
                 validPartials.CopyTo(allPartials, 1);
 
-                existingTransaction = builder.CombineSignatures(allPartials);
+                existingTransaction = builder.CombineSignatures(true, allPartials);
             }
 
             return existingTransaction;
