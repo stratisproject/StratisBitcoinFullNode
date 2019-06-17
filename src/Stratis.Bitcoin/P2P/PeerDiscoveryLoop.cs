@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.P2P
             // We need DNS discovery to happen in two main cases:
             // 1. We have no other peers.
             // 2. Periodically (but infrequently) so that we will have fresh alternatives to connect to if our current peers disconnect.
-            if (this.peerAddressManager.Peers.Count == 0 || (this.seedAndDnsAttempted - DateTime.Now).TotalSeconds > RetrySeedsThresholdSeconds)
+            if (this.peerAddressManager.Peers.Count == 0 || (DateTime.Now - this.seedAndDnsAttempted).TotalSeconds > RetrySeedsThresholdSeconds)
             {
                 this.AddDNSSeedNodes(peersToDiscover);
                 this.AddSeedNodes(peersToDiscover);
