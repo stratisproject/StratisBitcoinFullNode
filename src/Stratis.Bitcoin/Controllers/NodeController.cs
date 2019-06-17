@@ -559,7 +559,7 @@ namespace Stratis.Bitcoin.Controllers
 
             try
             {
-                List<string> loops = this.asyncProvider.GetAllRunning();
+                List<string> loops = this.asyncProvider.GetAll(true);
 
                 return this.Json(loops);
             }

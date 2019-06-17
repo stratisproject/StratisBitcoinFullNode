@@ -118,8 +118,9 @@ namespace Stratis.Bitcoin.AsyncWork
         string GetStatistics(bool faultyOnly);
 
         /// <summary>
-        /// Returns a list of friendly names of all running loops.
+        /// Returns a list of friendly names of all loops.
         /// </summary>
-        List<string> GetAllRunning();
+        /// <param name="onlyRunning">Only return loops in that are not faulted.</param>
+        List<string> GetAll(bool onlyRunning);
     }
 }
