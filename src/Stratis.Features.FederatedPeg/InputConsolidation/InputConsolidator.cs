@@ -24,7 +24,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
         private readonly Network network;
 
         /// <summary>
-        /// Used to ensure only one operation is happening at a time.
+        /// Used to protect ConsolidationTransactions from write operations.
         /// </summary>
         private readonly object lockObj = new object();
 
@@ -66,7 +66,10 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                     this.ConsolidationTransactions = this.CreateRequiredConsolidationTransactions(trigger.Amount);
 
                     if (this.ConsolidationTransactions == null)
+                    {
+                        this.logger.LogWarning("Failed to build condensing transactions.");
                         return;
+                    }
 
                     this.logger.LogInformation("Successfully built {0} consolidating transactions.", this.ConsolidationTransactions.Count);
                 }
@@ -128,53 +131,62 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
         /// </summary>
         public List<ConsolidationTransaction> CreateRequiredConsolidationTransactions(Money amount)
         {
-            // Get all of the inputs
-            List<UnspentOutputReference> unspentOutputs = this.walletManager.GetSpendableTransactionsInWallet(WithdrawalTransactionBuilder.MinConfirmations).ToList();
-
-            // We shouldn't be consolidating transactions if we have less than 50 UTXOs to spend.
-            if (unspentOutputs.Count < FederatedPegSettings.MaxInputs)
-                return null;
-
-            // Go through every set of 50 until we consume all, or find a set that works.
-            List<UnspentOutputReference> oneRound = unspentOutputs.Take(FederatedPegSettings.MaxInputs).ToList();
-            int roundNumber = 0;
-
-            List<ConsolidationTransaction> consolidationTransactions = new List<ConsolidationTransaction>();
-            
-            while (oneRound.Count == FederatedPegSettings.MaxInputs)
+            lock (this.lockObj)
             {
-                // We found a set of 50 that is worth enough so no more consolidation needed.
-                if (oneRound.Sum(x => x.Transaction.Amount) >= amount + this.settings.GetWithdrawalTransactionFee(FederatedPegSettings.MaxInputs))
-                    break;
+                // Get all of the inputs
+                List<UnspentOutputReference> unspentOutputs = this.walletManager.GetSpendableTransactionsInWallet(WithdrawalTransactionBuilder.MinConfirmations).ToList();
 
-                // build a transaction and add it to our list.
-                Transaction transaction = this.BuildConsolidatingTransaction(oneRound);
-
-                // Something went wrong building transaction - start over. We will want to build them all from scratch in case wallet has changed state.
-                if (transaction == null)
-                    return null;
-
-                consolidationTransactions.Add(new ConsolidationTransaction
+                // We shouldn't be consolidating transactions if we have less than 50 UTXOs to spend.
+                if (unspentOutputs.Count < FederatedPegSettings.MaxInputs)
                 {
-                    PartialTransaction = transaction,
-                    Status = ConsolidationTransactionStatus.Partial
-                });
+                    this.logger.LogDebug("Not enough UTXOs to trigger consolidation transactions.");
+                    return null;
+                }
 
-                roundNumber++;
-                oneRound = unspentOutputs
-                    .Skip(roundNumber * FederatedPegSettings.MaxInputs)
-                    .Take(FederatedPegSettings.MaxInputs).ToList();
+                // Go through every set of 50 until we consume all, or find a set that works.
+                List<UnspentOutputReference> oneRound = unspentOutputs.Take(FederatedPegSettings.MaxInputs).ToList();
+                int roundNumber = 0;
+
+                List<ConsolidationTransaction> consolidationTransactions = new List<ConsolidationTransaction>();
+
+                while (oneRound.Count == FederatedPegSettings.MaxInputs)
+                {
+                    // We found a set of 50 that is worth enough so no more consolidation needed.
+                    if (oneRound.Sum(x => x.Transaction.Amount) >= amount + this.settings.GetWithdrawalTransactionFee(FederatedPegSettings.MaxInputs))
+                        break;
+
+                    // build a transaction and add it to our list.
+                    Transaction transaction = this.BuildConsolidatingTransaction(oneRound);
+
+                    // Something went wrong building transaction - start over. We will want to build them all from scratch in case wallet has changed state.
+                    if (transaction == null)
+                    {
+                        this.logger.LogDebug("Failure building specific consolidating transaction.");
+                        return null;
+                    }
+
+                    consolidationTransactions.Add(new ConsolidationTransaction
+                    {
+                        PartialTransaction = transaction,
+                        Status = ConsolidationTransactionStatus.Partial
+                    });
+
+                    roundNumber++;
+                    oneRound = unspentOutputs
+                        .Skip(roundNumber * FederatedPegSettings.MaxInputs)
+                        .Take(FederatedPegSettings.MaxInputs).ToList();
+                }
+
+                // Loop exits when we get a set of 50 that had a high enough amount, or when we run out of UTXOs aka a round less than 50
+
+                return consolidationTransactions;
             }
-
-            // Loop exits when we get a set of 50 that had a high enough amount, or when we run out of UTXOs aka a round less than 50
-
-            return consolidationTransactions;
         }
 
         /// <summary>
         /// Build a consolidating transaction.
         /// </summary>
-        public Transaction BuildConsolidatingTransaction(List<UnspentOutputReference> selectedInputs)
+        private Transaction BuildConsolidatingTransaction(List<UnspentOutputReference> selectedInputs)
         {
             try
             {
@@ -211,6 +223,9 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
         /// <inheritdoc />
         public void ProcessTransaction(Transaction transaction)
         {
+            // TODO: It would be nice if there was a way to quickly check that the transaction coming in through here is FullySigned.
+            // At the moment we know they are only coming from the mempool.
+
             lock (this.lockObj)
             {
                 // No work to do

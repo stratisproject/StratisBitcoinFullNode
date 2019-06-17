@@ -1053,7 +1053,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         // Trace the reason validation failed. Note that failure here doesn't mean an error necessarily. Just that the transaction is not fully signed.
                         foreach (TransactionPolicyError transactionPolicyError in errors)
                         {
-                            this.logger.LogInformation("TransactionBuilder.Verify FAILED - {0}", transactionPolicyError.ToString());
+                            this.logger.LogInformation("{0} FAILED - {1}", nameof(TransactionBuilder.Verify), transactionPolicyError.ToString());
                         }
 
                         return false;
@@ -1087,7 +1087,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         // Trace the reason validation failed. Note that failure here doesn't mean an error necessarily. Just that the transaction is not fully signed.
                         foreach (TransactionPolicyError transactionPolicyError in errors)
                         {
-                            this.logger.LogDebug("TransactionBuilder.Verify FAILED - {0}", transactionPolicyError.ToString());
+                            this.logger.LogInformation("{0} FAILED - {1}", nameof(TransactionBuilder.Verify), transactionPolicyError.ToString());
                         }
 
                         return false;
