@@ -332,9 +332,9 @@ namespace Stratis.Bitcoin.AsyncWork
                 taskInformation.AddRange(this.registeredTasks.Values);
             }
 
-            List<string> data = (from info in taskInformation where info.IsRunning orderby info.FriendlyName select info.FriendlyName).ToList();
+            var runningTasks = taskInformation.Where(a => a.IsRunning).Select(a => a.FriendlyName).OrderBy(a => a).ToList();
 
-            return data;
+            return runningTasks;
         }
 
         private void OnRegisteredTaskCompleted(Task task)
