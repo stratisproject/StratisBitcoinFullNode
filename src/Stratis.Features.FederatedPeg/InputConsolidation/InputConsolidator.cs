@@ -228,7 +228,9 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                     SelectedInputs = selectedInputs.Select(u => u.ToOutPoint()).ToList(),
                     AllowOtherInputs = false,
                     IsConsolidatingTransaction = true,
-                    Time = (uint?) selectedInputs.First().Transaction.CreationTime.ToUnixTimeSeconds()
+                    Time = this.network.Consensus.IsProofOfStake 
+                        ? (uint?)selectedInputs.Max(x => x.Transaction.CreationTime).ToUnixTimeSeconds()
+                        : null
                 };
 
                 Transaction transaction = this.transactionHandler.BuildTransaction(multiSigContext);
