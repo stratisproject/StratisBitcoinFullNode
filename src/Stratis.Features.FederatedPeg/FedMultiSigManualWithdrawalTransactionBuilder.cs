@@ -13,7 +13,7 @@ namespace Stratis.Features.FederatedPeg
     /// <summary>
     /// Uses this node's federation wallet and the current network fee policy to build withdrawal transactions for the federation multisig.
     /// </summary>
-    public class FedMultiSigWithdrawalTransactionBuilder
+    public class FedMultiSigManualWithdrawalTransactionBuilder
     {
         private readonly IFederationWalletManager federationWalletManager;
 
@@ -23,7 +23,7 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly IWalletFeePolicy walletFeePolicy;
 
-        public FedMultiSigWithdrawalTransactionBuilder(
+        public FedMultiSigManualWithdrawalTransactionBuilder(
             Network network,
             IFederationWalletManager federationWalletManager,
             IFederatedPegSettings federatedPegSettings,
