@@ -83,7 +83,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
                     return this.NotFound("No federation wallet found.");
                 }
 
-                var model = new FederationWalletGeneralInfoModel
+                var model = new WalletGeneralInfoModel
                 {
                     Network = wallet.Network,
                     CreationTime = wallet.CreationTime,
@@ -91,8 +91,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
                     ConnectedNodes = this.connectionManager.ConnectedPeers.Count(),
                     ChainTip = this.chainIndexer.Tip.Height,
                     IsChainSynced = this.chainIndexer.IsDownloaded(),
-                    IsDecrypted = true,
-                    MultiSigAddress = wallet.MultiSigAddress.Address
+                    IsDecrypted = true
                 };
 
                 return this.Json(model);
