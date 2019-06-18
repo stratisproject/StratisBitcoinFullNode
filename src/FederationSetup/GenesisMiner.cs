@@ -25,7 +25,7 @@ namespace FederationSetup
         public void Run_MineGenesis()
         {
             var consensusFactory = new SmartContractPoAConsensusFactory();
-            string coinbaseText = "https://www.coindesk.com/apple-co-founder-backs-dorsey-bitcoin-become-webs-currency/";
+            string coinbaseText = "https://github.com/stratisproject/StratisBitcoinFullNode/tree/master/src/Stratis.CirrusD";
             this.output.WriteLine(this.MineGenesisBlocks(consensusFactory, coinbaseText));
         }
 
