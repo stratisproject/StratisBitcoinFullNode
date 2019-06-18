@@ -286,7 +286,14 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             lock (this.peerLock)
             {
-                return this.pullerBehaviorsByPeerId.Sum(x => x.Value.SpeedBytesPerSecond);
+                try
+                {
+                    return this.pullerBehaviorsByPeerId.Sum(x => x.Value.SpeedBytesPerSecond);
+                }
+                catch (OverflowException)
+                {
+                    return long.MaxValue;
+                }
             }
         }
 

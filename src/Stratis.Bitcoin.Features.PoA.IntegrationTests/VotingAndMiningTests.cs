@@ -6,10 +6,13 @@ using NBitcoin;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.PoA.Voting;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
@@ -300,6 +303,61 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
                 long balanceAfterPremine = walletManager.GetBalances(walletName, "account 0").Sum(x => x.AmountConfirmed);
 
                 Assert.Equal(network.Consensus.PremineReward.Satoshi, balanceAfterPremine);
+            }
+        }
+
+        [Fact]
+        public async Task TransactionSentFeesReceivedByMinerAsync()
+        {
+            TestPoANetwork network = new TestPoANetwork();
+
+            using (PoANodeBuilder builder = PoANodeBuilder.CreatePoANodeBuilder(this))
+            {
+                string walletName = "mywallet";
+                string walletPassword = "pass";
+                string walletAccount = "account 0";
+
+                Money transferAmount = Money.Coins(1m);
+                Money feeAmount = Money.Coins(0.0001m);
+
+                CoreNode nodeA = builder.CreatePoANode(network, network.FederationKey1).WithWallet(walletPassword, walletName).Start();
+                CoreNode nodeB = builder.CreatePoANode(network, network.FederationKey2).WithWallet(walletPassword, walletName).Start();
+
+                TestHelper.Connect(nodeA, nodeB);
+
+                long toMineCount = network.Consensus.PremineHeight + network.Consensus.CoinbaseMaturity + 1 - nodeA.GetTip().Height;
+
+                // Get coins on nodeA via the premine.
+                await nodeA.MineBlocksAsync((int)toMineCount).ConfigureAwait(false);
+
+                CoreNodePoAExtensions.WaitTillSynced(nodeA, nodeB);
+
+                // Will send funds to one of nodeB's addresses.
+                Script destination = nodeB.FullNode.WalletManager().GetUnusedAddress().ScriptPubKey;
+
+                var context = new TransactionBuildContext(network)
+                {
+                    AccountReference = new WalletAccountReference(walletName, walletAccount),
+                    MinConfirmations = 0,
+                    FeeType = FeeType.High,
+                    WalletPassword = walletPassword,
+                    Recipients = new[] { new Recipient { Amount = transferAmount, ScriptPubKey = destination } }.ToList()
+                };
+
+                Transaction trx = nodeA.FullNode.WalletTransactionHandler().BuildTransaction(context);
+
+                nodeA.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(trx.ToHex()));
+
+                TestBase.WaitLoop(() => nodeA.CreateRPCClient().GetRawMempool().Length == 1 && nodeB.CreateRPCClient().GetRawMempool().Length == 1);
+
+                await nodeB.MineBlocksAsync((int)toMineCount).ConfigureAwait(false);
+
+                TestBase.WaitLoop(() => nodeA.CreateRPCClient().GetRawMempool().Length == 0 && nodeB.CreateRPCClient().GetRawMempool().Length == 0);
+
+                IWalletManager walletManager = nodeB.FullNode.NodeService<IWalletManager>();
+                long balance = walletManager.GetBalances(walletName, walletAccount).Sum(x => x.AmountConfirmed);
+                
+                Assert.True(balance == transferAmount + feeAmount);
             }
         }
 

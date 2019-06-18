@@ -118,7 +118,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                         ConfirmedBalance = (double)stratisWalletBalances.Content.balances[0].amountConfirmed / 100000000,
                         UnconfirmedBalance = (double)stratisWalletBalances.Content.balances[0].amountUnconfirmed / 100000000,
                         CoinTicker = stratisStatus.Content.coinTicker ?? "STRAT",
-                        LogRules = stratisLogRules.Content
+                        LogRules = JsonConvert.DeserializeObject<List<LogRule>>(stratisLogRules.Content.ToString())
                     },
                     SidechainNode = new SidechainNodelModel
                     {
@@ -134,7 +134,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                         ConfirmedBalance = (double)sidechainWalletBalances.Content.balances[0].amountConfirmed / 100000000,
                         UnconfirmedBalance = (double)sidechainWalletBalances.Content.balances[0].amountUnconfirmed / 100000000,
                         CoinTicker = sidechainStatus.Content.coinTicker ?? "STRAT",
-                        LogRules = sidechainLogRules.Content
+                        LogRules = JsonConvert.DeserializeObject<List<LogRule>>(sidechainLogRules.Content.ToString())
                     }
                 };
             }

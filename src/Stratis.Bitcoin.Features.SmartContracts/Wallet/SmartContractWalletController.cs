@@ -151,10 +151,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// If this has been done, and that address is supplied to this method,
         /// a list of all smart contract interactions for a wallet will be returned.
         /// </summary>
-        /// 
+        ///
         /// <param name="walletName">The name of the wallet holding the address.</param>
         /// <param name="address">The address to retrieve the history for.</param>
-        /// 
         /// <returns>A list of smart contract create and call transaction items as well as transaction items at a specific wallet address.</returns>
         [Route("history")]
         [HttpGet]
@@ -186,72 +185,57 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
                 foreach (FlatHistory item in history)
                 {
+                    bool hasSmartContract = this.receiptRepository.Retrieve(item.Transaction.Id) != null;
                     TransactionData transaction = item.Transaction;
 
-                    // Record a receive transaction
-                    transactionItems.Add(new ContractTransactionItem
+                    // Record a receive transaction if it has a SC
+                    if (hasSmartContract)
                     {
-                        Amount = transaction.Amount.ToUnit(MoneyUnit.Satoshi),
-                        BlockHeight = transaction.BlockHeight,
-                        Hash = transaction.Id,
-                        Type = ReceivedTransactionType(transaction),
-                        To = address
-                    });
+                        transactionItems.Add(new ContractTransactionItem
+                        {
+                            Amount = transaction.Amount.ToUnit(MoneyUnit.Satoshi),
+                            BlockHeight = transaction.BlockHeight,
+                            Hash = transaction.Id,
+                            Type = ReceivedTransactionType(transaction),
+                            To = address
+                        });
+                    }
 
                     // Add outgoing transaction details
-                    if (transaction.SpendingDetails != null)
+                    // Get if it's an SC transaction
+                    PaymentDetails scPayment = transaction.SpendingDetails?.Payments?.FirstOrDefault(x => x.DestinationScriptPubKey.IsSmartContractExec());
+
+                    if (scPayment == null) continue;
+
+                    Receipt receipt = this.receiptRepository.Retrieve(transaction.SpendingDetails.TransactionId);
+                    if (receipt == null) continue;
+
+                    if (scPayment.DestinationScriptPubKey.IsSmartContractCreate())
                     {
-                        // Get if it's an SC transaction
-                        PaymentDetails scPayment = transaction.SpendingDetails.Payments?.FirstOrDefault(x => x.DestinationScriptPubKey.IsSmartContractExec());
-
-                        if (scPayment != null)
+                        // Create a record for a Create transaction
+                        transactionItems.Add(new ContractTransactionItem
                         {
-                            if (scPayment.DestinationScriptPubKey.IsSmartContractCreate())
-                            {
-                                // Create a record for a Create transaction
-                                Receipt receipt = this.receiptRepository.Retrieve(transaction.SpendingDetails.TransactionId);
-                                transactionItems.Add(new ContractTransactionItem
-                                {
-                                    Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
-                                    BlockHeight = transaction.SpendingDetails.BlockHeight,
-                                    Type = ContractTransactionItemType.ContractCreate,
-                                    Hash = transaction.SpendingDetails.TransactionId,
-                                    To = receipt?.NewContractAddress?.ToBase58Address(this.network) ?? ""
-                                });
-                            }
-                            else
-                            {
-                                // Create a record for a Call transaction
-                                Result<ContractTxData> txData = this.callDataSerializer.Deserialize(scPayment.DestinationScriptPubKey.ToBytes());
+                            Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
+                            BlockHeight = transaction.SpendingDetails.BlockHeight,
+                            Type = ContractTransactionItemType.ContractCreate,
+                            Hash = transaction.SpendingDetails.TransactionId,
+                            To = receipt.NewContractAddress?.ToBase58Address(this.network) ?? string.Empty
+                        });
+                    }
+                    else
+                    {
+                        // Create a record for a Call transaction
+                        Result<ContractTxData> txData =
+                            this.callDataSerializer.Deserialize(scPayment.DestinationScriptPubKey.ToBytes());
 
-                                transactionItems.Add(new ContractTransactionItem
-                                {
-                                    Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
-                                    BlockHeight = transaction.SpendingDetails.BlockHeight,
-                                    Type = ContractTransactionItemType.ContractCall,
-                                    Hash = transaction.SpendingDetails.TransactionId,
-                                    To = txData.Value.ContractAddress.ToBase58Address(this.network)
-                                });
-                            }
-                        }
-                        else
+                        transactionItems.Add(new ContractTransactionItem
                         {
-                            // Create a record for every external payment sent
-                            if (transaction.SpendingDetails.Payments != null)
-                            {
-                                foreach (PaymentDetails payment in transaction.SpendingDetails.Payments)
-                                {
-                                    transactionItems.Add(new ContractTransactionItem
-                                    {
-                                        Amount = payment.Amount.ToUnit(MoneyUnit.Satoshi),
-                                        BlockHeight = transaction.SpendingDetails.BlockHeight,
-                                        Type = ContractTransactionItemType.Send,
-                                        Hash = transaction.SpendingDetails.TransactionId,
-                                        To = payment.DestinationAddress
-                                    });
-                                }
-                            }
-                        }
+                            Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
+                            BlockHeight = transaction.SpendingDetails.BlockHeight,
+                            Type = ContractTransactionItemType.ContractCall,
+                            Hash = transaction.SpendingDetails.TransactionId,
+                            To = txData.Value.ContractAddress.ToBase58Address(this.network)
+                        });
                     }
                 }
 
@@ -263,7 +247,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-         
+
         /// <summary>
         /// Builds a transaction to create a smart contract and then broadcasts the transaction to the network.
         /// If the deployment is successful, methods on the smart contract can be subsequently called.
