@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.P2P
                         if (addr.Addresses.Length > MaxAddressesPerAddrPayload)
                         {
                             // Not respecting the protocol.
-                            this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Protocol violation: addr payload size is limited by 1000 entries.");
+                            this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, $"Protocol violation: addr payload size is limited by {MaxAddressesPerAddrPayload} entries.");
 
                             this.logger.LogTrace("(-)[PROTOCOL_VIOLATION]");
                             return;
