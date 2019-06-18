@@ -110,7 +110,7 @@ namespace Stratis.Features.FederatedPeg
             if (coinAmount < totalAmountWithFees)
             {
                 // Throw an exception with a useful message.
-                throw new WalletException($"Coin amount of {coinAmount} was less than total amount with fees {totalAmountWithFees}. Adjust the amount you are trying to send.");
+                throw new WalletException($"Coin input amount of {coinAmount} was less than total amount + fees {totalAmountWithFees} (fee {fee} sats). Adjust the amount you are trying to send.");
             }
             
             transactionBuilder.SendFees(fee);
