@@ -4,6 +4,8 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Signals;
+using Stratis.Features.FederatedPeg.Events;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Wallet;
 using Recipient = Stratis.Features.FederatedPeg.Wallet.Recipient;
@@ -25,19 +27,22 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly IFederationWalletManager federationWalletManager;
         private readonly IFederationWalletTransactionHandler federationWalletTransactionHandler;
         private readonly IFederatedPegSettings federatedPegSettings;
+        private readonly ISignals signals;
 
         public WithdrawalTransactionBuilder(
             ILoggerFactory loggerFactory,
             Network network,
             IFederationWalletManager federationWalletManager,
             IFederationWalletTransactionHandler federationWalletTransactionHandler,
-            IFederatedPegSettings federatedPegSettings)
+            IFederatedPegSettings federatedPegSettings,
+            ISignals signals)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.federationWalletManager = federationWalletManager;
             this.federationWalletTransactionHandler = federationWalletTransactionHandler;
             this.federatedPegSettings = federatedPegSettings;
+            this.signals = signals;
         }
 
         /// <inheritdoc />
@@ -66,6 +71,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 // TODO: Amend this so we're not picking coins twice.
                 (List<Coin> coins, List<Wallet.UnspentOutputReference> unspentOutputs) = FederationWalletTransactionHandler.DetermineCoins(this.federationWalletManager, this.network, multiSigContext, this.federatedPegSettings);
+
+                if (coins.Count > FederatedPegSettings.MaxInputs)
+                {
+                    this.logger.LogDebug("Too many inputs. Triggering the consolidation process.");
+                    this.signals.Publish(new WalletNeedsConsolidation(recipient.Amount));
+                    this.logger.LogTrace("(-)[CONSOLIDATING_INPUTS]");
+                    return null;
+                }
 
                 multiSigContext.TransactionFee = this.federatedPegSettings.GetWithdrawalTransactionFee(coins.Count); // The "actual fee". Everything else goes to the fed.
                 multiSigContext.SelectedInputs = unspentOutputs.Select(u => u.ToOutPoint()).ToList();

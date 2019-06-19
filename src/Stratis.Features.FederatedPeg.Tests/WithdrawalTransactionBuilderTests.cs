@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Signals;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
@@ -24,6 +25,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly Mock<IFederationWalletManager> federationWalletManager;
         private readonly Mock<IFederationWalletTransactionHandler> federationWalletTransactionHandler;
         private readonly Mock<IFederatedPegSettings> federationGatewaySettings;
+        private readonly Mock<ISignals> signals;
 
         public WithdrawalTransactionBuilderTests()
         {
@@ -32,6 +34,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationWalletManager = new Mock<IFederationWalletManager>();
             this.federationWalletTransactionHandler = new Mock<IFederationWalletTransactionHandler>();
             this.federationGatewaySettings = new Mock<IFederatedPegSettings>();
+            this.signals = new Mock<ISignals>();
 
             this.logger = new Mock<ILogger>();
             this.loggerFactory.Setup(x => x.CreateLogger(It.IsAny<string>()))
@@ -82,7 +85,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.network,
                 this.federationWalletManager.Object,
                 this.federationWalletTransactionHandler.Object,
-                this.federationGatewaySettings.Object
+                this.federationGatewaySettings.Object,
+                this.signals.Object
                 );
 
             var recipient = new Recipient
@@ -116,7 +120,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.network,
                 this.federationWalletManager.Object,
                 this.federationWalletTransactionHandler.Object,
-                this.federationGatewaySettings.Object
+                this.federationGatewaySettings.Object,
+                this.signals.Object
             );
 
             var recipient = new Recipient
@@ -143,7 +148,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.network,
                 this.federationWalletManager.Object,
                 this.federationWalletTransactionHandler.Object,
-                this.federationGatewaySettings.Object
+                this.federationGatewaySettings.Object,
+                this.signals.Object
             );
 
             var recipient = new Recipient
