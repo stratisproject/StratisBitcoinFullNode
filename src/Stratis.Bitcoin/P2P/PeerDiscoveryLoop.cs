@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.P2P
                     await this.DiscoverFromDnsSeedsAsync();
             },
             this.nodeLifetime.ApplicationStopping,
-            new TimeSpan(1, 0, 0));
+            TimeSpan.FromHours(1));
 
             this.discoverFromPeersLoop = this.asyncProvider.CreateAndRunAsyncLoop(nameof(this.DiscoverPeersAsync), async token =>
             {
@@ -120,16 +120,16 @@ namespace Stratis.Bitcoin.P2P
         {
             var peersToDiscover = new List<IPEndPoint>();
 
-            if (this.peerAddressManager.Peers.Count == 0 || !this.peerAddressManager.Peers.Select(a => !a.Attempted).Any())
+            // First see if we need to do DNS discovery at all. We may have peers from a previous cycle that still need to be tried.
+            if (this.peerAddressManager.Peers.Select(a => !a.Attempted).Any())
             {
-                this.AddDNSSeedNodes(peersToDiscover);
-                this.AddSeedNodes(peersToDiscover);
-            }
-            else
-            {
-                this.logger.LogTrace("(-)[NOTHING_TO_DO]");
+                this.logger.LogTrace("(-)[SKIP_DISCOVERY_UNATTEMPTED_PEERS_REMAINING]");
                 return;
             }
+
+            // At this point there are either no peers that we know of, or all the ones we do know of have been attempted & failed.
+            this.AddDNSSeedNodes(peersToDiscover);
+            this.AddSeedNodes(peersToDiscover);
 
             if (peersToDiscover.Count == 0)
             {
