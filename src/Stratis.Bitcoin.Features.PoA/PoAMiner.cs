@@ -334,9 +334,10 @@ namespace Stratis.Bitcoin.Features.PoA
             ChainedHeader currentHeader = tip;
             uint currentTime = currentHeader.Header.Time;
 
-            int maxDepth = 20;
+            int maxDepth = 54;
             int pubKeyTakeCharacters = 4;
             int depthReached = 0;
+            int hitCount = 0;
 
             log.AppendLine($"Mining information for the last {maxDepth} blocks.");
             log.AppendLine("MISS means that miner didn't produce a block at the timestamp he was supposed to.");
@@ -348,6 +349,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
                 log.Append("[" + pubKeyRepresentation + "]-");
                 depthReached++;
+                hitCount++;
 
                 currentHeader = currentHeader.Previous;
                 currentTime -= this.network.ConsensusOptions.TargetSpacingSeconds;
@@ -367,6 +369,9 @@ namespace Stratis.Bitcoin.Features.PoA
             }
 
             log.Append("...");
+            log.AppendLine();
+            log.AppendLine($"Block producers hits      : {hitCount} of {maxDepth}({(((float)hitCount / (float)maxDepth)).ToString("P2")})");
+            log.AppendLine($"Block producers idle time : {TimeSpan.FromSeconds(this.network.ConsensusOptions.TargetSpacingSeconds * (maxDepth - hitCount)).ToString(@"hh\:mm\:ss")}");
             log.AppendLine();
         }
 
