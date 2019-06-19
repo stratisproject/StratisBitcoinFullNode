@@ -20,15 +20,6 @@ namespace FederationSetup
             this.output = output;
         }
 
-        //[Fact]
-        [Fact(Skip = "This is not a test, it is meant to be run upon creating a network")]
-        public void Run_MineGenesis()
-        {
-            var consensusFactory = new SmartContractPoAConsensusFactory();
-            string coinbaseText = "https://github.com/stratisproject/StratisBitcoinFullNode/tree/master/src/Stratis.CirrusD";
-            this.output.WriteLine(this.MineGenesisBlocks(consensusFactory, coinbaseText));
-        }
-
         public string MineGenesisBlocks(SmartContractPoAConsensusFactory consensusFactory, string coinbaseText)
         {
             var output = new StringBuilder();

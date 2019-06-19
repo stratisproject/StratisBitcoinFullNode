@@ -18,23 +18,6 @@ namespace FederationSetup
             this.output = output;
         }
 
-        [Fact(Skip = "This is not a test, it is meant to be run upon creating a network")]
-        public void Run_CreateMultisigAddresses()
-        {
-            Network mainchainNetwork = Networks.Stratis.Testnet();
-            Network sidechainNetwork = CirrusNetwork.NetworksSelector.Testnet();
-
-            // Create a mnemonic and get the corresponding pubKey.
-            var pubKeys = new PubKey[1];
-            var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
-            pubKeys[0] = mnemonic.DeriveExtKey().PrivateKey.PubKey;
-
-            this.output.WriteLine($"Mnemonic - Please note the following 12 words down in a secure place: {string.Join(" ", mnemonic.Words)}");
-            this.output.WriteLine($"PubKey   - Please share the following public key with the person responsible for the sidechain generation: {Encoders.Hex.EncodeData((pubKeys[0]).ToBytes(false))}");
-
-            this.output.WriteLine(this.CreateMultisigAddresses(mainchainNetwork, sidechainNetwork, pubKeys));
-        }
-
         public string CreateMultisigAddresses(Network mainchainNetwork, Network sidechainNetwork, PubKey[] pubKeys, int quorum = 3)
         {
             var output = new StringBuilder();
