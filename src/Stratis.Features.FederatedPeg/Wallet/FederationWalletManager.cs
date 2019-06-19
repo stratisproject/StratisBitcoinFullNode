@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.InputConsolidation;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
 
@@ -981,6 +982,29 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <summary>
+        /// Checks if a transaction is consuming unspent UTXOs that exist in the wallet.
+        /// </summary>
+        /// <param name="transaction">The transaction to check.</param>
+        /// <param name="coins">Returns the coins found if this parameter supplies an empty coin list.</param>
+        /// <returns><c>True</c> if UTXO's are valid and <c>false</c> otherwise.</returns>
+        private bool TransactionIsSpendingUnspentUTXOs(Transaction transaction, List<Coin> coins = null)
+        {
+            // All the input UTXO's should be present but not be spent by anything yet.
+            foreach (TxIn input in transaction.Inputs)
+            {
+                if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData transactionData))
+                    return false;
+
+                if (transactionData.SpendingDetails != null)
+                    return false;
+
+                coins?.Add(new Coin(transactionData.Id, (uint)transactionData.Index, transactionData.Amount, transactionData.ScriptPubKey));
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Compares two outpoints to see which occurs earlier.
         /// </summary>
         /// <param name="outPoint1">The first outpoint to compare.</param>
@@ -1029,7 +1053,41 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         // Trace the reason validation failed. Note that failure here doesn't mean an error necessarily. Just that the transaction is not fully signed.
                         foreach (TransactionPolicyError transactionPolicyError in errors)
                         {
-                            this.logger.LogInformation("TransactionBuilder.Verify FAILED - {0}", transactionPolicyError.ToString());
+                            this.logger.LogInformation("{0} FAILED - {1}", nameof(TransactionBuilder.Verify), transactionPolicyError.ToString());
+                        }
+
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        }
+
+        /// <inheritdoc />
+        public bool ValidateConsolidatingTransaction(Transaction transaction, bool checkSignature = false)
+        {
+            lock (this.lockObject)
+            {
+                List<Coin> coins = checkSignature ? new List<Coin>() : null;
+
+                // Verify that the transaction's UTXOs aren't used yet.
+                if (!this.TransactionIsSpendingUnspentUTXOs(transaction, coins))
+                    return false;
+
+                // TODO: Check the inputs are in order?
+
+                // Verify that all inputs are signed.
+                if (checkSignature)
+                {
+                    TransactionBuilder builder = new TransactionBuilder(this.Wallet.Network).AddCoins(coins);
+
+                    if (!builder.Verify(transaction, FederatedPegSettings.ConsolidationFee, out TransactionPolicyError[] errors))
+                    {
+                        // Trace the reason validation failed. Note that failure here doesn't mean an error necessarily. Just that the transaction is not fully signed.
+                        foreach (TransactionPolicyError transactionPolicyError in errors)
+                        {
+                            this.logger.LogInformation("{0} FAILED - {1}", nameof(TransactionBuilder.Verify), transactionPolicyError.ToString());
                         }
 
                         return false;

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
 using DBreeze.Utils;
+using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin;
@@ -235,7 +236,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     if (walletTran.GetHash() == partialTransfer.PartialTransaction.GetHash())
                         continue;
 
-                    if (CrossChainTransfer.TemplatesMatch(this.network, walletTran, partialTransfer.PartialTransaction))
+                    if (SigningUtils.TemplatesMatch(this.network, walletTran, partialTransfer.PartialTransaction))
                     {
                         partialTransfer.SetPartialTransaction(walletTran);
 

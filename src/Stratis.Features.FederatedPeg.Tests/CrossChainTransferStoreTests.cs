@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Features.FederatedPeg.CounterChain;
+using Stratis.Features.FederatedPeg.Events;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.Payloads;
@@ -446,7 +447,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
                 BitcoinAddress address = (new Key()).PubKey.Hash.GetAddress(this.network);
 
-                var deposit = new Deposit(0, new Money(160m, MoneyUnit.BTC), address.ToString(), cctsInstanceOne.NextMatureDepositHeight, 1);
+                var deposit = new Deposit(1, new Money(160m, MoneyUnit.BTC), address.ToString(), cctsInstanceOne.NextMatureDepositHeight, 1);
 
                 MaturedBlockDepositsModel[] blockDeposits = new[] { new MaturedBlockDepositsModel(
                     new MaturedBlockInfoModel() {
@@ -545,8 +546,8 @@ namespace Stratis.Features.FederatedPeg.Tests
                 BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
                 BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
 
-                var deposit1 = new Deposit(0, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
-                var deposit2 = new Deposit(1, new Money(60m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                var deposit1 = new Deposit(1, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                var deposit2 = new Deposit(2, new Money(60m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
 
                 MaturedBlockDepositsModel[] blockDeposits = new[] { new MaturedBlockDepositsModel(
                     new MaturedBlockInfoModel() {
@@ -560,32 +561,22 @@ namespace Stratis.Features.FederatedPeg.Tests
                 ICrossChainTransfer[] transactions = crossChainTransferStore.GetTransfersByStatus(new[] { CrossChainTransferStatus.Partial });
 
                 var requester = new PartialTransactionRequester(this.loggerFactory, crossChainTransferStore, this.asyncProvider,
-                    this.nodeLifetime, this.connectionManager, this.federatedPegSettings, this.ibdState, this.federationWalletManager);
-
-                var peerEndPoint = new IPEndPoint(System.Net.IPAddress.Parse("1.2.3.4"), 5);
-                INetworkPeer peer = Substitute.For<INetworkPeer>();
-                peer.RemoteSocketAddress.Returns(peerEndPoint.Address);
-                peer.RemoteSocketPort.Returns(peerEndPoint.Port);
-                peer.PeerEndPoint.Returns(peerEndPoint);
-                peer.IsConnected.Returns(true);
-
-                var peers = new NetworkPeerCollection();
-                peers.Add(peer);
-
-                this.federatedPegSettings.FederationNodeIpEndPoints.Returns(new[] { peerEndPoint });
-
-                this.connectionManager.ConnectedPeers.Returns(peers);
+                    this.nodeLifetime, this.federatedPegBroadcaster, this.ibdState, this.federationWalletManager, this.inputConsolidator);
 
                 requester.Start();
 
                 Thread.Sleep(2000);
 
                 // Receives all of the requests. We broadcast multiple at a time.
-                peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
-                    o.DepositId == 0 && o.PartialTransaction.GetHash() == transactions[0].PartialTransaction.GetHash())).GetAwaiter().GetResult();
+                this.federatedPegBroadcaster.Received().BroadcastAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
+                        o.DepositId == 1 && o.PartialTransaction.GetHash() ==
+                        transactions[0].PartialTransaction.GetHash()))
+                    .GetAwaiter().GetResult();
 
-                peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
-                    o.DepositId == 1 && o.PartialTransaction.GetHash() == transactions[1].PartialTransaction.GetHash())).GetAwaiter().GetResult();
+                this.federatedPegBroadcaster.Received().BroadcastAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
+                        o.DepositId == 2 && o.PartialTransaction.GetHash() ==
+                        transactions[1].PartialTransaction.GetHash()))
+                    .GetAwaiter().GetResult();
             }
         }
 
@@ -958,6 +949,67 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(expectedPartials, crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.Partial }).Length);
                 Assert.Equal(expectedSuspends, crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.Suspended }).Length);
                 Assert.Equal(expectedSeenInBlocks, crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.SeenInBlock }).Length);
+            }
+        }
+
+        [Fact]
+        public async Task CrossChainTransferStoreDoesntCreateMassiveTransactions()
+        {
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+
+            this.Init(dataFolder);
+            this.AddFunding();
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
+
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
+            {
+                crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
+
+                TestBase.WaitLoopMessage(() => (
+                    this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height,
+                    $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
+                Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
+
+                // Lets set the funding transactions to many really small outputs
+                const int numUtxos = FederatedPegSettings.MaxInputs * 2;
+                const decimal individualAmount = 0.1m;
+                const decimal depositAmount = numUtxos * individualAmount - 1; // Large amount minus some for fees.
+                BitcoinAddress address = new Script("").Hash.GetAddress(this.network);
+
+                this.wallet.MultiSigAddress.Transactions.Clear();
+                this.fundingTransactions.Clear();
+
+                Money[] funding = new Money[numUtxos];
+
+                for (int i = 0; i < funding.Length; i++)
+                {
+                    funding[i] = new Money(individualAmount, MoneyUnit.BTC);
+                }
+
+                this.AddFundingTransaction(funding);
+
+                Deposit deposit = new Deposit(1uL, new Money(depositAmount, MoneyUnit.BTC), address.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+
+                var blockDeposits = new Dictionary<int, MaturedBlockDepositsModel[]>();
+
+                blockDeposits[crossChainTransferStore.NextMatureDepositHeight] = new[]
+                {
+                    new MaturedBlockDepositsModel(
+                        new MaturedBlockInfoModel
+                        {
+                            BlockHash = 1,
+                            BlockHeight = crossChainTransferStore.NextMatureDepositHeight
+                        },
+                        new []{deposit})
+                };
+
+                RecordLatestMatureDepositsResult recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[crossChainTransferStore.NextMatureDepositHeight]);
+                
+                // The CCTS won't create any transactions until the InputConsolidator consolidates some inputs
+                Assert.Empty(recordMatureDepositResult.WithDrawalTransactions);
+
+                this.signals.Received().Publish(Arg.Any<WalletNeedsConsolidation>());
             }
         }
 

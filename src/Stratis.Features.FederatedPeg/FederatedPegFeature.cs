@@ -29,6 +29,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Collateral;
 using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.CounterChain;
+using Stratis.Features.FederatedPeg.InputConsolidation;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.Notifications;
@@ -83,6 +84,8 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly IWithdrawalHistoryProvider withdrawalHistoryProvider;
 
+        private readonly IInputConsolidator inputConsolidator;
+
         private readonly ILogger logger;
 
         public FederatedPegFeature(
@@ -100,6 +103,7 @@ namespace Stratis.Features.FederatedPeg
             ISignedMultisigTransactionBroadcaster signedBroadcaster,
             IMaturedBlocksSyncManager maturedBlocksSyncManager,
             IWithdrawalHistoryProvider withdrawalHistoryProvider,
+            IInputConsolidator inputConsolidator,
             ICollateralChecker collateralChecker = null)
         {
             this.loggerFactory = loggerFactory;
@@ -115,6 +119,7 @@ namespace Stratis.Features.FederatedPeg
             this.maturedBlocksSyncManager = maturedBlocksSyncManager;
             this.withdrawalHistoryProvider = withdrawalHistoryProvider;
             this.signedBroadcaster = signedBroadcaster;
+            this.inputConsolidator = inputConsolidator;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -156,7 +161,7 @@ namespace Stratis.Features.FederatedPeg
             // Respond to requests to sign transactions from other nodes.
             NetworkPeerConnectionParameters networkPeerConnectionParameters = this.connectionManager.Parameters;
             networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager,
-                this.network, this.federatedPegSettings, this.crossChainTransferStore));
+                this.network, this.federatedPegSettings, this.crossChainTransferStore, this.inputConsolidator));
         }
 
         public override void Dispose()
@@ -220,6 +225,26 @@ namespace Stratis.Features.FederatedPeg
                 benchLog.AppendLine("If not done previously, please enable your federation node using " + $"{apiSettings.ApiUri}/api/FederationWallet/{FederationWalletRouteEndPoint.EnableFederation}.");
                 benchLog.AppendLine();
                 benchLog.AppendLine("".PadRight(133, '='));
+                benchLog.AppendLine();
+            }
+
+            List<ConsolidationTransaction> consolidationPartials = this.inputConsolidator.ConsolidationTransactions;
+
+            if (consolidationPartials != null)
+            {
+                benchLog.AppendLine("--- Consolidation Transactions in Memory ---");
+                foreach (ConsolidationTransaction partial in consolidationPartials)
+                {
+                    benchLog.AppendLine(
+                        string.Format("Tran#={0} TotalOut={1,12} Status={2} Signatures=({3}/{4})",
+                            partial.PartialTransaction.ToString().Substring(0, 6),
+                            partial.PartialTransaction.TotalOut,
+                            partial.Status,
+                            partial.PartialTransaction.GetSignatureCount(this.network),
+                            this.federatedPegSettings.MultiSigM
+                        )
+                    );
+                }
                 benchLog.AppendLine();
             }
 
@@ -334,6 +359,9 @@ namespace Stratis.Features.FederatedPeg
                         services.AddSingleton<IMaturedBlocksSyncManager, MaturedBlocksSyncManager>();
                         services.AddSingleton<IWithdrawalHistoryProvider, WithdrawalHistoryProvider>();
                         services.AddSingleton<FederatedPegSettings>();
+
+                        services.AddSingleton<IFederatedPegBroadcaster, FederatedPegBroadcaster>();
+                        services.AddSingleton<IInputConsolidator, InputConsolidator>();
 
                         // Set up events.
                         services.AddSingleton<TransactionObserver>();
