@@ -45,7 +45,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
         private readonly object txLock = new object();
 
         /// <summary>
-        /// Used to protect <see cref="consoli"/> from write operations.
+        /// Used to protect <see cref="consolidationTask"/> from write operations.
         /// </summary>
         private readonly object taskLock = new object();
 
@@ -168,6 +168,8 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
         /// </summary>
         public List<ConsolidationTransaction> CreateRequiredConsolidationTransactions(Money amount)
         {
+            // TODO: This method doesn't need to be public.
+
             lock (this.txLock)
             {
                 // Get all of the inputs
@@ -263,6 +265,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
         public void ProcessTransaction(Transaction transaction)
         {
             // TODO: It would be nice if there was a way to quickly check that the transaction coming in through here is FullySigned.
+            // We can check the number of signatures for a start.
             // At the moment we know they are only coming from the mempool.
 
             // TODO: Could also be async to avoid blocking other components receiving future transaction details
@@ -280,7 +283,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
 
                     if (inMemoryTransaction != null && inMemoryTransaction.Status == ConsolidationTransactionStatus.Partial)
                     {
-                        this.logger.LogDebug("Saw condensing transaction {0} in mempool, updating its status to FullySigned", transaction.GetHash());
+                        this.logger.LogDebug("Saw consolidating transaction {0} in mempool, updating its status to FullySigned", transaction.GetHash());
                         inMemoryTransaction.Status = ConsolidationTransactionStatus.FullySigned;
                         inMemoryTransaction.PartialTransaction = transaction;
                     }

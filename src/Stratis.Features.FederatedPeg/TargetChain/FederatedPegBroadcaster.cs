@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
@@ -32,6 +31,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             List<INetworkPeer> peers = this.connectionManager.ConnectedPeers.ToList();
 
             var ipAddressComparer = new IPAddressComparer();
+
+            // TODO: Can do the send to each peer in parallel.
 
             foreach (INetworkPeer peer in peers)
             {
