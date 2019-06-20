@@ -37,7 +37,7 @@
             </div>
         </div>
     </div>
-    <partial name="Partials/ProofOfAuthority" />
+    <partial name="Partials/ProofOfAuthority" model="@(ViewBag.PendingPolls)" />
     <partial name="Partials/MiningPubKeys" model="@(ViewBag.MiningPubKeys)" />
     <partial name="Partials/LogLevels" model="@(ViewBag.LogRules)" />
     <nav class="navbar navbar-dark bg-purple fixed-top">
