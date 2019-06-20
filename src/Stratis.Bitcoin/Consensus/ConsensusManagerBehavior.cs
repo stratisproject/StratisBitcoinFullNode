@@ -676,6 +676,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void AttachCore()
         {
             // Initialize auto sync timer.
@@ -694,6 +695,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void DetachCore()
         {
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
@@ -701,6 +703,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public override void Dispose()
         {
             this.autosyncTimer?.Dispose();
@@ -709,11 +712,13 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public override object Clone()
         {
             return new ConsensusManagerBehavior(this.ChainIndexer, this.InitialBlockDownloadState, this.ConsensusManager, this.PeerBanning, this.LoggerFactory);
         }
 
+        [NoTrace]
         internal int GetCachedItemsCount()
         {
             return this.cachedHeaders.Count;

@@ -10,8 +10,11 @@ using System.Threading.Tasks;
 using LiteDB;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
@@ -28,19 +31,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         void Initialize();
 
         /// <summary>Returns balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
+        /// <param name="addresses">The set of addresses that will be queried.</param>
         /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed or doesn't exists.</returns>
-        /// <exception cref="IndexerNotInitializedException">Thrown if component wasn't initialized.</exception>
-        /// <exception cref="OutOfSyncException">Thrown if indexer isn't synced.</exception>
-        Money GetAddressBalance(string address, int minConfirmations = 0);
+        AddressBalancesResult GetAddressBalances(string[] addresses, int minConfirmations = 0);
 
-        /// <summary>Returns the total amount received by the given address in transactions with at least <paramref name="minConfirmations"/> confirmations.</summary>
-        /// <returns>Total amount received by a given address or <c>null</c> if address wasn't indexed.</returns>
-        /// <exception cref="IndexerNotInitializedException">Thrown if component wasn't initialized.</exception>
-        /// <exception cref="OutOfSyncException">Thrown if indexer isn't synced.</exception>
-        Money GetReceivedByAddress(string address, int minConfirmations = 0);
-
-        /// <summary>Returns <c>true</c> if indexer's tip is close to consensus tip; <c>false</c> otherwise.</summary>
-        bool IsSynced();
+        /// <summary>Returns verbose balances data.</summary>
+        /// <param name="addresses">The set of addresses that will be queried.</param>
+        VerboseAddressBalancesResult GetVerboseAddressBalancesData(string[] addresses);
     }
 
     public class AddressIndexer : IAddressIndexer
@@ -59,6 +56,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly IConsensusManager consensusManager;
 
+        private readonly IAsyncProvider asyncProvider;
+
         private readonly IScriptAddressReader scriptAddressReader;
 
         private readonly TimeSpan flushChangesInterval;
@@ -66,6 +65,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         private const string DbTipDataKey = "AddrTipData";
 
         private const string AddressIndexerDatabaseFilename = "addressindex.litedb";
+
+        /// <summary>Max supported reorganization length for networks without max reorg property.</summary>
+        public const int FallBackMaxReorg = 200;
 
         /// <summary>
         /// Time to wait before attempting to index the next block.
@@ -82,8 +84,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private LiteCollection<AddressIndexerTipData> tipDataStore;
 
-        private AddressIndexerTipData tipData;
-
         /// <summary>A mapping between addresses and their balance changes.</summary>
         /// <remarks>All access should be protected by <see cref="lockObject"/>.</remarks>
         private AddressIndexRepository addressIndexRepository;
@@ -99,6 +99,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly ILoggerFactory loggerFactory;
 
+        private readonly ChainIndexer chainIndexer;
+
         private readonly AverageCalculator averageTimePerBlock;
 
         private Task indexingTask;
@@ -107,27 +109,56 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private Task<ChainedHeaderBlock> prefetchingTask;
 
-        public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network, INodeStats nodeStats, IConsensusManager consensusManager)
+        /// <summary>Indexer height at the last save.</summary>
+        /// <remarks>Should be protected by <see cref="lockObject"/>.</remarks>
+        private int lastSavedHeight;
+
+        /// <summary>Distance in blocks from consensus tip at which compaction should start.</summary>
+        /// <remarks>It can't be lower than maxReorg since compacted data can't be converted back to uncompacted state for partial reversion.</remarks>
+        private readonly int compactionTriggerDistance;
+
+        /// <summary>
+        /// This is a window of some blocks that is needed to reduce the consequences of nodes having different view of consensus chain.
+        /// We assume that nodes usually don't have view that is different from other nodes by that constant of blocks.
+        /// </summary>
+        public const int SyncBuffer = 50;
+
+        public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network,
+            INodeStats nodeStats, IConsensusManager consensusManager, IAsyncProvider asyncProvider, ChainIndexer chainIndexer)
         {
             this.storeSettings = storeSettings;
             this.network = network;
             this.nodeStats = nodeStats;
             this.dataFolder = dataFolder;
             this.consensusManager = consensusManager;
+            this.asyncProvider = asyncProvider;
             this.loggerFactory = loggerFactory;
             this.scriptAddressReader = new ScriptAddressReader();
 
             this.lockObject = new object();
-            this.flushChangesInterval = TimeSpan.FromMinutes(10);
+            this.flushChangesInterval = TimeSpan.FromMinutes(2);
             this.lastFlushTime = DateTime.Now;
             this.cancellation = new CancellationTokenSource();
+            this.chainIndexer = chainIndexer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.averageTimePerBlock = new AverageCalculator(200);
+            int maxReorgLength = GetMaxReorgOrFallbackMaxReorg(this.network);
+
+            this.compactionTriggerDistance = maxReorgLength * 2 + SyncBuffer + 1000;
+        }
+
+        /// <summary>Returns maxReorg of <see cref="FallBackMaxReorg"/> in case maxReorg is <c>0</c>.</summary>
+        public static int GetMaxReorgOrFallbackMaxReorg(Network network)
+        {
+            int maxReorgLength = network.Consensus.MaxReorgLength == 0 ? FallBackMaxReorg : (int)network.Consensus.MaxReorgLength;
+
+            return maxReorgLength;
         }
 
         public void Initialize()
         {
+            // The transaction index is needed in the event of a reorg.
             if (!this.storeSettings.AddressIndex)
             {
                 this.logger.LogTrace("(-)[DISABLED]");
@@ -137,7 +168,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             string dbPath = Path.Combine(this.dataFolder.RootPath, AddressIndexerDatabaseFilename);
 
             FileMode fileMode = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? FileMode.Exclusive : FileMode.Shared;
-            this.db = new LiteDatabase(new ConnectionString() {Filename = dbPath, Mode = fileMode });
+            this.db = new LiteDatabase(new ConnectionString() { Filename = dbPath, Mode = fileMode });
 
             this.addressIndexRepository = new AddressIndexRepository(this.db, this.loggerFactory);
 
@@ -147,184 +178,199 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             lock (this.lockObject)
             {
-                this.tipData = this.tipDataStore.FindAll().FirstOrDefault();
+                AddressIndexerTipData tipData = this.tipDataStore.FindAll().FirstOrDefault();
 
-                if (this.tipData == null)
+                this.logger.LogDebug("Tip data: '{0}'.", tipData == null ? "null" : tipData.ToString());
+
+                this.IndexerTip = tipData == null ? this.chainIndexer.Genesis : this.consensusManager.Tip.FindAncestorOrSelf(new uint256(tipData.TipHashBytes));
+
+                if (this.IndexerTip == null)
                 {
-                    this.logger.LogDebug("Tip was not found, initializing with genesis.");
+                    // This can happen if block hash from tip data is no longer a part of the consensus chain and node was killed in the middle of a reorg.
+                    int rewindAmount = this.compactionTriggerDistance / 2;
 
-                    this.tipData = new AddressIndexerTipData() { TipHashBytes = this.network.GenesisHash.ToBytes(), Height = 0 };
-                    this.tipDataStore.Insert(this.tipData);
+                    if (rewindAmount > this.consensusManager.Tip.Height)
+                        this.IndexerTip = this.chainIndexer.Genesis;
+                    else
+                        this.IndexerTip = this.consensusManager.Tip.GetAncestor(this.consensusManager.Tip.Height - rewindAmount);
                 }
-
-                this.IndexerTip = this.consensusManager.Tip.FindAncestorOrSelf(new uint256(this.tipData.TipHashBytes));
             }
 
             this.outpointsRepository = new AddressIndexerOutpointsRepository(this.db, this.loggerFactory);
 
-            if (this.IndexerTip == null)
-                this.IndexerTip = this.consensusManager.Tip.GetAncestor(0);
+            this.RewindAndSave(this.IndexerTip);
+
+            this.logger.LogDebug("Indexer initialized at '{0}'.", this.IndexerTip);
 
             this.indexingTask = Task.Run(async () => await this.IndexAddressesContinuouslyAsync().ConfigureAwait(false));
+
+            this.asyncProvider.RegisterTask($"{nameof(AddressIndexer)}.{nameof(this.indexingTask)}", this.indexingTask);
 
             this.nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 400);
         }
 
         private async Task IndexAddressesContinuouslyAsync()
         {
-            try
+            var watch = Stopwatch.StartNew();
+
+            while (!this.cancellation.IsCancellationRequested)
             {
-                Stopwatch watch = Stopwatch.StartNew();
-
-                while (!this.cancellation.IsCancellationRequested)
+                if (DateTime.Now - this.lastFlushTime > this.flushChangesInterval)
                 {
-                    if (DateTime.Now - this.lastFlushTime > this.flushChangesInterval)
-                    {
-                        this.logger.LogDebug("Flushing changes.");
+                    this.logger.LogDebug("Flushing changes.");
 
-                        lock (this.lockObject)
-                        {
-                            this.addressIndexRepository.SaveAllItems();
-                            this.outpointsRepository.SaveAllItems();
-                            this.tipDataStore.Update(this.tipData);
-                        }
+                    this.SaveAll();
 
-                        this.lastFlushTime = DateTime.Now;
+                    this.lastFlushTime = DateTime.Now;
 
-                        this.logger.LogDebug("Flush completed.");
-                    }
-
-                    if (this.cancellation.IsCancellationRequested)
-                        break;
-
-                    ChainedHeader nextHeader = this.consensusManager.Tip.GetAncestor(this.IndexerTip.Height + 1);
-
-                    if (nextHeader == null)
-                    {
-                        this.logger.LogDebug("Next header wasn't found. Waiting.");
-
-                        try
-                        {
-                            await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                        }
-
-                        continue;
-                    }
-
-                    if (nextHeader.Previous.HashBlock != this.IndexerTip.HashBlock)
-                    {
-                        ChainedHeader lastCommonHeader = nextHeader.FindFork(this.IndexerTip);
-
-                        this.logger.LogDebug("Reorganization detected. Rewinding till '{0}'.", lastCommonHeader);
-
-                        lock (this.lockObject)
-                        {
-                            // The cache doesn't really lend itself to handling a reorg very well.
-                            // Therefore, we leverage LiteDb's indexing capabilities to tell us
-                            // which records are for the affected blocks.
-                            // TODO: May also be efficient to run ProcessBlocks with inverted deposit flags instead, depending on size of reorg
-
-                            List<string> affectedAddresses = this.addressIndexRepository.GetAddressesHigherThanHeight(lastCommonHeader.Height);
-
-                            foreach (string address in affectedAddresses)
-                            {
-                                AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
-                                indexData.BalanceChanges.RemoveAll(x => x.BalanceChangedHeight > lastCommonHeader.Height);
-                            }
-                        }
-
-                        this.IndexerTip = lastCommonHeader;
-
-                        lock (this.lockObject)
-                        {
-                            this.tipData.TipHashBytes = this.IndexerTip.HashBlock.ToBytes();
-                            this.tipData.Height = this.IndexerTip.Height;
-                        }
-
-                        continue;
-                    }
-
-                    // First try to see if it's prefetched.
-                    ChainedHeaderBlock prefetchedBlock = this.prefetchingTask == null ? null : await this.prefetchingTask.ConfigureAwait(false);
-
-                    Block blockToProcess;
-
-                    if (prefetchedBlock != null && prefetchedBlock.ChainedHeader == nextHeader)
-                        blockToProcess = prefetchedBlock.Block;
-                    else
-                        blockToProcess = this.consensusManager.GetBlockData(nextHeader.HashBlock).Block;
-
-                    if (blockToProcess == null)
-                    {
-                        this.logger.LogDebug("Next block wasn't found. Waiting.");
-
-                        try
-                        {
-                            await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                        }
-
-                        continue;
-                    }
-
-                    // Schedule prefetching of the next block;
-                    ChainedHeader headerToPrefetch = this.consensusManager.Tip.GetAncestor(nextHeader.Height + 1);
-
-                    if (headerToPrefetch != null)
-                        this.prefetchingTask = Task.Run(() => this.consensusManager.GetBlockData(headerToPrefetch.HashBlock));
-
-                    watch.Restart();
-
-                    bool success = this.ProcessBlock(blockToProcess, nextHeader);
-
-                    watch.Stop();
-                    this.averageTimePerBlock.AddSample(watch.Elapsed.TotalMilliseconds);
-
-                    if (!success)
-                    {
-                        this.logger.LogDebug("Failed to process next block. Waiting.");
-
-                        try
-                        {
-                            await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                        }
-
-                        continue;
-                    }
-
-                    this.IndexerTip = nextHeader;
-
-                    lock (this.lockObject)
-                    {
-                        this.tipData.TipHashBytes = this.IndexerTip.HashBlock.ToBytes();
-                        this.tipData.Height = this.IndexerTip.Height;
-                    }
+                    this.logger.LogDebug("Flush completed.");
                 }
 
-                lock (this.lockObject)
+                if (this.cancellation.IsCancellationRequested)
+                    break;
+
+                ChainedHeader nextHeader = this.consensusManager.Tip.GetAncestor(this.IndexerTip.Height + 1);
+
+                if (nextHeader == null)
                 {
-                    this.addressIndexRepository.SaveAllItems();
-                    this.outpointsRepository.SaveAllItems();
-                    this.tipDataStore.Update(this.tipData);
+                    this.logger.LogDebug("Next header wasn't found. Waiting.");
+
+                    try
+                    {
+                        await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                    }
+
+                    continue;
                 }
+
+                if (nextHeader.Previous.HashBlock != this.IndexerTip.HashBlock)
+                {
+                    ChainedHeader lastCommonHeader = nextHeader.FindFork(this.IndexerTip);
+
+                    this.logger.LogDebug("Reorganization detected. Rewinding till '{0}'.", lastCommonHeader);
+
+                    this.RewindAndSave(lastCommonHeader);
+
+                    continue;
+                }
+
+                // First try to see if it's prefetched.
+                ChainedHeaderBlock prefetchedBlock = this.prefetchingTask == null ? null : await this.prefetchingTask.ConfigureAwait(false);
+
+                Block blockToProcess;
+
+                if (prefetchedBlock != null && prefetchedBlock.ChainedHeader == nextHeader)
+                    blockToProcess = prefetchedBlock.Block;
+                else
+                    blockToProcess = this.consensusManager.GetBlockData(nextHeader.HashBlock).Block;
+
+                if (blockToProcess == null)
+                {
+                    this.logger.LogDebug("Next block wasn't found. Waiting.");
+
+                    try
+                    {
+                        await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                    }
+
+                    continue;
+                }
+
+                // Schedule prefetching of the next block;
+                ChainedHeader headerToPrefetch = this.consensusManager.Tip.GetAncestor(nextHeader.Height + 1);
+
+                if (headerToPrefetch != null)
+                    this.prefetchingTask = Task.Run(() => this.consensusManager.GetBlockData(headerToPrefetch.HashBlock));
+
+                watch.Restart();
+
+                bool success = this.ProcessBlock(blockToProcess, nextHeader);
+
+                watch.Stop();
+                this.averageTimePerBlock.AddSample(watch.Elapsed.TotalMilliseconds);
+
+                if (!success)
+                {
+                    this.logger.LogDebug("Failed to process next block. Waiting.");
+
+                    try
+                    {
+                        await Task.Delay(DelayTimeMs, this.cancellation.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                    }
+
+                    continue;
+                }
+
+                this.IndexerTip = nextHeader;
             }
-            catch (Exception e)
+
+            this.SaveAll();
+        }
+
+        private void RewindAndSave(ChainedHeader rewindToHeader)
+        {
+            lock (this.lockObject)
             {
-                this.logger.LogCritical(e.ToString());
+                // The cache doesn't really lend itself to handling a reorg very well.
+                // Therefore, we leverage LiteDb's indexing capabilities to tell us
+                // which records are for the affected blocks.
+                // TODO: May also be efficient to run ProcessBlocks with inverted deposit flags instead, depending on size of reorg
+
+                List<string> affectedAddresses = this.addressIndexRepository.GetAddressesHigherThanHeight(rewindToHeader.Height);
+
+                foreach (string address in affectedAddresses)
+                {
+                    AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
+                    indexData.BalanceChanges.RemoveAll(x => x.BalanceChangedHeight > rewindToHeader.Height);
+                }
+
+                this.logger.LogDebug("Rewinding changes for {0} addresses.", affectedAddresses.Count);
+
+                // Rewind all the way back to the fork point.
+                this.outpointsRepository.RewindDataAboveHeight(rewindToHeader.Height);
+
+                this.IndexerTip = rewindToHeader;
+
+                this.SaveAll();
             }
+        }
+
+        private void SaveAll()
+        {
+            this.logger.LogDebug("Saving address indexer.");
+
+            lock (this.lockObject)
+            {
+                this.addressIndexRepository.SaveAllItems();
+                this.outpointsRepository.SaveAllItems();
+
+                AddressIndexerTipData tipData = this.tipDataStore.FindAll().FirstOrDefault();
+
+                if (tipData == null)
+                    tipData = new AddressIndexerTipData();
+
+                tipData.Height = this.IndexerTip.Height;
+                tipData.TipHashBytes = this.IndexerTip.HashBlock.ToBytes();
+
+                this.tipDataStore.Upsert(tipData);
+                this.lastSavedHeight = this.IndexerTip.Height;
+            }
+
+            this.logger.LogDebug("Address indexer saved.");
         }
 
         private void AddInlineStats(StringBuilder benchLog)
         {
-            benchLog.AppendLine("AddressIndexer: Height: " + this.IndexerTip.Height.ToString().PadRight(8) +
+            benchLog.AppendLine("AddressIndexer.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + this.IndexerTip.Height.ToString().PadRight(9) +
                                 "AddressCache%: " + this.addressIndexRepository.GetLoadPercentage().ToString().PadRight(8) +
                                 "OutPointCache%: " + this.outpointsRepository.GetLoadPercentage().ToString().PadRight(8) +
                                 $"Ms/block: {Math.Round(this.averageTimePerBlock.Average, 2)}");
@@ -341,7 +387,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 {
                     for (int i = 0; i < tx.Outputs.Count; i++)
                     {
-                        if (tx.Outputs[i].Value == Money.Zero)
+                        // OP_RETURN outputs and empty outputs cannot be spent and therefore do not need to be put into the cache.
+                        if (tx.Outputs[i].IsEmpty || tx.Outputs[i].ScriptPubKey.IsUnspendable)
                             continue;
 
                         var outPoint = new OutPoint(tx, i);
@@ -353,6 +400,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                             Money = tx.Outputs[i].Value
                         };
 
+                        // TODO: When the outpoint cache is full, adding outpoints singly causes overhead writing evicted entries out to the repository
                         this.outpointsRepository.AddOutPointData(outPointData);
                     }
                 }
@@ -367,6 +415,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             lock (this.lockObject)
             {
+                var rewindData = new AddressIndexerRewindData() { BlockHash = header.HashBlock.ToString(), BlockHeight = header.Height, SpentOutputs = new List<OutPointData>() };
+
                 foreach (TxIn input in inputs)
                 {
                     OutPoint consumedOutput = input.PrevOut;
@@ -374,13 +424,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     if (!this.outpointsRepository.TryGetOutPointData(consumedOutput, out OutPointData consumedOutputData))
                     {
                         this.logger.LogError("Missing outpoint data for {0}.", consumedOutput);
-                        this.logger.LogTrace("(-)[MISSING OUTPOINTS_DATA]");
+                        this.logger.LogTrace("(-)[MISSING_OUTPOINTS_DATA]");
                         throw new Exception($"Missing outpoint data for {consumedOutput}");
                     }
 
                     Money amountSpent = consumedOutputData.Money;
 
-                    this.outpointsRepository.RemoveOutPointData(consumedOutput);
+                    rewindData.SpentOutputs.Add(consumedOutputData);
 
                     // Transactions that don't actually change the balance just bloat the database.
                     if (amountSpent == 0)
@@ -405,7 +455,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         Money amountReceived = txOut.Value;
 
                         // Transactions that don't actually change the balance just bloat the database.
-                        if (amountReceived == 0)
+                        if (amountReceived == 0 || txOut.IsEmpty || txOut.ScriptPubKey.IsUnspendable)
                             continue;
 
                         string address = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, txOut.ScriptPubKey);
@@ -420,6 +470,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                         this.ProcessBalanceChangeLocked(header.Height, address, amountReceived, true);
                     }
                 }
+
+                this.outpointsRepository.RecordRewindData(rewindData);
+
+                int purgeRewindDataThreshold = Math.Min(this.consensusManager.Tip.Height - this.compactionTriggerDistance, this.lastSavedHeight);
+
+                if (purgeRewindDataThreshold % 1000 == 0)
+                    this.outpointsRepository.PurgeOldRewindData(purgeRewindDataThreshold);
+
+                // Remove outpoints that were consumed.
+                foreach (OutPoint consumedOutPoint in inputs.Select(x => x.PrevOut))
+                    this.outpointsRepository.RemoveOutPointData(consumedOutPoint);
             }
 
             return true;
@@ -440,10 +501,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             });
 
             // Anything less than that should be compacted.
-            int heightThreshold = this.consensusManager.Tip.Height - (int)this.network.Consensus.MaxReorgLength;
+            int heightThreshold = this.consensusManager.Tip.Height - this.compactionTriggerDistance;
 
-            bool compact = (this.network.Consensus.MaxReorgLength != 0) &&
-                           (indexData.BalanceChanges.Count > CompactingThreshold) &&
+            bool compact = (indexData.BalanceChanges.Count > CompactingThreshold) &&
                            (indexData.BalanceChanges[1].BalanceChangedHeight < heightThreshold);
 
             if (!compact)
@@ -462,107 +522,109 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 }
             };
 
-            for (int i = 0; i < indexData.BalanceChanges.Count; i++)
+            foreach (AddressBalanceChange change in indexData.BalanceChanges)
             {
-                AddressBalanceChange change = indexData.BalanceChanges[i];
-
                 if (change.BalanceChangedHeight < heightThreshold)
                 {
+                    this.logger.LogTrace("Balance change: {0} was selected for compaction. Compacted balance now: {1}.", change, compacted[0].Satoshi);
+
                     if (change.Deposited)
                         compacted[0].Satoshi += change.Satoshi;
                     else
                         compacted[0].Satoshi -= change.Satoshi;
+
+                    this.logger.LogTrace("New compacted balance: {0}.", compacted[0].Satoshi);
                 }
-                else if (i < indexData.BalanceChanges.Count - 1)
-                {
-                    compacted.AddRange(indexData.BalanceChanges.Skip(i + 1));
-                    break;
-                }
+                else
+                    compacted.Add(change);
             }
 
             indexData.BalanceChanges = compacted;
             this.addressIndexRepository.AddOrUpdate(indexData.Address, indexData, indexData.BalanceChanges.Count + 1);
         }
 
-        /// <inheritdoc />
-        public bool IsSynced()
+        private bool IsSynced()
         {
             lock (this.lockObject)
             {
-                return this.consensusManager.Tip.Height - this.tipData.Height <= ConsiderSyncedMaxDistance;
+                return this.consensusManager.Tip.Height - this.IndexerTip.Height <= ConsiderSyncedMaxDistance;
             }
         }
 
         /// <inheritdoc />
-        public Money GetAddressBalance(string address, int minConfirmations = 1)
+        public AddressBalancesResult GetAddressBalances(string[] addresses, int minConfirmations = 1)
+        {
+            var (isQueryable, reason) = this.IsQueryable();
+
+            if (!isQueryable)
+                return AddressBalancesResult.RequestFailed(reason);
+
+            var result = new AddressBalancesResult();
+
+            lock (this.lockObject)
+            {
+                foreach (var address in addresses)
+                {
+                    AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
+
+                    int maxAllowedHeight = this.consensusManager.Tip.Height - minConfirmations + 1;
+
+                    long balance = indexData.BalanceChanges.Where(x => x.BalanceChangedHeight <= maxAllowedHeight).CalculateBalance();
+
+                    this.logger.LogTrace("Address: {0}, balance: {1}.", address, balance);
+                    result.Balances.Add(new AddressBalanceResult(address, new Money(balance)));
+                }
+
+                return result;
+            }
+        }
+
+        /// <inheritdoc />
+        public VerboseAddressBalancesResult GetVerboseAddressBalancesData(string[] addresses)
+        {
+            (bool isQueryable, string reason) = this.IsQueryable();
+
+            if (!isQueryable)
+                return VerboseAddressBalancesResult.RequestFailed(reason);
+
+            var result = new VerboseAddressBalancesResult();
+
+            lock (this.lockObject)
+            {
+                foreach (var address in addresses)
+                {
+                    AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
+
+                    var copy = new AddressIndexerData()
+                    {
+                        Address = indexData.Address,
+                        BalanceChanges = new List<AddressBalanceChange>(indexData.BalanceChanges)
+                    };
+
+                    result.BalancesData.Add(copy);
+                }
+            }
+
+            result.ConsensusTipHeight = this.consensusManager.Tip.Height;
+
+            return result;
+        }
+
+        private (bool isQueryable, string reason) IsQueryable()
         {
             if (this.addressIndexRepository == null)
             {
                 this.logger.LogTrace("(-)[NOT_INITIALIZED]");
-                throw new IndexerNotInitializedException();
+                return (false, "Address indexer is not initialized.");
             }
 
             if (!this.IsSynced())
             {
                 this.logger.LogTrace("(-)[NOT_SYNCED]");
-                throw new OutOfSyncException();
+                return (false, "Address indexer is not synced.");
             }
 
-            lock (this.lockObject)
-            {
-                AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
-                if (indexData == null)
-                {
-                    this.logger.LogTrace("(-)[NOT_FOUND]");
-                    return null;
-                }
-
-                long balance = 0;
-
-                int maxAllowedHeight = this.consensusManager.Tip.Height - minConfirmations + 1;
-
-                foreach (AddressBalanceChange change in indexData.BalanceChanges.Where(x => x.BalanceChangedHeight <= maxAllowedHeight))
-                {
-                    if (change.Deposited)
-                        balance += change.Satoshi;
-                    else
-                        balance -= change.Satoshi;
-                }
-
-                return new Money(balance);
-            }
-        }
-
-        /// <inheritdoc />
-        public Money GetReceivedByAddress(string address, int minConfirmations = 1)
-        {
-            if (this.addressIndexRepository == null)
-            {
-                this.logger.LogTrace("(-)[NOT_INITIALIZED]");
-                throw new IndexerNotInitializedException();
-            }
-
-            if (!this.IsSynced())
-            {
-                this.logger.LogTrace("(-)[NOT_SYNCED]");
-                throw new OutOfSyncException();
-            }
-
-            lock (this.lockObject)
-            {
-                AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
-                if (indexData == null)
-                {
-                    this.logger.LogTrace("(-)[NOT_FOUND]");
-                    return null;
-                }
-
-                int maxAllowedHeight = this.consensusManager.Tip.Height - minConfirmations + 1;
-
-                long deposited = indexData.BalanceChanges.Where(x => x.Deposited && x.BalanceChangedHeight <= maxAllowedHeight).Sum(x => x.Satoshi);
-
-                return new Money(deposited);
-            }
+            return (true, string.Empty);
         }
 
         /// <inheritdoc/>
@@ -574,15 +636,5 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             this.db?.Dispose();
         }
-    }
-
-    public class IndexerNotInitializedException : Exception
-    {
-        public IndexerNotInitializedException() : base("Component wasn't initialized and is not ready to use.") { }
-    }
-
-    public class OutOfSyncException : Exception
-    {
-        public OutOfSyncException() : base("Component is not ready to use. Wait till it's synced.") { }
     }
 }
