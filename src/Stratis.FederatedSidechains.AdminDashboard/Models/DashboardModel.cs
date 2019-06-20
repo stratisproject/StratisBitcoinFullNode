@@ -10,6 +10,6 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Models
         public string SidechainWalletAddress { get; set; }
         public JArray MiningPublicKeys { get; set; }
         public StratisNodeModel StratisNode { get; set; }
-        public StratisNodeModel SidechainNode { get; set; }
+        public SidechainNodeModel SidechainNode { get; set; }
     }
 }
