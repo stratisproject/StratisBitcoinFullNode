@@ -5,6 +5,7 @@ using FluentAssertions;
 using Flurl;
 using Flurl.Http;
 using NBitcoin;
+using NBitcoin.Networks;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -109,40 +110,50 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
         [Fact]
         public void MinerPairStarts()
         {
-            //Use a custom sidechain network just for this test.
-            CirrusRegTest collateralSidechainNetwork = (CirrusRegTest)CirrusNetwork.NetworksSelector.Regtest();
-
-            // Any collateral check. Doesn't have to be met, just checked.
-            Key collateralKey = new Key();
-            collateralSidechainNetwork.ConsensusOptions.GenesisFederationMembers.Clear();
-            collateralSidechainNetwork.ConsensusOptions.GenesisFederationMembers.Add(new CollateralFederationMember(collateralKey.PubKey, Money.Coins(100m), collateralKey.ScriptPubKey.GetDestinationAddress(this.mainNetwork).ToString()));
-
-
-            using (SidechainNodeBuilder sideNodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this))
-            using (NodeBuilder nodeBuilder = NodeBuilder.Create(this))
+            try
             {
-                CoreNode main = nodeBuilder.CreateStratisPosNode(this.mainNetwork).WithWallet();
-                main.AppendToConfig("addressindex=1");
+                //Use a custom sidechain network just for this test.
+                NetworkRegistration.Clear();
+                CirrusRegTest collateralSidechainNetwork = (CirrusRegTest)CirrusNetwork.NetworksSelector.Regtest();
 
-                Key federationKey = new Key();
+                // Any collateral check. Doesn't have to be met, just checked.
+                Key collateralKey = new Key();
+                collateralSidechainNetwork.ConsensusOptions.GenesisFederationMembers.Clear();
+                collateralSidechainNetwork.ConsensusOptions.GenesisFederationMembers.Add(
+                    new CollateralFederationMember(collateralKey.PubKey, Money.Coins(100m),
+                        collateralKey.ScriptPubKey.GetDestinationAddress(this.mainNetwork).ToString()));
 
-                CoreNode side = sideNodeBuilder.CreateSidechainFederationNode(collateralSidechainNetwork, this.mainNetwork, federationKey);
-                side.AppendToConfig("sidechain=1");
-                side.AppendToConfig($"redeemscript={this.scriptAndAddresses.payToMultiSig}");
-                side.AppendToConfig($"publickey={collateralSidechainNetwork.FederationMnemonics[0].DeriveExtKey().PrivateKey.PubKey}");
-                side.AppendToConfig("federationips=0.0.0.0,0.0.0.1"); // Placeholders
-                side.AppendToConfig($"mindepositconfirmations={DepositConfirmations}");
-                side.AppendToConfig($"counterchainapiport={main.ApiPort}");
+                using (SidechainNodeBuilder sideNodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this))
+                using (NodeBuilder nodeBuilder = NodeBuilder.Create(this))
+                {
+                    CoreNode main = nodeBuilder.CreateStratisPosNode(this.mainNetwork).WithWallet();
+                    main.AppendToConfig("addressindex=1");
 
-                main.Start();
-                side.Start();
+                    Key federationKey = new Key();
 
-                Assert.Equal(CoreNodeState.Running, main.State);
-                Assert.Equal(CoreNodeState.Running, side.State);
+                    CoreNode side = sideNodeBuilder.CreateSidechainMinerNode(collateralSidechainNetwork, this.mainNetwork, federationKey);
+                    side.AppendToConfig("sidechain=1");
+                    side.AppendToConfig($"redeemscript={this.scriptAndAddresses.payToMultiSig}");
+                    side.AppendToConfig($"publickey={collateralSidechainNetwork.FederationMnemonics[0].DeriveExtKey().PrivateKey.PubKey}");
+                    side.AppendToConfig("federationips=0.0.0.0,0.0.0.1"); // Placeholders
+                    side.AppendToConfig($"mindepositconfirmations={DepositConfirmations}");
+                    side.AppendToConfig($"counterchainapiport={main.ApiPort}");
 
-                // Collateral is checked - they're talking!
-                TestHelper.MineBlocks(main, 1);
-                TestBase.WaitLoop(()=> side.FullNode.NodeService<ICollateralChecker>().GetCounterChainConsensusHeight() > 0);
+                    main.Start();
+                    side.Start();
+
+                    Assert.Equal(CoreNodeState.Running, main.State);
+                    Assert.Equal(CoreNodeState.Running, side.State);
+
+                    // Collateral is checked - they're talking!
+                    TestHelper.MineBlocks(main, 1);
+                    TestBase.WaitLoop(() => side.FullNode.NodeService<ICollateralChecker>().GetCounterChainConsensusHeight() > 0);
+                }
+            }
+            finally
+            {
+                // We messed with the Networks...
+                NetworkRegistration.Clear();
             }
         }
 
@@ -193,6 +204,5 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 TestBase.WaitLoop(() => side.FullNode.NodeService<ICrossChainTransferStore>().NextMatureDepositHeight > 0);
             }
         }
-
     }
 }
