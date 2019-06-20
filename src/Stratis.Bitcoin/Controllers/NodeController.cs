@@ -559,7 +559,12 @@ namespace Stratis.Bitcoin.Controllers
 
             try
             {
-                List<string> loops = this.asyncProvider.GetAll(true);
+                var loops = new List<AsyncLoopModel>();
+
+                foreach ((string loopName, TaskStatus status) in this.asyncProvider.GetAll())
+                {
+                    loops.Add(new AsyncLoopModel() { LoopName = loopName, Status = Enum.GetName(typeof(TaskStatus), status)});
+                }
 
                 return this.Json(loops);
             }

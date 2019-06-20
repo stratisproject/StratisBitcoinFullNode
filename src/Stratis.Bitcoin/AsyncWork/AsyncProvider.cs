@@ -318,7 +318,7 @@ namespace Stratis.Bitcoin.AsyncWork
 
         /// <inheritdoc />
         [NoTrace]
-        public List<string> GetAll(bool onlyRunning)
+        public List<(string loopName, TaskStatus status)> GetAll()
         {
             var taskInformation = new List<AsyncTaskInfo>();
 
@@ -332,7 +332,7 @@ namespace Stratis.Bitcoin.AsyncWork
                 taskInformation.AddRange(this.registeredTasks.Values);
             }
 
-            var runningTasks = taskInformation.Where(a => (!onlyRunning || a.IsRunning)).Select(a => a.FriendlyName).OrderBy(a => a).ToList();
+            List<(string, TaskStatus)> runningTasks = taskInformation.Select(a => (a.FriendlyName, a.Status)).OrderBy(a => a.Item1).ToList();
 
             return runningTasks;
         }
