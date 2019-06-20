@@ -427,7 +427,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                             for (int i = 0; i < unspent.Outputs.Length; i++)
                             {
                                 // Only push to rewind data index UTXOs that are spent.
-                                if (unspent.Outputs[i] == null && clone.Outputs[i] != null)
+                                // Checks against array length are needed in case problem like 3965 on VSTS appears.
+                                if ((i < clone.Outputs.Length) && (unspent.Outputs[i] == null) && (clone.Outputs[i] != null))
                                 {
                                     var key = new OutPoint(unspent.TransactionId, i);
                                     indexItems[key] = this.blockHeight;
