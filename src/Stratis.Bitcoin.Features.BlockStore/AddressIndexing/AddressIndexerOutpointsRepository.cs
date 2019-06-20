@@ -116,7 +116,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         {
             lock (this.LockObject)
             {
-                // Generally there will only be one result here at most, as this should be getting called once per block.
                 foreach (AddressIndexerRewindData rewindData in this.addressIndexerRewindData.Find(x => x.BlockHeight < height))
                     this.addressIndexerRewindData.Delete(rewindData.BlockHash);
             }
