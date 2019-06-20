@@ -26,7 +26,7 @@ namespace Stratis.Sidechains.Networks
         // public IList<Mnemonic> FederationMnemonics { get; }
         public IList<Key> FederationKeys { get; private set; }
 
-        internal CirrusRegTest()
+        public CirrusRegTest()
         {
             this.Name = "CirrusRegTest";
             this.NetworkType = NetworkType.Regtest;
