@@ -9,6 +9,7 @@
     <DotNetCliToolReference Include="BundlerMinifier.Core" Version="2.6.362" />
     <PackageReference Include="BuildBundlerMinifier" Version="2.9.406" />
     <PackageReference Include="BundlerMinifier.Core" Version="2.9.406" />
+    <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="2.3.4" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.9" />
