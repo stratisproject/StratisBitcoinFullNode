@@ -12,21 +12,6 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
 {
     public class CrossChainTransferTests
     {
-
-        [Fact]
-        public void AllNodesBuildAndTalk()
-        {
-            using (var context = new SidechainTestContext())
-            {
-                // Demonstrates that all of the nodes can be built, connected and started.
-                // Protects from issues with injection and initialisation.
-                context.StartAndConnectNodes();
-                context.EnableSideFedWallets();
-                context.EnableMainFedWallets();
-            }
-        }
-
-
         [Fact(Skip = "Unstable. https://dev.azure.com/StratisProject/StratisBitcoinFullNode/_build/results?buildId=14582&view=ms.vss-test-web.build-test-results-tab")]
         public void MainChainFedNodesBuildAndSync()
         {
