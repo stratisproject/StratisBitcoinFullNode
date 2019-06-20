@@ -29,10 +29,10 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <img src="@Url.Action("value", "Home", new { value="MDRR" })" />
+                    <img id="qrcode-image" class="img-fluid" />
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary mx-auto" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-outline-secondary mx-auto mb-3" data-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -58,7 +58,7 @@
                 <li class="list-inline-item text-truncate">
                     @if (ViewBag.MainchainMultisigAddress != null)
                     {
-                        <a href="#qrcode" data-toggle="modal" class="inherit text-muted" id="mainchainMultisigAddress">@ViewBag.MainchainMultisigAddress</a>
+                        <a href="#qrcode" data-toggle="modal" role="qrcode" data-qr="@ViewBag.MainchainMultisigAddress" class="inherit text-muted" id="mainchainMultisigAddress">@ViewBag.MainchainMultisigAddress</a>
                         <i role="copy" data-id="mainchainMultisigAddress" data-message="Mainchain Multisig Address successfully copied to clipboard" class="far fa-copy"></i>
                     }
                     else
@@ -74,7 +74,7 @@
                 <li class="list-inline-item text-truncate">
                     @if (ViewBag.SidechainMultisigAddress != null)
                     {
-                        <a href="#qrcode" data-toggle="modal" class="inherit text-muted" id="sidechainMultisigAddress">@ViewBag.SidechainMultisigAddress</a>
+                        <a href="#qrcode" data-toggle="modal" role="qrcode" data-qr="@ViewBag.SidechainMultisigAddress" class="inherit text-muted" id="sidechainMultisigAddress">@ViewBag.SidechainMultisigAddress</a>
                         <i role="copy" data-id="sidechainMultisigAddress" data-message="Sidechain Multisig Address successfully copied to clipboard" class="far fa-copy"></i>
                     }
                     else

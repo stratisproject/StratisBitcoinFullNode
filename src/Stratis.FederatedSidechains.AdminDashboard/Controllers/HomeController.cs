@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -101,14 +103,20 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Display Qr code from text value
+        /// </summary>
         [Route("qr-code/{value?}")]
         public IActionResult QrCode(string value)
         {
             QRCodeGenerator qrGenerator = new QRCodeGenerator();
-            QRCodeData qrCodeData = qrGenerator.CreateQrCode(value, QRCodeGenerator.ECCLevel.Q);
+            QRCodeData qrCodeData = qrGenerator.CreateQrCode(value, QRCodeGenerator.ECCLevel.L);
             QRCode qrCode = new QRCode(qrCodeData);
-            Bitmap qrCodeImage = qrCode.GetGraphic(20);
-            return View();
+            using (var memoryStream = new MemoryStream())
+            {
+                qrCode.GetGraphic(20).Save(memoryStream, ImageFormat.Png);
+                return File(memoryStream.ToArray(), "image/png");
+            }
         }
 
         /// <summary>
