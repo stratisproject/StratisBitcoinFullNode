@@ -142,7 +142,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                         UnconfirmedBalance = (double)sidechainWalletBalances.Content.balances[0].amountUnconfirmed / 100000000,
                         CoinTicker = sidechainStatus.Content.coinTicker ?? "STRAT",
                         LogRules = JsonConvert.DeserializeObject<List<LogRule>>(sidechainLogRules.Content.ToString()),
-                        PoAPendingPolls = ParsePendingPolls(sidechainPoAPendingPolls.Content)
+                        PoAPendingPolls = JsonConvert.DeserializeObject<List<PendingPoll>>(sidechainPoAPendingPolls.Content.ToString())
                     }
                 };
             }
@@ -159,17 +159,6 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                 }
             }
             this.distributedCache.SetString("DashboardData", JsonConvert.SerializeObject(dashboardModel));
-        }
-
-        /// <summary>
-        /// Parse the output from /api/DefaultVoting/pendingpolls
-        /// </summary>
-        [Obsolete("The /api/DefaultVoting/pendingpolls output need to be replaced with JSON output")]
-        private List<PendingPoll> ParsePendingPolls(string content)
-        {
-            var pendingPolls = content.Split("\r\n");
-
-            return new List<PendingPoll>();
         }
 
         private void ParsePeers(dynamic stratisStatus, dynamic federationInfo, ref List<Peer> peers, ref List<Peer> federationMembers)
