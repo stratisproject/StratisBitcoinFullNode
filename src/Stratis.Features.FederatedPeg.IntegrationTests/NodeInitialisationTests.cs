@@ -79,7 +79,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
 
                 CoreNode gateway = nodeBuilder.CreateSidechainFederationNode(this.sidechainNetwork, this.mainNetwork, federationKey);
                 gateway.AppendToConfig("sidechain=1");
-                gateway.AppendToConfig($"redeemscript={this.scriptAndAddresses.payToMultiSig.ToString()}");
+                gateway.AppendToConfig($"redeemscript={this.scriptAndAddresses.payToMultiSig}");
                 gateway.AppendToConfig($"publickey={this.sidechainNetwork.FederationMnemonics[0].DeriveExtKey().PrivateKey.PubKey}");
                 gateway.AppendToConfig("federationips=0.0.0.0,0.0.0.1"); // Placeholders
 
@@ -109,23 +109,27 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
         [Fact]
         public void MinerPairStarts()
         {
+            //Use a custom sidechain network just for this test.
+            CirrusRegTest collateralSidechainNetwork = (CirrusRegTest)CirrusNetwork.NetworksSelector.Regtest();
+
+            // Any collateral check. Doesn't have to be met, just checked.
+            Key collateralKey = new Key();
+            collateralSidechainNetwork.ConsensusOptions.GenesisFederationMembers.Clear();
+            collateralSidechainNetwork.ConsensusOptions.GenesisFederationMembers.Add(new CollateralFederationMember(collateralKey.PubKey, Money.Coins(100m), collateralKey.ScriptPubKey.GetDestinationAddress(this.mainNetwork).ToString()));
+
+
             using (SidechainNodeBuilder sideNodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this))
             using (NodeBuilder nodeBuilder = NodeBuilder.Create(this))
             {
                 CoreNode main = nodeBuilder.CreateStratisPosNode(this.mainNetwork).WithWallet();
                 main.AppendToConfig("addressindex=1");
 
-                // Any collateral check. Doesn't have to be met, just checked.
-                Key collateralKey = new Key();
-                this.sidechainNetwork.ConsensusOptions.GenesisFederationMembers.Clear();
-                this.sidechainNetwork.ConsensusOptions.GenesisFederationMembers.Add(new CollateralFederationMember(collateralKey.PubKey, Money.Coins(100m), collateralKey.ScriptPubKey.GetDestinationAddress(this.mainNetwork).ToString()));
-
                 Key federationKey = new Key();
 
-                CoreNode side = sideNodeBuilder.CreateSidechainFederationNode(this.sidechainNetwork, this.mainNetwork, federationKey);
+                CoreNode side = sideNodeBuilder.CreateSidechainFederationNode(collateralSidechainNetwork, this.mainNetwork, federationKey);
                 side.AppendToConfig("sidechain=1");
                 side.AppendToConfig($"redeemscript={this.scriptAndAddresses.payToMultiSig}");
-                side.AppendToConfig($"publickey={this.sidechainNetwork.FederationMnemonics[0].DeriveExtKey().PrivateKey.PubKey}");
+                side.AppendToConfig($"publickey={collateralSidechainNetwork.FederationMnemonics[0].DeriveExtKey().PrivateKey.PubKey}");
                 side.AppendToConfig("federationips=0.0.0.0,0.0.0.1"); // Placeholders
                 side.AppendToConfig($"mindepositconfirmations={DepositConfirmations}");
                 side.AppendToConfig($"counterchainapiport={main.ApiPort}");
