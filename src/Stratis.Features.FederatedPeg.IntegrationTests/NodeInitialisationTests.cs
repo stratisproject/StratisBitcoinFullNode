@@ -55,7 +55,6 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
             }
         }
 
-
         [Fact]
         public void SidechainMinerStarts()
         {
@@ -152,7 +151,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
             }
             finally
             {
-                // We messed with the Networks...
+                // We messed with the Networks... 
                 NetworkRegistration.Clear();
             }
         }

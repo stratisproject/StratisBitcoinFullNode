@@ -63,6 +63,5 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 
             this.FullNode = (FullNode)builder.Build();
         }
-
     }
 }
