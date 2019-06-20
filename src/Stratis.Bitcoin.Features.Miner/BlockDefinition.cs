@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             if (this.IncludeWitness)
             {
-                AddCoinbaseCommitmentToBlock(this.block);
+                AddOrUpdateCoinbaseCommitmentToBlock(this.Network, this.block);
             }
 
             int nSerializeSize = this.block.GetSerializedSize();
@@ -246,61 +246,14 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
-        /// Modify the coinbase commitment to the coinbase transaction according to  https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki.
-        /// </summary>
-        /// <param name="block">The new block that is being mined.</param>
-        /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/validation.cpp"/>
-        public static void UpdateCoinbaseCommitmentToBlock(Block block)
-        {
-            int commitIndex = WitnessCommitmentsRule.GetWitnessCommitmentIndex(block);
-
-            if (commitIndex != -1)
-            {
-                block.Transactions[0].Outputs.RemoveAt(commitIndex);
-            }
-
-            AddCoinbaseCommitmentToBlock(block);
-        }
-
-        /// <summary>
         /// Adds the coinbase commitment to the coinbase transaction according to  https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki.
         /// </summary>
         /// <param name="block">The new block that is being mined.</param>
         /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/validation.cpp"/>
-        private static void AddCoinbaseCommitmentToBlock(Block block)
+        public static void AddOrUpdateCoinbaseCommitmentToBlock(Network network, Block block)
         {
-            var wtxidCoinbase = new byte[32];       // The wtxid of the coinbase transaction is defined as to be 0x0000....0000.
-            block.Transactions[0].Inputs[0].WitScript = new WitScript(Op.GetPushOp(wtxidCoinbase));
-
-            // A witness root hash is calculated with all those wtxid as leaves, in a way similar to the hashMerkleRoot in the block header.
-            byte[] witnessRootHash = WitnessCommitmentsRule.BlockWitnessMerkleRoot(block, out var _).ToBytes();
-
-            // // Coinbase's input's witness must consist of a single 32-byte array for the witness reserved value.
-            byte[] witnessReservedValue = new byte[32];
-
-            byte[] dataToHash = new byte[64]; // witness root hash|witness reserved value
-            Buffer.BlockCopy(witnessRootHash, 0, dataToHash, 0, 32);
-            Buffer.BlockCopy(witnessReservedValue, 0, dataToHash, 32, 32);
-
-            // 32-byte - Commitment hash: Double-SHA256(witness root hash|witness reserved value)
-            byte[] commitmentHash = Hashes.Hash256(dataToHash).ToBytes();
-
-            // The commitment is recorded in a scriptPubKey of the coinbase transaction.
-            var coinbaseScriptPubKeyFiledBytes = new byte[38];   // It must be at least 38 bytes, with the first 6-byte of 0x6a24aa21a9ed.
-            coinbaseScriptPubKeyFiledBytes[0] = 0x6a;            // OP_RETURN (0x6a)
-            coinbaseScriptPubKeyFiledBytes[1] = 0x24;            // Push the following 36 bytes (0x24)
-            coinbaseScriptPubKeyFiledBytes[2] = 0xaa;            // Commitment header (0xaa21a9ed)
-            coinbaseScriptPubKeyFiledBytes[3] = 0x21;
-            coinbaseScriptPubKeyFiledBytes[4] = 0xa9;
-            coinbaseScriptPubKeyFiledBytes[5] = 0xed;
-            Buffer.BlockCopy(commitmentHash, 0, coinbaseScriptPubKeyFiledBytes, 6, 32);
-
-            // Write the coinbase commitment to a ScriptPubKey structure.
-            var txOut = new TxOut();
-            txOut.Value = Money.Zero; // the default value would be -1
-            txOut.ScriptPubKey = new Script(coinbaseScriptPubKeyFiledBytes);
-            // If there are more than one scriptPubKey matching the pattern, the one with highest output index is assumed to be the commitment.
-            block.Transactions[0].Outputs.Add(txOut);
+            WitnessCommitmentsRule.ClearWitnessCommitment(network, block);
+            WitnessCommitmentsRule.CreateWitnessCommitment(network, block);
         }
 
         /// <summary>

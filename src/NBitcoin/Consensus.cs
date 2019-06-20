@@ -81,6 +81,9 @@ namespace NBitcoin
         public bool IsProofOfStake { get; }
 
         /// <inheritdoc />
+        public bool PosEmptyCoinbase { get; set; }
+
+        /// <inheritdoc />
         public uint256 DefaultAssumeValid { get; }
 
         /// <inheritdoc />

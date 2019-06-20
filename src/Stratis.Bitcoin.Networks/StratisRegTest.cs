@@ -108,6 +108,8 @@ namespace Stratis.Bitcoin.Networks
                 proofOfStakeReward: Money.COIN
             );
 
+            this.Consensus.PosEmptyCoinbase = true;
+
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (65) };
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
             this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (65 + 128) };

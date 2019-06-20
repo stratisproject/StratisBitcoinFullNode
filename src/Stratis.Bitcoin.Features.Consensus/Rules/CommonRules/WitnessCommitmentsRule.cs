@@ -38,8 +38,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             bool fHaveWitness = false;
             if (deploymentFlags.ScriptFlags.HasFlag(ScriptVerify.Witness))
             {
-                int commitpos = GetWitnessCommitmentIndex(block);
-                if (commitpos != -1)
+                Script commitment = GetWitnessCommitment(this.Parent.Network, block);
+                if (commitment != null)
                 {
                     uint256 hashWitness = BlockWitnessMerkleRoot(block, out bool _);
 
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     Buffer.BlockCopy(witness.Pushes.First(), 0, hashed, 32, 32);
                     hashWitness = Hashes.Hash256(hashed);
 
-                    if (!this.EqualsArray(hashWitness.ToBytes(), block.Transactions[0].Outputs[commitpos].ScriptPubKey.ToBytes(true).Skip(6).ToArray(), 32))
+                    if (!this.EqualsArray(hashWitness.ToBytes(), commitment.ToBytes(true).Skip(6).ToArray(), 32))
                     {
                         this.Logger.LogTrace("(-)[WITNESS_MERKLE_MISMATCH]");
                         ConsensusErrors.BadWitnessMerkleMatch.Throw();
@@ -104,37 +104,146 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <summary>
-        /// Gets index of the last coinbase transaction output with SegWit flag.
+        /// Gets commitment in the last coinbase transaction output with SegWit flag.
         /// </summary>
         /// <param name="block">Block which coinbase transaction's outputs will be checked for SegWit flags.</param>
         /// <returns>
-        /// <c>-1</c> if no SegWit flags were found.
-        /// If SegWit flag is found index of the last transaction's output that has SegWit flag is returned.
+        /// <c>null</c> if no SegWit flags were found.
+        /// If SegWit flag is found the commitment of the last transaction's output that has SegWit flag is returned.
         /// </returns>
-        public static int GetWitnessCommitmentIndex(Block block)
+        private static Script GetWitnessCommitment(Network network, Block block)
         {
-            int commitpos = -1;
-            for (int i = 0; i < block.Transactions[0].Outputs.Count; i++)
+            Script commitScriptPubKey = null;
+
+            if (network.Consensus.IsProofOfStake && network.Consensus.PosEmptyCoinbase)
             {
-                Script scriptPubKey = block.Transactions[0].Outputs[i].ScriptPubKey;
-
-                if (scriptPubKey.Length >= 38)
+                for (int i = 0; i < block.Transactions[0].Inputs.Count; i++)
                 {
-                    byte[] scriptBytes = scriptPubKey.ToBytes(true);
+                    Script scriptPubKey = block.Transactions[0].Inputs[i].ScriptSig;
 
-                    if ((scriptBytes[0] == (byte)OpcodeType.OP_RETURN) &&
-                        (scriptBytes[1] == 0x24) &&
-                        (scriptBytes[2] == 0xaa) &&
-                        (scriptBytes[3] == 0x21) &&
-                        (scriptBytes[4] == 0xa9) &&
-                        (scriptBytes[5] == 0xed))
+                    if (IsWitnessScript(scriptPubKey))
                     {
-                        commitpos = i;
+                        commitScriptPubKey = scriptPubKey;
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < block.Transactions[0].Outputs.Count; i++)
+                {
+                    Script scriptPubKey = block.Transactions[0].Outputs[i].ScriptPubKey;
+
+                    if (IsWitnessScript(scriptPubKey))
+                    {
+                        commitScriptPubKey = scriptPubKey;
                     }
                 }
             }
 
-            return commitpos;
+            return commitScriptPubKey;
+        }
+
+        /// <summary>
+        /// Clear all witness commitments form the block.
+        /// </summary>
+        public static void ClearWitnessCommitment(Network network, Block block)
+        {
+            if (network.Consensus.IsProofOfStake && network.Consensus.PosEmptyCoinbase)
+            {
+                for (int i = 0; i < block.Transactions[0].Inputs.Count; i++)
+                {
+                    Script scriptPubKey = block.Transactions[0].Inputs[i].ScriptSig;
+
+                    if (IsWitnessScript(scriptPubKey))
+                    {
+                        block.Transactions[0].Outputs.RemoveAt(i);
+                        i--;
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < block.Transactions[0].Outputs.Count; i++)
+                {
+                    Script scriptPubKey = block.Transactions[0].Outputs[i].ScriptPubKey;
+
+                    if (IsWitnessScript(scriptPubKey))
+                    {
+                        block.Transactions[0].Outputs.RemoveAt(i);
+                        i--;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Create a witness commitmnet based from the given block.
+        /// </summary>
+        public static void CreateWitnessCommitment(Network network, Block block)
+        {
+            var wtxidCoinbase = new byte[32];       // The wtxid of the coinbase transaction is defined as to be 0x0000....0000.
+            block.Transactions[0].Inputs[0].WitScript = new WitScript(Op.GetPushOp(wtxidCoinbase));
+
+            // A witness root hash is calculated with all those wtxid as leaves, in a way similar to the hashMerkleRoot in the block header.
+            byte[] witnessRootHash = WitnessCommitmentsRule.BlockWitnessMerkleRoot(block, out var _).ToBytes();
+
+            // // Coinbase's input's witness must consist of a single 32-byte array for the witness reserved value.
+            byte[] witnessReservedValue = new byte[32];
+
+            byte[] dataToHash = new byte[64]; // witness root hash|witness reserved value
+            Buffer.BlockCopy(witnessRootHash, 0, dataToHash, 0, 32);
+            Buffer.BlockCopy(witnessReservedValue, 0, dataToHash, 32, 32);
+
+            // 32-byte - Commitment hash: Double-SHA256(witness root hash|witness reserved value)
+            byte[] commitmentHash = Hashes.Hash256(dataToHash).ToBytes();
+
+            // The commitment is recorded in a scriptPubKey of the coinbase transaction.
+            var coinbaseScriptPubKeyFiledBytes = new byte[38];   // It must be at least 38 bytes, with the first 6-byte of 0x6a24aa21a9ed.
+            coinbaseScriptPubKeyFiledBytes[0] = 0x6a;            // OP_RETURN (0x6a)
+            coinbaseScriptPubKeyFiledBytes[1] = 0x24;            // Push the following 36 bytes (0x24)
+            coinbaseScriptPubKeyFiledBytes[2] = 0xaa;            // Commitment header (0xaa21a9ed)
+            coinbaseScriptPubKeyFiledBytes[3] = 0x21;
+            coinbaseScriptPubKeyFiledBytes[4] = 0xa9;
+            coinbaseScriptPubKeyFiledBytes[5] = 0xed;
+            Buffer.BlockCopy(commitmentHash, 0, coinbaseScriptPubKeyFiledBytes, 6, 32);
+
+
+            if (network.Consensus.IsProofOfStake && network.Consensus.PosEmptyCoinbase)
+            {
+                // If this is a POS network and coinbase limitation we use a coinbase input.
+                var txIn = new TxIn(new Script(coinbaseScriptPubKeyFiledBytes));
+
+                // If there are more than one scriptPubKey matching the pattern, the one with highest output index is assumed to be the commitment.
+                block.Transactions[0].Inputs.Add(txIn);
+            }
+            else
+            {
+                // Write the coinbase commitment to a ScriptPubKey structure.
+                var txOut = new TxOut(Money.Zero, new Script(coinbaseScriptPubKeyFiledBytes));
+
+                // If there are more than one scriptPubKey matching the pattern, the one with highest output index is assumed to be the commitment.
+                block.Transactions[0].Outputs.Add(txOut);
+            }
+        }
+
+        private static bool IsWitnessScript(Script script)
+        {
+            if (script.Length >= 38)
+            {
+                byte[] scriptBytes = script.ToBytes(true);
+
+                if ((scriptBytes[0] == (byte)OpcodeType.OP_RETURN) &&
+                    (scriptBytes[1] == 0x24) &&
+                    (scriptBytes[2] == 0xaa) &&
+                    (scriptBytes[3] == 0x21) &&
+                    (scriptBytes[4] == 0xa9) &&
+                    (scriptBytes[5] == 0xed))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>

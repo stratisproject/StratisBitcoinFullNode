@@ -34,13 +34,35 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             Block block = context.ValidationContext.BlockToValidate;
 
+            // Check if the block was produced using POS. 
             if (BlockStake.IsProofOfStake(block))
             {
                 // Coinbase output should be empty if proof-of-stake block.
-                if ((block.Transactions[0].Outputs.Count != 1) || !block.Transactions[0].Outputs[0].IsEmpty)
+                if ((block.Transactions[0].Outputs.Count != 1) || (!block.Transactions[0].Outputs[0].IsEmpty))
                 {
-                    this.Logger.LogTrace("(-)[COINBASE_NOT_EMPTY]");
-                    ConsensusErrors.BadStakeBlock.Throw();
+                    if (this.PosParent.Network.Consensus.PosEmptyCoinbase)
+                    {
+                        this.Logger.LogTrace("(-)[COINBASE_NOT_EMPTY]");
+                        ConsensusErrors.BadStakeBlock.Throw();
+                    }
+
+                    // First output must be empty.
+                    if ((!block.Transactions[0].Outputs[0].IsEmpty))
+                    {
+                        this.Logger.LogTrace("(-)[COINBASE_NOT_EMPTY]");
+                        ConsensusErrors.BadStakeBlock.Throw();
+                    }
+
+                    // Check that the rest of the outputs are not spendable (op_return)
+                    foreach (TxOut txOut in block.Transactions[0].Outputs.Skip(1))
+                    {
+                        // Only op_return are allowed in coinbase.
+                        if (!txOut.ScriptPubKey.IsUnspendable)
+                        {
+                            this.Logger.LogTrace("(-)[COINBASE_SPENDABLE]");
+                            ConsensusErrors.BadStakeBlock.Throw();
+                        }
+                    }
                 }
 
                 // Second transaction must be coinstake, the rest must not be.
