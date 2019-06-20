@@ -74,7 +74,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
             this.ViewBag.SidechainMultisigAddress = dashboardModel.SidechainWalletAddress;
             this.ViewBag.MiningPubKeys = dashboardModel.MiningPublicKeys;
             this.ViewBag.LogRules = new LogRulesModel().LoadRules(dashboardModel.StratisNode.LogRules, dashboardModel.SidechainNode.LogRules);
-            this.ViewBag.LogRules = new LogRulesModel().LoadRules(dashboardModel.StratisNode.LogRules, dashboardModel.SidechainNode.LogRules);
+            this.ViewBag.PendingPolls = dashboardModel.SidechainNode.PoAPendingPolls;
             this.ViewBag.Status = "OK";
 
             return View("Dashboard", dashboardModel);
