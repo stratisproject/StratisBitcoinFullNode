@@ -77,8 +77,8 @@ namespace Stratis.Features.FederatedPeg.Controllers
                     return this.Json(depositsResult.Value);
                 }
 
-                this.logger.LogTrace("Error calling /api/FederationGateway/{0}: {1}.", FederationGatewayRouteEndPoint.GetMaturedBlockDeposits, depositsResult.Error);
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not re-sync matured block deposits: {depositsResult.Error}", depositsResult.Error);
+                this.logger.LogTrace("Error calling /api/FederationGateway/{0}: {1}.", FederationGatewayRouteEndPoint.GetMaturedBlockDeposits, depositsResult.Message);
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not re-sync matured block deposits: {depositsResult.Message}", depositsResult.Message);
             }
             catch (Exception e)
             {
