@@ -22,8 +22,6 @@ namespace Stratis.FederatedSidechains.AdminDashboard
 
         public void ConfigureServices(IServiceCollection services)
         {
-            //TODO: change this
-            services.Configure<DefaultEndpointsSettings>(this.Configuration.GetSection("DefaultEndpoints"));
 
             services.AddDistributedMemoryCache();
 
