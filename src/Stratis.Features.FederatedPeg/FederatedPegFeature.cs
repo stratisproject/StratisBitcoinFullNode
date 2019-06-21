@@ -11,6 +11,7 @@ using Stratis.Bitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Api;
@@ -154,6 +155,9 @@ namespace Stratis.Features.FederatedPeg
             // Query our database for fully-signed transactions and broadcast them every N seconds.
             this.signedBroadcaster.Start();
 
+            // Check that the feature is configured correctly before going any further.
+            this.CheckConfiguration();
+
             // Connect the node to the other federation members.
             foreach (IPEndPoint federationMemberIp in this.federatedPegSettings.FederationNodeIpEndPoints)
                 this.connectionManager.AddNodeAddress(federationMemberIp);
@@ -162,6 +166,25 @@ namespace Stratis.Features.FederatedPeg
             NetworkPeerConnectionParameters networkPeerConnectionParameters = this.connectionManager.Parameters;
             networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager,
                 this.network, this.federatedPegSettings, this.crossChainTransferStore, this.inputConsolidator));
+        }
+
+        /// <summary>
+        /// Checks that the redeem script and the multisig address in the multisig wallet match the values provided in the federated peg settings.
+        /// </summary>
+        private void CheckConfiguration()
+        {
+            var wallet = this.federationWalletManager.GetWallet();
+
+            if (wallet.MultiSigAddress.RedeemScript != this.federatedPegSettings.MultiSigRedeemScript)
+            {
+                throw new ConfigurationException("Wallet redeem script does not match redeem script provided in settings. Please check that your wallet JSON file is correct and that the settings are configured correctly.");
+            }
+
+            if (wallet.MultiSigAddress.Address != this.federatedPegSettings.MultiSigAddress.ToString())
+            {
+                throw new ConfigurationException(
+                    "Wallet multisig address does not match multisig address of the redeem script provided in settings.  Please check that your wallet JSON file is correct and that the settings are configured correctly.");
+            }
         }
 
         public override void Dispose()
