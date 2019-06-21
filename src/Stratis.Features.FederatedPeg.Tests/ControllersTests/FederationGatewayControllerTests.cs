@@ -1,13 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NSubstitute;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -153,20 +153,9 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             IActionResult result = controller.GetMaturedBlockDeposits(new MaturedBlockRequestModel(earlierBlock.Height, 1000));
 
             // Block height (3) > Mature height (2) - returns error message
-            result.Should().BeOfType<ErrorResult>();
-
-            var error = result as ErrorResult;
-            error.Should().NotBeNull();
-
-            var errorResponse = error.Value as ErrorResponse;
-            errorResponse.Should().NotBeNull();
-            errorResponse.Errors.Should().HaveCount(1);
-
-            errorResponse.Errors.Should().Contain(
-                e => e.Status == (int)HttpStatusCode.BadRequest);
-
-            errorResponse.Errors.Should().Contain(
-                e => e.Message.Contains($"Block height {earlierBlock.Height} submitted is not mature enough. Blocks less than a height of {maturedHeight} can be processed."));
+            var maturedBlockDepositsResult = (result as JsonResult).Value as SerializableResult<List<MaturedBlockDepositsModel>>;
+            maturedBlockDepositsResult.Should().NotBeNull();
+            maturedBlockDepositsResult.Message.Should().Be(string.Format(MaturedBlocksProvider.RetrieveBlockHeightHigherThanMaturedTipMessage, earlierBlock.Height, maturedHeight));
         }
 
         [Fact]
@@ -194,7 +183,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
                 return new ChainedHeaderBlock(new Block(), earlierBlock);
             });
 
-            IActionResult result =  controller.GetMaturedBlockDeposits(new MaturedBlockRequestModel(earlierBlock.Height, 1000));
+            IActionResult result = controller.GetMaturedBlockDeposits(new MaturedBlockRequestModel(earlierBlock.Height, 1000));
 
             result.Should().BeOfType<JsonResult>();
 

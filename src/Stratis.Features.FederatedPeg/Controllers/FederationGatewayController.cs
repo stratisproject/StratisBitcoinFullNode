@@ -72,14 +72,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
             try
             {
                 SerializableResult<List<MaturedBlockDepositsModel>> depositsResult = this.maturedBlocksProvider.GetMaturedDeposits(blockRequest.BlockHeight, blockRequest.MaxBlocksToSend);
-
-                if (depositsResult.IsSuccess)
-                {
-                    return this.Json(depositsResult.Value);
-                }
-
-                this.logger.LogTrace("Error calling /api/FederationGateway/{0}: {1}.", FederationGatewayRouteEndPoint.GetMaturedBlockDeposits, depositsResult.Message);
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not re-sync matured block deposits: {depositsResult.Message}", depositsResult.Message);
+                return this.Json(depositsResult);
             }
             catch (Exception e)
             {

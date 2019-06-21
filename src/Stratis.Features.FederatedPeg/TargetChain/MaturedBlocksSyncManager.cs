@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
@@ -106,22 +107,20 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             // API method that provides blocks should't give us blocks that are not mature!
             var model = new MaturedBlockRequestModel(this.store.NextMatureDepositHeight, blocksToRequest);
 
-            this.logger.LogDebug("Request model created: {0}:{1}, {2}:{3}.", nameof(model.BlockHeight), model.BlockHeight,
-                nameof(model.MaxBlocksToSend), model.MaxBlocksToSend);
+            this.logger.LogDebug("Request model created: {0}:{1}, {2}:{3}.", nameof(model.BlockHeight), model.BlockHeight, nameof(model.MaxBlocksToSend), model.MaxBlocksToSend);
 
             // Ask for blocks.
-            IList<MaturedBlockDepositsModel> matureBlockDeposits = await this.federationGatewayClient.GetMaturedBlockDepositsAsync(model, cancellationToken).ConfigureAwait(false);
+            SerializableResult<List<MaturedBlockDepositsModel>> matureBlockDepositsResult = await this.federationGatewayClient.GetMaturedBlockDepositsAsync(model, cancellationToken).ConfigureAwait(false);
 
             bool delayRequired = true;
 
-            if (matureBlockDeposits != null)
+            if (matureBlockDepositsResult != null && matureBlockDepositsResult.Value != null)
             {
                 // Log what we've received.
-                foreach (MaturedBlockDepositsModel maturedBlockDeposit in matureBlockDeposits)
+                foreach (MaturedBlockDepositsModel maturedBlockDeposit in matureBlockDepositsResult.Value)
                 {
                     // Order transactions in block deterministically
-                    maturedBlockDeposit.Deposits = maturedBlockDeposit.Deposits.OrderBy(x => x.Id,
-                        Comparer<uint256>.Create(DeterministicCoinOrdering.CompareUint256)).ToList();
+                    maturedBlockDeposit.Deposits = maturedBlockDeposit.Deposits.OrderBy(x => x.Id, Comparer<uint256>.Create(DeterministicCoinOrdering.CompareUint256)).ToList();
 
                     foreach (IDeposit deposit in maturedBlockDeposit.Deposits)
                     {
@@ -130,9 +129,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     }
                 }
 
-                if (matureBlockDeposits.Count > 0)
+                if (matureBlockDepositsResult.Value.Count > 0)
                 {
-                    RecordLatestMatureDepositsResult result = await this.store.RecordLatestMatureDepositsAsync(matureBlockDeposits).ConfigureAwait(false);
+                    RecordLatestMatureDepositsResult result = await this.store.RecordLatestMatureDepositsAsync(matureBlockDepositsResult.Value).ConfigureAwait(false);
 
                     // If we received a portion of blocks we can ask for new portion without any delay.
                     if (result.MatureDepositRecorded)
@@ -148,7 +147,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 }
             }
             else
-                this.logger.LogDebug("Failed to fetch matured block deposits from counter chain node! {0} doesn't respond!", this.federationGatewayClient.EndpointUrl);
+                this.logger.LogDebug("Failed to fetch matured block deposits from counter chain node. {0} doesn't respond with any block deposits: {}", this.federationGatewayClient.EndpointUrl, matureBlockDepositsResult.Message);
 
             return delayRequired;
 

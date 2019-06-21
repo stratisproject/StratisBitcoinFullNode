@@ -26,6 +26,8 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
     public sealed class MaturedBlocksProvider : IMaturedBlocksProvider
     {
+        public const string RetrieveBlockHeightHigherThanMaturedTipMessage = "The submitted block height of {0} is not mature enough. Blocks below {1} can be returned.";
+
         private readonly IConsensusManager consensusManager;
 
         private readonly IDepositExtractor depositExtractor;
@@ -48,7 +50,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
             if (retrieveFromBlockHeight > maturedTipBlockHeight)
             {
-                return SerializableResult<List<MaturedBlockDepositsModel>>.Fail($"The submitted block height of {retrieveFromBlockHeight} is not mature enough. Blocks below {maturedTipBlockHeight} can be returned.");
+                return SerializableResult<List<MaturedBlockDepositsModel>>.Fail(string.Format(RetrieveBlockHeightHigherThanMaturedTipMessage, retrieveFromBlockHeight, maturedTipBlockHeight));
             }
 
             var maturedBlockDepositModels = new List<MaturedBlockDepositsModel>();
