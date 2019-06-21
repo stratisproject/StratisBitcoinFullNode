@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
@@ -35,7 +34,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         }
 
         [Fact]
-        public async Task GetMaturedBlocksAsyncReturnsDeposits()
+        public void GetMaturedBlocksAsyncReturnsDeposits()
         {
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(10, null, true);
 
@@ -48,9 +47,9 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             ChainedHeader tip = headers.Last();
 
-            this.consensusManager.GetBlockData(Arg.Any<uint256>()).Returns(delegate(CallInfo info)
+            this.consensusManager.GetBlockData(Arg.Any<uint256>()).Returns(delegate (CallInfo info)
             {
-                uint256 hash = (uint256) info[0];
+                uint256 hash = (uint256)info[0];
                 ChainedHeaderBlock block = blocks.Single(x => x.ChainedHeader.HashBlock == hash);
                 return block;
             });
@@ -63,7 +62,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             // Makes every block a matured block.
             var maturedBlocksProvider = new MaturedBlocksProvider(this.loggerFactory, this.depositExtractor, this.consensusManager);
 
-            Result<List<MaturedBlockDepositsModel>> depositsResult = await maturedBlocksProvider.GetMaturedDepositsAsync(0, 10);
+            Result<List<MaturedBlockDepositsModel>> depositsResult = maturedBlocksProvider.GetMaturedDeposits(0, 10);
 
             // Expect the number of matured deposits to equal the number of blocks.
             Assert.Equal(10, depositsResult.Value.Count);

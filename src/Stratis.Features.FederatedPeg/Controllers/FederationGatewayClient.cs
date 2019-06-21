@@ -12,7 +12,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
     /// <summary>Rest client for <see cref="FederationGatewayController"/>.</summary>
     public interface IFederationGatewayClient : IRestApiClientBase
     {
-        /// <summary><see cref="FederationGatewayController.GetMaturedBlockDepositsAsync"/></summary>
+        /// <summary><see cref="FederationGatewayController.GetMaturedBlockDeposits"/></summary>
         Task<List<MaturedBlockDepositsModel>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model, CancellationToken cancellation = default(CancellationToken));
     }
 

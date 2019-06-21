@@ -101,7 +101,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         }
 
         [Fact]
-        public async Task GetMaturedBlockDeposits_Fails_When_Block_Not_In_Chain_Async()
+        public void GetMaturedBlockDeposits_Fails_When_Block_Not_In_Chain()
         {
             FederationGatewayController controller = this.CreateController();
 
@@ -109,11 +109,12 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
             this.consensusManager.Tip.Returns(tip);
 
-            this.consensusManager.GetBlockData(Arg.Any<uint256>()).ReturnsForAnyArgs((x) => {
+            this.consensusManager.GetBlockData(Arg.Any<uint256>()).ReturnsForAnyArgs((x) =>
+            {
                 return new ChainedHeaderBlock(new Block(), tip);
             });
 
-            IActionResult result = await controller.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(1, 1000)).ConfigureAwait(false);
+            IActionResult result = controller.GetMaturedBlockDeposits(new MaturedBlockRequestModel(1, 1000));
 
             result.Should().BeOfType<ErrorResult>();
 
@@ -132,7 +133,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         }
 
         [Fact]
-        public async Task GetMaturedBlockDeposits_Fails_When_Block_Height_Greater_Than_Minimum_Deposit_Confirmations_Async()
+        public void GetMaturedBlockDeposits_Fails_When_Block_Height_Greater_Than_Minimum_Deposit_Confirmations()
         {
             ChainedHeader tip = ChainedHeadersHelper.CreateConsecutiveHeaders(5, null, true).Last();
             this.consensusManager.Tip.Returns(tip);
@@ -149,7 +150,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             ChainedHeader earlierBlock = tip.GetAncestor(maturedHeight + 1);
 
             // Mature height = 2 (Chain header height (4) - Minimum deposit confirmations (2))
-            IActionResult result = await controller.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(earlierBlock.Height, 1000)).ConfigureAwait(false);
+            IActionResult result = controller.GetMaturedBlockDeposits(new MaturedBlockRequestModel(earlierBlock.Height, 1000));
 
             // Block height (3) > Mature height (2) - returns error message
             result.Should().BeOfType<ErrorResult>();
@@ -169,7 +170,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         }
 
         [Fact]
-        public async Task GetMaturedBlockDeposits_Gets_All_Matured_Block_Deposits_Async()
+        public void GetMaturedBlockDeposits_Gets_All_Matured_Block_Deposits()
         {
             ChainedHeader tip = ChainedHeadersHelper.CreateConsecutiveHeaders(10, null, true).Last();
             this.consensusManager.Tip.Returns(tip);
@@ -188,11 +189,12 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
                 depositExtractorCallCount++;
             });
 
-            this.consensusManager.GetBlockData(Arg.Any<uint256>()).ReturnsForAnyArgs((x) => {
+            this.consensusManager.GetBlockData(Arg.Any<uint256>()).ReturnsForAnyArgs((x) =>
+            {
                 return new ChainedHeaderBlock(new Block(), earlierBlock);
             });
 
-            IActionResult result = await controller.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(earlierBlock.Height, 1000)).ConfigureAwait(false);
+            IActionResult result =  controller.GetMaturedBlockDeposits(new MaturedBlockRequestModel(earlierBlock.Height, 1000));
 
             result.Should().BeOfType<JsonResult>();
 

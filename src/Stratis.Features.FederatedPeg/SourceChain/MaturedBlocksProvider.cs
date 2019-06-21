@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
@@ -21,7 +20,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         /// <param name="maxBlocks">The number of blocks to retrieve.</param>
         /// <returns>A list of mature block deposits.</returns>
         /// <exception cref="InvalidOperationException">Thrown if the blocks are not mature or not found.</exception>
-        Task<Result<List<MaturedBlockDepositsModel>>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks);
+        Result<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int blockHeight, int maxBlocks);
     }
 
     public class MaturedBlocksProvider : IMaturedBlocksProvider
@@ -41,7 +40,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         }
 
         /// <inheritdoc />
-        public async Task<Result<List<MaturedBlockDepositsModel>>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks)
+        public Result<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int blockHeight, int maxBlocks)
         {
             ChainedHeader consensusTip = this.consensusManager.Tip;
 
