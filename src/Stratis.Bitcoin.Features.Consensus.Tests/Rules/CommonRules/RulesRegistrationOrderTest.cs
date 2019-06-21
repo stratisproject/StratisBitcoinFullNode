@@ -74,10 +74,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             List<IIntegrityValidationConsensusRule> integrityValidationRules = network.Consensus.IntegrityValidationRules;
 
-            integrityValidationRules.Count.Should().Be(3);
-            integrityValidationRules[0].Should().BeOfType<BlockMerkleRootRule>();
-            integrityValidationRules[1].Should().BeOfType<PosBlockSignatureRepresentationRule>();
-            integrityValidationRules[2].Should().BeOfType<PosBlockSignatureRule>();
+            integrityValidationRules.Count.Should().Be(4);
+            integrityValidationRules[0].Should().BeOfType<PosTransactionsOrderRule>();
+            integrityValidationRules[1].Should().BeOfType<BlockMerkleRootRule>();
+            integrityValidationRules[2].Should().BeOfType<PosBlockSignatureRepresentationRule>();
+            integrityValidationRules[3].Should().BeOfType<PosBlockSignatureRule>();
 
             List<IPartialValidationConsensusRule> partialValidationRules = network.Consensus.PartialValidationRules;
 

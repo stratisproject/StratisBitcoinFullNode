@@ -140,9 +140,10 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
                 {
+                    new PosTransactionsOrderRule(),
                     new BlockMerkleRootRule(),
                     new PosBlockSignatureRepresentationRule(),
-                    new PosBlockSignatureRule(),
+                    new PosBlockSignatureRule()
                 };
 
                 consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
