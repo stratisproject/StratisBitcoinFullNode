@@ -95,9 +95,9 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             });
 
             return new MaturedBlocksProvider(
-                this.loggerFactory,
+                this.consensusManager,
                 this.depositExtractor,
-                this.consensusManager);
+                this.loggerFactory);
         }
 
         [Fact]

@@ -23,19 +23,18 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         Result<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int blockHeight, int maxBlocks);
     }
 
-    public class MaturedBlocksProvider : IMaturedBlocksProvider
+    public sealed class MaturedBlocksProvider : IMaturedBlocksProvider
     {
-        private readonly IDepositExtractor depositExtractor;
-
         private readonly IConsensusManager consensusManager;
+
+        private readonly IDepositExtractor depositExtractor;
 
         private readonly ILogger logger;
 
-        public MaturedBlocksProvider(ILoggerFactory loggerFactory, IDepositExtractor depositExtractor, IConsensusManager consensusManager)
+        public MaturedBlocksProvider(IConsensusManager consensusManager, IDepositExtractor depositExtractor, ILoggerFactory loggerFactory)
         {
-            this.depositExtractor = depositExtractor;
             this.consensusManager = consensusManager;
-
+            this.depositExtractor = depositExtractor;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
