@@ -323,7 +323,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 // The cache doesn't really lend itself to handling a reorg very well.
                 // Therefore, we leverage LiteDb's indexing capabilities to tell us
                 // which records are for the affected blocks.
-                // TODO: May also be efficient to run ProcessBlocks with inverted deposit flags instead, depending on size of reorg
 
                 List<string> affectedAddresses = this.addressIndexRepository.GetAddressesHigherThanHeight(rewindToHeader.Height);
 
