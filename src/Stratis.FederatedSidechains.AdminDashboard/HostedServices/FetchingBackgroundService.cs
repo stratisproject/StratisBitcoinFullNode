@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -31,17 +32,16 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
         private readonly IHubContext<DataUpdaterHub> updaterHub;
         private readonly ILogger<FetchingBackgroundService> logger;
         private readonly ApiRequester apiRequester;
-
         private bool successfullyBuilt;
         private Timer dataRetrieverTimer;
 
-        public FetchingBackgroundService(IDistributedCache distributedCache, IOptions<DefaultEndpointsSettings> defaultEndpointsSettings, IHubContext<DataUpdaterHub> hubContext, ILogger<FetchingBackgroundService> logger, ApiRequester apiRequester)
+        public FetchingBackgroundService(IDistributedCache distributedCache, IOptions<DefaultEndpointsSettings> defaultEndpointsSettings, IHubContext<DataUpdaterHub> hubContext, ILogger<FetchingBackgroundService> logger, ApiRequester apiRequester, IConfiguration configuration)
         {
-            this.defaultEndpointsSettings = defaultEndpointsSettings.Value;
             this.distributedCache = distributedCache;
             this.updaterHub = hubContext;
             this.logger = logger;
             this.apiRequester = apiRequester;
+            this.defaultEndpointsSettings = configuration.GetSection("DefaultEndpoints").Get<DefaultEndpointsSettings>();
         }
 
         /// <summary>
