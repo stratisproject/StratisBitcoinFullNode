@@ -120,30 +120,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             Assert.Equal(ConsensusErrors.PHCoinstakeMissmatch.Code, expectedEx.ConsensusError.Code);
         }
 
-        [Fact]
-        public void FailesIfPowHeaderIsGivenAfterLastCheckpoint()
-        {
-            var validationContext = new ValidationContext();
-
-            var header = new BlockHeader();
-
-            validationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.engine.Checkpoints.GetLastCheckpointHeight() + this.network.Consensus.LastPOWBlock + 1);
-
-            ConsensusErrorException expectedEx = null;
-
-            try
-            {
-                this.rule.Run(new RuleContext(validationContext, DateTimeOffset.Now));
-            }
-            catch (ConsensusErrorException e)
-            {
-                expectedEx = e;
-            }
-
-            Assert.NotNull(expectedEx);
-            Assert.Equal(ConsensusErrors.ProofOfWorkTooHigh.Code, expectedEx.ConsensusError.Code);
-        }
-
         private Transaction GetRandomTx()
         {
             var tx = new Transaction();
