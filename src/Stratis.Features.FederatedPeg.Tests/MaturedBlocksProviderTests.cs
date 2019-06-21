@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
 using NSubstitute.Core;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
@@ -62,7 +63,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             // Makes every block a matured block.
             var maturedBlocksProvider = new MaturedBlocksProvider(this.consensusManager, this.depositExtractor, this.loggerFactory);
 
-            Result<List<MaturedBlockDepositsModel>> depositsResult = maturedBlocksProvider.GetMaturedDeposits(0, 10);
+            SerializableResult<List<MaturedBlockDepositsModel>> depositsResult = maturedBlocksProvider.GetMaturedDeposits(0, 10);
 
             // Expect the number of matured deposits to equal the number of blocks.
             Assert.Equal(10, depositsResult.Value.Count);

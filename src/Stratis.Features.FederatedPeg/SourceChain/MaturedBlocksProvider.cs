@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Primitives;
@@ -20,7 +21,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         /// <param name="amountOfBlocksToRetrieve">The number of blocks to retrieve.</param>
         /// <returns>A list of mature block deposits.</returns>
         /// <exception cref="InvalidOperationException">Thrown if the blocks are not mature or not found.</exception>
-        Result<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int retrieveFromBlockHeight, int amountOfBlocksToRetrieve);
+        SerializableResult<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int retrieveFromBlockHeight, int amountOfBlocksToRetrieve);
     }
 
     public sealed class MaturedBlocksProvider : IMaturedBlocksProvider
@@ -39,7 +40,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         }
 
         /// <inheritdoc />
-        public Result<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int retrieveFromBlockHeight, int amountOfBlocksToRetrieve)
+        public SerializableResult<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int retrieveFromBlockHeight, int amountOfBlocksToRetrieve)
         {
             ChainedHeader consensusTip = this.consensusManager.Tip;
 
@@ -47,7 +48,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
             if (retrieveFromBlockHeight > maturedTipBlockHeight)
             {
-                return Result<List<MaturedBlockDepositsModel>>.Fail($"The submitted block height of {retrieveFromBlockHeight} is not mature enough. Blocks below {maturedTipBlockHeight} can be returned.");
+                return SerializableResult<List<MaturedBlockDepositsModel>>.Fail($"The submitted block height of {retrieveFromBlockHeight} is not mature enough. Blocks below {maturedTipBlockHeight} can be returned.");
             }
 
             var maturedBlockDepositModels = new List<MaturedBlockDepositsModel>();
@@ -83,7 +84,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                 }
             }
 
-            return Result<List<MaturedBlockDepositsModel>>.Ok(maturedBlockDepositModels);
+            return SerializableResult<List<MaturedBlockDepositsModel>>.Ok(maturedBlockDepositModels);
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -70,7 +71,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
 
             try
             {
-                Result<List<MaturedBlockDepositsModel>> depositsResult = this.maturedBlocksProvider.GetMaturedDeposits(blockRequest.BlockHeight, blockRequest.MaxBlocksToSend);
+                SerializableResult<List<MaturedBlockDepositsModel>> depositsResult = this.maturedBlocksProvider.GetMaturedDeposits(blockRequest.BlockHeight, blockRequest.MaxBlocksToSend);
 
                 if (depositsResult.IsSuccess)
                 {
