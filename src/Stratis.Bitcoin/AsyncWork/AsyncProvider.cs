@@ -12,7 +12,7 @@ using TracerAttributes;
 namespace Stratis.Bitcoin.AsyncWork
 {
     /// <summary>
-    /// Provides functionality for creating and tracking asynchronous operations that happens in background.
+    /// Provides functionality for creating and tracking asynchronous operations that happen in the background.
     /// </summary>
     public partial class AsyncProvider : IAsyncProvider
     {
@@ -314,6 +314,27 @@ namespace Stratis.Bitcoin.AsyncWork
             sb.AppendLine("-".PadRight(this.benchmarkColumnsDefinition.Sum(column => column.Width), '-'));
 
             return sb.ToString();
+        }
+
+        /// <inheritdoc />
+        [NoTrace]
+        public List<(string loopName, TaskStatus status)> GetAll()
+        {
+            var taskInformation = new List<AsyncTaskInfo>();
+
+            lock (this.lockAsyncDelegates)
+            {
+                taskInformation.AddRange(this.asyncDelegates.Values);
+            }
+
+            lock (this.lockRegisteredTasks)
+            {
+                taskInformation.AddRange(this.registeredTasks.Values);
+            }
+
+            List<(string, TaskStatus)> runningTasks = taskInformation.Select(a => (a.FriendlyName, a.Status)).OrderBy(a => a.Item1).ToList();
+
+            return runningTasks;
         }
 
         private void OnRegisteredTaskCompleted(Task task)
