@@ -16,11 +16,11 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         /// <summary>
         /// Retrieves deposits for the indicated blocks from the block repository and throws an error if the blocks are not mature enough.
         /// </summary>
-        /// <param name="blockHeight">The block height at which to start retrieving blocks.</param>
-        /// <param name="maxBlocks">The number of blocks to retrieve.</param>
+        /// <param name="retrieveFromBlockHeight">The block height at which to start retrieving blocks.</param>
+        /// <param name="amountOfBlocksToRetrieve">The number of blocks to retrieve.</param>
         /// <returns>A list of mature block deposits.</returns>
         /// <exception cref="InvalidOperationException">Thrown if the blocks are not mature or not found.</exception>
-        Result<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int blockHeight, int maxBlocks);
+        Result<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int retrieveFromBlockHeight, int amountOfBlocksToRetrieve);
     }
 
     public sealed class MaturedBlocksProvider : IMaturedBlocksProvider
@@ -39,26 +39,24 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         }
 
         /// <inheritdoc />
-        public Result<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int blockHeight, int maxBlocks)
+        public Result<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int retrieveFromBlockHeight, int amountOfBlocksToRetrieve)
         {
             ChainedHeader consensusTip = this.consensusManager.Tip;
 
-            int matureTipHeight = (consensusTip.Height - (int)this.depositExtractor.MinimumDepositConfirmations);
+            int maturedTipBlockHeight = (consensusTip.Height - (int)this.depositExtractor.MinimumDepositConfirmations);
 
-            if (blockHeight > matureTipHeight)
+            if (retrieveFromBlockHeight > maturedTipBlockHeight)
             {
-                // We need to return a Result type here to explicitly indicate failure and the reason for failure.
-                // This is an expected condition so we can avoid throwing an exception here.
-                return Result<List<MaturedBlockDepositsModel>>.Fail($"Block height {blockHeight} submitted is not mature enough. Blocks less than a height of {matureTipHeight} can be processed.");
+                return Result<List<MaturedBlockDepositsModel>>.Fail($"The submitted block height of {retrieveFromBlockHeight} is not mature enough. Blocks below {maturedTipBlockHeight} can be returned.");
             }
 
-            var maturedBlocks = new List<MaturedBlockDepositsModel>();
+            var maturedBlockDepositModels = new List<MaturedBlockDepositsModel>();
 
             // Half of the timeout. We will also need time to convert it to json.
             int maxTimeCollectionCanTakeMs = RestApiClientBase.TimeoutMs / 2;
             var cancellation = new CancellationTokenSource(maxTimeCollectionCanTakeMs);
 
-            for (int i = blockHeight; (i <= matureTipHeight) && (i < blockHeight + maxBlocks); i++)
+            for (int i = retrieveFromBlockHeight; (i <= maturedTipBlockHeight) && (i < retrieveFromBlockHeight + amountOfBlocksToRetrieve); i++)
             {
                 ChainedHeader currentHeader = consensusTip.GetAncestor(i);
 
@@ -76,16 +74,16 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                 if (maturedBlockDeposits == null)
                     throw new InvalidOperationException($"Unable to get deposits for block at height {currentHeader.Height}");
 
-                maturedBlocks.Add(maturedBlockDeposits);
+                maturedBlockDepositModels.Add(maturedBlockDeposits);
 
-                if (cancellation.IsCancellationRequested && maturedBlocks.Count > 0)
+                if (cancellation.IsCancellationRequested && maturedBlockDepositModels.Count > 0)
                 {
                     this.logger.LogDebug("Stop matured blocks collection because it's taking too long. Send what we've collected.");
                     break;
                 }
             }
 
-            return Result<List<MaturedBlockDepositsModel>>.Ok(maturedBlocks);
+            return Result<List<MaturedBlockDepositsModel>>.Ok(maturedBlockDepositModels);
         }
     }
 }
