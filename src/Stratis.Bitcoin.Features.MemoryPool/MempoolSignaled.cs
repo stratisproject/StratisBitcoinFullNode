@@ -122,7 +122,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     return;
 
                 // Announce the blocks on each nodes behavior which supports relaying.
-                IEnumerable<MempoolBehavior> behaviors = peers.Where(x => x.PeerVersion?.Relay ?? false).Select(x => x.Behavior<MempoolBehavior>());
+                IEnumerable<MempoolBehavior> behaviors = peers.Where(x => x.PeerVersion?.Relay ?? false)
+                                                              .Select(x => x.Behavior<MempoolBehavior>())
+                                                              .Where(x => x != null)
+                                                              .ToList();
                 foreach (MempoolBehavior behavior in behaviors)
                     await behavior.SendTrickleAsync().ConfigureAwait(false);
             },

@@ -152,15 +152,18 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.MessageProducer.PushMessage(incomingMessage);
                 }
             }
-            catch (OperationCanceledException)
-            {
-                this.logger.LogTrace("Receiving cancelled.");
-                this.peer.Disconnect("Receiving cancelled.");
-            }
             catch (Exception ex)
             {
-                this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
-                this.peer.Disconnect("Unexpected failure while waiting for a message", ex);
+                if ((ex is IOException) || (ex is OperationCanceledException) || (ex is ObjectDisposedException))
+                {
+                    this.logger.LogDebug("Receiving cancelled.");
+                    this.peer.Disconnect("Receiving cancelled.");
+                }
+                else
+                {
+                    this.logger.LogDebug("Exception occurred: '{0}'", ex.ToString());
+                    this.peer.Disconnect("Unexpected failure while waiting for a message", ex);
+                }
             }
         }
 
@@ -284,29 +287,32 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             using (await this.writeLock.LockAsync(cancellation).ConfigureAwait(false))
             {
-                if (this.stream == null)
+                NetworkStream innerStream = this.stream;
+
+                if (innerStream == null)
                 {
-                    this.logger.LogTrace("Connection has been terminated.");
+                    this.logger.LogDebug("Connection has been terminated.");
                     this.logger.LogTrace("(-)[NO_STREAM]");
                     throw new OperationCanceledException();
                 }
 
                 try
                 {
-                    await this.stream.WriteAsync(data, 0, data.Length, cancellation).ConfigureAwait(false);
+                    await innerStream.WriteAsync(data, 0, data.Length, cancellation).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
-                    if ((e is IOException) || (e is OperationCanceledException))
+                    if ((e is IOException) || (e is OperationCanceledException) || (e is ObjectDisposedException))
                     {
                         this.logger.LogTrace("Connection has been terminated.");
                         if (e is IOException) this.logger.LogTrace("(-)[IO_EXCEPTION]");
+                        else if (e is ObjectDisposedException) this.logger.LogTrace("(-)[DISPOSED]");
                         else this.logger.LogTrace("(-)[CANCELLED]");
                         throw new OperationCanceledException();
                     }
                     else
                     {
-                        this.logger.LogTrace("Exception occurred: {0}", e.ToString());
+                        this.logger.LogDebug("Exception occurred: {0}", e.ToString());
                         this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
                         throw;
                     }
@@ -402,9 +408,18 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <exception cref="OperationCanceledException">Thrown if the operation was cancelled or the end of the stream was reached.</exception>
         private async Task ReadBytesAsync(byte[] buffer, int offset, int bytesToRead, CancellationToken cancellation = default(CancellationToken))
         {
+            NetworkStream innerStream = this.stream;
+
+            if (innerStream == null)
+            {
+                this.logger.LogDebug("Connection has been terminated.");
+                this.logger.LogTrace("(-)[NO_STREAM]");
+                throw new OperationCanceledException();
+            }
+
             while (bytesToRead > 0)
             {
-                int chunkSize = await this.stream.ReadAsync(buffer, offset, bytesToRead, cancellation).ConfigureAwait(false);
+                int chunkSize = await innerStream.ReadAsync(buffer, offset, bytesToRead, cancellation).ConfigureAwait(false);
                 if (chunkSize == 0)
                 {
                     this.logger.LogTrace("(-)[STREAM_END]");
@@ -424,6 +439,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>Binary message received from the connected counterparty.</returns>
         /// <exception cref="OperationCanceledException">Thrown if the operation was cancelled or the end of the stream was reached.</exception>
         /// <exception cref="FormatException">Thrown if the incoming message is too big.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown if the connection has been disposed.</exception>
+        /// <exception cref="IOException">Thrown if the I/O operation has been aborted because of either a thread exit or an application request.</exception>
         /// <remarks>
         /// TODO: Currently we rely on <see cref="Message.ReadNext(System.IO.Stream, Network, ProtocolVersion, CancellationToken, byte[], out PerformanceCounter)"/>
         /// for parsing the message from binary data. That method need stream to read from, so to achieve that we create a memory stream from our data,

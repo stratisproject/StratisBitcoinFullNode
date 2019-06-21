@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using DBreeze;
 using DBreeze.DataTypes;
@@ -324,7 +325,22 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 if (this.TxIndex)
                 {
+                    int rowCount = 0;
                     // Insert transactions to database.
+
+                    var totalBlocksCount = dbreezeTransaction.Count(BlockTableName);
+
+                    var warningMessage = new StringBuilder();
+                    warningMessage.AppendLine("".PadRight(59, '=') + " W A R N I N G " + "".PadRight(59, '='));
+                    warningMessage.AppendLine();
+                    warningMessage.AppendLine($"Starting ReIndex process on a total of {totalBlocksCount} blocks.");
+                    warningMessage.AppendLine("The operation could take a long time, please don't stop it.");
+                    warningMessage.AppendLine();
+                    warningMessage.AppendLine("".PadRight(133, '='));
+                    warningMessage.AppendLine();
+
+                    this.logger.LogInformation(warningMessage.ToString());
+
                     IEnumerable<Row<byte[], byte[]>> blockRows = dbreezeTransaction.SelectForward<byte[], byte[]>(BlockTableName);
                     foreach (Row<byte[], byte[]> blockRow in blockRows)
                     {
@@ -333,7 +349,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         {
                             dbreezeTransaction.Insert<byte[], byte[]>(TransactionTableName, transaction.GetHash().ToBytes(), block.GetHash().ToBytes());
                         }
+
+                        // inform the user about the ongoing operation
+                        if (++rowCount % 1000 == 0)
+                        {
+                            this.logger.LogInformation("Reindex in process... {0}/{1} blocks processed.", rowCount, totalBlocksCount);
+                        }
                     }
+
+                    this.logger.LogInformation("Reindex completed successfully.");
                 }
                 else
                 {

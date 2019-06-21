@@ -177,8 +177,14 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 Sender = sender ?? this.MinerAddress.Address,
                 WalletName = this.WalletName
             };
-            JsonResult response = (JsonResult)this.smartContractsController.BuildAndSendCreateSmartContractTransaction(request);
-            return (BuildCreateContractTransactionResponse)response.Value;
+
+            IActionResult result = this.smartContractsController.BuildAndSendCreateSmartContractTransaction(request);
+            if (result is JsonResult response)
+            {
+                return (BuildCreateContractTransactionResponse)response.Value; 
+            }
+
+            return null;
         }
 
         /// <summary>

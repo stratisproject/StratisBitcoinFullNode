@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
@@ -114,7 +115,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
                     return this.NotFound("No federation wallet found.");
                 }
 
-                (Money ConfirmedAmount, Money UnConfirmedAmount) result = wallet.GetSpendableAmount();
+                (Money ConfirmedAmount, Money UnConfirmedAmount) result = this.walletManager.GetSpendableAmount();
 
                 var balance = new AccountBalanceModel
                 {
@@ -202,9 +203,20 @@ namespace Stratis.Features.FederatedPeg.Controllers
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
                 }
 
-                this.walletManager.EnableFederationWallet(request.Password, request.Mnemonic, request.Passphrase);
+                // Enabling the federation wallet requires the federation wallet.
+                for (int timeOutSeconds = request.TimeoutSeconds ?? 0; timeOutSeconds >= 0; timeOutSeconds--)
+                {
+                    if (this.walletManager.GetWallet() != null)
+                    {
+                        this.walletManager.EnableFederationWallet(request.Password, request.Mnemonic, request.Passphrase);
 
-                return this.Ok();
+                        return this.Ok();
+                    }
+
+                    Thread.Sleep(1000);
+                }
+
+                return this.NotFound("No federation wallet found.");
             }
             catch (Exception e)
             {

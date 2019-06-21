@@ -19,6 +19,7 @@ using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -862,11 +863,15 @@ namespace Stratis.Bitcoin.Consensus
 
             if (validationContext.Error != null)
             {
-                List<int> badPeers;
+                var badPeers = new List<int>();
 
-                lock (this.peerLock)
+                // Ban the peers only in case block is invalid and not temporary rejected.
+                if (validationContext.RejectUntil == null)
                 {
-                    badPeers = this.chainedHeaderTree.PartialOrFullValidationFailed(blockToConnect.ChainedHeader);
+                    lock (this.peerLock)
+                    {
+                        badPeers = this.chainedHeaderTree.PartialOrFullValidationFailed(blockToConnect.ChainedHeader);
+                    }
                 }
 
                 var failureResult = new ConnectBlocksResult(false)
@@ -1329,6 +1334,7 @@ namespace Stratis.Bitcoin.Consensus
             return isConsideredSynced;
         }
 
+        [NoTrace]
         private void AddInlineStats(StringBuilder log)
         {
             lock (this.peerLock)
@@ -1355,6 +1361,7 @@ namespace Stratis.Bitcoin.Consensus
             benchLog.AppendLine(this.performanceCounter.TakeSnapshot().ToString());
         }
 
+        [NoTrace]
         private void AddComponentStats(StringBuilder log)
         {
             log.AppendLine();
@@ -1381,6 +1388,7 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Formats the big number.</summary>
         /// <remarks><c>123456789</c> => <c>123,456,789</c>.</remarks>
+        [NoTrace]
         private string FormatBigNumber(long number)
         {
             return $"{number:#,##0}";

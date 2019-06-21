@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.Signals;
@@ -53,6 +54,15 @@ namespace Stratis.Bitcoin.AsyncWork
         IAsyncLoop CreateAndRunAsyncLoopUntil(string name, CancellationToken cancellation, Func<bool> condition, Action action, Action<Exception> onException, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
 
         /// <summary>
+        /// Registers the passed task to be able to monitor it's health status.
+        /// It doesn't perform any schedule on the task, it's all up to the caller to handle the task life-cycle.
+        /// </summary>
+        /// <param name="name">The name assigned to the task.</param>
+        /// <param name="taskToRegister">The task to register.</param>
+        /// <returns>The same task passed as argument</returns>
+        Task RegisterTask(string name, Task taskToRegister);
+
+        /// <summary>
         /// Determines whether an <see cref="IAsyncDelegateDequeuer{T}" /> with the specified name is running.
         /// </summary>
         /// <param name="name">The name.</param>
@@ -72,7 +82,7 @@ namespace Stratis.Bitcoin.AsyncWork
         ///   <c>true</c> if an <see cref="IAsyncLoop" /> with the specified name is currently running, otherwise, <c>false</c>.
         /// </returns>
         /// <remarks>
-        /// Names are not unique, consider adding prefixes to names when <see cref="IAsyncLoop" /> are transient and does not act like singletons. This method is mostly used for tests.
+        /// Names are not guaranteed to be unique, consider adding prefixes to names when <see cref="IAsyncLoop" /> are transient and does not act like singletons. This method is mostly used for tests.
         /// </remarks>
         bool IsAsyncLoopRunning(string name);
 
@@ -84,14 +94,26 @@ namespace Stratis.Bitcoin.AsyncWork
         ///   <c>true</c> if the specified <see cref="IAsyncDelegate" /> is currently running, otherwise, <c>false</c>.
         /// </returns>
         /// <remarks>
-        /// Names are not unique, consider adding prefixes to names when loops are transient and does not act like singletons.
+        /// Names are not guaranteed to be unique, consider adding prefixes to names when loops are transient and does not act like singletons.
         /// This method is mostly used for tests.
         /// state can be either of type <see cref="IAsyncDelegateDequeuer{T}" /> or <see cref="IAsyncLoop" />
         /// </remarks>
         bool IsAsyncDelegateDequeuerRunning(IAsyncDelegate asyncDelegate);
 
         /// <summary>
-        /// returns statistics about running or faulted async loops.
+        /// Determines whether a registered <see cref="Task" /> with the specified name is running.
+        /// </summary>
+        /// <param name="name">The friendly name of the task.</param>
+        /// <returns>
+        ///   <c>true</c> if a <see cref="Task" /> with the specified name is currently running, otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// Names are not guaranteed to be unique, consider adding prefixes to names when <see cref="IAsyncLoop" /> are transient and does not act like singletons. This method is mostly used for tests.
+        /// </remarks>
+        bool IsRegisteredTaskRunning(string name);
+
+        /// <summary>
+        /// Returns statistics about running or faulted async loops.
         /// </summary>
         /// <param name="faultyOnly">if set to <c>true</c> dump information only for loops in faulty state.</param>
         string GetStatistics(bool faultyOnly);
@@ -104,5 +126,10 @@ namespace Stratis.Bitcoin.AsyncWork
         /// Having a single entry point for COMMON SERVICES allows us to speed up changes.
         /// </summary>
         ISignals Signals { get; }
+
+        /// <summary>
+        /// Returns a list of friendly names of all loops, as well as their current status.
+        /// </summary>
+        List<(string loopName, TaskStatus status)> GetAll();
     }
 }

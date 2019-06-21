@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
     public static class LoggingConfiguration
     {
         /// <summary>Width of a column for pretty console/log outputs.</summary>
-        public const int ColumnLength = 20;
+        public const int ColumnLength = 24;
 
         /// <summary>Currently used node's log settings.</summary>
         private static LogSettings logSettings;
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
 
                 if (debugFileTarget.ArchiveFileName != null)
                 {
-                    string currentArchive = debugFileTarget.ArchiveFileName.Render(new LogEventInfo {TimeStamp = DateTime.UtcNow});
+                    string currentArchive = debugFileTarget.ArchiveFileName.Render(new LogEventInfo { TimeStamp = DateTime.UtcNow });
                     debugFileTarget.ArchiveFileName = Path.Combine(folder.LogPath, currentArchive);
                 }
             }
@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
             LogManager.Configuration.AddTarget(mainTarget);
 
             // Default logging level is Info for all components.
-            var defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Bitcoin)}.*", settings.LogLevel, mainTarget);
+            var defaultRule = new LoggingRule($"{nameof(Stratis)}.*", settings.LogLevel, mainTarget);
 
             if (settings.DebugArgs.Any() && settings.DebugArgs[0] != "1")
             {
