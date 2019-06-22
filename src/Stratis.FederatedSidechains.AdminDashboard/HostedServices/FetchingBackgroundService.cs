@@ -101,9 +101,9 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                 {
                     Status = true,
                     IsCacheBuilt = true,
-                    MainchainWalletAddress = stratisFederationInfo.Content.multisigAddress,
-                    SidechainWalletAddress = sidechainFederationInfo.Content.multisigAddress,
-                    MiningPublicKeys = stratisFederationInfo.Content.federationMultisigPubKeys,
+                    MainchainWalletAddress = stratisFederationInfo?.Content?.multisigAddress ?? "Unknown",
+                    SidechainWalletAddress = sidechainFederationInfo?.Content?.multisigAddress ?? "Unknown",
+                    MiningPublicKeys = stratisFederationInfo?.Content?.federationMultisigPubKeys ?? new JArray(),
                     StratisNode = new StratisNodeModel
                     {
                         WebAPIUrl = UriHelper.BuildUri(this.defaultEndpointsSettings.StratisNode, "/api").ToString(),
@@ -115,8 +115,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                         BlockHeight = stratisStatus.Content.blockStoreHeight,
                         MempoolSize = stratisRawmempool.Content.Count,
                         History = stratisWalletHistory.Content,
-                        ConfirmedBalance = (double)stratisWalletBalances.Content.balances[0].amountConfirmed / 100000000,
-                        UnconfirmedBalance = (double)stratisWalletBalances.Content.balances[0].amountUnconfirmed / 100000000,
+                        ConfirmedBalance = (double)(stratisWalletBalances.Content?.balances[0].amountConfirmed ?? 0) / 100000000,
+                        UnconfirmedBalance = (double)(stratisWalletBalances.Content?.balances[0].amountUnconfirmed ?? 0) / 100000000,
                         CoinTicker = stratisStatus.Content.coinTicker ?? "STRAT",
                         LogRules = JsonConvert.DeserializeObject<List<LogRule>>(stratisLogRules.Content.ToString())
                     },
@@ -131,8 +131,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                         BlockHeight = sidechainStatus.Content.blockStoreHeight,
                         MempoolSize = sidechainRawmempool.Content.Count,
                         History = sidechainWalletHistory.Content,
-                        ConfirmedBalance = (double)sidechainWalletBalances.Content.balances[0].amountConfirmed / 100000000,
-                        UnconfirmedBalance = (double)sidechainWalletBalances.Content.balances[0].amountUnconfirmed / 100000000,
+                        ConfirmedBalance = (double)(sidechainWalletBalances.Content?.balances[0].amountConfirmed ?? 0) / 100000000,
+                        UnconfirmedBalance = (double)(sidechainWalletBalances.Content?.balances[0].amountUnconfirmed ?? 0) / 100000000,
                         CoinTicker = sidechainStatus.Content.coinTicker ?? "STRAT",
                         LogRules = JsonConvert.DeserializeObject<List<LogRule>>(sidechainLogRules.Content.ToString())
                     }
@@ -158,16 +158,30 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
             foreach (dynamic peer in (JArray)stratisStatus.Content.outboundPeers)
             {
                 var endpointRegex = new Regex("\\[([A-Za-z0-9:.]*)\\]:([0-9]*)");
-                dynamic endpointMatches = endpointRegex.Matches(Convert.ToString(peer.remoteSocketEndpoint));
+                MatchCollection endpointMatches = endpointRegex.Matches(Convert.ToString(peer.remoteSocketEndpoint));
                 var endpoint = new IPEndPoint(IPAddress.Parse(endpointMatches[0].Groups[1].Value), int.Parse(endpointMatches[0].Groups[2].Value));
-                (Convert.ToString(federationInfo.Content.endpoints).Contains($"{endpoint.Address.MapToIPv4().ToString()}:{endpointMatches[0].Groups[2].Value}") ? federationMembers : peers)
-                .Add(new Peer()
+
+                string fedEndpoints = federationInfo?.Content?.endpoints?.ToString();
+                
+                if (!string.IsNullOrEmpty(fedEndpoints) && endpointMatches.Count > 0 && endpointMatches[0].Groups.Count > 1)
                 {
-                    Endpoint = peer.remoteSocketEndpoint,
-                    Type = "outbound",
-                    Height = peer.tipHeight,
-                    Version = peer.version
-                });
+                    var peerToAdd = new Peer
+                    {
+                        Endpoint = peer.remoteSocketEndpoint,
+                        Type = "outbound",
+                        Height = peer.tipHeight,
+                        Version = peer.version
+                    };
+                    
+                    if (fedEndpoints.Contains($"{endpoint.Address.MapToIPv4()}:{endpointMatches[0].Groups[2].Value}"))
+                    {
+                        federationMembers.Add(peerToAdd);
+                    }
+                    else
+                    {
+                        peers.Add(peerToAdd);
+                    }
+                }
             }
             foreach (dynamic peer in (JArray)stratisStatus.Content.inboundPeers)
             {
@@ -221,7 +235,12 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
         /// </summary>
         /// <remarks>The ports can be changed in the future</remarks>
         /// <returns>True if the connection are succeed</returns>
-        private bool PerformNodeCheck() => this.PortCheck(new Uri(this.defaultEndpointsSettings.StratisNode)) && this.PortCheck(new Uri(this.defaultEndpointsSettings.SidechainNode));
+        private bool PerformNodeCheck()
+        {
+            var mainNodeUp = this.PortCheck(new Uri(this.defaultEndpointsSettings.StratisNode));
+            var sidechainsNodeUp = this.PortCheck(new Uri(this.defaultEndpointsSettings.SidechainNode));
+            return mainNodeUp && sidechainsNodeUp;
+        } 
 
         /// <summary>
         /// Perform a TCP port scan

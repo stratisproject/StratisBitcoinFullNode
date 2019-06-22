@@ -145,18 +145,24 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach(dynamic transaction in (JArray)ViewBag.History[0])
+                        @if (ViewBag.History != null && ViewBag.History is JArray && ((JArray)ViewBag.History).Count > 0) 
                         {
-                            <tr>
-                                <td class="text-center"><i class="material-icons text-green md-18">check_circle</i></td>
-                                <td class="text-center text-truncate"><code>@(transaction.withdrawal.targetAddress)</code></td>
-                                <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.withdrawal.id).htm" target="_blank">@transaction.withdrawal.id</a></td>
-                                <td class="text-center">@transaction.withdrawal.blockNumber</td>
-                                <td class="text-right">@(((double)transaction.withdrawal.amount/100000000).ToString("N8")) @ViewBag.StratisTicker</td>
-                            </tr>
+                            foreach(dynamic transaction in (JArray)ViewBag.History[0])
+                            {
+                                if (transaction != null) 
+                                {
+                                    <tr>
+                                        <td class="text-center"><i class="material-icons text-green md-18">check_circle</i></td>
+                                        <td class="text-center text-truncate"><code>@(transaction.withdrawal.targetAddress)</code></td>
+                                        <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.withdrawal.id).htm" target="_blank">@transaction.withdrawal.id</a></td>
+                                        <td class="text-center">@transaction.withdrawal.blockNumber</td>
+                                        <td class="text-right">@(((double)transaction.withdrawal.amount/100000000).ToString("N8")) @ViewBag.StratisTicker</td>
+                                    </tr>
+                                }
+                            }
                         }
                     </tbody>
-                    @if(((JArray)ViewBag.History[0]).Count == 0)
+                    @if(ViewBag.History == null || !(ViewBag.History is JArray) || ((JArray)ViewBag.History[0]).Count == 0)
                     {
                         <tfoot>
                             <tr>
@@ -190,18 +196,24 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach(dynamic transaction in (JArray)ViewBag.History[1])
+                        @if (ViewBag.History != null && ViewBag.History is JArray && ((JArray)ViewBag.History).Count > 0)
                         {
-                            <tr>
-                            <td class="text-center"><i class="material-icons text-green md-18">check_circle</i></td>
-                            <td class="text-center text-truncate"><code>@(transaction.withdrawal.targetAddress)</code></td>
-                            <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.withdrawal.id).htm" target="_blank">@transaction.withdrawal.id</a></td>
-                            <td class="text-center">@transaction.withdrawal.blockNumber</td>
-                            <td class="text-right">@(((double)transaction.withdrawal.amount/100000000).ToString("N8")) @ViewBag.SidechainTicker</td>
-                            </tr>
+                            foreach (dynamic transaction in (JArray) ViewBag.History[1])
+                            {
+                                if (transaction != null)
+                                {
+                                    <tr>
+                                        <td class="text-center"><i class="material-icons text-green md-18">check_circle</i></td>
+                                        <td class="text-center text-truncate"><code>@(transaction.withdrawal.targetAddress)</code></td>
+                                        <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.withdrawal.id).htm" target="_blank">@transaction.withdrawal.id</a></td>
+                                        <td class="text-center">@transaction.withdrawal.blockNumber</td>
+                                        <td class="text-right">@(((double) transaction.withdrawal.amount / 100000000).ToString("N8")) @ViewBag.SidechainTicker</td>
+                                    </tr>
+                                }
+                            }
                         }
                     </tbody>
-                    @if(((JArray)ViewBag.History[1]).Count == 0)
+                    @if(ViewBag.History == null || !(ViewBag.History is JArray) || ((JArray)ViewBag.History).Count < 2 || ((JArray)ViewBag.History[1]).Count == 0)
                     {
                         <tfoot>
                             <tr>
