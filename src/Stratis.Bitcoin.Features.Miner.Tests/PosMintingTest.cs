@@ -656,5 +656,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             throw new NotImplementedException();
         }
+
+        public void BlockModified(ChainedHeader chainTip, Block block)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

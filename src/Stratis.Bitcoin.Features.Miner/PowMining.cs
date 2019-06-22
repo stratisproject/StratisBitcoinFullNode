@@ -315,7 +315,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             block.Transactions[0].Inputs[0].ScriptSig = new Script(Op.GetPushOp(height)) + OpcodeType.OP_0; // update TxIn.ScriptSig, do not overwrite it, it can contain a WitScript
 
-            block.UpdateMerkleRoot();
+            this.blockProvider.BlockModified(previousHeader, block);
 
             return extraNonce;
         }

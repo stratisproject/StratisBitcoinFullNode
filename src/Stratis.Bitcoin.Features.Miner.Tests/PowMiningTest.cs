@@ -426,6 +426,11 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             return this.blockDefinition.Build(chainTip, script);
         }
+
+        public void BlockModified(ChainedHeader chainTip, Block block)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 
     /// <summary>

@@ -117,14 +117,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             if (network.Consensus.IsProofOfStake && network.Consensus.PosEmptyCoinbase)
             {
-                for (int i = 0; i < block.Transactions[0].Inputs.Count; i++)
-                {
-                    Script scriptPubKey = block.Transactions[0].Inputs[i].ScriptSig;
+                Script scriptPubKey = block.Transactions[0].Inputs[0].ScriptSig;
 
-                    if (IsWitnessScript(scriptPubKey))
-                    {
-                        commitScriptPubKey = scriptPubKey;
-                    }
+                var ops = scriptPubKey.ToOps();
+
+                if (ops.Count > 2 && IsWitnessScript(new Script(ops.Skip(2))))
+                {
+                    // We assume the first two ops are the BIP34 coinbase height.
+                    commitScriptPubKey = new Script(ops.Skip(2));
                 }
             }
             else
@@ -150,15 +150,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             if (network.Consensus.IsProofOfStake && network.Consensus.PosEmptyCoinbase)
             {
-                for (int i = 0; i < block.Transactions[0].Inputs.Count; i++)
-                {
-                    Script scriptPubKey = block.Transactions[0].Inputs[i].ScriptSig;
+                Script scriptPubKey = block.Transactions[0].Inputs[0].ScriptSig;
 
-                    if (IsWitnessScript(scriptPubKey))
-                    {
-                        block.Transactions[0].Outputs.RemoveAt(i);
-                        i--;
-                    }
+                var ops = scriptPubKey.ToOps();
+
+                if (ops.Count > 2 && IsWitnessScript(new Script(ops.Skip(2))))
+                {
+                    block.Transactions[0].Inputs[0].ScriptSig = new Script(ops.Take(2));
                 }
             }
             else
@@ -210,11 +208,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             if (network.Consensus.IsProofOfStake && network.Consensus.PosEmptyCoinbase)
             {
+                // For legacy POS networks where the coinbase is mandatory to be empty
+                // we store the witness commitment in the inputs script signature.
+                // However as per BIP34 this place is reserved for the block height.
+                // In this case we store the commitment after the block height op (push_op + op_0).
+
+                var currentScriptSig = block.Transactions[0].Inputs[0].ScriptSig;
+
                 // If this is a POS network and coinbase limitation we use a coinbase input.
-                var txIn = new TxIn(new Script(coinbaseScriptPubKeyFiledBytes));
+                var commitScript = new Script(currentScriptSig.ToBytes().Concat(coinbaseScriptPubKeyFiledBytes));
 
                 // If there are more than one scriptPubKey matching the pattern, the one with highest output index is assumed to be the commitment.
-                block.Transactions[0].Inputs.Add(txIn);
+                block.Transactions[0].Inputs[0].ScriptSig = commitScript;
             }
             else
             {
