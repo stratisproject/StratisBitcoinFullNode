@@ -61,11 +61,12 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             return node;
         }
 
-        public CoreNode CreateMainChainFederationNode(Network network, Network counterChainNetwork)
+        public CoreNode CreateMainChainFederationNode(Network network, Network counterChainNetwork, NodeConfigParameters parameters = null)
         {
             string agentName = $"mainfed{Interlocked.Increment(ref agentCount)}";
             string dataFolder = this.GetNextDataFolderName(agentName);
-            CoreNode node = this.CreateNode(new MainChainFederationNodeRunner(dataFolder, agentName, network, counterChainNetwork), "stratis.conf");
+
+            CoreNode node = this.CreateNode(new MainChainFederationNodeRunner(dataFolder, agentName, network, counterChainNetwork), "stratis.conf", configParameters: parameters);
 
             return node;
         }

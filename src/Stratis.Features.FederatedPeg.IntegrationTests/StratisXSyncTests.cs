@@ -24,7 +24,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
         public StratisXSyncTests()
         {
             this.sidechainNetwork = (CirrusRegTest)CirrusNetwork.NetworksSelector.Regtest();
-            this.mainNetwork = new StratisMain10KCheckpoint();
+            this.mainNetwork = new StratisMain();
             var pubKeysByMnemonic = this.sidechainNetwork.FederationMnemonics.ToDictionary(m => m, m => m.DeriveExtKey().PrivateKey.PubKey);
             this.scriptAndAddresses = FederatedPegTestHelper.GenerateScriptAndAddresses(this.mainNetwork, this.sidechainNetwork, 2, pubKeysByMnemonic);
         }
@@ -42,11 +42,14 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
             {
                 builder.WithLogsEnabled();
 
-                CoreNode gatewayNode = builder.CreateMainChainFederationNode(this.mainNetwork, this.sidechainNetwork);
-                gatewayNode.AppendToConfig("mainchain=1");
-                gatewayNode.AppendToConfig($"redeemscript={this.scriptAndAddresses.payToMultiSig}");
-                gatewayNode.AppendToConfig($"publickey={this.sidechainNetwork.FederationMnemonics[0].DeriveExtKey().PrivateKey.PubKey}");
-                gatewayNode.AppendToConfig("federationips=0.0.0.0,0.0.0.1"); // Placeholders
+                var gatewayParameters = new NodeConfigParameters();
+                gatewayParameters.Add("regtest", "0");
+                gatewayParameters.Add("mainchain", "1");
+                gatewayParameters.Add("redeemscript", this.scriptAndAddresses.payToMultiSig.ToString());
+                gatewayParameters.Add("publickey", this.sidechainNetwork.FederationMnemonics[0].DeriveExtKey().PrivateKey.PubKey.ToString());
+                gatewayParameters.Add("federationips", "0.0.0.0,0.0.0.1");
+
+                CoreNode gatewayNode = builder.CreateMainChainFederationNode(this.mainNetwork, this.sidechainNetwork, gatewayParameters);
 
                 var stratisXParameters = new NodeConfigParameters();
                 stratisXParameters.Add("connect", gatewayNode.Endpoint.ToString());
@@ -54,6 +57,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 CoreNode stratisXNode = builder.CreateMainnetStratisXNode(parameters: stratisXParameters)
                     .WithReadyBlockchainData(ReadyBlockchain.StratisXMainnet15K);
 
+                gatewayNode.AppendToConfig("gateway=1");
                 gatewayNode.AppendToConfig($"whitelist={stratisXNode.Endpoint}");
 
                 gatewayNode.Start();
