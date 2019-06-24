@@ -156,7 +156,7 @@ namespace Stratis.Features.FederatedPeg
             // Query our database for partially-signed transactions and send them around to be signed every N seconds.
             this.partialTransactionRequester.Start();
 
-            // Cleans the mempool.
+            // Cleans the mempool periodically.
             this.mempoolCleaner.Start();
 
             // Query our database for fully-signed transactions and broadcast them every N seconds.
