@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 
 namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 {
@@ -67,6 +68,19 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             CoreNode node = this.CreateNode(new MainChainFederationNodeRunner(dataFolder, agentName, network, counterChainNetwork), "stratis.conf");
 
             return node;
+        }
+
+        public CoreNode CreatePartiallySyncedStratisXNode(string version = "2.0.0.5", bool useCookieAuth = false, NodeConfigParameters parameters = null)
+        {
+            if (parameters == null)
+            {
+                parameters = new NodeConfigParameters();
+            }
+            parameters.Add("regtest", "0");
+            parameters.Add("server", "0");
+
+            string stratisDPath = GetStratisXPath(version);
+            return this.CreateNode(new StratisXRunner(this.GetNextDataFolderName(), stratisDPath), "stratis.conf", useCookieAuth, parameters);
         }
     }
 }

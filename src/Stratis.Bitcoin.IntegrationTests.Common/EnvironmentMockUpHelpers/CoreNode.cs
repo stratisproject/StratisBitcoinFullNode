@@ -84,8 +84,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.runner = runner;
 
             this.State = CoreNodeState.Stopped;
+            string user = Encoders.Hex.EncodeData(RandomUtils.GetBytes(20));
             string pass = Encoders.Hex.EncodeData(RandomUtils.GetBytes(20));
-            this.creds = new NetworkCredential(pass, pass);
+            this.creds = new NetworkCredential(user, pass);
             this.Config = Path.Combine(this.runner.DataFolder, configfile);
             this.CookieAuth = useCookieAuth;
 
@@ -352,7 +353,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     this.State = CoreNodeState.Running;
                     return true;
                 }
-                catch
+                catch (Exception e)
                 {
                     return false;
                 }
