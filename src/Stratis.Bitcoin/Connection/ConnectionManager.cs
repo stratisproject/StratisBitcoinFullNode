@@ -407,7 +407,7 @@ namespace Stratis.Bitcoin.Connection
             bool isAddNodeOrConnect = false;
             foreach (IPEndPoint addNodeEndPoint in this.ConnectionSettings.AddNode.Union(this.ConnectionSettings.Connect))
             {
-                if (peer.PeerEndPoint.Address.Equals(addNodeEndPoint.Address))
+                if (peer.PeerEndPoint.MatchIpOnly(addNodeEndPoint))
                 {
                     isAddNodeOrConnect = true;
                     break;
