@@ -208,7 +208,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     if (scPayment == null) continue;
 
                     Receipt receipt = this.receiptRepository.Retrieve(transaction.SpendingDetails.TransactionId);
-                    if (receipt == null) continue;
 
                     if (scPayment.DestinationScriptPubKey.IsSmartContractCreate())
                     {
@@ -219,7 +218,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                             BlockHeight = transaction.SpendingDetails.BlockHeight,
                             Type = ContractTransactionItemType.ContractCreate,
                             Hash = transaction.SpendingDetails.TransactionId,
-                            To = receipt.NewContractAddress?.ToBase58Address(this.network) ?? string.Empty
+                            To = receipt?.NewContractAddress?.ToBase58Address(this.network) ?? string.Empty
                         });
                     }
                     else
