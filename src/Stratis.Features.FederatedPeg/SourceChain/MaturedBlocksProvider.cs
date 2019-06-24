@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -15,18 +14,19 @@ namespace Stratis.Features.FederatedPeg.SourceChain
     public interface IMaturedBlocksProvider
     {
         /// <summary>
-        /// Retrieves deposits for the indicated blocks from the block repository and throws an error if the blocks are not mature enough.
+        /// Retrieves deposits for the indicated blocks from the block repository.
         /// </summary>
-        /// <param name="retrieveFromBlockHeight">The block height at which to start retrieving blocks.</param>
+        /// <param name="retrieveFromBlockHeight">The block height at which to start retrieving blocks from.</param>
         /// <param name="amountOfBlocksToRetrieve">The number of blocks to retrieve.</param>
         /// <returns>A list of mature block deposits.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if the blocks are not mature or not found.</exception>
         SerializableResult<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int retrieveFromBlockHeight, int amountOfBlocksToRetrieve);
     }
 
     public sealed class MaturedBlocksProvider : IMaturedBlocksProvider
     {
         public const string RetrieveBlockHeightHigherThanMaturedTipMessage = "The submitted block height of {0} is not mature enough. Blocks below {1} can be returned.";
+
+        public const string UnableToRetrieveBlockDataFromConsensusMessage = "Stopping mature block collection and sending what we've collected. Reason: Unable to get block data for {0} from consensus.";
 
         private readonly IConsensusManager consensusManager;
 
@@ -50,6 +50,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
             if (retrieveFromBlockHeight > maturedTipBlockHeight)
             {
+                this.logger.LogTrace("(-)[RETRIEVE_FROM_BLOCKHEIGHT_HIGHER_THAN_MATURED_TIP]");
                 return SerializableResult<List<MaturedBlockDepositsModel>>.Fail(string.Format(RetrieveBlockHeightHigherThanMaturedTipMessage, retrieveFromBlockHeight, maturedTipBlockHeight));
             }
 
@@ -67,21 +68,20 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
                 if (block?.Block?.Transactions == null)
                 {
-                    // Report unexpected results from consenus manager.
-                    this.logger.LogWarning("Stop matured blocks collection due to consensus manager integrity failure. Send what we've collected.");
-                    break;
+                    this.logger.LogDebug(UnableToRetrieveBlockDataFromConsensusMessage, currentHeader);
+                    this.logger.LogTrace("(-)[BLOCKDATA_MISSING_FROM_CONSENSUS]");
+                    return SerializableResult<List<MaturedBlockDepositsModel>>.Ok(maturedBlockDepositModels, string.Format(UnableToRetrieveBlockDataFromConsensusMessage, currentHeader));
                 }
 
-                MaturedBlockDepositsModel maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(block);
+                MaturedBlockDepositsModel maturedBlockDepositModel = this.depositExtractor.ExtractBlockDeposits(block);
 
-                if (maturedBlockDeposits == null)
-                    throw new InvalidOperationException($"Unable to get deposits for block at height {currentHeader.Height}");
+                this.logger.LogDebug("{0} deposits extracted at block {1}", maturedBlockDepositModel.Deposits.Count, currentHeader);
 
-                maturedBlockDepositModels.Add(maturedBlockDeposits);
+                maturedBlockDepositModels.Add(maturedBlockDepositModel);
 
                 if (cancellation.IsCancellationRequested && maturedBlockDepositModels.Count > 0)
                 {
-                    this.logger.LogDebug("Stop matured blocks collection because it's taking too long. Send what we've collected.");
+                    this.logger.LogDebug("Stopping mature block collection and sending what has been collected. Reason: The operation took longer than {0} ms.", maxTimeCollectionCanTakeMs);
                     break;
                 }
             }

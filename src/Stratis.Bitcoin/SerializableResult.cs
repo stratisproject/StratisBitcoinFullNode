@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin
     /// <typeparam name="T">The type of the value to return if the result was successful.</typeparam>
     public sealed class SerializableResult<T>
     {
-        [JsonProperty("isFailure")]
+        [JsonProperty("isSuccess")]
         public bool IsSuccess { get; private set; }
 
         [JsonProperty("message")]
@@ -22,21 +22,21 @@ namespace Stratis.Bitcoin
         {
         }
 
-        private SerializableResult(bool isFailure, T value, string error)
+        private SerializableResult(bool isSuccess, T value, string message)
         {
-            this.IsSuccess = !isFailure;
+            this.IsSuccess = isSuccess;
+            this.Message = message;
             this.Value = value;
-            this.Message = error;
         }
 
-        public static SerializableResult<T> Ok(T value)
+        public static SerializableResult<T> Ok(T value, string message = null)
         {
-            return new SerializableResult<T>(true, value, null);
+            return new SerializableResult<T>(true, value, message);
         }
 
-        public static SerializableResult<T> Fail(string error)
+        public static SerializableResult<T> Fail(string message)
         {
-            return new SerializableResult<T>(false, default(T), error);
+            return new SerializableResult<T>(false, default(T), message);
         }
     }
 }
