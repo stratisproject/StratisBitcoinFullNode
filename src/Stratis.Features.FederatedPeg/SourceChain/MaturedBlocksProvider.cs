@@ -50,7 +50,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
             if (retrieveFromBlockHeight > maturedTipBlockHeight)
             {
-                this.logger.LogTrace("(-)[RETRIEVE_FROM_BLOCKHEIGHT_HIGHER_THAN_MATURED_TIP]");
+                this.logger.LogTrace("(-)[RETRIEVEFROMBLOCK_HIGHER_THAN_MATUREDTIP]:{0}={1},{2}={3}", nameof(retrieveFromBlockHeight), retrieveFromBlockHeight, nameof(maturedTipBlockHeight), maturedTipBlockHeight);
                 return SerializableResult<List<MaturedBlockDepositsModel>>.Fail(string.Format(RetrieveBlockHeightHigherThanMaturedTipMessage, retrieveFromBlockHeight, maturedTipBlockHeight));
             }
 
