@@ -34,7 +34,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// </summary>
         private static readonly TimeSpan TimeBetweenQueries = TimeSpans.Minute;
         private readonly ILogger logger;
-        private readonly MempoolManager mempoolManager;
         private readonly MempoolOrphans mempoolOrphans;
         private readonly ICrossChainTransferStore store;
         private readonly IAsyncProvider asyncProvider;
@@ -44,14 +43,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         public MempoolCleaner(
             ILoggerFactory loggerFactory,
-            MempoolManager mempoolManager,
             MempoolOrphans mempoolOrphans,
             ICrossChainTransferStore crossChainTransferStore,
             IAsyncProvider asyncProvider,
             INodeLifetime nodeLifetime)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            this.mempoolManager = Guard.NotNull(mempoolManager, nameof(mempoolManager));
             this.mempoolOrphans = Guard.NotNull(mempoolOrphans, nameof(mempoolOrphans));
             this.store = Guard.NotNull(crossChainTransferStore, nameof(crossChainTransferStore));
             this.asyncProvider = Guard.NotNull(asyncProvider, nameof(asyncProvider));
@@ -62,7 +59,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         private async Task CleanMempoolAsync()
         {
-            IEnumerable<Transaction> transactionsToCheck = (await this.mempoolManager.InfoAllAsync()).Select(i => i.Trx);
+            IEnumerable<Transaction> transactionsToCheck = this.mempoolOrphans.OrphansList().Select(i => i.Tx);
 
             List<Transaction> transactionsToRemove = this.store.CompletedWithdrawals(transactionsToCheck);
 
