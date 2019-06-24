@@ -75,7 +75,8 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
                 MaturedBlockDepositsModel maturedBlockDepositModel = this.depositExtractor.ExtractBlockDeposits(block);
 
-                this.logger.LogDebug("{0} deposits extracted at block {1}", maturedBlockDepositModel.Deposits.Count, currentHeader);
+                if (maturedBlockDepositModel.Deposits != null && maturedBlockDepositModel.Deposits.Count > 0)
+                    this.logger.LogDebug("{0} deposits extracted at block {1}", maturedBlockDepositModel.Deposits.Count, currentHeader);
 
                 maturedBlockDepositModels.Add(maturedBlockDepositModel);
 
