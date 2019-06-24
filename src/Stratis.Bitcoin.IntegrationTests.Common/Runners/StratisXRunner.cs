@@ -62,16 +62,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && (new FileInfo(this.DataFolder).FullName.Length > 222))
                 throw new Exception("Path is too long for stratisd to function.");
 
-            //// Copy files to 
-            //const string sourcePath = @"C:\Users\jorda\source\repos\StratisBitcoinFullNode\src\TestCase\StratisXSyncTests\SyncPastFirstCheckpoint-21062019T04.20.38.010\4bef459";
-
-            //foreach (var srcPath in Directory.GetFiles(sourcePath))
-            //{
-            //    //Copy the file from sourcepath and place into mentioned target path, 
-            //    //Overwrite the file if same file is exist in target path
-            //    File.Copy(srcPath, srcPath.Replace(sourcePath, this.DataFolder), true);
-            //}
-
             TestBase.WaitLoop(() =>
             {
                 try
