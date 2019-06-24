@@ -404,17 +404,7 @@ namespace Stratis.Bitcoin.Connection
             }
 
             // Don't disconnect if this peer is in -addnode or -connect.
-            bool isAddNodeOrConnect = false;
-            foreach (IPEndPoint addNodeEndPoint in this.ConnectionSettings.AddNode.Union(this.ConnectionSettings.Connect))
-            {
-                if (peer.PeerEndPoint.MatchIpOnly(addNodeEndPoint))
-                {
-                    isAddNodeOrConnect = true;
-                    break;
-                }
-            }
-
-            if (isAddNodeOrConnect)
+            if (this.ConnectionSettings.AddNode.Union(this.ConnectionSettings.Connect).Any(ep => peer.PeerEndPoint.MatchIpOnly(ep)))
             {
                 this.logger.LogTrace("(-)[ADD_NODE_OR_CONNECT]:false");
                 return false;
