@@ -70,7 +70,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             return node;
         }
 
-        public CoreNode CreatePartiallySyncedStratisXNode(string version = "2.0.0.5", bool useCookieAuth = false, NodeConfigParameters parameters = null)
+        public CoreNode CreateMainnetStratisXNode(string version = "2.0.0.5", bool useCookieAuth = false, NodeConfigParameters parameters = null)
         {
             if (parameters == null)
             {

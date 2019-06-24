@@ -51,7 +51,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 var stratisXParameters = new NodeConfigParameters();
                 stratisXParameters.Add("connect", gatewayNode.Endpoint.ToString());
 
-                CoreNode stratisXNode = builder.CreatePartiallySyncedStratisXNode(parameters: stratisXParameters)
+                CoreNode stratisXNode = builder.CreateMainnetStratisXNode(parameters: stratisXParameters)
                     .WithReadyBlockchainData(ReadyBlockchain.StratisXMainnet15K);
 
                 gatewayNode.AppendToConfig($"whitelist={stratisXNode.Endpoint}");
