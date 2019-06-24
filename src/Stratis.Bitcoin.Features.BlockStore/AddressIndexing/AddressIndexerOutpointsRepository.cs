@@ -30,7 +30,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.addressIndexerOutPointData = db.GetCollection<OutPointData>(DbOutputsDataKey);
             this.addressIndexerRewindData = db.GetCollection<AddressIndexerRewindData>(DbOutputsRewindDataKey);
-            this.addressIndexerRewindData.EnsureIndex("BlockHeightIndex", "$.BlockHeight", true);
             this.maxCacheItems = maxItems;
         }
 
@@ -111,36 +110,32 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             }
         }
 
-        /// <summary>Deletes rewind data originated at height lower than <paramref name="height"/>.</summary>
+        /// <summary>Deletes rewind data items that were originated at height lower than <paramref name="height"/>.</summary>
         /// <param name="height">The threshold below which data will be deleted.</param>
         public void PurgeOldRewindData(int height)
         {
             lock (this.LockObject)
             {
-                // Generally there will only be one result here at most, as this should be getting called once per block.
-                foreach (AddressIndexerRewindData rewindData in this.addressIndexerRewindData.Find(Query.LT("BlockHeightIndex", height)))
+                foreach (AddressIndexerRewindData rewindData in this.addressIndexerRewindData.Find(x => x.BlockHeight < height))
                     this.addressIndexerRewindData.Delete(rewindData.BlockHash);
             }
         }
 
-        /// <summary>Reverts changes made by processing a block with <param name="blockHash"> hash.</param></summary>
-        public void Rewind(uint256 blockHash)
+        /// <summary>Reverts changes made by processing blocks with height higher than <param name="height">.</param></summary>
+        public void RewindDataAboveHeight(int height)
         {
             lock (this.LockObject)
             {
-                AddressIndexerRewindData rewindData = this.addressIndexerRewindData.FindById(blockHash.ToString());
+                IEnumerable<AddressIndexerRewindData> toRestore = this.addressIndexerRewindData.Find(x => x.BlockHeight > height);
 
-                if (rewindData == null)
+                this.logger.LogDebug("Restoring data for {0} blocks.", toRestore.Count());
+
+                foreach (AddressIndexerRewindData rewindData in toRestore)
                 {
-                    this.logger.LogTrace("(-)[NOT_FOUND]");
-                    throw new Exception($"Rewind data not found for {blockHash}.");
+                    // Put the spent outputs back into the cache.
+                    foreach (OutPointData outPointData in rewindData.SpentOutputs)
+                        this.AddOutPointData(outPointData);
                 }
-
-                // Put the spent outputs back into the cache.
-                foreach (OutPointData outPointData in rewindData.SpentOutputs)
-                    this.AddOutPointData(outPointData);
-
-                this.addressIndexerRewindData.Delete(rewindData.BlockHash);
             }
         }
 
