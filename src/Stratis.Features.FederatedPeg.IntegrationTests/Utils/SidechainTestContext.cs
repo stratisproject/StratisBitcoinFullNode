@@ -11,6 +11,7 @@ using Flurl.Http;
 using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.IntegrationTests;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;

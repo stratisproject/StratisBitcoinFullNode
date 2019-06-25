@@ -15,6 +15,8 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
+using Stratis.Bitcoin.IntegrationTests.Common.TestNetworks;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -394,6 +396,45 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 TestBase.WaitLoop(() => xRpc1.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
                 TestBase.WaitLoop(() => sbfnRpc2.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
                 TestBase.WaitLoop(() => xRpc3.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+            }
+        }
+
+        [Fact]
+        public void SyncFirst15KBlocks()
+        {
+            Network network = new StratisMain15KCheckpoint();
+
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // TODO: Add the necessary executables for Linux & OSX
+                return;
+            }
+
+            using (NodeBuilder builder = NodeBuilder.Create(this).WithLogsEnabled())
+            {
+                var gatewayParameters = new NodeConfigParameters();
+                gatewayParameters.Add("regtest", "0");
+
+                CoreNode gatewayNode = builder.CreateStratisPosNode(network, configParameters: gatewayParameters, isGateway:true);
+
+                var stratisXParameters = new NodeConfigParameters();
+                stratisXParameters.Add("connect", gatewayNode.Endpoint.ToString());
+
+                CoreNode stratisXNode = builder.CreateMainnetStratisXNode(parameters: stratisXParameters)
+                    .WithReadyBlockchainData(ReadyBlockchain.StratisXMainnet15K);
+
+                gatewayNode.AppendToConfig("gateway=1");
+                gatewayNode.AppendToConfig($"whitelist={stratisXNode.Endpoint}");
+
+                gatewayNode.Start();
+                stratisXNode.Start();
+
+                RPCClient stratisXRpc = stratisXNode.CreateRPCClient();
+                RPCClient gatewayNodeRpc = gatewayNode.CreateRPCClient();
+
+                gatewayNodeRpc.AddNode(stratisXNode.Endpoint);
+
+                TestBase.WaitLoop(() => gatewayNode.FullNode.ChainIndexer.Height >= 15_000, waitTimeSeconds: 600);
             }
         }
 
