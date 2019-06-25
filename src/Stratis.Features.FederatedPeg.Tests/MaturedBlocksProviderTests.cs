@@ -35,16 +35,21 @@ namespace Stratis.Features.FederatedPeg.Tests
         }
 
         [Fact]
-        public void GetMaturedBlocksAsyncReturnsDeposits()
+        public void GetMaturedBlocksReturnsDeposits()
         {
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(10, null, true);
 
             foreach (ChainedHeader chainedHeader in headers)
+            {
                 chainedHeader.Block = new Block(chainedHeader.Header);
+            }
 
             var blocks = new List<ChainedHeaderBlock>(headers.Count);
+
             foreach (ChainedHeader chainedHeader in headers)
+            {
                 blocks.Add(new ChainedHeaderBlock(chainedHeader.Block, chainedHeader));
+            }
 
             ChainedHeader tip = headers.Last();
 
