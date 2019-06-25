@@ -180,9 +180,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
                 // Represents a sublist of transactions associated with receive addresses + a sublist of already spent transactions associated with change addresses.
                 // In effect, we filter out 'change' transactions that are not spent, as we don't want to show these in the history.
-                List<FlatHistory> history = items.Where(t =>
-                    !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && t.Transaction.IsSpent()))
-                    .ToList();
+                List<FlatHistory> history = items.Where(t => !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && t.Transaction.IsSpent())).ToList();
 
                 // TransactionData in history is confusingly named. A "TransactionData" actually represents an input, and the outputs that spend it are "SpendingDetails".
                 // There can be multiple "TransactionData" which have the same "SpendingDetails".
