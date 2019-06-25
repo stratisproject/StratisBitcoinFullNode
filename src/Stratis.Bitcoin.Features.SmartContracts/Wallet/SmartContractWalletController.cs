@@ -395,18 +395,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             }
         }
 
-        public static ContractTransactionItemType ReceivedTransactionType(TransactionData transaction)
-        {
-            bool isCoinBase = transaction.IsCoinBase.HasValue && transaction.IsCoinBase.Value;
-            
-            bool isGasRefund = isCoinBase && transaction.Index != 0;
-
-            if (isGasRefund)
-                return ContractTransactionItemType.GasRefund;
-            
-            return ContractTransactionItemType.Received;
-        }
-
         /// <summary>
         /// Retrieves a string that represents the receiving address for an output.For smart contract transactions,
         /// returns the opcode that was sent i.e.OP_CALL or OP_CREATE
