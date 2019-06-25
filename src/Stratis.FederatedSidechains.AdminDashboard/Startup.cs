@@ -22,7 +22,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard
 
         public void ConfigureServices(IServiceCollection services)
         {
-
+            services.Configure<DefaultEndpointsSettings>(options => Configuration.GetSection("DefaultEndpoints").Bind(options));
+            
             services.AddDistributedMemoryCache();
 
             services.AddTransient<ApiRequester>();
