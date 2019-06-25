@@ -204,25 +204,28 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
                 foreach (var scTransaction in scTransactions)
                 {
-                    // If this transaction has been spent, check if it was spent by a smart contract.
                     // Consensus rules state that each transaction can have only one smart contract exec output, so FirstOrDefault is correct.
                     PaymentDetails scPayment = scTransaction.Outputs?.FirstOrDefault(x => x.DestinationScriptPubKey.IsSmartContractExec());
 
-                    if (scPayment == null) continue;
+                    if (scPayment == null)
+                        continue;
 
                     Receipt receipt = this.receiptRepository.Retrieve(scTransaction.TransactionId);
 
-                    // Create a record for a Call transaction.
-                    Result<ContractTxData> txData =
-                        this.callDataSerializer.Deserialize(scPayment.DestinationScriptPubKey.ToBytes());
+                    Result<ContractTxData> txDataResult = this.callDataSerializer.Deserialize(scPayment.DestinationScriptPubKey.ToBytes());
 
-                    var gasFee = receipt != null
+                    if (txDataResult.IsFailure)
+                        continue;
+
+                    ContractTxData txData = txDataResult.Value;
+
+                    // If the receipt is not available yet, we don't know how much gas was consumed so use the full gas budget.
+                    ulong gasFee = receipt != null
                         ? receipt.GasUsed * receipt.GasPrice
-                        : txData.Value.GasCostBudget;
+                        : txData.GasCostBudget;
 
-                    ulong gasRefund = txData.Value.GasCostBudget - gasFee;
-                    long allFees = scTransaction.InputAmount - scTransaction.OutputAmount;
-                    Money transactionFee = Money.FromUnit(allFees, MoneyUnit.Satoshi) - Money.FromUnit(gasFee + gasRefund, MoneyUnit.Satoshi);
+                    long totalFees = scTransaction.InputAmount - scTransaction.OutputAmount;
+                    Money transactionFee = Money.FromUnit(totalFees, MoneyUnit.Satoshi) - Money.FromUnit(txData.GasCostBudget, MoneyUnit.Satoshi);
 
                     var result = new ContractTransactionItem
                     {
@@ -241,7 +244,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     else if (scPayment.DestinationScriptPubKey.IsSmartContractCall())
                     {
                         result.Type = ContractTransactionItemType.ContractCall;
-                        result.To = txData.Value.ContractAddress.ToBase58Address(this.network);
+                        result.To = txData.ContractAddress.ToBase58Address(this.network);
                     }
 
                     transactionItems.Add(result);
