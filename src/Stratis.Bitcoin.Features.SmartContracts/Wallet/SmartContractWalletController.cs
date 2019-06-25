@@ -202,15 +202,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     })
                     .ToList();
 
-                foreach (var spendingDetail in scTransactions)
+                foreach (var scTransaction in scTransactions)
                 {
                     // If this transaction has been spent, check if it was spent by a smart contract.
                     // Consensus rules state that each transaction can have only one smart contract exec output, so FirstOrDefault is correct.
-                    PaymentDetails scPayment = spendingDetail.Outputs?.FirstOrDefault(x => x.DestinationScriptPubKey.IsSmartContractExec());
+                    PaymentDetails scPayment = scTransaction.Outputs?.FirstOrDefault(x => x.DestinationScriptPubKey.IsSmartContractExec());
 
                     if (scPayment == null) continue;
 
-                    Receipt receipt = this.receiptRepository.Retrieve(spendingDetail.TransactionId);
+                    Receipt receipt = this.receiptRepository.Retrieve(scTransaction.TransactionId);
 
                     // Create a record for a Call transaction.
                     Result<ContractTxData> txData =
@@ -221,14 +221,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                         : txData.Value.GasCostBudget;
 
                     ulong gasRefund = txData.Value.GasCostBudget - gasFee;
-                    long allFees = spendingDetail.InputAmount - spendingDetail.OutputAmount;
+                    long allFees = scTransaction.InputAmount - scTransaction.OutputAmount;
                     Money transactionFee = Money.FromUnit(allFees, MoneyUnit.Satoshi) - Money.FromUnit(gasFee + gasRefund, MoneyUnit.Satoshi);
 
                     var result = new ContractTransactionItem
                     {
                         Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
-                        BlockHeight = spendingDetail.BlockHeight,
-                        Hash = spendingDetail.TransactionId,
+                        BlockHeight = scTransaction.BlockHeight,
+                        Hash = scTransaction.TransactionId,
                         TransactionFee = transactionFee.ToUnit(MoneyUnit.Satoshi),
                         GasFee = gasFee
                     };
