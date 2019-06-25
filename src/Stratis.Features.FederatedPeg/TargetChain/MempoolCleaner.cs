@@ -81,6 +81,28 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 // If this is a confirmed spending transaction then it is in completed state.
                 else if (spendingTransactions.Contains(hash))
                     yield return tx;
+                // If the tx has an input that is consumed by another confirmed transaction then it should be removed.
+                else
+                {
+                    bool bDone = false;
+
+                    foreach (TxIn txIn in tx.Inputs)
+                    {
+                        // Find the input's UTXO.
+                        if (walletTxs.TryGetTransaction(txIn.PrevOut.Hash, (int)txIn.PrevOut.N, out TransactionData tData2))
+                        {
+                            // Check if the input's UTXO is being spent by another confirmed transaction.
+                            if (tData2.SpendingDetails?.BlockHeight > 0 && tData2.SpendingDetails?.TransactionId != hash)
+                            {
+                                bDone = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (bDone)
+                        yield return tx;
+                }
             }
         }
 
