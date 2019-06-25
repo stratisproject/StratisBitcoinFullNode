@@ -30,13 +30,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         void Initialize();
 
-        /// <summary>Returns balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
-        /// <param name="addresses">The set of addresses that will be queried.</param>
-        /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed or doesn't exists.</returns>
-        AddressBalancesResult GetAddressBalances(string[] addresses, int minConfirmations = 0);
-
         /// <summary>Returns verbose balances data.</summary>
         /// <param name="addresses">The set of addresses that will be queried.</param>
+        /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed or doesn't exists.</returns>
         VerboseAddressBalancesResult GetVerboseAddressBalancesData(string[] addresses);
     }
 
@@ -547,34 +543,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             lock (this.lockObject)
             {
                 return this.consensusManager.Tip.Height - this.IndexerTip.Height <= ConsiderSyncedMaxDistance;
-            }
-        }
-
-        /// <inheritdoc />
-        public AddressBalancesResult GetAddressBalances(string[] addresses, int minConfirmations = 1)
-        {
-            var (isQueryable, reason) = this.IsQueryable();
-
-            if (!isQueryable)
-                return AddressBalancesResult.RequestFailed(reason);
-
-            var result = new AddressBalancesResult();
-
-            lock (this.lockObject)
-            {
-                foreach (var address in addresses)
-                {
-                    AddressIndexerData indexData = this.addressIndexRepository.GetOrCreateAddress(address);
-
-                    int maxAllowedHeight = this.consensusManager.Tip.Height - minConfirmations + 1;
-
-                    long balance = indexData.BalanceChanges.Where(x => x.BalanceChangedHeight <= maxAllowedHeight).CalculateBalance();
-
-                    this.logger.LogTrace("Address: {0}, balance: {1}.", address, balance);
-                    result.Balances.Add(new AddressBalanceResult(address, new Money(balance)));
-                }
-
-                return result;
             }
         }
 

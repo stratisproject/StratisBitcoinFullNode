@@ -17,7 +17,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 {
     public static class BlockStoreRouteEndPoint
     {
-        public const string GetAddressesBalances = "getaddressesbalances";
         public const string GetVerboseAddressesBalances = "getverboseaddressesbalances";
         public const string GetAddressIndexerTip = "addressindexertip";
         public const string GetBlock = "block";
@@ -144,33 +143,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-
-        /// <summary>Provides balance of the given addresses confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
-        /// <param name="addresses">A comma delimited set of addresses that will be queried.</param>
-        /// <returns>A result object containing the balance for each requested address and if so, a meesage stating why the indexer is not queryable.</returns>
-        [Route(BlockStoreRouteEndPoint.GetAddressesBalances)]
-        [HttpGet]
-        public IActionResult GetAddressesBalances(string addresses, int minConfirmations)
-        {
-            try
-            {
-                string[] addressesArray = addresses.Split(',');
-
-                this.logger.LogDebug("Asking data for {0} addresses.", addressesArray.Length);
-
-                AddressBalancesResult result = this.addressIndexer.GetAddressBalances(addressesArray, minConfirmations);
-
-                this.logger.LogDebug("Sending data for {0} addresses.", result.Balances.Count);
-
-                return this.Json(result);
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }
-
 
         /// <summary>Provides verbose balance data of the given addresses.</summary>
         /// <param name="addresses">A comma delimited set of addresses that will be queried.</param>

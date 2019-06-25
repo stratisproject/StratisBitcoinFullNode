@@ -36,10 +36,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public AddressIndexerTests()
         {
             this.network = new StratisMain();
-            var storeSettings = new StoreSettings(NodeSettings.Default(this.network));
 
-            storeSettings.AddressIndex = true;
-            storeSettings.TxIndex = true;
+            var storeSettings = new StoreSettings(NodeSettings.Default(this.network))
+            {
+                AddressIndex = true,
+                TxIndex = true
+            };
 
             var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
             var stats = new Mock<INodeStats>();
@@ -106,7 +108,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             var tx = new Transaction();
             tx.Inputs.Add(new TxIn(new OutPoint(block5.Transactions.First().GetHash(), 0)));
-            var block10 = new Block() { Transactions = new List<Transaction>() { tx } };
+
+            var block10 = new Block()
+            {
+                Transactions = new List<Transaction>() { tx }
+            };
 
             this.consensusManagerMock.Setup(x => x.GetBlockData(It.IsAny<uint256>())).Returns((uint256 hash) =>
             {
@@ -131,10 +137,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             TestBase.WaitLoop(() => this.addressIndexer.IndexerTip == headers.Last());
 
-            Assert.Equal(60_000, this.addressIndexer.GetAddressBalances(new[] { address1 }).Balances.First().Balance.Satoshi);
-            Assert.Equal(2_000, this.addressIndexer.GetAddressBalances(new[] { address2 }).Balances.First().Balance.Satoshi);
+            var resultAddress1 = this.addressIndexer.GetVerboseAddressBalancesData(new[] { address1 });
+            Assert.Equal(80_000, resultAddress1.BalancesData.First().BalanceChanges.Sum(b => b.Satoshi));
 
-            Assert.Equal(70_000, this.addressIndexer.GetAddressBalances(new[] { address1 }, 93).Balances.First().Balance.Satoshi);
+            var resultAddress2 = this.addressIndexer.GetVerboseAddressBalancesData(new[] { address2 });
+            Assert.Equal(2_000, resultAddress2.BalancesData.First().BalanceChanges.Sum(b => b.Satoshi));
 
             // Now trigger rewind to see if indexer can handle reorgs.
             ChainedHeader forkPoint = headers.Single(x => x.Height == 8);
@@ -151,7 +158,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.consensusManagerMock.Setup(x => x.Tip).Returns(() => headersFork.Last());
             TestBase.WaitLoop(() => this.addressIndexer.IndexerTip == headersFork.Last());
 
-            Assert.Equal(70_000, this.addressIndexer.GetAddressBalances(new[] { address1 }).Balances.First().Balance.Satoshi);
+            Assert.Equal(70_000, this.addressIndexer.GetVerboseAddressBalancesData(new[] { address1 }).BalancesData.First().BalanceChanges.Sum(b => b.Satoshi));
 
             this.addressIndexer.Dispose();
         }
