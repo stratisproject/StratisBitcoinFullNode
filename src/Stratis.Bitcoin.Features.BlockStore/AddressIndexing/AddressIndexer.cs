@@ -581,12 +581,18 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <inheritdoc />
         public VerboseAddressBalancesResult GetVerboseAddressBalancesData(string[] addresses)
         {
+            var result = new VerboseAddressBalancesResult()
+            {
+                ConsensusTipHeight = this.consensusManager.Tip.Height
+            };
+
+            if (addresses.Length == 0)
+                return result;
+
             (bool isQueryable, string reason) = this.IsQueryable();
 
             if (!isQueryable)
                 return VerboseAddressBalancesResult.RequestFailed(reason);
-
-            var result = new VerboseAddressBalancesResult();
 
             lock (this.lockObject)
             {
@@ -603,8 +609,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     result.BalancesData.Add(copy);
                 }
             }
-
-            result.ConsensusTipHeight = this.consensusManager.Tip.Height;
 
             return result;
         }

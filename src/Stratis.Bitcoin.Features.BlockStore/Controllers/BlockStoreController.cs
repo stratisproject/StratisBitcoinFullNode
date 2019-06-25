@@ -181,7 +181,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         {
             try
             {
-                string[] addressesArray = addresses.Split(',');
+                string[] addressesArray = addresses?.Split(',') ?? new string[] { };
 
                 this.logger.LogDebug("Asking data for {0} addresses.", addressesArray.Length);
 
