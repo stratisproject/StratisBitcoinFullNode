@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
                 // Get a list of all the transactions found in an account (or in a wallet if no account is specified), with the addresses associated with them.
                 IEnumerable<AccountHistory> accountsHistory = this.walletManager.GetHistory(walletName, account.Name);
-                
+
                 // Wallet manager returns only 1 when an account name is specified.
                 AccountHistory accountHistory = accountsHistory.First();
 
@@ -184,8 +184,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && t.Transaction.IsSpent()))
                     .ToList();
 
-                // TransactionData in history is confusingly named. A "TransactionData" actually represents an input, and the outputs that spend it are "SpendingDetails"
-                // There can be multiple "TransactionData" which have the same "SpendingDetails"
+                // TransactionData in history is confusingly named. A "TransactionData" actually represents an input, and the outputs that spend it are "SpendingDetails".
+                // There can be multiple "TransactionData" which have the same "SpendingDetails".
                 // For SCs we need to group spending details by their transaction ID, to get all the inputs related to the same outputs.
                 // Each group represents 1 SC transaction.
                 // Each item.Transaction in a group is an input.
@@ -198,9 +198,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     {
                         TransactionId = g.Key,
                         InputAmount = g.Sum(i => i.Transaction.Amount), // Sum the inputs to the SC transaction.
-                        Outputs = g.First().Transaction.SpendingDetails.Payments, // Each item in the group will have the same outputs
+                        Outputs = g.First().Transaction.SpendingDetails.Payments, // Each item in the group will have the same outputs.
                         OutputAmount = g.First().Transaction.SpendingDetails.Payments.Sum(o => o.Amount),
-                        BlockHeight = g.First().Transaction.SpendingDetails.BlockHeight // Each item in the group will have the same block height
+                        BlockHeight = g.First().Transaction.SpendingDetails.BlockHeight // Each item in the group will have the same block height.
                     })
                     .ToList();
 
@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
                     Receipt receipt = this.receiptRepository.Retrieve(spendingDetail.TransactionId);
 
-                    // Create a record for a Call transaction
+                    // Create a record for a Call transaction.
                     Result<ContractTxData> txData =
                         this.callDataSerializer.Deserialize(scPayment.DestinationScriptPubKey.ToBytes());
 
@@ -226,7 +226,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     long allFees = spendingDetail.InputAmount - spendingDetail.OutputAmount;
                     Money transactionFee = Money.FromUnit(allFees, MoneyUnit.Satoshi) - Money.FromUnit(gasFee + gasRefund, MoneyUnit.Satoshi);
 
-                    // Add the amount that was the input for the transaction
                     var result = new ContractTransactionItem
                     {
                         Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
