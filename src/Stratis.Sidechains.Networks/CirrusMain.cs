@@ -194,10 +194,6 @@ namespace Stratis.Sidechains.Networks
             
 			};
 	    
-			string[] seedNodes = { "82.146.153.175" };
-
-            this.SeedNodes = ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
-			
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("00000732c8b76184212e1d1f485fe49d61a65c36dc4b609cf5be0009ed88bd66"));
