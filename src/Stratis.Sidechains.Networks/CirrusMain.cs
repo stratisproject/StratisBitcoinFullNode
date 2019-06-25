@@ -25,7 +25,7 @@ namespace Stratis.Sidechains.Networks
             this.Name = "CirrusMain";
             this.NetworkType = NetworkType.Mainnet;
             this.CoinTicker = "CRS";
-            this.Magic = 0x522357A0;
+            this.Magic = 0x522357AB;
             this.DefaultPort = 16179;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
