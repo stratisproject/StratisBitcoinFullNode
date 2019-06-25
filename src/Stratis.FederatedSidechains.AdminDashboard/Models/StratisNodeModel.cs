@@ -1,7 +1,5 @@
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
 using Stratis.FederatedSidechains.AdminDashboard.Entities;
-using Stratis.FederatedSidechains.AdminDashboard.Services;
 
 namespace Stratis.FederatedSidechains.AdminDashboard.Models
 {

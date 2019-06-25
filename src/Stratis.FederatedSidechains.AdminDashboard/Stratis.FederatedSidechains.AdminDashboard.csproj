@@ -9,11 +9,13 @@
     <DotNetCliToolReference Include="BundlerMinifier.Core" Version="2.6.362" />
     <PackageReference Include="BuildBundlerMinifier" Version="2.9.406" />
     <PackageReference Include="BundlerMinifier.Core" Version="2.9.406" />
+    <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="2.3.4" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.9" />
     <PackageReference Include="Microsoft.Web.LibraryManager.Build" Version="1.0.172" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+    <PackageReference Include="QRCoder" Version="1.3.5" />
     <PackageReference Include="RestSharp" Version="106.6.9" />
   </ItemGroup>
 

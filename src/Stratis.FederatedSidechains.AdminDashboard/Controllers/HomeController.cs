@@ -1,11 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using QRCoder;
+using Stratis.FederatedSidechains.AdminDashboard.Entities;
 using Stratis.FederatedSidechains.AdminDashboard.Filters;
 using Stratis.FederatedSidechains.AdminDashboard.Helpers;
 using Stratis.FederatedSidechains.AdminDashboard.Hubs;
@@ -20,12 +25,14 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
         private readonly IDistributedCache distributedCache;
         private readonly DefaultEndpointsSettings defaultEndpointsSettings;
         private readonly IHubContext<DataUpdaterHub> updaterHub;
+        private readonly ApiRequester apiRequester;
 
-        public HomeController(IDistributedCache distributedCache, IHubContext<DataUpdaterHub> hubContext, IOptions<DefaultEndpointsSettings> defaultEndpointsSettings)
+        public HomeController(IDistributedCache distributedCache, IHubContext<DataUpdaterHub> hubContext, IOptions<DefaultEndpointsSettings> defaultEndpointsSettings, ApiRequester apiRequester)
         {
             this.distributedCache = distributedCache;
             this.defaultEndpointsSettings = defaultEndpointsSettings.Value;
             this.updaterHub = hubContext;
+            this.apiRequester = apiRequester;
         }
 
         /// <summary>
@@ -36,7 +43,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
         [Route("check-federation")]
         public async Task<IActionResult> CheckFederationAsync()
         {
-            ApiResponse getMainchainFederationInfo = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/FederationGateway/info");
+            ApiResponse getMainchainFederationInfo = await this.apiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/FederationGateway/info");
             if (getMainchainFederationInfo.IsSuccess)
             {
                 return Json(getMainchainFederationInfo.Content.active);
@@ -69,6 +76,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
             this.ViewBag.SidechainMultisigAddress = dashboardModel.SidechainWalletAddress;
             this.ViewBag.MiningPubKeys = dashboardModel.MiningPublicKeys;
             this.ViewBag.LogRules = new LogRulesModel().LoadRules(dashboardModel.StratisNode.LogRules, dashboardModel.SidechainNode.LogRules);
+            this.ViewBag.PendingPolls = dashboardModel.SidechainNode.PoAPendingPolls;
             this.ViewBag.Status = "OK";
 
             return View("Dashboard", dashboardModel);
@@ -93,6 +101,32 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
                 return PartialView("Dashboard", dashboardModel);
             }
             return NoContent();
+        }
+
+        /// <summary>
+        /// Display Qr code from text value
+        /// </summary>
+        [Route("qr-code/{value?}")]
+        public IActionResult QrCode(string value)
+        {
+            QRCodeGenerator qrGenerator = new QRCodeGenerator();
+            QRCodeData qrCodeData = qrGenerator.CreateQrCode(value, QRCodeGenerator.ECCLevel.L);
+            QRCode qrCode = new QRCode(qrCodeData);
+            using (var memoryStream = new MemoryStream())
+            {
+                qrCode.GetGraphic(20).Save(memoryStream, ImageFormat.Png);
+                return File(memoryStream.ToArray(), "image/png");
+            }
+        }
+
+        /// <summary>
+        /// Shutdown the ASP.Net MVC Application
+        /// </summary>
+        [Route("shutdown")]
+        public IActionResult Shutdown()
+        {
+            Environment.Exit(0);
+            return Ok();
         }
     }
 }

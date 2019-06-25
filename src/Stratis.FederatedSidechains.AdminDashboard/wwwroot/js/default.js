@@ -13,6 +13,13 @@ $(document).on("click", '[role="copy"]', function()
     }
 });
 
+// Register qrcode event
+$(document).on("click", '[role="qrcode"]', function(data)
+{
+    $("#qrcode-image").attr("src", "/qr-code/" + $(this).attr("data-qr"));
+    //qrcode-image
+});
+
 $(document).ready(function()
 {
     var CacheIsDifferent = false;

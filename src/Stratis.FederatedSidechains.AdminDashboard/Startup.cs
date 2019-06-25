@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Stratis.FederatedSidechains.AdminDashboard.Hubs;
 using Stratis.FederatedSidechains.AdminDashboard.HostedServices;
 using Stratis.FederatedSidechains.AdminDashboard.Settings;
+using Stratis.FederatedSidechains.AdminDashboard.Services;
 
 namespace Stratis.FederatedSidechains.AdminDashboard
 {
@@ -21,10 +22,10 @@ namespace Stratis.FederatedSidechains.AdminDashboard
 
         public void ConfigureServices(IServiceCollection services)
         {
-            //TODO: change this
-            services.Configure<DefaultEndpointsSettings>(this.Configuration.GetSection("DefaultEndpoints"));
 
             services.AddDistributedMemoryCache();
+
+            services.AddTransient<ApiRequester>();
 
             services.AddHostedService<FetchingBackgroundService>();
 
