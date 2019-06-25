@@ -11,6 +11,10 @@
     <PackageReference Include="CSharpFunctionalExtensions" Version="1.10.0" />
     <PackageReference Include="ICSharpCode.Decompiler" Version="3.2.0.3856" />
     <PackageReference Include="Stratis.SmartContracts.Standards" Version="1.0.0" />
+    <PackageReference Include="Tracer.Fody" Version="2.2.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>

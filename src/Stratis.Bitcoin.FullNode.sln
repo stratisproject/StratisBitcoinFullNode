@@ -158,15 +158,22 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Features.FederatedP
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Features.FederatedPeg.Tests", "Stratis.Features.FederatedPeg.Tests\Stratis.Features.FederatedPeg.Tests.csproj", "{DE629FE5-BC8A-4597-B19C-DDAB5EC1528D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.CirrusD", "Stratis.CirrusD\Stratis.CirrusD.csproj", "{D1A3A36B-4F50-4C10-9DAE-DACFAF617A6D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.CirrusD", "Stratis.CirrusD\Stratis.CirrusD.csproj", "{D1A3A36B-4F50-4C10-9DAE-DACFAF617A6D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.CirrusPegD", "Stratis.CirrusPegD\Stratis.CirrusPegD.csproj", "{3E6D4D9E-CAF5-4A23-9C96-07B1B1FE76B7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.CirrusPegD", "Stratis.CirrusPegD\Stratis.CirrusPegD.csproj", "{3E6D4D9E-CAF5-4A23-9C96-07B1B1FE76B7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Features.FederatedPeg.IntegrationTests", "Stratis.Features.FederatedPeg.IntegrationTests\Stratis.Features.FederatedPeg.IntegrationTests.csproj", "{D71A7BBE-E64A-4F2E-B2A9-6D742FE94ED9}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Benchmarks", "Benchmarks", "{7FFED910-450B-4D6E-9085-6E5A6731D72A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Benchmark", "Stratis.Benchmark\Stratis.Benchmark.csproj", "{B8BC6552-6409-4BE1-B085-E8E6513EC251}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Benchmark", "Stratis.Benchmark\Stratis.Benchmark.csproj", "{B8BC6552-6409-4BE1-B085-E8E6513EC251}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.CirrusDnsD", "Stratis.CirrusDnsD\Stratis.CirrusDnsD.csproj", "{62CE1282-A077-4454-A718-7A5BA5756BE9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FederationSetup", "FederationSetup\FederationSetup.csproj", "{C83A089D-7B30-46BB-BBE3-AFBBAFB9A40D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.CirrusMinerD", "Stratis.CirrusMinerD\Stratis.CirrusMinerD.csproj", "{4548A1D1-C4E2-460C-A06A-FF8A994919D8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.AdminDashboard", "Stratis.FederatedSidechains.AdminDashboard\Stratis.FederatedSidechains.AdminDashboard.csproj", "{AB1DCAA5-9C86-411D-A730-83A896C0590F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -434,6 +441,22 @@ Global
 		{B8BC6552-6409-4BE1-B085-E8E6513EC251}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B8BC6552-6409-4BE1-B085-E8E6513EC251}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B8BC6552-6409-4BE1-B085-E8E6513EC251}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62CE1282-A077-4454-A718-7A5BA5756BE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62CE1282-A077-4454-A718-7A5BA5756BE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62CE1282-A077-4454-A718-7A5BA5756BE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62CE1282-A077-4454-A718-7A5BA5756BE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C83A089D-7B30-46BB-BBE3-AFBBAFB9A40D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C83A089D-7B30-46BB-BBE3-AFBBAFB9A40D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C83A089D-7B30-46BB-BBE3-AFBBAFB9A40D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C83A089D-7B30-46BB-BBE3-AFBBAFB9A40D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4548A1D1-C4E2-460C-A06A-FF8A994919D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4548A1D1-C4E2-460C-A06A-FF8A994919D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4548A1D1-C4E2-460C-A06A-FF8A994919D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4548A1D1-C4E2-460C-A06A-FF8A994919D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB1DCAA5-9C86-411D-A730-83A896C0590F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB1DCAA5-9C86-411D-A730-83A896C0590F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB1DCAA5-9C86-411D-A730-83A896C0590F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB1DCAA5-9C86-411D-A730-83A896C0590F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -494,6 +517,8 @@ Global
 		{DE629FE5-BC8A-4597-B19C-DDAB5EC1528D} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
 		{D71A7BBE-E64A-4F2E-B2A9-6D742FE94ED9} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
 		{B8BC6552-6409-4BE1-B085-E8E6513EC251} = {7FFED910-450B-4D6E-9085-6E5A6731D72A}
+		{C83A089D-7B30-46BB-BBE3-AFBBAFB9A40D} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
+		{AB1DCAA5-9C86-411D-A730-83A896C0590F} = {A6FF48E5-310A-4606-B435-D24B6B348F8C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6C780ABA-5872-4B83-AD3F-A5BD423AD907}

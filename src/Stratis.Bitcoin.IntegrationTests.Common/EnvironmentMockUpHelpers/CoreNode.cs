@@ -62,6 +62,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public Mnemonic Mnemonic { get; set; }
 
+        public string WalletName => this.builderWalletName;
+        public string WalletPassword => this.builderWalletPassword;
+
         private bool builderAlwaysFlushBlocks;
         private bool builderEnablePeerDiscovery;
         private bool builderNoValidation;

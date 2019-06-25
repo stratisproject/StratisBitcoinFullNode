@@ -97,6 +97,9 @@ namespace Stratis.Bitcoin.Features.Api
 
             app.UseCors("CorsPolicy");
 
+            // Register this before MVC and Swagger.
+            app.UseMiddleware<NoCacheMiddleware>();
+
             app.UseMvc();
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.

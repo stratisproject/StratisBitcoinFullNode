@@ -16,7 +16,6 @@
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
   </PropertyGroup>
 
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <NoWarn>1701;1702;1705;IDE0008;</NoWarn>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
@@ -24,13 +23,17 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
-
   <ItemGroup>
     <Compile Remove="PoA\**" />
     <EmbeddedResource Remove="PoA\**" />
     <None Remove="PoA\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="NLog.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />

@@ -1117,7 +1117,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new WalletManager(this.LoggerFactory.Object, KnownNetworks.StratisMain, chain, new WalletSettings(NodeSettings.Default(this.Network)),
                 CreateDataFolder(this), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
 
-            uint256 result = walletManager.LastReceivedBlockHash();
+            uint256 result = walletManager.LastReceivedBlockInfo().Hash;
 
             Assert.Equal(chain.Tip.HashBlock, result);
         }
@@ -1132,7 +1132,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             wallet.AccountsRoot.ElementAt(0).CoinType = CoinType.Stratis;
             walletManager.Wallets.Add(wallet);
 
-            uint256 result = walletManager.LastReceivedBlockHash();
+            uint256 result = walletManager.LastReceivedBlockInfo().Hash;
             Assert.Equal(chainIndexer.Tip.HashBlock, result);
         }
 
@@ -2376,9 +2376,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 dataFolder, walletFeePolicy.Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
             walletManager.Wallets.Add(wallet);
             walletManager.LoadKeysLookupLock();
-            walletManager.WalletTipHash = block.Header.GetHash();
 
             ChainedHeader chainedBlock = chainInfo.chain.GetHeader(block.GetHash());
+            walletManager.WalletTipHash = block.Header.GetHash();
+            walletManager.WalletTipHeight = chainedBlock.Height;
+
             walletManager.ProcessBlock(block, chainedBlock);
 
             HdAddress spentAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);
@@ -3017,7 +3019,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(4, transactionCount);
 
             // Act.
-            HashSet<(uint256, DateTimeOffset)> result = walletManager.RemoveTransactionsByIdsLocked("wallet1", new[] { trxUnconfirmed1.Id, trxUnconfirmed2.Id, trxConfirmed1.Id, trxConfirmed2.Id });
+            HashSet<(uint256, DateTimeOffset)> result = walletManager.RemoveTransactionsByIds("wallet1", new[] { trxUnconfirmed1.Id, trxUnconfirmed2.Id, trxConfirmed1.Id, trxConfirmed2.Id });
 
             // Assert.
             List<TransactionData> remainingTrxs = firstAccount.GetCombinedAddresses().SelectMany(a => a.Transactions).ToList();
@@ -3027,6 +3029,100 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Contains((trxUnconfirmed2.Id, trxConfirmed2.CreationTime), result);
             Assert.DoesNotContain(trxUnconfirmed1, remainingTrxs);
             Assert.DoesNotContain(trxUnconfirmed2, remainingTrxs);
+        }
+
+        [Fact]
+        public void ConfirmedTransactionsShouldWipeOutUnconfirmedWithSameInputs()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+            Directory.CreateDirectory(dataFolder.WalletPath);
+
+            Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password");
+            (ExtKey ExtKey, string ExtPubKey) accountKeys = WalletTestsHelpers.GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
+            (PubKey PubKey, BitcoinPubKeyAddress Address) spendingKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
+            (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
+            (PubKey PubKey, BitcoinPubKeyAddress Address) changeKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
+
+            var spendingAddress = new HdAddress
+            {
+                Index = 0,
+                HdPath = $"m/44'/0'/0'/0/0",
+                Address = spendingKeys.Address.ToString(),
+                Pubkey = spendingKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = spendingKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            var destinationAddress = new HdAddress
+            {
+                Index = 1,
+                HdPath = $"m/44'/0'/0'/0/1",
+                Address = destinationKeys.Address.ToString(),
+                Pubkey = destinationKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = destinationKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            var changeAddress = new HdAddress
+            {
+                Index = 0,
+                HdPath = $"m/44'/0'/0'/1/0",
+                Address = changeKeys.Address.ToString(),
+                Pubkey = changeKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = changeKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            // Generate a spendable transaction.
+            (ChainIndexer chain, uint256 blockhash, Block block) chainInfo = WalletTestsHelpers.CreateChainAndCreateFirstBlockWithPaymentToAddress(wallet.Network, spendingAddress);
+            TransactionData spendingTransaction = WalletTestsHelpers.CreateTransactionDataFromFirstBlock(chainInfo);
+            spendingAddress.Transactions.Add(spendingTransaction);
+
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount
+            {
+                Index = 0,
+                Name = "account1",
+                HdPath = "m/44'/0'/0'",
+                ExtendedPubKey = accountKeys.ExtPubKey,
+                ExternalAddresses = new List<HdAddress> { spendingAddress, destinationAddress },
+                InternalAddresses = new List<HdAddress> { changeAddress }
+            });
+
+            // Set up a transaction that will arrive through the mempool.
+            Transaction transaction1 = WalletTestsHelpers.SetupValidTransaction(wallet, "password", spendingAddress, destinationKeys.PubKey, changeAddress, new Money(7500), new Money(5000));
+
+            // Set up a different transaction spending the same inputs, with a higher fee, that will arrive in a block.
+            Transaction transaction2 = WalletTestsHelpers.SetupValidTransaction(wallet, "password", spendingAddress, destinationKeys.PubKey, changeAddress, new Money(7500), new Money(10_000));
+
+            Assert.Equal(transaction1.Inputs[0].PrevOut, transaction2.Inputs[0].PrevOut);
+            Assert.NotEqual(transaction1.GetHash(), transaction2.GetHash());
+
+            var walletFeePolicy = new Mock<IWalletFeePolicy>();
+            walletFeePolicy.Setup(w => w.GetMinimumFee(258, 50))
+                .Returns(new Money(5000));
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chainInfo.chain, new WalletSettings(NodeSettings.Default(this.Network)),
+                dataFolder, walletFeePolicy.Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
+            walletManager.Wallets.Add(wallet);
+            walletManager.LoadKeysLookupLock();
+
+            // First add transaction 1 via mempool.
+            walletManager.ProcessTransaction(transaction1);
+
+            // The first transaction should be present in the wallet.
+            Assert.True(destinationAddress.Transactions.Any(t => t.Id == transaction1.GetHash()));
+
+            // Now add transaction 2 via block.
+            Block block = this.Network.CreateBlock();
+            block.AddTransaction(transaction2);
+
+            walletManager.ProcessTransaction(transaction2, 10, block);
+            
+            // The first transaction should no longer be present in the wallet.
+            Assert.False(destinationAddress.Transactions.Any(t => t.Id == transaction1.GetHash()));
+
+            // The second transaction should be present.
+            Assert.True(destinationAddress.Transactions.Any(t => t.Id == transaction2.GetHash()));
         }
 
         [Fact]
@@ -3069,7 +3165,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(3, transactionCount);
 
             // Act.
-            HashSet<(uint256, DateTimeOffset)> result = walletManager.RemoveTransactionsByIdsLocked("wallet1", new[]
+            HashSet<(uint256, DateTimeOffset)> result = walletManager.RemoveTransactionsByIds("wallet1", new[]
             {
                 trxConfirmed1.Id, // Shouldn't be removed.
                 unconfirmedTransactionId, // A transaction + a spending transaction should be removed.

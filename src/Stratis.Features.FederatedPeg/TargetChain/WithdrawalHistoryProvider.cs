@@ -16,7 +16,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
     public class WithdrawalHistoryProvider : IWithdrawalHistoryProvider
     {
         private readonly Network network;
-        private readonly IFederationGatewaySettings federationGatewaySettings;
+        private readonly IFederatedPegSettings federatedPegSettings;
         private readonly IFederationWalletManager federationWalletManager;
         private readonly ICrossChainTransferStore crossChainTransferStore;
         private readonly MempoolManager mempoolManager;
@@ -25,19 +25,19 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// The <see cref="WithdrawalHistoryProvider"/> constructor.
         /// </summary>
         /// <param name="network">Network we are running on.</param>
-        /// <param name="federationGatewaySettings">Federation settings providing access to number of signatures required.</param>
+        /// <param name="federatedPegSettings">Federation settings providing access to number of signatures required.</param>
         /// <param name="federationWalletManager">Wallet manager which provides access to the wallet.</param>
         /// <param name="crossChainTransferStore">Store which provides access to the statuses.</param>
         /// <param name="mempoolManager">Mempool which provides information about transactions in the mempool.</param>
         public WithdrawalHistoryProvider(
             Network network,
-            IFederationGatewaySettings federationGatewaySettings,
+            IFederatedPegSettings federatedPegSettings,
             IFederationWalletManager federationWalletManager,
             ICrossChainTransferStore crossChainTransferStore,
             MempoolManager mempoolManager)
         {
             this.network = network;
-            this.federationGatewaySettings = federationGatewaySettings;
+            this.federatedPegSettings = federatedPegSettings;
             this.federationWalletManager = federationWalletManager;
             this.crossChainTransferStore = crossChainTransferStore;
             this.mempoolManager = mempoolManager;
@@ -118,7 +118,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                         model.SpendingOutputDetails = this.GetSpendingInfo(transfer.PartialTransaction);
                         break;
                     case CrossChainTransferStatus.Partial:
-                        status += " (" + transfer.GetSignatureCount(this.network) + "/" + this.federationGatewaySettings.MultiSigM + ")";
+                        status += " (" + transfer.GetSignatureCount(this.network) + "/" + this.federatedPegSettings.MultiSigM + ")";
                         model.SpendingOutputDetails = this.GetSpendingInfo(transfer.PartialTransaction);
                         break;
                 }

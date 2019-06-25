@@ -32,7 +32,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
 
         private readonly IMaturedBlocksProvider maturedBlocksProvider;
 
-        private readonly IFederationGatewaySettings federationGatewaySettings;
+        private readonly IFederatedPegSettings federatedPegSettings;
 
         private readonly IFederationWalletManager federationWalletManager;
 
@@ -41,13 +41,13 @@ namespace Stratis.Features.FederatedPeg.Controllers
         public FederationGatewayController(
             ILoggerFactory loggerFactory,
             IMaturedBlocksProvider maturedBlocksProvider,
-            IFederationGatewaySettings federationGatewaySettings,
+            IFederatedPegSettings federatedPegSettings,
             IFederationWalletManager federationWalletManager,
             IFederationManager federationManager = null)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.maturedBlocksProvider = maturedBlocksProvider;
-            this.federationGatewaySettings = federationGatewaySettings;
+            this.federatedPegSettings = federatedPegSettings;
             this.federationWalletManager = federationWalletManager;
             this.federationManager = federationManager;
         }
@@ -99,20 +99,20 @@ namespace Stratis.Features.FederatedPeg.Controllers
         {
             try
             {
-                bool isMainchain = this.federationGatewaySettings.IsMainChain;
+                bool isMainchain = this.federatedPegSettings.IsMainChain;
 
                 var model = new FederationGatewayInfoModel
                 {
                     IsActive = this.federationWalletManager.IsFederationWalletActive(),
                     IsMainChain = isMainchain,
-                    FederationNodeIpEndPoints = this.federationGatewaySettings.FederationNodeIpEndPoints.Select(i => $"{i.Address}:{i.Port}"),
-                    MultisigPublicKey = this.federationGatewaySettings.PublicKey,
-                    FederationMultisigPubKeys = this.federationGatewaySettings.FederationPublicKeys.Select(k => k.ToString()),
+                    FederationNodeIpEndPoints = this.federatedPegSettings.FederationNodeIpEndPoints.Select(i => $"{i.Address}:{i.Port}"),
+                    MultisigPublicKey = this.federatedPegSettings.PublicKey,
+                    FederationMultisigPubKeys = this.federatedPegSettings.FederationPublicKeys.Select(k => k.ToString()),
                     MiningPublicKey =  isMainchain ? null : this.federationManager.CurrentFederationKey?.PubKey.ToString(),
                     FederationMiningPubKeys =  isMainchain ? null : this.federationManager.GetFederationMembers().Select(k => k.ToString()),
-                    MultiSigAddress = this.federationGatewaySettings.MultiSigAddress,
-                    MultiSigRedeemScript = this.federationGatewaySettings.MultiSigRedeemScript.ToString(),
-                    MinimumDepositConfirmations = this.federationGatewaySettings.MinimumDepositConfirmations
+                    MultiSigAddress = this.federatedPegSettings.MultiSigAddress,
+                    MultiSigRedeemScript = this.federatedPegSettings.MultiSigRedeemScript.ToString(),
+                    MinimumDepositConfirmations = this.federatedPegSettings.MinimumDepositConfirmations
                 };
 
                 return this.Json(model);

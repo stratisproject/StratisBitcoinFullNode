@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
@@ -33,7 +34,11 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private readonly ILogger logger;
 
+        private readonly IDateTimeProvider timeProvider;
+
         private readonly uint federationMemberMaxIdleTimeSeconds;
+
+        private readonly PoAConsensusFactory consensusFactory;
 
         private SubscriptionToken blockConnectedToken, fedMemberAddedToken, fedMemberKickedToken;
 
@@ -43,7 +48,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         private const string fedMembersByLastActiveTimeKey = "fedMembersByLastActiveTime";
 
         public IdleFederationMembersKicker(ISignals signals, Network network, IKeyValueRepository keyValueRepository, IConsensusManager consensusManager,
-            IFederationManager federationManager, ISlotsManager slotsManager, VotingManager votingManager, ILoggerFactory loggerFactory)
+            IFederationManager federationManager, ISlotsManager slotsManager, VotingManager votingManager, ILoggerFactory loggerFactory, IDateTimeProvider timeProvider)
         {
             this.signals = signals;
             this.network = network;
@@ -52,7 +57,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.federationManager = federationManager;
             this.slotsManager = slotsManager;
             this.votingManager = votingManager;
+            this.timeProvider = timeProvider;
 
+            this.consensusFactory = this.network.Consensus.ConsensusFactory as PoAConsensusFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.federationMemberMaxIdleTimeSeconds = ((PoAConsensusOptions)network.Consensus.Options).FederationMemberMaxIdleTimeSeconds;
         }
@@ -63,17 +70,26 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.fedMemberAddedToken = this.signals.Subscribe<FedMemberAdded>(this.OnFedMemberAdded);
             this.fedMemberKickedToken = this.signals.Subscribe<FedMemberKicked>(this.OnFedMemberKicked);
 
-            this.fedPubKeysByLastActiveTime = this.keyValueRepository.LoadValueJson<Dictionary<PubKey, uint>>(fedMembersByLastActiveTimeKey);
+            Dictionary<string, uint> loaded = this.keyValueRepository.LoadValueJson<Dictionary<string, uint>>(fedMembersByLastActiveTimeKey);
 
-            if (this.fedPubKeysByLastActiveTime == null)
+            if (loaded != null)
+            {
+                this.fedPubKeysByLastActiveTime = new Dictionary<PubKey, uint>();
+
+                foreach (KeyValuePair<string, uint> loadedMember in loaded)
+                {
+                    this.fedPubKeysByLastActiveTime.Add(new PubKey(loadedMember.Key), loadedMember.Value);
+                }
+            }
+            else
             {
                 this.logger.LogDebug("No saved data found. Initializing federation data with genesis timestamps.");
 
                 this.fedPubKeysByLastActiveTime = new Dictionary<PubKey, uint>();
 
-                // Initialize federation members with genesis time.
-                foreach (PubKey federationMember in this.federationManager.GetFederationMembers())
-                    this.fedPubKeysByLastActiveTime.Add(federationMember, this.network.GenesisTime);
+                // Initialize with 0.
+                foreach (IFederationMember federationMember in this.federationManager.GetFederationMembers())
+                    this.fedPubKeysByLastActiveTime.Add(federationMember.PubKey, 0);
 
                 this.SaveMembersByLastActiveTime();
             }
@@ -110,24 +126,56 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             foreach (KeyValuePair<PubKey, uint> fedMemberToActiveTime in this.fedPubKeysByLastActiveTime)
             {
-                uint inactiveForSeconds = tip.Header.Time - fedMemberToActiveTime.Value;
+                uint inactiveForSeconds;
 
-                if (inactiveForSeconds > this.federationMemberMaxIdleTimeSeconds)
+                if (fedMemberToActiveTime.Value == 0)
                 {
-                    this.logger.LogDebug("Federation member '{0}' was inactive for {1} seconds and will be scheduled to be kicked.", fedMemberToActiveTime.Key, inactiveForSeconds);
+                    // Fed member was never active, count from first block after genesis.
+                    inactiveForSeconds = tip.Header.Time - blockConnectedData.ConnectedBlock.ChainedHeader.GetAncestor(1).Header.Time;
+                }
+                else
+                {
+                    inactiveForSeconds = tip.Header.Time - fedMemberToActiveTime.Value;
+                }
 
-                    this.votingManager.ScheduleVote(new VotingData()
+                if (inactiveForSeconds > this.federationMemberMaxIdleTimeSeconds && this.federationManager.IsFederationMember)
+                {
+                    IFederationMember memberToKick = this.federationManager.GetFederationMembers().SingleOrDefault(x => x.PubKey == fedMemberToActiveTime.Key);
+
+                    byte[] federationMemberBytes = this.consensusFactory.SerializeFederationMember(memberToKick);
+
+                    List<Poll> finishedPolls = this.votingManager.GetFinishedPolls();
+
+                    bool alreadyKicking = finishedPolls.Any(x => !x.IsExecuted &&
+                         x.VotingData.Key == VoteKey.KickFederationMember && x.VotingData.Data.SequenceEqual(federationMemberBytes) &&
+                         x.PubKeysHexVotedInFavor.Contains(this.federationManager.CurrentFederationKey.PubKey.ToHex()));
+
+                    if (!alreadyKicking)
                     {
-                        Key = VoteKey.KickFederationMember,
-                        Data = fedMemberToActiveTime.Key.ToBytes()
-                    });
+                        this.logger.LogWarning("Federation member '{0}' was inactive for {1} seconds and will be scheduled to be kicked.", fedMemberToActiveTime.Key, inactiveForSeconds);
+
+                        this.votingManager.ScheduleVote(new VotingData()
+                        {
+                            Key = VoteKey.KickFederationMember,
+                            Data = fedMemberToActiveTime.Key.ToBytes()
+                        });
+                    }
+                    else
+                    {
+                        this.logger.LogDebug("Skipping because kicking is already voted for.");
+                    }
                 }
             }
         }
 
         private void SaveMembersByLastActiveTime()
         {
-            this.keyValueRepository.SaveValueJson(fedMembersByLastActiveTimeKey, this.fedPubKeysByLastActiveTime);
+            var dataToSave = new Dictionary<string, uint>();
+
+            foreach (KeyValuePair<PubKey, uint> pair in this.fedPubKeysByLastActiveTime)
+                dataToSave.Add(pair.Key.ToHex(), pair.Value);
+
+            this.keyValueRepository.SaveValueJson(fedMembersByLastActiveTimeKey, dataToSave);
         }
 
         /// <inheritdoc />
