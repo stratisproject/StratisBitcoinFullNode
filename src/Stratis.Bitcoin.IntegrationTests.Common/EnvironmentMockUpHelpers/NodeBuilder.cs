@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             throw new FileNotFoundException($"Could not load the file {path}.");
         }
 
-        protected static string GetStratisXPath(string version)
+        private static string GetStratisXPath(string version)
         {
             string path;
 

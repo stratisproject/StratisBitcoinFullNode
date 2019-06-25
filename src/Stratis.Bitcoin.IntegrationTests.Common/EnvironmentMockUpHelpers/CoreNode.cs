@@ -353,7 +353,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     this.State = CoreNodeState.Running;
                     return true;
                 }
-                catch (Exception e)
+                catch
                 {
                     return false;
                 }
