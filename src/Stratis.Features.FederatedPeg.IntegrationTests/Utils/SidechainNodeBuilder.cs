@@ -64,7 +64,6 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
         {
             string agentName = $"mainfed{Interlocked.Increment(ref agentCount)}";
             string dataFolder = this.GetNextDataFolderName(agentName);
-
             CoreNode node = this.CreateNode(new MainChainFederationNodeRunner(dataFolder, agentName, network, counterChainNetwork), "stratis.conf");
 
             return node;
