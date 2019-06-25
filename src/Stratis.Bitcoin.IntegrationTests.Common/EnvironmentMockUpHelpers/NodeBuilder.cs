@@ -113,12 +113,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new StratisXRunner(this.GetNextDataFolderName(), stratisDPath), "stratis.conf", useCookieAuth);
         }
 
-        public CoreNode CreateMainnetStratisXNode(string version = "2.0.0.5", bool useCookieAuth = false, NodeConfigParameters parameters = null)
+        public CoreNode CreateMainnetStratisXNode(string version = "2.0.0.5", bool useCookieAuth = false)
         {
-            if (parameters == null)
-            {
-                parameters = new NodeConfigParameters();
-            }
+            var parameters = new NodeConfigParameters();
             parameters.Add("regtest", "0");
             parameters.Add("server", "0");
 

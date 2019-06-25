@@ -400,9 +400,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
         }
 
         [Fact]
-        public void SyncFirst15KBlocks()
+        public void GatewayNodeCanSyncFirst15KBlocks()
         {
-            Network network = new StratisMain15KCheckpoint();
+            Network network = new StratisMain10KCheckpoint();
 
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -412,19 +412,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
 
             using (NodeBuilder builder = NodeBuilder.Create(this).WithLogsEnabled())
             {
-                var gatewayParameters = new NodeConfigParameters();
-                gatewayParameters.Add("regtest", "0");
-
-                CoreNode gatewayNode = builder.CreateStratisPosNode(network, configParameters: gatewayParameters, isGateway:true);
-
-                var stratisXParameters = new NodeConfigParameters();
-                stratisXParameters.Add("connect", gatewayNode.Endpoint.ToString());
-
-                CoreNode stratisXNode = builder.CreateMainnetStratisXNode(parameters: stratisXParameters)
+                CoreNode stratisXNode = builder.CreateMainnetStratisXNode()
                     .WithReadyBlockchainData(ReadyBlockchain.StratisXMainnet15K);
 
-                gatewayNode.AppendToConfig("gateway=1");
-                gatewayNode.AppendToConfig($"whitelist={stratisXNode.Endpoint}");
+                var gatewayParameters = new NodeConfigParameters();
+                gatewayParameters.Add("regtest", "0");
+                gatewayParameters.Add("gateway", "1");
+                gatewayParameters.Add("whitelist", stratisXNode.Endpoint.ToString());
+                CoreNode gatewayNode = builder.CreateStratisPosNode(network, configParameters: gatewayParameters, isGateway:true);
 
                 gatewayNode.Start();
                 stratisXNode.Start();

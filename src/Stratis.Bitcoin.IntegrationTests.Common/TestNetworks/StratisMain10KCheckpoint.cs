@@ -7,9 +7,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.TestNetworks
     /// <summary>
     /// Allows us to test syncing blocks around the switch from PoW to PoS.
     /// </summary>
-    public class StratisMain15KCheckpoint : StratisMain
+    public class StratisMain10KCheckpoint : StratisMain
     {
-        public StratisMain15KCheckpoint()
+        public StratisMain10KCheckpoint()
         {
             this.Checkpoints = new Dictionary<int, CheckpointInfo>
             {
@@ -20,8 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.TestNetworks
                 { 150, new CheckpointInfo(new uint256("0xe4ae9663519abec15e28f68bdb2cb89a739aee22f53d1573048d69141db6ee5d"), new uint256("0xa6c17173e958dc716cc0892ce33dad8bc327963d78a16c436264ceae43d584ce")) },
                 { 2000, new CheckpointInfo(new uint256("0x7902db2766bb6a5a1c5b9624afc733ab2ffff5875b867d87c3b74821290aaca2"), new uint256("0x0b0b48c5ad4557b973f7c9e9e7d4fcc828c7c084e6d31b359c07c6810d24d922")) },
                 { 4000, new CheckpointInfo(new uint256("0x383c951dcd8250d42141a2341dbcb449d59f87cc3b1b60d0e34765b8ebc25f41"), new uint256("0x9270895f93216d4dac1cfca1fbf5d4b3c468b719d37f9c2dbc4fe887e41fd55b")) },
-                { 10000, new CheckpointInfo(new uint256("0xad873f39e811afd15aba794bd40aaeaa4843eddf193d56f4a23007834e5aefb0"), new uint256("0x895eab2f44472715e45d5ef1dab893a9c3d9860dc4c4eecd02b4c365f19bf08f")) },
-                { 15000, new CheckpointInfo(new uint256("0x18ac39b202af9f8d0ae9830a37f1367910ed736f39c83b14d888ce01fc4ca44e"), new uint256("0x925aedb733d038493edd4b3d11d0db094ca801647089242e0b9b925908a21dfc")) }
+                { 10000, new CheckpointInfo(new uint256("0xad873f39e811afd15aba794bd40aaeaa4843eddf193d56f4a23007834e5aefb0"), new uint256("0x895eab2f44472715e45d5ef1dab893a9c3d9860dc4c4eecd02b4c365f19bf08f")) }
             };
         }
     }
