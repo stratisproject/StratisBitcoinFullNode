@@ -194,12 +194,9 @@ namespace Stratis.Sidechains.Networks
             
 			};
 	    
-			this.SeedNodes = new List<NetworkAddress>
-            {
-            
-				new NetworkAddress(IPAddress.Parse("82.146.153.175"), 16179)
+			string[] seedNodes = { "82.146.153.175" };
 
-            };
+            this.SeedNodes = ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
 			
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
 
