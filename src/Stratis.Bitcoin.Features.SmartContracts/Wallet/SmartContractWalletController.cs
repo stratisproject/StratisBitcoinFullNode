@@ -233,8 +233,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                         BlockHeight = spendingDetail.BlockHeight,
                         Hash = spendingDetail.TransactionId,
                         TransactionFee = transactionFee.ToUnit(MoneyUnit.Satoshi),
-                        GasFee = gasFee,
-                        GasRefund = gasRefund
+                        GasFee = gasFee
                     };
 
                     if (scPayment.DestinationScriptPubKey.IsSmartContractCreate())

@@ -11,6 +11,5 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         public decimal Amount { get; set; }
         public decimal TransactionFee { get; set; }
         public decimal GasFee { get; set; }
-        public decimal GasRefund { get; set; }
     }
 }
