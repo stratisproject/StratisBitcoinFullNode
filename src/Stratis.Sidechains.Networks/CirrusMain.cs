@@ -103,8 +103,6 @@ namespace Stratis.Sidechains.Networks
 				new CollateralFederationMember(new PubKey("02a523078d5391f69ad3ee1554cf4afad3ce4c0946ff92c7447e5b7c7197967314"), new Money(10000_00000000),	"SaZ8oZAasmSp5kJRnGx1aPDW5nqSjBxR7z"),
 				new CollateralFederationMember(new PubKey("02d57eaa61845c5ce07963b211af83c3fe072a9de65c555f7bdbd7c38efe65e42a"), new Money(10000_00000000),	"SSwiXJ8ENCcLyFDRxSnCaG9FS4UmtfaE5g"),
 				new CollateralFederationMember(new PubKey("0371c8558c846172eaf694a4e3af4d6cfdbfdd0d8480666c206ea43522c65a926a"), new Money(10000_00000000),	"SREEeESBB1fiSCEfZ7qDBuQeZtM7byCyoG"),
-				new CollateralFederationMember(new PubKey("02aba98b9eb45dd3a27519101d78f44a7a4604dc5f35c7afa32034a6c856c2f791"), new Money(10000_00000000),	"SaMvhqGUFWHFgBoC24Dtxgg48XS7ZbNtbs"),
-				new CollateralFederationMember(new PubKey("0225b9d32621eda3691bb1c9effce6819ca6536a34fe45f13b42467240a2e53daf"), new Money(10000_00000000),	"SXaAD7ZAtZHZkwvKUBk7iBLKWqicAVsosQ"),
 				new CollateralFederationMember(new PubKey("03adce7b60c2a3b03f9567d44bcf4e1d98200a736914a4385a4ef8c248d50b71ba"), new Money(10000_00000000),	"ScY7ZaL5KN4PpHMaoAr3yK1qbRpEuq4rYv")
 	    
 			};
