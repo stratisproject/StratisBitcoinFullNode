@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System.Threading.Tasks;
+using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Interfaces
@@ -13,6 +14,6 @@ namespace Stratis.Bitcoin.Interfaces
         /// </summary>
         /// <param name="trxid">Hash of the transaction to query.</param>
         /// <returns>Unspent Outputs</returns>
-        UnspentOutputs GetUnspentTransaction(uint256 trxid);
+        Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid);
     }
 }

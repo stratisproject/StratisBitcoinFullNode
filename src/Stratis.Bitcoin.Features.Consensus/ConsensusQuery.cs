@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -13,9 +14,9 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// </summary>
     public class ConsensusQuery : IGetUnspentTransaction, INetworkDifficulty
     {
+        private readonly IChainState chainState;
         private readonly ICoinView coinView;
         private readonly ILogger logger;
-        private readonly IChainState chainState;
         private readonly Network network;
 
         public ConsensusQuery(
@@ -31,12 +32,13 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public UnspentOutputs GetUnspentTransaction(uint256 trxid)
+        public Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {
             FetchCoinsResponse response = this.coinView.FetchCoins(new[] { trxid });
 
             UnspentOutputs unspentOutputs = response.UnspentOutputs.FirstOrDefault();
-            return unspentOutputs;
+
+            return Task.FromResult(unspentOutputs);
         }
 
         /// <inheritdoc/>

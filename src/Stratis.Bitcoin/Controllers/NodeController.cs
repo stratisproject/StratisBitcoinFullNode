@@ -371,7 +371,7 @@ namespace Stratis.Bitcoin.Controllers
         /// <exception cref="ArgumentException">Thrown if trxid is empty or not a valid <see cref="uint256"/></exception>
         [Route("gettxout")]
         [HttpGet]
-        public IActionResult GetTxOut([FromQuery] string trxid, uint vout = 0, bool includeMemPool = true)
+        public async Task<IActionResult> GetTxOutAsync([FromQuery] string trxid, uint vout = 0, bool includeMemPool = true)
         {
             try
             {
@@ -386,11 +386,11 @@ namespace Stratis.Bitcoin.Controllers
                 UnspentOutputs unspentOutputs = null;
                 if (includeMemPool)
                 {
-                    unspentOutputs = this.pooledGetUnspentTransaction != null ? this.pooledGetUnspentTransaction.GetUnspentTransaction(txid) : null;
+                    unspentOutputs = this.pooledGetUnspentTransaction != null ? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(txid) : null;
                 }
                 else
                 {
-                    unspentOutputs = this.getUnspentTransaction != null ? this.getUnspentTransaction.GetUnspentTransaction(txid) : null;
+                    unspentOutputs = this.getUnspentTransaction != null ? await this.getUnspentTransaction.GetUnspentTransactionAsync(txid) : null;
                 }
 
                 if (unspentOutputs == null)
@@ -563,7 +563,7 @@ namespace Stratis.Bitcoin.Controllers
 
                 foreach ((string loopName, TaskStatus status) in this.asyncProvider.GetAll())
                 {
-                    loops.Add(new AsyncLoopModel() { LoopName = loopName, Status = Enum.GetName(typeof(TaskStatus), status)});
+                    loops.Add(new AsyncLoopModel() { LoopName = loopName, Status = Enum.GetName(typeof(TaskStatus), status) });
                 }
 
                 return this.Json(loops);

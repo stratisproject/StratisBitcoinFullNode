@@ -257,69 +257,69 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         }
 
         [Fact]
-        public void GetTxOutAsync_NotIncludeInMempool_UnspentTransactionNotFound_ReturnsNull()
+        public async Task GetTxOutAsync_NotIncludeInMempool_UnspentTransactionNotFound_ReturnsNullAsync()
         {
             var txId = new uint256(1243124);
-            this.getUnspentTransaction.Setup(s => s.GetUnspentTransaction(txId))
-                .Returns((UnspentOutputs)null)
+            this.getUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
+                .ReturnsAsync((UnspentOutputs)null)
                 .Verifiable();
 
-            GetTxOutModel result = this.controller.GetTxOut(txId.ToString(), 0, false);
+            GetTxOutModel result = await this.controller.GetTxOutAsync(txId.ToString(), 0, false);
 
             Assert.Null(result);
             this.getUnspentTransaction.Verify();
         }
 
         [Fact]
-        public void GetTxOutAsync_NotIncludeInMempool_GetUnspentTransactionNotAvailable_ReturnsNull()
+        public async Task GetTxOutAsync_NotIncludeInMempool_GetUnspentTransactionNotAvailable_ReturnsNullAsync()
         {
             var txId = new uint256(1243124);
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, null, this.networkDifficulty.Object,
                 this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
-            GetTxOutModel result = this.controller.GetTxOut(txId.ToString(), 0, false);
+            GetTxOutModel result = await this.controller.GetTxOutAsync(txId.ToString(), 0, false);
 
             Assert.Null(result);
         }
 
         [Fact]
-        public void GetTxOutAsync_IncludeMempool_UnspentTransactionNotFound_ReturnsNull()
+        public async Task GetTxOutAsync_IncludeMempool_UnspentTransactionNotFound_ReturnsNullAsync()
         {
             var txId = new uint256(1243124);
-            this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransaction(txId))
-                .Returns((UnspentOutputs)null)
+            this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
+                .ReturnsAsync((UnspentOutputs)null)
                 .Verifiable();
 
-            GetTxOutModel result = this.controller.GetTxOut(txId.ToString(), 0, true);
+            GetTxOutModel result = await this.controller.GetTxOutAsync(txId.ToString(), 0, true);
 
             Assert.Null(result);
             this.pooledGetUnspentTransaction.Verify();
         }
 
         [Fact]
-        public void GetTxOutAsync_IncludeMempool_PooledGetUnspentTransactionNotAvailable_UnspentTransactionNotFound_ReturnsNull()
+        public async Task GetTxOutAsync_IncludeMempool_PooledGetUnspentTransactionNotAvailable_UnspentTransactionNotFound_ReturnsNullAsync()
         {
             var txId = new uint256(1243124);
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, null, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
-            GetTxOutModel result = this.controller.GetTxOut(txId.ToString(), 0, true);
+            GetTxOutModel result = await this.controller.GetTxOutAsync(txId.ToString(), 0, true);
 
             Assert.Null(result);
         }
 
         [Fact]
-        public void GetTxOutAsync_NotIncludeInMempool_UnspentTransactionFound_ReturnsModel()
+        public async Task GetTxOutAsync_NotIncludeInMempool_UnspentTransactionFound_ReturnsModelAsync()
         {
             var txId = new uint256(1243124);
             Transaction transaction = this.CreateTransaction();
             var unspentOutputs = new UnspentOutputs(1, transaction);
 
-            this.getUnspentTransaction.Setup(s => s.GetUnspentTransaction(txId))
-                .Returns(unspentOutputs)
+            this.getUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
+                .ReturnsAsync(unspentOutputs)
                 .Verifiable();
 
-            GetTxOutModel model = this.controller.GetTxOut(txId.ToString(), 0, false);
+            GetTxOutModel model = await this.controller.GetTxOutAsync(txId.ToString(), 0, false);
 
             this.getUnspentTransaction.Verify();
 
@@ -331,19 +331,19 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         }
 
         [Fact]
-        public void GetTxOutAsync_IncludeInMempool_UnspentTransactionFound_ReturnsModel()
+        public async Task GetTxOutAsync_IncludeInMempool_UnspentTransactionFound_ReturnsModelAsync()
         {
             var txId = new uint256(1243124);
             Transaction transaction = this.CreateTransaction();
             var unspentOutputs = new UnspentOutputs(1, transaction);
 
-            this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransaction(txId))
-                .Returns(unspentOutputs)
+            this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
+                .ReturnsAsync(unspentOutputs)
                 .Verifiable();
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
-            GetTxOutModel model = this.controller.GetTxOut(txId.ToString(), 0, true);
+            GetTxOutModel model = await this.controller.GetTxOutAsync(txId.ToString(), 0, true);
 
             this.pooledGetUnspentTransaction.Verify();
             Assert.Equal(this.chain.Tip.HashBlock, model.BestBlock);
@@ -354,17 +354,17 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         }
 
         [Fact]
-        public void GetTxOutAsync_NotIncludeInMempool_UnspentTransactionFound_VOutNotFound_ReturnsModel()
+        public async Task GetTxOutAsync_NotIncludeInMempool_UnspentTransactionFound_VOutNotFound_ReturnsModelAsync()
         {
             var txId = new uint256(1243124);
             Transaction transaction = this.CreateTransaction();
             var unspentOutputs = new UnspentOutputs(1, transaction);
 
-            this.getUnspentTransaction.Setup(s => s.GetUnspentTransaction(txId))
-                .Returns(unspentOutputs)
+            this.getUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
+                .ReturnsAsync(unspentOutputs)
                 .Verifiable();
 
-            GetTxOutModel model = this.controller.GetTxOut(txId.ToString(), 13, false);
+            GetTxOutModel model = await this.controller.GetTxOutAsync(txId.ToString(), 13, false);
 
             this.getUnspentTransaction.Verify();
             Assert.Equal(this.chain.Tip.HashBlock, model.BestBlock);
@@ -375,17 +375,17 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         }
 
         [Fact]
-        public void GetTxOutAsync_IncludeInMempool_UnspentTransactionFound_VOutNotFound_ReturnsModel()
+        public async Task GetTxOutAsync_IncludeInMempool_UnspentTransactionFound_VOutNotFound_ReturnsModelAsync()
         {
             var txId = new uint256(1243124);
             Transaction transaction = this.CreateTransaction();
             var unspentOutputs = new UnspentOutputs(1, transaction);
 
-            this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransaction(txId))
-                .Returns(unspentOutputs)
+            this.pooledGetUnspentTransaction.Setup(s => s.GetUnspentTransactionAsync(txId))
+                .ReturnsAsync(unspentOutputs)
                 .Verifiable();
 
-            GetTxOutModel model = this.controller.GetTxOut(txId.ToString(), 13, true);
+            GetTxOutModel model = await this.controller.GetTxOutAsync(txId.ToString(), 13, true);
 
             this.pooledGetUnspentTransaction.Verify();
             Assert.Equal(this.chain.Tip.HashBlock, model.BestBlock);

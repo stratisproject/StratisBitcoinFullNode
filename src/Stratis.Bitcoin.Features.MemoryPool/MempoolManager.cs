@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     public class MempoolManager : IPooledTransaction, IPooledGetUnspentTransaction
     {
         /// <summary>Memory pool persistence methods for loading and saving from storage.</summary>
-        private IMempoolPersistence mempoolPersistence;
+        private readonly IMempoolPersistence mempoolPersistence;
 
         /// <summary>Instance logger for memory pool manager.</summary>
         private readonly ILogger logger;
@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <inheritdoc />
-        public async Task<UnspentOutputs> GetUnspentTransaction(uint256 trxid)
+        public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {
             TxMempoolInfo txInfo = this.Info(trxid);
             if (txInfo == null)
