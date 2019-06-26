@@ -1,8 +1,10 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Stratis.FederatedSidechains.AdminDashboard.Entities;
 using Stratis.FederatedSidechains.AdminDashboard.Filters;
+using Stratis.FederatedSidechains.AdminDashboard.Models;
 using Stratis.FederatedSidechains.AdminDashboard.Services;
 using Stratis.FederatedSidechains.AdminDashboard.Settings;
 
@@ -75,6 +77,21 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
         {
             ApiResponse changeLogLevelRequest = await this.apiRequester.PostRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Node/loglevels", new { logRules = new[] { new { ruleName = rule, logLevel = level } } });
             return changeLogLevelRequest.IsSuccess ? (IActionResult)Ok() : BadRequest();
+        }
+
+        [Ajax]
+        [HttpPost] 
+        public async Task<IActionResult> Vote(Vote vote)
+        {
+            if (!string.IsNullOrEmpty(vote?.Hash))
+                return this.BadRequest("Hash is required");
+            
+            ApiResponse response = await this.apiRequester.PostRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/DefaultVoting/schedulevote-whitelisthash", new { hash = vote.Hash });
+
+            if (response.IsSuccess) return this.Ok();
+            
+            vote.Message = $"Failed to whitelist hash. Reason: {response.Content}";
+            return this.BadRequest($"Failed to whitelist hash. Reason: {response.Content}");
         }
     }
 }

@@ -1,4 +1,27 @@
-﻿<div class="modal fade right" id="federationVotes" tabindex="-1" role="dialog">
+﻿@model Vote
+
+<script type="text/javascript">
+    function submitVote() {
+        var form = document.getElementById('voteForm');
+        if (form.checkValidity() === false) {
+            return;
+        }
+        form.classList.add('was-validated');
+        $.post("/SidechainNode/Vote", $("#voteForm").serialize())
+         .done(function(data) {
+             $("#voteError").hide();
+             var hash = $("#vote").val();
+             $("#vote").val("");
+             $("#hashLabel").text(hash);
+             $("#confirmationModal").modal('show');
+         })
+         .fail(function(result) {
+             $("#voteError").text("Failed to vote. " + result.responseText);
+             $("#voteError").show();
+         });
+    }
+</script>
+<div class="modal fade right" id="federationVotes" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -8,7 +31,38 @@
                 </button>
             </div>
             <div class="modal-body">
+                <div class="alert alert-danger" role="alert" style="display: none;" id="voteError">
+                </div>
+                <form id="voteForm" novalidate class="needs-validation">
+                    <div class="form-group">
+                        <label for="exampleInputEmail1">Contract Hash</label>
+                        <input asp-for="Hash" type="text" class="form-control" id="vote" aria-describedby="hashHelp" placeholder="Enter hash value" required>
+                        <small id="hashHelp" class="form-text text-muted">Paste contract hash to be whitelisted.</small>
+                        <div class="invalid-feedback">
+                            Please provide a valid contract hash.
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="submitVote()">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
+<<div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Hash vote submitted</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                You have successfully submitted <b id="hashLabel"></b> contract hash.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
