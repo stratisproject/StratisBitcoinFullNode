@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (hash == null)
             {
                 // Look for the transaction in the mempool, and if not found, look in the indexed transactions.
-                trx = (this.pooledTransaction == null ? null : await this.pooledTransaction.GetTransaction(trxid)) ??
+                trx = (this.pooledTransaction == null ? null : await this.pooledTransaction.GetTransaction(trxid).ConfigureAwait(false)) ??
                       this.blockStore.GetTransactionById(trxid);
 
                 if (trx == null)
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             if (verbose != 0)
             {
-                ChainedHeader block = chainedHeaderBlock != null ? chainedHeaderBlock.ChainedHeader : await this.GetTransactionBlockAsync(trxid);
+                ChainedHeader block = chainedHeaderBlock != null ? chainedHeaderBlock.ChainedHeader : await this.GetTransactionBlockAsync(trxid).ConfigureAwait(false);
                 return new TransactionVerboseModel(trx, this.Network, block, this.ChainState?.ConsensusTip);
             }
             else
@@ -203,20 +203,19 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (!uint256.TryParse(txid, out trxid))
                 throw new ArgumentException(nameof(txid));
 
-            UnspentOutputs unspentOutputs = null;
-            if (includeMemPool)
+            if (includeMemPool && this.pooledGetUnspentTransaction != null)
             {
-                unspentOutputs = await this.pooledGetUnspentTransaction?.GetUnspentTransactionAsync(trxid);
-            }
-            else
-            {
-                unspentOutputs = await this.getUnspentTransaction?.GetUnspentTransactionAsync(trxid);
+                var unspentOutputs = await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid).ConfigureAwait(false);
+                return new GetTxOutModel(unspentOutputs, vout, this.Network, this.ChainIndexer.Tip);
             }
 
-            if (unspentOutputs == null)
-                return null;
+            if (!includeMemPool && this.getUnspentTransaction != null)
+            {
+                var unspentOutputs = await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid).ConfigureAwait(false);
+                return new GetTxOutModel(unspentOutputs, vout, this.Network, this.ChainIndexer.Tip);
+            }
 
-            return new GetTxOutModel(unspentOutputs, vout, this.Network, this.ChainIndexer.Tip);
+            return null;
         }
 
         /// <summary>
