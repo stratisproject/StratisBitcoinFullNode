@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>Transaction information.</returns>
         [ActionName("gettransaction")]
         [ActionDescription("Get detailed information about an in-wallet transaction.")]
-        public async Task<GetTransactionModel> GetTransactionAsync(string txid)
+        public GetTransactionModel GetTransaction(string txid)
         {
             if (!uint256.TryParse(txid, out uint256 trxid))
                 throw new ArgumentException(nameof(txid));

@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             if (verbose != 0)
             {
-                ChainedHeader block = chainedHeaderBlock != null ? chainedHeaderBlock.ChainedHeader : await this.GetTransactionBlockAsync(trxid).ConfigureAwait(false);
+                ChainedHeader block = chainedHeaderBlock != null ? chainedHeaderBlock.ChainedHeader : this.GetTransactionBlock(trxid);
                 return new TransactionVerboseModel(trx, this.Network, block, this.ChainState?.ConsensusTip);
             }
             else
@@ -277,24 +277,18 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             this.logger.LogDebug("RPC GetBlockHeader {0}", hash);
 
-            BlockHeaderModel model = null;
-            if (this.ChainIndexer != null)
-            {
-                BlockHeader blockHeader = this.ChainIndexer.GetHeader(uint256.Parse(hash))?.Header;
-                if (blockHeader != null)
-                {
-                    if (isJsonFormat)
-                    {
-                        return new BlockHeaderModel(blockHeader);
-                    }
-                    else
-                    {
-                        return new HexModel(blockHeader.ToHex(this.Network));
-                    }
-                }
-            }
+            if (this.ChainIndexer == null)
+                return null;
 
-            return null;
+            BlockHeader blockHeader = this.ChainIndexer.GetHeader(uint256.Parse(hash))?.Header;
+
+            if (blockHeader == null)
+                return null;
+
+            if (isJsonFormat)
+                return new BlockHeaderModel(blockHeader);
+            else
+                return new HexModel(blockHeader.ToHex(this.Network));
         }
 
         /// <summary>
@@ -365,9 +359,9 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <returns>The block according to format specified in <see cref="verbosity"/></returns>
         [ActionName("getblock")]
         [ActionDescription("Returns the block in hex, given a block hash.")]
-        public async Task<object> GetBlockAsync(string blockHash, int verbosity = 1)
+        public object GetBlock(string blockHash, int verbosity = 1)
         {
-            Block block = this.blockStore != null ? this.blockStore.GetBlock(uint256.Parse(blockHash)) : null;
+            Block block = this.blockStore?.GetBlock(uint256.Parse(blockHash));
 
             if (verbosity == 0)
                 return new HexModel(block?.ToHex(this.Network));
@@ -427,11 +421,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             return blockchainInfo;
         }
 
-        private async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid)
+        private ChainedHeader GetTransactionBlock(uint256 trxid)
         {
             ChainedHeader block = null;
 
-            uint256 blockid = this.blockStore != null ? this.blockStore.GetBlockIdByTransactionId(trxid) : null;
+            uint256 blockid = this.blockStore?.GetBlockIdByTransactionId(trxid);
             if (blockid != null)
                 block = this.ChainIndexer?.GetHeader(blockid);
 

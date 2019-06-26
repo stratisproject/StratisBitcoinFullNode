@@ -113,6 +113,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Check whether a transaction exists in the mempool.
         /// </summary>
+        /// <param name="trxid">The hash of the transaction to check.</param>
+        /// <returns><c>true</c>if the transaction exists in the mempool.</returns>
         public Task<bool> ExistsAsync(uint256 trxid)
         {
             return this.MempoolLock.ReadAsync(() => this.memPool.Exists(trxid));
