@@ -11,6 +11,7 @@ using Stratis.Bitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Api;
@@ -21,6 +22,7 @@ using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -28,6 +30,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Collateral;
 using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.CounterChain;
+using Stratis.Features.FederatedPeg.InputConsolidation;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.Notifications;
@@ -48,6 +51,11 @@ namespace Stratis.Features.FederatedPeg
         /// Given that we can have up to 10 UTXOs going at once.
         /// </summary>
         private const int TransfersToDisplay = 10;
+
+        /// <summary>
+        /// The maximum number of pending transactions to display in the console logging.
+        /// </summary>
+        private const int PendingToDisplay = 25;
 
         public const string FederationGatewayFeatureNamespace = "federationgateway";
 
@@ -77,6 +85,8 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly IWithdrawalHistoryProvider withdrawalHistoryProvider;
 
+        private readonly IInputConsolidator inputConsolidator;
+
         private readonly ILogger logger;
 
         public FederatedPegFeature(
@@ -94,6 +104,7 @@ namespace Stratis.Features.FederatedPeg
             ISignedMultisigTransactionBroadcaster signedBroadcaster,
             IMaturedBlocksSyncManager maturedBlocksSyncManager,
             IWithdrawalHistoryProvider withdrawalHistoryProvider,
+            IInputConsolidator inputConsolidator,
             ICollateralChecker collateralChecker = null)
         {
             this.loggerFactory = loggerFactory;
@@ -109,6 +120,7 @@ namespace Stratis.Features.FederatedPeg
             this.maturedBlocksSyncManager = maturedBlocksSyncManager;
             this.withdrawalHistoryProvider = withdrawalHistoryProvider;
             this.signedBroadcaster = signedBroadcaster;
+            this.inputConsolidator = inputConsolidator;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -143,6 +155,9 @@ namespace Stratis.Features.FederatedPeg
             // Query our database for fully-signed transactions and broadcast them every N seconds.
             this.signedBroadcaster.Start();
 
+            // Check that the feature is configured correctly before going any further.
+            this.CheckConfiguration();
+
             // Connect the node to the other federation members.
             foreach (IPEndPoint federationMemberIp in this.federatedPegSettings.FederationNodeIpEndPoints)
                 this.connectionManager.AddNodeAddress(federationMemberIp);
@@ -150,7 +165,26 @@ namespace Stratis.Features.FederatedPeg
             // Respond to requests to sign transactions from other nodes.
             NetworkPeerConnectionParameters networkPeerConnectionParameters = this.connectionManager.Parameters;
             networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager,
-                this.network, this.federatedPegSettings, this.crossChainTransferStore));
+                this.network, this.federatedPegSettings, this.crossChainTransferStore, this.inputConsolidator));
+        }
+
+        /// <summary>
+        /// Checks that the redeem script and the multisig address in the multisig wallet match the values provided in the federated peg settings.
+        /// </summary>
+        private void CheckConfiguration()
+        {
+            var wallet = this.federationWalletManager.GetWallet();
+
+            if (wallet.MultiSigAddress.RedeemScript != this.federatedPegSettings.MultiSigRedeemScript)
+            {
+                throw new ConfigurationException("Wallet redeem script does not match redeem script provided in settings. Please check that your wallet JSON file is correct and that the settings are configured correctly.");
+            }
+
+            if (wallet.MultiSigAddress.Address != this.federatedPegSettings.MultiSigAddress.ToString())
+            {
+                throw new ConfigurationException(
+                    "Wallet multisig address does not match multisig address of the redeem script provided in settings.  Please check that your wallet JSON file is correct and that the settings are configured correctly.");
+            }
         }
 
         public override void Dispose()
@@ -171,9 +205,9 @@ namespace Stratis.Features.FederatedPeg
             uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
             FederationWallet federationWallet = this.federationWalletManager.GetWallet();
-            benchLogs.AppendLine("Fed. Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
+            benchLogs.AppendLine("Fed.Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                  (federationWallet != null ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
-                                 (federationWallet != null ? (" Fed. Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
+                                 (federationWallet != null ? (" Fed.Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
         }
 
         private void AddComponentStats(StringBuilder benchLog)
@@ -186,7 +220,6 @@ namespace Stratis.Features.FederatedPeg
             catch (Exception e)
             {
                 this.logger.LogError(e.ToString());
-                throw;
             }
         }
 
@@ -218,14 +251,47 @@ namespace Stratis.Features.FederatedPeg
                 benchLog.AppendLine();
             }
 
-            List<WithdrawalModel> pendingWithdrawals = this.withdrawalHistoryProvider.GetPending();
+            List<ConsolidationTransaction> consolidationPartials = this.inputConsolidator.ConsolidationTransactions;
 
-            if (pendingWithdrawals.Count > 0)
+            if (consolidationPartials != null)
+            {
+                benchLog.AppendLine("--- Consolidation Transactions in Memory ---");
+                foreach (ConsolidationTransaction partial in consolidationPartials)
+                {
+                    benchLog.AppendLine(
+                        string.Format("Tran#={0} TotalOut={1,12} Status={2} Signatures=({3}/{4})",
+                            partial.PartialTransaction.ToString().Substring(0, 6),
+                            partial.PartialTransaction.TotalOut,
+                            partial.Status,
+                            partial.PartialTransaction.GetSignatureCount(this.network),
+                            this.federatedPegSettings.MultiSigM
+                        )
+                    );
+                }
+                benchLog.AppendLine();
+            }
+
+            try
+            {
+                List<WithdrawalModel> pendingWithdrawals = this.withdrawalHistoryProvider.GetPending();
+
+                if (pendingWithdrawals.Count > 0)
+                {
+                    benchLog.AppendLine("--- Pending Withdrawals ---");
+                    foreach (WithdrawalModel withdrawal in pendingWithdrawals.Take(PendingToDisplay))
+                        benchLog.AppendLine(withdrawal.ToString());
+
+                    if (pendingWithdrawals.Count > PendingToDisplay)
+                        benchLog.AppendLine($"And {pendingWithdrawals.Count - PendingToDisplay} more...");
+
+                    benchLog.AppendLine();
+                }
+            }
+            catch (Exception exception)
             {
                 benchLog.AppendLine("--- Pending Withdrawals ---");
-                foreach (WithdrawalModel withdrawal in pendingWithdrawals)
-                    benchLog.AppendLine(withdrawal.ToString());
-                benchLog.AppendLine();
+                benchLog.AppendLine("Failed to retrieve data");
+                this.logger.LogDebug("Exception occurred while getting pending withdrawals: '{0}'.", exception.ToString());
             }
 
             List<WithdrawalModel> completedWithdrawals = this.withdrawalHistoryProvider.GetHistory(TransfersToDisplay);
@@ -307,6 +373,8 @@ namespace Stratis.Features.FederatedPeg
                         services.AddSingleton<IFederationWalletSyncManager, FederationWalletSyncManager>();
                         services.AddSingleton<IFederationWalletTransactionHandler, FederationWalletTransactionHandler>();
                         services.AddSingleton<IFederationWalletManager, FederationWalletManager>();
+                        services.AddSingleton<IMultisigCoinSelector, MultisigCoinSelector>();
+                        services.AddSingleton<FedMultiSigManualWithdrawalTransactionBuilder>();
                         services.AddSingleton<IWithdrawalTransactionBuilder, WithdrawalTransactionBuilder>();
                         services.AddSingleton<FederationWalletController>();
                         services.AddSingleton<ICrossChainTransferStore, CrossChainTransferStore>();
@@ -316,6 +384,9 @@ namespace Stratis.Features.FederatedPeg
                         services.AddSingleton<IMaturedBlocksSyncManager, MaturedBlocksSyncManager>();
                         services.AddSingleton<IWithdrawalHistoryProvider, WithdrawalHistoryProvider>();
                         services.AddSingleton<FederatedPegSettings>();
+
+                        services.AddSingleton<IFederatedPegBroadcaster, FederatedPegBroadcaster>();
+                        services.AddSingleton<IInputConsolidator, InputConsolidator>();
 
                         // Set up events.
                         services.AddSingleton<TransactionObserver>();
@@ -333,7 +404,7 @@ namespace Stratis.Features.FederatedPeg
                 features.AddFeature<PoAFeature>().DependOn<FederatedPegFeature>().FeatureServices(services =>
                     {
                         services.AddSingleton<PoABlockHeaderValidator>();
-                        services.AddSingleton<IPoAMiner, PoAMiner>();
+                        services.AddSingleton<IPoAMiner, CollateralPoAMiner>();
                         services.AddSingleton<ISlotsManager, SlotsManager>();
                         services.AddSingleton<BlockDefinition, FederatedPegBlockDefinition>();
                         services.AddSingleton<ICoinbaseSplitter, PremineCoinbaseSplitter>();
@@ -369,6 +440,31 @@ namespace Stratis.Features.FederatedPeg
                     services.AddSingleton<PoAConsensusRuleEngine>();
                     services.AddSingleton<DefaultVotingController>();
                 });
+            });
+
+            return fullNodeBuilder;
+        }
+
+        /// <summary>
+        /// Adds mining to the smart contract node when on a proof-of-authority network with collateral enabled.
+        /// </summary>
+        public static IFullNodeBuilder UseSmartContractCollateralPoAMining(this IFullNodeBuilder fullNodeBuilder)
+        {
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                    .AddFeature<PoAFeature>()
+                    .FeatureServices(services =>
+                    {
+                        services.AddSingleton<IFederationManager, FederationManager>();
+                        services.AddSingleton<PoABlockHeaderValidator>();
+                        services.AddSingleton<IPoAMiner, CollateralPoAMiner>();
+                        services.AddSingleton<PoAMinerSettings>();
+                        services.AddSingleton<MinerSettings>();
+                        services.AddSingleton<ISlotsManager, SlotsManager>();
+                        services.AddSingleton<BlockDefinition, SmartContractPoABlockDefinition>();
+                        services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();
+                    });
             });
 
             return fullNodeBuilder;
