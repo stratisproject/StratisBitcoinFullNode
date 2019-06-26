@@ -69,7 +69,7 @@ namespace Stratis.Sidechains.Networks
 				new CollateralFederationMember(new PubKey("03eb5db0b1703ea7418f0ad20582bf8de0b4105887d232c7724f43f19f14862488"), new Money(50000_00000000),	"SkDJi8QmuPiTrnqnuTrLU41yesYeBQRvzV"),
 				new CollateralFederationMember(new PubKey("03d8b5580b7ec709c006ef497327db27ea323bd358ca45412171c644214483b74f"), new Money(50000_00000000),	"SNw49otqojNsozwnv63CxMwnCnvxZtdPBM"),
 				new CollateralFederationMember(new PubKey("03e8809be396745434ee8c875089e518a3eef40e31ade81869ce9cbef63484996d"), new Money(50000_00000000),	"SManifHryS5bhr2WQWbUp2EVw8aT46PDSh"),
-				new CollateralFederationMember(new PubKey("0359ee929c4cc1717b188758c1c34b22098e1b4f2318eea35e821b734e7070c8e9"), new Money(50000_00000000),	"SaQoQdEvj4VdwW526CjEQj1CTiwU5svu5m"),
+				new CollateralFederationMember(new PubKey("02ace4fbe6a622cdfc922a447c3253e8635f3fecb69241f73629e6f0596a567907"), new Money(50000_00000000),	"SaQoQdEvj4VdwW526CjEQj1CTiwU5svu5m"),
 				new CollateralFederationMember(new PubKey("03a37019d2e010b046ef9d0459e4844a015758007602ddfbdc9702534924a23695"), new Money(50000_00000000),	"SZUNS9RWoAHLWHq3BGKihSTHYwuVeDDGzv"),
 				new CollateralFederationMember(new PubKey("0336312e7dce4f9ff8449a5d7d140be26eea7849f8ba13bb07b57b154a74aa7600"), new Money(50000_00000000),	"SUMMi8UuoEUEVc5ecr9TEBaKpf152oNz4M"),
 				new CollateralFederationMember(new PubKey("038e1a76f0e33474144b61e0796404821a5150c00b05aad8a1cd502c865d8b5b92"), new Money(50000_00000000),	"SNMUVtVkmzvNSiM2Kbc8ykVY43Wky8iKTY"),
@@ -103,8 +103,6 @@ namespace Stratis.Sidechains.Networks
 				new CollateralFederationMember(new PubKey("02a523078d5391f69ad3ee1554cf4afad3ce4c0946ff92c7447e5b7c7197967314"), new Money(10000_00000000),	"SaZ8oZAasmSp5kJRnGx1aPDW5nqSjBxR7z"),
 				new CollateralFederationMember(new PubKey("02d57eaa61845c5ce07963b211af83c3fe072a9de65c555f7bdbd7c38efe65e42a"), new Money(10000_00000000),	"SSwiXJ8ENCcLyFDRxSnCaG9FS4UmtfaE5g"),
 				new CollateralFederationMember(new PubKey("0371c8558c846172eaf694a4e3af4d6cfdbfdd0d8480666c206ea43522c65a926a"), new Money(10000_00000000),	"SREEeESBB1fiSCEfZ7qDBuQeZtM7byCyoG"),
-				new CollateralFederationMember(new PubKey("02aba98b9eb45dd3a27519101d78f44a7a4604dc5f35c7afa32034a6c856c2f791"), new Money(10000_00000000),	"SaMvhqGUFWHFgBoC24Dtxgg48XS7ZbNtbs"),
-				new CollateralFederationMember(new PubKey("0225b9d32621eda3691bb1c9effce6819ca6536a34fe45f13b42467240a2e53daf"), new Money(10000_00000000),	"SXaAD7ZAtZHZkwvKUBk7iBLKWqicAVsosQ"),
 				new CollateralFederationMember(new PubKey("03adce7b60c2a3b03f9567d44bcf4e1d98200a736914a4385a4ef8c248d50b71ba"), new Money(10000_00000000),	"ScY7ZaL5KN4PpHMaoAr3yK1qbRpEuq4rYv")
 	    
 			};
