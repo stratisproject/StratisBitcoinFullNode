@@ -31,13 +31,13 @@
     @section Scripts
     {
         <script type="text/javascript">
-        // $(document).ready(function()
-        // {
-        //     Snackbar.show({text: "The full nodes API are unavailable", pos: "bottom-center", duration: 0, actionText: 'REFRESH', onActionClick: function(element) {document.location.reload();}});
-        //     setTimeout(function() {
-        //         document.location.reload();
-        //     }, 10000);
-        // });
+        $(document).ready(function()
+        {
+            Snackbar.show({text: "The full nodes API are unavailable", pos: "bottom-center", duration: 0, actionText: 'REFRESH', onActionClick: function(element) {document.location.reload();}});
+            setTimeout(function() {
+                document.location.reload();
+            }, 10000);
+        });
         </script>
     }
 }
@@ -46,12 +46,12 @@ else
     @section Scripts
     {
         <script type="text/javascript">
-        // $(document).ready(function()
-        // {
-        //     setTimeout(function() {
-        //         document.location.reload();
-        //     }, 3000);
-        // });
+        $(document).ready(function()
+        {
+            setTimeout(function() {
+                document.location.reload();
+            }, 3000);
+        });
         </script>
     }
 }
