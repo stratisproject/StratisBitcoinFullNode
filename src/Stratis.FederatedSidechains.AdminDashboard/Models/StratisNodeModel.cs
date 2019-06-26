@@ -5,7 +5,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Models
 {
     public class StratisNodeModel
     {
-        public int SyncingStatus { get; set; }
+        public float SyncingStatus { get; set; }
         public string WebAPIUrl { get; set; } = "http://localhost:38221/api";
         public string SwaggerUrl { get; set; } = "http://localhost:38221/swagger";
         public int BlockHeight { get; set; }
