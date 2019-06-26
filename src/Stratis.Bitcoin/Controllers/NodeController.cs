@@ -386,11 +386,11 @@ namespace Stratis.Bitcoin.Controllers
                 UnspentOutputs unspentOutputs = null;
                 if (includeMemPool)
                 {
-                    unspentOutputs = this.pooledGetUnspentTransaction != null ? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(txid) : null;
+                    unspentOutputs = this.pooledGetUnspentTransaction != null ? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(txid).ConfigureAwait(false) : null;
                 }
                 else
                 {
-                    unspentOutputs = this.getUnspentTransaction != null ? await this.getUnspentTransaction.GetUnspentTransactionAsync(txid) : null;
+                    unspentOutputs = this.getUnspentTransaction != null ? await this.getUnspentTransaction.GetUnspentTransactionAsync(txid).ConfigureAwait(false) : null;
                 }
 
                 if (unspentOutputs == null)
