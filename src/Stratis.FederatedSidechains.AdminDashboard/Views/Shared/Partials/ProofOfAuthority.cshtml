@@ -7,7 +7,7 @@
             return;
         }
         form.classList.add('was-validated');
-        $.post("/SidechainNode/Vote", $("#voteForm").serialize())
+        $.post("/sidechain-node/vote", $("#voteForm").serialize())
          .done(function(data) {
              $("#voteError").hide();
              var hash = $("#vote").val();
@@ -16,7 +16,13 @@
              $("#confirmationModal").modal('show');
          })
          .fail(function(result) {
-             $("#voteError").text("Failed to vote. " + result.responseText);
+             debugger;
+             if (!!result.responseText) {
+                $("#voteError").text(result.responseText);
+                $("#voteError").show();
+                return;
+             }
+             $("#voteError").text("Failed to vote. Unknown error. Please try again and make sure nodes are running.");
              $("#voteError").show();
          });
     }

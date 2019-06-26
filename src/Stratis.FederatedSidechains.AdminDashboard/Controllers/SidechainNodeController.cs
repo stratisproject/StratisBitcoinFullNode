@@ -81,6 +81,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
 
         [Ajax]
         [HttpPost] 
+        [Route("vote")]
         public async Task<IActionResult> Vote(Vote vote)
         {
             if (string.IsNullOrEmpty(vote?.Hash))
@@ -89,8 +90,11 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
             ApiResponse response = await this.apiRequester.PostRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/DefaultVoting/schedulevote-whitelisthash", new { hash = vote.Hash });
 
             if (response.IsSuccess) return this.Ok();
+            if (response.Content?.errors != null)
+            {
+                return this.BadRequest($"Failed to whitelist hash. Reason: {response.Content?.errors[0].message}");
+            }
             
-            vote.Message = $"Failed to whitelist hash. Reason: {response.Content}";
             return this.BadRequest($"Failed to whitelist hash. Reason: {response.Content}");
         }
     }
