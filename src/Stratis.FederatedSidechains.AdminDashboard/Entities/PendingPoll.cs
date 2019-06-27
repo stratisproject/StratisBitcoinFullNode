@@ -15,13 +15,13 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Entities
         public bool IsExecuted { get; set; }
         
         [JsonProperty("pollVotedInFavorBlockData")]
-        public HashHeightPairModel PollVotedInFavorBlockData { get; set; }
+        public string PollVotedInFavorBlockData { get; set; }
         
         [JsonProperty("pollStartBlockData")]
-        public HashHeightPairModel PollStartBlockData { get; set; }
+        public string PollStartBlockData { get; set; }
         
         [JsonProperty("pollExecutedBlockData")]
-        public HashHeightPairModel PollExecutedBlockData { get; set; }
+        public string PollExecutedBlockData { get; set; }
         
         [JsonProperty("pubKeysHexVotedInFavor")]
         public List<string> PubKeysHexVotedInFavor { get; set; }

@@ -234,13 +234,9 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                 };
 
                 if (fedEndpoints.Contains(peerIp))
-                {
                     federationMembers.Add(peerToAdd);
-                }
                 else
-                {
                     peers.Add(peerToAdd);
-                }
             }
         }
 
