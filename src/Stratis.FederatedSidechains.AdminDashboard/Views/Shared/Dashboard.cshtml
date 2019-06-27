@@ -101,7 +101,7 @@
                             @foreach (var peer in Model.StratisNode.Peers)
                             {
                                 <tr>
-                                    <td class="text-left">@peer.Endpoint</td>
+                                    <td class="text-left reveal-on-blur">@peer.Endpoint</td>
                                     <td class="text-center">@peer.Type</td>
                                     <td class="text-center">height:@peer.Height</td>
                                     <td style="width: 250px;" nowrap class="text-left">agent:@peer.Version</td>
@@ -125,7 +125,7 @@
                                 @foreach (var member in Model.StratisNode.FederationMembers)
                                 {
                                     <tr>
-                                        <td class="text-left">@member.Endpoint</td>
+                                        <td class="text-left reveal-on-blur">@member.Endpoint</td>
                                         <td class="text-center">@member.Type</td>
                                         <td class="text-center">height:@member.Height</td>
                                         <td style="width: 250px;" nowrap class="text-left">agent:@member.Version</td>
@@ -268,7 +268,7 @@
                             @foreach (var peer in Model.SidechainNode.Peers)
                             {
                                 <tr>
-                                    <td class="text-left">@peer.Endpoint</td>
+                                    <td class="text-left reveal-on-blur">@peer.Endpoint</td>
                                     <td class="text-center">@peer.Type</td>
                                     <td class="text-center">height:@peer.Height</td>
                                     <td style="width: 250px;" nowrap class="text-left">agent:@peer.Version</td>
@@ -292,7 +292,7 @@
                                 @foreach (var member in Model.SidechainNode.FederationMembers)
                                 {
                                     <tr>
-                                        <td class="text-left">@member.Endpoint</td>
+                                        <td class="text-left reveal-on-blur">@member.Endpoint</td>
                                         <td class="text-center">@member.Type</td>
                                         <td class="text-center">height:@member.Height</td>
                                         <td style="width: 250px;" nowrap class="text-left">agent:@member.Version</td>
