@@ -74,18 +74,14 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
 
             if (this.is50K)
             {
-                nodeDataServiceMainchain = new NodeGetDataServiceMultisig(this.apiRequester,
-                    this.defaultEndpointsSettings.StratisNode, this.loggerFactory);
+                nodeDataServiceMainchain = new NodeGetDataServiceMultisig(this.apiRequester, this.defaultEndpointsSettings.StratisNode, this.loggerFactory);
                 nodeDataServiceSidechain = new NodeDataServiceSidechainMultisig(this.apiRequester, this.defaultEndpointsSettings.SidechainNode, this.loggerFactory);
             }
             else
             {
-                nodeDataServiceMainchain = new NodeGetDataServiceMainchainMiner(this.apiRequester,
-                    this.defaultEndpointsSettings.StratisNode, this.loggerFactory);
-                nodeDataServiceSidechain = new NodeDataServicesSidechainMiner(this.apiRequester,
-                    this.defaultEndpointsSettings.StratisNode, this.loggerFactory);
+                nodeDataServiceMainchain = new NodeGetDataServiceMainchainMiner(this.apiRequester, this.defaultEndpointsSettings.StratisNode, this.loggerFactory);
+                nodeDataServiceSidechain = new NodeDataServicesSidechainMiner(this.apiRequester, this.defaultEndpointsSettings.SidechainNode, this.loggerFactory);
             }
-
 
             await nodeDataServiceMainchain.Update();
             await nodeDataServiceSidechain.Update();
