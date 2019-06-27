@@ -30,16 +30,18 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
         private readonly DefaultEndpointsSettings defaultEndpointsSettings;
         private readonly IDistributedCache distributedCache;
         private readonly IHubContext<DataUpdaterHub> updaterHub;
+        private readonly ILoggerFactory loggerFactory;
         private readonly ILogger<FetchingBackgroundService> logger;
         private readonly ApiRequester apiRequester;
         private bool successfullyBuilt;
         private Timer dataRetrieverTimer;
 
-        public FetchingBackgroundService(IDistributedCache distributedCache, IOptions<DefaultEndpointsSettings> defaultEndpointsSettings, IHubContext<DataUpdaterHub> hubContext, ILogger<FetchingBackgroundService> logger, ApiRequester apiRequester, IConfiguration configuration)
+        public FetchingBackgroundService(IDistributedCache distributedCache, IOptions<DefaultEndpointsSettings> defaultEndpointsSettings, IHubContext<DataUpdaterHub> hubContext, ILoggerFactory loggerFactory, ApiRequester apiRequester, IConfiguration configuration)
         {
             this.distributedCache = distributedCache;
             this.updaterHub = hubContext;
-            this.logger = logger;
+            this.loggerFactory = loggerFactory;
+            this.logger = loggerFactory.CreateLogger<FetchingBackgroundService>();
             this.apiRequester = apiRequester;
             this.defaultEndpointsSettings = configuration.GetSection("DefaultEndpoints").Get<DefaultEndpointsSettings>();
         }
@@ -64,8 +66,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
         private async Task BuildCacheAsync()
         {
             this.logger.LogInformation($"Refresh the Dashboard Data");
-            NodeGetDataServiceMultisig nodeDataServiceMainchainMultisig = new NodeGetDataServiceMultisig(this.apiRequester, this.defaultEndpointsSettings.StratisNode);
-            NodeDataServiceSidechainMultisig nodeDataServiceSidechainMultisig = new NodeDataServiceSidechainMultisig(this.apiRequester, this.defaultEndpointsSettings.SidechainNode);
+            NodeGetDataServiceMultisig nodeDataServiceMainchainMultisig = new NodeGetDataServiceMultisig(this.apiRequester, this.defaultEndpointsSettings.StratisNode, this.loggerFactory);
+            NodeDataServiceSidechainMultisig nodeDataServiceSidechainMultisig = new NodeDataServiceSidechainMultisig(this.apiRequester, this.defaultEndpointsSettings.SidechainNode, this.loggerFactory);
 
             await nodeDataServiceMainchainMultisig.Update();
             await nodeDataServiceSidechainMultisig.Update();
@@ -110,6 +112,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                 stratisNode.UnconfirmedBalance = nodeDataServiceMainchainMultisig.WalletBalance.unconfirmedBalance;
                 stratisNode.CoinTicker = "STRAT";
                 stratisNode.LogRules = nodeDataServiceMainchainMultisig.LogRules;
+                stratisNode.Uptime = nodeDataServiceMainchainMultisig.NodeStatus.Uptime;
 
                 dashboardModel.StratisNode = stratisNode;
 
@@ -126,15 +129,16 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                 sidechainNode.History = nodeDataServiceSidechainMultisig.WalletHistory;
                 sidechainNode.ConfirmedBalance = nodeDataServiceSidechainMultisig.WalletBalance.confirmedBalance;
                 sidechainNode.UnconfirmedBalance = nodeDataServiceSidechainMultisig.WalletBalance.unconfirmedBalance;
-                sidechainNode.CoinTicker = "STRAT";
+                sidechainNode.CoinTicker = "TCRS";
                 sidechainNode.LogRules = nodeDataServiceSidechainMultisig.LogRules;
-                sidechainNode.PoAPendingPolls = null;// JsonConvert.DeserializeObject<List<PendingPoll>>(sidechainPoAPendingPolls.Content.ToString())
-
+                sidechainNode.PoAPendingPolls = this.defaultEndpointsSettings.NodeType.ToUpper() == NodeTypes.FiftyK ? nodeDataServiceSidechainMultisig.PendingPolls : null;
+                sidechainNode.Uptime = nodeDataServiceSidechainMultisig.NodeStatus.Uptime;
                 dashboardModel.SidechainNode = sidechainNode;
             }
             catch(Exception e)
             {
                 this.logger.LogError(e, "Unable to fetch feeds.");
+                return;
             }
 
             if (!string.IsNullOrEmpty(this.distributedCache.GetString("DashboardData")))
