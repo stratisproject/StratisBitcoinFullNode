@@ -18,5 +18,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Models
         public object History { get; set; }
         public string CoinTicker { get; set; }
         public List<LogRule> LogRules { get; set; }
+
+        public string Uptime { get; set; }
     }
 }

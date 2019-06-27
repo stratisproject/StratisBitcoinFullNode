@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using NUglify.Helpers;
 using Stratis.FederatedSidechains.AdminDashboard.Entities;
@@ -26,11 +27,13 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         protected const int STRATOSHI = 100_000_000;
         private ApiRequester _apiRequester;
         private string _endpoint;
+        private readonly ILogger<NodeGetDataService> logger;
 
-        public NodeGetDataService(ApiRequester apiRequester, string endpoint)
+        public NodeGetDataService(ApiRequester apiRequester, string endpoint, ILoggerFactory loggerFactory)
         {
             _apiRequester = apiRequester;
             _endpoint = endpoint;
+            this.logger = loggerFactory.CreateLogger<NodeGetDataService>();
         }
 
         public virtual async Task<NodeGetDataService> Update()
@@ -55,9 +58,9 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 nodeStatus.Uptime = StatusResponse.Content.runningTime;
                 nodeStatus.State = StatusResponse.Content.state;
             }
-            catch
-            {
-                int x = 10;
+            catch (Exception ex)
+            { 
+                this.logger.LogError(ex, "Failed to update node status");
             }
 
             return nodeStatus;
@@ -71,9 +74,9 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 ApiResponse response = await _apiRequester.GetRequestAsync(_endpoint, "/api/Node/logrules");
                 responseLog = JsonConvert.DeserializeObject<List<LogRule>>(response.Content.ToString());
             }
-            catch
-            {
-
+            catch (Exception ex)
+            { 
+                this.logger.LogError(ex, "Failed to get log rules");
             }
 
             return responseLog;
@@ -87,9 +90,9 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 ApiResponse response = await _apiRequester.GetRequestAsync(_endpoint, "/api/Mempool/getrawmempool");
                 mempoolSize = response.Content.Count;
             }
-            catch
-            {
-
+            catch (Exception ex)
+            { 
+                this.logger.LogError(ex, "Failed to get mempool info");
             }
 
             return mempoolSize;
@@ -103,8 +106,9 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 ApiResponse response = await _apiRequester.GetRequestAsync(_endpoint, "/api/Consensus/getbestblockhash");
                 hash = response.Content;
             }
-            catch
-            {
+            catch (Exception ex)
+            { 
+                this.logger.LogError(ex, "Failed to get best hash");
             }
 
             return hash;
@@ -120,8 +124,9 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 confirmed = response.Content.balances[0].amountConfirmed / STRATOSHI;
                 unconfirmed = response.Content.balances[0].amountUnconfirmed / STRATOSHI;
             }
-            catch
-            {
+            catch (Exception ex)
+            { 
+                this.logger.LogError(ex, "Failed to get wallet balance");
             }
 
             return (confirmed, unconfirmed);
@@ -135,8 +140,9 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 ApiResponse response = await _apiRequester.GetRequestAsync(_endpoint, "/api/FederationWallet/history", "maxEntriesToReturn=30");
                 history = response.Content;
             }
-            catch
-            {
+            catch (Exception ex)
+            { 
+                this.logger.LogError(ex, "Failed to get history");
             }
 
             return history;
@@ -150,7 +156,9 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 FedInfoResponse = await _apiRequester.GetRequestAsync(_endpoint, "/api/FederationGateway/info");
                 fedAddress = FedInfoResponse.Content.multisigAddress;
             }
-            catch { 
+            catch (Exception ex)
+            { 
+                this.logger.LogError(ex, "Failed to fed info");
             }
 
             return fedAddress;
@@ -164,7 +172,9 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 ApiResponse response = await _apiRequester.GetRequestAsync(_endpoint, "/api/DefaultVoting/pendingpolls");
                 polls = JsonConvert.DeserializeObject<List<PendingPoll>>(response.Content.ToString());
             }
-            catch { 
+            catch (Exception ex)
+            { 
+                this.logger.LogError(ex, "Failed to update polls");
             }
 
             return polls;
@@ -173,8 +183,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
 
     public class NodeGetDataServiceMainchainMiner : NodeGetDataService
     {
-        public NodeGetDataServiceMainchainMiner(ApiRequester apiRequester, string endpoint) : base(apiRequester,
-            endpoint)
+        public NodeGetDataServiceMainchainMiner(ApiRequester apiRequester, string endpoint, ILoggerFactory loggerFactory) : base(apiRequester,
+            endpoint, loggerFactory)
         {
 
         }
@@ -184,8 +194,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
     {
         public string FedAddress { get; set; }
 
-        public NodeGetDataServiceMultisig(ApiRequester apiRequester, string endpoint) : base(apiRequester,
-            endpoint)
+        public NodeGetDataServiceMultisig(ApiRequester apiRequester, string endpoint, ILoggerFactory logger) : base(apiRequester,
+            endpoint, logger)
         {
 
         }
@@ -205,10 +215,9 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
 
     public class NodeDataServiceSidechainMultisig : NodeGetDataServiceMultisig
     {
-        public NodeDataServiceSidechainMultisig(ApiRequester apiRequester, string endpoint) : base(apiRequester,
-            endpoint)
+        public NodeDataServiceSidechainMultisig(ApiRequester apiRequester, string endpoint, ILoggerFactory logger) : base(apiRequester,
+            endpoint, logger)
         {
-
         }
 
         public override async Task<NodeGetDataService> Update()

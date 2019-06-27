@@ -1,3 +1,6 @@
+@using Microsoft.Extensions.Options
+@using Stratis.FederatedSidechains.AdminDashboard.Settings
+@inject IOptions<DefaultEndpointsSettings> defaultEndpointsSettings;
 @model DashboardModel
 @if(ViewBag.DisplayLoader == true)
 {
@@ -67,6 +70,12 @@
                      </li>
                   </ul>
                   <ul class="list-inline mb-0 row">
+                     <li class="col-12">
+                        <ul class="list-inline">
+                           <li class="list-inline-item"><strong>Uptime :</strong></li>
+                           <li class="list-inline-item text-muted">@Model.StratisNode.Uptime</li>
+                        </ul>
+                     </li>
                      <li class="col-12">
                         <ul class="list-inline">
                            <li class="list-inline-item"><strong>Mempool size :</strong></li>
@@ -237,6 +246,12 @@
                      </li>
                   </ul>
                   <ul class="list-inline mb-0 row">
+                     <li class="col-12">
+                        <ul class="list-inline">
+                           <li class="list-inline-item"><strong>Uptime :</strong></li>
+                           <li class="list-inline-item text-muted">@Model.SidechainNode.Uptime</li>
+                        </ul>
+                     </li>
                      <li class="col-12">
                         <ul class="list-inline">
                            <li class="list-inline-item"><strong>Mempool size :</strong></li>

@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Stratis.FederatedSidechains.AdminDashboard.Entities
 {
@@ -15,18 +15,27 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Entities
         public bool IsExecuted { get; set; }
         
         [JsonProperty("pollVotedInFavorBlockData")]
-        public string PollVotedInFavorBlockData { get; set; }
+        public HashHeightPairModel PollVotedInFavorBlockData { get; set; }
         
         [JsonProperty("pollStartBlockData")]
-        public string PollStartBlockData { get; set; }
+        public HashHeightPairModel PollStartBlockData { get; set; }
         
         [JsonProperty("pollExecutedBlockData")]
-        public string PollExecutedBlockData { get; set; }
+        public HashHeightPairModel PollExecutedBlockData { get; set; }
         
         [JsonProperty("pubKeysHexVotedInFavor")]
-        public JArray PubKeysHexVotedInFavor { get; set; }
+        public List<string> PubKeysHexVotedInFavor { get; set; }
 
         [JsonProperty("votingDataString")]
         public string VotingDataString { get; set; }
+    }
+
+    public class HashHeightPairModel
+    {
+        [JsonProperty("hash")]
+        public string Hash { get; set; }
+
+        [JsonProperty("height")]
+        public int Height { get; set; }
     }
 }

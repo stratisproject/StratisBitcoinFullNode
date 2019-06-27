@@ -66,10 +66,12 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
 
             DashboardModel dashboardModel = JsonConvert.DeserializeObject<DashboardModel>(this.distributedCache.GetString("DashboardData"));
             this.ViewBag.DisplayLoader = true;
-            this.ViewBag.History = new[] {
-                dashboardModel.StratisNode.History,
-                dashboardModel.SidechainNode.History
-            };
+            this.ViewBag.History = dashboardModel?.StratisNode?.History == null || dashboardModel?.SidechainNode?.History == null 
+                        ? new[] {
+                            dashboardModel.StratisNode.History,
+                            dashboardModel.SidechainNode.History
+                        } 
+                        : null;
             this.ViewBag.StratisTicker = dashboardModel.StratisNode.CoinTicker;
             this.ViewBag.SidechainTicker = dashboardModel.SidechainNode.CoinTicker;
             this.ViewBag.MainchainMultisigAddress = dashboardModel.MainchainWalletAddress;
