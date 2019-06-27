@@ -159,8 +159,8 @@ namespace Stratis.Features.FederatedPeg
             this.CheckConfiguration();
 
             // Connect the node to the other federation members.
-            foreach (IPEndPoint federationMemberIp in this.federatedPegSettings.FederationNodeIpEndPoints)
-                this.connectionManager.AddNodeAddress(federationMemberIp);
+            foreach (KeyValuePair<IPEndPoint, IPEndPoint> federationMemberIp in this.federatedPegSettings.FederationNodeIpEndPoints)
+                this.connectionManager.AddNodeAddress(federationMemberIp.Key);
 
             // Respond to requests to sign transactions from other nodes.
             NetworkPeerConnectionParameters networkPeerConnectionParameters = this.connectionManager.Parameters;
