@@ -25,9 +25,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <inheritdoc />
         public async Task BroadcastAsync(Payload payload)
         {
-            IEnumerable<INetworkPeer> connectedPeers = this.federatedPegSettings.FederationNodeIpEndPoints
-                .Select(ep => this.connectionManager.ConnectedPeers.FindByEndpoint(ep.Key))
-                .Where(peer => peer?.IsConnected ?? false);
+            IEnumerable<INetworkPeer> connectedPeers = this.connectionManager.ConnectedPeers
+                .Where(peer => (peer?.IsConnected ?? false) && this.federatedPegSettings.FederationNodeIpEndPoints.ContainsKey(peer.PeerEndPoint));
 
             Parallel.ForEach<INetworkPeer>(connectedPeers, async (INetworkPeer peer) =>
             {
