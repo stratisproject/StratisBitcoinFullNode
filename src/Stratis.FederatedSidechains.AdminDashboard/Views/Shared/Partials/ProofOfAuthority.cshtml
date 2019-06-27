@@ -2,21 +2,16 @@
 
 <script type="text/javascript">
     function submitVote() {
-        var form = document.getElementById('voteForm');
-        if (form.checkValidity() === false) {
-            return;
-        }
-        form.classList.add('was-validated');
         $.post("/sidechain-node/vote", $("#voteForm").serialize())
          .done(function(data) {
              $("#voteError").hide();
              var hash = $("#vote").val();
              $("#vote").val("");
              $("#hashLabel").text(hash);
+             $("#federationVotes").modal('hide');
              $("#confirmationModal").modal('show');
          })
          .fail(function(result) {
-             debugger;
              if (!!result.responseText) {
                 $("#voteError").text(result.responseText);
                 $("#voteError").show();
