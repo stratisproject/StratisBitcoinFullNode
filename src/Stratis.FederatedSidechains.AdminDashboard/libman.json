@@ -38,6 +38,15 @@
       "library": "font-awesome@5.8.1",
       "provider": "cdnjs",
       "destination": "wwwroot/lib/font-awesome/"
+    },
+    {
+      "library": "jquery@3.3.1",
+      "destination": "wwwroot/lib/jquery"
+    },
+    {
+      "library": "datatables@1.10.19",
+      "provider": "cdnjs",
+      "destination": "wwwroot/lib/datatables/"
     }
   ]
 }

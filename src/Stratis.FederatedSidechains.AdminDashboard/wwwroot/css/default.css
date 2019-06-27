@@ -9408,3 +9408,28 @@ i[role="copy"] {
 .modal-header {
     padding: 0.9rem;
 }
+
+.reveal-on-blur {
+    color: transparent;
+    text-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+.unreveal:hover .reveal-on-blur {
+    color: black;
+    text-shadow: none;
+}
+
+.reveal-on-blur:hover {
+    color: black;
+    text-shadow: none;
+}
+
+.page-link {
+    padding: 0.1rem 0.3rem !important;
+    font-size: x-small;
+}
+
+.dataTables_info {
+    display: none !important;
+}
+
