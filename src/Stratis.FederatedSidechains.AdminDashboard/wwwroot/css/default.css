@@ -9424,3 +9424,7 @@ i[role="copy"] {
     text-shadow: none;
 }
 
+.page-link {
+    padding: 0.1rem 0.3rem !important;
+}
+
