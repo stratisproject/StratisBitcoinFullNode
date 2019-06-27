@@ -180,6 +180,8 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private async Task<uint> WaitUntilMiningSlotAsync()
         {
+            uint? myTimestamp = null;
+
             while (!this.cancellation.IsCancellationRequested)
             {
                 uint timeNow = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
@@ -190,23 +192,24 @@ namespace Stratis.Bitcoin.Features.PoA
                     continue;
                 }
 
-                uint myTimestamp;
-
-                try
+                if (myTimestamp == null)
                 {
-                    myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
-                }
-                catch (NotAFederationMemberException)
-                {
-                    this.logger.LogWarning("This node is no longer a federation member!");
+                    try
+                    {
+                        myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
+                    }
+                    catch (NotAFederationMemberException)
+                    {
+                        this.logger.LogWarning("This node is no longer a federation member!");
 
-                    throw new OperationCanceledException();
+                        throw new OperationCanceledException();
+                    }
                 }
 
                 int estimatedWaitingTime = (int)(myTimestamp - timeNow) - 1;
 
                 if (estimatedWaitingTime <= 0)
-                    return myTimestamp;
+                    return myTimestamp.Value;
 
                 await Task.Delay(TimeSpan.FromMilliseconds(500), this.cancellation.Token).ConfigureAwait(false);
             }
@@ -334,7 +337,7 @@ namespace Stratis.Bitcoin.Features.PoA
             ChainedHeader currentHeader = tip;
             uint currentTime = currentHeader.Header.Time;
 
-            int maxDepth = 54;
+            int maxDepth = 45;
             int pubKeyTakeCharacters = 4;
             int depthReached = 0;
             int hitCount = 0;
