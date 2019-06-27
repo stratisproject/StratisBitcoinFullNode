@@ -39,7 +39,7 @@
         </div>
     </div>
 </div>
-@if (defaultEndpointsSettings.Value.NodeType == NodeTypes.FiftyK)
+@if (defaultEndpointsSettings.Value.SidechainNodeType == NodeTypes.FiftyK)
 {
     <partial name="Partials/ProofOfAuthority" model="@(ViewBag.Vote)"></partial>
 }
@@ -91,7 +91,7 @@
         </div>
         <div class="navbar-text p-0 d-inline ml-auto">
             <ul class="list-inline mb-0 d-flex align-items-center">
-                @if (defaultEndpointsSettings.Value.NodeType == NodeTypes.FiftyK)
+                @if (defaultEndpointsSettings.Value.SidechainNodeType == NodeTypes.FiftyK)
                 {
                     <li class="list-inline-item">
                         <a data-toggle="modal" href="#federationVotes"><i class="fas fa-vote-yea"></i>&nbsp; Federation Votes</a>
@@ -100,7 +100,7 @@
                 <li class="list-inline-item ml-4">
                     <a data-toggle="modal" data-target="#logLevels"><i class="fas fa-book"></i>&nbsp; Log Levels</a>
                 </li>
-                @if (defaultEndpointsSettings.Value.NodeType == NodeTypes.FiftyK)
+                @if (defaultEndpointsSettings.Value.SidechainNodeType == NodeTypes.FiftyK)
                 {
                     <li class="list-inline-item ml-4">
                         <a data-toggle="modal" data-target="#miningPublicKeys"><i class="fas fa-key"></i>&nbsp; Mining Public keys</a>

@@ -131,7 +131,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                 sidechainNode.UnconfirmedBalance = nodeDataServiceSidechainMultisig.WalletBalance.unconfirmedBalance;
                 sidechainNode.CoinTicker = "TCRS";
                 sidechainNode.LogRules = nodeDataServiceSidechainMultisig.LogRules;
-                sidechainNode.PoAPendingPolls = this.defaultEndpointsSettings.NodeType.ToUpper() == NodeTypes.FiftyK ? nodeDataServiceSidechainMultisig.PendingPolls : null;
+                sidechainNode.PoAPendingPolls = this.defaultEndpointsSettings.SidechainNodeType.ToUpper() == NodeTypes.FiftyK ? nodeDataServiceSidechainMultisig.PendingPolls : null;
                 sidechainNode.Uptime = nodeDataServiceSidechainMultisig.NodeStatus.Uptime;
                 dashboardModel.SidechainNode = sidechainNode;
             }

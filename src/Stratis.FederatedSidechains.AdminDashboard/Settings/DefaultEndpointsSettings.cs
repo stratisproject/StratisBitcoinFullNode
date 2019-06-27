@@ -4,7 +4,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Settings
     {
         public string StratisNode { get; set; }
         public string SidechainNode { get; set; }
-        public string NodeType { get; set; }
+        public string SidechainNodeType { get; set; }
     }
 
     public class NodeTypes
