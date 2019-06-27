@@ -93,8 +93,16 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
 
             try
             {
-                this.ParsePeers(nodeDataServiceMainchain.StatusResponse, nodeDataServiceMainchain.FedInfoResponse, ref stratisPeers, ref stratisFederationMembers);
-                this.ParsePeers(nodeDataServiceSidechain.StatusResponse, nodeDataServiceSidechain.FedInfoResponse, ref sidechainPeers, ref sidechainFederationMembers);
+                if (this.is50K)
+                {
+                    this.ParsePeers(nodeDataServiceMainchain, stratisPeers, stratisFederationMembers);
+                    this.ParsePeers(nodeDataServiceSidechain, sidechainPeers, sidechainFederationMembers);
+                }
+                else
+                {
+                    this.ParsePeers(nodeDataServiceMainchain, stratisPeers);
+                    this.ParsePeers(nodeDataServiceSidechain, sidechainPeers);
+                }
             }
             catch(Exception e)
             {
@@ -106,16 +114,15 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
             {
                 dashboardModel.Status = true;
                 dashboardModel.IsCacheBuilt = true;
-                dashboardModel.MainchainWalletAddress = this.is50K ? ((NodeGetDataServiceMultisig)nodeDataServiceMainchain).FedAddress : String.Empty;
-                dashboardModel.SidechainWalletAddress = this.is50K ? ((NodeDataServiceSidechainMultisig)nodeDataServiceSidechain).FedAddress : String.Empty;
+                dashboardModel.MainchainWalletAddress = this.is50K ? ((NodeGetDataServiceMultisig)nodeDataServiceMainchain).FedAddress : string.Empty;
+                dashboardModel.SidechainWalletAddress = this.is50K ? ((NodeDataServiceSidechainMultisig)nodeDataServiceSidechain).FedAddress : string.Empty;
                 dashboardModel.MiningPublicKeys = nodeDataServiceMainchain.FedInfoResponse?.Content?.federationMultisigPubKeys ?? new JArray();
 
-                StratisNodeModel stratisNode = new StratisNodeModel();
+                var stratisNode = new StratisNodeModel();
 
                 stratisNode.History = this.is50K ? ((NodeGetDataServiceMultisig)nodeDataServiceMainchain).WalletHistory : new JArray();
                 stratisNode.ConfirmedBalance = this.is50K ? ((NodeGetDataServiceMultisig)nodeDataServiceMainchain).WalletBalance.confirmedBalance : -1;
                 stratisNode.UnconfirmedBalance = this.is50K ? ((NodeGetDataServiceMultisig)nodeDataServiceMainchain).WalletBalance.unconfirmedBalance : -1;
-
                 
                 stratisNode.WebAPIUrl = UriHelper.BuildUri(this.defaultEndpointsSettings.StratisNode, "/api").ToString();
                 stratisNode.SwaggerUrl = UriHelper.BuildUri(this.defaultEndpointsSettings.StratisNode, "/swagger").ToString();
@@ -132,7 +139,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
 
                 dashboardModel.StratisNode = stratisNode;
 
-                SidechainNodeModel sidechainNode = new SidechainNodeModel();
+                var sidechainNode = new SidechainNodeModel();
 
                 sidechainNode.History = this.is50K ? ((NodeDataServiceSidechainMultisig)nodeDataServiceSidechain).WalletHistory : new JArray();
                 sidechainNode.ConfirmedBalance = this.is50K ? ((NodeDataServiceSidechainMultisig)nodeDataServiceSidechain).WalletBalance.confirmedBalance : -1;
@@ -169,50 +176,85 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
             this.distributedCache.SetString("DashboardData", JsonConvert.SerializeObject(dashboardModel));
         }
 
-        private void ParsePeers(dynamic stratisStatus, dynamic federationInfo, ref List<Peer> peers, ref List<Peer> federationMembers)
+        private void ParsePeers(NodeGetDataService dataService, List<Peer> peers, List<Peer> federationMembers)
         {
-            foreach (dynamic peer in (JArray)stratisStatus.Content.outboundPeers)
-            {
-                var endpointRegex = new Regex("\\[([A-Za-z0-9:.]*)\\]:([0-9]*)");
-                MatchCollection endpointMatches = endpointRegex.Matches(Convert.ToString(peer.remoteSocketEndpoint));
-                var endpoint = new IPEndPoint(IPAddress.Parse(endpointMatches[0].Groups[1].Value), int.Parse(endpointMatches[0].Groups[2].Value));
+            string fedEndpoints = dataService.FedInfoResponse?.Content?.endpoints?.ToString() ?? string.Empty;
 
-                string fedEndpoints = federationInfo?.Content?.endpoints?.ToString();
-                
-                if (!string.IsNullOrEmpty(fedEndpoints) && endpointMatches.Count > 0 && endpointMatches[0].Groups.Count > 1)
-                {
-                    var peerToAdd = new Peer
-                    {
-                        Endpoint = peer.remoteSocketEndpoint,
-                        Type = "outbound",
-                        Height = peer.tipHeight,
-                        Version = peer.version
-                    };
-                    
-                    if (fedEndpoints.Contains($"{endpoint.Address.MapToIPv4()}:{endpointMatches[0].Groups[2].Value}"))
-                    {
-                        federationMembers.Add(peerToAdd);
-                    }
-                    else
-                    {
-                        peers.Add(peerToAdd);
-                    }
-                }
-            }
-            foreach (dynamic peer in (JArray)stratisStatus.Content.inboundPeers)
+            if (dataService.StatusResponse.Content.outboundPeers is JArray outboundPeers)
             {
-                var endpointRegex = new Regex("\\[([A-Za-z0-9:.]*)\\]:([0-9]*)");
-                dynamic endpointMatches = endpointRegex.Matches(Convert.ToString(peer.remoteSocketEndpoint));
-                var endpoint = new IPEndPoint(IPAddress.Parse(endpointMatches[0].Groups[1].Value), int.Parse(endpointMatches[0].Groups[2].Value));
-                (Convert.ToString(federationInfo.Content.endpoints).Contains($"{endpoint.Address.MapToIPv4().ToString()}:{endpointMatches[0].Groups[2].Value}") ? federationMembers : peers)
-                .Add(new Peer()
+                this.LoadPeers(fedEndpoints, outboundPeers, "outbound", peers, federationMembers);
+            }
+
+            if (dataService.StatusResponse.Content.inboundPeers is JArray inboundPeers)
+            {
+                this.LoadPeers(fedEndpoints, inboundPeers, "inbound", peers, federationMembers);
+            }
+        }
+
+        private void ParsePeers(NodeGetDataService dataService, List<Peer> peers)
+        {
+            if (dataService.StatusResponse.Content.outboundPeers is JArray outboundPeers)
+            {
+                this.LoadPeers(outboundPeers, "outbound", peers);
+            }
+
+            if (dataService.StatusResponse.Content.inboundPeers is JArray inboundPeers)
+            {
+                this.LoadPeers(inboundPeers, "inbound", peers);
+            }
+        }
+
+        private void LoadPeers(JArray peersToProcess, string direction, List<Peer> peers)
+        {
+            foreach (dynamic peer in peersToProcess)
+            {
+                var peerToAdd = new Peer
                 {
                     Endpoint = peer.remoteSocketEndpoint,
-                    Type = "inbound",
+                    Type = direction,
                     Height = peer.tipHeight,
                     Version = peer.version
-                });
+                };
+
+                peers.Add(peerToAdd);
             }
+        }
+
+        private void LoadPeers(string fedEndpoints, JArray peersToProcess, string direction, List<Peer> peers, List<Peer> federationMembers)
+        {
+            foreach (dynamic peer in peersToProcess)
+            {
+                string peerIp = this.GetPeerIP(peer);
+                var peerToAdd = new Peer
+                {
+                    Endpoint = peer.remoteSocketEndpoint,
+                    Type = direction,
+                    Height = peer.tipHeight,
+                    Version = peer.version
+                };
+
+                if (fedEndpoints.Contains(peerIp))
+                {
+                    federationMembers.Add(peerToAdd);
+                }
+                else
+                {
+                    peers.Add(peerToAdd);
+                }
+            }
+        }
+
+        private string GetPeerIP(dynamic peer)
+        {
+            var endpointRegex = new Regex("\\[([A-Za-z0-9:.]*)\\]:([0-9]*)");
+            MatchCollection endpointMatches = endpointRegex.Matches(Convert.ToString(peer.remoteSocketEndpoint));
+            if (endpointMatches.Count <= 0 || endpointMatches[0].Groups.Count <= 1)
+                return string.Empty;
+            var endpoint = new IPEndPoint(IPAddress.Parse(endpointMatches[0].Groups[1].Value),
+                int.Parse(endpointMatches[0].Groups[2].Value));
+
+            return
+                $"{endpoint.Address.MapToIPv4()}:{endpointMatches[0].Groups[2].Value}";
         }
 
         private async void DoWorkAsync(object state)

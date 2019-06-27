@@ -191,7 +191,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
     public class NodeGetDataServiceMultisig : NodeGetDataService
     {
         public (double confirmedBalance, double unconfirmedBalance) WalletBalance { get; set; } = (0, 0);
-        public Object WalletHistory { get; set; }
+        public object WalletHistory { get; set; }
         public string FedAddress { get; set; }
 
         public NodeGetDataServiceMultisig(ApiRequester apiRequester, string endpoint, ILoggerFactory logger) : base(apiRequester,
