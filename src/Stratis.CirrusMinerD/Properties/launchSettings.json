@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Stratis.CirrusMinerD": {
+      "commandName": "Project",
+      "commandLineArgs": "-sidechain"
+    }
+  }
+}

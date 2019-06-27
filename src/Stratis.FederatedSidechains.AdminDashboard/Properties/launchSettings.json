@@ -28,6 +28,22 @@
       },
       "applicationUrl": "http://localhost:37000/"
     },
+    "Stratis.FederatedSidechains.Docker50K": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Docker50k"
+      },
+      "applicationUrl": "http://localhost:37000/"
+    },
+    "Stratis.FederatedSidechains.Docker10K": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Docker10K"
+      },
+      "applicationUrl": "http://localhost:37000/"
+    },
     "Stratis.FederatedSidechains.AdminDashboard as Production": {
       "commandName": "Project",
       "launchBrowser": true,
