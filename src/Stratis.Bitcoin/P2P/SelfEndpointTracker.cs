@@ -2,6 +2,7 @@
 using ConcurrentCollections;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -47,6 +48,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
+        [NoTrace]
         public bool IsSelf(IPEndPoint ipEndPoint)
         {
             return this.knownSelfEndpoints.Contains(ipEndPoint);
