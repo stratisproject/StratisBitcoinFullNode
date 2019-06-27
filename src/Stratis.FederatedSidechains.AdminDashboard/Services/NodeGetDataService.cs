@@ -17,12 +17,11 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         public List<LogRule> LogRules { get; set; }
         public int RawMempool { get; set; } = 0;
         public string BestHash { get; set; } = String.Empty;
-        public (double confirmedBalance, double unconfirmedBalance) WalletBalance { get; set; } = (0, 0);
-        public Object WalletHistory { get; set; }
+        //public (double confirmedBalance, double unconfirmedBalance) WalletBalance { get; set; } = (0, 0);
+        //public Object WalletHistory { get; set; }
         public ApiResponse StatusResponse { get; set; }
         public ApiResponse FedInfoResponse { get; set; }
         public List<PendingPoll> PendingPolls { get; set; }
-        
 
         protected const int STRATOSHI = 100_000_000;
         private ApiRequester _apiRequester;
@@ -42,8 +41,6 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
             LogRules = await UpdateLogRules();
             RawMempool = await UpdateMempool();
             BestHash = await UpdateBestHash();
-            WalletBalance = await UpdateWalletBalancec();
-            WalletHistory = await UpdateHistory();
             return this;
         }
 
@@ -55,7 +52,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 StatusResponse = await _apiRequester.GetRequestAsync(_endpoint, "/api/Node/status");
                 nodeStatus.BlockStoreHeight = StatusResponse.Content.blockStoreHeight;
                 nodeStatus.ConsensusHeight = StatusResponse.Content.consensusHeight;
-                nodeStatus.Uptime = StatusResponse.Content.runningTime;
+                string upTimeLargePrecion = StatusResponse.Content.runningTime;
+                nodeStatus.Uptime = upTimeLargePrecion.Split('.')[0];
                 nodeStatus.State = StatusResponse.Content.state;
             }
             catch (Exception ex)
@@ -192,6 +190,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
 
     public class NodeGetDataServiceMultisig : NodeGetDataService
     {
+        public (double confirmedBalance, double unconfirmedBalance) WalletBalance { get; set; } = (0, 0);
+        public Object WalletHistory { get; set; }
         public string FedAddress { get; set; }
 
         public NodeGetDataServiceMultisig(ApiRequester apiRequester, string endpoint, ILoggerFactory logger) : base(apiRequester,
@@ -229,6 +229,23 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
             WalletBalance = await UpdateWalletBalancec();
             WalletHistory = await UpdateHistory();
             FedAddress = await UpdateFedInfo();
+            PendingPolls = await UpdatePolls();
+            return this;
+        }
+    }
+
+    public class NodeDataServicesSidechainMiner : NodeGetDataService
+    {
+        public NodeDataServicesSidechainMiner(ApiRequester apiRequester, string endpoint, ILoggerFactory loggerFactory) : base(apiRequester, endpoint, loggerFactory)
+        {
+        }
+
+        public override async Task<NodeGetDataService> Update()
+        {
+            NodeStatus = await UpdateNodeStatus();
+            LogRules = await UpdateLogRules();
+            RawMempool = await UpdateMempool();
+            BestHash = await UpdateBestHash();
             PendingPolls = await UpdatePolls();
             return this;
         }

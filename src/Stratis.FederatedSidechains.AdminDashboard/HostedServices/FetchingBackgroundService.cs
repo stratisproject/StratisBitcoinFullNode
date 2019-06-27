@@ -35,6 +35,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
         private readonly ApiRequester apiRequester;
         private bool successfullyBuilt;
         private Timer dataRetrieverTimer;
+        private readonly bool is50K = true;
 
         public FetchingBackgroundService(IDistributedCache distributedCache, IOptions<DefaultEndpointsSettings> defaultEndpointsSettings, IHubContext<DataUpdaterHub> hubContext, ILoggerFactory loggerFactory, ApiRequester apiRequester, IConfiguration configuration)
         {
@@ -44,6 +45,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
             this.logger = loggerFactory.CreateLogger<FetchingBackgroundService>();
             this.apiRequester = apiRequester;
             this.defaultEndpointsSettings = configuration.GetSection("DefaultEndpoints").Get<DefaultEndpointsSettings>();
+            if (this.defaultEndpointsSettings.SidechainNodeType == NodeTypes.TenK) this.is50K = false;
         }
 
         /// <summary>
@@ -66,11 +68,27 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
         private async Task BuildCacheAsync()
         {
             this.logger.LogInformation($"Refresh the Dashboard Data");
-            NodeGetDataServiceMultisig nodeDataServiceMainchainMultisig = new NodeGetDataServiceMultisig(this.apiRequester, this.defaultEndpointsSettings.StratisNode, this.loggerFactory);
-            NodeDataServiceSidechainMultisig nodeDataServiceSidechainMultisig = new NodeDataServiceSidechainMultisig(this.apiRequester, this.defaultEndpointsSettings.SidechainNode, this.loggerFactory);
 
-            await nodeDataServiceMainchainMultisig.Update();
-            await nodeDataServiceSidechainMultisig.Update();
+            NodeGetDataService nodeDataServiceMainchain;
+            NodeGetDataService nodeDataServiceSidechain;
+
+            if (this.is50K)
+            {
+                nodeDataServiceMainchain = new NodeGetDataServiceMultisig(this.apiRequester,
+                    this.defaultEndpointsSettings.StratisNode, this.loggerFactory);
+                nodeDataServiceSidechain = new NodeDataServiceSidechainMultisig(this.apiRequester, this.defaultEndpointsSettings.SidechainNode, this.loggerFactory);
+            }
+            else
+            {
+                nodeDataServiceMainchain = new NodeGetDataServiceMainchainMiner(this.apiRequester,
+                    this.defaultEndpointsSettings.StratisNode, this.loggerFactory);
+                nodeDataServiceSidechain = new NodeDataServicesSidechainMiner(this.apiRequester,
+                    this.defaultEndpointsSettings.StratisNode, this.loggerFactory);
+            }
+
+
+            await nodeDataServiceMainchain.Update();
+            await nodeDataServiceSidechain.Update();
 
             var stratisPeers = new List<Peer>();
             var stratisFederationMembers = new List<Peer>();
@@ -79,8 +97,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
 
             try
             {
-                this.ParsePeers(nodeDataServiceMainchainMultisig.StatusResponse, nodeDataServiceMainchainMultisig.FedInfoResponse, ref stratisPeers, ref stratisFederationMembers);
-                this.ParsePeers(nodeDataServiceSidechainMultisig.StatusResponse, nodeDataServiceSidechainMultisig.FedInfoResponse, ref sidechainPeers, ref sidechainFederationMembers);
+                this.ParsePeers(nodeDataServiceMainchain.StatusResponse, nodeDataServiceMainchain.FedInfoResponse, ref stratisPeers, ref stratisFederationMembers);
+                this.ParsePeers(nodeDataServiceSidechain.StatusResponse, nodeDataServiceSidechain.FedInfoResponse, ref sidechainPeers, ref sidechainFederationMembers);
             }
             catch(Exception e)
             {
@@ -92,47 +110,51 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
             {
                 dashboardModel.Status = true;
                 dashboardModel.IsCacheBuilt = true;
-                dashboardModel.MainchainWalletAddress = nodeDataServiceMainchainMultisig.FedAddress;
-                dashboardModel.SidechainWalletAddress = nodeDataServiceSidechainMultisig.FedAddress;
-                dashboardModel.MiningPublicKeys =
-                    nodeDataServiceMainchainMultisig.FedInfoResponse?.Content?.federationMultisigPubKeys ??
-                    new JArray();
+                dashboardModel.MainchainWalletAddress = this.is50K ? ((NodeGetDataServiceMultisig)nodeDataServiceMainchain).FedAddress : String.Empty;
+                dashboardModel.SidechainWalletAddress = this.is50K ? ((NodeDataServiceSidechainMultisig)nodeDataServiceSidechain).FedAddress : String.Empty;
+                dashboardModel.MiningPublicKeys = nodeDataServiceMainchain.FedInfoResponse?.Content?.federationMultisigPubKeys ?? new JArray();
 
                 StratisNodeModel stratisNode = new StratisNodeModel();
+
+                stratisNode.History = this.is50K ? ((NodeGetDataServiceMultisig)nodeDataServiceMainchain).WalletHistory : new JArray();
+                stratisNode.ConfirmedBalance = this.is50K ? ((NodeGetDataServiceMultisig)nodeDataServiceMainchain).WalletBalance.confirmedBalance : -1;
+                stratisNode.UnconfirmedBalance = this.is50K ? ((NodeGetDataServiceMultisig)nodeDataServiceMainchain).WalletBalance.unconfirmedBalance : -1;
+
+                
                 stratisNode.WebAPIUrl = UriHelper.BuildUri(this.defaultEndpointsSettings.StratisNode, "/api").ToString();
                 stratisNode.SwaggerUrl = UriHelper.BuildUri(this.defaultEndpointsSettings.StratisNode, "/swagger").ToString();
-                stratisNode.SyncingStatus = nodeDataServiceMainchainMultisig.NodeStatus.SyncingProgress;
+                stratisNode.SyncingStatus = nodeDataServiceMainchain.NodeStatus.SyncingProgress;
                 stratisNode.Peers = stratisPeers;
                 stratisNode.FederationMembers = stratisFederationMembers;
-                stratisNode.BlockHash = nodeDataServiceMainchainMultisig.BestHash;
-                stratisNode.BlockHeight = (int)nodeDataServiceMainchainMultisig.NodeStatus.BlockStoreHeight;
-                stratisNode.MempoolSize = nodeDataServiceMainchainMultisig.RawMempool;
-                stratisNode.History = nodeDataServiceMainchainMultisig.WalletHistory;
-                stratisNode.ConfirmedBalance = nodeDataServiceMainchainMultisig.WalletBalance.confirmedBalance;
-                stratisNode.UnconfirmedBalance = nodeDataServiceMainchainMultisig.WalletBalance.unconfirmedBalance;
+                stratisNode.BlockHash = nodeDataServiceMainchain.BestHash;
+                stratisNode.BlockHeight = (int)nodeDataServiceMainchain.NodeStatus.BlockStoreHeight;
+                stratisNode.MempoolSize = nodeDataServiceMainchain.RawMempool;
+
                 stratisNode.CoinTicker = "STRAT";
-                stratisNode.LogRules = nodeDataServiceMainchainMultisig.LogRules;
-                stratisNode.Uptime = nodeDataServiceMainchainMultisig.NodeStatus.Uptime;
+                stratisNode.LogRules = nodeDataServiceMainchain.LogRules;
+                stratisNode.Uptime = nodeDataServiceMainchain.NodeStatus.Uptime;
 
                 dashboardModel.StratisNode = stratisNode;
 
                 SidechainNodeModel sidechainNode = new SidechainNodeModel();
 
+                sidechainNode.History = this.is50K ? ((NodeDataServiceSidechainMultisig)nodeDataServiceSidechain).WalletHistory : new JArray();
+                sidechainNode.ConfirmedBalance = this.is50K ? ((NodeDataServiceSidechainMultisig)nodeDataServiceSidechain).WalletBalance.confirmedBalance : -1;
+                sidechainNode.UnconfirmedBalance = this.is50K ? ((NodeDataServiceSidechainMultisig)nodeDataServiceSidechain).WalletBalance.unconfirmedBalance : -1;
+
                 sidechainNode.WebAPIUrl = UriHelper.BuildUri(this.defaultEndpointsSettings.SidechainNode, "/api").ToString();
                 sidechainNode.SwaggerUrl = UriHelper.BuildUri(this.defaultEndpointsSettings.SidechainNode, "/swagger").ToString();
-                sidechainNode.SyncingStatus = nodeDataServiceSidechainMultisig.NodeStatus.SyncingProgress;
+                sidechainNode.SyncingStatus = nodeDataServiceSidechain.NodeStatus.SyncingProgress;
                 sidechainNode.Peers = sidechainPeers;
                 sidechainNode.FederationMembers = sidechainFederationMembers;
-                sidechainNode.BlockHash = nodeDataServiceSidechainMultisig.BestHash;
-                sidechainNode.BlockHeight = (int) nodeDataServiceSidechainMultisig.NodeStatus.BlockStoreHeight;
-                sidechainNode.MempoolSize = nodeDataServiceSidechainMultisig.RawMempool;
-                sidechainNode.History = nodeDataServiceSidechainMultisig.WalletHistory;
-                sidechainNode.ConfirmedBalance = nodeDataServiceSidechainMultisig.WalletBalance.confirmedBalance;
-                sidechainNode.UnconfirmedBalance = nodeDataServiceSidechainMultisig.WalletBalance.unconfirmedBalance;
+                sidechainNode.BlockHash = nodeDataServiceSidechain.BestHash;
+                sidechainNode.BlockHeight = (int) nodeDataServiceSidechain.NodeStatus.BlockStoreHeight;
+                sidechainNode.MempoolSize = nodeDataServiceSidechain.RawMempool;
+
                 sidechainNode.CoinTicker = "TCRS";
-                sidechainNode.LogRules = nodeDataServiceSidechainMultisig.LogRules;
-                sidechainNode.PoAPendingPolls = this.defaultEndpointsSettings.SidechainNodeType.ToUpper() == NodeTypes.FiftyK ? nodeDataServiceSidechainMultisig.PendingPolls : null;
-                sidechainNode.Uptime = nodeDataServiceSidechainMultisig.NodeStatus.Uptime;
+                sidechainNode.LogRules = nodeDataServiceSidechain.LogRules;
+                sidechainNode.PoAPendingPolls = this.defaultEndpointsSettings.SidechainNodeType.ToUpper() == NodeTypes.FiftyK ? nodeDataServiceSidechain.PendingPolls : null;
+                sidechainNode.Uptime = nodeDataServiceSidechain.NodeStatus.Uptime;
                 dashboardModel.SidechainNode = sidechainNode;
             }
             catch(Exception e)
