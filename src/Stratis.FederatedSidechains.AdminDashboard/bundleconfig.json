@@ -9,7 +9,8 @@
     "outputFileName": "wwwroot/css/default.bundle.min.css",
     "inputFiles": [
       "wwwroot/lib/node-snackbar/dist/snackbar.css",
-      "wwwroot/lib/nprogress/nprogress.css"
+      "wwwroot/lib/nprogress/nprogress.css",
+      "wwwroot/lib/datatables/css/dataTables.bootstrap4.min.css"
     ],
     "minify": {
       "enabled": true,
@@ -36,7 +37,9 @@
       "wwwroot/lib/bootstrap/dist/js/bootstrap.min.js",
       "wwwroot/lib/jquery-ajax-unobtrusive/dist/jquery.unobtrusive-ajax.min.js",
       "wwwroot/lib/node-snackbar/dist/snackbar.min.js",
-      "wwwroot/lib/nprogress/nprogress.js"
+      "wwwroot/lib/nprogress/nprogress.js",
+      "wwwroot/lib/datatables/js/jquery.dataTables.js",
+      "wwwroot/lib/datatables/js/dataTables.bootstrap4.min.js"
     ],
     "minify": {
       "enabled": true,

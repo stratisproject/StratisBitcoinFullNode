@@ -12,6 +12,7 @@
         <link rel="stylesheet" type="text/css" href="~/lib/font-awesome/css/all.css" />
         <link rel="stylesheet" type="text/css" href="~/lib/node-snackbar/dist/snackbar.css" />
         <link rel="stylesheet" type="text/css" href="~/lib/nprogress/nprogress.css" />
+        <link rel="stylesheet" type="text/css" href="~/lib/datatables/css/dataTables.bootstrap4.min.css" />
     </environment>
     <environment exclude="Development">
         <link rel="stylesheet" type="text/css" href="~/lib/font-awesome/css/all.min.css" />
@@ -21,28 +22,25 @@
     <link rel="icon" type="image/png" href="~/images/logo.png" />
 </head>
 <body>
-<div class="modal fade show" id="qrcode" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Qr Code</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <img id="qrcode-image" class="img-fluid" />
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary mx-auto mb-3" data-dismiss="modal">Close</button>
+    <div class="modal fade show" id="qrcode" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Qr Code</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <img id="qrcode-image" class="img-fluid" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary mx-auto mb-3" data-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-@if (defaultEndpointsSettings.Value.SidechainNodeType == NodeTypes.FiftyK)
-{
     <partial name="Partials/ProofOfAuthority" model="@(ViewBag.Vote)"></partial>
-}
     <partial name="Partials/MiningPubKeys" model="@(ViewBag.MiningPubKeys)"></partial>
     <partial name="Partials/LogLevels" model="@(ViewBag.LogRules)"></partial>
     <nav class="navbar navbar-dark bg-purple fixed-top">
@@ -91,21 +89,15 @@
         </div>
         <div class="navbar-text p-0 d-inline ml-auto">
             <ul class="list-inline mb-0 d-flex align-items-center">
-                @if (defaultEndpointsSettings.Value.SidechainNodeType == NodeTypes.FiftyK)
-                {
-                    <li class="list-inline-item">
-                        <a data-toggle="modal" href="#federationVotes"><i class="fas fa-vote-yea"></i>&nbsp; Federation Votes</a>
-                    </li>
-                }
+                <li class="list-inline-item">
+                    <a data-toggle="modal" href="#federationVotes"><i class="fas fa-vote-yea"></i>&nbsp; Federation Votes</a>
+                </li>
                 <li class="list-inline-item ml-4">
                     <a data-toggle="modal" data-target="#logLevels"><i class="fas fa-book"></i>&nbsp; Log Levels</a>
                 </li>
-                @if (defaultEndpointsSettings.Value.SidechainNodeType == NodeTypes.FiftyK)
-                {
-                    <li class="list-inline-item ml-4">
-                        <a data-toggle="modal" data-target="#miningPublicKeys"><i class="fas fa-key"></i>&nbsp; Mining Public keys</a>
-                    </li>
-                }
+                <li class="list-inline-item ml-4">
+                    <a data-toggle="modal" data-target="#miningPublicKeys"><i class="fas fa-key"></i>&nbsp; Mining Public keys</a>
+                </li>
                 <li class="list-inline-item ml-4">
                     <a asp-controller="Home" asp-action="Shutdown" class="text-danger"><i class="fas fa-power-off"></i>&nbsp; Shutdown Dashboard</a>
                 </li>
@@ -123,6 +115,8 @@
         <script type="text/javascript" src="~/lib/node-snackbar/dist/snackbar.min.js"></script>
         <script type="text/javascript" src="~/lib/nprogress/nprogress.js"></script>
         <script type="text/javascript" src="~/js/default.js"></script>
+        <script type="text/javascript" src="~/lib/datatables/js/jquery.dataTables.min.js"></script>
+        <script type="text/javascript" src="~/lib/datatables/js/dataTables.bootstrap4.min.js"></script>
     </environment>
     <environment exclude="Development">
         <script type="text/javascript" src="~/js/default.bundle.min.js"></script>
