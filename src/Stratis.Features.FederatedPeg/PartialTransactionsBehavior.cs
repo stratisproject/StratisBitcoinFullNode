@@ -58,13 +58,13 @@ namespace Stratis.Features.FederatedPeg
 
         protected override void AttachCore()
         {
-            if (this.federatedPegSettings.FederationNodeIpEndPoints.ContainsKey(Utils.EnsureIPv6(this.AttachedPeer.PeerEndPoint)))
+            if (this.federatedPegSettings.FederationNodeIpEndPoints.Contains(Utils.EnsureIPv6(this.AttachedPeer.PeerEndPoint)))
                 this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
         }
 
         protected override void DetachCore()
         {
-            if (this.federatedPegSettings.FederationNodeIpEndPoints.ContainsKey(Utils.EnsureIPv6(this.AttachedPeer.PeerEndPoint)))
+            if (this.federatedPegSettings.FederationNodeIpEndPoints.Contains(Utils.EnsureIPv6(this.AttachedPeer.PeerEndPoint)))
                 this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
         }
 
@@ -74,7 +74,7 @@ namespace Stratis.Features.FederatedPeg
         /// <param name="payload">The payload to broadcast.</param>
         private async Task BroadcastAsync(RequestPartialTransactionPayload payload)
         {
-            if (this.AttachedPeer.IsConnected && this.federatedPegSettings.FederationNodeIpEndPoints.ContainsKey(Utils.EnsureIPv6(this.AttachedPeer.PeerEndPoint)))
+            if (this.AttachedPeer.IsConnected && this.federatedPegSettings.FederationNodeIpEndPoints.Contains(Utils.EnsureIPv6(this.AttachedPeer.PeerEndPoint)))
                 await this.AttachedPeer.SendMessageAsync(payload).ConfigureAwait(false);
         }
 

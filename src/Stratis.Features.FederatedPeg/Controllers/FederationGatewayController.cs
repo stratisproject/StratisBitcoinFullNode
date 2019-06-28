@@ -105,7 +105,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
                 {
                     IsActive = this.federationWalletManager.IsFederationWalletActive(),
                     IsMainChain = isMainchain,
-                    FederationNodeIpEndPoints = this.federatedPegSettings.FederationNodeIpEndPoints.Select(i => $"{i.Value.Address}:{i.Value.Port}"),
+                    FederationNodeIpEndPoints = this.federatedPegSettings.FederationNodeIpEndPoints.Select(i => $"{i.Address}:{i.Port}"),
                     MultisigPublicKey = this.federatedPegSettings.PublicKey,
                     FederationMultisigPubKeys = this.federatedPegSettings.FederationPublicKeys.Select(k => k.ToString()),
                     MiningPublicKey =  isMainchain ? null : this.federationManager.CurrentFederationKey?.PubKey.ToString(),
