@@ -65,7 +65,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
             if (withdrawals.Length > 0)
             {
-                ICrossChainTransfer[] transfers = this.crossChainTransferStore.QueryTransfersById(withdrawals.Select(w => w.DepositId).ToArray());
+                ICrossChainTransfer[] transfers = this.crossChainTransferStore.GetAsync(withdrawals.Select(w => w.DepositId).ToArray(), false).GetAwaiter().GetResult();
 
                 for (int i = 0; i < withdrawals.Length; i++)
                 {
@@ -89,12 +89,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             var result = new List<WithdrawalModel>();
 
             // Get all Suspended, all Partial, and all FullySigned transfers.
-            ICrossChainTransfer[] inProgressTransfers = this.crossChainTransferStore.QueryTransfersByStatus(new CrossChainTransferStatus[]
+            ICrossChainTransfer[] inProgressTransfers = this.crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[]
             {
                 CrossChainTransferStatus.Suspended,
                 CrossChainTransferStatus.Partial,
                 CrossChainTransferStatus.FullySigned
-            });
+            }, true, false);
 
             foreach (ICrossChainTransfer transfer in inProgressTransfers)
             {
