@@ -1046,8 +1046,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     {
                         Guard.Assert(this.Synchronize());
 
-                        ICrossChainTransfer[] res = this.ValidateCrossChainTransfers(this.Get(depositIds));
-                        return res;
+                        return this.Get(depositIds);
                     });
                 }
             });
