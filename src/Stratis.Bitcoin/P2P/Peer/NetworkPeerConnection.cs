@@ -226,15 +226,19 @@ namespace Stratis.Bitcoin.P2P.Peer
                 throw new ProtocolViolationException($"Message payload {payload.GetType()} not found.");
 
             CancellationTokenSource cts = null;
-            if (cancellation != default(CancellationToken))
-            {
-                cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.CancellationSource.Token);
-                cancellation = cts.Token;
-            }
-            else cancellation = this.CancellationSource.Token;
 
             try
             {
+                if (cancellation != default(CancellationToken))
+                {
+                    cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.CancellationSource.Token);
+                    cancellation = cts.Token;
+                }
+                else
+                {
+                    cancellation = this.CancellationSource.Token;
+                }
+
                 var message = new Message(this.payloadProvider)
                 {
                     Magic = this.peer.Network.Magic,
