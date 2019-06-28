@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -11,7 +10,6 @@ using Stratis.Features.FederatedPeg.InputConsolidation;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.NetworkHelpers;
 using Stratis.Features.FederatedPeg.Payloads;
-using Stratis.Features.FederatedPeg.TargetChain;
 
 namespace Stratis.Features.FederatedPeg
 {
@@ -87,16 +85,14 @@ namespace Stratis.Features.FederatedPeg
 
         private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
-            var payload = message.Message.Payload as RequestPartialTransactionPayload;
-
-            if (payload == null)
+            if (!(message.Message.Payload is RequestPartialTransactionPayload payload))
                 return;
 
             // Is a consolidation request.
             if (payload.DepositId == RequestPartialTransactionPayload.ConsolidationDepositId)
             {
                 this.logger.LogDebug("Received request to sign consolidation transaction.");
-                await this.HandleConsolidationTransactionRequest(peer, payload);
+                await this.HandleConsolidationTransactionRequestAsync(peer, payload);
                 return;
             }
 
@@ -139,7 +135,7 @@ namespace Stratis.Features.FederatedPeg
             }
         }
 
-        private async Task HandleConsolidationTransactionRequest(INetworkPeer peer, RequestPartialTransactionPayload payload)
+        private async Task HandleConsolidationTransactionRequestAsync(INetworkPeer peer, RequestPartialTransactionPayload payload)
         {
             ConsolidationSignatureResult result = this.inputConsolidator.CombineSignatures(payload.PartialTransaction);
 
