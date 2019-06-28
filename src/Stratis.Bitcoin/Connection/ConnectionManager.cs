@@ -388,7 +388,7 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>
         /// Determines if the peer should be disconnected.
         /// Peer should be disconnected in case it's IP is from the same group in which any other peer
-        /// is and the peer wasn't added using -connect or -addNode command line argumentserc
+        /// is and the peer wasn't added using -connect or -addNode command line arguments.
         /// </summary>
         private bool ShouldDisconnect(INetworkPeer peer)
         {
