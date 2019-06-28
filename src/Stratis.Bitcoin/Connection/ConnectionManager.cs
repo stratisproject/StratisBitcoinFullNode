@@ -417,7 +417,7 @@ namespace Stratis.Bitcoin.Connection
             }
 
             // Don't disconnect if this peer is in the exclude from IP range filtering group.
-            if (this.ipRangeFilteringEndpointExclusions.Any(ip => ip.Match(peer.PeerEndPoint)))
+            if (this.ipRangeFilteringEndpointExclusions.Any(ip => ip.MatchIpOnly(peer.PeerEndPoint)))
             {
                 this.logger.LogTrace("(-)[PEER_IN_IPRANGEFILTER_EXCLUSIONS]:false");
                 return false;
