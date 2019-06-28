@@ -165,15 +165,15 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="ip">The ip to match.</param>
         /// <param name="port">The port to match (optional).</param>
-        /// <returns></returns>
+        /// <returns><c>True</c> if the endpoint matches and <c>false</c> otherwise.</returns>
         bool Match(IPAddress ip, int? port = null);
 
         /// <summary>
-        /// Determines if this peer matches the endpoint.
+        /// Determines if this peer matches the endpoint. Port matching can be suppressed by passing an optional argument.
         /// </summary>
         /// <param name="ep">The endpoint to match.</param>
         /// <param name="matchPort">Set to <c>false</c> to omit port matching.</param>
-        /// <returns></returns>
+        /// <returns><c>True</c> if the endpoint matches and <c>false</c> otherwise.</returns>
         bool Match(IPEndPoint ep, bool matchPort = true);
     }
 }
