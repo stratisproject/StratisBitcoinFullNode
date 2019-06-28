@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net;
 using Stratis.Bitcoin.Utilities.Extensions;
 
@@ -34,7 +33,7 @@ namespace Stratis.Features.FederatedPeg.NetworkHelpers
 
         public int GetHashCode(IPEndPoint endPoint)
         {
-            return endPoint.Address.MapToIPv6().GetHashCode() ^ endPoint.Port;
+            return endPoint?.Address.MapToIPv6().GetHashCode() ^ endPoint.Port ?? 0;
         }
     }
 }
