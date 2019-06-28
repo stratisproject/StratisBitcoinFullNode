@@ -95,11 +95,6 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// <returns>The counter of the cross chain transfer for each <see cref="CrossChainTransferStatus"/> status</returns>
         Dictionary<CrossChainTransferStatus, int> GetCrossChainTransferStatusCounter();
 
-        /// <summary>
-        /// Get transfers by status without validating or locking. Useful for retrieving console data.
-        /// </summary>
-        ICrossChainTransfer[] QueryTransfersByStatus(CrossChainTransferStatus[] statuses);
-
 
         /// <summary>
         /// Get transfers by ID without validating or locking. Useful for retrieving console data.
