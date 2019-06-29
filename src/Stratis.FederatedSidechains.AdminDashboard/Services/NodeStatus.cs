@@ -16,4 +16,15 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
 
         public string State { get; set; } = "Not Operational";
     }
+
+    public class NodeDashboardStats
+    {
+        public int HeaderHeight { get; set; } = 0;
+        public string AsyncLoops { get; set; } = String.Empty;
+        public int AddressIndexerHeight { get; set; } = 0;
+        public string OrphanSize { get; set; } = String.Empty;
+        public int MissCount { get; set; } = 0;
+        public bool IsMining { get; set; } = false;
+        public int LastMinedIndex { get; set; } = 0;
+    }
 }

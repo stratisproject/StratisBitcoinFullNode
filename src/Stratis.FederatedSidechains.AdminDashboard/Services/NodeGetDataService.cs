@@ -1,13 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection.Metadata;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using NUglify.Helpers;
 using Stratis.FederatedSidechains.AdminDashboard.Entities;
+using Stratis.FederatedSidechains.AdminDashboard.Settings;
+using NBitcoin;
+using NBitcoin.DataEncoders;
 
 namespace Stratis.FederatedSidechains.AdminDashboard.Services
 {
@@ -17,26 +23,49 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         public List<LogRule> LogRules { get; set; }
         public int RawMempool { get; set; } = 0;
         public string BestHash { get; set; } = String.Empty;
-        //public (double confirmedBalance, double unconfirmedBalance) WalletBalance { get; set; } = (0, 0);
-        //public Object WalletHistory { get; set; }
+
         public ApiResponse StatusResponse { get; set; }
         public ApiResponse FedInfoResponse { get; set; }
         public List<PendingPoll> PendingPolls { get; set; }
+        public NodeDashboardStats NodeDashboardStats { get; set; }
+        public string MiningPubKey { get; set; }
 
         protected const int STRATOSHI = 100_000_000;
+        protected readonly string miningKeyFile;
+
         private ApiRequester _apiRequester;
         private string _endpoint;
         private readonly ILogger<NodeGetDataService> logger;
+        protected readonly bool isMainnet = true;
 
-        public NodeGetDataService(ApiRequester apiRequester, string endpoint, ILoggerFactory loggerFactory)
+        public NodeGetDataService(ApiRequester apiRequester, string endpoint, ILoggerFactory loggerFactory, string env)
         {
             _apiRequester = apiRequester;
             _endpoint = endpoint;
             this.logger = loggerFactory.CreateLogger<NodeGetDataService>();
+            this.isMainnet = env != NodeEnv.TestNet;
+            try
+            {
+                miningKeyFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "StratisNode", "cirrus", this.isMainnet ? "CirrusMain" : "CirrusTest",
+                    "federationKey.dat");
+                using (FileStream readStream = File.OpenRead(miningKeyFile))
+                {
+                    var privateKey = new Key();
+                    var stream = new BitcoinStream(readStream, false);
+                    stream.ReadWrite(ref privateKey);
+                    this.MiningPubKey = Encoders.Hex.EncodeData(privateKey.PubKey.ToBytes());
+                }
+            }
+            catch
+            {
+
+            }
         }
 
         public virtual async Task<NodeGetDataService> Update()
         {
+            NodeDashboardStats = await UpdateDashboardStats();
             NodeStatus = await UpdateNodeStatus();
             LogRules = await UpdateLogRules();
             RawMempool = await UpdateMempool();
@@ -177,12 +206,56 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
 
             return polls;
         }
+
+        Regex headerHeight = new Regex("Headers\\.Height:\\s+([0-9]+)", RegexOptions.Compiled);
+        Regex walletHeight = new Regex("Wallet(\\[SC\\])*\\.Height:\\s+([0-9]+)", RegexOptions.Compiled);
+        Regex orphanSize = new Regex("OrphanSize:\\s+([0-9]+)", RegexOptions.Compiled);
+        Regex miningHistory = new Regex("MISS means that miner didn't produce a block at the timestamp he was supposed to.\\n(.*)...", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        Regex asyncLoopStats = new Regex("====== Async loops ======   (.*)", RegexOptions.Compiled);
+        Regex addressIndexer = new Regex("AddressIndexer\\.Height:\\s+([0-9]+)", RegexOptions.Compiled);
+        protected async Task<NodeDashboardStats> UpdateDashboardStats()
+        {
+            var nodeDashboardStats  = new NodeDashboardStats();
+            try
+            {
+                string response;
+                using (HttpClient client = new HttpClient())
+                {
+                    response = await client.GetStringAsync($"{_endpoint}/api/Dashboard/Stats").ConfigureAwait(false);
+                    nodeDashboardStats.HeaderHeight = Int32.Parse(headerHeight.Match(response).Groups[1].Value);
+                    nodeDashboardStats.OrphanSize = orphanSize.Match(response).Groups[1].Value;
+                    try
+                    {
+                        nodeDashboardStats.AddressIndexerHeight = Int32.Parse(this.addressIndexer.Match(response).Groups[1].Value);
+                    }
+                    catch
+                    {
+                    }
+                    
+                    nodeDashboardStats.AsyncLoops = asyncLoopStats.Match(response).Groups[1].Value.Replace("[", "").Replace("]", "").Replace(" ", "").Replace("Running", "R").Replace("Faulted", ", F");
+                    var hitOrMiss = miningHistory.Match(response).Groups[1].Value.Split("-".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+                    nodeDashboardStats.MissCount = Array.FindAll(hitOrMiss, x => x.Contains("MISS")).Length;
+
+                    if (!string.IsNullOrEmpty(MiningPubKey))
+                    {
+                        nodeDashboardStats.LastMinedIndex = Array.IndexOf(hitOrMiss, $"[{MiningPubKey.Substring(0, 4)}]") + 1;
+                        nodeDashboardStats.IsMining = 0 < nodeDashboardStats.LastMinedIndex;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError(ex, "Failed to get /api/Dashboard/Stats");
+            }
+
+            return nodeDashboardStats;
+        }
     }
 
     public class NodeGetDataServiceMainchainMiner : NodeGetDataService
     {
-        public NodeGetDataServiceMainchainMiner(ApiRequester apiRequester, string endpoint, ILoggerFactory loggerFactory) : base(apiRequester,
-            endpoint, loggerFactory)
+        public NodeGetDataServiceMainchainMiner(ApiRequester apiRequester, string endpoint, ILoggerFactory loggerFactory, string env) : base(apiRequester,
+            endpoint, loggerFactory, env)
         {
 
         }
@@ -194,14 +267,15 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         public object WalletHistory { get; set; }
         public string FedAddress { get; set; }
 
-        public NodeGetDataServiceMultisig(ApiRequester apiRequester, string endpoint, ILoggerFactory logger) : base(apiRequester,
-            endpoint, logger)
+        public NodeGetDataServiceMultisig(ApiRequester apiRequester, string endpoint, ILoggerFactory loggerFactory, string env) : base(apiRequester,
+            endpoint, loggerFactory, env)
         {
 
         }
 
         public override async Task<NodeGetDataService> Update()
         {
+            NodeDashboardStats = await UpdateDashboardStats();
             NodeStatus = await this.UpdateNodeStatus();
             LogRules = await this.UpdateLogRules();
             RawMempool = await this.UpdateMempool();
@@ -215,13 +289,14 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
 
     public class NodeDataServiceSidechainMultisig : NodeGetDataServiceMultisig
     {
-        public NodeDataServiceSidechainMultisig(ApiRequester apiRequester, string endpoint, ILoggerFactory logger) : base(apiRequester,
-            endpoint, logger)
+        public NodeDataServiceSidechainMultisig(ApiRequester apiRequester, string endpoint, ILoggerFactory loggerFactory, string env) : base(apiRequester,
+            endpoint, loggerFactory, env)
         {
         }
 
         public override async Task<NodeGetDataService> Update()
         {
+            NodeDashboardStats = await UpdateDashboardStats();
             NodeStatus = await UpdateNodeStatus();
             LogRules = await UpdateLogRules();
             RawMempool = await UpdateMempool();
@@ -236,12 +311,14 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
 
     public class NodeDataServicesSidechainMiner : NodeGetDataService
     {
-        public NodeDataServicesSidechainMiner(ApiRequester apiRequester, string endpoint, ILoggerFactory loggerFactory) : base(apiRequester, endpoint, loggerFactory)
+        public NodeDataServicesSidechainMiner(ApiRequester apiRequester, string endpoint, ILoggerFactory loggerFactory, string env) : base(apiRequester,
+            endpoint, loggerFactory, env)
         {
         }
 
         public override async Task<NodeGetDataService> Update()
         {
+            NodeDashboardStats = await UpdateDashboardStats();
             NodeStatus = await UpdateNodeStatus();
             LogRules = await UpdateLogRules();
             RawMempool = await UpdateMempool();

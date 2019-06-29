@@ -36,6 +36,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
         private bool successfullyBuilt;
         private Timer dataRetrieverTimer;
         private readonly bool is50K = true;
+        private NodeGetDataService nodeDataServiceMainchain;
+        private NodeGetDataService nodeDataServiceSidechain;
 
         public FetchingBackgroundService(IDistributedCache distributedCache, IOptions<DefaultEndpointsSettings> defaultEndpointsSettings, IHubContext<DataUpdaterHub> hubContext, ILoggerFactory loggerFactory, ApiRequester apiRequester, IConfiguration configuration)
         {
@@ -46,6 +48,18 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
             this.apiRequester = apiRequester;
             this.defaultEndpointsSettings = configuration.GetSection("DefaultEndpoints").Get<DefaultEndpointsSettings>();
             if (this.defaultEndpointsSettings.SidechainNodeType == NodeTypes.TenK) this.is50K = false;
+
+            if (this.is50K)
+            {
+                nodeDataServiceMainchain = new NodeGetDataServiceMultisig(this.apiRequester, this.defaultEndpointsSettings.StratisNode, this.loggerFactory, this.defaultEndpointsSettings.EnvType);
+                nodeDataServiceSidechain = new NodeDataServiceSidechainMultisig(this.apiRequester, this.defaultEndpointsSettings.SidechainNode, this.loggerFactory, this.defaultEndpointsSettings.EnvType);
+            }
+            else
+            {
+                nodeDataServiceMainchain = new NodeGetDataServiceMainchainMiner(this.apiRequester, this.defaultEndpointsSettings.StratisNode, this.loggerFactory, this.defaultEndpointsSettings.EnvType);
+                nodeDataServiceSidechain = new NodeDataServicesSidechainMiner(this.apiRequester, this.defaultEndpointsSettings.SidechainNode, this.loggerFactory, this.defaultEndpointsSettings.EnvType);
+            }
+
         }
 
         /// <summary>
@@ -69,19 +83,19 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
         {
             this.logger.LogInformation($"Refresh the Dashboard Data");
 
-            NodeGetDataService nodeDataServiceMainchain;
-            NodeGetDataService nodeDataServiceSidechain;
+            //NodeGetDataService nodeDataServiceMainchain;
+            //NodeGetDataService nodeDataServiceSidechain;
 
-            if (this.is50K)
-            {
-                nodeDataServiceMainchain = new NodeGetDataServiceMultisig(this.apiRequester, this.defaultEndpointsSettings.StratisNode, this.loggerFactory);
-                nodeDataServiceSidechain = new NodeDataServiceSidechainMultisig(this.apiRequester, this.defaultEndpointsSettings.SidechainNode, this.loggerFactory);
-            }
-            else
-            {
-                nodeDataServiceMainchain = new NodeGetDataServiceMainchainMiner(this.apiRequester, this.defaultEndpointsSettings.StratisNode, this.loggerFactory);
-                nodeDataServiceSidechain = new NodeDataServicesSidechainMiner(this.apiRequester, this.defaultEndpointsSettings.SidechainNode, this.loggerFactory);
-            }
+            //if (this.is50K)
+            //{
+            //    nodeDataServiceMainchain = new NodeGetDataServiceMultisig(this.apiRequester, this.defaultEndpointsSettings.StratisNode, this.loggerFactory, this.defaultEndpointsSettings.EnvType);
+            //    nodeDataServiceSidechain = new NodeDataServiceSidechainMultisig(this.apiRequester, this.defaultEndpointsSettings.SidechainNode, this.loggerFactory, this.defaultEndpointsSettings.EnvType);
+            //}
+            //else
+            //{
+            //    nodeDataServiceMainchain = new NodeGetDataServiceMainchainMiner(this.apiRequester, this.defaultEndpointsSettings.StratisNode, this.loggerFactory, this.defaultEndpointsSettings.EnvType);
+            //    nodeDataServiceSidechain = new NodeDataServicesSidechainMiner(this.apiRequester, this.defaultEndpointsSettings.SidechainNode, this.loggerFactory, this.defaultEndpointsSettings.EnvType);
+            //}
 
             await nodeDataServiceMainchain.Update();
             await nodeDataServiceSidechain.Update();
