@@ -164,6 +164,5 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 Assert.Equal("[::ffff:127.0.0.3]:0", bannedPeer.EndPoint);
             }
         }
-
     }
 }
