@@ -9439,5 +9439,6 @@ i[role="copy"] {
     /* Required for text-overflow to do anything */
     white-space: nowrap;
     overflow: hidden;
+    max-width: 150px;
 }
 

@@ -1,10 +1,6 @@
 ﻿@model Vote
 
 <script type="text/javascript">
-    $(document).ready(function() {
-        var settings = { searching: false, pageLength: 10, lengthMenu: false, lengthChange: false };
-        $("#polls-table").DataTable(settings);
-    });
     function submitVote() {
         $.post("/sidechain-node/vote", $("#voteForm").serialize())
             .done(function(data) {
@@ -27,7 +23,7 @@
     }
 </script>
 <div class="modal fade right" id="federationVotes" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="width: 950px">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Federation Votes (PoA)</h5>
@@ -50,7 +46,7 @@
                     <button type="button" class="btn btn-primary" onclick="submitVote()">Submit</button>
                 </form>
                 <label class="mt-3"><strong>Polls Stats :</strong></label>
-                <table class="table table-sm table-striped" id="polls-table">
+                <table class="table table-sm table-striped table-bordered" id="polls-table">
                     <thead>
                         <tr>
                             <th class="text-left">ID</th>
@@ -70,11 +66,11 @@
                             <td class="text-left">@poll.Id</td>
                             <td class="text-center">@poll.IsExecuted</td>
                             <td class="text-center">@poll.IsPending</td>
-                            <td class="text-left ellipsis">@poll.PollExecutedBlockData</td>
-                            <td class="text-left ellipsis">@poll.PollStartBlockData</td>
-                            <td class="text-left ellipsis">@poll.PollVotedInFavorBlockData</td>
-                            <td class="text-left ellipsis">@(string.Join(", ", poll.PubKeysHexVotedInFavor ?? new List<string>()))</td>
-                            <td class="text-left ellipsis">@poll.VotingDataString</td>
+                            <td class="text-left ellipsis" title="@poll.PollExecutedBlockData">@poll.PollExecutedBlockData</td>
+                            <td class="text-left ellipsis" title="@poll.PollStartBlockData">@poll.PollStartBlockData</td>
+                            <td class="text-left ellipsis" title="@poll.PollVotedInFavorBlockData">@poll.PollVotedInFavorBlockData</td>
+                            <td class="text-left ellipsis" title="@(string.Join(", ", poll.PubKeysHexVotedInFavor ?? new List<string>()))">@(string.Join(", ", poll.PubKeysHexVotedInFavor ?? new List<string>()))</td>
+                            <td class="text-left ellipsis" title="@poll.VotingDataString">@poll.VotingDataString</td>
                         </tr>
                     }
                     </tbody>

@@ -426,6 +426,9 @@
             $("#sidechain-members").DataTable(settings);
             $("#sidechain-history").DataTable(settings);
 
+            var settings2 = { searching: false, pageLength: 10, lengthMenu: false, lengthChange: false };
+            $("#polls-table").DataTable(settings2);
+
             setTimeout(function() {
                     $(".loader").fadeOut(function() {
                         $("#loading-content").fadeIn();
