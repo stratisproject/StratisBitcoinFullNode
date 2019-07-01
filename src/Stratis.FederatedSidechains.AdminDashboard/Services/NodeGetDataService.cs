@@ -57,9 +57,9 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                     this.MiningPubKey = Encoders.Hex.EncodeData(privateKey.PubKey.ToBytes());
                 }
             }
-            catch
+            catch (Exception ex)
             {
-
+                this.logger.LogError(ex, "Failed to read file.");
             }
         }
 
