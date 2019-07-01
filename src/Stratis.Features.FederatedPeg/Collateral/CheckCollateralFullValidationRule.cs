@@ -28,23 +28,20 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
         private readonly Network network;
 
-        private readonly Network counterChainNetwork;
-
         /// <summary>For how many seconds the block should be banned in case collateral check failed.</summary>
         private readonly int collateralCheckBanDurationSeconds;
 
         public CheckCollateralFullValidationRule(IInitialBlockDownloadState ibdState, ICollateralChecker collateralChecker,
             ISlotsManager slotsManager, IDateTimeProvider dateTime, Network network, CounterChainNetworkWrapper counterChainNetwork)
         {
-            this.network = network;
-            this.counterChainNetwork = counterChainNetwork.CounterChainNetwork;
+            this.network = counterChainNetwork.CounterChainNetwork;
             this.encoder = new CollateralHeightCommitmentEncoder();
             this.ibdState = ibdState;
             this.collateralChecker = collateralChecker;
             this.slotsManager = slotsManager;
             this.dateTime = dateTime;
 
-            this.collateralCheckBanDurationSeconds = (int)(this.network.Consensus.Options as PoAConsensusOptions).TargetSpacingSeconds / 2;
+            this.collateralCheckBanDurationSeconds = (int)(network.Consensus.Options as PoAConsensusOptions).TargetSpacingSeconds / 2;
         }
 
         public override Task RunAsync(RuleContext context)
@@ -71,7 +68,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
             this.Logger.LogDebug("Commitment is: {0}.", commitmentHeight);
 
             int counterChainHeight = this.collateralChecker.GetCounterChainConsensusHeight();
-            int maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(this.counterChainNetwork);
+            int maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(this.network);
 
             // Check if commitment height is less than `mainchain consensus tip height - MaxReorg`.
             if (commitmentHeight > counterChainHeight - maxReorgLength)
