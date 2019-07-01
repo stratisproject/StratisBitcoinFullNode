@@ -31,7 +31,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         public string MiningPubKey { get; set; }
 
         protected const int STRATOSHI = 100_000_000;
-        protected readonly string miningKeyFile;
+        protected readonly string miningKeyFile = String.Empty;
 
         private ApiRequester _apiRequester;
         private string _endpoint;
@@ -44,22 +44,30 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
             _endpoint = endpoint;
             this.logger = loggerFactory.CreateLogger<NodeGetDataService>();
             this.isMainnet = env != NodeEnv.TestNet;
+
             try
             {
                 miningKeyFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                     "StratisNode", "cirrus", this.isMainnet ? "CirrusMain" : "CirrusTest",
                     "federationKey.dat");
-                using (FileStream readStream = File.OpenRead(miningKeyFile))
+                try
                 {
-                    var privateKey = new Key();
-                    var stream = new BitcoinStream(readStream, false);
-                    stream.ReadWrite(ref privateKey);
-                    this.MiningPubKey = Encoders.Hex.EncodeData(privateKey.PubKey.ToBytes());
+                    using (FileStream readStream = File.OpenRead(miningKeyFile))
+                    {
+                        var privateKey = new Key();
+                        var stream = new BitcoinStream(readStream, false);
+                        stream.ReadWrite(ref privateKey);
+                        this.MiningPubKey = Encoders.Hex.EncodeData(privateKey.PubKey.ToBytes());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    this.logger.LogError(ex, $"Failed to read file {miningKeyFile}");
                 }
             }
             catch (Exception ex)
             {
-                this.logger.LogError(ex, "Failed to read file.");
+                this.logger.LogError(ex, $"Failed to get APPDATA");
             }
         }
 
