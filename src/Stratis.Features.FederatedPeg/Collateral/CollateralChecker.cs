@@ -43,11 +43,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
         private readonly ISignals signals;
         private readonly IAsyncProvider asyncProvider;
 
-        private readonly IInitialBlockDownloadState ibdState;
-
         private readonly ILogger logger;
-
-        private readonly Network network;
 
         /// <summary>Protects access to <see cref="balancesDataByAddress"/> and <see cref="counterChainConsensusTipHeight"/>.</summary>
         private readonly object locker;
@@ -81,7 +77,6 @@ namespace Stratis.Features.FederatedPeg.Collateral
             this.federationManager = federationManager;
             this.signals = signals;
             this.asyncProvider = asyncProvider;
-            this.network = network;
 
             this.maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(settings.CounterChainNetwork);
             this.cancellationSource = new CancellationTokenSource();

@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Collateral;
+using Stratis.Features.FederatedPeg.CounterChain;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests
@@ -23,6 +24,8 @@ namespace Stratis.Features.FederatedPeg.Tests
 
         private readonly Mock<ISlotsManager> slotsManagerMock;
 
+        private readonly Mock<CounterChainNetworkWrapper> counterChainNetworkWrapperMock;
+
         private readonly RuleContext ruleContext;
 
         public CheckCollateralFullValidationRuleTests()
@@ -30,6 +33,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.ibdMock = new Mock<IInitialBlockDownloadState>();
             this.collateralCheckerMock = new Mock<ICollateralChecker>();
             this.slotsManagerMock = new Mock<ISlotsManager>();
+            this.counterChainNetworkWrapperMock = new Mock<CounterChainNetworkWrapper>();
 
 
             this.ibdMock.Setup(x => x.IsInitialBlockDownload()).Returns(false);
@@ -50,7 +54,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             var votingOutputScript = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(encodedHeight));
             block.Transactions[0].AddOutput(Money.Zero, votingOutputScript);
 
-            this.rule = new CheckCollateralFullValidationRule(this.ibdMock.Object, this.collateralCheckerMock.Object, this.slotsManagerMock.Object, new Mock<IDateTimeProvider>().Object, new PoANetwork());
+            this.rule = new CheckCollateralFullValidationRule(this.ibdMock.Object, this.collateralCheckerMock.Object, this.slotsManagerMock.Object, new Mock<IDateTimeProvider>().Object, new PoANetwork(), this.counterChainNetworkWrapperMock.Object);
             this.rule.Logger = new ExtendedLoggerFactory().CreateLogger(this.rule.GetType().FullName);
             this.rule.Initialize();
         }
