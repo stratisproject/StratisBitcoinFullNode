@@ -12,10 +12,6 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         public static void Main(string[] args)
         {
-            // TODO: DONT COMMIIT THIS TO MAIN REPO
-            new ProofOfStakeMintCoinsTest().Staking_Wallet_Can_Mint_New_Coins();
-            return;
-
             RunAllTestsOf<WalletTests>();
             RunAllTestsOf<NodeSyncTests>();
         }
