@@ -337,7 +337,7 @@ namespace Stratis.Bitcoin.Features.PoA
             ChainedHeader currentHeader = tip;
             uint currentTime = currentHeader.Header.Time;
 
-            int maxDepth = 45;
+            int maxDepth = 46;
             int pubKeyTakeCharacters = 4;
             int depthReached = 0;
             int hitCount = 0;
