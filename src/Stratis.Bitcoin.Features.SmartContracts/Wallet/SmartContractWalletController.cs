@@ -278,7 +278,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             BuildCreateContractTransactionResponse response = this.smartContractTransactionService.BuildCreateTx(request);
 
             if (!response.Success)
-                return this.BadRequest(this.Json(response));
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, response.Message, string.Empty);
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
 
@@ -314,8 +314,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
             BuildCallContractTransactionResponse response = this.smartContractTransactionService.BuildCallTx(request);
+
             if (!response.Success)
-                return this.BadRequest(this.Json(response));
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, response.Message,string.Empty);
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
 
