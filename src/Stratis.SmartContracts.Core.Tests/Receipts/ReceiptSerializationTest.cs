@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using NBitcoin;
+using Nethereum.RLP;
 using Stratis.SmartContracts.Core.Receipts;
 using Xunit;
 
@@ -56,6 +58,17 @@ namespace Stratis.SmartContracts.Core.Tests.Receipts
             TestStorageSerialize(receipt);
         }
 
+        [Fact]
+        public void Receipt_With_No_MethodName_Deserializes_Correctly()
+        {
+            var receipt = new Receipt(new uint256(1234), 12345, new Log[]{}, new uint256(12345), new uint160(25), new uint160(24), null, true, "Test Result", "Test Error Message", 54321, 1_000_000) { BlockHash = new uint256(1234) };
+
+            byte[] serialized = ToStorageBytesRlp_NoMethodName(receipt);
+
+            Receipt deserialized = Receipt.FromStorageBytesRlp(serialized);
+            TestStorageReceiptEquality(receipt, deserialized);
+        }
+
         private void TestConsensusSerialize(Receipt receipt)
         {
             byte[] serialized = receipt.ToConsensusBytesRlp();
@@ -76,6 +89,33 @@ namespace Stratis.SmartContracts.Core.Tests.Receipts
             byte[] serialized = receipt.ToStorageBytesRlp();
             Receipt deserialized = Receipt.FromStorageBytesRlp(serialized);
             TestStorageReceiptEquality(receipt, deserialized);
+        }
+
+        /// <summary>
+        /// Serializes a receipt without including the method name. For backwards compatibility testing.
+        /// </summary>
+        /// <param name="receipt"></param>
+        /// <returns></returns>
+        public byte[] ToStorageBytesRlp_NoMethodName(Receipt receipt)
+        {
+            IList<byte[]> encodedLogs = receipt.Logs.Select(x => RLP.EncodeElement(x.ToBytesRlp())).ToList();
+
+            return RLP.EncodeList(
+                RLP.EncodeElement(receipt.PostState.ToBytes()),
+                RLP.EncodeElement(BitConverter.GetBytes(receipt.GasUsed)),
+                RLP.EncodeElement(receipt.Bloom.ToBytes()),
+                RLP.EncodeElement(RLP.EncodeList(encodedLogs.ToArray())),
+                RLP.EncodeElement(receipt.TransactionHash.ToBytes()),
+                RLP.EncodeElement(receipt.BlockHash.ToBytes()),
+                RLP.EncodeElement(receipt.From.ToBytes()),
+                RLP.EncodeElement(receipt.To?.ToBytes()),
+                RLP.EncodeElement(receipt.NewContractAddress?.ToBytes()),
+                RLP.EncodeElement(BitConverter.GetBytes(receipt.Success)),
+                RLP.EncodeElement(Encoding.UTF8.GetBytes(receipt.Result ?? "")),
+                RLP.EncodeElement(Encoding.UTF8.GetBytes(receipt.ErrorMessage ?? "")),
+                RLP.EncodeElement(BitConverter.GetBytes(receipt.GasPrice)),
+                RLP.EncodeElement(BitConverter.GetBytes(receipt.Amount))
+            );
         }
 
         /// <summary>
