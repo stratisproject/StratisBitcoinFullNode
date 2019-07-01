@@ -17,7 +17,7 @@
                 <div class="card-body">
                     <div class="pb-3 mb-3">
                         <div class="mr-auto d-inline-block">
-                            <h3>Stratis Node</h3>
+                            <h3>Mainchain Node</h3>
                         </div>
                         <ul class="list-inline float-right d-flex align-items-center">
                             <li class="list-inline-item">
@@ -65,6 +65,18 @@
                             </li>
                             <li class="col-12 col-xl-6">
                                 <ul class="list-inline">
+                                    <li class="list-inline-item"><strong>Header height :</strong></li>
+                                    <li class="list-inline-item">@Model.StratisNode.HeaderHeight</li>
+                                </ul>
+                            </li>
+                            <li class="col-12 col-xl-6">
+                                <ul class="list-inline">
+                                    <li class="list-inline-item"><strong>Address Indexer height :</strong></li>
+                                    <li class="list-inline-item">@Model.StratisNode.AddressIndexer</li>
+                                </ul>
+                            </li>
+                            <li class="col-12 col-xl-6">
+                                <ul class="list-inline">
                                     <li class="list-inline-item"><strong>Uptime :</strong></li>
                                     <li class="list-inline-item text-muted">@Model.StratisNode.Uptime</li>
                                 </ul>
@@ -73,6 +85,22 @@
                                 <ul class="list-inline">
                                     <li class="list-inline-item"><strong>Mempool size :</strong></li>
                                     <li class="list-inline-item text-muted">@Model.StratisNode.MempoolSize</li>
+                                </ul>
+                            </li>
+                            <li class="col-12 col-xl-6">
+                                <ul class="list-inline">
+                                    <li class="list-inline-item"><strong>Orphan size :</strong></li>
+                                    <li class="list-inline-item text-muted">@Model.StratisNode.OrphanSize</li>
+                                </ul>
+                            </li>
+                            <li class="col-12 col-xl-6">
+                                <ul class="list-inline">
+                                    <li class="list-inline-item"><strong>Async Loops :</strong></li>
+                                    <li class="list-inline-item text-muted">
+                                        <span class="badge badge-@(Model.StratisNode.HasAsyncLoopsErrors ? "danger" : "success")">
+                                            @Model.StratisNode.AsyncLoops
+                                        </span>
+                                    </li>
                                 </ul>
                             </li>
                             @if (fiftyKOnlyFeature)
@@ -101,7 +129,7 @@
                             @foreach (var peer in Model.StratisNode.Peers)
                             {
                                 <tr>
-                                    <td class="text-left reveal-on-blur">@peer.Endpoint</td>
+                                    <td class="text-left">@peer.Endpoint</td>
                                     <td class="text-center">@peer.Type</td>
                                     <td class="text-center">height:@peer.Height</td>
                                     <td style="width: 250px;" nowrap class="text-left">agent:@peer.Version</td>
@@ -232,6 +260,18 @@
                             </li>
                             <li class="col-12 col-xl-6">
                                 <ul class="list-inline">
+                                    <li class="list-inline-item"><strong>Header height :</strong></li>
+                                    <li class="list-inline-item">@Model.SidechainNode.HeaderHeight</li>
+                                </ul>
+                            </li>
+                            <li class="col-12 col-xl-6">
+                                <ul class="list-inline">
+                                    <li class="list-inline-item"><strong>Address Indexer height :</strong></li>
+                                    <li class="list-inline-item">@Model.SidechainNode.AddressIndexer</li>
+                                </ul>
+                            </li>
+                            <li class="col-12 col-xl-6">
+                                <ul class="list-inline">
                                     <li class="list-inline-item"><strong>Uptime :</strong></li>
                                     <li class="list-inline-item text-muted">@Model.SidechainNode.Uptime</li>
                                 </ul>
@@ -240,6 +280,32 @@
                                 <ul class="list-inline">
                                     <li class="list-inline-item"><strong>Mempool size :</strong></li>
                                     <li class="list-inline-item text-muted">@Model.SidechainNode.MempoolSize</li>
+                                </ul>
+                            </li>
+                            <li class="col-12 col-xl-6">
+                                <ul class="list-inline">
+                                    <li class="list-inline-item"><strong>Orphan size :</strong></li>
+                                    <li class="list-inline-item text-muted">@Model.SidechainNode.OrphanSize</li>
+                                </ul>
+                            </li>
+                            <li class="col-12 col-xl-6">
+                                <ul class="list-inline">
+                                    <li class="list-inline-item"><strong>Mining Status :</strong></li>
+                                    <li class="list-inline-item text-muted">
+                                        <span class="badge badge-@(Model.SidechainNode.IsMining ? "success" : "danger")">
+                                            @(Model.SidechainNode.IsMining ? "Mining" : "Not Mining")
+                                        </span>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="col-12 col-xl-6">
+                                <ul class="list-inline">
+                                    <li class="list-inline-item"><strong>Async Loops :</strong></li>
+                                    <li class="list-inline-item text-muted">
+                                        <span class="badge badge-@(Model.SidechainNode.HasAsyncLoopsErrors ? "danger" : "success")">
+                                            @Model.SidechainNode.AsyncLoops
+                                        </span>
+                                    </li>
                                 </ul>
                             </li>
                             @if (fiftyKOnlyFeature)
@@ -268,7 +334,7 @@
                             @foreach (var peer in Model.SidechainNode.Peers)
                             {
                                 <tr>
-                                    <td class="text-left reveal-on-blur">@peer.Endpoint</td>
+                                    <td class="text-left">@peer.Endpoint</td>
                                     <td class="text-center">@peer.Type</td>
                                     <td class="text-center">height:@peer.Height</td>
                                     <td style="width: 250px;" nowrap class="text-left">agent:@peer.Version</td>

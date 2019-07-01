@@ -86,7 +86,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 nodeStatus.State = StatusResponse.Content.state;
             }
             catch (Exception ex)
-            { 
+            {
                 this.logger.LogError(ex, "Failed to update node status");
             }
 
@@ -102,7 +102,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 responseLog = JsonConvert.DeserializeObject<List<LogRule>>(response.Content.ToString());
             }
             catch (Exception ex)
-            { 
+            {
                 this.logger.LogError(ex, "Failed to get log rules");
             }
 
@@ -118,7 +118,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 mempoolSize = response.Content.Count;
             }
             catch (Exception ex)
-            { 
+            {
                 this.logger.LogError(ex, "Failed to get mempool info");
             }
 
@@ -134,7 +134,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 hash = response.Content;
             }
             catch (Exception ex)
-            { 
+            {
                 this.logger.LogError(ex, "Failed to get best hash");
             }
 
@@ -152,7 +152,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 unconfirmed = response.Content.balances[0].amountUnconfirmed / STRATOSHI;
             }
             catch (Exception ex)
-            { 
+            {
                 this.logger.LogError(ex, "Failed to get wallet balance");
             }
 
@@ -168,7 +168,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 history = response.Content;
             }
             catch (Exception ex)
-            { 
+            {
                 this.logger.LogError(ex, "Failed to get history");
             }
 
@@ -184,7 +184,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 fedAddress = FedInfoResponse.Content.multisigAddress;
             }
             catch (Exception ex)
-            { 
+            {
                 this.logger.LogError(ex, "Failed to fed info");
             }
 
@@ -200,7 +200,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 polls = JsonConvert.DeserializeObject<List<PendingPoll>>(response.Content.ToString());
             }
             catch (Exception ex)
-            { 
+            {
                 this.logger.LogError(ex, "Failed to update polls");
             }
 
@@ -215,23 +215,23 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         Regex addressIndexer = new Regex("AddressIndexer\\.Height:\\s+([0-9]+)", RegexOptions.Compiled);
         protected async Task<NodeDashboardStats> UpdateDashboardStats()
         {
-            var nodeDashboardStats  = new NodeDashboardStats();
+            var nodeDashboardStats = new NodeDashboardStats();
             try
             {
                 string response;
                 using (HttpClient client = new HttpClient())
                 {
                     response = await client.GetStringAsync($"{_endpoint}/api/Dashboard/Stats").ConfigureAwait(false);
-                    nodeDashboardStats.HeaderHeight = Int32.Parse(headerHeight.Match(response).Groups[1].Value);
                     nodeDashboardStats.OrphanSize = orphanSize.Match(response).Groups[1].Value;
-                    try
+                    if (int.TryParse(headerHeight.Match(response).Groups[1].Value, out var headerHeightValue))
                     {
-                        nodeDashboardStats.AddressIndexerHeight = Int32.Parse(this.addressIndexer.Match(response).Groups[1].Value);
+                        nodeDashboardStats.HeaderHeight = headerHeightValue;
                     }
-                    catch
+                    if (int.TryParse(this.addressIndexer.Match(response).Groups[1].Value, out var height))
                     {
+                        nodeDashboardStats.AddressIndexerHeight = height;
                     }
-                    
+
                     nodeDashboardStats.AsyncLoops = asyncLoopStats.Match(response).Groups[1].Value.Replace("[", "").Replace("]", "").Replace(" ", "").Replace("Running", "R").Replace("Faulted", ", F");
                     var hitOrMiss = miningHistory.Match(response).Groups[1].Value.Split("-".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
                     nodeDashboardStats.MissCount = Array.FindAll(hitOrMiss, x => x.Contains("MISS")).Length;

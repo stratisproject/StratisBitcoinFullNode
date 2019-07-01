@@ -1,25 +1,29 @@
 ﻿@model Vote
 
 <script type="text/javascript">
+    $(document).ready(function() {
+        var settings = { searching: false, pageLength: 10, lengthMenu: false, lengthChange: false };
+        $("#polls-table").DataTable(settings);
+    });
     function submitVote() {
         $.post("/sidechain-node/vote", $("#voteForm").serialize())
-         .done(function(data) {
-             $("#voteError").hide();
-             var hash = $("#vote").val();
-             $("#vote").val("");
-             $("#hashLabel").text(hash);
-             $("#federationVotes").modal('hide');
-             $("#confirmationModal").modal('show');
-         })
-         .fail(function(result) {
-             if (!!result.responseText) {
-                $("#voteError").text(result.responseText);
+            .done(function(data) {
+                $("#voteError").hide();
+                var hash = $("#vote").val();
+                $("#vote").val("");
+                $("#hashLabel").text(hash);
+                $("#federationVotes").modal('hide');
+                $("#confirmationModal").modal('show');
+            })
+            .fail(function(result) {
+                if (!!result.responseText) {
+                    $("#voteError").text(result.responseText);
+                    $("#voteError").show();
+                    return;
+                }
+                $("#voteError").text("Failed to vote. Unknown error. Please try again and make sure nodes are running.");
                 $("#voteError").show();
-                return;
-             }
-             $("#voteError").text("Failed to vote. Unknown error. Please try again and make sure nodes are running.");
-             $("#voteError").show();
-         });
+            });
     }
 </script>
 <div class="modal fade right" id="federationVotes" tabindex="-1" role="dialog">
@@ -45,6 +49,36 @@
                     </div>
                     <button type="button" class="btn btn-primary" onclick="submitVote()">Submit</button>
                 </form>
+                <label class="mt-3"><strong>Polls Stats :</strong></label>
+                <table class="table table-sm table-striped" id="polls-table">
+                    <thead>
+                        <tr>
+                            <th class="text-left">ID</th>
+                            <th class="text-center">Executed</th>
+                            <th class="text-center">Pending</th>
+                            <th class="text-left">Executed Data</th>
+                            <th class="text-left">Start Data</th>
+                            <th class="text-left">Voted Data</th>
+                            <th class="text-left">Hex</th>
+                            <th class="text-left">Voting Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var poll in Model?.Polls ?? new List<PendingPoll>())
+                    {
+                        <tr>
+                            <td class="text-left">@poll.Id</td>
+                            <td class="text-center">@poll.IsExecuted</td>
+                            <td class="text-center">@poll.IsPending</td>
+                            <td class="text-left ellipsis">@poll.PollExecutedBlockData</td>
+                            <td class="text-left ellipsis">@poll.PollStartBlockData</td>
+                            <td class="text-left ellipsis">@poll.PollVotedInFavorBlockData</td>
+                            <td class="text-left ellipsis">@(string.Join(", ", poll.PubKeysHexVotedInFavor ?? new List<string>()))</td>
+                            <td class="text-left ellipsis">@poll.VotingDataString</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

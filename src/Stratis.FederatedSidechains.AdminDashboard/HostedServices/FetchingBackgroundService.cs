@@ -136,6 +136,11 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                 stratisNode.CoinTicker = "STRAT";
                 stratisNode.LogRules = nodeDataServiceMainchain.LogRules;
                 stratisNode.Uptime = nodeDataServiceMainchain.NodeStatus.Uptime;
+                stratisNode.IsMining = this.nodeDataServiceMainchain.NodeDashboardStats?.IsMining ?? false;
+                stratisNode.AddressIndexer = this.nodeDataServiceMainchain.NodeDashboardStats?.AddressIndexerHeight ?? 0;
+                stratisNode.HeaderHeight = this.nodeDataServiceMainchain.NodeDashboardStats?.HeaderHeight ?? 0;
+                stratisNode.AsyncLoops = this.nodeDataServiceMainchain.NodeDashboardStats?.AsyncLoops ?? string.Empty;
+                stratisNode.OrphanSize = this.nodeDataServiceMainchain.NodeDashboardStats?.OrphanSize ?? string.Empty;
 
                 dashboardModel.StratisNode = stratisNode;
 
@@ -158,6 +163,12 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                 sidechainNode.LogRules = nodeDataServiceSidechain.LogRules;
                 sidechainNode.PoAPendingPolls = this.defaultEndpointsSettings.SidechainNodeType.ToUpper() == NodeTypes.FiftyK ? nodeDataServiceSidechain.PendingPolls : null;
                 sidechainNode.Uptime = nodeDataServiceSidechain.NodeStatus.Uptime;
+                sidechainNode.IsMining = this.nodeDataServiceSidechain.NodeDashboardStats?.IsMining ?? false;
+                sidechainNode.AddressIndexer = this.nodeDataServiceSidechain.NodeDashboardStats?.AddressIndexerHeight ?? 0;
+                sidechainNode.HeaderHeight = this.nodeDataServiceSidechain.NodeDashboardStats?.HeaderHeight ?? 0;
+                sidechainNode.AsyncLoops = this.nodeDataServiceSidechain.NodeDashboardStats?.AsyncLoops ?? string.Empty;
+                sidechainNode.OrphanSize = this.nodeDataServiceSidechain.NodeDashboardStats?.OrphanSize ?? string.Empty;
+
                 dashboardModel.SidechainNode = sidechainNode;
             }
             catch(Exception e)
