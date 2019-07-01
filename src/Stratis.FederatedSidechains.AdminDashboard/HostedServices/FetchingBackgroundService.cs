@@ -49,6 +49,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
             this.apiRequester = apiRequester;
             if (this.defaultEndpointsSettings.SidechainNodeType == NodeTypes.TenK) this.is50K = false;
 
+            this.logger.LogInformation("Default settings {settings}", defaultEndpointsSettings);
             if (this.is50K)
             {
                 nodeDataServiceMainchain = new NodeGetDataServiceMultisig(this.apiRequester, this.defaultEndpointsSettings.StratisNode, this.loggerFactory, this.defaultEndpointsSettings.EnvType);
