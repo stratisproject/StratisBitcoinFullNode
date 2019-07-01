@@ -39,14 +39,14 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
         private NodeGetDataService nodeDataServiceMainchain;
         private NodeGetDataService nodeDataServiceSidechain;
 
-        public FetchingBackgroundService(IDistributedCache distributedCache, IOptions<DefaultEndpointsSettings> defaultEndpointsSettings, IHubContext<DataUpdaterHub> hubContext, ILoggerFactory loggerFactory, ApiRequester apiRequester, IConfiguration configuration)
+        public FetchingBackgroundService(IDistributedCache distributedCache, DefaultEndpointsSettings defaultEndpointsSettings, IHubContext<DataUpdaterHub> hubContext, ILoggerFactory loggerFactory, ApiRequester apiRequester, IConfiguration configuration)
         {
+            this.defaultEndpointsSettings = defaultEndpointsSettings;
             this.distributedCache = distributedCache;
             this.updaterHub = hubContext;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger<FetchingBackgroundService>();
             this.apiRequester = apiRequester;
-            this.defaultEndpointsSettings = configuration.GetSection("DefaultEndpoints").Get<DefaultEndpointsSettings>();
             if (this.defaultEndpointsSettings.SidechainNodeType == NodeTypes.TenK) this.is50K = false;
 
             if (this.is50K)

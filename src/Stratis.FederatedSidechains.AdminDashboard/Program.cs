@@ -27,39 +27,12 @@ namespace Stratis.FederatedSidechains.AdminDashboard
 
             app.OnExecute(() =>
             {
-                CreateWebHostBuilder(args, mainchainportOption, sidechainportOption, sidechainNodeType, environmentType).Build().Run();
+                IWebHostBuilder webHostBuilder = WebHost.CreateDefaultBuilder(args);
+                IWebHost webHost = webHostBuilder.UseStartup<Startup>().Build();
+                webHost.Run();
             });
 
             app.Execute(args);
-        }
-
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args, CommandOption<int> mainchainportOption, CommandOption<int> sidechainportOption, CommandOption<string> sidechainNodeType, CommandOption<string> nodeEnv)
-        {
-            IWebHostBuilder webHostBuilder = WebHost.CreateDefaultBuilder(args);
-            webHostBuilder.UseSetting("DefaultEndpoints:EnvType", NodeEnv.MainNet);
-            if (mainchainportOption.HasValue())
-                webHostBuilder.UseSetting("DefaultEndpoints:StratisNode", $"http://localhost:{mainchainportOption.Value()}");
-            if(sidechainportOption.HasValue())
-                webHostBuilder.UseSetting("DefaultEndpoints:SidechainNode", $"http://localhost:{sidechainportOption.Value()}");
-            if (sidechainNodeType.HasValue() && !string.IsNullOrEmpty(sidechainNodeType.Value()))
-            {
-                var nodeType =
-                    sidechainNodeType.Value().Contains("50", StringComparison.OrdinalIgnoreCase) || sidechainNodeType
-                        .Value().Contains("fifty", StringComparison.OrdinalIgnoreCase)
-                        ? NodeTypes.FiftyK
-                        : NodeTypes.TenK;
-                webHostBuilder.UseSetting("DefaultEndpoints:SidechainNodeType", nodeType);
-            }
-
-            if (nodeEnv.HasValue() && !string.IsNullOrEmpty(nodeEnv.Value()))
-            {
-                var envType = nodeEnv.Value().Contains("testnet", StringComparison.OrdinalIgnoreCase)
-                    ? NodeEnv.TestNet
-                    : NodeEnv.MainNet;
-                webHostBuilder.UseSetting("DefaultEndpoints:EnvType", envType);
-            }
-
-            return webHostBuilder.UseStartup<Startup>();
         }
     }
 }

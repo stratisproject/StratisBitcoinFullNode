@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -22,8 +23,32 @@ namespace Stratis.FederatedSidechains.AdminDashboard
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.Configure<DefaultEndpointsSettings>(options => Configuration.GetSection("DefaultEndpoints").Bind(options));
-            
+            IConfigurationSection defaultEndpoints = this.Configuration.GetSection("DefaultEndpoints");
+            var defaultEndpointsSettings = new DefaultEndpointsSettings
+            {
+                StratisNode = !string.IsNullOrEmpty(this.Configuration["mainchainport"]) ? $"http://localhost:{this.Configuration["mainchainport"]}" : defaultEndpoints["StratisNode"],
+                EnvType = defaultEndpoints["EnvType"],
+                SidechainNodeType = this.Configuration["nodetype"] ?? defaultEndpoints["SidechainNodeType"],
+                SidechainNode = !string.IsNullOrEmpty(this.Configuration["sidechainport"]) ? $"http://localhost:{this.Configuration["sidechainport"]}" : defaultEndpoints["SidechainNode"]
+            };
+
+            if (!string.IsNullOrEmpty(this.Configuration["nodetype"]))
+            {
+                defaultEndpointsSettings.SidechainNodeType =
+                    this.Configuration["nodetype"].Contains("50", StringComparison.OrdinalIgnoreCase) || this.Configuration["nodetype"]
+                        .Contains("fifty", StringComparison.OrdinalIgnoreCase)
+                        ? NodeTypes.FiftyK
+                        : NodeTypes.TenK;
+            }
+
+            if (!string.IsNullOrEmpty(this.Configuration["env"]))
+            {
+                defaultEndpointsSettings.EnvType = this.Configuration["env"].Contains("testnet", StringComparison.OrdinalIgnoreCase)
+                    ? NodeEnv.TestNet
+                    : NodeEnv.MainNet;
+            }
+
+            services.AddSingleton(defaultEndpointsSettings);
             services.AddDistributedMemoryCache();
 
             services.AddTransient<ApiRequester>();

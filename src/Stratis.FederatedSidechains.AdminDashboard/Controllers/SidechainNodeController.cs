@@ -16,9 +16,9 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
         private readonly DefaultEndpointsSettings defaultEndpointsSettings;
         private readonly ApiRequester apiRequester;
 
-        public SidechainNodeController(IOptions<DefaultEndpointsSettings> defaultEndpointsSettings, ApiRequester apiRequester)
+        public SidechainNodeController(DefaultEndpointsSettings defaultEndpointsSettings, ApiRequester apiRequester)
         {
-            this.defaultEndpointsSettings = defaultEndpointsSettings.Value;
+            this.defaultEndpointsSettings = defaultEndpointsSettings;
             this.apiRequester = apiRequester;
         }
 

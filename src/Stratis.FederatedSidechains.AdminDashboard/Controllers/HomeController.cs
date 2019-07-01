@@ -27,10 +27,10 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
         private readonly IHubContext<DataUpdaterHub> updaterHub;
         private readonly ApiRequester apiRequester;
 
-        public HomeController(IDistributedCache distributedCache, IHubContext<DataUpdaterHub> hubContext, IOptions<DefaultEndpointsSettings> defaultEndpointsSettings, ApiRequester apiRequester)
+        public HomeController(IDistributedCache distributedCache, IHubContext<DataUpdaterHub> hubContext, DefaultEndpointsSettings defaultEndpointsSettings, ApiRequester apiRequester)
         {
             this.distributedCache = distributedCache;
-            this.defaultEndpointsSettings = defaultEndpointsSettings.Value;
+            this.defaultEndpointsSettings = defaultEndpointsSettings;
             this.updaterHub = hubContext;
             this.apiRequester = apiRequester;
         }

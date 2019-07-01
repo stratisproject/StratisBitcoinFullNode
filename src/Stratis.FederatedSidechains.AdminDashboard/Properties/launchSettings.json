@@ -22,6 +22,7 @@
     },
     "Stratis.FederatedSidechains.AdminDashboard": {
       "commandName": "Project",
+      "commandLineArgs": "--nodetype 50K",
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

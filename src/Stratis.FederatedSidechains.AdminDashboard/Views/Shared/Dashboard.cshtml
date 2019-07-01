@@ -1,9 +1,9 @@
 @using Microsoft.Extensions.Options
 @using Stratis.FederatedSidechains.AdminDashboard.Settings
-@inject IOptions<DefaultEndpointsSettings> defaultEndpointsSettings;
+@inject DefaultEndpointsSettings defaultEndpointsSettings;
 @model DashboardModel
 @{
-    bool fiftyKOnlyFeature = this.defaultEndpointsSettings.Value.SidechainNodeType == NodeTypes.FiftyK;
+    bool fiftyKOnlyFeature = this.defaultEndpointsSettings.SidechainNodeType == NodeTypes.FiftyK;
 }
 @if (ViewBag.DisplayLoader == true)
 {
