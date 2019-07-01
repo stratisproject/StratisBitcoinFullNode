@@ -14,6 +14,9 @@ namespace Stratis.Bitcoin.Utilities
 
             public TValue Value { get; set; }
 
+            /// <summary>Indicates whether the item has been modified.</summary>
+            public bool Dirty { get; set; }
+
             /// <summary>Size of value in bytes.</summary>
             public long Size { get; set; }
 
@@ -67,11 +70,13 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>An item was added to the cache.</summary>
         protected virtual void ItemAddedLocked(CacheItem item)
         {
+            this.totalSize += item.Size;
         }
 
         /// <summary>An item was removed from the cache.</summary>
         protected virtual void ItemRemovedLocked(CacheItem item)
         {
+            this.totalSize -= item.Size;
         }
 
         /// <summary>Gets the count of the current items for diagnostic purposes.</summary>
@@ -94,10 +99,19 @@ namespace Stratis.Bitcoin.Utilities
 
             lock (this.LockObject)
             {
+                bool insertLast = true;
+
                 if (this.Cache.TryGetValue(item.Key, out node))
                 {
                     node.Value.Value = item.Value;
-                    this.Keys.Remove(node);
+
+                    if (node.Next == null)
+                    {
+                        // Already last item.
+                        insertLast = false;
+                    }
+                    else
+                        this.Keys.Remove(node);
                 }
                 else
                 {
@@ -118,7 +132,10 @@ namespace Stratis.Bitcoin.Utilities
                     this.ItemAddedLocked(item);
                 }
 
-                this.Keys.AddLast(node);
+                node.Value.Dirty = true;
+
+                if (insertLast)
+                    this.Keys.AddLast(node);
             }
         }
 

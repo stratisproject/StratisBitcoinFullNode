@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     {
         /// <summary>Maximum interval between saving batches.</summary>
         /// <remarks>Interval value is a prime number that wasn't used as an interval in any other component. That prevents having CPU consumption spikes.</remarks>
-        private const int BatchMaxSaveIntervalSeconds = 37;
+        private const int BatchMaxSaveIntervalSeconds = 17;
 
         /// <summary>Maximum number of bytes the batch can hold until the downloaded blocks are stored to the disk.</summary>
         internal long BatchThresholdSizeBytes;
@@ -186,6 +186,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // Start dequeuing.
             this.currentBatchSizeBytes = 0;
             this.dequeueLoopTask = this.DequeueBlocksContinuouslyAsync();
+
+            this.asyncProvider.RegisterTask($"{nameof(BlockStoreQueue)}.{nameof(this.dequeueLoopTask)}", this.dequeueLoopTask);
         }
 
         /// <inheritdoc/>
