@@ -99,14 +99,14 @@ namespace Stratis.Bitcoin.P2P.Peer
         public List<INetworkPeer> FindByIp(IPAddress ip)
         {
             ip = ip.EnsureIPv6();
-            return this.networkPeers.Where(n => n.Match(ip)).ToList();
+            return this.networkPeers.Where(n => n.HasRemoteIPAddress(ip)).ToList();
         }
 
         public INetworkPeer FindByEndpoint(IPEndPoint endpoint)
         {
             IPAddress ip = endpoint.Address.EnsureIPv6();
             int port = endpoint.Port;
-            return this.networkPeers.FirstOrDefault(n => n.Match(ip, port));
+            return this.networkPeers.FirstOrDefault(n => n.HasRemoteIPAddress(ip, port));
         }
 
         public IEnumerator<INetworkPeer> GetEnumerator()

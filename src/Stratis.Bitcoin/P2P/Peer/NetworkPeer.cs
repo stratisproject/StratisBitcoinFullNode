@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc />
-        public bool Match(IPAddress ip, int? port = null)
+        public bool HasRemoteIPAddress(IPAddress ip, int? port = null)
         {
             bool isConnectedOrHandShaked = (this.State == NetworkPeerState.Connected || this.State == NetworkPeerState.HandShaked);
 
@@ -214,9 +214,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc />
-        public bool Match(IPEndPoint ep, bool matchPort = true)
+        public bool HasRemoteEndPoint(IPEndPoint ep, bool matchPort = true)
         {
-            return this.Match(ep.Address, matchPort ? ep.Port : (int?)null);
+            return this.HasRemoteIPAddress(ep.Address, matchPort ? ep.Port : (int?)null);
         }
 
         /// <summary><c>true</c> to advertise "addr" message with our external endpoint to the peer when passing to <see cref="NetworkPeerState.HandShaked"/> state.</summary>
