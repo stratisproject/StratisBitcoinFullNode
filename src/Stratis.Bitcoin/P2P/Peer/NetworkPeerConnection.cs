@@ -229,14 +229,22 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             try
             {
-                if (cancellation != default(CancellationToken))
+                try
                 {
-                    cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.CancellationSource.Token);
-                    cancellation = cts.Token;
+                    if (cancellation != default(CancellationToken))
+                    {
+                        cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.CancellationSource.Token);
+                        cancellation = cts.Token;
+                    }
+                    else
+                    {
+                        cancellation = this.CancellationSource.Token;
+                    }
                 }
-                else
+                catch (ObjectDisposedException)
                 {
-                    cancellation = this.CancellationSource.Token;
+                    // The peer already disconnected, no need to handle this as unexpected behavior, just cancel the task.
+                    throw new OperationCanceledException();
                 }
 
                 var message = new Message(this.payloadProvider)
