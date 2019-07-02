@@ -218,7 +218,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         Regex headerHeight = new Regex("Headers\\.Height:\\s+([0-9]+)", RegexOptions.Compiled);
         Regex walletHeight = new Regex("Wallet(\\[SC\\])*\\.Height:\\s+([0-9]+)", RegexOptions.Compiled);
         Regex orphanSize = new Regex("OrphanSize:\\s+([0-9]+)", RegexOptions.Compiled);
-        Regex miningHistory = new Regex("MISS means that miner didn't produce a block at the timestamp he was supposed to.\\n(.*)...", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        Regex miningHistory = new Regex("at the timestamp he was supposed to\\.\\r\\n(.*)\\.\\.\\.", RegexOptions.IgnoreCase);
         Regex asyncLoopStats = new Regex("====== Async loops ======   (.*)", RegexOptions.Compiled);
         Regex addressIndexer = new Regex("AddressIndexer\\.Height:\\s+([0-9]+)", RegexOptions.Compiled);
         protected async Task<NodeDashboardStats> UpdateDashboardStats()
