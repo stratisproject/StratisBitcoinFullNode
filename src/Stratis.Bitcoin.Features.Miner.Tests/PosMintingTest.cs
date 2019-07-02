@@ -249,9 +249,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.dateTimeProvider.Setup(c => c.GetAdjustedTimeAsUnixTimestamp())
                 .Returns(this.chainIndexer.Tip.Header.Time + 16);
             var ct = CancellationToken.None;
-            var utxoStakeDescriptions = await this.posMinting.GetUtxoStakeDescriptionsAsync(walletSecret, ct);
-
-
+            (var utxoStakeDescriptions, _) = await this.posMinting.GetUtxoStakeDescriptionsAsync(walletSecret, ct);
+            
             utxoStakeDescriptions.Select(d => d.TxOut.Value).Where(v => v < this.posMinting.MinimumStakingCoinValue)
                 .Should().BeEmpty("small coins should not be included");
             utxoStakeDescriptions.Select(d => d.TxOut.Value).Where(v => v >= this.posMinting.MinimumStakingCoinValue)
