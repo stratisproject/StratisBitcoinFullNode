@@ -21,6 +21,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.UnexpectedWitness">The block does not expect witness transactions but contains a witness transaction.</exception>
         public override Task RunAsync(RuleContext context)
         {
+            return this.ValidateWitnessCommitment(context, this.Parent.Network);
+        }
+
+        /// <summary>
+        /// Validation of the witness commitment if its found.
+        /// </summary>
+        public Task ValidateWitnessCommitment(RuleContext context, Network network)
+        { 
             if (context.SkipValidation)
                 return Task.CompletedTask;
 
@@ -38,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             bool fHaveWitness = false;
             if (deploymentFlags.ScriptFlags.HasFlag(ScriptVerify.Witness))
             {
-                Script commitment = GetWitnessCommitment(this.Parent.Network, block);
+                Script commitment = GetWitnessCommitment(network, block);
                 if (commitment != null)
                 {
                     uint256 hashWitness = BlockWitnessMerkleRoot(block, out bool _);
