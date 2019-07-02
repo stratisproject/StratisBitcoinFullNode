@@ -15,8 +15,6 @@ namespace Stratis.Bitcoin.Features.PoA
         /// </remarks>
         public List<IFederationMember> GenesisFederationMembers { get; protected set; }
 
-        public uint TargetSpacingSeconds { get; protected set; }
-
         /// <summary>Adds capability of voting for adding\kicking federation members and other things.</summary>
         public bool VotingEnabled { get; protected set; }
 
@@ -39,10 +37,9 @@ namespace Stratis.Bitcoin.Features.PoA
             bool votingEnabled,
             bool autoKickIdleMembers,
             uint federationMemberMaxIdleTimeSeconds = 60 * 60 * 24 * 7)
-                : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
+            : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost, targetSpacingSeconds)
         {
             this.GenesisFederationMembers = genesisFederationMembers;
-            this.TargetSpacingSeconds = targetSpacingSeconds;
             this.VotingEnabled = votingEnabled;
             this.AutoKickIdleMembers = autoKickIdleMembers;
             this.FederationMemberMaxIdleTimeSeconds = federationMemberMaxIdleTimeSeconds;

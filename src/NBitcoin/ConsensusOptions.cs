@@ -42,6 +42,9 @@
         /// <summary>The maximum number of sigops we're willing to relay/mine in a single tx.</summary>
         public int MaxStandardTxSigopsCost { get; set; }
 
+        /// <summary>Expected (or target) block time in seconds.</summary>
+        public uint TargetSpacingSeconds { get; protected set; }
+
         /// <summary>
         /// Initializes the default values. Currently only used for initialising Bitcoin networks and testing.
         /// </summary>
@@ -69,7 +72,8 @@
             int maxStandardVersion,
             int maxStandardTxWeight,
             int maxBlockSigopsCost,
-            int maxStandardTxSigopsCost)
+            int maxStandardTxSigopsCost,
+            uint targetSpacingSeconds)
         {
             this.MaxBlockBaseSize = maxBlockBaseSize;
             this.MaxBlockWeight = maxBlockWeight;
@@ -79,6 +83,7 @@
             this.MaxStandardTxWeight = maxStandardTxWeight;
             this.MaxBlockSigopsCost = maxBlockSigopsCost;
             this.MaxStandardTxSigopsCost = maxStandardTxSigopsCost;
+            this.TargetSpacingSeconds = targetSpacingSeconds;
         }
 
         /// <summary>
@@ -89,7 +94,8 @@
             int maxStandardVersion,
             int maxStandardTxWeight,
             int maxBlockSigopsCost,
-            int maxStandardTxSigopsCost)
+            int maxStandardTxSigopsCost,
+            uint targetSpacingSeconds)
         {
             this.MaxBlockBaseSize = maxBlockBaseSize;
 
@@ -103,6 +109,7 @@
             this.MaxStandardTxWeight = maxStandardTxWeight;
             this.MaxBlockSigopsCost = maxBlockSigopsCost;
             this.MaxStandardTxSigopsCost = maxStandardTxSigopsCost;
+            this.TargetSpacingSeconds = targetSpacingSeconds;
         }
     }
 
@@ -157,8 +164,10 @@
             int maxStandardVersion,
             int maxStandardTxWeight,
             int maxBlockSigopsCost,
-            int maxStandardTxSigopsCost) : base(maxBlockBaseSize, maxBlockWeight, maxBlockSerializedSize, witnessScaleFactor, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
+            int maxStandardTxSigopsCost,
+            uint targetSpacingSeconds) : base(maxBlockBaseSize, maxBlockWeight, maxBlockSerializedSize, witnessScaleFactor, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost, targetSpacingSeconds)
         {
+            this.TargetSpacingSeconds = targetSpacingSeconds;
         }
 
         /// <summary>
@@ -169,9 +178,10 @@
             int maxStandardVersion,
             int maxStandardTxWeight,
             int maxBlockSigopsCost,
-            int maxStandardTxSigopsCost
-            ) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
+            int maxStandardTxSigopsCost,
+            uint targetSpacingSeconds) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost, targetSpacingSeconds)
         {
+            this.TargetSpacingSeconds = targetSpacingSeconds;
         }
 
         /// <summary>

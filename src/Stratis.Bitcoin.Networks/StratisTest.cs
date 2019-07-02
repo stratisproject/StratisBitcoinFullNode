@@ -58,7 +58,8 @@ namespace Stratis.Bitcoin.Networks
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
-                maxStandardTxSigopsCost: 20_000 / 5
+                maxStandardTxSigopsCost: 20_000 / 5,
+                targetSpacingSeconds: 64
             );
 
             var buriedDeployments = new BuriedDeploymentsArray

@@ -15,9 +15,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
     /// </summary>
     public sealed class ConnectionManagerSettings
     {
-        /// <summary>Number of seconds to keep misbehaving peers from reconnecting (Default 24-hour ban).</summary>
         public const int DefaultMisbehavingBantimeSeconds = 24 * 60 * 60;
-        public const int DefaultMisbehavingBantimeSecondsTestnet = 10 * 60;
 
         /// <summary>Maximum number of AgentPrefix characters to use in the Agent value.</summary>
         private const int MaximumAgentPrefixLength = 10;
@@ -132,7 +130,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
                 this.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, this.Port);
             }
 
-            this.BanTimeSeconds = config.GetOrDefault<int>("bantime", nodeSettings.Network.IsTest() ? DefaultMisbehavingBantimeSecondsTestnet : DefaultMisbehavingBantimeSeconds, this.logger);
+            this.BanTimeSeconds = config.GetOrDefault<int>("bantime", (int)this.CalculateBanTime(nodeSettings.Network), this.logger);
 
             // Listen option will default to true in case there are no connect option specified.
             // When running the node with connect option listen flag has to be explicitly passed to the node to enable listen flag.
@@ -187,7 +185,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#whitelist=<ip:port>");
             builder.AppendLine($"#Specify your own public address.");
             builder.AppendLine($"#externalip=<ip>");
-            builder.AppendLine($"#Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
+            builder.AppendLine($"#Number of seconds to keep misbehaving peers from reconnecting. Default is calculated from the network's target spacing and max reorg length, otherwise {DefaultMisbehavingBantimeSeconds}.");
             builder.AppendLine($"#bantime=<number>");
             builder.AppendLine($"#The maximum number of outbound connections. Default {network.DefaultMaxOutboundConnections}.");
             builder.AppendLine($"#maxoutboundconnections=<number>");
@@ -204,6 +202,22 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#bantime=<number>");
             builder.AppendLine($"#Disallow connection to peers in same IP range. Default is 1 for remote hosts.");
             builder.AppendLine($"#iprangefiltering=<0 or 1>");
+        }
+
+        private uint CalculateBanTime(Network network)
+        {
+            uint banTime = 0;
+
+            // If the network's consensus options is derived from ConsensusOptions then it is not the base
+            // and therefore we conclude that the network is NOT Proof-Of-Work.
+            if (network.Consensus.Options.GetType().IsAssignableFrom(typeof(ConsensusOptions)))
+            {
+                banTime = network.Consensus.Options.TargetSpacingSeconds * network.Consensus.MaxReorgLength / 2;
+            }
+            else
+                banTime = (uint)network.Consensus.PowTargetSpacing.TotalSeconds * network.Consensus.MaxReorgLength / 2;
+
+            return banTime > 0 ? banTime : DefaultMisbehavingBantimeSeconds;
         }
 
         /// <summary>
