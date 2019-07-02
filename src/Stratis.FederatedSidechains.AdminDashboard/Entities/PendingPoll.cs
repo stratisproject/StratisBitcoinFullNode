@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json;
 
 namespace Stratis.FederatedSidechains.AdminDashboard.Entities
@@ -28,6 +30,21 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Entities
 
         [JsonProperty("votingDataString")]
         public string VotingDataString { get; set; }
+
+        [JsonIgnore]
+        public string Hash
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(this.VotingDataString)) return string.Empty;
+                string[] tokens = this.VotingDataString.Split(',');
+                if (tokens.Length < 1) return string.Empty;
+                string hashToken = tokens.FirstOrDefault(t => t.StartsWith("hash", StringComparison.OrdinalIgnoreCase));
+                if (hashToken == null) return string.Empty;
+                string[] hashTokens = hashToken.Split(':');
+                return hashTokens.Length < 2 ? string.Empty : hashTokens[1].Replace("'", string.Empty);
+            }
+        }
     }
 
     public class HashHeightPairModel
