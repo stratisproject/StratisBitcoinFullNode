@@ -15,8 +15,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
     /// </summary>
     public sealed class ConnectionManagerSettings
     {
-        public const int DefaultMisbehavingBantimeSeconds = 24 * 60 * 60;
-
         /// <summary>Maximum number of AgentPrefix characters to use in the Agent value.</summary>
         private const int MaximumAgentPrefixLength = 10;
 
@@ -185,7 +183,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#whitelist=<ip:port>");
             builder.AppendLine($"#Specify your own public address.");
             builder.AppendLine($"#externalip=<ip>");
-            builder.AppendLine($"#Number of seconds to keep misbehaving peers from reconnecting. Default is calculated from the network's target spacing and max reorg length, otherwise {DefaultMisbehavingBantimeSeconds}.");
+            builder.AppendLine($"#Number of seconds to keep misbehaving peers from reconnecting. Default is calculated from the network's target spacing and max reorg length.");
             builder.AppendLine($"#bantime=<number>");
             builder.AppendLine($"#The maximum number of outbound connections. Default {network.DefaultMaxOutboundConnections}.");
             builder.AppendLine($"#maxoutboundconnections=<number>");
@@ -204,20 +202,21 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#iprangefiltering=<0 or 1>");
         }
 
-        private uint CalculateBanTime(Network network)
+        private int CalculateBanTime(Network network)
         {
-            uint banTime = 0;
+            int banTime = 0;
 
-            // If the network's consensus options is derived from ConsensusOptions then it is not the base
+            // Ensure that the network's MaxReorgLength always has a value.
+            int maxReorgLength = network.Consensus.MaxReorgLength == 0 ? Network.FallBackMaxReorg : (int)network.Consensus.MaxReorgLength;
+
+            // If the network's consensus options is a subclass of ConsensusOptions then it is not the base
             // and therefore we conclude that the network is NOT Proof-Of-Work.
-            if (network.Consensus.Options.GetType().IsAssignableFrom(typeof(ConsensusOptions)))
-            {
-                banTime = network.Consensus.Options.TargetSpacingSeconds * network.Consensus.MaxReorgLength / 2;
-            }
+            if (network.Consensus.Options.GetType().IsSubclassOf(typeof(ConsensusOptions)) || network.Consensus.Options.GetType() != typeof(ConsensusOptions))
+                banTime = (int)network.Consensus.Options.TargetSpacingSeconds * maxReorgLength / 2;
             else
-                banTime = (uint)network.Consensus.PowTargetSpacing.TotalSeconds * network.Consensus.MaxReorgLength / 2;
+                banTime = (int)network.Consensus.PowTargetSpacing.TotalSeconds * maxReorgLength / 2;
 
-            return banTime > 0 ? banTime : DefaultMisbehavingBantimeSeconds;
+            return banTime;
         }
 
         /// <summary>
@@ -239,7 +238,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
             builder.AppendLine($"-whitelist=<ip:port>      Whitelist peers having the given IP:port address, both inbound or outbound. Can be specified multiple times.");
             builder.AppendLine($"-externalip=<ip>          Specify your own public address.");
-            builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
+            builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting. Default is calculated from the network's target spacing and max reorg length.");
             builder.AppendLine($"-maxoutboundconnections=<number> The maximum number of outbound connections. Default {network.DefaultMaxOutboundConnections}.");
             builder.AppendLine($"-maxinboundconnections=<number> The maximum number of inbound connections. Default {network.DefaultMaxInboundConnections}.");
             builder.AppendLine($"-initialconnectiontarget=<number> The number of connections to be reached before a 1 second connection interval (initally 100ms). Default 1.");

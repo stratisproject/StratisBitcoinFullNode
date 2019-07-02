@@ -368,7 +368,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             int maxReorgBtc = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(btc);
 
-            Assert.Equal(maxReorgBtc, AddressIndexer.FallBackMaxReorg);
+            Assert.Equal(maxReorgBtc, Network.FallBackMaxReorg);
 
             var stratis = new StratisMain();
 

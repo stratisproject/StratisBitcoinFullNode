@@ -62,6 +62,11 @@ namespace NBitcoin
 
     public abstract class Network
     {
+        /// <summary>
+        /// Max supported reorganization length for networks without max reorg property.
+        /// </summary>
+        public const int FallBackMaxReorg = 200;
+
         protected Block Genesis;
 
         /// <summary>
