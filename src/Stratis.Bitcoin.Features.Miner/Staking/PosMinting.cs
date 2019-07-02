@@ -406,7 +406,6 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     return;
                 }
 
-                // Return a tuple also including immature wallet balance. This is so we avoid enumerating the entire wallet twice.
                 List<UtxoStakeDescription> utxoStakeDescriptions = await this.GetUtxoStakeDescriptionsAsync(walletSecret, cancellationToken).ConfigureAwait(false);
 
                 blockTemplate = blockTemplate ?? this.blockProvider.BuildPosBlock(chainTip, new Script());
