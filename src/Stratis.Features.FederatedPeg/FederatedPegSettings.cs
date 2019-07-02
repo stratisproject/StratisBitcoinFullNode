@@ -104,7 +104,7 @@ namespace Stratis.Features.FederatedPeg
 
             IEnumerable<IPEndPoint> endPoints = federationIpsRaw.Split(',').Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort));
 
-            this.FederationNodeIpEndPoints = new HashSet<IPEndPoint>(endPoints, new NetworkHelpers.IPEndPointComparer());
+            this.FederationNodeIpEndPoints = new HashSet<IPEndPoint>(endPoints, new IPEndPointComparer());
 
             // These values are only configurable for tests at the moment. Fed members on live networks shouldn't play with them.
             this.CounterChainDepositStartBlock = configReader.GetOrDefault<int>(CounterChainDepositBlock, this.IsMainChain ? 1 : StratisMainDepositStartBlock);

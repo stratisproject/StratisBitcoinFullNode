@@ -1,8 +1,8 @@
 ﻿using System.Net;
-using Stratis.Features.FederatedPeg.NetworkHelpers;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
-namespace Stratis.Features.FederatedPeg.Tests
+namespace Stratis.Bitcoin.Tests.Utilities
 {
     public class IPEndPointComparerTests
     {

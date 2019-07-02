@@ -2,7 +2,7 @@
 using System.Net;
 using Stratis.Bitcoin.Utilities.Extensions;
 
-namespace Stratis.Features.FederatedPeg.NetworkHelpers
+namespace Stratis.Bitcoin.Utilities
 {
     public class IPEndPointComparer : IEqualityComparer<IPEndPoint>
     {
