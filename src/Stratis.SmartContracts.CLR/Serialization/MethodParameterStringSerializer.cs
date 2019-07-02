@@ -136,7 +136,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
                     parameterSignature[1] = parameterSignature[1].Replace(@"\#", "#");
 
                     parameterType = ulong.TryParse(parameterSignature[0], out var parsedParameterType) 
-                        ? Enum.GetName(typeof(MethodParameterDataType), parsedParameterType) 
+                        ? Enum.GetName(typeof(MethodParameterDataType), parsedParameterType) ?? parameterSignature[0]
                         : parameterSignature[0];
 
                     parameterValue = parameterSignature[1];
