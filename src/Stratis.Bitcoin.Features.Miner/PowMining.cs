@@ -311,11 +311,13 @@ namespace Stratis.Bitcoin.Features.Miner
 
             extraNonce++;
 
-            int height = previousHeader.Height + 1; // Height first in coinbase required for block.version=2
-
-            block.Transactions[0].Inputs[0].ScriptSig = new Script(Op.GetPushOp(height)) + OpcodeType.OP_0; // update TxIn.ScriptSig, do not overwrite it, it can contain a WitScript
+            // BIP34 require the coinbase first input to start with the block height.
+            int height = previousHeader.Height + 1;
+            block.Transactions[0].Inputs[0].ScriptSig = new Script(Op.GetPushOp(height)) + OpcodeType.OP_0; 
 
             this.blockProvider.BlockModified(previousHeader, block);
+
+            Guard.Assert(block.Transactions[0].Inputs[0].ScriptSig.Length <= 100);
 
             return extraNonce;
         }

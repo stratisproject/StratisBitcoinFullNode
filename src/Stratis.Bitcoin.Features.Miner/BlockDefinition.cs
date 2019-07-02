@@ -158,12 +158,6 @@ namespace Stratis.Bitcoin.Features.Miner
             return flags.ScriptFlags.HasFlag(ScriptVerify.Witness);
         }
 
-        protected Script GenerateCoinbaseCommitment(ChainedHeader chainedHeader)
-        {
-            // TODO: 
-            return null;
-        }
-
         /// <summary>
         /// Create coinbase transaction.
         /// Set the coin base with zero money.
