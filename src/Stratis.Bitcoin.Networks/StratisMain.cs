@@ -183,12 +183,9 @@ namespace Stratis.Bitcoin.Networks
             };
            
             this.Bech32Encoders = new Bech32Encoder[2];
-            // Bech32 is currently unsupported on Stratis - once supported uncomment lines below
-            //var encoder = new Bech32Encoder("bc");
-            //this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
-            //this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
-            this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = null;
-            this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = null;
+            var encoder = new Bech32Encoder("strat");
+            this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
+            this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
 
             this.DNSSeeds = new List<DNSSeedData>
             {
