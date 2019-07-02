@@ -226,15 +226,27 @@ namespace Stratis.Bitcoin.P2P.Peer
                 throw new ProtocolViolationException($"Message payload {payload.GetType()} not found.");
 
             CancellationTokenSource cts = null;
-            if (cancellation != default(CancellationToken))
-            {
-                cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.CancellationSource.Token);
-                cancellation = cts.Token;
-            }
-            else cancellation = this.CancellationSource.Token;
 
             try
             {
+                try
+                {
+                    if (cancellation != default(CancellationToken))
+                    {
+                        cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.CancellationSource.Token);
+                        cancellation = cts.Token;
+                    }
+                    else
+                    {
+                        cancellation = this.CancellationSource.Token;
+                    }
+                }
+                catch (ObjectDisposedException)
+                {
+                    // The peer already disconnected, no need to handle this as unexpected behavior, just cancel the task.
+                    throw new OperationCanceledException();
+                }
+
                 var message = new Message(this.payloadProvider)
                 {
                     Magic = this.peer.Network.Magic,
