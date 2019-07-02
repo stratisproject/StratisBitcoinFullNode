@@ -407,7 +407,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 }
 
                 // Return a tuple also including immature wallet balance. This is so we avoid enumerating the entire wallet twice.
-                (List<UtxoStakeDescription> utxoStakeDescriptions, long immature) = await this.GetUtxoStakeDescriptionsAsync(walletSecret, cancellationToken).ConfigureAwait(false);
+                List<UtxoStakeDescription> utxoStakeDescriptions = await this.GetUtxoStakeDescriptionsAsync(walletSecret, cancellationToken).ConfigureAwait(false);
 
                 blockTemplate = blockTemplate ?? this.blockProvider.BuildPosBlock(chainTip, new Script());
                 var posBlock = (PosBlock)blockTemplate.Block;
@@ -418,7 +418,6 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 this.rpcGetStakingInfoModel.PooledTx = await this.mempoolLock.ReadAsync(() => this.mempool.MapTx.Count).ConfigureAwait(false);
                 this.rpcGetStakingInfoModel.Difficulty = this.GetDifficulty(chainTip);
                 this.rpcGetStakingInfoModel.NetStakeWeight = this.networkWeight;
-                this.rpcGetStakingInfoModel.Immature = immature;
 
                 // Trying to create coinstake that satisfies the difficulty target, put it into a block and sign the block.
                 if (await this.StakeAndSignBlockAsync(utxoStakeDescriptions, posBlock, chainTip, blockTemplate.TotalFee, coinstakeTimestamp).ConfigureAwait(false))
@@ -436,10 +435,9 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             }
         }
 
-        internal async Task<(List<UtxoStakeDescription>, long immature)> GetUtxoStakeDescriptionsAsync(WalletSecret walletSecret, CancellationToken cancellationToken)
+        internal async Task<List<UtxoStakeDescription>> GetUtxoStakeDescriptionsAsync(WalletSecret walletSecret, CancellationToken cancellationToken)
         {
             var utxoStakeDescriptions = new List<UtxoStakeDescription>();
-            long immature = 0;
 
             List<UnspentOutputReference> stakableUtxos = this.walletManager
                 .GetSpendableTransactionsInWalletForStaking(walletSecret.WalletName, 1)
@@ -487,7 +485,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             }
 
             this.logger.LogTrace("Wallet total staking balance is {0}.", new Money(utxoStakeDescriptions.Sum(d => d.TxOut.Value)));
-            return (utxoStakeDescriptions, immature);
+            return utxoStakeDescriptions;
         }
 
         /// <summary>
@@ -610,7 +608,10 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             // Mark coinstake transaction.
             coinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(Money.Zero, new Script()));
 
+            // TODO: Is the difference and duplication in logic between GetMatureBalanceAsync and GetStakeMinConfirmations acceptable?
             long balance = (await this.GetMatureBalanceAsync(utxoStakeDescriptions).ConfigureAwait(false)).Satoshi;
+            this.rpcGetStakingInfoModel.Immature = balance;
+
             if (balance <= this.targetReserveBalance)
             {
                 this.rpcGetStakingInfoModel.PauseStaking();
