@@ -9,6 +9,7 @@ using NBitcoin;
 using NBitcoin.BitcoinCore;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
@@ -49,6 +50,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private readonly Mock<IWalletManager> walletManager;
         private readonly Mock<IAsyncProvider> asyncProvider;
         private readonly Mock<ITimeSyncBehaviorState> timeSyncBehaviorState;
+        private readonly NodeDeployments nodeDeployments;
         private readonly CancellationTokenSource cancellationTokenSource;
 
         public PosMintingTest()
@@ -71,6 +73,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.walletManager = new Mock<IWalletManager>();
             this.asyncProvider = new Mock<IAsyncProvider>();
             this.timeSyncBehaviorState = new Mock<ITimeSyncBehaviorState>();
+            this.nodeDeployments = new NodeDeployments(this.network, this.chainIndexer);
 
             this.cancellationTokenSource = new CancellationTokenSource();
             this.nodeLifetime.Setup(n => n.ApplicationStopping).Returns(this.cancellationTokenSource.Token);
@@ -602,7 +605,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.minerSettings,
                 this.network,
                 this.stakeChain.Object,
-                this.stakeValidator.Object);
+                this.stakeValidator.Object,
+                this.nodeDeployments);
 
             posBlockAssembler.Setup(a => a.Build(It.IsAny<ChainedHeader>(), It.IsAny<Script>()))
                 .Returns(new BlockTemplate(this.network));
