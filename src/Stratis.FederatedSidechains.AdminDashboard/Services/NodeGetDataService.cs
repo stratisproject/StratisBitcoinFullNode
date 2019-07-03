@@ -23,7 +23,6 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         public List<LogRule> LogRules { get; set; }
         public int RawMempool { get; set; } = 0;
         public string BestHash { get; set; } = String.Empty;
-
         public ApiResponse StatusResponse { get; set; }
         public ApiResponse FedInfoResponse { get; set; }
         public List<PendingPoll> PendingPolls { get; set; }
@@ -33,7 +32,6 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
 
         protected const int STRATOSHI = 100_000_000;
         protected readonly string miningKeyFile = String.Empty;
-
         private ApiRequester _apiRequester;
         private string _endpoint;
         private readonly ILogger<NodeGetDataService> logger;
@@ -243,6 +241,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         Regex miningHistory = new Regex(@"at the timestamp he was supposed to\.[\r\n|\n|\r]+(.*)\.\.\.", RegexOptions.IgnoreCase);
         Regex asyncLoopStats = new Regex("====== Async loops ======   (.*)", RegexOptions.Compiled);
         Regex addressIndexer = new Regex("AddressIndexer\\.Height:\\s+([0-9]+)", RegexOptions.Compiled);
+        Regex blockProducers = new Regex("Block producers hits      : (.*)", RegexOptions.Compiled);
+
         protected async Task<NodeDashboardStats> UpdateDashboardStats()
         {
             var nodeDashboardStats = new NodeDashboardStats();
@@ -253,6 +253,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 {
                     response = await client.GetStringAsync($"{_endpoint}/api/Dashboard/Stats").ConfigureAwait(false);
                     nodeDashboardStats.OrphanSize = orphanSize.Match(response).Groups[1].Value;
+                    nodeDashboardStats.BlockProducerHits = this.blockProducers.Match(response).Groups[1].Value;
+                    
                     if (int.TryParse(headerHeight.Match(response).Groups[1].Value, out var headerHeightValue))
                     {
                         nodeDashboardStats.HeaderHeight = headerHeightValue;
@@ -271,6 +273,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                         nodeDashboardStats.LastMinedIndex = Array.IndexOf(hitOrMiss, $"[{MiningPubKey.Substring(0, 4)}]") + 1;
                         nodeDashboardStats.IsMining = 0 < nodeDashboardStats.LastMinedIndex;
                     }
+
+
                 }
             }
             catch (Exception ex)

@@ -9,11 +9,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
     {
         public float SyncingProgress => ConsensusHeight > 0 ? (BlockStoreHeight / ConsensusHeight) * 100 : 0; 
         public float BlockStoreHeight { get; set; } = 0;
-
         public float ConsensusHeight { get; set; } = 0;
-
         public string Uptime { get; set; } = String.Empty;
-
         public string State { get; set; } = "Not Operational";
     }
 
@@ -26,5 +23,6 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         public int MissCount { get; set; } = 0;
         public bool IsMining { get; set; } = false;
         public int LastMinedIndex { get; set; } = 0;
+        public string BlockProducerHits { get; set; } = string.Empty;
     }
 }
