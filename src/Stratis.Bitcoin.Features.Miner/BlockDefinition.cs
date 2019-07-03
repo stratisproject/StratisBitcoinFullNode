@@ -158,12 +158,6 @@ namespace Stratis.Bitcoin.Features.Miner
             return flags.ScriptFlags.HasFlag(ScriptVerify.Witness);
         }
 
-        protected Script GenerateCoinbaseCommitment(ChainedHeader chainedHeader)
-        {
-            // TODO: 
-            return null;
-        }
-
         /// <summary>
         /// Create coinbase transaction.
         /// Set the coin base with zero money.
@@ -236,7 +230,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             if (this.IncludeWitness)
             {
-                AddOrUpdateCoinbaseCommitmentToBlock(this.Network, this.block);
+                this.AddOrUpdateCoinbaseCommitmentToBlock(this.block);
             }
 
             int nSerializeSize = this.block.GetSerializedSize();
@@ -250,10 +244,20 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <param name="block">The new block that is being mined.</param>
         /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/validation.cpp"/>
-        public static void AddOrUpdateCoinbaseCommitmentToBlock(Network network, Block block)
+        public void AddOrUpdateCoinbaseCommitmentToBlock(Block block)
         {
-            WitnessCommitmentsRule.ClearWitnessCommitment(network, block);
-            WitnessCommitmentsRule.CreateWitnessCommitment(network, block);
+            WitnessCommitmentsRule.ClearWitnessCommitment(this.Network, block);
+            WitnessCommitmentsRule.CreateWitnessCommitment(this.Network, block);
+        }
+
+        public virtual void BlockModified(ChainedHeader chainTip, Block block)
+        {
+            if (this.IncludeWitness)
+            {
+                this.AddOrUpdateCoinbaseCommitmentToBlock(this.block);
+            }
+
+            block.UpdateMerkleRoot();
         }
 
         /// <summary>
