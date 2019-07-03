@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         {
             if (!this.TryGetValue(address, out AddressIndexerData data))
             {
-                this.logger.LogTrace("Not found in cache.");
+                this.logger.LogDebug("Not found in cache.");
                 data = this.addressIndexerDataCollection.FindById(address) ?? new AddressIndexerData() { Address = address, BalanceChanges = new List<AddressBalanceChange>() };
             }
 
