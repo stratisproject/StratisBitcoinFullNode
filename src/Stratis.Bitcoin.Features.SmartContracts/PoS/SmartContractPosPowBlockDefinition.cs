@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
                 if (result.InternalTransaction != null)
                 {
                     this.AddTransactionToBlock(result.InternalTransaction);
-                    this.logger.LogTrace("Internal {0}:{1} was added.", nameof(result.InternalTransaction), result.InternalTransaction.GetHash());
+                    this.logger.LogDebug("Internal {0}:{1} was added.", nameof(result.InternalTransaction), result.InternalTransaction.GetHash());
                 }
             }
         }

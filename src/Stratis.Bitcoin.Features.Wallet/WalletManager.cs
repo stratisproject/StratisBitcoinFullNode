@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             else
             {
-                this.logger.LogTrace("Exception occurred: {0}", transactionEntry.ErrorMessage);
+                this.logger.LogDebug("Exception occurred: {0}", transactionEntry.ErrorMessage);
                 this.logger.LogTrace("(-)[EXCEPTION]");
             }
         }
@@ -336,7 +336,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             catch (Exception ex)
             {
-                this.logger.LogTrace("Failed to verify message: {0}", ex.ToString());
+                this.logger.LogDebug("Failed to verify message: {0}", ex.ToString());
                 this.logger.LogTrace("(-)[EXCEPTION]");
             }
             return result;
@@ -359,7 +359,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             catch (Exception ex)
             {
-                this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
+                this.logger.LogDebug("Exception occurred: {0}", ex.ToString());
                 this.logger.LogTrace("(-)[EXCEPTION]");
                 throw new SecurityException(ex.Message);
             }
@@ -424,7 +424,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             catch (NotSupportedException ex)
             {
-                this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
+                this.logger.LogDebug("Exception occurred: {0}", ex.ToString());
                 this.logger.LogTrace("(-)[EXCEPTION]");
 
                 if (ex.Message == "Unknown")
@@ -475,7 +475,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             Guard.NotEmpty(name, nameof(name));
             Guard.NotNull(extPubKey, nameof(extPubKey));
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(name), name, nameof(extPubKey), extPubKey, nameof(accountIndex), accountIndex);
+            this.logger.LogDebug("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(name), name, nameof(extPubKey), extPubKey, nameof(accountIndex), accountIndex);
 
             // Create a wallet file.
             Wallet wallet = this.GenerateExtPubKeyOnlyWalletFile(name, creationTime);
@@ -959,7 +959,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Is this the next block.
             if (chainedHeader.Header.HashPrevBlock != this.WalletTipHash)
             {
-                this.logger.LogTrace("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
+                this.logger.LogDebug("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
 
                 // The block coming in to the wallet should never be ahead of the wallet.
                 // If the block is behind, let it pass.
@@ -1141,7 +1141,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             else
             {
-                this.logger.LogTrace("Transaction ID '{0}' found, updating.", transactionHash);
+                this.logger.LogDebug("Transaction ID '{0}' found, updating.", transactionHash);
 
                 // Update the block height and block hash.
                 if ((foundTransaction.BlockHeight == null) && (blockHeight != null))
@@ -1244,7 +1244,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             else // If this spending transaction is being confirmed in a block.
             {
-                this.logger.LogTrace("Spending transaction ID '{0}' is being confirmed, updating.", spendingTransactionId);
+                this.logger.LogDebug("Spending transaction ID '{0}' is being confirmed, updating.", spendingTransactionId);
 
                 // Update the block height.
                 if (spentTransaction.SpendingDetails.BlockHeight == null && blockHeight != null)
@@ -1791,7 +1791,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                     foreach (Wallet wallet in wallets)
                     {
-                        this.logger.LogTrace("The chain of headers has finished downloading, updating wallet '{0}' with height {1}", wallet.Name, heightAtDate);
+                        this.logger.LogDebug("The chain of headers has finished downloading, updating wallet '{0}' with height {1}", wallet.Name, heightAtDate);
                         this.UpdateLastBlockSyncedHeight(wallet, this.ChainIndexer.GetHeader(heightAtDate));
                         this.SaveWallet(wallet);
                     }

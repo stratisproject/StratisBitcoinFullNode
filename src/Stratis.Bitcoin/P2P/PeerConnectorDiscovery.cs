@@ -73,21 +73,21 @@ namespace Stratis.Bitcoin.P2P
                     peerSelectionFailed = 0;
                     peer = null;
 
-                    this.logger.LogTrace("Selection failed, maximum amount of selection attempts reached.");
+                    this.logger.LogDebug("Selection failed, maximum amount of selection attempts reached.");
                     break;
                 }
 
                 peer = this.PeerAddressManager.PeerSelector.SelectPeer();
                 if (peer == null)
                 {
-                    this.logger.LogTrace("Selection failed, selector returned nothing.");
+                    this.logger.LogDebug("Selection failed, selector returned nothing.");
                     peerSelectionFailed++;
                     continue;
                 }
 
                 if (!peer.Endpoint.Address.IsValid())
                 {
-                    this.logger.LogTrace("Selection failed, peer endpoint is not valid '{0}'.", peer.Endpoint);
+                    this.logger.LogDebug("Selection failed, peer endpoint is not valid '{0}'.", peer.Endpoint);
                     peerSelectionFailed++;
                     continue;
                 }
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.P2P
             // effectively override the connector's initial connection interval.
             if (peer == null)
             {
-                this.logger.LogTrace("Selection failed, executing selection delay.");
+                this.logger.LogDebug("Selection failed, executing selection delay.");
                 await Task.Delay(2000, this.NodeLifetime.ApplicationStopping).ConfigureAwait(false);
             }
             else

@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.PoA
             {
                 try
                 {
-                    this.logger.LogTrace("IsInitialBlockDownload={0}, AnyConnectedPeers={1}, BootstrappingMode={2}, IsFederationMember={3}",
+                    this.logger.LogDebug("IsInitialBlockDownload={0}, AnyConnectedPeers={1}, BootstrappingMode={2}, IsFederationMember={3}",
                         this.ibdState.IsInitialBlockDownload(), this.connectionManager.ConnectedPeers.Any(), this.settings.BootstrappingMode, this.federationManager.IsFederationMember);
 
                     // Don't mine in IBD in case we are connected to any node unless bootstrapping mode is enabled.

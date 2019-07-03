@@ -359,7 +359,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             lock (this.lockObject)
             {
-                this.logger.LogTrace("Removing blocks back to height {0} from {1}", fork.Height, this.LastBlockHeight());
+                this.logger.LogDebug("Removing blocks back to height {0} from {1}", fork.Height, this.LastBlockHeight());
 
                 // Remove all the UTXO that have been reorged.
                 IEnumerable<TransactionData> makeUnspendable = this.Wallet.MultiSigAddress.Transactions.Where(w => w.BlockHeight > fork.Height).ToList();
@@ -395,7 +395,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 // Is this the next block.
                 if (chainedHeader.Header.HashPrevBlock != this.WalletTipHash)
                 {
-                    this.logger.LogTrace("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
+                    this.logger.LogDebug("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
 
                     // The block coming in to the wallet should never be ahead of the wallet.
                     // If the block is behind, let it pass.
@@ -472,14 +472,14 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     List<(Transaction transaction, IWithdrawal withdrawal)> walletData = this.FindWithdrawalTransactions(withdrawal.DepositId);
                     if ((walletData.Count == 1) && (walletData[0].withdrawal.BlockNumber != 0))
                     {
-                        this.logger.LogTrace("Deposit {0} Already included in block.", withdrawal.DepositId);
+                        this.logger.LogDebug("Deposit {0} Already included in block.", withdrawal.DepositId);
                         return false;
                     }
 
                     // Remove this to prevent duplicates if the transaction hash has changed.
                     if (walletData.Count != 0)
                     {
-                        this.logger.LogTrace("Removing duplicates for {0}", withdrawal.DepositId);
+                        this.logger.LogDebug("Removing duplicates for {0}", withdrawal.DepositId);
                         this.RemoveWithdrawalTransactions(withdrawal.DepositId);
                     }
                 }
@@ -889,7 +889,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public bool RemoveWithdrawalTransactions(uint256 depositId)
         {
-            this.logger.LogTrace("Removing transient transactions. DepositId={0}", depositId);
+            this.logger.LogDebug("Removing transient transactions. DepositId={0}", depositId);
 
             lock (this.lockObject)
             {
@@ -1124,7 +1124,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <exception cref="WalletException">Thrown if wallet cannot be created.</exception>
         private FederationWallet GenerateWallet()
         {
-            this.logger.LogTrace("Generating the federation wallet file.");
+            this.logger.LogDebug("Generating the federation wallet file.");
 
             var wallet = new FederationWallet
             {
@@ -1175,7 +1175,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     }
                     catch (NotSupportedException ex)
                     {
-                        this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
+                        this.logger.LogDebug("Exception occurred: {0}", ex.ToString());
                         this.logger.LogTrace("(-)[EXCEPTION]");
 
                         if (ex.Message == "Unknown")
