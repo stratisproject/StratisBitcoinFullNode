@@ -206,7 +206,12 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
             try
             {
                 ApiResponse response = await _apiRequester.GetRequestAsync(_endpoint, "/api/DefaultVoting/pendingpolls");
-                polls = JsonConvert.DeserializeObject<List<PendingPoll>>(response.Content.ToString());
+                List<PendingPoll> pendingPolls = JsonConvert.DeserializeObject<List<PendingPoll>>(response.Content.ToString());
+                
+                response = await _apiRequester.GetRequestAsync(_endpoint, "/api/DefaultVoting/finishedpolls");
+                List<PendingPoll> approvedPolls = JsonConvert.DeserializeObject<List<PendingPoll>>(response.Content.ToString());
+
+                return pendingPolls.Union(approvedPolls).OrderByDescending(p => p.Id).ToList();
             }
             catch (Exception ex)
             {
