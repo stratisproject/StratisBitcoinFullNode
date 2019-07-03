@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
                 this.logger.LogDebug("Asking data for {0} addresses.", addressesArray.Length);
 
-                VerboseAddressBalancesResult result = this.addressIndexer.GetVerboseAddressBalancesData(addressesArray);
+                VerboseAddressBalancesResult result = this.addressIndexer.GetAddressIndexerState(addressesArray);
 
                 return this.Json(result);
             }

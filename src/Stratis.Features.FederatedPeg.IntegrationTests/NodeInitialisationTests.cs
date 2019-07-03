@@ -77,7 +77,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
         {
             var mockClient = new Mock<IBlockStoreClient>();
             mockClient.Setup(x => x.GetVerboseAddressesBalancesDataAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new Bitcoin.Controllers.Models.VerboseAddressBalancesResult() { ConsensusTipHeight = 100000 });
+                .ReturnsAsync(new Bitcoin.Controllers.Models.VerboseAddressBalancesResult(100000));
 
             node.Start(() => {
                 ICollateralChecker collateralChecker = node.FullNode.NodeService<ICollateralChecker>();
