@@ -420,7 +420,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         // Now modify the cached items with the mutated data.
                         cacheItem.UnspentOutputs.Spend(unspent);
 
-                        this.logger.LogTrace("Cache item after spend {0}:'{1}'.", nameof(cacheItem.UnspentOutputs), cacheItem.UnspentOutputs);
+                        this.logger.LogDebug("Cache item after spend {0}:'{1}'.", nameof(cacheItem.UnspentOutputs), cacheItem.UnspentOutputs);
 
                         if (this.rewindDataIndexCache != null)
                         {

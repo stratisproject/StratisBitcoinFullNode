@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
             TxOut smartContractTxOut = mempoolEntry.Transaction.TryGetSmartContractTxOut();
             if (smartContractTxOut == null)
             {
-                this.logger.LogTrace("Transaction does not contain smart contract information.");
+                this.logger.LogDebug("Transaction does not contain smart contract information.");
 
                 base.AddTransactionToBlock(mempoolEntry.Transaction);
                 base.UpdateBlockStatistics(mempoolEntry);
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
             }
             else
             {
-                this.logger.LogTrace("Transaction contains smart contract information.");
+                this.logger.LogDebug("Transaction contains smart contract information.");
 
                 // We HAVE to first execute the smart contract contained in the transaction
                 // to ensure its validity before we can add it to the block.
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
                 if (result.Refund != null)
                 {
                     this.refundOutputs.Add(result.Refund);
-                    this.logger.LogTrace("refund was added with value {0}.", result.Refund.Value);
+                    this.logger.LogDebug("refund was added with value {0}.", result.Refund.Value);
                 }
 
                 // Add internal transactions made during execution.

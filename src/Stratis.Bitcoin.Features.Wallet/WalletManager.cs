@@ -1107,7 +1107,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             TransactionData foundTransaction = addressTransactions.FirstOrDefault(t => (t.Id == transactionHash) && (t.Index == index));
             if (foundTransaction == null)
             {
-                this.logger.LogTrace("UTXO '{0}-{1}' not found, creating.", transactionHash, index);
+                this.logger.LogDebug("UTXO '{0}-{1}' not found, creating.", transactionHash, index);
                 var newTransaction = new TransactionData
                 {
                     Amount = amount,
@@ -1208,7 +1208,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // If the details of this spending transaction are seen for the first time.
             if (spentTransaction.SpendingDetails == null)
             {
-                this.logger.LogTrace("Spending UTXO '{0}-{1}' is new.", spendingTransactionId, spendingTransactionIndex);
+                this.logger.LogDebug("Spending UTXO '{0}-{1}' is new.", spendingTransactionId, spendingTransactionIndex);
 
                 var payments = new List<PaymentDetails>();
                 foreach (TxOut paidToOutput in paidToOutputs)

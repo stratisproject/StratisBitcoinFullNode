@@ -575,7 +575,7 @@ namespace Stratis.Bitcoin.Consensus
                 }
 
                 blocksToDownload.Add(connectNewHeadersResult);
-                this.logger.LogTrace("{0} headers were added to download by peer ID {1}.", connectNewHeadersResult.DownloadTo.Height - connectNewHeadersResult.DownloadFrom.Height + 1, peerId);
+                this.logger.LogDebug("{0} headers were added to download by peer ID {1}.", connectNewHeadersResult.DownloadTo.Height - connectNewHeadersResult.DownloadFrom.Height + 1, peerId);
             }
 
             foreach (ConnectNewHeadersResult newHeaders in blocksToDownload)
@@ -1290,7 +1290,7 @@ namespace Stratis.Bitcoin.Consensus
                 }
                 else
                 {
-                    this.logger.LogTrace("Splitting enqueued job of size {0} into 2 pieces of sizes {1} and {2}.", request.BlocksToDownload.Count, maxBlocksToAsk, request.BlocksToDownload.Count - maxBlocksToAsk);
+                    this.logger.LogDebug("Splitting enqueued job of size {0} into 2 pieces of sizes {1} and {2}.", request.BlocksToDownload.Count, maxBlocksToAsk, request.BlocksToDownload.Count - maxBlocksToAsk);
 
                     // Split queue item in 2 pieces: one of size blocksToAsk and second is the rest. Ask BP for first part, leave 2nd part in the queue.
                     var blockPullerRequest = new BlockDownloadRequest()

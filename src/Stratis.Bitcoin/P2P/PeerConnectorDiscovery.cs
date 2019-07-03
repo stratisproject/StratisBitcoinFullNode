@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.P2P
                 bool peerExistsInAddNode = this.ConnectionSettings.AddNode.Any(p => p.MapToIpv6().Match(peer.Endpoint));
                 if (peerExistsInAddNode)
                 {
-                    this.logger.LogTrace("Selection failed, peer exists in -addnode args '{0}'.", peer.Endpoint);
+                    this.logger.LogDebug("Selection failed, peer exists in -addnode args '{0}'.", peer.Endpoint);
                     peerSelectionFailed++;
                     continue;
                 }
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.P2P
                 bool peerExistsInConnectNode = this.ConnectionSettings.Connect.Any(p => p.MapToIpv6().Match(peer.Endpoint));
                 if (peerExistsInConnectNode)
                 {
-                    this.logger.LogTrace("Selection failed, peer exists in -connect args '{0}'.", peer.Endpoint);
+                    this.logger.LogDebug("Selection failed, peer exists in -connect args '{0}'.", peer.Endpoint);
                     peerSelectionFailed++;
                     continue;
                 }

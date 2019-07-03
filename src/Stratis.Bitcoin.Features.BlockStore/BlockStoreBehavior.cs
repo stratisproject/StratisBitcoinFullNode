@@ -360,7 +360,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             bool revertToInv = (!this.PreferHeaders && (!this.preferHeaderAndIDs || blocksToAnnounce.Count > 1));
 
-            this.logger.LogTrace("Block propagation preferences of the peer '{0}': prefer headers - {1}, prefer headers and IDs - {2}, will{3} revert to 'inv' now.", peer.RemoteSocketEndpoint, this.PreferHeaders, this.preferHeaderAndIDs, revertToInv ? "" : " NOT");
+            this.logger.LogDebug("Block propagation preferences of the peer '{0}': prefer headers - {1}, prefer headers and IDs - {2}, will{3} revert to 'inv' now.", peer.RemoteSocketEndpoint, this.PreferHeaders, this.preferHeaderAndIDs, revertToInv ? "" : " NOT");
 
             var headers = new List<BlockHeader>();
             var inventoryBlockToSend = new List<ChainedHeader>();

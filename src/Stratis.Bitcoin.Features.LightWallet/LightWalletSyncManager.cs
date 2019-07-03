@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         return;
                     }
 
-                    this.logger.LogTrace("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
+                    this.logger.LogDebug("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
 
                     // The wallet is falling behind we need to catch up.
                     this.logger.LogWarning("New tip '{0}' is too far in advance.", newTip);
@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         return;
                     }
 
-                    this.logger.LogTrace("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip.HashBlock);
+                    this.logger.LogDebug("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip.HashBlock);
                 }
             }
             else

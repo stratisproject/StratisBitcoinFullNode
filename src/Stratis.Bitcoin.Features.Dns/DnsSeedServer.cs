@@ -322,7 +322,7 @@ namespace Stratis.Bitcoin.Features.Dns
                     }
                 }
 
-                this.logger.LogTrace("{0} answers to the question: domain = {1}, record type = {2}", answers.Count, question.Name, question.Type);
+                this.logger.LogDebug("{0} answers to the question: domain = {1}, record type = {2}", answers.Count, question.Name, question.Type);
             }
 
             // Sort output so same order isn't returned every time.

@@ -196,9 +196,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
                 // Copy checkpointed stake modifier.
                 CheckpointInfo checkpoint = this.Parent.Checkpoints.GetCheckpoint(lastCheckpointHeight);
                 blockStake.StakeModifierV2 = checkpoint.StakeModifierV2;
-                this.Logger.LogTrace("Last checkpoint stake modifier V2 loaded: '{0}'.", blockStake.StakeModifierV2);
+                this.Logger.LogDebug("Last checkpoint stake modifier V2 loaded: '{0}'.", blockStake.StakeModifierV2);
             }
-            else this.Logger.LogTrace("POS stake modifier computation skipped for block at height {0} because it is not above last checkpoint block height {1}.", chainedHeader.Height, lastCheckpointHeight);
+            else this.Logger.LogDebug("POS stake modifier computation skipped for block at height {0} because it is not above last checkpoint block height {1}.", chainedHeader.Height, lastCheckpointHeight);
         }
 
         /// <inheritdoc />

@@ -399,7 +399,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // If the chained header block already exists, we need to remove it and add to the back of the collection.
                     this.pendingBlocksCache.Remove(chainedHeaderBlock.ChainedHeader.HashBlock);
                     this.pendingBlocksCache.Add(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
-                    this.logger.LogTrace("Block '{0}' was re-added to pending.", chainedHeaderBlock.ChainedHeader);
+                    this.logger.LogDebug("Block '{0}' was re-added to pending.", chainedHeaderBlock.ChainedHeader);
                 }
 
                 this.BlockStoreCacheTip = chainedHeaderBlock.ChainedHeader;
