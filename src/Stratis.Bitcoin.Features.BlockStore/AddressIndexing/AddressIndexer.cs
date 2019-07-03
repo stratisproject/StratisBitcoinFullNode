@@ -551,6 +551,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
 
         /// <inheritdoc />
+        /// <remarks>This is currently not in use but will be required for exchange integration.</remarks>
         public AddressBalancesResult GetAddressBalances(string[] addresses, int minConfirmations = 1)
         {
             var (isQueryable, reason) = this.IsQueryable();

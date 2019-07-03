@@ -61,7 +61,9 @@ namespace Stratis.Bitcoin.Connection
         private readonly IPeerAddressManager peerAddressManager;
 
         /// <summary>Async loop that discovers new peers to connect to.</summary>
-        private IPeerDiscovery peerDiscovery;
+        private readonly IPeerDiscovery peerDiscovery;
+
+        private readonly List<IPEndPoint> ipRangeFilteringEndpointExclusions;
 
         private readonly NetworkPeerCollection connectedPeers;
 
@@ -126,6 +128,7 @@ namespace Stratis.Bitcoin.Connection
             this.Parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
             this.selfEndpointTracker = selfEndpointTracker;
             this.versionProvider = versionProvider;
+            this.ipRangeFilteringEndpointExclusions = new List<IPEndPoint>();
             this.connectedPeersQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<INetworkPeer>($"{nameof(ConnectionManager)}-{nameof(this.connectedPeersQueue)}", this.OnPeerAdded);
             this.disconnectedPerfCounter = new PerformanceCounter();
 
@@ -410,6 +413,13 @@ namespace Stratis.Bitcoin.Connection
                 return false;
             }
 
+            // Don't disconnect if this peer is in the exclude from IP range filtering group.
+            if (this.ipRangeFilteringEndpointExclusions.Any(ip => ip.MatchIpOnly(peer.PeerEndPoint)))
+            {
+                this.logger.LogTrace("(-)[PEER_IN_IPRANGEFILTER_EXCLUSIONS]:false");
+                return false;
+            }
+
             byte[] peerGroup = peer.PeerEndPoint.MapToIpv6().Address.GetGroup();
 
             foreach (INetworkPeer connectedPeer in this.ConnectedPeers)
@@ -469,9 +479,15 @@ namespace Stratis.Bitcoin.Connection
         /// </para>
         /// </summary>
         /// <param name="ipEndpoint">The endpoint of the peer to add.</param>
-        public void AddNodeAddress(IPEndPoint ipEndpoint)
+        public void AddNodeAddress(IPEndPoint ipEndpoint, bool excludeFromIpRangeFiltering = false)
         {
             Guard.NotNull(ipEndpoint, nameof(ipEndpoint));
+
+            if (excludeFromIpRangeFiltering && !this.ipRangeFilteringEndpointExclusions.Any(ip => ip.Match(ipEndpoint)))
+            {
+                this.logger.LogDebug("{0} will be excluded from IP range filtering.", ipEndpoint);
+                this.ipRangeFilteringEndpointExclusions.Add(ipEndpoint);
+            }
 
             this.peerAddressManager.AddPeer(ipEndpoint.MapToIpv6(), IPAddress.Loopback);
 
