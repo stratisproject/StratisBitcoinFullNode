@@ -12,5 +12,6 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Models
         public List<PendingPoll> Polls { get; set; }
 
         public string Message { get; set; }
+        public int FedMemberCount { get; set; }
     }
 }

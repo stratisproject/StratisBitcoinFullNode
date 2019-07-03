@@ -27,6 +27,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         public ApiResponse StatusResponse { get; set; }
         public ApiResponse FedInfoResponse { get; set; }
         public List<PendingPoll> PendingPolls { get; set; }
+        public int FedMemberCount { get; set; }
         public NodeDashboardStats NodeDashboardStats { get; set; }
         public string MiningPubKey { get; set; }
 
@@ -214,6 +215,22 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
 
             return polls;
         }
+        
+        protected async Task<int> UpdateFedMemberCount()
+        {
+            try
+            {
+                ApiResponse response = await _apiRequester.GetRequestAsync(_endpoint, "/api/DefaultVoting/fedmembers");
+                var count = JsonConvert.DeserializeObject<List<string>>(response.Content.ToString());
+                return count.Count;
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError(ex, "Failed to update polls");
+            }
+
+            return 0;
+        }
 
         Regex headerHeight = new Regex("Headers\\.Height:\\s+([0-9]+)", RegexOptions.Compiled);
         Regex walletHeight = new Regex("Wallet(\\[SC\\])*\\.Height:\\s+([0-9]+)", RegexOptions.Compiled);
@@ -313,6 +330,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
             WalletHistory = await UpdateHistory();
             FedAddress = await UpdateFedInfo();
             PendingPolls = await UpdatePolls();
+            FedMemberCount = await UpdateFedMemberCount();
             return this;
         }
     }
@@ -332,6 +350,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
             RawMempool = await UpdateMempool();
             BestHash = await UpdateBestHash();
             PendingPolls = await UpdatePolls();
+            FedMemberCount = await UpdateFedMemberCount();
             return this;
         }
     }

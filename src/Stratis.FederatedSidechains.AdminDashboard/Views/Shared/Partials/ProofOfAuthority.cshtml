@@ -51,11 +51,9 @@
                         <tr>
                             <th class="text-left">ID</th>
                             <th class="text-left">Hash</th>
-                            <th class="text-center">Executed</th>
-                            <th class="text-center">Pending</th>
-                            <th class="text-left">Start Data</th>
-                            <th class="text-left">Votes</th>
-                            <th class="text-left">Voting Data</th>
+                            <th class="text-center">Approved</th>
+                            <th class="text-left">Votes In Favour</th>
+                            <th class="text-left">Total Members</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -64,11 +62,9 @@
                         <tr>
                             <td class="text-left">@poll.Id</td>
                             <td class="text-left ellipsis" style="min-width: 250px;" title="@poll.Hash">@poll.Hash</td>
-                            <td class="text-center">@poll.IsExecuted</td>
-                            <td class="text-center">@poll.IsPending</td>
-                            <td class="text-left ellipsis" title="@poll.PollStartBlockData">@poll.PollStartBlockData</td>
-                            <td class="text-left ellipsis" title="@(string.Join(", ", poll.PubKeysHexVotedInFavor ?? new List<string>()))">@((poll.PubKeysHexVotedInFavor ?? new List<string>()).Count)</td>
-                            <td class="text-left ellipsis" title="@poll.VotingDataString">@poll.VotingDataString</td>
+                            <td class="text-center">@(poll.IsExecuted ? "Yes" : "No")</td>
+                            <td class="text-left ellipsis">@((poll.PubKeysHexVotedInFavor ?? new List<string>()).Count)</td>
+                            <td class="text-left ellipsis">@Model.FedMemberCount"</td>
                         </tr>
                     }
                     </tbody>

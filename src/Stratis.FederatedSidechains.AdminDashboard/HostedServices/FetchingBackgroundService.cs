@@ -169,6 +169,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.HostedServices
                 sidechainNode.HeaderHeight = this.nodeDataServiceSidechain.NodeDashboardStats?.HeaderHeight ?? 0;
                 sidechainNode.AsyncLoops = this.nodeDataServiceSidechain.NodeDashboardStats?.AsyncLoops ?? string.Empty;
                 sidechainNode.OrphanSize = this.nodeDataServiceSidechain.NodeDashboardStats?.OrphanSize ?? string.Empty;
+                sidechainNode.FedMemberCount = this.nodeDataServiceSidechain.FedMemberCount;
 
                 dashboardModel.SidechainNode = sidechainNode;
             }

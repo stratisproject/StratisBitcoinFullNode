@@ -6,5 +6,6 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Models
     public class SidechainNodeModel : StratisNodeModel
     {
         public List<PendingPoll> PoAPendingPolls { get; set; }
+        public int FedMemberCount { get; set; }
     }
 }
