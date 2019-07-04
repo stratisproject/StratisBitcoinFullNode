@@ -47,8 +47,8 @@ $(document).ready(function()
     $('.modal').on('hidden.bs.modal', function () {
         if(CacheIsDifferent)
         {
-            $("#container").load("/update-dashboard");
-            Snackbar.close();
+            // $("#container").load("/update-dashboard");
+            // Snackbar.close();
         }
     });
 

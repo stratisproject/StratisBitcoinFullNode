@@ -25,19 +25,6 @@
                                     <i class="material-icons">sync</i> @(Model.StratisNode.SyncingStatus >= 100 ? "Synced" : "Syncing") @Model.StratisNode.SyncingStatus.ToString("N0")%
                                 </span>
                             </li>
-                            <li class="list-inline-item ml-3">
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-option btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        <i class="material-icons md-24">more_vert</i>
-                                    </button>
-                                    <div class="dropdown-menu dropdown-menu-right">
-                                        <!-- <button data-toggle="modal" data-target="#stratisResyncCrosschain" class="dropdown-item" type="button">Resync crosschain transactions</button> -->
-                                        <button data-toggle="modal" data-target="#stratisResyncBlockchain" class="dropdown-item" type="button">Resync blockchain</button>
-                                        <div class="dropdown-divider"></div>
-                                        <button data-toggle="modal" data-target="#stratisStopNode" class="dropdown-item text-danger d-flex align-items-center" type="button">Stop Node</button>
-                                    </div>
-                                </div>
-                            </li>
                         </ul>
                     </div>
                     <div class="card-text">
@@ -50,8 +37,20 @@
                             </li>
                             <li class="col-12 col-xl-6">
                                 <ul class="list-inline">
+                                    <li class="list-inline-item"><strong>Uptime :</strong></li>
+                                    <li class="list-inline-item text-muted">@Model.StratisNode.Uptime</li>
+                                </ul>
+                            </li>
+                            <li class="col-12 col-xl-6">
+                                <ul class="list-inline">
                                     <li class="list-inline-item"><strong>Block height :</strong></li>
                                     <li class="list-inline-item">@Model.StratisNode.BlockHeight</li>
+                                </ul>
+                            </li>
+                            <li class="col-12 col-xl-6">
+                                <ul class="list-inline">
+                                    <li class="list-inline-item"><strong>Mempool size :</strong></li>
+                                    <li class="list-inline-item text-muted">@Model.StratisNode.MempoolSize</li>
                                 </ul>
                             </li>
                             <li class="col-12 col-xl-6">
@@ -65,32 +64,14 @@
                             </li>
                             <li class="col-12 col-xl-6">
                                 <ul class="list-inline">
-                                    <li class="list-inline-item"><strong>Header height :</strong></li>
-                                    <li class="list-inline-item">@Model.StratisNode.HeaderHeight</li>
-                                </ul>
-                            </li>
-                            <li class="col-12 col-xl-6">
-                                <ul class="list-inline">
-                                    <li class="list-inline-item"><strong>Address Indexer height :</strong></li>
-                                    <li class="list-inline-item">@Model.StratisNode.AddressIndexer</li>
-                                </ul>
-                            </li>
-                            <li class="col-12 col-xl-6">
-                                <ul class="list-inline">
-                                    <li class="list-inline-item"><strong>Uptime :</strong></li>
-                                    <li class="list-inline-item text-muted">@Model.StratisNode.Uptime</li>
-                                </ul>
-                            </li>
-                            <li class="col-12 col-xl-6">
-                                <ul class="list-inline">
-                                    <li class="list-inline-item"><strong>Mempool size :</strong></li>
-                                    <li class="list-inline-item text-muted">@Model.StratisNode.MempoolSize</li>
-                                </ul>
-                            </li>
-                            <li class="col-12 col-xl-6">
-                                <ul class="list-inline">
                                     <li class="list-inline-item"><strong>Orphan size :</strong></li>
                                     <li class="list-inline-item text-muted">@Model.StratisNode.OrphanSize</li>
+                                </ul>
+                            </li>
+                            <li class="col-12 col-xl-6">
+                                <ul class="list-inline">
+                                    <li class="list-inline-item"><strong>Header height :</strong></li>
+                                    <li class="list-inline-item">@Model.StratisNode.HeaderHeight</li>
                                 </ul>
                             </li>
                             <li class="col-12 col-xl-6">
@@ -101,6 +82,12 @@
                                             @Model.StratisNode.AsyncLoops
                                         </span>
                                     </li>
+                                </ul>
+                            </li>
+                            <li class="col-12 col-xl-6">
+                                <ul class="list-inline">
+                                    <li class="list-inline-item"><strong>Address Indexer height :</strong></li>
+                                    <li class="list-inline-item">@Model.StratisNode.AddressIndexer</li>
                                 </ul>
                             </li>
                             @if (fiftyKOnlyFeature)
@@ -220,19 +207,6 @@
                                     <i class="material-icons">sync</i> @(Model.SidechainNode.SyncingStatus >= 100 ? "Synced" : "Syncing") @Model.SidechainNode.SyncingStatus.ToString("N0")%
                                 </span>
                             </li>
-                            <li class="list-inline-item ml-3">
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-option btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        <i class="material-icons md-24">more_vert</i>
-                                    </button>
-                                    <div class="dropdown-menu dropdown-menu-right">
-                                        <!-- <button data-toggle="modal" data-target="#sidechainResyncCrosschain" class="dropdown-item" type="button">Resync crosschain transactions</button> -->
-                                        <button data-toggle="modal" data-target="#sidechainResyncBlockchain" class="dropdown-item" type="button">Resync blockchain</button>
-                                        <div class="dropdown-divider"></div>
-                                        <button data-toggle="modal" data-target="#sidechainStopNode" class="dropdown-item text-danger d-flex align-items-center" type="button">Stop Node</button>
-                                    </div>
-                                </div>
-                            </li>
                         </ul>
                     </div>
                     <div class="card-text">
@@ -245,8 +219,20 @@
                             </li>
                             <li class="col-12 col-xl-6">
                                 <ul class="list-inline">
+                                    <li class="list-inline-item"><strong>Uptime :</strong></li>
+                                    <li class="list-inline-item text-muted">@Model.SidechainNode.Uptime</li>
+                                </ul>
+                            </li>
+                            <li class="col-12 col-xl-6">
+                                <ul class="list-inline">
                                     <li class="list-inline-item"><strong>Block height :</strong></li>
                                     <li class="list-inline-item">@Model.SidechainNode.BlockHeight</li>
+                                </ul>
+                            </li>
+                            <li class="col-12 col-xl-6">
+                                <ul class="list-inline">
+                                    <li class="list-inline-item"><strong>Mempool size :</strong></li>
+                                    <li class="list-inline-item text-muted">@Model.SidechainNode.MempoolSize</li>
                                 </ul>
                             </li>
                             <li class="col-12 col-xl-6">
@@ -260,26 +246,14 @@
                             </li>
                             <li class="col-12 col-xl-6">
                                 <ul class="list-inline">
-                                    <li class="list-inline-item"><strong>Header height :</strong></li>
-                                    <li class="list-inline-item">@Model.SidechainNode.HeaderHeight</li>
-                                </ul>
-                            </li>
-                            <li class="col-12 col-xl-6">
-                                <ul class="list-inline">
-                                    <li class="list-inline-item"><strong>Uptime :</strong></li>
-                                    <li class="list-inline-item text-muted">@Model.SidechainNode.Uptime</li>
-                                </ul>
-                            </li>
-                            <li class="col-12 col-xl-6">
-                                <ul class="list-inline">
-                                    <li class="list-inline-item"><strong>Mempool size :</strong></li>
-                                    <li class="list-inline-item text-muted">@Model.SidechainNode.MempoolSize</li>
-                                </ul>
-                            </li>
-                            <li class="col-12 col-xl-6">
-                                <ul class="list-inline">
                                     <li class="list-inline-item"><strong>Orphan size :</strong></li>
                                     <li class="list-inline-item text-muted">@Model.SidechainNode.OrphanSize</li>
+                                </ul>
+                            </li>
+                            <li class="col-12 col-xl-6">
+                                <ul class="list-inline">
+                                    <li class="list-inline-item"><strong>Header height :</strong></li>
+                                    <li class="list-inline-item">@Model.SidechainNode.HeaderHeight</li>
                                 </ul>
                             </li>
                             <li class="col-12 col-xl-6">
@@ -289,6 +263,16 @@
                                         <span class="badge badge-@(Model.SidechainNode.IsMining ? "success" : "danger")">
                                             @(Model.SidechainNode.IsMining ? "Mining" : "Not Mining")
                                         </span>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="col-12 col-xl-6">
+                                <ul class="list-inline">
+                                    <li class="list-inline-item"><strong>Block Producer Hits :</strong></li>
+                                    <li class="list-inline-item">
+                                        <div class="progress" style="width: 100px;">
+                                          <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: @Model.SidechainNode.BlockProducerHitsValue%;" aria-valuenow="@Model.SidechainNode.BlockProducerHitsValue" aria-valuemin="0" aria-valuemax="100">@Model.SidechainNode.BlockProducerHitsValue%</div>
+                                        </div>
                                     </li>
                                 </ul>
                             </li>

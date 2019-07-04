@@ -242,6 +242,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         Regex asyncLoopStats = new Regex("====== Async loops ======   (.*)", RegexOptions.Compiled);
         Regex addressIndexer = new Regex("AddressIndexer\\.Height:\\s+([0-9]+)", RegexOptions.Compiled);
         Regex blockProducers = new Regex("Block producers hits      : (.*)", RegexOptions.Compiled);
+        Regex blockProducersValues = new Regex(@"([\d]+) of ([\d]+).*", RegexOptions.Compiled);
 
         protected async Task<NodeDashboardStats> UpdateDashboardStats()
         {
@@ -254,6 +255,19 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                     response = await client.GetStringAsync($"{_endpoint}/api/Dashboard/Stats").ConfigureAwait(false);
                     nodeDashboardStats.OrphanSize = orphanSize.Match(response).Groups[1].Value;
                     nodeDashboardStats.BlockProducerHits = this.blockProducers.Match(response).Groups[1].Value;
+                    var matches = blockProducersValues.Match(nodeDashboardStats.BlockProducerHits);
+                    if (matches.Success && matches.Groups.Count > 2)
+                    {
+                        string firstValueString = matches.Groups[1].Value;
+                        string secondValueString = matches.Groups[2].Value;
+
+                        if (decimal.TryParse(firstValueString, out decimal firstValue) &&
+                            decimal.TryParse(secondValueString, out decimal secondValue))
+                        {
+                            if (secondValue == 0) nodeDashboardStats.BlockProducerHitsValue = 0;
+                            nodeDashboardStats.BlockProducerHitsValue = Math.Round(100 * (firstValue / secondValue), 2);
+                        }
+                    }
                     
                     if (int.TryParse(headerHeight.Match(response).Groups[1].Value, out var headerHeightValue))
                     {
