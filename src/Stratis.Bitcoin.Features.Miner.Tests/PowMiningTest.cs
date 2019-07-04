@@ -68,6 +68,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.initialBlockDownloadState = new Mock<IInitialBlockDownloadState>();
             this.initialBlockDownloadState.Setup(s => s.IsInitialBlockDownload()).Returns(false);
 
+            this.nodeDeployments = new NodeDeployments(this.network, this.chainIndexer);
+
             this.mempoolLock = new MempoolSchedulerLock();
 
             this.nodeDeployments = new NodeDeployments(this.network, this.chainIndexer);
