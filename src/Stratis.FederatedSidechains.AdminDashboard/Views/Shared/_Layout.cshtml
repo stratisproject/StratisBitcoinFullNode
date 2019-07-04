@@ -77,21 +77,18 @@
     </div>
     <div class="navbar-text d-inline">
         <ul class="list-inline mb-0 ml-5 ml-md-2 d-flex align-items-center">
-            @if (defaultEndpointsSettings.SidechainNodeType == NodeTypes.FiftyK)
-            {
-                <li class="list-inline-item text-dark">Sidechain wallet address</li>
-                <li class="list-inline-item text-truncate">
-                    @if (ViewBag.SidechainMultisigAddress != null)
-                    {
-                        <a href="#qrcode" data-toggle="modal" role="qrcode" data-qr="@ViewBag.SidechainMultisigAddress" class="inherit text-muted" id="sidechainMultisigAddress">@ViewBag.SidechainMultisigAddress</a>
-                        <i role="copy" data-id="sidechainMultisigAddress" data-message="Sidechain Multisig Address successfully copied to clipboard" class="far fa-copy"></i>
-                    }
-                    else
-                    {
-                        @("Not Running")
-                    }
-                </li>
-            }
+            <li class="list-inline-item text-dark">Sidechain wallet address</li>
+            <li class="list-inline-item text-truncate">
+                @if (ViewBag.SidechainMultisigAddress != null)
+                {
+                    <a href="#qrcode" data-toggle="modal" role="qrcode" data-qr="@ViewBag.SidechainMultisigAddress" class="inherit text-muted" id="sidechainMultisigAddress">@ViewBag.SidechainMultisigAddress</a>
+                    <i role="copy" data-id="sidechainMultisigAddress" data-message="Sidechain Multisig Address successfully copied to clipboard" class="far fa-copy"></i>
+                }
+                else
+                {
+                    @("Not Running")
+                }
+            </li>
         </ul>
     </div>
     <div class="navbar-text p-0 d-inline ml-auto">
