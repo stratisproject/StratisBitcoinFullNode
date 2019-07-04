@@ -52,7 +52,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private readonly Mock<ITimeSyncBehaviorState> timeSyncBehaviorState;
         private readonly NodeDeployments nodeDeployments;
         private readonly CancellationTokenSource cancellationTokenSource;
-        private readonly NodeDeployments nodeDeployments;
 
         public PosMintingTest()
         {

@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.PoA
             bool votingEnabled,
             bool autoKickIdleMembers,
             uint federationMemberMaxIdleTimeSeconds = 60 * 60 * 24 * 7)
-                : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
+                : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost, witnessScaleFactor: 1)
         {
             this.GenesisFederationMembers = genesisFederationMembers;
             this.TargetSpacingSeconds = targetSpacingSeconds;
