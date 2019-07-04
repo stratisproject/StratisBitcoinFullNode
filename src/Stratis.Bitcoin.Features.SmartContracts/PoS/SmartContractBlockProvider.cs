@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
         /// <inheritdoc/>
         public void BlockModified(ChainedHeader chainTip, Block block)
         {
-            throw new System.NotImplementedException();
+           // unused.
         }
     }
 }
