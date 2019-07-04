@@ -741,8 +741,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             var addressesCreated = new List<HdAddress>();
             for (int i = firstNewAddressIndex; i < firstNewAddressIndex + addressesQuantity; i++)
             {
-                // Generate a new address.
+                // Retrieve the pubkey associated with the private key of this address index.
                 PubKey pubkey = HdOperations.GeneratePublicKey(this.ExtendedPubKey, i, isChange);
+
+                // Generate the P2PKH address corresponding to the pubkey.
                 BitcoinPubKeyAddress address = pubkey.GetAddress(network);
 
                 // Add the new address details to the list of addresses.
@@ -837,15 +839,21 @@ namespace Stratis.Bitcoin.Features.Wallet
         public int Index { get; set; }
 
         /// <summary>
-        /// The script pub key for this address.
+        /// The P2PKH (pay-to-pubkey-hash) script pub key for this address.
         /// </summary>
+        /// <remarks>The script is of the format OP_DUP OP_HASH160 {pubkeyhash} OP_EQUALVERIFY OP_CHECKSIG</remarks>
         [JsonProperty(PropertyName = "scriptPubKey")]
         [JsonConverter(typeof(ScriptJsonConverter))]
         public Script ScriptPubKey { get; set; }
 
         /// <summary>
-        /// The script pub key for this address.
+        /// The P2PK (pay-to-pubkey) script pub key corresponding to the private key of this address.
         /// </summary>
+        /// <remarks>This is typically only used for mining, as the valid script types for mining are constrained.
+        /// Block explorers often depict the P2PKH address as the 'address' of a P2PK scriptPubKey, which is not
+        /// actually correct. A P2PK scriptPubKey does not have a defined address format.
+        /// 
+        /// The script itself is of the format: {pubkey} OP_CHECKSIG</remarks>
         [JsonProperty(PropertyName = "pubkey")]
         [JsonConverter(typeof(ScriptJsonConverter))]
         public Script Pubkey { get; set; }
