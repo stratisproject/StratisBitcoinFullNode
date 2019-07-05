@@ -11,10 +11,6 @@ namespace Stratis.Bitcoin.Controllers.Models
     /// </summary>
     public class BannedPeerModel
     {
-        public BannedPeerModel()
-        {
-        }
-
         public string EndPoint { get; set; }
 
         public DateTime? BanUntil { get; set; }
