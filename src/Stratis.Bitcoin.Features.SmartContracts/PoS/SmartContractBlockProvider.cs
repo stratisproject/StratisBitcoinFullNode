@@ -44,7 +44,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
         /// <inheritdoc/>
         public void BlockModified(ChainedHeader chainTip, Block block)
         {
-           // unused.
+            if (this.network.Consensus.IsProofOfStake)
+            {
+                this.posPowBlockDefinition.BlockModified(chainTip, block);
+            }
+
+            this.powBlockDefinition.BlockModified(chainTip, block);
         }
     }
 }
