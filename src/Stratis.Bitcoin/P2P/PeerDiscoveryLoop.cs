@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.P2P
             {
                 using (CancellationTokenSource connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation))
                 {
-                    this.logger.LogTrace("Attempting to discover from : '{0}'", endPoint);
+                    this.logger.LogDebug("Attempting to discover from : '{0}'", endPoint);
 
                     connectTokenSource.CancelAfter(TimeSpan.FromSeconds(5));
 
@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.P2P
                         networkPeer?.Dispose();
                     }
 
-                    this.logger.LogTrace("Discovery from '{0}' finished", endPoint);
+                    this.logger.LogDebug("Discovery from '{0}' finished", endPoint);
                 }
             }).ConfigureAwait(false);
         }

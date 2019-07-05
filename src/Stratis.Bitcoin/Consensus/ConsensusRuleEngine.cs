@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.Consensus
 
             uint256 hashToBan = validationContext.ChainedHeaderToValidate.HashBlock;
 
-            this.logger.LogTrace("Marking '{0}' invalid.", hashToBan);
+            this.logger.LogDebug("Marking '{0}' invalid.", hashToBan);
             this.invalidBlockHashStore.MarkInvalid(hashToBan, validationContext.RejectUntil);
         }
 

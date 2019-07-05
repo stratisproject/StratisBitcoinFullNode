@@ -80,7 +80,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         public async Task BroadcastPartialTransactionsAsync() {
             if (this.ibdState.IsInitialBlockDownload() || !this.federationWalletManager.IsFederationWalletActive()) {
-                this.logger.LogTrace("Federation wallet isn't active or in IBD. Not attempting to request transaction signatures.");
+                this.logger.LogDebug("Federation wallet isn't active or in IBD. Not attempting to request transaction signatures.");
                 return;
             }
 

@@ -6,6 +6,7 @@ using Flurl;
 using Flurl.Http;
 using NBitcoin;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.IntegrationTests;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;

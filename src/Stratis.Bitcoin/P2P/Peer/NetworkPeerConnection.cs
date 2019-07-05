@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     Message message = await this.ReadAndParseMessageAsync(this.peer.Version, this.CancellationSource.Token).ConfigureAwait(false);
 
                     this.asyncProvider.Signals.Publish(new PeerMessageReceived(this.peer.PeerEndPoint, message));
-                    this.logger.LogTrace("Received message: '{0}'", message);
+                    this.logger.LogDebug("Received message: '{0}'", message);
 
                     this.peer.Counter.AddRead(message.MessageSize);
 
@@ -221,23 +221,34 @@ namespace Stratis.Bitcoin.P2P.Peer
                 throw new ProtocolViolationException($"Message payload {payload.GetType()} not found.");
 
             CancellationTokenSource cts = null;
-            if (cancellation != default(CancellationToken))
-            {
-                cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.CancellationSource.Token);
-                cancellation = cts.Token;
-            }
-            else cancellation = this.CancellationSource.Token;
 
-            Message message = null;
             try
             {
-                message = new Message(this.payloadProvider)
+                try
+                {
+                    if (cancellation != default(CancellationToken))
+                    {
+                        cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, this.CancellationSource.Token);
+                        cancellation = cts.Token;
+                    }
+                    else
+                    {
+                        cancellation = this.CancellationSource.Token;
+                    }
+                }
+                catch (ObjectDisposedException)
+                {
+                    // The peer already disconnected, no need to handle this as unexpected behavior, just cancel the task.
+                    throw new OperationCanceledException();
+                }
+
+                var message = new Message(this.payloadProvider)
                 {
                     Magic = this.peer.Network.Magic,
                     Payload = payload
                 };
 
-                this.logger.LogTrace("Sending message: '{0}'", message);
+                this.logger.LogDebug("Sending message: '{0}'", message);
 
                 using (var ms = new MemoryStream())
                 {
@@ -264,7 +275,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             catch (Exception ex)
             {
                 this.asyncProvider.Signals.Publish(new PeerMessageSendFailure(this.peer.PeerEndPoint, message, ex));
-                this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
+                this.logger.LogDebug("Exception occurred: '{0}'", ex.ToString());
 
                 this.peer.Disconnect("Unexpected exception while sending a message", ex);
 
@@ -304,7 +315,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     if ((e is IOException) || (e is OperationCanceledException) || (e is ObjectDisposedException))
                     {
-                        this.logger.LogTrace("Connection has been terminated.");
+                        this.logger.LogDebug("Connection has been terminated.");
                         if (e is IOException) this.logger.LogTrace("(-)[IO_EXCEPTION]");
                         else if (e is ObjectDisposedException) this.logger.LogTrace("(-)[DISPOSED]");
                         else this.logger.LogTrace("(-)[CANCELLED]");

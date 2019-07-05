@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.acceptTask = Task.CompletedTask;
 
-            this.logger.LogTrace("Network peer server ready to listen on '{0}'.", this.LocalEndpoint);
+            this.logger.LogDebug("Network peer server ready to listen on '{0}'.", this.LocalEndpoint);
         }
 
         /// <summary>
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception e)
             {
-                this.logger.LogTrace("Exception occurred: {0}", e.ToString());
+                this.logger.LogDebug("Exception occurred: {0}", e.ToString());
                 throw;
             }
         }
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         private async Task AcceptClientsAsync()
         {
-            this.logger.LogTrace("Accepting incoming connections.");
+            this.logger.LogDebug("Accepting incoming connections.");
 
             try
             {
@@ -165,12 +165,12 @@ namespace Stratis.Bitcoin.P2P.Peer
                     if (!connectionAttempt.successful)
                     {
                         this.signals.Publish(new PeerConnectionAttemptFailed(true, (IPEndPoint)tcpClient.Client.RemoteEndPoint, connectionAttempt.reason));
-                        this.logger.LogTrace("Connection from client '{0}' was rejected and will be closed.", tcpClient.Client.RemoteEndPoint);
+                        this.logger.LogDebug("Connection from client '{0}' was rejected and will be closed.", tcpClient.Client.RemoteEndPoint);
                         tcpClient.Close();
                         continue;
                     }
 
-                    this.logger.LogTrace("Connection accepted from client '{0}'.", tcpClient.Client.RemoteEndPoint);
+                    this.logger.LogDebug("Connection accepted from client '{0}'.", tcpClient.Client.RemoteEndPoint);
 
                     INetworkPeer connectedPeer = this.networkPeerFactory.CreateNetworkPeer(tcpClient, this.CreateNetworkPeerConnectionParameters(), this.networkPeerDisposer);
                     this.signals.Publish(new PeerConnected(connectedPeer.Inbound, connectedPeer.PeerEndPoint));
@@ -191,10 +191,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.serverCancel.Cancel();
 
-            this.logger.LogTrace("Stopping TCP listener.");
+            this.logger.LogDebug("Stopping TCP listener.");
             this.tcpListener.Stop();
 
-            this.logger.LogTrace("Waiting for accepting task to complete.");
+            this.logger.LogDebug("Waiting for accepting task to complete.");
             this.acceptTask.Wait();
 
             if (this.networkPeerDisposer.ConnectedPeersCount > 0)
@@ -244,7 +244,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return (true, "Endpoint Whitelisted, Allow Connection even if in IBD.");
             }
 
-            this.logger.LogTrace("Node '{0}' is not white listed during initial block download.", clientLocalEndPoint);
+            this.logger.LogDebug("Node '{0}' is not white listed during initial block download.", clientLocalEndPoint);
 
             return (false, "Node in IBD, Endpoint not whitelisted, connection refused.");
         }
