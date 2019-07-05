@@ -152,18 +152,15 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.MessageProducer.PushMessage(incomingMessage);
                 }
             }
+            catch (Exception ex) when (ex is IOException || ex is OperationCanceledException || ex is ObjectDisposedException)
+            {
+                this.logger.LogDebug("Receiving cancelled.");
+                this.peer.Disconnect("Receiving cancelled.");
+            }
             catch (Exception ex)
             {
-                if ((ex is IOException) || (ex is OperationCanceledException) || (ex is ObjectDisposedException))
-                {
-                    this.logger.LogDebug("Receiving cancelled.");
-                    this.peer.Disconnect("Receiving cancelled.");
-                }
-                else
-                {
-                    this.logger.LogDebug("Exception occurred: '{0}'", ex.ToString());
-                    this.peer.Disconnect("Unexpected failure while waiting for a message", ex);
-                }
+                this.logger.LogDebug("Exception occurred: '{0}'", ex.ToString());
+                this.peer.Disconnect("Unexpected failure while waiting for a message", ex);
             }
         }
 
@@ -222,6 +219,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             CancellationTokenSource cts = null;
 
+            Message message = null;
             try
             {
                 try
@@ -242,7 +240,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     throw new OperationCanceledException();
                 }
 
-                var message = new Message(this.payloadProvider)
+                message = new Message(this.payloadProvider)
                 {
                     Magic = this.peer.Network.Magic,
                     Payload = payload
