@@ -80,6 +80,8 @@ namespace Stratis.Features.FederatedPeg.Collateral
                 // sufficiently old.
                 context.ValidationContext.RejectUntil = this.dateTime.GetUtcNow() + TimeSpan.FromSeconds(this.collateralCheckBanDurationSeconds);
 
+                this.Logger.LogDebug("commitmentHeight is {0}, counterChainHeight is {1}.", commitmentHeight, counterChainHeight);
+
                 this.Logger.LogTrace("(-)[COMMITMENT_TOO_NEW]");
                 PoAConsensusErrors.InvalidCollateralAmount.Throw();
             }
