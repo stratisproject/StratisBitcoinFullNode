@@ -81,12 +81,12 @@ namespace Stratis.Bitcoin.P2P
 
                 // If it was different we decrement the score by 1.
                 this.MyExternalAddressPeerScore -= 1;
-                this.logger.LogTrace("Different endpoint '{0}' supplied. Score decremented to {1}.", ipEndPoint, this.MyExternalAddressPeerScore);
+                this.logger.LogDebug("Different endpoint '{0}' supplied. Score decremented to {1}.", ipEndPoint, this.MyExternalAddressPeerScore);
 
                 // If the new score is 0 we replace the old one with the new one with score 1.
                 if (this.MyExternalAddressPeerScore <= 0)
                 {
-                    this.logger.LogTrace("Score for old endpoint '{0}' is <= 0. Updating endpoint to '{1}' and resetting peer score to 1.", this.MyExternalAddress, ipEndPoint);
+                    this.logger.LogDebug("Score for old endpoint '{0}' is <= 0. Updating endpoint to '{1}' and resetting peer score to 1.", this.MyExternalAddress, ipEndPoint);
                     this.MyExternalAddress = ipEndPoint;
                     this.MyExternalAddressPeerScore = 1;
                 }

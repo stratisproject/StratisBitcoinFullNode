@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(block, nameof(block));
 
             long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, -block.BlockSize.Value);
-            this.logger.LogTrace("Queue sized changed to {0} bytes.", currentBlockQueueSize);
+            this.logger.LogDebug("Queue sized changed to {0} bytes.", currentBlockQueueSize);
 
             ChainedHeader newTip = this.chainIndexer.GetHeader(block.GetHash());
 
@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     this.walletManager.RemoveBlocks(fork);
                     this.walletTip = fork;
 
-                    this.logger.LogTrace("Wallet tip set to '{0}'.", this.walletTip);
+                    this.logger.LogDebug("Wallet tip set to '{0}'.", this.walletTip);
                 }
 
                 // The new tip can be ahead or behind the wallet.
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         return;
                     }
 
-                    this.logger.LogTrace("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
+                    this.logger.LogDebug("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
 
                     ChainedHeader next = this.walletTip;
                     while (next != newTip)
@@ -243,10 +243,10 @@ namespace Stratis.Bitcoin.Features.Wallet
                         return;
                     }
 
-                    this.logger.LogTrace("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip);
+                    this.logger.LogDebug("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip);
                 }
             }
-            else this.logger.LogTrace("New block follows the previously known block '{0}'.", this.walletTip);
+            else this.logger.LogDebug("New block follows the previously known block '{0}'.", this.walletTip);
 
             this.walletTip = newTip;
             this.walletManager.ProcessBlock(block, newTip);
@@ -282,7 +282,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (!this.maxQueueSizeReached)
             {
                 long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, block.BlockSize.Value);
-                this.logger.LogTrace("Queue sized changed to {0} bytes.", currentBlockQueueSize);
+                this.logger.LogDebug("Queue sized changed to {0} bytes.", currentBlockQueueSize);
 
                 this.blocksQueue.Enqueue(block);
             }

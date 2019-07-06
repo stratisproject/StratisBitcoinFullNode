@@ -525,14 +525,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             {
                 if (change.BalanceChangedHeight < heightThreshold)
                 {
-                    this.logger.LogTrace("Balance change: {0} was selected for compaction. Compacted balance now: {1}.", change, compacted[0].Satoshi);
+                    this.logger.LogDebug("Balance change: {0} was selected for compaction. Compacted balance now: {1}.", change, compacted[0].Satoshi);
 
                     if (change.Deposited)
                         compacted[0].Satoshi += change.Satoshi;
                     else
                         compacted[0].Satoshi -= change.Satoshi;
 
-                    this.logger.LogTrace("New compacted balance: {0}.", compacted[0].Satoshi);
+                    this.logger.LogDebug("New compacted balance: {0}.", compacted[0].Satoshi);
                 }
                 else
                     compacted.Add(change);
@@ -551,6 +551,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
 
         /// <inheritdoc />
+        /// <remarks>This is currently not in use but will be required for exchange integration.</remarks>
         public AddressBalancesResult GetAddressBalances(string[] addresses, int minConfirmations = 1)
         {
             var (isQueryable, reason) = this.IsQueryable();
@@ -570,7 +571,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     long balance = indexData.BalanceChanges.Where(x => x.BalanceChangedHeight <= maxAllowedHeight).CalculateBalance();
 
-                    this.logger.LogTrace("Address: {0}, balance: {1}.", address, balance);
+                    this.logger.LogDebug("Address: {0}, balance: {1}.", address, balance);
                     result.Balances.Add(new AddressBalanceResult(address, new Money(balance)));
                 }
 

@@ -500,7 +500,7 @@ namespace Stratis.Bitcoin.Connection
                 this.PeerConnectors.FirstOrDefault(pc => pc is PeerConnectorAddNode).MaxOutboundConnections++;
             }
             else
-                this.logger.LogTrace("The endpoint already exists in the add node collection.");
+                this.logger.LogDebug("The endpoint already exists in the add node collection.");
         }
 
         /// <summary>
