@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Utilities;
@@ -23,15 +24,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>The "functional" minimum gas limit. Not enforced by consensus but miners are only going to pick transactions up if their gas price is higher than this.</summary>
         public const ulong MinGasPrice = 100;
 
-        /// <summary>
-        /// These rules can be checked instantly. They don't rely on other parts of the context to be loaded.
-        /// </summary>
-        private readonly List<ISmartContractMempoolRule> preTxRules;
-
-        /// <summary>
-        /// These rules rely on the fee part of the context to be loaded in parent class. See 'AcceptToMemoryPoolWorkerAsync'.
-        /// </summary>
-        private readonly List<ISmartContractMempoolRule> feeTxRules;
         private readonly ICallDataSerializer callDataSerializer;
         private readonly IStateRepositoryRoot stateRepositoryRoot;
 
@@ -55,23 +47,35 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             var scriptTypeRule = new AllowedScriptTypeRule(network);
             scriptTypeRule.Initialize();
 
-            this.preTxRules = new List<ISmartContractMempoolRule>
-            {
-                new MempoolOpSpendRule(),
-                new TxOutSmartContractExecRule(),
-                scriptTypeRule,
-                p2pkhRule
-            };
-
             var txChecks = new List<IContractTransactionPartialValidationRule>()
             {
                 new SmartContractFormatLogic()
             };
             
-            this.feeTxRules = new List<ISmartContractMempoolRule>()
+            this.mempoolRules = new List<IMempoolRule>
             {
+                new MempoolOpSpendRule(),
+                new TxOutSmartContractExecRule(),
+                scriptTypeRule,
+                p2pkhRule,
+
+                // The non-SC mempool rules
+                new CheckConflictsMempoolRule(),
+                new CheckCoinViewMempoolRule(),
+                new CreateMempoolEntryMempoolRule(),
+                new CheckSigOpsMempoolRule(),
+                new CheckFeeMempoolRule(),
+
+                // The smart contract mempool needs to do more fee checks than its counterpart, so include extra rules
                 new ContractTransactionPartialValidationRule(this.callDataSerializer, txChecks),
-                new ContractTransactionFullValidationRule(this.callDataSerializer, txFullValidationRules)
+                new ContractTransactionFullValidationRule(this.callDataSerializer, txFullValidationRules),
+                new CheckMinGasLimitSmartContractMempoolRule(),
+
+                // Remaining non-SC rules
+                new CheckRateLimitMempoolRule(),
+                new CheckAncestorsMempoolRule(),
+                new CheckReplacementMempoolRule(),
+                new CheckAllInputsMempoolRule()
             };
         }
 
@@ -84,34 +88,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             {
                 rule.CheckTransaction(context);
             }
-        }
-
-        /// <inheritdoc />
-        public override void CheckFee(MempoolValidationContext context)
-        {
-            base.CheckFee(context);
-
-            foreach (ISmartContractMempoolRule rule in this.feeTxRules)
-            {
-                rule.CheckTransaction(context);
-            }
-
-            this.CheckMinGasLimit(context);
-        }
-
-        private void CheckMinGasLimit(MempoolValidationContext context)
-        {
-            Transaction transaction = context.Transaction;
-
-            if (!transaction.IsSmartContractExecTransaction())
-                return;
-
-            // We know it has passed SmartContractFormatRule so we can deserialize it easily.
-            TxOut scTxOut = transaction.TryGetSmartContractTxOut();
-            Result<ContractTxData> callDataDeserializationResult = this.callDataSerializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
-            ContractTxData callData = callDataDeserializationResult.Value;
-            if (callData.GasPrice < MinGasPrice)
-                context.State.Fail(MempoolErrors.InsufficientFee, $"Gas price {callData.GasPrice} is below required price: {MinGasPrice}").Throw();
         }
     }
 }
