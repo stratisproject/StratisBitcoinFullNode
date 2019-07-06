@@ -4,6 +4,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.SmartContracts.Core;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
@@ -11,7 +12,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// <summary>
     /// Each transaction should have only 1 'SmartContractExec' output.
     /// </summary>
-    public class TxOutSmartContractExecRule : FullValidationConsensusRule, ISmartContractMempoolRule
+    public class TxOutSmartContractExecRule : FullValidationConsensusRule, IMempoolRule
     {
         public override Task RunAsync(RuleContext context)
         {
@@ -25,7 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             return Task.CompletedTask;
         }
 
-        public void CheckTransaction(MempoolValidationContext context)
+        public void CheckTransaction(MempoolRuleContext ruleContext, MempoolValidationContext context)
         {
             this.CheckTransaction(context.Transaction);
         }

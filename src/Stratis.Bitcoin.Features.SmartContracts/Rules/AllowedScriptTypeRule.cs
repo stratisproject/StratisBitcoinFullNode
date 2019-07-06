@@ -3,6 +3,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.SmartContracts.Core;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
@@ -10,7 +11,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// <summary>
     /// Enforces that only certain script types are used on the network.
     /// </summary>
-    public class AllowedScriptTypeRule : PartialValidationConsensusRule, ISmartContractMempoolRule
+    public class AllowedScriptTypeRule : PartialValidationConsensusRule, IMempoolRule
     {
         private readonly Network network;
 
@@ -31,7 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             return Task.CompletedTask;
         }
 
-        public void CheckTransaction(MempoolValidationContext context)
+        public void CheckTransaction(MempoolRuleContext ruleContext, MempoolValidationContext context)
         {
             this.CheckTransaction(context.Transaction);
         }

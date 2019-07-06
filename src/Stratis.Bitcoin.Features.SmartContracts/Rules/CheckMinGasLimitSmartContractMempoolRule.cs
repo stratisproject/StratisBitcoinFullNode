@@ -8,6 +8,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
     public class CheckMinGasLimitSmartContractMempoolRule : IMempoolRule
     {
+        private readonly ICallDataSerializer callDataSerializer;
+
+        public CheckMinGasLimitSmartContractMempoolRule(ICallDataSerializer callDataSerializer)
+        {
+            this.callDataSerializer = callDataSerializer;
+        }
+
         public void CheckTransaction(MempoolRuleContext ruleContext, MempoolValidationContext context)
         {
             Transaction transaction = context.Transaction;

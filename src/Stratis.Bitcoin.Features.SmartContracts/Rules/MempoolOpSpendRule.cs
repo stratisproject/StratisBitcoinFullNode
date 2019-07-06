@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.SmartContracts.Core;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
@@ -8,9 +9,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// <summary>
     /// Checks that transactions sent to the mempool don't include the OP_SPEND opcode.
     /// </summary>
-    public class MempoolOpSpendRule : ISmartContractMempoolRule
+    public class MempoolOpSpendRule : IMempoolRule
     {
-        public void CheckTransaction(MempoolValidationContext context)
+        public void CheckTransaction(MempoolRuleContext ruleContext, MempoolValidationContext context)
         {
             if (context.Transaction.Inputs.Any(x => x.ScriptSig.IsSmartContractSpend()) || context.Transaction.Outputs.Any(x => x.ScriptPubKey.IsSmartContractSpend()))
                 this.Throw();

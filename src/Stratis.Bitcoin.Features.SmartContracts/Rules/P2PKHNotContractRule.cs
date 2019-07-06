@@ -3,6 +3,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
@@ -10,7 +11,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// <summary>
     /// Used to check that people don't try and send funds to contracts via P2PKH.
     /// </summary>
-    public class P2PKHNotContractRule : FullValidationConsensusRule, ISmartContractMempoolRule
+    public class P2PKHNotContractRule : FullValidationConsensusRule, IMempoolRule
     {
         private readonly IStateRepositoryRoot stateRepositoryRoot;
 
@@ -31,7 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             return Task.CompletedTask;
         }
 
-        public void CheckTransaction(MempoolValidationContext context)
+        public void CheckTransaction(MempoolRuleContext ruleContext, MempoolValidationContext context)
         {
             this.CheckTransaction(context.Transaction);
         }

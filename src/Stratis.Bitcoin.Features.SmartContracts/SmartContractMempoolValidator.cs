@@ -66,28 +66,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new CheckSigOpsMempoolRule(),
                 new CheckFeeMempoolRule(),
 
-                // The smart contract mempool needs to do more fee checks than its counterpart, so include extra rules
+                // The smart contract mempool needs to do more fee checks than its counterpart, so include extra rules.
+                // These rules occur directly after the fee check rule in the non-SC mempool.
                 new ContractTransactionPartialValidationRule(this.callDataSerializer, txChecks),
                 new ContractTransactionFullValidationRule(this.callDataSerializer, txFullValidationRules),
-                new CheckMinGasLimitSmartContractMempoolRule(),
+                new CheckMinGasLimitSmartContractMempoolRule(this.callDataSerializer),
 
-                // Remaining non-SC rules
+                // Remaining non-SC rules.
                 new CheckRateLimitMempoolRule(),
                 new CheckAncestorsMempoolRule(),
                 new CheckReplacementMempoolRule(),
                 new CheckAllInputsMempoolRule()
             };
-        }
-
-        /// <inheritdoc />
-        protected override void PreMempoolChecks(MempoolValidationContext context)
-        {
-            base.PreMempoolChecks(context);
-
-            foreach (ISmartContractMempoolRule rule in this.preTxRules)
-            {
-                rule.CheckTransaction(context);
-            }
         }
     }
 }
