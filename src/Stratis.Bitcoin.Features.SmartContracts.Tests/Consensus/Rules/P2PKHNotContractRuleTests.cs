@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             Transaction transaction = this.network.CreateTransaction();
             transaction.Outputs.Add(new TxOut(100, PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new KeyId(walletAddress))));
-            rule.CheckTransaction(new MempoolValidationContext(transaction, null));
+            rule.CheckTransaction(new MempoolRuleContext(null, null, null, null, null, null, null), new MempoolValidationContext(transaction, null));
         }
 
         [Fact]
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             Transaction transaction = this.network.CreateTransaction();
             transaction.Outputs.Add(new TxOut(100, PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new KeyId(contractAddress))));
-            Assert.Throws<ConsensusErrorException>(() => rule.CheckTransaction(new MempoolValidationContext(transaction, null)));
+            Assert.Throws<ConsensusErrorException>(() => rule.CheckTransaction(new MempoolRuleContext(null, null, null, null, null, null, null), new MempoolValidationContext(transaction, null)));
         }
     }
 }

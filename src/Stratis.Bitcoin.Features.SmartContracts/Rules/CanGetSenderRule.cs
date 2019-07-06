@@ -7,12 +7,13 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
-    public class CanGetSenderRule : UtxoStoreConsensusRule, ISmartContractMempoolRule
+    public class CanGetSenderRule : UtxoStoreConsensusRule, IMempoolRule
     {
         private readonly ISenderRetriever senderRetriever;
 
@@ -46,7 +47,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             }
         }
 
-        public void CheckTransaction(MempoolValidationContext context)
+        public void CheckTransaction(MempoolRuleContext ruleContext, MempoolValidationContext context)
         {
             // If wanting to execute a contract, we must be able to get the sender.
             if (context.Transaction.Outputs.Any(x => x.ScriptPubKey.IsSmartContractExec()))
@@ -56,8 +57,5 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
                     new ConsensusError("cant-get-sender", "smart contract output without a P2PKH as the first input to the tx.").Throw();
             }
         }
-
     }
 }
-
-
