@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Security.Cryptography.X509Certificates;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments.Models;
 using Stratis.Bitcoin.Utilities;
