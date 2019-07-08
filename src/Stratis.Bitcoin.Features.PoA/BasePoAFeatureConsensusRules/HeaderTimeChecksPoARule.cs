@@ -12,17 +12,23 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
     /// <seealso cref="Stratis.Bitcoin.Consensus.Rules.HeaderValidationConsensusRule" />
     public class HeaderTimeChecksPoARule : HeaderValidationConsensusRule
     {
-        /// <summary>Up to how many seconds headers's timestamp can be in the future to be considered valid.</summary>
-        public const int MaxFutureDriftSeconds = 60;
+        /// <summary>
+        /// How far into the future we allow incoming blocks to be.
+        /// </summary>
+        private long maxFutureDriftSeconds;
 
         private ISlotsManager slotsManager;
+
 
         /// <inheritdoc />
         public override void Initialize()
         {
             base.Initialize();
 
-            this.slotsManager = (this.Parent as PoAConsensusRuleEngine).SlotsManager;
+            var parent = this.Parent as PoAConsensusRuleEngine;
+
+            this.slotsManager = parent.SlotsManager;
+            this.maxFutureDriftSeconds = (parent.Network as PoANetwork).ConsensusOptions.TargetSpacingSeconds / 2;
         }
 
         /// <inheritdoc />
@@ -38,7 +44,7 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
             }
 
             // Timestamp shouldn't be more than current time plus max future drift.
-            long maxValidTime = this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp() + MaxFutureDriftSeconds;
+            long maxValidTime = this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp() + this.maxFutureDriftSeconds;
             if (chainedHeader.Header.Time > maxValidTime)
             {
                 this.Logger.LogWarning("Peer presented header with timestamp that is too far in to the future. Header was ignored." +
