@@ -42,7 +42,7 @@ _If you are using www.trustaking.com, we provide a command to simplify this proc
 
 ---
 
-## To withdraw funds back to the cold wallet
+## To withdraw funds back to your regular wallet
 
 _If you are using www.trustaking.com, we provide a command to simplify this process._
 
