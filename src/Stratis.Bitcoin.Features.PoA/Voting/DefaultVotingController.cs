@@ -100,9 +100,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             try
             {
-                string hashes = string.Join(Environment.NewLine, this.whitelistedHashesRepository.GetHashes().Select(x => x.ToString()).ToList());
-
-                return this.Ok(hashes);
+                List<string> hashes = this.whitelistedHashesRepository.GetHashes().Select(x => x.ToString()).ToList();
+                return this.Json(hashes);
             }
             catch (Exception e)
             {
