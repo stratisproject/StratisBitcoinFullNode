@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Connection
                 if (address != null)
                 {
                     peerAddresses.Add(address);
-                    this.logger.LogTrace("{0} added to the address manager.");
+                    this.logger.LogDebug("{0} added to the address manager.");
                 }
             }
 

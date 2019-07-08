@@ -13,7 +13,10 @@ using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Events;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Signals;
+using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.CounterChain;
 using Stratis.Features.FederatedPeg.Interfaces;
 
 namespace Stratis.Features.FederatedPeg.Collateral
@@ -75,7 +78,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
             this.signals = signals;
             this.asyncProvider = asyncProvider;
 
-            this.maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(network);
+            this.maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(settings.CounterChainNetwork);
             this.cancellationSource = new CancellationTokenSource();
             this.locker = new object();
             this.balancesDataByAddress = new Dictionary<string, AddressIndexerData>();

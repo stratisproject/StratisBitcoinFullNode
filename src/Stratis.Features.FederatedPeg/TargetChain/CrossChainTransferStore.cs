@@ -507,7 +507,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                                             if (!this.ValidateTransaction(transaction))
                                             {
-                                                this.logger.LogTrace("Suspending transfer for deposit '{0}' to retry invalid transaction later.", deposit.Id);
+                                                this.logger.LogDebug("Suspending transfer for deposit '{0}' to retry invalid transaction later.", deposit.Id);
 
                                                 this.federationWalletManager.RemoveWithdrawalTransactions(deposit.Id);
                                                 haveSuspendedTransfers = true;

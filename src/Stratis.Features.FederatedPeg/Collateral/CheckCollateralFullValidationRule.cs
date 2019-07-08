@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.CounterChain;
 
 namespace Stratis.Features.FederatedPeg.Collateral
 {
@@ -25,22 +26,22 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
         private readonly CollateralHeightCommitmentEncoder encoder;
 
-        private readonly Network network;
+        private readonly Network counterChainNetwork;
 
         /// <summary>For how many seconds the block should be banned in case collateral check failed.</summary>
         private readonly int collateralCheckBanDurationSeconds;
 
         public CheckCollateralFullValidationRule(IInitialBlockDownloadState ibdState, ICollateralChecker collateralChecker,
-            ISlotsManager slotsManager, IDateTimeProvider dateTime, Network network)
+            ISlotsManager slotsManager, IDateTimeProvider dateTime, Network network, CounterChainNetworkWrapper counterChainNetwork)
         {
-            this.network = network;
+            this.counterChainNetwork = counterChainNetwork.CounterChainNetwork;
             this.encoder = new CollateralHeightCommitmentEncoder();
             this.ibdState = ibdState;
             this.collateralChecker = collateralChecker;
             this.slotsManager = slotsManager;
             this.dateTime = dateTime;
 
-            this.collateralCheckBanDurationSeconds = (int)(this.network.Consensus.Options as PoAConsensusOptions).TargetSpacingSeconds / 2;
+            this.collateralCheckBanDurationSeconds = (int)(network.Consensus.Options as PoAConsensusOptions).TargetSpacingSeconds / 2;
         }
 
         public override Task RunAsync(RuleContext context)
@@ -60,14 +61,16 @@ namespace Stratis.Features.FederatedPeg.Collateral
                 // Every PoA miner on sidechain network is enforced to include commitment data to the blocks mined.
                 // Not having a commitment always should result in a permanent ban of the block.
                 this.Logger.LogTrace("(-)[NO_COMMITMENT_FOUND]");
-                PoAConsensusErrors.InvalidCollateralAmount.Throw();
+                PoAConsensusErrors.InvalidCollateralAmountNoCommitment.Throw();
             }
 
             int commitmentHeight = this.encoder.Decode(rawCommitmentData);
             this.Logger.LogDebug("Commitment is: {0}.", commitmentHeight);
 
             int counterChainHeight = this.collateralChecker.GetCounterChainConsensusHeight();
-            int maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(this.network);
+
+            // Get the maxiumum reorg length of the counter chain network.
+            int maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(this.counterChainNetwork);
 
             // Check if commitment height is less than `mainchain consensus tip height - MaxReorg`.
             if (commitmentHeight > counterChainHeight - maxReorgLength)
@@ -77,8 +80,10 @@ namespace Stratis.Features.FederatedPeg.Collateral
                 // sufficiently old.
                 context.ValidationContext.RejectUntil = this.dateTime.GetUtcNow() + TimeSpan.FromSeconds(this.collateralCheckBanDurationSeconds);
 
+                this.Logger.LogDebug("commitmentHeight is {0}, counterChainHeight is {1}.", commitmentHeight, counterChainHeight);
+
                 this.Logger.LogTrace("(-)[COMMITMENT_TOO_NEW]");
-                PoAConsensusErrors.InvalidCollateralAmount.Throw();
+                PoAConsensusErrors.InvalidCollateralAmountCommitmentTooNew.Throw();
             }
 
             if (!this.collateralChecker.CheckCollateral(federationMember, commitmentHeight))

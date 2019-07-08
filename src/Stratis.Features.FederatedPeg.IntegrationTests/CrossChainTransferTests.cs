@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Stratis.Features.FederatedPeg.IntegrationTests
 {
-    public class NodeSetupTests
+    public class CrossChainTransferTests
     {
         [Fact(Skip = "Unstable. https://dev.azure.com/StratisProject/StratisBitcoinFullNode/_build/results?buildId=14582&view=ms.vss-test-web.build-test-results-tab")]
         public void MainChainFedNodesBuildAndSync()

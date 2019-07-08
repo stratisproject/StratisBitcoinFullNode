@@ -26,11 +26,13 @@ namespace Stratis.Features.FederatedPeg.CounterChain
         /// <inheritdoc />
         public Network CounterChainNetwork { get; set; }
 
-        public CounterChainSettings(NodeSettings nodeSettings, Network counterChainNetwork)
+        public CounterChainSettings(NodeSettings nodeSettings, CounterChainNetworkWrapper counterChainNetworkWrapper)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
             TextFileConfiguration configReader = nodeSettings.ConfigReader;
+
+            Network counterChainNetwork = counterChainNetworkWrapper.CounterChainNetwork;
 
             this.CounterChainApiHost = configReader.GetOrDefault(CounterChainApiHostParam, "localhost");
             this.CounterChainApiPort = configReader.GetOrDefault(CounterChainApiPortParam, counterChainNetwork.DefaultAPIPort);
