@@ -31,6 +31,12 @@ To install a City Chain Node on a Raspberry Pi running Raspian - as <code>sudo s
 
 <code> bash <( curl https://raw.githubusercontent.com/CityChainFoundation/city-chain/master/Scripts/install_city_RPI.sh ) </code>
 
+
+To install a City Chain Node from binaries on a Raspberry Pi running Raspian - as <code>sudo su root</code> run the following:
+
+<code>bash <( curl https://raw.githubusercontent.com/CityChainFoundation/city-chain/master/Scripts/install_city_RPI_binaries.sh )</code>
+
+
 ## CentOS
 
 To install a City Chain Node on CentOS (Core) - as <code>sudo su root</code> run the following:
