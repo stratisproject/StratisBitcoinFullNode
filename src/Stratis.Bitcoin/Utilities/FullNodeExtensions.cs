@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -68,7 +69,20 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="shutdownCompleteMessage">Message to display on the console when the shutdown is complete.</param>
         public static async Task RunAsync(this IFullNode node, CancellationToken cancellationToken, string shutdownMessage, string shutdownCompleteMessage)
         {
-            node.Start();
+            var nodeLifetime = node.Services.ServiceProvider.GetRequiredService<INodeLifetime>() as NodeLifetime;
+
+            cancellationToken.Register(state =>
+            {
+                ((INodeLifetime)state).StopApplication();
+            },
+            nodeLifetime);
+
+            var waitForStop = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+            nodeLifetime.ApplicationStopping.Register(obj =>
+            {
+                var tcs = (TaskCompletionSource<object>)obj;
+                tcs.TrySetResult(null);
+            }, waitForStop);
 
             if (!string.IsNullOrEmpty(shutdownMessage))
             {
@@ -77,18 +91,7 @@ namespace Stratis.Bitcoin.Utilities
                 Console.WriteLine();
             }
 
-            cancellationToken.Register(state =>
-            {
-                ((INodeLifetime)state).StopApplication();
-            },
-            node.NodeLifetime);
-
-            var waitForStop = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-            node.NodeLifetime.ApplicationStopping.Register(obj =>
-            {
-                var tcs = (TaskCompletionSource<object>)obj;
-                tcs.TrySetResult(null);
-            }, waitForStop);
+            node.Start();
 
             await waitForStop.Task.ConfigureAwait(false);
 
