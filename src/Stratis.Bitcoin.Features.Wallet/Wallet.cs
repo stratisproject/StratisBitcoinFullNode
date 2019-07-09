@@ -748,7 +748,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 
                // Add the new address details to the list of addresses.
                var newAddress = new HdAddress
-                {
+               {
                     Index = i,
                     HdPath = HdOperations.CreateHdPath((int)this.GetCoinType(), this.Index, isChange, i),
                     ScriptPubKey = address.ScriptPubKey,
