@@ -744,14 +744,16 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // Generate a new address.
                 PubKey pubkey = HdOperations.GeneratePublicKey(this.ExtendedPubKey, i, isChange);
                 BitcoinPubKeyAddress address = pubkey.GetAddress(network);
-
-                // Add the new address details to the list of addresses.
-                var newAddress = new HdAddress
+                BitcoinWitPubKeyAddress witAddress = pubkey.GetSegwitAddress(network);
+                
+               // Add the new address details to the list of addresses.
+               var newAddress = new HdAddress
                 {
                     Index = i,
                     HdPath = HdOperations.CreateHdPath((int)this.GetCoinType(), this.Index, isChange, i),
                     ScriptPubKey = address.ScriptPubKey,
                     Pubkey = pubkey.ScriptPubKey,
+                    Bech32Address = witAddress.ToString(),
                     Address = address.ToString(),
                     Transactions = new List<TransactionData>()
                 };
@@ -837,18 +839,24 @@ namespace Stratis.Bitcoin.Features.Wallet
         public int Index { get; set; }
 
         /// <summary>
-        /// The script pub key for this address.
+        /// The script pub key for this address, this is a P2PKH address.
         /// </summary>
         [JsonProperty(PropertyName = "scriptPubKey")]
         [JsonConverter(typeof(ScriptJsonConverter))]
         public Script ScriptPubKey { get; set; }
 
         /// <summary>
-        /// The script pub key for this address.
+        /// The script pub key for this address, this is a P2PK address.
         /// </summary>
         [JsonProperty(PropertyName = "pubkey")]
         [JsonConverter(typeof(ScriptJsonConverter))]
         public Script Pubkey { get; set; }
+
+        /// <summary>
+        /// The base32 representation of a segwit (P2WPH) address.
+        /// </summary>
+        [JsonProperty(PropertyName = "bech32Address")]
+        public string Bech32Address { get; set; }
 
         /// <summary>
         /// The Base58 representation of this address.
