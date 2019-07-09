@@ -13,10 +13,8 @@ using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Events;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Features.FederatedPeg.CounterChain;
 using Stratis.Features.FederatedPeg.Interfaces;
 
 namespace Stratis.Features.FederatedPeg.Collateral
@@ -48,7 +46,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
         /// <summary>Protects access to <see cref="balancesDataByAddress"/> and <see cref="counterChainConsensusTipHeight"/>.</summary>
         private readonly object locker;
 
-        private readonly CancellationTokenSource cancellationSource;
+        private readonly CancellationToken cancellationToken;
 
         private SubscriptionToken memberAddedToken, memberKickedToken;
 
@@ -72,14 +70,14 @@ namespace Stratis.Features.FederatedPeg.Collateral
         private bool collateralUpdated;
 
         public CollateralChecker(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, ICounterChainSettings settings,
-            IFederationManager federationManager, ISignals signals, Network network, IAsyncProvider asyncProvider)
+            IFederationManager federationManager, ISignals signals, Network network, IAsyncProvider asyncProvider, INodeLifetime nodeLifetime)
         {
             this.federationManager = federationManager;
             this.signals = signals;
             this.asyncProvider = asyncProvider;
 
             this.maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(settings.CounterChainNetwork);
-            this.cancellationSource = new CancellationTokenSource();
+            this.cancellationToken = nodeLifetime.ApplicationStopping;
             this.locker = new object();
             this.balancesDataByAddress = new Dictionary<string, AddressIndexerData>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -98,9 +96,9 @@ namespace Stratis.Features.FederatedPeg.Collateral
                 this.balancesDataByAddress.Add(federationMember.CollateralMainchainAddress, null);
             }
 
-            while (!this.cancellationSource.IsCancellationRequested)
+            while (!this.cancellationToken.IsCancellationRequested)
             {
-                await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
+                await this.UpdateCollateralInfoAsync(this.cancellationToken).ConfigureAwait(false);
 
                 if (this.collateralUpdated)
                     break;
@@ -127,9 +125,9 @@ namespace Stratis.Features.FederatedPeg.Collateral
         /// <summary>Continuously updates info about money deposited to fed member's addresses.</summary>
         private async Task UpdateCollateralInfoContinuouslyAsync()
         {
-            while (!this.cancellationSource.IsCancellationRequested)
+            while (!this.cancellationToken.IsCancellationRequested)
             {
-                await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
+                await this.UpdateCollateralInfoAsync(this.cancellationToken).ConfigureAwait(false);
 
                 await this.DelayCollateralCheckAsync().ConfigureAwait(false);
             }
@@ -142,7 +140,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
         {
             try
             {
-                await Task.Delay(CollateralUpdateIntervalSeconds * 1000, this.cancellationSource.Token).ConfigureAwait(false);
+                await Task.Delay(CollateralUpdateIntervalSeconds * 1000, this.cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -283,8 +281,6 @@ namespace Stratis.Features.FederatedPeg.Collateral
         {
             this.signals.Unsubscribe(this.memberAddedToken);
             this.signals.Unsubscribe(this.memberKickedToken);
-
-            this.cancellationSource.Cancel();
 
             this.updateCollateralContinuouslyTask?.GetAwaiter().GetResult();
         }
