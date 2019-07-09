@@ -69,12 +69,15 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
         private bool collateralUpdated;
 
+        private bool isDisposing;
+
         public CollateralChecker(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, ICounterChainSettings settings,
             IFederationManager federationManager, ISignals signals, Network network, IAsyncProvider asyncProvider, INodeLifetime nodeLifetime)
         {
             this.federationManager = federationManager;
             this.signals = signals;
             this.asyncProvider = asyncProvider;
+            this.isDisposing = false;
 
             this.maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(settings.CounterChainNetwork);
             this.cancellationToken = nodeLifetime.ApplicationStopping;
@@ -125,7 +128,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
         /// <summary>Continuously updates info about money deposited to fed member's addresses.</summary>
         private async Task UpdateCollateralInfoContinuouslyAsync()
         {
-            while (!this.cancellationToken.IsCancellationRequested)
+            while (!this.cancellationToken.IsCancellationRequested && !this.isDisposing)
             {
                 await this.UpdateCollateralInfoAsync(this.cancellationToken).ConfigureAwait(false);
 
@@ -281,6 +284,8 @@ namespace Stratis.Features.FederatedPeg.Collateral
         {
             this.signals.Unsubscribe(this.memberAddedToken);
             this.signals.Unsubscribe(this.memberKickedToken);
+
+            this.isDisposing = true;
 
             this.updateCollateralContinuouslyTask?.GetAwaiter().GetResult();
         }
