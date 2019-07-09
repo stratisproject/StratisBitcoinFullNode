@@ -125,9 +125,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             if (network.Consensus.IsProofOfStake && network.Consensus.PosEmptyCoinbase)
             {
-                Script scriptPubKey = block.Transactions[0].Inputs[0].ScriptSig;
+                Script scriptSig = block.Transactions[0].Inputs[0].ScriptSig;
 
-                var ops = scriptPubKey.ToOps();
+                var ops = scriptSig.ToOps();
 
                 if (ops.Count > 2 && IsWitnessScript(new Script(ops.Skip(2))))
                 {
@@ -152,15 +152,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <summary>
-        /// Clear all witness commitments form the block.
+        /// Clear all witness commitments from the block.
         /// </summary>
         public static void ClearWitnessCommitment(Network network, Block block)
         {
             if (network.Consensus.IsProofOfStake && network.Consensus.PosEmptyCoinbase)
             {
-                Script scriptPubKey = block.Transactions[0].Inputs[0].ScriptSig;
+                Script scriptSig = block.Transactions[0].Inputs[0].ScriptSig;
 
-                var ops = scriptPubKey.ToOps();
+                var ops = scriptSig.ToOps();
 
                 if (ops.Count > 2 && IsWitnessScript(new Script(ops.Skip(2))))
                 {
@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <summary>
-        /// Create a witness commitmnet based from the given block.
+        /// Create a witness commitment based from the given block.
         /// </summary>
         public static void CreateWitnessCommitment(Network network, Block block)
         {
