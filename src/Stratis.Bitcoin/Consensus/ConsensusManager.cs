@@ -121,6 +121,8 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly ConsensusManagerPerformanceCounter performanceCounter;
 
+        private readonly IDateTimeProvider dateTimeProvider;
+
         private bool isIbd;
 
         internal ConsensusManager(
@@ -142,7 +144,8 @@ namespace Stratis.Bitcoin.Consensus
             IConnectionManager connectionManager,
             INodeStats nodeStats,
             INodeLifetime nodeLifetime,
-            ConsensusSettings consensusSettings)
+            ConsensusSettings consensusSettings,
+            IDateTimeProvider dateTimeProvider)
         {
             Guard.NotNull(chainedHeaderTree, nameof(chainedHeaderTree));
             Guard.NotNull(network, nameof(network));
@@ -162,6 +165,7 @@ namespace Stratis.Bitcoin.Consensus
             Guard.NotNull(connectionManager, nameof(connectionManager));
             Guard.NotNull(nodeStats, nameof(nodeStats));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
+            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
 
             this.network = network;
             this.chainState = chainState;
@@ -193,6 +197,7 @@ namespace Stratis.Bitcoin.Consensus
             this.ibdState = ibdState;
 
             this.blockPuller = blockPuller;
+            this.dateTimeProvider = dateTimeProvider;
 
             this.maxUnconsumedBlocksDataBytes = consensusSettings.MaxBlockMemoryInMB * 1024 * 1024;
 
@@ -865,13 +870,9 @@ namespace Stratis.Bitcoin.Consensus
             {
                 var badPeers = new List<int>();
 
-                // Ban the peers only in case block is invalid and not temporary rejected.
-                if (validationContext.RejectUntil == null)
+                lock (this.peerLock)
                 {
-                    lock (this.peerLock)
-                    {
-                        badPeers = this.chainedHeaderTree.PartialOrFullValidationFailed(blockToConnect.ChainedHeader);
-                    }
+                    badPeers = this.chainedHeaderTree.PartialOrFullValidationFailed(blockToConnect.ChainedHeader);
                 }
 
                 var failureResult = new ConnectBlocksResult(false)
@@ -882,6 +883,14 @@ namespace Stratis.Bitcoin.Consensus
                     Error = validationContext.Error,
                     PeersToBan = badPeers
                 };
+
+                if (validationContext.RejectUntil != null)
+                {
+                    failureResult.BanDurationSeconds = (int)(validationContext.RejectUntil.Value.ToUnixTimestamp() - this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp());
+
+                    if (failureResult.BanDurationSeconds < 1)
+                        failureResult.BanDurationSeconds = 1;
+                }
 
                 this.logger.LogTrace("(-)[FAILED]:'{0}'", failureResult);
                 return failureResult;
