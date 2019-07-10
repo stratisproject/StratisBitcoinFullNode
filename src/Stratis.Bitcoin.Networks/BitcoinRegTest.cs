@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Networks
                 [BitcoinBIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999)
             };
 
-            this.Consensus = new NBitcoin.Consensus(
+            this.Consensus = new Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: new ConsensusOptions(), // Default - set to Bitcoin params.
                 coinType: 0,
@@ -72,6 +72,7 @@ namespace Stratis.Bitcoin.Networks
                 proofOfWorkReward: Money.Coins(50),
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
+                targetSpacingSeconds: 0,
                 powAllowMinDifficultyBlocks: true,
                 posNoRetargeting: false,
                 powNoRetargeting: true,

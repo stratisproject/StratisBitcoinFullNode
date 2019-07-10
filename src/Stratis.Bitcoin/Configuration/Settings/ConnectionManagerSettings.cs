@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
                 this.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, this.Port);
             }
 
-            this.BanTimeSeconds = config.GetOrDefault<int>("bantime", (int)this.CalculateBanTime(nodeSettings.Network), this.logger);
+            this.BanTimeSeconds = config.GetOrDefault<int>("bantime", (int)CalculateBanTime(nodeSettings.Network), this.logger);
 
             // Listen option will default to true in case there are no connect option specified.
             // When running the node with connect option listen flag has to be explicitly passed to the node to enable listen flag.
@@ -202,7 +202,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#iprangefiltering=<0 or 1>");
         }
 
-        private int CalculateBanTime(Network network)
+        private static int CalculateBanTime(Network network)
         {
             int banTime = 0;
 
@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             // If the network's consensus options is a subclass of ConsensusOptions then it is not the base
             // and therefore we conclude that the network is NOT Proof-Of-Work.
             if (network.Consensus.Options.GetType().IsSubclassOf(typeof(ConsensusOptions)) || network.Consensus.Options.GetType() != typeof(ConsensusOptions))
-                banTime = (int)network.Consensus.Options.TargetSpacingSeconds * maxReorgLength / 2;
+                banTime = (int)network.Consensus.TargetSpacingSeconds * maxReorgLength / 2;
             else
                 banTime = (int)network.Consensus.PowTargetSpacing.TotalSeconds * maxReorgLength / 2;
 
@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
             builder.AppendLine($"-whitelist=<ip:port>      Whitelist peers having the given IP:port address, both inbound or outbound. Can be specified multiple times.");
             builder.AppendLine($"-externalip=<ip>          Specify your own public address.");
-            builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting. Default is calculated from the network's target spacing and max reorg length.");
+            builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting. The current value based on network configuration is {CalculateBanTime(network)} seconds.");
             builder.AppendLine($"-maxoutboundconnections=<number> The maximum number of outbound connections. Default {network.DefaultMaxOutboundConnections}.");
             builder.AppendLine($"-maxinboundconnections=<number> The maximum number of inbound connections. Default {network.DefaultMaxInboundConnections}.");
             builder.AppendLine($"-initialconnectiontarget=<number> The number of connections to be reached before a 1 second connection interval (initally 100ms). Default 1.");

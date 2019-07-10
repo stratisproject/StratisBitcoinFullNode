@@ -45,8 +45,7 @@ namespace Stratis.SmartContracts.Networks
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
-                maxStandardTxSigopsCost: 20_000 / 5,
-                targetSpacingSeconds: 64
+                maxStandardTxSigopsCost: 20_000 / 5
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -58,7 +57,7 @@ namespace Stratis.SmartContracts.Networks
 
             var bip9Deployments = new NoBIP9Deployments();
 
-            this.Consensus = new NBitcoin.Consensus(
+            this.Consensus = new Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
                 coinType: default(int),
@@ -81,6 +80,7 @@ namespace Stratis.SmartContracts.Networks
                 proofOfWorkReward: Money.Coins(50),
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
+                targetSpacingSeconds: 64,
                 powAllowMinDifficultyBlocks: true,
                 posNoRetargeting: true,
                 powNoRetargeting: true,

@@ -85,7 +85,6 @@ namespace Stratis.Bitcoin.Features.PoA
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
                 genesisFederationMembers: genesisFederationMembers,
-                targetSpacingSeconds: 16,
                 votingEnabled: true,
                 autoKickIdleMembers: true
             );
@@ -122,6 +121,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 proofOfWorkReward: Money.Coins(0),
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(60),
+                targetSpacingSeconds: 16,
                 powAllowMinDifficultyBlocks: false,
                 posNoRetargeting: true,
                 powNoRetargeting: true,

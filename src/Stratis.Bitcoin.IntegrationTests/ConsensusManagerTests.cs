@@ -45,8 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
-                maxStandardTxSigopsCost: 20_000 / 5,
-                targetSpacingSeconds: 64)
+                maxStandardTxSigopsCost: 20_000 / 5)
             {
             }
 

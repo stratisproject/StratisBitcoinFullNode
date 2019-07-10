@@ -81,7 +81,6 @@ namespace Stratis.Sidechains.Networks
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
                 genesisFederationMembers: genesisFederationMembers,
-                targetSpacingSeconds: 16,
                 votingEnabled: true,
                 autoKickIdleMembers: false
             );
@@ -118,6 +117,7 @@ namespace Stratis.Sidechains.Networks
                 proofOfWorkReward: Money.Coins(0),
                 powTargetTimespan: TimeSpan.FromDays(14), // two weeks
                 powTargetSpacing: TimeSpan.FromMinutes(1),
+                targetSpacingSeconds: 16,
                 powAllowMinDifficultyBlocks: false,
                 posNoRetargeting: true,
                 powNoRetargeting: true,

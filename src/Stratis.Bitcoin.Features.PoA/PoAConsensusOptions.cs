@@ -33,11 +33,10 @@ namespace Stratis.Bitcoin.Features.PoA
             int maxBlockSigopsCost,
             int maxStandardTxSigopsCost,
             List<IFederationMember> genesisFederationMembers,
-            uint targetSpacingSeconds,
             bool votingEnabled,
             bool autoKickIdleMembers,
             uint federationMemberMaxIdleTimeSeconds = 60 * 60 * 24 * 7)
-            : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost, targetSpacingSeconds)
+            : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
             this.GenesisFederationMembers = genesisFederationMembers;
             this.VotingEnabled = votingEnabled;

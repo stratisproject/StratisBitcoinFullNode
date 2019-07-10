@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             Block block = new Block();
             block.Transactions.Add(tx);
 
-            block.Header.Time = (uint)(height * (this.network.ConsensusOptions as PoAConsensusOptions).TargetSpacingSeconds);
+            block.Header.Time = (uint)(height * this.network.Consensus.TargetSpacingSeconds);
 
             block.UpdateMerkleRoot();
             block.GetHash();

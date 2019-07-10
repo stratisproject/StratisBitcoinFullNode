@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.PoA
                         continue;
                     }
 
-                    uint miningTimestamp =  await this.WaitUntilMiningSlotAsync().ConfigureAwait(false);
+                    uint miningTimestamp = await this.WaitUntilMiningSlotAsync().ConfigureAwait(false);
 
                     ChainedHeader chainedHeader = await this.MineBlockAtTimestampAsync(miningTimestamp).ConfigureAwait(false);
 
@@ -355,7 +355,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 hitCount++;
 
                 currentHeader = currentHeader.Previous;
-                currentTime -= this.network.ConsensusOptions.TargetSpacingSeconds;
+                currentTime -= this.network.Consensus.TargetSpacingSeconds;
 
                 if (currentHeader.Height == 0)
                     break;
@@ -363,7 +363,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 while ((currentHeader.Header.Time != currentTime) && (depthReached <= maxDepth))
                 {
                     log.Append("MISS-");
-                    currentTime -= this.network.ConsensusOptions.TargetSpacingSeconds;
+                    currentTime -= this.network.Consensus.TargetSpacingSeconds;
                     depthReached++;
                 }
 
@@ -374,7 +374,7 @@ namespace Stratis.Bitcoin.Features.PoA
             log.Append("...");
             log.AppendLine();
             log.AppendLine($"Block producers hits      : {hitCount} of {maxDepth}({(((float)hitCount / (float)maxDepth)).ToString("P2")})");
-            log.AppendLine($"Block producers idle time : {TimeSpan.FromSeconds(this.network.ConsensusOptions.TargetSpacingSeconds * (maxDepth - hitCount)).ToString(@"hh\:mm\:ss")}");
+            log.AppendLine($"Block producers idle time : {TimeSpan.FromSeconds(this.network.Consensus.TargetSpacingSeconds * (maxDepth - hitCount)).ToString(@"hh\:mm\:ss")}");
             log.AppendLine();
         }
 

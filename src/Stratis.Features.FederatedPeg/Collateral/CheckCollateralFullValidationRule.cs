@@ -40,7 +40,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
             this.slotsManager = slotsManager;
             this.dateTime = dateTime;
 
-            this.collateralCheckBanDurationSeconds = (int)(this.network.Consensus.Options as PoAConsensusOptions).TargetSpacingSeconds / 2;
+            this.collateralCheckBanDurationSeconds = (int)(this.network.Consensus.TargetSpacingSeconds / 2);
         }
 
         public override Task RunAsync(RuleContext context)

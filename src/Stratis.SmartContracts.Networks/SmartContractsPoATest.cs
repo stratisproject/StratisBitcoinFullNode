@@ -61,7 +61,6 @@ namespace Stratis.SmartContracts.Networks
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
                 genesisFederationMembers: genesisFederationMembers,
-                targetSpacingSeconds: 60,
                 votingEnabled: true,
                 autoKickIdleMembers: false
             );
@@ -98,6 +97,7 @@ namespace Stratis.SmartContracts.Networks
                 proofOfWorkReward: Money.Coins(0),
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(60),
+                targetSpacingSeconds: 60,
                 powAllowMinDifficultyBlocks: false,
                 posNoRetargeting: true,
                 powNoRetargeting: true,
