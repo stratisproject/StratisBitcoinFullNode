@@ -198,6 +198,27 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
+        /// <inheritdoc />
+        public bool MatchRemoteIPAddress(IPAddress ip, int? port = null)
+        {
+            bool isConnectedOrHandShaked = (this.State == NetworkPeerState.Connected || this.State == NetworkPeerState.HandShaked);
+
+            bool isAddressMatching = this.RemoteSocketAddress.Equals(ip)
+                                     && (!port.HasValue || port == this.RemoteSocketPort);
+
+            bool isPeerVersionAddressMatching = this.PeerVersion?.AddressFrom != null
+                                                && this.PeerVersion.AddressFrom.Address.Equals(ip)
+                                                && (!port.HasValue || port == this.PeerVersion.AddressFrom.Port);
+
+            return (isConnectedOrHandShaked && isAddressMatching) || isPeerVersionAddressMatching;
+        }
+
+        /// <inheritdoc />
+        public bool MatchRemoteEndPoint(IPEndPoint ep, bool matchPort = true)
+        {
+            return this.MatchRemoteIPAddress(ep.Address, matchPort ? ep.Port : (int?)null);
+        }
+
         /// <summary><c>true</c> to advertise "addr" message with our external endpoint to the peer when passing to <see cref="NetworkPeerState.HandShaked"/> state.</summary>
         private bool advertize;
 
