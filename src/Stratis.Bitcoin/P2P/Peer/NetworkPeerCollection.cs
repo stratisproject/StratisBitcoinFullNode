@@ -99,28 +99,14 @@ namespace Stratis.Bitcoin.P2P.Peer
         public List<INetworkPeer> FindByIp(IPAddress ip)
         {
             ip = ip.EnsureIPv6();
-            return this.networkPeers.Where(n => Match(ip, null, n)).ToList();
+            return this.networkPeers.Where(n => n.MatchRemoteIPAddress(ip)).ToList();
         }
 
         public INetworkPeer FindByEndpoint(IPEndPoint endpoint)
         {
             IPAddress ip = endpoint.Address.EnsureIPv6();
             int port = endpoint.Port;
-            return this.networkPeers.FirstOrDefault(n => Match(ip, port, n));
-        }
-
-        private static bool Match(IPAddress ip, int? port, INetworkPeer peer)
-        {
-            bool isConnectedOrHandShaked = (peer.State == NetworkPeerState.Connected || peer.State == NetworkPeerState.HandShaked);
-
-            bool isAddressMatching = peer.RemoteSocketAddress.Equals(ip)
-                                     && (!port.HasValue || port == peer.RemoteSocketPort);
-
-            bool isPeerVersionAddressMatching = peer.PeerVersion?.AddressFrom != null
-                                                && peer.PeerVersion.AddressFrom.Address.Equals(ip)
-                                                && (!port.HasValue || port == peer.PeerVersion.AddressFrom.Port);
-
-            return (isConnectedOrHandShaked && isAddressMatching) || isPeerVersionAddressMatching;
+            return this.networkPeers.FirstOrDefault(n => n.MatchRemoteIPAddress(ip, port));
         }
 
         public IEnumerator<INetworkPeer> GetEnumerator()

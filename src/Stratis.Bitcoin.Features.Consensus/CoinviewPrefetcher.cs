@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 this.coinview.FetchCoins(idsToFetch, cancellation);
 
-                this.logger.LogTrace("{0} ids were pre-fetched.", idsToFetch.Length);
+                this.logger.LogDebug("{0} ids were pre-fetched.", idsToFetch.Length);
             }
 
             return Task.CompletedTask;

@@ -507,7 +507,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                                             if (!this.ValidateTransaction(transaction))
                                             {
-                                                this.logger.LogTrace("Suspending transfer for deposit '{0}' to retry invalid transaction later.", deposit.Id);
+                                                this.logger.LogDebug("Suspending transfer for deposit '{0}' to retry invalid transaction later.", deposit.Id);
 
                                                 this.federationWalletManager.RemoveWithdrawalTransactions(deposit.Id);
                                                 haveSuspendedTransfers = true;
@@ -1329,6 +1329,32 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 return result;
             }
+        }
+
+        /// <inheritdoc />
+        public List<Transaction> CompletedWithdrawals(IEnumerable<Transaction> transactionsToCheck)
+        {
+            var res = new List<Transaction>();
+
+            lock (this.lockObj)
+            {
+                HashSet<uint256> inProgress = this.depositsIdsByStatus[CrossChainTransferStatus.Partial].Union(
+                    this.depositsIdsByStatus[CrossChainTransferStatus.FullySigned].Union(
+                    this.depositsIdsByStatus[CrossChainTransferStatus.Suspended])).ToHashSet();
+
+                foreach (Transaction tx in transactionsToCheck)
+                {
+                    IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(tx, null, 0);
+
+                    // Transactions containing withdrawals that are not in progress.
+                    if (withdrawal != null && !inProgress.Contains(withdrawal.DepositId))
+                    {
+                        res.Add(tx);
+                    }
+                }
+            }
+
+            return res;
         }
 
         /// <summary>

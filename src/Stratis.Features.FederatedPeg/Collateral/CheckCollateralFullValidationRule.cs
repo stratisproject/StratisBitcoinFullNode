@@ -60,7 +60,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
                 // Every PoA miner on sidechain network is enforced to include commitment data to the blocks mined.
                 // Not having a commitment always should result in a permanent ban of the block.
                 this.Logger.LogTrace("(-)[NO_COMMITMENT_FOUND]");
-                PoAConsensusErrors.InvalidCollateralAmount.Throw();
+                PoAConsensusErrors.InvalidCollateralAmountNoCommitment.Throw();
             }
 
             int commitmentHeight = this.encoder.Decode(rawCommitmentData);
@@ -77,8 +77,10 @@ namespace Stratis.Features.FederatedPeg.Collateral
                 // sufficiently old.
                 context.ValidationContext.RejectUntil = this.dateTime.GetUtcNow() + TimeSpan.FromSeconds(this.collateralCheckBanDurationSeconds);
 
+                this.Logger.LogDebug("commitmentHeight is {0}, counterChainHeight is {1}.", commitmentHeight, counterChainHeight);
+
                 this.Logger.LogTrace("(-)[COMMITMENT_TOO_NEW]");
-                PoAConsensusErrors.InvalidCollateralAmount.Throw();
+                PoAConsensusErrors.InvalidCollateralAmountCommitmentTooNew.Throw();
             }
 
             if (!this.collateralChecker.CheckCollateral(federationMember, commitmentHeight))

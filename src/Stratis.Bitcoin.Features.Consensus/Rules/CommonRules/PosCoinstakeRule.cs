@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 // Check transaction timestamp.
                 if (block.Header.Time < transaction.Time)
                 {
-                    this.Logger.LogTrace("Block contains transaction with timestamp {0}, which is greater than block's timestamp {1}.", transaction.Time, block.Header.Time);
+                    this.Logger.LogDebug("Block contains transaction with timestamp {0}, which is greater than block's timestamp {1}.", transaction.Time, block.Header.Time);
                     this.Logger.LogTrace("(-)[TX_TIME_MISMATCH]");
                     ConsensusErrors.BlockTimeBeforeTrx.Throw();
                 }
