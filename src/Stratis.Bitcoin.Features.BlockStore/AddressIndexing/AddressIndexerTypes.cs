@@ -30,9 +30,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
     public class AddressIndexerRewindData
     {
-        [BsonId(false)]
         public int BlockHeight { get; set; }
 
+        [BsonId(false)]
         public string BlockHash { get; set; }
 
         public List<OutPointData> SpentOutputs { get; set; }
