@@ -34,7 +34,6 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
                 maxBlockSigopsCost: baseOptions.MaxBlockSigopsCost,
                 maxStandardTxSigopsCost: baseOptions.MaxStandardTxSigopsCost,
                 genesisFederationMembers: genesisFederationMembers,
-                targetSpacingSeconds: 60,
                 votingEnabled: baseOptions.VotingEnabled,
                 autoKickIdleMembers: false,
                 federationMemberMaxIdleTimeSeconds: baseOptions.FederationMemberMaxIdleTimeSeconds

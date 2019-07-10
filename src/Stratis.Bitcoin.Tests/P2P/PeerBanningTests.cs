@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         {
             var nodeSettings = NodeSettings.Default(this.Network);
             var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
-            var calculatedBanTime = this.Network.Consensus.Options.TargetSpacingSeconds * this.Network.Consensus.MaxReorgLength / 2;
+            var calculatedBanTime = this.Network.Consensus.TargetSpacingSeconds * this.Network.Consensus.MaxReorgLength / 2;
             Assert.Equal((int)calculatedBanTime, connectionManagerSettings.BanTimeSeconds);
         }
 

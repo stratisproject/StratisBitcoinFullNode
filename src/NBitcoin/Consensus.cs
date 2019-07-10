@@ -123,8 +123,8 @@ namespace NBitcoin
             Money premineReward,
             Money proofOfWorkReward,
             TimeSpan powTargetTimespan,
-            uint targetSpacingSeconds,
             TimeSpan powTargetSpacing,
+            uint targetSpacingSeconds,
             bool powAllowMinDifficultyBlocks,
             bool posNoRetargeting,
             bool powNoRetargeting,
@@ -157,8 +157,8 @@ namespace NBitcoin
             this.BIP34Hash = bip34Hash;
             this.PowLimit = powLimit;
             this.PowTargetTimespan = powTargetTimespan;
-            this.TargetSpacingSeconds = targetSpacingSeconds;
             this.PowTargetSpacing = powTargetSpacing;
+            this.TargetSpacingSeconds = targetSpacingSeconds;
             this.PowAllowMinDifficultyBlocks = powAllowMinDifficultyBlocks;
             this.PosNoRetargeting = posNoRetargeting;
             this.PowNoRetargeting = powNoRetargeting;

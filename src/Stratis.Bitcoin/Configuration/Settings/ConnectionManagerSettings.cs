@@ -209,12 +209,10 @@ namespace Stratis.Bitcoin.Configuration.Settings
             // Ensure that the network's MaxReorgLength always has a value.
             int maxReorgLength = network.Consensus.MaxReorgLength == 0 ? Network.FallBackMaxReorg : (int)network.Consensus.MaxReorgLength;
 
-            // If the network's consensus options is a subclass of ConsensusOptions then it is not the base
-            // and therefore we conclude that the network is NOT Proof-Of-Work.
-            if (network.Consensus.Options.GetType().IsSubclassOf(typeof(ConsensusOptions)) || network.Consensus.Options.GetType() != typeof(ConsensusOptions))
-                banTime = (int)network.Consensus.TargetSpacingSeconds * maxReorgLength / 2;
-            else
+            if (network.IsBitcoin())
                 banTime = (int)network.Consensus.PowTargetSpacing.TotalSeconds * maxReorgLength / 2;
+            else
+                banTime = (int)network.Consensus.TargetSpacingSeconds * maxReorgLength / 2;
 
             return banTime;
         }
