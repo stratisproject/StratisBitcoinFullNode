@@ -12,29 +12,17 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
     /// <seealso cref="Stratis.Bitcoin.Consensus.Rules.HeaderValidationConsensusRule" />
     public class HeaderTimeChecksPoARule : HeaderValidationConsensusRule
     {
-        /// <summary>
-        /// This represents the amount of time in seconds that nodes could think their time differs by even when it's the same.
-        /// This is due to latency, processing times etc.
-        /// </summary>
-        private const int DriftVarianceReduction = 3;
-
-        /// <summary>
-        /// How far into the future we allow incoming blocks to be.
-        /// </summary>
-        private long maxFutureDriftSeconds;
+        /// <summary>Up to how many seconds headers's timestamp can be in the future to be considered valid.</summary>
+        public const int MaxFutureDriftSeconds = 5;
 
         private ISlotsManager slotsManager;
-
 
         /// <inheritdoc />
         public override void Initialize()
         {
             base.Initialize();
 
-            var parent = this.Parent as PoAConsensusRuleEngine;
-
-            this.slotsManager = parent.SlotsManager;
-            this.maxFutureDriftSeconds = ((parent.Network as PoANetwork).ConsensusOptions.TargetSpacingSeconds / 2) - DriftVarianceReduction;
+            this.slotsManager = (this.Parent as PoAConsensusRuleEngine).SlotsManager;
         }
 
         /// <inheritdoc />
@@ -50,7 +38,7 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
             }
 
             // Timestamp shouldn't be more than current time plus max future drift.
-            long maxValidTime = this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp() + this.maxFutureDriftSeconds;
+            long maxValidTime = this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp() + MaxFutureDriftSeconds;
             if (chainedHeader.Header.Time > maxValidTime)
             {
                 this.Logger.LogWarning("Peer presented header with timestamp that is too far in to the future. Header was ignored." +
