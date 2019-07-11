@@ -884,6 +884,7 @@ namespace Stratis.Bitcoin.Consensus
                     PeersToBan = badPeers
                 };
 
+                // If set, use the block reject until time as the ban duration instead of the default 10 minute ban.
                 if (validationContext.RejectUntil != null)
                 {
                     failureResult.BanDurationSeconds = (int)(validationContext.RejectUntil.Value.ToUnixTimestamp() - this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp());
