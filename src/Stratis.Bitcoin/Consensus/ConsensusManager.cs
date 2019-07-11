@@ -1380,7 +1380,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (this.isIbd != (tipAge >= maxTipAge))
                     timeToIBD = "0 seconds";
 
-                log.AppendLine($"Tip Age: { TimeSpan.FromSeconds(tipAge).ToString(@"hh\:mm\:ss") } (maximum is { TimeSpan.FromSeconds(maxTipAge).ToString(@"hh\:mm\:ss") }");
+                log.AppendLine($"Tip Age: { TimeSpan.FromSeconds(tipAge).ToString(@"hh\:mm\:ss") } (maximum is { TimeSpan.FromSeconds(maxTipAge).ToString(@"hh\:mm\:ss") })");
                 log.AppendLine($"IBD Stage: { (this.isIbd ? "Yes" : "No") }. Current expected time to remain in this stage: { timeToIBD }");
 
                 log.AppendLine($"Chained header tree size: {this.chainedHeaderTree.ChainedBlocksDataBytes.BytesToMegaBytes()} MB");
