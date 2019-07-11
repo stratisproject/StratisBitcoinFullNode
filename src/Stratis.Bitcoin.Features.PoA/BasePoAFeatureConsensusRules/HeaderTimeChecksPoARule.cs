@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
             var parent = this.Parent as PoAConsensusRuleEngine;
 
             this.slotsManager = parent.SlotsManager;
-            this.maxFutureDriftSeconds = (parent.Network as PoANetwork).ConsensusOptions.TargetSpacingSeconds - 1;
+            this.maxFutureDriftSeconds = (parent.Network as PoANetwork).ConsensusOptions.TargetSpacingSeconds / 2;
         }
 
         /// <inheritdoc />
