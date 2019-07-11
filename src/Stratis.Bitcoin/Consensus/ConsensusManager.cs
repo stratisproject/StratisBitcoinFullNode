@@ -121,6 +121,8 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly ConsensusManagerPerformanceCounter performanceCounter;
 
+        private readonly ConsensusSettings consensusSettings;
+
         private bool isIbd;
 
         internal ConsensusManager(
@@ -162,6 +164,7 @@ namespace Stratis.Bitcoin.Consensus
             Guard.NotNull(connectionManager, nameof(connectionManager));
             Guard.NotNull(nodeStats, nameof(nodeStats));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
+            Guard.NotNull(consensusSettings, nameof(consensusSettings));
 
             this.network = network;
             this.chainState = chainState;
@@ -194,6 +197,7 @@ namespace Stratis.Bitcoin.Consensus
 
             this.blockPuller = blockPuller;
 
+            this.consensusSettings = consensusSettings;
             this.maxUnconsumedBlocksDataBytes = consensusSettings.MaxBlockMemoryInMB * 1024 * 1024;
 
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
@@ -1369,7 +1373,15 @@ namespace Stratis.Bitcoin.Consensus
 
             lock (this.peerLock)
             {
-                if (this.isIbd) log.AppendLine("IBD Stage");
+                long currentTime = DateTimeProvider.Default.GetTime();
+                long tipAge = currentTime - this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds();
+                long maxTipAge = this.consensusSettings.MaxTipAge;
+                string timeToIBD = TimeSpan.FromSeconds(Math.Abs(maxTipAge - tipAge)).ToString(@"hh\:mm\:ss");
+                if (this.isIbd != (tipAge >= maxTipAge))
+                    timeToIBD = "0 seconds";
+
+                log.AppendLine($"Tip Age: { TimeSpan.FromSeconds(tipAge).ToString(@"hh\:mm\:ss") } (maximum is { TimeSpan.FromSeconds(maxTipAge).ToString(@"hh\:mm\:ss") }");
+                log.AppendLine($"IBD Stage: { (this.isIbd ? "Yes" : "No") }. Current expected time to remain in this stage: { timeToIBD }");
 
                 log.AppendLine($"Chained header tree size: {this.chainedHeaderTree.ChainedBlocksDataBytes.BytesToMegaBytes()} MB");
 
