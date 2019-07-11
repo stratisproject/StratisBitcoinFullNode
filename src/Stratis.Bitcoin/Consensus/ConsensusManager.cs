@@ -1378,7 +1378,7 @@ namespace Stratis.Bitcoin.Consensus
                 long maxTipAge = this.consensusSettings.MaxTipAge;
 
                 log.AppendLine($"Tip Age: { TimeSpan.FromSeconds(tipAge).ToString(@"hh\:mm\:ss") } (maximum is { TimeSpan.FromSeconds(maxTipAge).ToString(@"hh\:mm\:ss") })");
-                log.AppendLine($"IBD Stage: { (this.isIbd ? "Yes" : "No") }");
+                log.AppendLine($"In IBD Stage: { (this.isIbd ? "Yes" : "No") }");
 
                 log.AppendLine($"Chained header tree size: {this.chainedHeaderTree.ChainedBlocksDataBytes.BytesToMegaBytes()} MB");
 
