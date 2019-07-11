@@ -30,7 +30,7 @@ namespace Stratis.Sidechains.Networks
             this.DefaultMaxInboundConnections = 109;
             this.DefaultRPCPort = 16175;
             this.DefaultAPIPort = 37223;
-            this.MaxTipAge = 30 * 60; // Node will be considered in IBD when blocks are more than 30 minutes away.
+            this.MaxTipAge = 46 * 16; // One full round. 12 mins 16 seconds.
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
             this.MinRelayTxFee = 10000;
