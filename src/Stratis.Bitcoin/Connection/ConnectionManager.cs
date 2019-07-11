@@ -407,13 +407,10 @@ namespace Stratis.Bitcoin.Connection
             }
 
             // Don't disconnect if this peer is in -addnode or -connect.
-            foreach (IPEndPoint addNodeEndPoint in this.ConnectionSettings.AddNode.Union(this.ConnectionSettings.Connect))
+            if (this.ConnectionSettings.AddNode.Union(this.ConnectionSettings.Connect).Any(ep => peer.PeerEndPoint.MatchIpOnly(ep)))
             {
-                if (peer.PeerEndPoint.Address.Equals(addNodeEndPoint.Address))
-                {
-                    this.logger.LogTrace("(-)[ADD_NODE_OR_CONNECT]:false");
-                    return false;
-                }
+                this.logger.LogTrace("(-)[ADD_NODE_OR_CONNECT]:false");
+                return false;
             }
 
             // Don't disconnect if this peer is in the exclude from IP range filtering group.

@@ -17,7 +17,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// <summary>
         /// Ip Endpoints for the other nodes in the federation.
         /// </summary>
-        IEnumerable<IPEndPoint> FederationNodeIpEndPoints { get; }
+        HashSet<IPEndPoint> FederationNodeIpEndPoints { get; }
 
         /// <summary>
         /// Public keys of other federation members.

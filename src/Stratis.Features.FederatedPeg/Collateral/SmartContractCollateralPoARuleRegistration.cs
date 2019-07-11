@@ -23,20 +23,17 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
         private readonly ICollateralChecker collateralChecker;
 
-        private readonly CheckCollateralFullValidationRule checkCollateralFullValidationRule;
-
         private readonly IDateTimeProvider dateTime;
 
         public SmartContractCollateralPoARuleRegistration(Network network, IStateRepositoryRoot stateRepositoryRoot, IContractExecutorFactory executorFactory,
             ICallDataSerializer callDataSerializer, ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView,
             IEnumerable<IContractTransactionPartialValidationRule> partialTxValidationRules, IEnumerable<IContractTransactionFullValidationRule> fullTxValidationRules,
-            IInitialBlockDownloadState ibdState, ISlotsManager slotsManager, ICollateralChecker collateralChecker, IDateTimeProvider dateTime, CheckCollateralFullValidationRule checkCollateralFullValidationRule)
+            IInitialBlockDownloadState ibdState, ISlotsManager slotsManager, ICollateralChecker collateralChecker, IDateTimeProvider dateTime)
         : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView, partialTxValidationRules, fullTxValidationRules)
         {
             this.ibdState = ibdState;
             this.slotsManager = slotsManager;
             this.collateralChecker = collateralChecker;
-            this.checkCollateralFullValidationRule = checkCollateralFullValidationRule;
             this.dateTime = dateTime;
         }
 
@@ -48,7 +45,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
             // see https://dev.azure.com/Stratisplatformuk/StratisBitcoinFullNode/_workitems/edit/3770
             // TODO: re-design how rules gets called, which order they have and prevent a rule to change internal service statuses (rules should just check)
             int saveCoinviewRulePosition = consensus.FullValidationRules.FindIndex(c => c is SaveCoinviewRule);
-            consensus.FullValidationRules.Insert(saveCoinviewRulePosition, this.checkCollateralFullValidationRule);
+            consensus.FullValidationRules.Insert(saveCoinviewRulePosition, new CheckCollateralFullValidationRule(this.ibdState, this.collateralChecker, this.slotsManager, this.dateTime, this.network));
         }
     }
 }

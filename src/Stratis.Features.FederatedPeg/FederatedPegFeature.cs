@@ -79,6 +79,8 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly IPartialTransactionRequester partialTransactionRequester;
 
+        private readonly MempoolCleaner mempoolCleaner;
+
         private readonly ISignedMultisigTransactionBroadcaster signedBroadcaster;
 
         private readonly IMaturedBlocksSyncManager maturedBlocksSyncManager;
@@ -101,6 +103,7 @@ namespace Stratis.Features.FederatedPeg
             INodeStats nodeStats,
             ICrossChainTransferStore crossChainTransferStore,
             IPartialTransactionRequester partialTransactionRequester,
+            MempoolCleaner mempoolCleaner,
             ISignedMultisigTransactionBroadcaster signedBroadcaster,
             IMaturedBlocksSyncManager maturedBlocksSyncManager,
             IWithdrawalHistoryProvider withdrawalHistoryProvider,
@@ -117,6 +120,7 @@ namespace Stratis.Features.FederatedPeg
             this.network = network;
             this.crossChainTransferStore = crossChainTransferStore;
             this.partialTransactionRequester = partialTransactionRequester;
+            this.mempoolCleaner = mempoolCleaner;
             this.maturedBlocksSyncManager = maturedBlocksSyncManager;
             this.withdrawalHistoryProvider = withdrawalHistoryProvider;
             this.signedBroadcaster = signedBroadcaster;
@@ -151,6 +155,9 @@ namespace Stratis.Features.FederatedPeg
 
             // Query our database for partially-signed transactions and send them around to be signed every N seconds.
             this.partialTransactionRequester.Start();
+
+            // Cleans the mempool periodically.
+            this.mempoolCleaner.Start();
 
             // Query our database for fully-signed transactions and broadcast them every N seconds.
             this.signedBroadcaster.Start();
@@ -380,6 +387,7 @@ namespace Stratis.Features.FederatedPeg
                         services.AddSingleton<ICrossChainTransferStore, CrossChainTransferStore>();
                         services.AddSingleton<ISignedMultisigTransactionBroadcaster, SignedMultisigTransactionBroadcaster>();
                         services.AddSingleton<IPartialTransactionRequester, PartialTransactionRequester>();
+                        services.AddSingleton<MempoolCleaner>();
                         services.AddSingleton<IFederationGatewayClient, FederationGatewayClient>();
                         services.AddSingleton<IMaturedBlocksSyncManager, MaturedBlocksSyncManager>();
                         services.AddSingleton<IWithdrawalHistoryProvider, WithdrawalHistoryProvider>();
