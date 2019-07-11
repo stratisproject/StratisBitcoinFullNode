@@ -63,6 +63,31 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             Assert.Single(this.votingManager.GetFinishedPolls());
         }
 
+        [Fact]
+        public void VoteAfterPollFinished()
+        {
+            var votingData = new VotingData()
+            {
+                Key = VoteKey.AddFederationMember,
+                Data = RandomUtils.GetBytes(20)
+            };
+
+            int votesRequired = (this.federationManager.GetFederationMembers().Count / 2) + 1;
+
+            for (int i = 0; i < votesRequired; i++)
+            {
+                this.TriggerOnBlockConnected(this.CreateBlockWithVotingData(new List<VotingData>() { votingData }, i + 1));
+            }
+
+            Assert.Single(this.votingManager.GetFinishedPolls());
+
+            ChainedHeaderBlock blockToDisconnect = this.CreateBlockWithVotingData(new List<VotingData>() {votingData}, votesRequired + 1);
+
+            this.TriggerOnBlockConnected(blockToDisconnect);
+
+            this.TriggerOnBlockDisconnected(blockToDisconnect);
+        }
+
         private ChainedHeaderBlock CreateBlockWithVotingData(List<VotingData> data, int height)
         {
             var tx = new Transaction();

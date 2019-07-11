@@ -274,7 +274,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                 foreach (VotingData votingData in votingDataList)
                 {
                     // Poll that was finished in the block being disconnected.
-                    Poll targetPoll = this.polls.Single(x => x.VotingData == votingData);
+                    Poll targetPoll = this.polls.SingleOrDefault(x => x.VotingData == votingData && x.IsPending)
+                        ?? this.polls.Single(x=> x.VotingData == votingData);
 
                     this.logger.LogDebug("Reverting poll voting in favor: '{0}'.", targetPoll);
 
