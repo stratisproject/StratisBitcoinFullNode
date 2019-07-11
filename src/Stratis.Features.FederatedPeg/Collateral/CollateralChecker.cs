@@ -158,11 +158,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
             if (addressesToCheck.Count == 0)
             {
-                this.collateralUpdated = true;
-
                 this.logger.LogInformation("None of the federation members has a collateral requirement configured.");
-                this.logger.LogTrace("(-)[NOTHING_TO_CHECK]:true");
-                return;
             }
 
             this.logger.LogDebug("Addresses to check {0}.", addressesToCheck.Count);
