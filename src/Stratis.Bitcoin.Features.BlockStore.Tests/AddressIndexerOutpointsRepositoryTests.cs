@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             Assert.False(this.repository.TryGetOutPointData(outPoint, out OutPointData dataOut));
 
-            this.repository.RewindDataAboveHeight(rewindData.BlockHeight - 1);
+            this.repository.Rewind(rewindDataBlockHash);
 
             Assert.True(this.repository.TryGetOutPointData(outPoint, out dataOut));
 
@@ -83,6 +83,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             Assert.False(this.repository.TryGetOutPointData(outPoint, out dataOut));
 
             this.repository.PurgeOldRewindData(rewindData.BlockHeight + 1);
+
+            Assert.Throws<Exception>(() => this.repository.Rewind(rewindDataBlockHash));
 
             Assert.False(this.repository.TryGetOutPointData(outPoint, out dataOut));
         }

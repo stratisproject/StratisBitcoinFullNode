@@ -79,7 +79,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
             this.asyncProvider = asyncProvider;
             this.isDisposing = false;
 
-            this.maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(settings.CounterChainNetwork);
+            this.maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(network);
             this.cancellationToken = nodeLifetime.ApplicationStopping;
             this.locker = new object();
             this.balancesDataByAddress = new Dictionary<string, AddressIndexerData>();
