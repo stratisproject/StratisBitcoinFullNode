@@ -46,7 +46,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
         /// <summary>Protects access to <see cref="balancesDataByAddress"/> and <see cref="counterChainConsensusTipHeight"/>.</summary>
         private readonly object locker;
 
-        private readonly CancellationToken cancellationToken;
+        private readonly CancellationTokenSource cancellationSource;
 
         private SubscriptionToken memberAddedToken, memberKickedToken;
 
@@ -69,18 +69,15 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
         private bool collateralUpdated;
 
-        private bool isDisposing;
-
         public CollateralChecker(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, ICounterChainSettings settings,
             IFederationManager federationManager, ISignals signals, Network network, IAsyncProvider asyncProvider, INodeLifetime nodeLifetime)
         {
             this.federationManager = federationManager;
             this.signals = signals;
             this.asyncProvider = asyncProvider;
-            this.isDisposing = false;
 
             this.maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(network);
-            this.cancellationToken = nodeLifetime.ApplicationStopping;
+            this.cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(nodeLifetime.ApplicationStopping);
             this.locker = new object();
             this.balancesDataByAddress = new Dictionary<string, AddressIndexerData>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -99,9 +96,9 @@ namespace Stratis.Features.FederatedPeg.Collateral
                 this.balancesDataByAddress.Add(federationMember.CollateralMainchainAddress, null);
             }
 
-            while (!this.cancellationToken.IsCancellationRequested)
+            while (!this.cancellationSource.Token.IsCancellationRequested)
             {
-                await this.UpdateCollateralInfoAsync(this.cancellationToken).ConfigureAwait(false);
+                await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
 
                 if (this.collateralUpdated)
                     break;
@@ -128,9 +125,9 @@ namespace Stratis.Features.FederatedPeg.Collateral
         /// <summary>Continuously updates info about money deposited to fed member's addresses.</summary>
         private async Task UpdateCollateralInfoContinuouslyAsync()
         {
-            while (!this.cancellationToken.IsCancellationRequested && !this.isDisposing)
+            while (!this.cancellationSource.Token.IsCancellationRequested)
             {
-                await this.UpdateCollateralInfoAsync(this.cancellationToken).ConfigureAwait(false);
+                await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
 
                 await this.DelayCollateralCheckAsync().ConfigureAwait(false);
             }
@@ -143,7 +140,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
         {
             try
             {
-                await Task.Delay(CollateralUpdateIntervalSeconds * 1000, this.cancellationToken).ConfigureAwait(false);
+                await Task.Delay(CollateralUpdateIntervalSeconds * 1000, this.cancellationSource.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -285,7 +282,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
             this.signals.Unsubscribe(this.memberAddedToken);
             this.signals.Unsubscribe(this.memberKickedToken);
 
-            this.isDisposing = true;
+            this.cancellationSource.Cancel();
 
             this.updateCollateralContinuouslyTask?.GetAwaiter().GetResult();
         }
