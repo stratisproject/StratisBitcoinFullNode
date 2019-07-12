@@ -70,7 +70,7 @@ namespace NBitcoin
         /// This value should be calculated as (TargetSpacingSeconds * maxReorgLength) / 2.
         /// </para>
         /// </summary>
-        public int BanTimeSeconds { get; protected set; }
+        public int DefaultBanTimeSeconds { get; protected set; }
 
         /// <summary>
         /// Maximal value for the calculated time offset.

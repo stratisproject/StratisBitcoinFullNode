@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Networks
             this.DefaultRPCPort = 18332;
             this.DefaultAPIPort = 38220;
             this.CoinTicker = "TBTC";
-            this.BanTimeSeconds = 60 * 60 * 24; // 24 Hours
+            this.DefaultBanTimeSeconds = 60 * 60 * 24; // 24 Hours
 
             // Create the genesis block.
             this.GenesisTime = 1296688602;
