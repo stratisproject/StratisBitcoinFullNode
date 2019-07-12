@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
                 if (blockCount <= 0)
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, "Invalid request", "The number of blocks to mine must be higher than zero.");
 
-                this.logger.LogTrace("({0}:{1})", nameof(request.BlockCount), blockCount);
+                this.logger.LogDebug("({0}:{1})", nameof(request.BlockCount), blockCount);
 
                 WalletAccountReference accountReference = this.GetAccount();
                 HdAddress address = this.walletManager.GetUnusedAddress(accountReference);

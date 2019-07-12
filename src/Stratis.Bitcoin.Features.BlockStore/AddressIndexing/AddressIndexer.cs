@@ -522,6 +522,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
 
         /// <inheritdoc />
+        /// <remarks>This is currently not in use but will be required for exchange integration.</remarks>
         public AddressBalancesResult GetAddressBalances(string[] addresses, int minConfirmations = 1)
         {
             var (isQueryable, reason) = this.IsQueryable();
@@ -541,7 +542,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     long balance = indexData.BalanceChanges.Where(x => x.BalanceChangedHeight <= maxAllowedHeight).CalculateBalance();
 
-                    this.logger.LogTrace("Address: {0}, balance: {1}.", address, balance);
+                    this.logger.LogDebug("Address: {0}, balance: {1}.", address, balance);
                     result.Balances.Add(new AddressBalanceResult(address, new Money(balance)));
                 }
 

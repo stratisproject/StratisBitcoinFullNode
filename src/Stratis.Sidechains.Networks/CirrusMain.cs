@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.SmartContracts.Networks.Policies;
@@ -31,7 +30,7 @@ namespace Stratis.Sidechains.Networks
             this.DefaultMaxInboundConnections = 109;
             this.DefaultRPCPort = 16175;
             this.DefaultAPIPort = 37223;
-            this.MaxTipAge = 2 * 60 * 60;
+            this.MaxTipAge = 30 * 60; // Node will be considered in IBD when blocks are more than 30 minutes away.
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
             this.MinRelayTxFee = 10000;

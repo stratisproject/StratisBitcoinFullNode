@@ -4,13 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.AsyncWork;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.InputConsolidation;
 using Stratis.Features.FederatedPeg.Interfaces;
-using Stratis.Features.FederatedPeg.NetworkHelpers;
 using Stratis.Features.FederatedPeg.Payloads;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
@@ -80,7 +77,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         public async Task BroadcastPartialTransactionsAsync() {
             if (this.ibdState.IsInitialBlockDownload() || !this.federationWalletManager.IsFederationWalletActive()) {
-                this.logger.LogTrace("Federation wallet isn't active or in IBD. Not attempting to request transaction signatures.");
+                this.logger.LogDebug("Federation wallet isn't active or in IBD. Not attempting to request transaction signatures.");
                 return;
             }
 
