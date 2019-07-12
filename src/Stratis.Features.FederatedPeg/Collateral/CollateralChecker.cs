@@ -96,7 +96,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
                 this.balancesDataByAddress.Add(federationMember.CollateralMainchainAddress, null);
             }
 
-            while (!this.cancellationSource.Token.IsCancellationRequested)
+            while (!this.cancellationSource.IsCancellationRequested)
             {
                 await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
 
@@ -125,7 +125,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
         /// <summary>Continuously updates info about money deposited to fed member's addresses.</summary>
         private async Task UpdateCollateralInfoContinuouslyAsync()
         {
-            while (!this.cancellationSource.Token.IsCancellationRequested)
+            while (!this.cancellationSource.IsCancellationRequested)
             {
                 await this.UpdateCollateralInfoAsync(this.cancellationSource.Token).ConfigureAwait(false);
 
