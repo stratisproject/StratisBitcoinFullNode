@@ -1373,6 +1373,13 @@ namespace Stratis.Bitcoin.Consensus
 
             lock (this.peerLock)
             {
+                // Having the Tip Age and Max Tip Age displayed together with the IBD Stage serves as a reminder
+                // to the user how this affects being in IBD (makes it less magical) and provide a hint that
+                // Max Tip Age should be changed if it is set to an absurd value. Perhaps the user made the
+                // assumption that it is minutes or milliseconds. This will show up such issues. It also
+                // gives us easier access to these values if issues are reported in the field.
+
+                // Use the default time provider - same as in InitialBlockDownloadState.IsInitialBlockDownload.
                 long currentTime = DateTimeProvider.Default.GetTime();
                 long tipAge = currentTime - this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds();
                 long maxTipAge = this.consensusSettings.MaxTipAge;
