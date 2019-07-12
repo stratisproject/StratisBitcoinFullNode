@@ -100,7 +100,19 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
         [Fact]
         public void EnsureTimestampDivisibleByTargetSpacing()
         {
+            // Set up a rule with a fixed time so that we don't have non-deterministic tests due to running times et.
             DateTimeOffset time = DateTimeOffset.FromUnixTimeSeconds(new DateTimeProvider().GetUtcNow().ToUnixTimestamp() / this.consensusOptions.TargetSpacingSeconds * this.consensusOptions.TargetSpacingSeconds);
+
+            var timeProvider = new Mock<IDateTimeProvider>();
+            timeProvider.Setup(x => x.GetAdjustedTimeAsUnixTimestamp())
+                .Returns(time.ToUnixTimeSeconds() + this.consensusOptions.TargetSpacingSeconds);
+
+            this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, timeProvider.Object, this.ChainIndexer, new NodeDeployments(this.network, this.ChainIndexer),
+                this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object, this.chainState, new InvalidBlockHashStore(timeProvider.Object),
+                new NodeStats(timeProvider.Object), this.slotsManager, this.poaHeaderValidator, this.votingManager, this.federationManager, this.asyncProvider);
+
+            var timeRule = new HeaderTimeChecksPoARule();
+            this.InitRule(timeRule);
 
             ChainedHeader prevHeader = this.currentHeader.Previous;
 
@@ -111,15 +123,15 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             prevHeader.Header.Time = (uint)time.ToUnixTimeSeconds();
 
             this.currentHeader.Header.Time = prevHeader.Header.Time + this.consensusOptions.TargetSpacingSeconds;
-            this.timeChecksRule.Run(ruleContext);
+            timeRule.Run(ruleContext);
 
             this.currentHeader.Header.Time = prevHeader.Header.Time + this.consensusOptions.TargetSpacingSeconds - 1;
 
-            Assert.Throws<ConsensusErrorException>(() => this.timeChecksRule.Run(ruleContext));
+            Assert.Throws<ConsensusErrorException>(() => timeRule.Run(ruleContext));
 
             try
             {
-                this.timeChecksRule.Run(ruleContext);
+                timeRule.Run(ruleContext);
             }
             catch (ConsensusErrorException exception)
             {
