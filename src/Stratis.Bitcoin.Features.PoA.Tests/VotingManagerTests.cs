@@ -24,8 +24,6 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             this.resultExecutorMock.Setup(x => x.ApplyChange(It.IsAny<VotingData>())).Callback((VotingData data) => this.changesApplied.Add(data));
             this.resultExecutorMock.Setup(x => x.RevertChange(It.IsAny<VotingData>())).Callback((VotingData data) => this.changesReverted.Add(data));
-
-            this.votingManager.Initialize();
         }
 
         [Fact]
@@ -64,8 +62,10 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         }
 
         [Fact]
-        public void VoteAfterPollFinished()
+        public void AddVoteAfterPollComplete()
         {
+            //TODO: When/if we remove duplicate polls, this test will need to be changed to account for the new expected functionality.
+
             var votingData = new VotingData()
             {
                 Key = VoteKey.AddFederationMember,
@@ -80,12 +80,22 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             }
 
             Assert.Single(this.votingManager.GetFinishedPolls());
+            Assert.Empty(this.votingManager.GetPendingPolls());
 
+            // Now that poll is complete, add another vote for it.
             ChainedHeaderBlock blockToDisconnect = this.CreateBlockWithVotingData(new List<VotingData>() {votingData}, votesRequired + 1);
-
             this.TriggerOnBlockConnected(blockToDisconnect);
 
+            // Now we have 1 finished and 1 pending for the same data.
+            Assert.Single(this.votingManager.GetFinishedPolls());
+            Assert.Single(this.votingManager.GetPendingPolls());
+
+            // This previously caused an error because of Single() being used.
             this.TriggerOnBlockDisconnected(blockToDisconnect);
+
+            // VotingManager cleverly removed the pending poll but kept the finished poll.
+            Assert.Single(this.votingManager.GetFinishedPolls());
+            Assert.Empty(this.votingManager.GetPendingPolls());
         }
 
         private ChainedHeaderBlock CreateBlockWithVotingData(List<VotingData> data, int height)
@@ -107,7 +117,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             block.UpdateMerkleRoot();
             block.GetHash();
 
-            return new ChainedHeaderBlock(block, new ChainedHeader(block.Header, block.GetHash(), 1));
+            return new ChainedHeaderBlock(block, new ChainedHeader(block.Header, block.GetHash(), height));
         }
 
         private void TriggerOnBlockConnected(ChainedHeaderBlock block)
