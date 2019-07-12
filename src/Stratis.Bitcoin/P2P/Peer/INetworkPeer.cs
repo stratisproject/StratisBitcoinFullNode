@@ -159,5 +159,21 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <typeparam name="T">Type of the behavior to find.</typeparam>
         /// <returns>Collection of behaviors of specific type.</returns>
         T Behavior<T>() where T : INetworkPeerBehavior;
+
+        /// <summary>
+        /// Determines if this peer matches the ip and optional port.
+        /// </summary>
+        /// <param name="ip">The ip to match.</param>
+        /// <param name="port">The port to match (optional).</param>
+        /// <returns><c>True</c> if the endpoint matches and <c>false</c> otherwise.</returns>
+        bool MatchRemoteIPAddress(IPAddress ip, int? port = null);
+
+        /// <summary>
+        /// Determines if this peer matches the endpoint. Port matching can be suppressed by passing an optional argument.
+        /// </summary>
+        /// <param name="ep">The endpoint to match.</param>
+        /// <param name="matchPort">Set to <c>false</c> to omit port matching.</param>
+        /// <returns><c>True</c> if the endpoint matches and <c>false</c> otherwise.</returns>
+        bool MatchRemoteEndPoint(IPEndPoint ep, bool matchPort = true);
     }
 }
