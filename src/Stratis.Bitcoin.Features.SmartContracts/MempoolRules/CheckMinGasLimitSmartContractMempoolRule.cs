@@ -1,21 +1,27 @@
 ﻿using CSharpFunctionalExtensions;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.SmartContracts.CLR;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Rules
+namespace Stratis.Bitcoin.Features.SmartContracts.MempoolRules
 {
-    public class CheckMinGasLimitSmartContractMempoolRule : IMempoolRule
+    public class CheckMinGasLimitSmartContractMempoolRule : MempoolRule
     {
         private readonly ICallDataSerializer callDataSerializer;
 
-        public CheckMinGasLimitSmartContractMempoolRule(ICallDataSerializer callDataSerializer)
+        public CheckMinGasLimitSmartContractMempoolRule(Network network,
+            ITxMempool mempool,
+            MempoolSettings mempoolSettings,
+            ChainIndexer chainIndexer,
+            ICallDataSerializer callDataSerializer,
+            ILoggerFactory loggerFactory) : base(network, mempool, mempoolSettings, chainIndexer, loggerFactory)
         {
             this.callDataSerializer = callDataSerializer;
         }
 
-        public void CheckTransaction(MempoolRuleContext ruleContext, MempoolValidationContext context)
+        public override void CheckTransaction(MempoolValidationContext context)
         {
             Transaction transaction = context.Transaction;
 

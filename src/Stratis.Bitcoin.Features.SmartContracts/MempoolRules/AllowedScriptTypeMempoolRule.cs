@@ -1,0 +1,31 @@
+﻿using System.Linq;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
+using Stratis.SmartContracts.Core;
+
+namespace Stratis.Bitcoin.Features.SmartContracts.MempoolRules
+{
+    /// <summary>
+    /// Enforces that only certain script types are used on the network.
+    /// </summary>
+    /// <remarks>Shares logic with the consensus rule <see cref="AllowedScriptTypeRule"/></remarks>
+    public class AllowedScriptTypeMempoolRule : MempoolRule
+    {
+        public AllowedScriptTypeMempoolRule(Network network,
+            ITxMempool mempool,
+            MempoolSettings mempoolSettings,
+            ChainIndexer chainIndexer,
+            ILoggerFactory loggerFactory) : base(network, mempool, mempoolSettings, chainIndexer, loggerFactory)
+        {
+        }
+
+        public override void CheckTransaction(MempoolValidationContext context)
+        {
+            AllowedScriptTypeRule.CheckTransaction(this.network, context.Transaction);
+        }
+    }
+}

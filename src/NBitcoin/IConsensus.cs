@@ -129,5 +129,8 @@ namespace NBitcoin
 
         /// <summary>Group of rules that are used during full validation (connection of a new block) specific to the given network.</summary>
         List<IFullValidationConsensusRule> FullValidationRules { get; set; }
+
+        /// <summary>Group of mempool validation rules used by the given network.</summary>
+        List<Type> MempoolRules { get; set; }
     }
 }

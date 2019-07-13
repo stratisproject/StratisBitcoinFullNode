@@ -5,52 +5,15 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
-using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
-    /// <summary>
-    /// Public interface for the memory pool validator.
-    /// </summary>
-    public interface IMempoolValidator
-    {
-        /// <summary>Gets the proof of work consensus option.</summary>
-        ConsensusOptions ConsensusOptions { get; }
-
-        /// <summary>Gets the memory pool performance counter.</summary>
-        MempoolPerformanceCounter PerformanceCounter { get; }
-
-        /// <summary>
-        /// Accept transaction to memory pool.
-        /// Sets the validation state accept time to now.
-        /// </summary>
-        /// <param name="state">Validation state.</param>
-        /// <param name="tx">Transaction to accept.</param>
-        /// <returns>Whether the transaction is accepted or not.</returns>
-        Task<bool> AcceptToMemoryPool(MempoolValidationState state, Transaction tx);
-
-        /// <summary>
-        /// Accept transaction to memory pool.
-        /// Honors the validation state accept time.
-        /// </summary>
-        /// <param name="state">Validation state.</param>
-        /// <param name="tx">Transaction to accept.</param>
-        /// <returns>Whether the transaction was accepted to the memory pool.</returns>
-        Task<bool> AcceptToMemoryPoolWithTime(MempoolValidationState state, Transaction tx);
-
-        /// <summary>
-        /// Executes the memory pool sanity check here <see cref="TxMempool.Check(CoinView)"/>.
-        /// </summary>
-        Task SanityCheck();
-    }
-
     /// <summary>
     /// Validates memory pool transactions.
     /// </summary>
@@ -135,9 +98,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public static Transaction.LockTimeFlags StandardLocktimeVerifyFlags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
 
         private readonly IConsensusRuleEngine consensusRules;
-
-        protected List<IMempoolRule> mempoolRules;
-
+        
         // TODO: Implement Later with CheckRateLimit()
         //private readonly FreeLimiterSection freeLimiter;
 
@@ -149,6 +110,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         private Network network;
 
+        private readonly List<MempoolRule> mempoolRules;
+
         public MempoolValidator(
             ITxMempool memPool,
             MempoolSchedulerLock mempoolLock,
@@ -158,7 +121,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             ICoinView coinView,
             ILoggerFactory loggerFactory,
             NodeSettings nodeSettings,
-            IConsensusRuleEngine consensusRules)
+            IConsensusRuleEngine consensusRules,
+            IEnumerable<MempoolRule> mempoolRules)
         {
             this.memPool = memPool;
             this.mempoolLock = mempoolLock;
@@ -173,20 +137,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.PerformanceCounter = new MempoolPerformanceCounter(this.dateTimeProvider);
             this.minRelayTxFee = nodeSettings.MinRelayTxFeeRate;
             this.consensusRules = consensusRules;
-
-            // TODO: The tests all referred to the methods by name, check the comments are still reasonably sensible
-            this.mempoolRules = new List<IMempoolRule>
-            {
-                new CheckConflictsMempoolRule(),
-                new CheckCoinViewMempoolRule(),
-                new CreateMempoolEntryMempoolRule(),
-                new CheckSigOpsMempoolRule(),
-                new CheckFeeMempoolRule(),
-                new CheckRateLimitMempoolRule(),
-                new CheckAncestorsMempoolRule(),
-                new CheckReplacementMempoolRule(),
-                new CheckAllInputsMempoolRule()
-            };
+            this.mempoolRules = mempoolRules.ToList();
         }
 
         /// <summary>Gets a counter for tracking memory pool performance.</summary>
@@ -342,6 +293,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             var context = new MempoolValidationContext(tx, state);
 
+            context.MinRelayTxFee = this.minRelayTxFee;
+
             // TODO: Convert these into rules too
             this.PreMempoolChecks(context);
 
@@ -365,18 +318,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     return;
                 }
 
-                // Prepopulate rule context with necessary information for the rules to use.
-                var ruleContext = new MempoolRuleContext(this.network, this.memPool, this.mempoolSettings, this.chainIndexer, this.consensusRules, this.minRelayTxFee, this.logger);
-                
-                // TODO: Do we need rule categories, similarly to the consensus rule engine?
-                foreach (IMempoolRule rule in this.mempoolRules)
+                foreach (MempoolRule rule in this.mempoolRules)
                 {
-                    rule.CheckTransaction(ruleContext, context);
+                    rule.CheckTransaction(context);
                 }
 
                 // Remove conflicting transactions from the mempool
                 foreach (TxMempoolEntry it in context.AllConflicting)
-                    this.logger.LogInformation($"replacing tx {it.TransactionHash} with {context.TransactionHash} for {context.ModifiedFees - context.ConflictingFees} BTC additional fees, {context.EntrySize - context.ConflictingSize} delta bytes");
+                    this.logger.LogInformation($"Replacing tx {it.TransactionHash} with {context.TransactionHash} for {context.ModifiedFees - context.ConflictingFees} BTC additional fees, {context.EntrySize - context.ConflictingSize} delta bytes");
 
                 this.memPool.RemoveStaged(context.AllConflicting, false);
 

@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -167,6 +168,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         services.AddSingleton<IMempoolPersistence, MempoolPersistence>();
                         services.AddSingleton<MempoolController>();
                         services.AddSingleton<MempoolSettings>();
+
+                        // TODO: Should the smart contract-specific rule injection be separated out?
+                        foreach (var ruleType in fullNodeBuilder.Network.Consensus.MempoolRules)
+                            services.AddSingleton(typeof(MempoolRule), ruleType);
                     });
             });
 

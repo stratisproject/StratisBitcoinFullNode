@@ -9,8 +9,7 @@
         /// Check that the transaction meets certain criteria before being added to mempool.
         /// If it doesn't, a <see cref="ConsensusErrorException" /> will be thrown.
         /// </summary>
-        /// <param name="ruleContext">Current rule context.</param>
         /// <param name="context">Current validation context.</param>
-        void CheckTransaction(MempoolRuleContext ruleContext, MempoolValidationContext context);
+        void CheckTransaction(MempoolValidationContext context);
     }
 }

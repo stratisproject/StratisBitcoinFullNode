@@ -9,27 +9,35 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
     /// Checks whether the fee meets minimum fee, free transactions have sufficient priority,
     /// and absurdly high fees.
     /// </summary>
-    public class CheckFeeMempoolRule : IMempoolRule
+    public class CheckFeeMempoolRule : MempoolRule
     {
-        public void CheckTransaction(MempoolRuleContext ruleContext, MempoolValidationContext context)
+        public CheckFeeMempoolRule(Network network,
+            ITxMempool mempool,
+            MempoolSettings mempoolSettings,
+            ChainIndexer chainIndexer,
+            ILoggerFactory loggerFactory) : base(network, mempool, mempoolSettings, chainIndexer, loggerFactory)
         {
-            Money mempoolRejectFee = ruleContext.Mempool.GetMinFee(ruleContext.Settings.MaxMempool * 1000000).GetFee(context.EntrySize);
+        }
+
+        public override void CheckTransaction(MempoolValidationContext context)
+        {
+            Money mempoolRejectFee = this.mempool.GetMinFee(this.settings.MaxMempool * 1000000).GetFee(context.EntrySize);
             if (mempoolRejectFee > 0 && context.ModifiedFees < mempoolRejectFee)
             {
-                ruleContext.Logger.LogTrace("(-)[FAIL_MIN_FEE_NOT_MET]");
+                this.logger.LogTrace("(-)[FAIL_MIN_FEE_NOT_MET]");
                 context.State.Fail(MempoolErrors.MinFeeNotMet, $" {context.Fees} < {mempoolRejectFee}").Throw();
             }
-            else if (ruleContext.Settings.RelayPriority && context.ModifiedFees < ruleContext.MinRelayTxFee.GetFee(context.EntrySize) &&
-                     !TxMempool.AllowFree(context.Entry.GetPriority(ruleContext.ChainIndexer.Height + 1)))
+            else if (this.settings.RelayPriority && context.ModifiedFees < context.MinRelayTxFee.GetFee(context.EntrySize) &&
+                     !TxMempool.AllowFree(context.Entry.GetPriority(this.chainIndexer.Height + 1)))
             {
-                ruleContext.Logger.LogTrace("(-)[FAIL_INSUFFICIENT_PRIORITY]");
+                this.logger.LogTrace("(-)[FAIL_INSUFFICIENT_PRIORITY]");
                 // Require that free transactions have sufficient priority to be mined in the next block.
                 context.State.Fail(MempoolErrors.InsufficientPriority).Throw();
             }
 
             if (context.State.AbsurdFee > 0 && context.Fees > context.State.AbsurdFee)
             {
-                ruleContext.Logger.LogTrace("(-)[INVALID_ABSURD_FEE]");
+                this.logger.LogTrace("(-)[INVALID_ABSURD_FEE]");
                 context.State.Invalid(MempoolErrors.AbsurdlyHighFee, $"{context.Fees} > {context.State.AbsurdFee}").Throw();
             }
         }

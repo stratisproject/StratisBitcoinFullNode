@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -15,6 +16,7 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Signals;
@@ -139,7 +141,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             blockDefinition = new PowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, consensusRules);
             blockDefinition.Build(chain.Tip, scriptPubKey);
 
-            var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, new MempoolSettings(nodeSettings), chain, inMemoryCoinView, loggerFactory, nodeSettings, consensusRules);
+            var mempoolRules = new List<MempoolRule>();
+
+            // TODO: The mempool rule constructors aren't parameterless, so doing this doesn't actually work
+            foreach (var ruleType in network.Consensus.MempoolRules)
+                mempoolRules.Add(Activator.CreateInstance(ruleType) as MempoolRule);
+
+            var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, new MempoolSettings(nodeSettings), chain, inMemoryCoinView, loggerFactory, nodeSettings, consensusRules, mempoolRules);
 
             var outputs = new List<UnspentOutputs>();
 
