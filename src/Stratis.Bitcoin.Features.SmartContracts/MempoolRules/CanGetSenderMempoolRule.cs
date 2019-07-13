@@ -22,6 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.MempoolRules
             ISenderRetriever senderRetriever,
             ILoggerFactory loggerFactory) : base(network, mempool, mempoolSettings, chainIndexer, loggerFactory)
         {
+            this.senderRetriever = senderRetriever;
         }
 
         public override void CheckTransaction(MempoolValidationContext context)

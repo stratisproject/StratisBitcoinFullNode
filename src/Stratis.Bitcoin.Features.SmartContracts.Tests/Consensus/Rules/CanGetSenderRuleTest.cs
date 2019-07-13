@@ -13,6 +13,8 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Features.SmartContracts.MempoolRules;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
@@ -29,6 +31,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
     {
         private readonly Network network;
         private readonly CanGetSenderRule rule;
+        private readonly CanGetSenderMempoolRule mempoolRule;
         private readonly Mock<ISenderRetriever> senderRetriever;
 
         public CanGetSenderRuleTest()
@@ -36,6 +39,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             this.network = new SmartContractsRegTest();
             this.senderRetriever = new Mock<ISenderRetriever>();
             this.rule = new CanGetSenderRule(this.senderRetriever.Object);
+            this.mempoolRule = new CanGetSenderMempoolRule(this.network, new Mock<TxMempool>().Object, new Mock<MempoolSettings>().Object, new ChainIndexer(this.network), this.senderRetriever.Object, new Mock<ILoggerFactory>().Object);
             this.rule.Parent = new PowConsensusRuleEngine(
                 this.network,
                 new Mock<ILoggerFactory>().Object,
@@ -63,7 +67,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             transaction.Outputs.Add(new TxOut(100, new Script(new byte[]{ (byte) ScOpcodeType.OP_CREATECONTRACT})));
 
             // Mempool check works
-            this.rule.CheckTransaction(new MempoolRuleContext(null, null, null, null, null, null, null), new MempoolValidationContext(transaction, new MempoolValidationState(false)));
+            this.mempoolRule.CheckTransaction(new MempoolValidationContext(transaction, new MempoolValidationState(false)));
 
             // Block validation check works
             Block block = this.network.CreateBlock();
@@ -84,7 +88,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             transaction.Outputs.Add(new TxOut(100, new Script(new byte[] { (byte)ScOpcodeType.OP_CREATECONTRACT })));
 
             // Mempool check fails
-            Assert.ThrowsAny<ConsensusErrorException>(() => this.rule.CheckTransaction(new MempoolRuleContext(null, null, null, null, null, null, null), new MempoolValidationContext(transaction, new MempoolValidationState(false))));
+            Assert.ThrowsAny<ConsensusErrorException>(() => this.mempoolRule.CheckTransaction(new MempoolValidationContext(transaction, new MempoolValidationState(false))));
 
             // Block validation check fails
             Block block = this.network.CreateBlock();
