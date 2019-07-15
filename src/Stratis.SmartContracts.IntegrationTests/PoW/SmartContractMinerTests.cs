@@ -234,9 +234,9 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                         new ConsensusRulesContainer())
                     .SetupRulesEngineParent();
 
-                var ruleRegistration = new SmartContractPowRuleRegistration(this.network, this.StateRoot,
-                    this.ExecutorFactory, this.callDataSerializer, senderRetriever, receiptRepository, this.cachedCoinView);
-                this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chainIndexer: this.ChainIndexer, ruleRegistration: ruleRegistration, consensusRules: this.consensusRules);
+                //var ruleRegistration = new SmartContractPowRuleRegistration(this.network, this.StateRoot,
+                //    this.ExecutorFactory, this.callDataSerializer, senderRetriever, receiptRepository, this.cachedCoinView);
+                this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chainIndexer: this.ChainIndexer, ruleRegistration: null, consensusRules: this.consensusRules);
 
                 await this.consensusManager.InitializeAsync(chainState.BlockStoreTip);
 
