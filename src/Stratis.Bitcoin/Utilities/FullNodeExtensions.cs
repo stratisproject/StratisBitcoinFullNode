@@ -69,6 +69,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="shutdownCompleteMessage">Message to display on the console when the shutdown is complete.</param>
         public static async Task RunAsync(this IFullNode node, CancellationToken cancellationToken, string shutdownMessage, string shutdownCompleteMessage)
         {
+            // node.NodeLifetime is not initialized yet. Use this temporary variable as to avoid side-effects to node.
             var nodeLifetime = node.Services.ServiceProvider.GetRequiredService<INodeLifetime>() as NodeLifetime;
 
             cancellationToken.Register(state =>
