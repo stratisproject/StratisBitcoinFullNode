@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Notifications
         /// <inheritdoc/>
         public virtual void SyncFrom(uint256 startHash)
         {
-            this.logger.LogTrace("Received request to sync from hash : {0}.", startHash);
+            this.logger.LogDebug("Received request to sync from hash : {0}.", startHash);
 
             // No need to resync the first time this method is called.
             if (this.StartHash != null)
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Notifications
                    // this.Puller.SetLocation(previousBlock);
                     this.tip = previousBlock;
 
-                    this.logger.LogTrace("Puller location set to block: {0}.", previousBlock);
+                    this.logger.LogDebug("Puller location set to block: {0}.", previousBlock);
                 }
             }
 
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Features.Notifications
            // this.Puller.SetLocation(previousBlock);
             this.tip = previousBlock;
 
-            this.logger.LogTrace("Puller location set to block: {0}.", previousBlock);
+            this.logger.LogDebug("Puller location set to block: {0}.", previousBlock);
 
             // Send notifications for all the following blocks.
             while (!this.ReSync)

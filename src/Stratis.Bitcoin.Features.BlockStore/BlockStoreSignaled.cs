@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            this.logger.LogTrace("Block hash is '{0}'.", chainedHeader.HashBlock);
+            this.logger.LogDebug("Block hash is '{0}'.", chainedHeader.HashBlock);
 
             bool isIBD = this.initialBlockDownloadState.IsInitialBlockDownload();
 
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            this.logger.LogTrace("Block header '{0}' added to the announce queue.", chainedHeader);
+            this.logger.LogDebug("Block header '{0}' added to the announce queue.", chainedHeader);
             this.blocksToAnnounce.Enqueue(chainedHeader);
         }
 
@@ -215,12 +215,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            this.logger.LogTrace("There are {0} blocks in the announce queue.", announceBlockCount);
+            this.logger.LogDebug("There are {0} blocks in the announce queue.", announceBlockCount);
 
             // Remove blocks that we've reorged away from.
             foreach (ChainedHeader reorgedBlock in batch.Where(x => this.chainState.ConsensusTip.FindAncestorOrSelf(x) == null).ToList())
             {
-                this.logger.LogTrace("Block header '{0}' not found in the consensus chain and will be skipped.", reorgedBlock);
+                this.logger.LogDebug("Block header '{0}' not found in the consensus chain and will be skipped.", reorgedBlock);
 
                 // List removal is of O(N) complexity but in this case removals will happen just a few times a day (on orphaned blocks)
                 // and always only the latest items in this list will be subjected to removal so in this case it's better than creating
@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             List<BlockStoreBehavior> behaviors = peers.Select(peer => peer.Behavior<BlockStoreBehavior>())
                 .Where(behavior => behavior != null).ToList();
 
-            this.logger.LogTrace("{0} blocks will be sent to {1} peers.", batch.Count, behaviors.Count);
+            this.logger.LogDebug("{0} blocks will be sent to {1} peers.", batch.Count, behaviors.Count);
             foreach (BlockStoreBehavior behavior in behaviors)
                 await behavior.AnnounceBlocksAsync(batch).ConfigureAwait(false);
         }
