@@ -226,7 +226,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
                             services.AddSingleton<IWalletFeePolicy, LightWalletBitcoinExternalFeePolicy>();
                         else
                             services.AddSingleton<IWalletFeePolicy, LightWalletFixedFeePolicy>();
-                        services.AddSingleton<WalletController>();
                         services.AddSingleton<IBroadcasterManager, LightWalletBroadcasterManager>();
                         services.AddSingleton<BroadcasterBehavior>();
                         services.AddSingleton<IInitialBlockDownloadState, LightWalletInitialBlockDownloadState>();
