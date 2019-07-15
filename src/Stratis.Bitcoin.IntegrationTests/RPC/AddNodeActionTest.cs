@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             IFullNode fullNode = this.BuildServicedNode(testDirectory);
             fullNode.Start();
 
-            var controller = fullNode.Services.ServiceProvider.GetService<ConnectionManagerController>();
+            var controller = fullNode.NodeController<ConnectionManagerController>();
 
             Assert.True(controller.AddNodeRPC("0.0.0.0", "add"));
             Assert.Throws<ArgumentException>(() => { controller.AddNodeRPC("0.0.0.0", "notarealcommand"); });
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
             IFullNode fullNode = this.BuildServicedNode(testDirectory);
 
-            var controller = fullNode.Services.ServiceProvider.GetService<ConnectionManagerController>();
+            var controller = fullNode.NodeController<ConnectionManagerController>();
 
             var connectionManager = fullNode.NodeService<IConnectionManager>();
             controller.AddNodeRPC("0.0.0.0", "add");

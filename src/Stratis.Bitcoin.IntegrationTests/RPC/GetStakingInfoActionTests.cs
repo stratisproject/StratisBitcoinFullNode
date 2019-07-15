@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
             var nodeLifetime = fullNode.NodeService<INodeLifetime>();
             nodeLifetime.ApplicationStarted.WaitHandle.WaitOne();
-            var controller = fullNode.Services.ServiceProvider.GetService<StakingRpcController>();
+            var controller = fullNode.NodeController<StakingRpcController>();
 
             Assert.NotNull(fullNode.NodeService<IPosMinting>(true));
 
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
             var nodeLifetime = fullNode.NodeService<INodeLifetime>();
             nodeLifetime.ApplicationStarted.WaitHandle.WaitOne();
-            var controller = fullNode.Services.ServiceProvider.GetService<StakingRpcController>();
+            var controller = fullNode.NodeController<StakingRpcController>();
 
             var walletManager = node.NodeService<IWalletManager>() as WalletManager;
 

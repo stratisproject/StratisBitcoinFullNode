@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 this.lastTransaction = this.sendingStratisBitcoinNode.FullNode.WalletTransactionHandler()
                     .BuildTransaction(transactionBuildContext);
 
-                this.sendingStratisBitcoinNode.FullNode.NodeService<WalletController>()
+                this.sendingStratisBitcoinNode.FullNode.NodeController<WalletController>()
                     .SendTransaction(new SendTransactionRequest(this.lastTransaction.ToHex()));
             }
             catch (Exception exception)

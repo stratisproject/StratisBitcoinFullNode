@@ -148,9 +148,9 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
                 Assert.Equal(Money.COIN * spendableBlocks * 50, total);
 
-                SmartContractsController senderSmartContractsController = scSender.FullNode.NodeService<SmartContractsController>();
+                SmartContractsController senderSmartContractsController = scSender.FullNode.NodeController<SmartContractsController>();
 
-                SmartContractWalletController senderWalletController = scSender.FullNode.NodeService<SmartContractWalletController>();
+                SmartContractWalletController senderWalletController = scSender.FullNode.NodeController<SmartContractWalletController>();
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
                 Assert.True(compilationResult.Success);
 
