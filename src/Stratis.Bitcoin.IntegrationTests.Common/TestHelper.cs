@@ -501,7 +501,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         public static void CheckWalletBalance(CoreNode node, Money amount)
         {
             var total = node.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Sum(s => s.Transaction.Amount);
-            total.Should().Equals(amount);
+            total.Should().Be(amount);
         }
 
         public static void SendCoins(CoreNode sender, CoreNode receiver, Money amount)
@@ -517,9 +517,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             TestBase.WaitLoop(() => receiver.CreateRPCClient().GetRawMempool().Length > 0);
             TestBase.WaitLoop(() => receiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Any());
 
-            var receivetotal = receiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Sum(s => s.Transaction.Amount);
-            receivetotal.Should().Equals(amount);
-            receiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).First().Transaction.BlockHeight.Should().BeNull();
+            CheckWalletBalance(receiver, amount);
         }
 
         private static TransactionBuildContext CreateContext(Network network, WalletAccountReference accountReference, string password, Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
