@@ -45,8 +45,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadColdstakeAmount">Thrown if the total input is smaller or equal than the sum of outputs.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            this.Logger.LogTrace("()");
-
             // Get the second transaction so that we can confirm whether it is a cold coin stake transaction.
             Block block = context.ValidationContext.BlockToValidate;
             PosTransaction coinstakeTransaction = ((block.Transactions.Count >= 2)?block.Transactions[1]:null) as PosTransaction;

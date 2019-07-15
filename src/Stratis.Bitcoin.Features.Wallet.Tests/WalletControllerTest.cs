@@ -1235,7 +1235,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(transaction.BlockHeight, resultingTransactionModel.ConfirmedInBlock);
             Assert.Null(resultingTransactionModel.Fee);
             Assert.Equal(0, resultingTransactionModel.Payments.Count);
-            
+
             resultingTransactionModel = historyModel.TransactionsHistory.ElementAt(2);
 
             Assert.Equal(TransactionItemType.Send, resultingTransactionModel.Type);
@@ -1629,7 +1629,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var mockBroadcasterManager = new Mock<IBroadcasterManager>();
 
-            mockBroadcasterManager.Setup(m => m.GetTransaction(It.IsAny<uint256>())).Returns(new TransactionBroadcastEntry(this.Network.CreateTransaction(transactionHex), State.Broadcasted, string.Empty));
+            mockBroadcasterManager.Setup(m => m.GetTransaction(It.IsAny<uint256>())).Returns(new TransactionBroadcastEntry(this.Network.CreateTransaction(transactionHex), State.Broadcasted, null));
 
             var connectionManagerMock = new Mock<IConnectionManager>();
             var peers = new List<INetworkPeer>();
@@ -2226,7 +2226,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var walletManager = new Mock<IWalletManager>();
             var walletSyncManager = new Mock<IWalletSyncManager>();
-            walletManager.Setup(manager => manager.RemoveTransactionsByIdsLocked(walletName, new[] { trxId1 })).Returns(resultModel);
+            walletManager.Setup(manager => manager.RemoveTransactionsByIds(walletName, new[] { trxId1 })).Returns(resultModel);
             walletManager.Setup(manager => manager.GetWallet(walletName)).Returns(wallet);
             walletSyncManager.Setup(manager => manager.SyncFromHeight(It.IsAny<int>()));
             ChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(3, this.Network);

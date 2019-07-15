@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Wallet;
 
 namespace Stratis.Features.FederatedPeg.Interfaces
@@ -8,7 +9,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
     /// <summary>
     /// Interface for a manager providing operations on wallets.
     /// </summary>
-    public interface IFederationWalletManager
+    public interface IFederationWalletManager : ILockProtected
     {
         /// <summary>
         /// Starts this wallet manager.
@@ -70,6 +71,14 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         bool ValidateTransaction(Transaction transaction, bool checkSignature = false);
 
         /// <summary>
+        /// Verifies that a transaction's inputs aren't being consumed by any other transactions.
+        /// </summary>
+        /// <param name="transaction">The transaction to check.</param>
+        /// <param name="checkSignature">Indicates whether to check the signature.</param>
+        /// <returns><c>True</c> if all's well and <c>false</c> otherwise.</returns>
+        bool ValidateConsolidatingTransaction(Transaction transaction, bool checkSignature = false);
+
+        /// <summary>
         /// Saves the wallet into the file system.
         /// </summary>
         void SaveWallet();
@@ -104,10 +113,15 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         List<(Transaction, IWithdrawal)> FindWithdrawalTransactions(uint256 depositId = null, bool sort = false);
 
         /// <summary>
-        /// Removes the transient transactions associated with the corresponding deposit ids.
+        /// Removes the withdrawal transaction(s) associated with the corresponding deposit id.
         /// </summary>
-        /// <param name="depositId">The deposit id identifying the transient transactions to remove. Set to <c>null</c> to remove all.</param>
-        bool RemoveTransientTransactions(uint256 depositId = null);
+        /// <param name="depositId">The deposit id identifying the withdrawal transaction(s) to remove.</param>
+        bool RemoveWithdrawalTransactions(uint256 depositId);
+
+        /// <summary>
+        /// Removes transaction data that is still to be confirmed in a block.
+        /// </summary>
+        bool RemoveUnconfirmedTransactionData();
 
         /// <summary>
         /// Determines if federation has been activated.

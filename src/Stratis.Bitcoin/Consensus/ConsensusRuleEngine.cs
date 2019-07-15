@@ -184,7 +184,10 @@ namespace Stratis.Bitcoin.Consensus
             await this.ExecuteRulesAsync(this.consensusRules.FullValidationRules, ruleContext).ConfigureAwait(false);
 
             if (validationContext.Error != null)
+            {
+                this.logger.LogWarning("Block '{0}' failed full validation with error: '{1}'.", header, validationContext.Error);
                 this.HandleConsensusError(validationContext);
+            }
 
             return validationContext;
         }
@@ -201,7 +204,10 @@ namespace Stratis.Bitcoin.Consensus
             await this.ExecuteRulesAsync(this.consensusRules.PartialValidationRules, ruleContext).ConfigureAwait(false);
 
             if (validationContext.Error != null)
+            {
+                this.logger.LogWarning("Block '{0}' failed partial validation with error: '{1}'.", header, validationContext.Error);
                 this.HandleConsensusError(validationContext);
+            }
 
             return validationContext;
         }
@@ -244,7 +250,7 @@ namespace Stratis.Bitcoin.Consensus
 
             uint256 hashToBan = validationContext.ChainedHeaderToValidate.HashBlock;
 
-            this.logger.LogTrace("Marking '{0}' invalid.", hashToBan);
+            this.logger.LogWarning("Marking '{0}' invalid.", hashToBan);
             this.invalidBlockHashStore.MarkInvalid(hashToBan, validationContext.RejectUntil);
         }
 

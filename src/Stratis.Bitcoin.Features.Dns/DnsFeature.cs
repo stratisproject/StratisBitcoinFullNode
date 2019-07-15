@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Dns
                         break;
                     }
 
-                    this.logger.LogTrace("Restarting DNS server following previous failure.");
+                    this.logger.LogDebug("Restarting DNS server following previous failure.");
                 }
             }
         }
