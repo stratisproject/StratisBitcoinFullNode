@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly ConsensusManagerPerformanceCounter performanceCounter;
 
-        private readonly IDateTimeProvider dateTimeProvider;
+        private readonly ConsensusSettings consensusSettings;
 
         private bool isIbd;
 
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Consensus
             Guard.NotNull(connectionManager, nameof(connectionManager));
             Guard.NotNull(nodeStats, nameof(nodeStats));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
-            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
+            Guard.NotNull(consensusSettings, nameof(consensusSettings));
 
             this.network = network;
             this.chainState = chainState;
@@ -199,6 +199,7 @@ namespace Stratis.Bitcoin.Consensus
             this.blockPuller = blockPuller;
             this.dateTimeProvider = dateTimeProvider;
 
+            this.consensusSettings = consensusSettings;
             this.maxUnconsumedBlocksDataBytes = consensusSettings.MaxBlockMemoryInMB * 1024 * 1024;
 
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
@@ -1379,7 +1380,19 @@ namespace Stratis.Bitcoin.Consensus
 
             lock (this.peerLock)
             {
-                if (this.isIbd) log.AppendLine("IBD Stage");
+                // Having the Tip Age and Max Tip Age displayed together with the IBD Stage serves as a reminder
+                // to the user how this affects being in IBD (makes it less magical) and provide a hint that
+                // Max Tip Age should be changed if it is set to an absurd value. Perhaps the user made the
+                // assumption that it is minutes or milliseconds. This will show up such issues. It also
+                // gives us easier access to these values if issues are reported in the field.
+
+                // Use the default time provider - same as in InitialBlockDownloadState.IsInitialBlockDownload.
+                long currentTime = DateTimeProvider.Default.GetTime();
+                long tipAge = currentTime - this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds();
+                long maxTipAge = this.consensusSettings.MaxTipAge;
+
+                log.AppendLine($"Tip Age: { TimeSpan.FromSeconds(tipAge).ToString(@"hh\:mm\:ss") } (maximum is { TimeSpan.FromSeconds(maxTipAge).ToString(@"hh\:mm\:ss") })");
+                log.AppendLine($"In IBD Stage: { (this.isIbd ? "Yes" : "No") }");
 
                 log.AppendLine($"Chained header tree size: {this.chainedHeaderTree.ChainedBlocksDataBytes.BytesToMegaBytes()} MB");
 
