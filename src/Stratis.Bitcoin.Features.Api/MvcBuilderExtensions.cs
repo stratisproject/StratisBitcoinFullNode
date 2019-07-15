@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,18 +17,15 @@ namespace Stratis.Bitcoin.Features.Api
         /// <returns>The Mvc builder</returns>
         public static IMvcBuilder AddControllers(this IMvcBuilder builder, IServiceCollection services)
         {
-            // Adds Controllers with API endpoints
-            System.Collections.Generic.IEnumerable<ServiceDescriptor> controllerTypes = services.Where(s => s.ServiceType.GetTypeInfo().BaseType == typeof(Controller));
-            foreach (ServiceDescriptor controllerType in controllerTypes)
-            {
-                builder.AddApplicationPart(controllerType.ServiceType.GetTypeInfo().Assembly);
-            }
+            // Adds the assembles containing our features.
+            var featureAssemblies = AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes())
+                .Where(x => typeof(FeatureController).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
+                .Select(x => x.Assembly)
+                .ToList();
 
-            // Adds FeatureControllers with API endpoints.
-            System.Collections.Generic.IEnumerable<ServiceDescriptor> featureControllerTypes = services.Where(s => s.ServiceType.GetTypeInfo().BaseType == typeof(FeatureController));
-            foreach (ServiceDescriptor featureControllerType in featureControllerTypes)
+            foreach (Assembly assembly in featureAssemblies)
             {
-                builder.AddApplicationPart(featureControllerType.ServiceType.GetTypeInfo().Assembly);
+                builder.AddApplicationPart(assembly);
             }
 
             builder.AddApplicationPart(typeof(Controllers.NodeController).Assembly);
