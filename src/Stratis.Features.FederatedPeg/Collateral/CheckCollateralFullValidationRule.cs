@@ -66,6 +66,8 @@ namespace Stratis.Features.FederatedPeg.Collateral
             int commitmentHeight = this.encoder.Decode(rawCommitmentData);
             this.Logger.LogDebug("Commitment is: {0}.", commitmentHeight);
 
+            // TODO: Both this and CollateralPoAMiner are using this chain's MaxReorg instead of the Counter chain's MaxReorg. Beware: fixing requires fork.
+
             int counterChainHeight = this.collateralChecker.GetCounterChainConsensusHeight();
             int maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(this.network);
 
