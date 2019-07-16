@@ -28,9 +28,20 @@ namespace Stratis.Bitcoin.Features.SignalR
             return base.OnDisconnectedAsync(exception);
         }
 
-        public void SendToClients(EventBase @event)
+        public async Task SendToClients(EventBase @event)
         {
-            this.Clients.All.SendAsync("RecieveEvent", JsonConvert.SerializeObject(@event));
+            try
+            {
+                string data = JsonConvert.SerializeObject(new
+                {
+                    @event.CorrelationId
+                });
+                await this.Clients.All.SendAsync("recieveEvent", data);
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError(ex, "Error sending to clients");
+            }
         }
     }
 }

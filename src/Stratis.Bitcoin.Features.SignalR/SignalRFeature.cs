@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.SignalR
 
         private void OnEvent(EventBase @event)
         {
-            this.eventsHub.SendToClients(@event);
+            this.eventsHub.SendToClients(@event).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>
