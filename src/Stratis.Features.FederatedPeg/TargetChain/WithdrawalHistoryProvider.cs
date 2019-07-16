@@ -69,6 +69,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 if (maximumEntriesToReturn-- <= 0)
                     break;
 
+                // Extract the withdrawal details from the recorded "PartialTransaction".
                 IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(transfer.PartialTransaction, transfer.BlockHash, (int)transfer.BlockHeight);
 
                 var model = new WithdrawalModel();
