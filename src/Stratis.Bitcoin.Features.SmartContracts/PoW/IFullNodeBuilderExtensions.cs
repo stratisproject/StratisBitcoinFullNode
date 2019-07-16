@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
                     services.AddSingleton<ICoinView, CachedCoinView>();
                     services.AddSingleton<ConsensusController>();
 
-                    services.AddSingleton<PowConsensusRuleEngine>();
+                    services.AddSingleton<IConsensusRuleEngine, PowConsensusRuleEngine>();
                     services.AddSingleton<IRuleRegistration, SmartContractPowRuleRegistration>();
                     new SmartContractPowRuleRegistration().RegisterRules(services);
 

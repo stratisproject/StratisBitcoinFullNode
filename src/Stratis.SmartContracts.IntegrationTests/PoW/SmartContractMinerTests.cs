@@ -18,12 +18,15 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
+using Stratis.Bitcoin.Features.SmartContracts.PoW.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Signals;
@@ -211,12 +214,28 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                     BlockStoreTip = new ChainedHeader(genesis.Header, genesis.GetHash(), 0)
                 };
 
-                InitializeSmartContractComponents(callingMethod);
+                this.InitializeSmartContractComponents(callingMethod);
 
                 var receiptRepository = new PersistentReceiptRepository(new DataFolder(this.Folder));
 
                 var signals = new Signals(loggerFactory, null);
                 var asyncProvider = new AsyncProvider(loggerFactory, signals, new NodeLifetime());
+
+                //new SmartContractPowRuleRegistration().RegisterRules();
+
+                var consensusRulesContainer = new ConsensusRulesContainer();
+
+                consensusRulesContainer.HeaderValidationRules.Add(Activator.CreateInstance(typeof(BitcoinHeaderVersionRule)) as HeaderValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new SetActivationDeploymentsFullValidationRule() as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new LoadCoinviewRule() as FullValidationConsensusRule);
+
+                consensusRulesContainer.FullValidationRules.Add(new TxOutSmartContractExecRule() as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new OpSpendRule() as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new CanGetSenderRule(senderRetriever) as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new P2PKHNotContractRule(this.StateRoot) as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new CanGetSenderRule(senderRetriever) as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new SmartContractPowCoinviewRule(this.network, this.StateRoot, this.ExecutorFactory, this.callDataSerializer, senderRetriever, receiptRepository, this.cachedCoinView) as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new SaveCoinviewRule() as FullValidationConsensusRule);
 
                 this.consensusRules = new PowConsensusRuleEngine(
                         this.network,
@@ -231,7 +250,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                         new InvalidBlockHashStore(DateTimeProvider.Default),
                         new NodeStats(new DateTimeProvider()),
                         asyncProvider,
-                        new ConsensusRulesContainer())
+                        consensusRulesContainer)
                     .SetupRulesEngineParent();
 
                 //var ruleRegistration = new SmartContractPowRuleRegistration(this.network, this.StateRoot,

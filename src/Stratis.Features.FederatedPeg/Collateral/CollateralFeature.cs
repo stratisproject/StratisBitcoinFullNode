@@ -53,6 +53,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
                         services.AddSingleton<IRuleRegistration, SmartContractCollateralPoARuleRegistration>();
                         new SmartContractCollateralPoARuleRegistration().RegisterRules(services);
+                        services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
 
                         //services.AddSingleton<IConsensusRuleEngine>(f =>
                         //{

@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
 
-                        services.AddSingleton<PoAConsensusRuleEngine>();
+                        services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
                         new SmartContractPoARuleRegistration().RegisterRules(services);
 
                         //services.AddSingleton<IRuleRegistration, SmartContractPoARuleRegistration>();

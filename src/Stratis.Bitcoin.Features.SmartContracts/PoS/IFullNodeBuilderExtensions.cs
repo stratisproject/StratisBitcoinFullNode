@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
                         services.AddSingleton<IStakeValidator, StakeValidator>();
                         services.AddSingleton<ConsensusController>();
 
-                        services.AddSingleton<PosConsensusRuleEngine>();
+                        services.AddSingleton<IConsensusRuleEngine, PosConsensusRuleEngine>();
                         new SmartContractPosRuleRegistration().RegisterRules(services);
 
                         //services.AddSingleton<IConsensusRuleEngine>(f =>
