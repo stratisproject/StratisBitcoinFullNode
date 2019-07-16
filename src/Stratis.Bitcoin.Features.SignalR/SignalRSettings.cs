@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SignalR
             var uri = new Uri(host);
 
             // Find out which port should be used for the API.
-            int port = config.GetOrDefault("signalrport", nodeSettings.Network.DefaultAPIPort, this.logger);
+            int port = config.GetOrDefault("signalrport", 38224, this.logger);
 
             // If no port is set in the API URI.
             if (uri.IsDefaultPort)
