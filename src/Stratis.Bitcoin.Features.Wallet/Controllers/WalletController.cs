@@ -459,7 +459,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     int itemsCount = 0;
                     foreach (FlatHistory item in history)
                     {
-
                         if (itemsCount == MaxHistoryItemsPerAccount)
                         {
                             break;
@@ -559,20 +558,30 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         // Create a record for a 'receive' transaction.
                         if (transaction.IsCoinStake == null && !address.IsChangeAddress())
                         {
-                            // Add incoming fund transaction details.
-                            var receivedItem = new TransactionItemModel
-                            {
-                                Type = TransactionItemType.Received,
-                                ToAddress = address.Address,
-                                Amount = transaction.Amount,
-                                Id = transaction.Id,
-                                Timestamp = transaction.CreationTime,
-                                ConfirmedInBlock = transaction.BlockHeight,
-                                BlockIndex = transaction.BlockIndex
-                            };
+                            // First check if we already have a similar transaction output, in which case we just sum up the amounts
+                            TransactionItemModel existingReceivedItem = this.FindSimilarReceivedTransactionOutput(transactionItems, transaction);
 
-                            transactionItems.Add(receivedItem);
-                            itemsCount++;
+                            if (existingReceivedItem == null)
+                            {
+                                // Add incoming fund transaction details.
+                                var receivedItem = new TransactionItemModel
+                                {
+                                    Type = TransactionItemType.Received,
+                                    ToAddress = address.Address,
+                                    Amount = transaction.Amount,
+                                    Id = transaction.Id,
+                                    Timestamp = transaction.CreationTime,
+                                    ConfirmedInBlock = transaction.BlockHeight,
+                                    BlockIndex = transaction.BlockIndex
+                                };
+
+                                transactionItems.Add(receivedItem);
+                                itemsCount++;
+                            }
+                            else
+                            {
+                                existingReceivedItem.Amount += transaction.Amount;
+                            }
                         }
                     }
 
@@ -1375,6 +1384,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 this.walletSyncManager.SyncFromHeight(blockHeightToSyncFrom);
             }
+        }
+
+        private TransactionItemModel FindSimilarReceivedTransactionOutput(List<TransactionItemModel> items, TransactionData transaction)
+        {
+            TransactionItemModel existingTransaction = items.FirstOrDefault(i => i.Id == transaction.Id &&
+                                                                                 i.Type == TransactionItemType.Received &&
+                                                                                 i.ConfirmedInBlock == transaction.BlockHeight);
+            return existingTransaction;
         }
     }
 }
