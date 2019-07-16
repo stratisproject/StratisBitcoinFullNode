@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             catch (SecurityException exception)
             {
-                throw new RPCServerException(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED, exception.Message);
+                throw new RPCServerException(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED, "Wallet unlock needed");
             }
             catch (WalletException exception)
             {
@@ -675,7 +675,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             catch (SecurityException exception)
             {
-                throw new RPCServerException(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED, exception.Message);
+                throw new RPCServerException(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED, "Wallet unlock needed");
             }
             catch (WalletException exception)
             {

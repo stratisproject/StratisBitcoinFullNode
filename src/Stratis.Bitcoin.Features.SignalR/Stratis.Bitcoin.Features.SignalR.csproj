@@ -8,11 +8,10 @@
         <PackageReference Include="CSharpFunctionalExtensions" Version="1.10.0" />
         <PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.12" />
     </ItemGroup>
-
+    
     <ItemGroup>
-        <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
-        <ProjectReference Include="..\Stratis.Bitcoin.Features.PoA\Stratis.Bitcoin.Features.PoA.csproj" />
-        <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
+      <ProjectReference Include="..\Stratis.Bitcoin.Features.PoA\Stratis.Bitcoin.Features.PoA.csproj" />
+      <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
     </ItemGroup>
 
 </Project>
