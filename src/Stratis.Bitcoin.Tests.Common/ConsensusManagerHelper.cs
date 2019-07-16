@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Tests.Common
             var consensus = new ConsensusManager(tree, network, loggerFactory, chainState, new IntegrityValidator(consensusRules, loggerFactory),
                 new PartialValidator(asyncProvider, consensusRules, loggerFactory), new FullValidator(consensusRules, loggerFactory), consensusRules,
                 new Mock<IFinalizedBlockInfoRepository>().Object, new Signals.Signals(loggerFactory, null), peerBanning, new Mock<IInitialBlockDownloadState>().Object, chainIndexer,
-                new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object, new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object, new NodeLifetime(), consensusSettings);
+                new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object, new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object, new NodeLifetime(), consensusSettings, dateTimeProvider);
 
             return consensus;
         }
