@@ -184,7 +184,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
                 result.Return?.ToString(),
                 result.ErrorMessage,
                 deserializedCallData.Value.GasPrice,
-                txContext.TxOutValue)
+                txContext.TxOutValue,
+                deserializedCallData.Value.IsCreateContract ? null : deserializedCallData.Value.MethodName)
             {
                 BlockHash = context.ValidationContext.BlockToValidate.GetHash()
             };
