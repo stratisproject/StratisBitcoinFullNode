@@ -17,6 +17,22 @@ namespace Stratis.Bitcoin.Features.SignalR
     {
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors(
+                options =>
+                {
+                    options.AddPolicy(
+                        "CorsPolicy",
+                        builder =>
+                        {
+                            var allowedDomains = new[] { "http://localhost", "http://localhost:4200" };
+
+                            builder
+                                .WithOrigins(allowedDomains)
+                                .AllowAnyMethod()
+                                .AllowAnyHeader()
+                                .AllowCredentials();
+                        });
+                });
             services.AddSignalR();
         }
 
@@ -27,6 +43,7 @@ namespace Stratis.Bitcoin.Features.SignalR
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseCors("CorsPolicy");
             app.UseSignalR(route =>
             {
                 route.MapHub<EventsHub>("/events-hub");
