@@ -64,6 +64,8 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly IBlockStore blockStore;
 
+        private readonly IDateTimeProvider dateTimeProvider;
+
         private readonly IFinalizedBlockInfoRepository finalizedBlockInfo;
 
         /// <remarks>All access should be protected by <see cref="peerLock"/>.</remarks>
@@ -144,7 +146,8 @@ namespace Stratis.Bitcoin.Consensus
             IConnectionManager connectionManager,
             INodeStats nodeStats,
             INodeLifetime nodeLifetime,
-            ConsensusSettings consensusSettings)
+            ConsensusSettings consensusSettings,
+            IDateTimeProvider dateTimeProvider)
         {
             Guard.NotNull(chainedHeaderTree, nameof(chainedHeaderTree));
             Guard.NotNull(network, nameof(network));
@@ -165,6 +168,7 @@ namespace Stratis.Bitcoin.Consensus
             Guard.NotNull(nodeStats, nameof(nodeStats));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(consensusSettings, nameof(consensusSettings));
+            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
 
             this.network = network;
             this.chainState = chainState;
@@ -180,6 +184,7 @@ namespace Stratis.Bitcoin.Consensus
             this.connectionManager = connectionManager;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.dateTimeProvider = dateTimeProvider;
 
             this.chainedHeaderTree = chainedHeaderTree;
 
@@ -1380,7 +1385,7 @@ namespace Stratis.Bitcoin.Consensus
                 // gives us easier access to these values if issues are reported in the field.
 
                 // Use the default time provider - same as in InitialBlockDownloadState.IsInitialBlockDownload.
-                long currentTime = DateTimeProvider.Default.GetTime();
+                long currentTime =this.dateTimeProvider.GetTime();
                 long tipAge = currentTime - this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds();
                 long maxTipAge = this.consensusSettings.MaxTipAge;
 
