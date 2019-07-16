@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 uint256 hash = transaction.GetHash();
                 return hash;
             }
-            catch (SecurityException exception)
+            catch (SecurityException)
             {
                 throw new RPCServerException(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED, "Wallet unlock needed");
             }
@@ -673,7 +673,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 return transaction.GetHash();
             }
-            catch (SecurityException exception)
+            catch (SecurityException)
             {
                 throw new RPCServerException(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED, "Wallet unlock needed");
             }

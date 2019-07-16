@@ -146,9 +146,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             #region Smart Contract Components
 
             internal AddressGenerator AddressGenerator { get; private set; }
-            private bool useCheckpoints = true;
             public Key privateKey;
-            private ReflectionVirtualMachine vm;
             private ISerializer serializer;
             private ContractAssemblyLoader assemblyLoader;
             public ICallDataSerializer callDataSerializer;
@@ -214,8 +212,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 var receiptRepository = new PersistentReceiptRepository(new DataFolder(this.Folder));
 
-                var signals = new Signals(loggerFactory, null);
-                var asyncProvider = new AsyncProvider(loggerFactory, signals, new NodeLifetime());
+                var signals = new Signals(this.loggerFactory, null);
+                var asyncProvider = new AsyncProvider(this.loggerFactory, signals, new NodeLifetime());
 
                 this.consensusRules = new PowConsensusRuleEngine(
                         this.network,
