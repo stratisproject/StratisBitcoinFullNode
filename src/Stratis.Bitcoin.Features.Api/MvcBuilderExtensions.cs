@@ -1,35 +1,32 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using Stratis.Bitcoin.Controllers;
+using Stratis.Bitcoin.Builder.Feature;
 
 namespace Stratis.Bitcoin.Features.Api
 {
     public static class MvcBuilderExtensions
     {
         /// <summary>
-        /// Finds all the types that are <see cref="Controller"/> or <see cref="FeatureController"/>and add them to the Api as services.
+        /// Identifies the assemblies to include for controller discovery.
         /// </summary>
         /// <param name="builder">The builder</param>
-        /// <param name="services">The services to look into</param>
+        /// <param name="features">The selected features to include the assemblies of.</param>
         /// <returns>The Mvc builder</returns>
-        public static IMvcBuilder AddControllers(this IMvcBuilder builder, IServiceCollection services)
+        public static IMvcBuilder AddControllers(this IMvcBuilder builder, IEnumerable<IFullNodeFeature> features)
         {
-            // Adds the assembles containing our features.
-            var featureAssemblies = AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetTypes())
-                .Where(x => typeof(FeatureController).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
-                .Select(x => x.Assembly)
-                .ToList();
+            // The required assemblies including those of the selected features.
+            IEnumerable<Assembly> assemblies = features
+                .Select(f => f.GetType().Assembly)
+                .Append(typeof(Controllers.NodeController).Assembly)
+                .Distinct();
 
-            foreach (Assembly assembly in featureAssemblies)
+            foreach (Assembly assembly in assemblies)
             {
                 builder.AddApplicationPart(assembly);
             }
 
-            builder.AddApplicationPart(typeof(Controllers.NodeController).Assembly);
-            builder.AddControllersAsServices();
             return builder;
         }
     }
