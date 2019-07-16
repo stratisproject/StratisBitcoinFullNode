@@ -6,7 +6,6 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Features.FederatedPeg.Interfaces;
-using Stratis.Features.FederatedPeg.NetworkHelpers;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
 {
@@ -26,31 +25,19 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <inheritdoc />
         public async Task BroadcastAsync(Payload payload)
         {
-            // TODO: Optimize how federation peers are identified.
+            IEnumerable<INetworkPeer> connectedPeers = this.connectionManager.ConnectedPeers
+                .Where(peer => (peer?.IsConnected ?? false) && this.federatedPegSettings.FederationNodeIpEndPoints.Contains(peer.PeerEndPoint));
 
-            List<INetworkPeer> peers = this.connectionManager.ConnectedPeers.ToList();
-
-            var ipAddressComparer = new IPAddressComparer();
-
-            // TODO: Can do the send to each peer in parallel.
-
-            foreach (INetworkPeer peer in peers)
+            Parallel.ForEach<INetworkPeer>(connectedPeers, async (INetworkPeer peer) =>
             {
-                // Broadcast to peers.
-                if (!peer.IsConnected)
-                    continue;
-
-                if (this.federatedPegSettings.FederationNodeIpEndPoints.Any(e => ipAddressComparer.Equals(e.Address, peer.PeerEndPoint.Address)))
+                try
                 {
-                    try
-                    {
-                        await peer.SendMessageAsync(payload).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                    }
+                    await peer.SendMessageAsync(payload).ConfigureAwait(false);
                 }
-            }
+                catch (OperationCanceledException)
+                {
+                }
+            });
         }
     }
 }

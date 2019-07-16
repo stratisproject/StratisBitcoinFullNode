@@ -96,5 +96,12 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// </summary>
         /// <returns>The counter of the cross chain transfer for each <see cref="CrossChainTransferStatus"/> status</returns>
         Dictionary<CrossChainTransferStatus, int> GetCrossChainTransferStatusCounter();
+
+        /// <summary>
+        /// Determines, for a list of input transactions, which of those are completed or unknown withdrawals.
+        /// </summary>
+        /// <param name="transactionsToCheck">The list of input transactions.</param>
+        /// <returns>The list of transactions that are completed (or unknown) wihdrawals.</returns>
+        List<Transaction> CompletedWithdrawals(IEnumerable<Transaction> transactionsToCheck);
     }
 }

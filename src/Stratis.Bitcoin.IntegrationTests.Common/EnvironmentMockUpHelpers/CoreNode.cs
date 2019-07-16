@@ -84,8 +84,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.runner = runner;
 
             this.State = CoreNodeState.Stopped;
+            string user = Encoders.Hex.EncodeData(RandomUtils.GetBytes(20));
             string pass = Encoders.Hex.EncodeData(RandomUtils.GetBytes(20));
-            this.creds = new NetworkCredential(pass, pass);
+            this.creds = new NetworkCredential(user, pass);
             this.Config = Path.Combine(this.runner.DataFolder, configfile);
             this.CookieAuth = useCookieAuth;
 
@@ -274,7 +275,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 return this.runner.FullNode.NodeService<IAsyncProvider>();
         }
 
-        public CoreNode Start()
+        public CoreNode Start(Action startAction = null)
         {
             lock (this.lockObject)
             {
@@ -283,6 +284,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 this.runner.OverrideDateTimeProvider = this.builderOverrideDateTimeProvider;
 
                 this.runner.BuildNode();
+                startAction?.Invoke();
                 this.runner.Start();
                 this.State = CoreNodeState.Starting;
             }
