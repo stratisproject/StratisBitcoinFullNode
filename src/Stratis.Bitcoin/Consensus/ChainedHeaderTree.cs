@@ -290,16 +290,17 @@ namespace Stratis.Bitcoin.Consensus
 
         public ChainedHeaderBlock[] GetChainedHeaderBlocks(List<uint256> blockHashes)
         {
-            var chainedHeaderBlocks = blockHashes.ToDictionary(x => x, x => (ChainedHeaderBlock)null);
+            var chainedHeaderBlocks = new List<ChainedHeaderBlock>();
 
-            foreach (uint256 key in blockHashes.Intersect(this.chainedHeadersByHash.Keys))
+            foreach (uint256 key in blockHashes)
             {
-                var chainedHeader = this.chainedHeadersByHash[key];
-
-                chainedHeaderBlocks[key] = new ChainedHeaderBlock(chainedHeader.Block, chainedHeader);
+                if (this.chainedHeadersByHash.TryGetValue(key, out ChainedHeader chainedHeader))
+                    chainedHeaderBlocks.Add(new ChainedHeaderBlock(chainedHeader.Block, chainedHeader));
+                else
+                    chainedHeaderBlocks.Add(null);
             }
 
-            return blockHashes.Select(x => chainedHeaderBlocks[x]).ToArray();
+            return chainedHeaderBlocks.ToArray();
         }
 
         /// <inheritdoc />
