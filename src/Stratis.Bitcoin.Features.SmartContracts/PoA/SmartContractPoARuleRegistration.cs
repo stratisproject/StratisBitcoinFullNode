@@ -69,13 +69,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                 services.AddSingleton(typeof(IFullValidationConsensusRule), ruleType);
 
             // Replace coinview rule
-            services.Remove(services.Single(f => f.ImplementationType == typeof(PoACoinviewRule)));
+            foreach (ServiceDescriptor serviceDescriptor in services.Where(f => f.ImplementationType == typeof(PoACoinviewRule)).ToList()) services.Remove(serviceDescriptor);
+            foreach (ServiceDescriptor serviceDescriptor in services.Where(f => f.ImplementationType == typeof(SmartContractPoACoinviewRule)).ToList()) services.Remove(serviceDescriptor);
             services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(SmartContractPoACoinviewRule));
 
             // SaveCoinviewRule must be the last rule executed because actually it calls CachedCoinView.SaveChanges that causes internal CachedCoinView to be updated
             // see https://dev.azure.com/Stratisplatformuk/StratisBitcoinFullNode/_workitems/edit/3770
-            services.Remove(services.Single(f => f.ImplementationType == typeof(SaveCoinviewRule)));
+            foreach (ServiceDescriptor serviceDescriptor in services.Where(f => f.ImplementationType == typeof(SaveCoinviewRule)).ToList()) services.Remove(serviceDescriptor);
             services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(SaveCoinviewRule));
+
         }
     }
 }

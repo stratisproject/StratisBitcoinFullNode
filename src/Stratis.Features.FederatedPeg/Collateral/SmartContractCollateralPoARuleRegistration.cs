@@ -35,13 +35,13 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
         public override void RegisterRules(IServiceCollection services)
         {
-            //base.RegisterRules(services);
+            base.RegisterRules(services);
 
             services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(CheckCollateralFullValidationRule));
 
             // SaveCoinviewRule must be the last rule executed because actually it calls CachedCoinView.SaveChanges that causes internal CachedCoinView to be updated
             // see https://dev.azure.com/Stratisplatformuk/StratisBitcoinFullNode/_workitems/edit/3770
-            services.Remove(services.Single(f => f.ImplementationType == typeof(SaveCoinviewRule)));
+            foreach (ServiceDescriptor serviceDescriptor in services.Where(f => f.ImplementationType == typeof(SaveCoinviewRule)).ToList()) services.Remove(serviceDescriptor);
             services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(SaveCoinviewRule));
         }
     }
