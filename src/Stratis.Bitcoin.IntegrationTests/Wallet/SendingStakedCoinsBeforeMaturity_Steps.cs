@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private IActionResult BuildTransaction()
         {
-            IActionResult transactionResult = this.proofOfStakeSteps.PremineNodeWithCoins.FullNode.NodeService<WalletController>()
+            IActionResult transactionResult = this.proofOfStakeSteps.PremineNodeWithCoins.FullNode.NodeController<WalletController>()
                 .BuildTransaction(new BuildTransactionRequest
                 {
                     AccountName = this.proofOfStakeSteps.PremineWalletAccount,
