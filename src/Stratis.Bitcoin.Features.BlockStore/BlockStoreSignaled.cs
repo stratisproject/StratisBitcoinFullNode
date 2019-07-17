@@ -111,6 +111,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
+            if (chainedHeader.Header.Version <= 7)
+            {
+                // Don't propagate blocks that are created by legacy clients.
+                return;
+            }
+
             this.logger.LogDebug("Block header '{0}' added to the announce queue.", chainedHeader);
             this.blocksToAnnounce.Enqueue(chainedHeader);
         }
