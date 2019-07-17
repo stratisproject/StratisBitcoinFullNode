@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 if ((ex is IOException) || (ex is OperationCanceledException) || (ex is ObjectDisposedException))
                 {
-                    this.logger.LogDebug("Receiving cancelled.");
+                    this.logger.LogDebug("Receiving cancelled. Exception: {0}", ex.ToString());
                     this.peer.Disconnect("Receiving cancelled.");
                 }
                 else
