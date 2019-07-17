@@ -80,7 +80,6 @@ namespace Stratis.Features.FederatedPeg.SourceChain
             headers.Reverse();
 
             int numDeposits = 0;
-            int numBlocks = 0;
 
             for (int ndx = 0; ndx < headers.Count; ndx += 100)
             {
@@ -92,6 +91,9 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
                 foreach (ChainedHeaderBlock chainedHeaderBlock in blocks)
                 {
+                    if (chainedHeaderBlock.Block == null)
+                        throw new InvalidOperationException($"Could not access block data at height {chainedHeaderBlock.ChainedHeader.Height}");
+
                     MaturedBlockDepositsModel maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(chainedHeaderBlock);
 
                     if (maturedBlockDeposits == null)
@@ -99,10 +101,9 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
                     maturedBlocks.Add(maturedBlockDeposits);
 
-                    numDeposits += maturedBlocks.Sum(b => b.Deposits.Count);
-                    numBlocks += maturedBlocks.Count;
+                    numDeposits += maturedBlockDeposits.Deposits.Count;
 
-                    if (numBlocks >= maxBlocks || numDeposits >= maxDeposits)
+                    if (maturedBlocks.Count >= maxBlocks || numDeposits >= maxDeposits)
                         return Result<List<MaturedBlockDepositsModel>>.Ok(maturedBlocks);
 
                     if (cancellation.IsCancellationRequested)
