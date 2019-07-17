@@ -282,7 +282,7 @@ namespace Stratis.Bitcoin.Consensus
                 chainedHeaderBlock = new ChainedHeaderBlock(chainedHeader.Block, chainedHeader);
 
                 if (chainedHeaderBlock.Block == null)
-                    this.logger.LogTrace("[BLOCK_NULL]");
+                    this.logger.LogDebug("[BLOCK_NULL]");
             }
 
             return chainedHeaderBlock;
@@ -377,7 +377,7 @@ namespace Stratis.Bitcoin.Consensus
             if ((chainedHeader.Previous.BlockValidationState != ValidationState.PartiallyValidated) &&
                 (chainedHeader.Previous.BlockValidationState != ValidationState.FullyValidated))
             {
-                this.logger.LogTrace("Previous block validation state invalid: {0}", chainedHeader.Previous);
+                this.logger.LogDebug("Previous block validation state invalid: {0}", chainedHeader.Previous);
                 this.logger.LogTrace("(-)[PREV_BLOCK_NOT_VALIDATED]:null");
                 return null;
             }
@@ -411,11 +411,11 @@ namespace Stratis.Bitcoin.Consensus
                 if (header.BlockDataAvailability == BlockDataAvailabilityState.BlockAvailable)
                 {
                     if (header.Block == null)
-                        this.logger.LogTrace("[BLOCK_NULL]");
+                        this.logger.LogDebug("[BLOCK_NULL]");
 
                     // Block header is not ancestor of the consensus tip so it's block data is guaranteed to be there.
                     chainedHeaderBlocksToValidate.Add(new ChainedHeaderBlock(header.Block, header));
-                    this.logger.LogTrace("Chained header '{0}' is selected for partial validation.", header);
+                    this.logger.LogDebug("Chained header '{0}' is selected for partial validation.", header);
                 }
             }
 
@@ -461,7 +461,7 @@ namespace Stratis.Bitcoin.Consensus
             ChainedHeader fork = newConsensusTip.FindFork(oldConsensusTip);
             ChainedHeader currentHeader = newConsensusTip;
 
-            this.logger.LogTrace("Old consensus tip: '{0}', new consensus tip: '{1}', fork point: '{2}'.", oldConsensusTip, newConsensusTip, fork);
+            this.logger.LogDebug("Old consensus tip: '{0}', new consensus tip: '{1}', fork point: '{2}'.", oldConsensusTip, newConsensusTip, fork);
 
             // Consider blocks that became a part of our best chain as consumed.
             while ((newConsensusTip.Block != null) && (currentHeader != fork) && !blockMined)
@@ -469,7 +469,7 @@ namespace Stratis.Bitcoin.Consensus
                 this.UnconsumedBlocksDataBytes -= currentHeader.Block.BlockSize.Value;
                 this.UnconsumedBlocksCount--;
 
-                this.logger.LogTrace("UnconsumedBlocks decreased by block {0} (byte: {1}), new count: {2}, new size: {3}", currentHeader, currentHeader.Block.BlockSize.Value, this.UnconsumedBlocksCount, this.UnconsumedBlocksDataBytes);
+                this.logger.LogDebug("UnconsumedBlocks decreased by block {0} (byte: {1}), new count: {2}, new size: {3}", currentHeader, currentHeader.Block.BlockSize.Value, this.UnconsumedBlocksCount, this.UnconsumedBlocksDataBytes);
                 currentHeader = currentHeader.Previous;
             }
 
@@ -509,7 +509,7 @@ namespace Stratis.Bitcoin.Consensus
                     if ((fork != null) && (fork.Height < finalizedHeight))
                     {
                         peerIdsToResync.Add(peerId);
-                        this.logger.LogTrace("Peer with Id {0} claims a chain that violates max reorg, its tip is '{1}' and the last finalized block height is {2}.", peerId, peerTip, finalizedHeight);
+                        this.logger.LogDebug("Peer with Id {0} claims a chain that violates max reorg, its tip is '{1}' and the last finalized block height is {2}.", peerId, peerTip, finalizedHeight);
                     }
                 }
             }
@@ -550,7 +550,7 @@ namespace Stratis.Bitcoin.Consensus
                 currentBlockToDeleteData.Block = null;
 
                 // TODO when prune node mode is implemented mark currentBlockToDeleteData as BlockDataAvailabilityState.HeaderOnly
-                this.logger.LogTrace("Block data for '{0}' was removed from memory, block data availability is {1}.", currentBlockToDeleteData, currentBlockToDeleteData.BlockDataAvailability);
+                this.logger.LogDebug("Block data for '{0}' was removed from memory, block data availability is {1}.", currentBlockToDeleteData, currentBlockToDeleteData.BlockDataAvailability);
 
                 currentBlockToDeleteData = currentBlockToDeleteData.Previous;
             }
@@ -611,7 +611,7 @@ namespace Stratis.Bitcoin.Consensus
                 this.UnconsumedBlocksDataBytes -= header.Block.BlockSize.Value;
                 this.UnconsumedBlocksCount--;
 
-                this.logger.LogTrace("UnconsumedBlocks decreased by block {0} (byte: {1}), new count: {2}, new size: {3}", header, header.Block.BlockSize.Value, this.UnconsumedBlocksCount, this.UnconsumedBlocksDataBytes);
+                this.logger.LogDebug("UnconsumedBlocks decreased by block {0} (byte: {1}), new count: {2}, new size: {3}", header, header.Block.BlockSize.Value, this.UnconsumedBlocksCount, this.UnconsumedBlocksDataBytes);
             }
         }
 
@@ -636,12 +636,12 @@ namespace Stratis.Bitcoin.Consensus
             this.UnconsumedBlocksDataBytes += chainedHeader.Block.BlockSize.Value;
             this.UnconsumedBlocksCount++;
 
-            this.logger.LogTrace("UnconsumedBlocks increased by block {0} (byte: {1}), new count: {2}, new size: {3}", chainedHeader, chainedHeader.Block.BlockSize.Value, this.UnconsumedBlocksCount, this.UnconsumedBlocksDataBytes);
+            this.logger.LogDebug("UnconsumedBlocks increased by block {0} (byte: {1}), new count: {2}, new size: {3}", chainedHeader, chainedHeader.Block.BlockSize.Value, this.UnconsumedBlocksCount, this.UnconsumedBlocksDataBytes);
 
             bool partialValidationRequired = chainedHeader.Previous.BlockValidationState == ValidationState.PartiallyValidated
                                           || chainedHeader.Previous.BlockValidationState == ValidationState.FullyValidated;
 
-            this.logger.LogTrace("[BLOCK_DOWNLOAD_PREVIOUS_STATE]{0}.{1}:{2}", nameof(chainedHeader), nameof(chainedHeader.Previous), chainedHeader.Previous);
+            this.logger.LogDebug("[BLOCK_DOWNLOAD_PREVIOUS_STATE]{0}.{1}:{2}", nameof(chainedHeader), nameof(chainedHeader.Previous), chainedHeader.Previous);
 
             return partialValidationRequired;
         }
@@ -672,7 +672,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 if (this.TryFindLastValidatedHeader(headers, out ChainedHeader lastAlreadyValidatedHeader))
                 {
-                    this.logger.LogTrace("Some headers were already validated.");
+                    this.logger.LogDebug("Some headers were already validated.");
                     this.AddOrReplacePeerTip(networkPeerId, lastAlreadyValidatedHeader.Header.GetHash());
                 }
 
@@ -731,7 +731,7 @@ namespace Stratis.Bitcoin.Consensus
                 if ((connectNewHeadersResult == null) && isBelowLastCheckpoint)
                 {
                     connectNewHeadersResult = new ConnectNewHeadersResult() { Consumed = latestNewHeader };
-                    this.logger.LogTrace("Chained header '{0}' below last checkpoint.", currentChainedHeader);
+                    this.logger.LogDebug("Chained header '{0}' below last checkpoint.", currentChainedHeader);
                 }
 
                 if (connectNewHeadersResult != null)
@@ -890,20 +890,20 @@ namespace Stratis.Bitcoin.Consensus
                 bool headerHasDecendents = currentHeader.Next.Count > 0;
                 if (headerHasDecendents)
                 {
-                    this.logger.LogTrace("Header '{0}' is part of another branch.", currentHeader);
+                    this.logger.LogDebug("Header '{0}' is part of another branch.", currentHeader);
                     break;
                 }
 
                 bool headerIsClaimedByPeer = this.peerIdsByTipHash.ContainsKey(currentHeader.HashBlock);
                 if (headerIsClaimedByPeer)
                 {
-                    this.logger.LogTrace("Header '{0}' is claimed by a peer and won't be removed.", currentHeader);
+                    this.logger.LogDebug("Header '{0}' is claimed by a peer and won't be removed.", currentHeader);
                     break;
                 }
 
                 this.DisconnectChainHeader(currentHeader);
 
-                this.logger.LogTrace("Header '{0}' was removed from the tree.", currentHeader);
+                this.logger.LogDebug("Header '{0}' was removed from the tree.", currentHeader);
 
                 currentHeader = currentHeader.Previous;
             }
@@ -924,12 +924,12 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConsensusException("PEER_TIP_NOT_FOUND");
             }
 
-            this.logger.LogTrace("Tip claim of peer ID {0} removed from chained header '{1}'.", networkPeerId, chainedHeader);
+            this.logger.LogDebug("Tip claim of peer ID {0} removed from chained header '{1}'.", networkPeerId, chainedHeader);
             peerIds.Remove(networkPeerId); // TODO: do we need to throw in this case
 
             if (peerIds.Count == 0)
             {
-                this.logger.LogTrace("Header '{0}' is not the tip of any peer.", chainedHeader);
+                this.logger.LogDebug("Header '{0}' is not the tip of any peer.", chainedHeader);
                 this.peerIdsByTipHash.Remove(chainedHeader.HashBlock);
                 this.RemoveUnclaimedBranch(chainedHeader);
             }
@@ -1017,7 +1017,7 @@ namespace Stratis.Bitcoin.Consensus
             ChainedHeader previousChainedHeader;
             if (!this.chainedHeadersByHash.TryGetValue(headers[newHeaderIndex].HashPrevBlock, out previousChainedHeader))
             {
-                this.logger.LogTrace("Previous hash '{0}' of block hash '{1}' was not found.", headers[newHeaderIndex].GetHash(), headers[newHeaderIndex].HashPrevBlock);
+                this.logger.LogDebug("Previous hash '{0}' of block hash '{1}' was not found.", headers[newHeaderIndex].GetHash(), headers[newHeaderIndex].HashPrevBlock);
                 this.logger.LogTrace("(-)[PREVIOUS_HEADER_NOT_FOUND]");
                 throw new ConnectHeaderException();
             }
@@ -1032,7 +1032,7 @@ namespace Stratis.Bitcoin.Consensus
                 newChainedHeaders.Add(newChainedHeader);
                 newHeaderIndex++;
 
-                this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
+                this.logger.LogDebug("New chained header was added to the tree '{0}'.", newChainedHeader);
 
                 try
                 {
@@ -1048,7 +1048,7 @@ namespace Stratis.Bitcoin.Consensus
                             break;
 
                         newChainedHeaders.Add(newChainedHeader);
-                        this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
+                        this.logger.LogDebug("New chained header was added to the tree '{0}'.", newChainedHeader);
 
                         previousChainedHeader = newChainedHeader;
                     }
@@ -1117,7 +1117,7 @@ namespace Stratis.Bitcoin.Consensus
                 uint256 currentBlockHash = headers[newHeaderIndex].GetHash();
                 if (!this.chainedHeadersByHash.ContainsKey(currentBlockHash))
                 {
-                    this.logger.LogTrace("A new header with hash '{0}' was found that is not connected to the tree.", currentBlockHash);
+                    this.logger.LogDebug("A new header with hash '{0}' was found that is not connected to the tree.", currentBlockHash);
                     return true;
                 }
             }
@@ -1177,12 +1177,12 @@ namespace Stratis.Bitcoin.Consensus
 
                     if (fork.Height < finalizedHeight)
                     {
-                        this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}' and the last finalized block height is {3}.", reorgLength, maxReorgLength, consensusTip, finalizedHeight);
+                        this.logger.LogDebug("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}' and the last finalized block height is {3}.", reorgLength, maxReorgLength, consensusTip, finalizedHeight);
                         this.logger.LogTrace("(-)[MAX_REORG_VIOLATION]");
                         throw new MaxReorgViolationException();
                     }
 
-                    this.logger.LogTrace("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
+                    this.logger.LogDebug("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
                 }
             }
         }
@@ -1215,7 +1215,7 @@ namespace Stratis.Bitcoin.Consensus
             this.UnconsumedBlocksDataBytes += disconnectedBlock.Block.BlockSize.Value;
             this.UnconsumedBlocksCount++;
 
-            this.logger.LogTrace("UnconsumedBlocks increased by block {0} (byte: {1}), new count: {2}, new size: {3}", disconnectedBlock.ChainedHeader, disconnectedBlock.Block.BlockSize.Value, this.UnconsumedBlocksCount, this.UnconsumedBlocksDataBytes);
+            this.logger.LogDebug("UnconsumedBlocks increased by block {0} (byte: {1}), new count: {2}, new size: {3}", disconnectedBlock.ChainedHeader, disconnectedBlock.Block.BlockSize.Value, this.UnconsumedBlocksCount, this.UnconsumedBlocksDataBytes);
         }
     }
 

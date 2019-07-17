@@ -184,7 +184,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             lock (this.lockObject)
             {
-                if (transactionData.IsSpendable())
+                if (this.spendableTransactionList.ContainsKey(transactionData))
                     this.spendableTransactionList.Remove(transactionData);
 
                 this.RemoveSpentTransactionByHeight(transactionData);
@@ -223,6 +223,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
             lock (this.lockObject)
             {
                 this.RemoveSpentTransactionByHeight(transactionData);
+
+                // This is ordered by height/id/index.
+                if (this.spendableTransactionList.ContainsKey(transactionData))
+                    this.spendableTransactionList.Remove(transactionData);
             }
         }
 
@@ -237,6 +241,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
             lock (this.lockObject)
             {
                 this.AddSpentTransactionByHeight(transactionData);
+
+                // This is ordered by height/id/index.
+                if (transactionData.IsSpendable())
+                    this.spendableTransactionList.Add(transactionData, transactionData);
             }
         }
 

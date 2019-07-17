@@ -39,6 +39,38 @@ namespace Stratis.Features.FederatedPeg.Tests.Wallet
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
+        [Fact]
+        public void CanChangeHeightOfSpendableTransaction()
+        {
+            var transactionData1 = new TransactionData()
+            {
+                Id = 1,
+                Index = 1,
+                BlockHeight = null,
+                SpendingDetails = null
+            };
+
+            var transactionData2 = new TransactionData()
+            {
+                Id = 2,
+                Index = 0,
+                BlockHeight = null,
+                SpendingDetails = null
+            };
+
+            var transactions = new MultiSigTransactions();
+            transactions.Add(transactionData2);
+            transactions.Add(transactionData1);
+
+            transactionData2.BlockHeight = 1;
+
+            transactions.Remove(transactionData2);
+
+            transactionData2.BlockHeight = null;
+
+            transactions.Add(transactionData2);
+        }
+
         [Theory]
         [ClassData(typeof(TestData))]
         public void TransactionDataAddedToMultiSigTransactionsExistsInExpectedLookups(bool hasBlockHeight, bool hasSpendingDetails, bool hasWithdrawalDetails, bool flipBlockHeight, bool flipSpendingDetails, bool flipWithdrawalDetails)

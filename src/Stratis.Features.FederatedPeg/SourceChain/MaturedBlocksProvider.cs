@@ -91,8 +91,12 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
                 foreach (ChainedHeaderBlock chainedHeaderBlock in blocks)
                 {
-                    if (chainedHeaderBlock.Block == null)
-                        throw new InvalidOperationException($"Could not access block data at height {chainedHeaderBlock.ChainedHeader.Height}");
+                    if (chainedHeaderBlock?.Block?.Transactions == null)
+                    {
+                        this.logger.LogDebug("Unexpected null data. Send what we've collected.");
+
+                        return Result<List<MaturedBlockDepositsModel>>.Ok(maturedBlocks);
+                    }
 
                     MaturedBlockDepositsModel maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(chainedHeaderBlock);
 

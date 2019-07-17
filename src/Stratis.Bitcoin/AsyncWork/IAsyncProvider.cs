@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.Utilities;
@@ -111,9 +112,14 @@ namespace Stratis.Bitcoin.AsyncWork
         bool IsRegisteredTaskRunning(string name);
 
         /// <summary>
-        /// returns statistics about running or faulted async loops.
+        /// Returns statistics about running or faulted async loops.
         /// </summary>
         /// <param name="faultyOnly">if set to <c>true</c> dump information only for loops in faulty state.</param>
         string GetStatistics(bool faultyOnly);
+
+        /// <summary>
+        /// Returns a list of friendly names of all loops, as well as their current status.
+        /// </summary>
+        List<(string loopName, TaskStatus status)> GetAll();
     }
 }
