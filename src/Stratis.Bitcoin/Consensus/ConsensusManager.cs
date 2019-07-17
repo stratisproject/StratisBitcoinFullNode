@@ -1385,7 +1385,7 @@ namespace Stratis.Bitcoin.Consensus
                 // gives us easier access to these values if issues are reported in the field.
 
                 // Use the default time provider - same as in InitialBlockDownloadState.IsInitialBlockDownload.
-                long currentTime =this.dateTimeProvider.GetTime();
+                long currentTime = this.dateTimeProvider.GetTime();
                 long tipAge = currentTime - this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds();
                 long maxTipAge = this.consensusSettings.MaxTipAge;
 
