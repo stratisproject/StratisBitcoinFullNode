@@ -320,23 +320,23 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public List<Block> GetBlocks(List<uint256> blockHashes)
         {
-            var res = new Dictionary<uint256, Block>();
-
             lock (this.blocksCacheLock)
             {
+                var res = new Dictionary<uint256, Block>();
+
                 foreach (uint256 key in blockHashes.Intersect(this.pendingBlocksCache.Keys))
                     res[key] = this.pendingBlocksCache[key].Block;
+
+                int cacheCount = res.Count;
+
+                var storeHashes = blockHashes.Except(this.pendingBlocksCache.Keys).ToList();
+                foreach ((Block block, int hashIndex) in this.blockRepository.GetBlocks(storeHashes).Select((x, n) => (x, n)))
+                    res[storeHashes[hashIndex]] = block;
+
+                this.logger.LogTrace("{0} blocks were found in the cache of a total of {1} blocks.", cacheCount, res.Count);
+
+                return blockHashes.Select(bh => res[bh]).ToList();
             }
-
-            int cacheCount = res.Count;
-
-            var storeHashes = blockHashes.Except(this.pendingBlocksCache.Keys).ToList();
-            foreach ((Block block, int hashIndex) in this.blockRepository.GetBlocks(storeHashes).Select((x, n) => (x, n)))
-                res[storeHashes[hashIndex]] = block;
-
-            this.logger.LogTrace("{0} blocks were found in the cache of a total of {1} blocks.", cacheCount, res.Count);
-
-            return res.OrderBy(kv => kv.Key).Select(kv => kv.Value).ToList();
         }
 
         /// <summary>Sets the internal store tip and exposes the store tip to other components through the chain state.</summary>
