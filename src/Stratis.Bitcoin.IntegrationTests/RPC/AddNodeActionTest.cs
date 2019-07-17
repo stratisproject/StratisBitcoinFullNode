@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net.Sockets;
-using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC

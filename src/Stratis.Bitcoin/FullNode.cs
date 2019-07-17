@@ -92,35 +92,6 @@ namespace Stratis.Bitcoin
         /// <inheritdoc />
         public IFullNodeServiceProvider Services { get; set; }
 
-        public T NodeController<T>(bool failWithDefault = false)
-        {
-            foreach (ConstructorInfo ci in typeof(T).GetConstructors())
-            {
-                ParameterInfo[] paramInfo = ci.GetParameters();
-
-                var parameters = new object[paramInfo.Length];
-
-                for (int i = 0; i < parameters.Length; i++)
-                {
-                    parameters[i] = this.Services.ServiceProvider.GetService(paramInfo[i].ParameterType) ?? paramInfo[i].DefaultValue;
-                    if (parameters[i] == null && !paramInfo[i].HasDefaultValue)
-                    {
-                        if (failWithDefault)
-                            return default(T);
-
-                        throw new InvalidOperationException($"The {typeof(T).ToString()} controller constructor can't resolve {paramInfo[i].ParameterType.ToString()}");
-                    }
-                }
-
-                return (T)ci.Invoke(parameters);
-            }
-
-            if (failWithDefault)
-                return default(T);
-
-            throw new InvalidOperationException($"The {typeof(T).ToString()} controller has no constructor");
-        }
-
         public T NodeService<T>(bool failWithDefault = false)
         {
             if (this.Services != null && this.Services.ServiceProvider != null)

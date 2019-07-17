@@ -61,14 +61,6 @@ namespace Stratis.Bitcoin
         /// <param name="failWithError">Set to false to return null instead of throwing an error</param>
         /// <returns></returns>
         T NodeFeature<T>(bool failWithError = false);
-
-        /// <summary>
-        /// Create an instance of the controller type using DI.
-        /// </summary>
-        /// <typeparam name="T">Class of type.</typeparam>
-        /// <param name="failWithDefault">Set to true to return null instead of throwing an error.</param>
-        /// <returns></returns>
-        T NodeController<T>(bool failWithDefault = false);
     }
 
     /// <summary>Represents <see cref="IFullNode"/> state.</summary>

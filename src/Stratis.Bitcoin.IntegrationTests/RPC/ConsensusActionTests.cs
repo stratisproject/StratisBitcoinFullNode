@@ -1,5 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using NBitcoin;
+﻿using NBitcoin;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Xunit;

@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC
