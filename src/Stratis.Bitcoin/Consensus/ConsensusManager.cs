@@ -1237,6 +1237,7 @@ namespace Stratis.Bitcoin.Consensus
             return chainedHeaderBlock;
         }
 
+        /// <inheritdoc />
         public ChainedHeaderBlock[] GetBlockData(List<uint256> blockHashes)
         {
             Dictionary<uint256, ChainedHeaderBlock> chainedHeaderBlocks;
