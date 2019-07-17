@@ -109,8 +109,9 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
             this.consensusManager.Tip.Returns(tip);
 
-            this.consensusManager.GetBlockData(Arg.Any<uint256>()).ReturnsForAnyArgs((x) => {
-                return new ChainedHeaderBlock(new Block(), tip);
+            this.consensusManager.GetBlockData(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) => {
+                List<uint256> hashes = x.ArgAt<List<uint256>>(0);
+                return hashes.Select((h) => new ChainedHeaderBlock(new Block(), tip)).ToArray();
             });
 
             IActionResult result = await controller.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(1, 1000)).ConfigureAwait(false);
@@ -188,8 +189,9 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
                 depositExtractorCallCount++;
             });
 
-            this.consensusManager.GetBlockData(Arg.Any<uint256>()).ReturnsForAnyArgs((x) => {
-                return new ChainedHeaderBlock(new Block(), earlierBlock);
+            this.consensusManager.GetBlockData(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) => {
+                List<uint256> hashes = x.ArgAt<List<uint256>>(0);
+                return hashes.Select((h) => new ChainedHeaderBlock(new Block(), earlierBlock)).ToArray();
             });
 
             IActionResult result = await controller.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(earlierBlock.Height, 1000)).ConfigureAwait(false);

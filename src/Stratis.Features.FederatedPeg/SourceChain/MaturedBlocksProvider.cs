@@ -105,7 +105,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
                     maturedBlocks.Add(maturedBlockDeposits);
 
-                    numDeposits += maturedBlockDeposits.Deposits.Count;
+                    numDeposits += maturedBlockDeposits.Deposits?.Count ?? 0;
 
                     if (maturedBlocks.Count >= maxBlocks || numDeposits >= maxDeposits)
                         return Result<List<MaturedBlockDepositsModel>>.Ok(maturedBlocks);
