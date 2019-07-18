@@ -1233,7 +1233,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 // We don't care if witness for this input is empty, since it must not be bloated.
                 // If the script is invalid without witness, it would be caught sooner or later during validation.
-                if (input.WitScript == null)
+                if (input.WitScriptEmpty)
                     continue;
 
                 TxOut prev = mapInputs.GetOutputFor(input);
