@@ -30,7 +30,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public bool ReIndex { get; set; }
 
         /// <summary><c>true</c> to maintain a full addresses index.</summary>
-        /// <remarks><see cref="TxIndex"/> should be set to <c>true</c> in order to enable address indexing.</remarks>
         public bool AddressIndex { get; set; }
 
         /// <summary>Calculates minimum amount of blocks we need to keep during pruning.</summary>
@@ -85,7 +84,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             builder.AppendLine($"-txindex=<0 or 1>              Enable to maintain a full transaction index.");
             builder.AppendLine($"-reindex=<0 or 1>              Rebuild chain state and block index from block data files on disk.");
-            builder.AppendLine($"-addressindex=<0 or 1>         Enable to maintain a full addresses index. Requires txindex to be enabled in order to work.");
+            builder.AppendLine($"-addressindex=<0 or 1>         Enable to maintain a full address index.");
 
             NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
         }

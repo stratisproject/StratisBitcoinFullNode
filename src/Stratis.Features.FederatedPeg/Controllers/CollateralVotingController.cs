@@ -11,11 +11,24 @@ using Stratis.Bitcoin.Utilities.ModelStateErrors;
 
 namespace Stratis.Features.FederatedPeg.Controllers
 {
-    public class CollateralVotingController : VotingControllerBase
+    [Route("api/[controller]")]
+    public class CollateralVotingController : Controller
     {
-        public CollateralVotingController(IFederationManager fedManager, ILoggerFactory loggerFactory, VotingManager votingManager, IWhitelistedHashesRepository whitelistedHashesRepository, Network network)
-            : base(fedManager, loggerFactory, votingManager, whitelistedHashesRepository, network)
+        protected readonly IFederationManager fedManager;
+
+        protected readonly VotingManager votingManager;
+
+        protected readonly Network network;
+
+        protected readonly ILogger logger;
+
+        public CollateralVotingController(IFederationManager fedManager, ILoggerFactory loggerFactory, VotingManager votingManager, Network network)
         {
+            this.fedManager = fedManager;
+            this.votingManager = votingManager;
+            this.network = network;
+
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         [Route("schedulevote-addfedmember")]

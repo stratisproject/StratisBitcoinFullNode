@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Wallet;
 
 namespace Stratis.Features.FederatedPeg.Interfaces
@@ -8,7 +9,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
     /// <summary>
     /// Interface for a manager providing operations on wallets.
     /// </summary>
-    public interface IFederationWalletManager
+    public interface IFederationWalletManager : ILockProtected
     {
         /// <summary>
         /// Starts this wallet manager.
@@ -68,6 +69,14 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// <param name="checkSignature">Indicates whether to check the signature.</param>
         /// <returns><c>True</c> if all's well and <c>false</c> otherwise.</returns>
         bool ValidateTransaction(Transaction transaction, bool checkSignature = false);
+
+        /// <summary>
+        /// Verifies that a transaction's inputs aren't being consumed by any other transactions.
+        /// </summary>
+        /// <param name="transaction">The transaction to check.</param>
+        /// <param name="checkSignature">Indicates whether to check the signature.</param>
+        /// <returns><c>True</c> if all's well and <c>false</c> otherwise.</returns>
+        bool ValidateConsolidatingTransaction(Transaction transaction, bool checkSignature = false);
 
         /// <summary>
         /// Saves the wallet into the file system.

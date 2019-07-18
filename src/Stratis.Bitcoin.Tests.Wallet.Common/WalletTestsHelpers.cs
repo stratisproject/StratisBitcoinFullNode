@@ -413,7 +413,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
                             BlockHeight = height,
                             Amount = new Money(new Random().Next(500000, 1000000)),
                             SpendingDetails = new SpendingDetails(),
-                            Id = new uint256()
+                            Id = new uint256(),
                         }
                     }
                 };

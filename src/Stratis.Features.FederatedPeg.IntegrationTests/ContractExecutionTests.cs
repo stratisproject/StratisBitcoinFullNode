@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.IntegrationTests;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
@@ -51,8 +52,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 CoreNode user1 = nodeBuilder.CreateSidechainNode(network).WithWallet();
                 CoreNode fed1 = nodeBuilder.CreateSidechainFederationNode(network, counterChainNetwork, network.FederationKeys[0], testingFederation: false).WithWallet();
                 fed1.AppendToConfig("sidechain=1");
-                fed1.AppendToConfig($"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
-                fed1.AppendToConfig($"{FederationGatewaySettings.PublicKeyParam}={pubKeysByMnemonic[mnemonics[0]].ToString()}");
+                fed1.AppendToConfig($"{FederatedPegSettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
+                fed1.AppendToConfig($"{FederatedPegSettings.PublicKeyParam}={pubKeysByMnemonic[mnemonics[0]].ToString()}");
 
                 user1.Start();
                 fed1.Start();

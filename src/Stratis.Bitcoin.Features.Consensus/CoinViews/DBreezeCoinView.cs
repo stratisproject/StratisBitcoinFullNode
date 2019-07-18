@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         Row<byte[], byte[]> row = transaction.Select<byte[], byte[]>("Coins", input.ToBytes(false));
                         UnspentOutputs outputs = row.Exists ? new UnspentOutputs(input, this.dBreezeSerializer.Deserialize<Coins>(row.Value)) : null;
 
-                        this.logger.LogTrace("Outputs for '{0}' were {1}.", input, outputs == null ? "NOT loaded" : "loaded");
+                        this.logger.LogDebug("Outputs for '{0}' were {1}.", input, outputs == null ? "NOT loaded" : "loaded");
 
                         result[i++] = outputs;
                     }
@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     {
                         if (coin.IsPrunable)
                         {
-                            this.logger.LogTrace("Outputs of transaction ID '{0}' are prunable and will be removed from the database.", coin.TransactionId);
+                            this.logger.LogDebug("Outputs of transaction ID '{0}' are prunable and will be removed from the database.", coin.TransactionId);
                             transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
                         }
                         else
@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     for (int i = 0; i < toInsert.Count; i++)
                     {
                         var coin = toInsert[i];
-                        this.logger.LogTrace("Outputs of transaction ID '{0}' are NOT PRUNABLE and will be inserted into the database. {1}/{2}.", coin.TransactionId, i, toInsert.Count);
+                        this.logger.LogDebug("Outputs of transaction ID '{0}' are NOT PRUNABLE and will be inserted into the database. {1}/{2}.", coin.TransactionId, i, toInsert.Count);
 
                         transaction.Insert("Coins", coin.TransactionId.ToBytes(false), this.dBreezeSerializer.Serialize(coin.ToCoins()));
                     }
@@ -242,7 +242,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         int nextRewindIndex = this.GetRewindIndex(transaction) + 1;
                         foreach (RewindData rewindData in rewindDataList)
                         {
-                            this.logger.LogTrace("Rewind state #{0} created.", nextRewindIndex);
+                            this.logger.LogDebug("Rewind state #{0} created.", nextRewindIndex);
 
                             transaction.Insert("Rewind", nextRewindIndex, this.dBreezeSerializer.Serialize(rewindData));
                             nextRewindIndex++;
@@ -408,7 +408,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 foreach (StakeItem blockStake in blocklist)
                 {
-                    this.logger.LogTrace("Loading POS block hash '{0}' from the database.", blockStake.BlockId);
+                    this.logger.LogDebug("Loading POS block hash '{0}' from the database.", blockStake.BlockId);
                     Row<byte[], byte[]> stakeRow = transaction.Select<byte[], byte[]>("Stake", blockStake.BlockId.ToBytes(false));
 
                     if (stakeRow.Exists)

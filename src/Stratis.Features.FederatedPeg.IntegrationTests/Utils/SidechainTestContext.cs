@@ -11,10 +11,12 @@ using Flurl.Http;
 using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.IntegrationTests;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
+using Stratis.Features.FederatedPeg.CounterChain;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Sidechains.Networks;
 
@@ -278,15 +280,15 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
         {
             string fedIps = $"{fed1.Endpoint},{fed2.Endpoint},{fed3.Endpoint}";
 
-            fed1.AppendToConfig($"{FederationGatewaySettings.FederationIpsParam}={fedIps}");
-            fed2.AppendToConfig($"{FederationGatewaySettings.FederationIpsParam}={fedIps}");
-            fed3.AppendToConfig($"{FederationGatewaySettings.FederationIpsParam}={fedIps}");
+            fed1.AppendToConfig($"{FederatedPegSettings.FederationIpsParam}={fedIps}");
+            fed2.AppendToConfig($"{FederatedPegSettings.FederationIpsParam}={fedIps}");
+            fed3.AppendToConfig($"{FederatedPegSettings.FederationIpsParam}={fedIps}");
         }
 
         private void ApplyCounterChainAPIPort(CoreNode fromNode, CoreNode toNode)
         {
-            fromNode.AppendToConfig($"{FederationGatewaySettings.CounterChainApiPortParam}={toNode.ApiPort.ToString()}");
-            toNode.AppendToConfig($"{FederationGatewaySettings.CounterChainApiPortParam}={fromNode.ApiPort.ToString()}");
+            fromNode.AppendToConfig($"{CounterChainSettings.CounterChainApiPortParam}={toNode.ApiPort.ToString()}");
+            toNode.AppendToConfig($"{CounterChainSettings.CounterChainApiPortParam}={fromNode.ApiPort.ToString()}");
         }
 
         private void ApplyConfigParametersToNodes()
@@ -308,25 +310,25 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             this.FedMain3.AppendToConfig($"mindepositconfirmations=5");
 
             // To look for deposits from the beginning on our sidechain.
-            this.FedSide1.AppendToConfig($"{FederationGatewaySettings.CounterChainDepositBlock}=1");
-            this.FedSide2.AppendToConfig($"{FederationGatewaySettings.CounterChainDepositBlock}=1");
-            this.FedSide3.AppendToConfig($"{FederationGatewaySettings.CounterChainDepositBlock}=1");
+            this.FedSide1.AppendToConfig($"{FederatedPegSettings.CounterChainDepositBlock}=1");
+            this.FedSide2.AppendToConfig($"{FederatedPegSettings.CounterChainDepositBlock}=1");
+            this.FedSide3.AppendToConfig($"{FederatedPegSettings.CounterChainDepositBlock}=1");
 
-            this.FedSide1.AppendToConfig($"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
-            this.FedSide2.AppendToConfig($"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
-            this.FedSide3.AppendToConfig($"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
+            this.FedSide1.AppendToConfig($"{FederatedPegSettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
+            this.FedSide2.AppendToConfig($"{FederatedPegSettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
+            this.FedSide3.AppendToConfig($"{FederatedPegSettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
 
-            this.FedMain1.AppendToConfig($"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
-            this.FedMain2.AppendToConfig($"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
-            this.FedMain3.AppendToConfig($"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
+            this.FedMain1.AppendToConfig($"{FederatedPegSettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
+            this.FedMain2.AppendToConfig($"{FederatedPegSettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
+            this.FedMain3.AppendToConfig($"{FederatedPegSettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
 
-            this.FedSide1.AppendToConfig($"{FederationGatewaySettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[0]].ToString()}");
-            this.FedSide2.AppendToConfig($"{FederationGatewaySettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[1]].ToString()}");
-            this.FedSide3.AppendToConfig($"{FederationGatewaySettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[2]].ToString()}");
+            this.FedSide1.AppendToConfig($"{FederatedPegSettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[0]].ToString()}");
+            this.FedSide2.AppendToConfig($"{FederatedPegSettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[1]].ToString()}");
+            this.FedSide3.AppendToConfig($"{FederatedPegSettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[2]].ToString()}");
 
-            this.FedMain1.AppendToConfig($"{FederationGatewaySettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[0]].ToString()}");
-            this.FedMain2.AppendToConfig($"{FederationGatewaySettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[1]].ToString()}");
-            this.FedMain3.AppendToConfig($"{FederationGatewaySettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[2]].ToString()}");
+            this.FedMain1.AppendToConfig($"{FederatedPegSettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[0]].ToString()}");
+            this.FedMain2.AppendToConfig($"{FederatedPegSettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[1]].ToString()}");
+            this.FedMain3.AppendToConfig($"{FederatedPegSettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[2]].ToString()}");
 
             this.ApplyFederationIPs(this.FedMain1, this.FedMain2, this.FedMain3);
             this.ApplyFederationIPs(this.FedSide1, this.FedSide2, this.FedSide3);

@@ -10,7 +10,7 @@ using Stratis.Features.FederatedPeg.Models;
 namespace Stratis.Features.FederatedPeg.Controllers
 {
     /// <summary>Rest client for <see cref="FederationGatewayController"/>.</summary>
-    public interface IFederationGatewayClient
+    public interface IFederationGatewayClient : IRestApiClientBase
     {
         /// <summary><see cref="FederationGatewayController.GetMaturedBlockDepositsAsync"/></summary>
         Task<List<MaturedBlockDepositsModel>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model, CancellationToken cancellation = default(CancellationToken));
@@ -25,7 +25,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
         /// In a production/live scenario the sidechain and mainnet federation nodes should run on the same machine.
         /// </para>
         /// </summary>
-        public FederationGatewayClient(ILoggerFactory loggerFactory, IFederationGatewaySettings settings, IHttpClientFactory httpClientFactory)
+        public FederationGatewayClient(ILoggerFactory loggerFactory, ICounterChainSettings settings, IHttpClientFactory httpClientFactory)
             : base(loggerFactory, httpClientFactory, settings.CounterChainApiPort, "FederationGateway", $"http://{settings.CounterChainApiHost}")
         {
         }
