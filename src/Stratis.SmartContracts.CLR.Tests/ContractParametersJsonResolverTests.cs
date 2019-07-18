@@ -51,7 +51,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             {
                 ContractResolver = this.resolver
             });
-            Assert.Contains($"\"Return\":\"{expectedString}\"", jsonOutput);
+            Assert.Contains($"\"return\":\"{expectedString}\"", jsonOutput);
         }
     }
 }
