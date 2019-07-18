@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ConsensusManagerPerformanceCounter performanceCounter;
 
         private readonly ConsensusSettings consensusSettings;
-        
+
         private readonly IDateTimeProvider dateTimeProvider;
 
         private bool isIbd;
@@ -280,6 +280,12 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     this.logger.LogTrace("(-)[NO_HEADERS_CONNECTED]:null");
                     return null;
+                }
+
+                if (connectNewHeadersResult.CantConnect)
+                {
+                    this.logger.LogTrace("(-)[NOTHING_CONNECTED]:null");
+                    return connectNewHeadersResult;
                 }
 
                 if (connectNewHeadersResult.Consumed == null)
