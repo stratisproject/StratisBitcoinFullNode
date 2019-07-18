@@ -463,7 +463,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// <param name="height">The height of the block this being processed.</param>
         /// <param name="address">The address receiving the funds.</param>
         /// <param name="amount">The amount being received.</param>
-        /// <param name="deposited"><c>true</c> if this is an output being spent, <c>false</c> otherwise.</param>
+        /// <param name="deposited"><c>false</c> if this is an output being spent, <c>true</c> otherwise.</param>
         /// <remarks>Should be protected by <see cref="lockObject"/>.</remarks>
         private void ProcessBalanceChangeLocked(int height, string address, Money amount, bool deposited)
         {

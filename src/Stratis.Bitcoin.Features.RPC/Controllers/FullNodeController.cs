@@ -286,8 +286,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             if (isJsonFormat)
                 return new BlockHeaderModel(blockHeader);
-            else
-                return new HexModel(blockHeader.ToHex(this.Network));
+
+            return new HexModel(blockHeader.ToHex(this.Network));
         }
 
         /// <summary>
