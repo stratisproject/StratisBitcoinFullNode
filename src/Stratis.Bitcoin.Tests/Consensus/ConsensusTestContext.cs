@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.AsyncWork;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
@@ -96,8 +96,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.BlockStore = new Mock<IBlockStore>();
             this.checkpoints = new Mock<ICheckpoints>();
             this.ChainState = new Mock<IChainState>();
-            this.nodeStats = new NodeStats(this.dateTimeProvider);
-
+            this.nodeStats = new NodeStats(this.dateTimeProvider, this.loggerFactory);
 
             string[] param = new string[] { };
             this.nodeSettings = new NodeSettings(this.Network, args: param);

@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.prunedBlockRepository = prunedBlockRepository;
             this.addressIndexer = addressIndexer;
 
-            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 900);
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name, 900);
         }
 
         private void AddInlineStats(StringBuilder log)

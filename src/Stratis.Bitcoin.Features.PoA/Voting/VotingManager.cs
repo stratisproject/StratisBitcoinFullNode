@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
             this.blockDisconnectedSubscription = this.signals.Subscribe<BlockDisconnected>(this.OnBlockDisconnected);
 
-            this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1200);
+            this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name, 1200);
 
             this.isInitialized = true;
             this.logger.LogDebug("VotingManager initialized.");
