@@ -21,13 +21,6 @@ namespace Stratis.Bitcoin.Consensus
         }
     }
 
-    public class ConnectHeaderException : ConsensusException
-    {
-        public ConnectHeaderException() : base()
-        {
-        }
-    }
-
     /// <summary>
     /// This throws when the header of a previously block that failed
     /// partial or full validation and was marked as invalid is passed to the node.
