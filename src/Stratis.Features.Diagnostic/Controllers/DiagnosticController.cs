@@ -83,7 +83,7 @@ namespace Stratis.Features.Diagnostic.Controllers
         /// <param name="connectedOnly">if set to <c>true</c> returns statistics related to connected peers only.</param>
         /// <returns>List of peer statistics</returns>
         [HttpGet]
-        public ActionResult<List<PeerStatisticsModel>> GetPeersStatistics(bool connectedOnly)
+        public ActionResult<List<PeerStatisticsModel>> GetPeerStatistics(bool connectedOnly)
         {
             try
             {
@@ -108,7 +108,7 @@ namespace Stratis.Features.Diagnostic.Controllers
         /// </summary>
         /// <returns>Operation result.</returns>
         [HttpGet]
-        public IActionResult StartCollectingPeersStatistics()
+        public IActionResult StartCollectingPeerStatistics()
         {
             try
             {
@@ -134,7 +134,7 @@ namespace Stratis.Features.Diagnostic.Controllers
         /// </summary>
         /// <returns>Operation result.</returns>
         [HttpGet]
-        public IActionResult StopCollectingPeersStatistics()
+        public IActionResult StopCollectingPeerStatistics()
         {
             try
             {

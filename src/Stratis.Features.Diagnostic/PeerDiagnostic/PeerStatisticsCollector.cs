@@ -105,7 +105,7 @@ namespace Stratis.Features.Diagnostic.PeerDiagnostic
         {
             if (!this.peersStatistics.TryGetValue(peerEndPoint, out PeerStatistics statistics))
             {
-                // ensures no other threads have created already an entry between existance check and lock acquisition.
+                // ensures no other threads have created already an entry between existence check and lock acquisition.
                 if (!this.peersStatistics.TryGetValue(peerEndPoint, out statistics))
                 {
                     statistics = new PeerStatistics(this.diagnosticSettings.MaxPeerLoggedEvents, peerEndPoint);

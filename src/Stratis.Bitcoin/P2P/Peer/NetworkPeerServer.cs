@@ -225,13 +225,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (this.networkPeerDisposer.ConnectedInboundPeersCount >= this.connectionManagerSettings.MaxInboundConnections)
             {
                 this.logger.LogTrace("(-)[MAX_CONNECTION_THRESHOLD_REACHED]:false");
-                return (false, "Max Connection Threshold Reached.");
+                return (false, "Inbound Refused: Max Connection Threshold Reached.");
             }
 
             if (!this.initialBlockDownloadState.IsInitialBlockDownload())
             {
                 this.logger.LogTrace("(-)[IBD_COMPLETE_ALLOW_CONNECTION]:true");
-                return (true, "IBD Complete, allow connection.");
+                return (true, "Inbound Accepted: IBD Complete.");
             }
 
             var clientLocalEndPoint = tcpClient.Client.LocalEndPoint as IPEndPoint;
@@ -241,12 +241,12 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (endpointCanBeWhiteListed)
             {
                 this.logger.LogTrace("(-)[ENDPOINT_WHITELISTED_ALLOW_CONNECTION]:true");
-                return (true, "Endpoint Whitelisted, Allow Connection even if in IBD.");
+                return (true, "Inbound Accepted: Whitelisted endpoint connected during IBD.");
             }
 
             this.logger.LogDebug("Node '{0}' is not white listed during initial block download.", clientLocalEndPoint);
 
-            return (false, "Node in IBD, Endpoint not whitelisted, connection refused.");
+            return (false, "Inbound Refused: Non Whitelisted endpoint connected during IBD.");
         }
     }
 }
