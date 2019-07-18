@@ -173,7 +173,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             return new Dictionary<string, ScriptTemplate> {
                 { "P2PK", PayToPubkeyTemplate.Instance },
-                { "P2PKH", PayToPubkeyHashTemplate.Instance } };
+                { "P2PKH", PayToPubkeyHashTemplate.Instance },
+                { "P2WPKH", PayToWitPubKeyHashTemplate.Instance }
+            };
         }
 
         // <inheritdoc />
