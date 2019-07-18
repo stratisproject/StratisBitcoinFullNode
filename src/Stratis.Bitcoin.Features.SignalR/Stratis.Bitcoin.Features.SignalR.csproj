@@ -10,7 +10,6 @@
     </ItemGroup>
     
     <ItemGroup>
-      <ProjectReference Include="..\Stratis.Bitcoin.Features.PoA\Stratis.Bitcoin.Features.PoA.csproj" />
       <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
     </ItemGroup>
 

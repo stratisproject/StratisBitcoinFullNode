@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
@@ -9,54 +8,40 @@ using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.EventBus;
-using Stratis.Bitcoin.EventBus.CoreEvents;
-using Stratis.Bitcoin.Features.PoA.Events;
-using Stratis.Bitcoin.Signals;
 
 namespace Stratis.Bitcoin.Features.SignalR
 {
     public class SignalRFeature : FullNodeFeature
     {
+        private const int SignalRStopTimeoutSeconds = 10;
         private readonly FullNode fullNode;
         private readonly IFullNodeBuilder fullNodeBuilder;
         private readonly SignalRSettings settings;
-        private readonly EventsHub eventsHub;
+        private readonly IEventsSubscriptionService eventsSubscriptionService;
         private IWebHost webHost;
         private readonly ILogger<SignalRFeature> logger;
-        private const int SignalRStopTimeoutSeconds = 10;
-        private readonly List<SubscriptionToken> subscriptions = new List<SubscriptionToken>();
 
         public SignalRFeature(
             FullNode fullNode,
             IFullNodeBuilder fullNodeBuilder,
             SignalRSettings settings,
             ILoggerFactory loggerFactory,
-            ISignals signals,
-            EventsHub eventsHub)
+            IEventsSubscriptionService eventsSubscriptionService)
         {
             this.fullNode = fullNode;
             this.fullNodeBuilder = fullNodeBuilder;
             this.settings = settings;
-            this.eventsHub = eventsHub;
+            this.eventsSubscriptionService = eventsSubscriptionService;
             this.logger = loggerFactory.CreateLogger<SignalRFeature>();
-
-            this.subscriptions.Add(signals.Subscribe<BlockConnected>(this.OnEvent));
-            this.subscriptions.Add(signals.Subscribe<FedMemberAdded>(this.OnEvent));
-            this.subscriptions.Add(signals.Subscribe<FedMemberKicked>(this.OnEvent));
-            this.subscriptions.Add(signals.Subscribe<TransactionReceived>(this.OnEvent));
         }
 
         public override Task InitializeAsync()
         {
             this.webHost = Program.Initialize(this.fullNodeBuilder.Services, this.fullNode, this.settings, new WebHostBuilder());
 
-            return Task.CompletedTask;
-        }
+            this.eventsSubscriptionService.Init();
 
-        private void OnEvent(EventBase @event)
-        {
-            this.eventsHub.SendToClients(@event).ConfigureAwait(false).GetAwaiter().GetResult();
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -86,12 +71,12 @@ namespace Stratis.Bitcoin.Features.SignalR
             this.logger.LogInformation("API stopping on URL '{0}'.", this.settings.SignalRUri);
             this.webHost.StopAsync(TimeSpan.FromSeconds(SignalRStopTimeoutSeconds)).Wait();
             this.webHost = null;
-            this.subscriptions.ForEach(s => s?.Dispose());
         }
     }
 
     public class SignalROptions
     {
+        public IClientEvent[] EventsToHandle { get; set; }
     }
 
     public static partial class IFullNodeBuilderExtensions
@@ -108,6 +93,7 @@ namespace Stratis.Bitcoin.Features.SignalR
                     .AddFeature<SignalRFeature>()
                     .FeatureServices(services =>
                     {
+                        services.AddSingleton<IEventsSubscriptionService, EventSubscriptionService>();
                         services.AddSingleton<EventsHub>();
                         services.AddSingleton(fullNodeBuilder);
                         services.AddSingleton(options);

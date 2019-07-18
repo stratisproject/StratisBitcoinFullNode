@@ -2,8 +2,6 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Stratis.Bitcoin.EventBus;
 
 namespace Stratis.Bitcoin.Features.SignalR
 {
@@ -28,15 +26,11 @@ namespace Stratis.Bitcoin.Features.SignalR
             return base.OnDisconnectedAsync(exception);
         }
 
-        public async Task SendToClients(EventBase @event)
+        public async Task SendToClients(IClientEvent @event)
         {
             try
             {
-                string data = JsonConvert.SerializeObject(new
-                {
-                    @event.CorrelationId
-                });
-                await this.Clients.All.SendAsync("recieveEvent", data);
+                await this.Clients.All.SendAsync("receiveEvent", @event);
             }
             catch (Exception ex)
             {
