@@ -634,6 +634,21 @@ namespace Stratis.Bitcoin.Consensus
         {
             Guard.NotNull(headers, nameof(headers));
 
+            if (!this.chainedHeadersByHash.ContainsKey(headers[0].HashPrevBlock))
+            {
+                this.logger.LogTrace("(-)[HEADER_COULD_NOT_CONNECT]");
+                return new ConnectNewHeadersResult() { CantConnect = true };
+            }
+
+            uint256 lastHash = headers.Last().GetHash();
+            if (this.chainedHeadersByHash.ContainsKey(lastHash))
+            {
+                this.AddOrReplacePeerTip(networkPeerId, lastHash);
+
+                this.logger.LogTrace("(-)[NO_NEW_HEADERS]");
+                return new ConnectNewHeadersResult() { Consumed = this.chainedHeadersByHash[lastHash] };
+            }
+
             List<ChainedHeader> newChainedHeaders = this.CreateNewHeaders(headers, out bool insufficientInfo, out bool cantConnect);
 
             if (cantConnect)
