@@ -8,8 +8,6 @@ using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Features.SignalR;
-using Stratis.Bitcoin.Features.SignalR.Events;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
@@ -58,10 +56,6 @@ namespace Stratis.CirrusD
                 .UseSmartContractWallet()
                 .UseApi()
                 .AddRPC()
-                .AddSignalR(options =>
-                {
-                    options.EventsToHandle = new IClientEvent[] { new BlockConnectedClientEvent(), new TransactionReceivedClientEvent() };
-                })
                 .Build();
 
             return node;
