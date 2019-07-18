@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Tests.Base
                 {
                     Assert.Equal(this.headers[14].Header, presentedHeaders.First());
 
-                    throw new ConnectHeaderException();
+                    return new ConnectNewHeadersResult() { CantConnect = true };
                 });
 
             ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync();
@@ -382,7 +382,9 @@ namespace Stratis.Bitcoin.Tests.Base
         public async Task ProcessHeadersAsync_SyncWhenCacheIsEmptyAsync()
         {
             this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
-                (presentedHeaders, triggerDownload) => { throw new ConnectHeaderException(); });
+                (presentedHeaders, triggerDownload) => {
+                    return new ConnectNewHeadersResult() { CantConnect = true };
+                });
 
             await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(13).Take(8).Select(x => x.Header)));
 
