@@ -12,7 +12,7 @@ using TracerAttributes;
 namespace Stratis.Bitcoin.AsyncWork
 {
     /// <summary>
-    /// Provides functionality for creating and tracking asynchronous operations that happens in background.
+    /// Provides functionality for creating and tracking asynchronous operations that happen in the background.
     /// </summary>
     public partial class AsyncProvider : IAsyncProvider
     {
@@ -316,6 +316,27 @@ namespace Stratis.Bitcoin.AsyncWork
             return sb.ToString();
         }
 
+        /// <inheritdoc />
+        [NoTrace]
+        public List<(string loopName, TaskStatus status)> GetAll()
+        {
+            var taskInformation = new List<AsyncTaskInfo>();
+
+            lock (this.lockAsyncDelegates)
+            {
+                taskInformation.AddRange(this.asyncDelegates.Values);
+            }
+
+            lock (this.lockRegisteredTasks)
+            {
+                taskInformation.AddRange(this.registeredTasks.Values);
+            }
+
+            List<(string, TaskStatus)> runningTasks = taskInformation.Select(a => (a.FriendlyName, a.Status)).OrderBy(a => a.Item1).ToList();
+
+            return runningTasks;
+        }
+
         private void OnRegisteredTaskCompleted(Task task)
         {
             AsyncTaskInfo itemToRemove;
@@ -329,7 +350,7 @@ namespace Stratis.Bitcoin.AsyncWork
 
             if (itemToRemove != null)
             {
-                this.logger.LogTrace("Registered task '{0}' Removed. Id: {1}.", itemToRemove.FriendlyName, task.Id);
+                this.logger.LogDebug("Registered task '{0}' Removed. Id: {1}.", itemToRemove.FriendlyName, task.Id);
             }
             else
             {
@@ -433,7 +454,7 @@ namespace Stratis.Bitcoin.AsyncWork
 
             if (itemToRemove != null)
             {
-                this.logger.LogTrace("IAsyncDelegate task '{0}' Removed. Id: {1}.", itemToRemove.FriendlyName, task.Id);
+                this.logger.LogDebug("IAsyncDelegate task '{0}' Removed. Id: {1}.", itemToRemove.FriendlyName, task.Id);
             }
             else
             {

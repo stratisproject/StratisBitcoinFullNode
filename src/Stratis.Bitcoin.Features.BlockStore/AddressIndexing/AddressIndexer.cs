@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Interfaces;
@@ -36,7 +37,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         /// <summary>Returns verbose balances data.</summary>
         /// <param name="addresses">The set of addresses that will be queried.</param>
-        VerboseAddressBalancesResult GetVerboseAddressBalancesData(string[] addresses);
+        VerboseAddressBalancesResult GetAddressIndexerState(string[] addresses);
     }
 
     public class AddressIndexer : IAddressIndexer
@@ -346,7 +347,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private void AddInlineStats(StringBuilder benchLog)
         {
-            benchLog.AppendLine("AddressIndexer: Height: " + this.IndexerTip.Height.ToString().PadRight(8) +
+            benchLog.AppendLine("AddressIndexer.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + this.IndexerTip.Height.ToString().PadRight(9) +
                                 "AddressCache%: " + this.addressIndexRepository.GetLoadPercentage().ToString().PadRight(8) +
                                 "OutPointCache%: " + this.outpointsRepository.GetLoadPercentage().ToString().PadRight(8) +
                                 $"Ms/block: {Math.Round(this.averageTimePerBlock.Average, 2)}");
@@ -521,6 +522,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
 
         /// <inheritdoc />
+        /// <remarks>This is currently not in use but will be required for exchange integration.</remarks>
         public AddressBalancesResult GetAddressBalances(string[] addresses, int minConfirmations = 1)
         {
             var (isQueryable, reason) = this.IsQueryable();
@@ -540,7 +542,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                     long balance = indexData.BalanceChanges.Where(x => x.BalanceChangedHeight <= maxAllowedHeight).CalculateBalance();
 
-                    this.logger.LogTrace("Address: {0}, balance: {1}.", address, balance);
+                    this.logger.LogDebug("Address: {0}, balance: {1}.", address, balance);
                     result.Balances.Add(new AddressBalanceResult(address, new Money(balance)));
                 }
 
@@ -549,14 +551,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
 
         /// <inheritdoc />
-        public VerboseAddressBalancesResult GetVerboseAddressBalancesData(string[] addresses)
+        public VerboseAddressBalancesResult GetAddressIndexerState(string[] addresses)
         {
+            var result = new VerboseAddressBalancesResult(this.consensusManager.Tip.Height);
+
+            if (addresses.Length == 0)
+                return result;
+
             (bool isQueryable, string reason) = this.IsQueryable();
 
             if (!isQueryable)
                 return VerboseAddressBalancesResult.RequestFailed(reason);
-
-            var result = new VerboseAddressBalancesResult();
 
             lock (this.lockObject)
             {
@@ -573,8 +578,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     result.BalancesData.Add(copy);
                 }
             }
-
-            result.ConsensusTipHeight = this.consensusManager.Tip.Height;
 
             return result;
         }

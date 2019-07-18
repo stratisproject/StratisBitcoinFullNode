@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -291,7 +292,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             if (!this.ModelState.IsValid)
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
-            return this.Json(this.smartContractTransactionService.BuildCreateTx(request));
+            BuildCreateContractTransactionResponse response = this.smartContractTransactionService.BuildCreateTx(request);
+
+            if (!response.Success)
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, response.Message, string.Empty);
+
+            return this.Json(response);
         }
 
         /// <summary>
@@ -313,7 +319,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             if (!this.ModelState.IsValid)
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
-            return this.Json(this.smartContractTransactionService.BuildCallTx(request));
+            var response = this.smartContractTransactionService.BuildCallTx(request);
+
+            if (!response.Success)
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, response.Message, string.Empty);
+
+            return this.Json(response);
         }
 
         /// <summary>
@@ -335,7 +346,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             BuildCreateContractTransactionResponse response = this.smartContractTransactionService.BuildCreateTx(request);
 
             if (!response.Success)
-                return this.Json(response);
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, response.Message, string.Empty);
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
 
