@@ -34,7 +34,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="headers">The list of new headers.</param>
         /// <param name="triggerDownload">Specifies if the download should be scheduled for interesting blocks.</param>
         /// <returns>Information about consumed headers.</returns>
-        /// <exception cref="ConnectHeaderException">Thrown when first presented header can't be connected to any known chain in the tree.</exception>
         /// <exception cref="CheckpointMismatchException">Thrown if checkpointed header doesn't match the checkpoint hash.</exception>
         /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
         /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
