@@ -124,8 +124,6 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ConsensusManagerPerformanceCounter performanceCounter;
 
         private readonly ConsensusSettings consensusSettings;
-        
-        private readonly IDateTimeProvider dateTimeProvider;
 
         private bool isIbd;
 
