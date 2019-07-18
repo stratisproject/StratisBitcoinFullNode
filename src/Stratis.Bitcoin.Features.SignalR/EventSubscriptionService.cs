@@ -30,8 +30,8 @@ namespace Stratis.Bitcoin.Features.SignalR
 
         public void Init()
         {
-            MethodInfo subscribeMethod = typeof(ISignals).GetMethod("Subscribe");
-            MethodInfo onEventCallbackMethod = typeof(ISignals).GetMethod("OnEvent");
+            MethodInfo subscribeMethod = this.signals.GetType().GetMethod("Subscribe");
+            MethodInfo onEventCallbackMethod = typeof(EventSubscriptionService).GetMethod("OnEvent");
             foreach (IClientEvent eventToHandle in this.options.EventsToHandle)
             {
                 this.logger.LogDebug("Create subscription for {eventType}", eventToHandle.NodeEventType);
@@ -42,11 +42,6 @@ namespace Stratis.Bitcoin.Features.SignalR
                 var token = (SubscriptionToken)subscribeMethodInfo.Invoke(this.signals, new object[] { onEventDelegate });
                 this.subscriptions.Add(token);
             }
-
-            // this.subscriptions.Add(this.signals.Subscribe<BlockConnected>(this.OnEvent));
-            // this.subscriptions.Add(this.signals.Subscribe<FedMemberAdded>(this.OnEvent));
-            // this.subscriptions.Add(this.signals.Subscribe<FedMemberKicked>(this.OnEvent));
-            // this.subscriptions.Add(this.signals.Subscribe<TransactionReceived>(this.OnEvent));
         }
 
         public void OnEvent(EventBase @event)

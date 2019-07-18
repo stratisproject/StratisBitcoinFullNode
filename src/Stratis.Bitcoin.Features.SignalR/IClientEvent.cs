@@ -7,7 +7,6 @@ namespace Stratis.Bitcoin.Features.SignalR
     {
         Type NodeEventType { get; }
 
-        void BuildFrom<TBase>(TBase @event)
-            where TBase : EventBase;
+        void BuildFrom(EventBase @event);
     }
 }
