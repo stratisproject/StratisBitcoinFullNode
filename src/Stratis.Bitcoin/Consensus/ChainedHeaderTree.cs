@@ -1004,9 +1004,10 @@ namespace Stratis.Bitcoin.Consensus
             ChainedHeader previousChainedHeader;
             if (!this.chainedHeadersByHash.TryGetValue(headers[newHeaderIndex].HashPrevBlock, out previousChainedHeader))
             {
+                cantConnect = true;
+
                 this.logger.LogDebug("Previous hash '{0}' of block hash '{1}' was not found.", headers[newHeaderIndex].GetHash(), headers[newHeaderIndex].HashPrevBlock);
                 this.logger.LogTrace("(-)[PREVIOUS_HEADER_NOT_FOUND]");
-                cantConnect = true;
                 return null;
             }
 
