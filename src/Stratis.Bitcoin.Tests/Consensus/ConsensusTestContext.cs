@@ -96,13 +96,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.BlockStore = new Mock<IBlockStore>();
             this.checkpoints = new Mock<ICheckpoints>();
             this.ChainState = new Mock<IChainState>();
-            this.nodeStats = new NodeStats(this.dateTimeProvider, this.loggerFactory);
 
             string[] param = new string[] { };
             this.nodeSettings = new NodeSettings(this.Network, args: param);
             this.ConsensusSettings = new ConsensusSettings(this.nodeSettings);
 
             this.loggerFactory = this.nodeSettings.LoggerFactory;
+
+            this.nodeStats = new NodeStats(this.dateTimeProvider, this.loggerFactory);
 
             var connectionSettings = new ConnectionManagerSettings(this.nodeSettings);
             this.selfEndpointTracker = new SelfEndpointTracker(this.loggerFactory, connectionSettings);
