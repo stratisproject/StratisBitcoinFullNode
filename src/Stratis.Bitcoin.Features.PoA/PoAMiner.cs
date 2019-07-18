@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.PoA
             {
                 try
                 {
-                    this.logger.LogTrace("IsInitialBlockDownload={0}, AnyConnectedPeers={1}, BootstrappingMode={2}, IsFederationMember={3}",
+                    this.logger.LogDebug("IsInitialBlockDownload={0}, AnyConnectedPeers={1}, BootstrappingMode={2}, IsFederationMember={3}",
                         this.ibdState.IsInitialBlockDownload(), this.connectionManager.ConnectedPeers.Any(), this.settings.BootstrappingMode, this.federationManager.IsFederationMember);
 
                     // Don't mine in IBD in case we are connected to any node unless bootstrapping mode is enabled.
@@ -180,6 +180,8 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private async Task<uint> WaitUntilMiningSlotAsync()
         {
+            uint? myTimestamp = null;
+
             while (!this.cancellation.IsCancellationRequested)
             {
                 uint timeNow = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
@@ -190,23 +192,24 @@ namespace Stratis.Bitcoin.Features.PoA
                     continue;
                 }
 
-                uint myTimestamp;
-
-                try
+                if (myTimestamp == null)
                 {
-                    myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
-                }
-                catch (NotAFederationMemberException)
-                {
-                    this.logger.LogWarning("This node is no longer a federation member!");
+                    try
+                    {
+                        myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
+                    }
+                    catch (NotAFederationMemberException)
+                    {
+                        this.logger.LogWarning("This node is no longer a federation member!");
 
-                    throw new OperationCanceledException();
+                        throw new OperationCanceledException();
+                    }
                 }
 
                 int estimatedWaitingTime = (int)(myTimestamp - timeNow) - 1;
 
                 if (estimatedWaitingTime <= 0)
-                    return myTimestamp;
+                    return myTimestamp.Value;
 
                 await Task.Delay(TimeSpan.FromMilliseconds(500), this.cancellation.Token).ConfigureAwait(false);
             }
@@ -334,9 +337,10 @@ namespace Stratis.Bitcoin.Features.PoA
             ChainedHeader currentHeader = tip;
             uint currentTime = currentHeader.Header.Time;
 
-            int maxDepth = 20;
+            int maxDepth = 46;
             int pubKeyTakeCharacters = 4;
             int depthReached = 0;
+            int hitCount = 0;
 
             log.AppendLine($"Mining information for the last {maxDepth} blocks.");
             log.AppendLine("MISS means that miner didn't produce a block at the timestamp he was supposed to.");
@@ -348,6 +352,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
                 log.Append("[" + pubKeyRepresentation + "]-");
                 depthReached++;
+                hitCount++;
 
                 currentHeader = currentHeader.Previous;
                 currentTime -= this.network.ConsensusOptions.TargetSpacingSeconds;
@@ -367,6 +372,9 @@ namespace Stratis.Bitcoin.Features.PoA
             }
 
             log.Append("...");
+            log.AppendLine();
+            log.AppendLine($"Block producers hits      : {hitCount} of {maxDepth}({(((float)hitCount / (float)maxDepth)).ToString("P2")})");
+            log.AppendLine($"Block producers idle time : {TimeSpan.FromSeconds(this.network.ConsensusOptions.TargetSpacingSeconds * (maxDepth - hitCount)).ToString(@"hh\:mm\:ss")}");
             log.AppendLine();
         }
 

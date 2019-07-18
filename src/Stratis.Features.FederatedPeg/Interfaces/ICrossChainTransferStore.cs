@@ -37,6 +37,12 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         Task<RecordLatestMatureDepositsResult> RecordLatestMatureDepositsAsync(IList<MaturedBlockDepositsModel> blockDeposits);
 
         /// <summary>
+        /// Rejects a transfer.
+        /// </summary>
+        /// <param name="crossChainTransfer">The transfer to reject.</param>
+        void RejectTransfer(ICrossChainTransfer crossChainTransfer);
+
+        /// <summary>
         /// Returns transfers based on their status.
         /// </summary>
         /// <param name="statuses">Set of statuses to get transfers for.</param>
@@ -99,5 +105,12 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// Get transfers by ID without validating or locking. Useful for retrieving console data.
         /// </summary>
         ICrossChainTransfer[] QueryTransfersById(uint256[] depositIds);
+
+        /// <summary>
+        /// Determines, for a list of input transactions, which of those are completed or unknown withdrawals.
+        /// </summary>
+        /// <param name="transactionsToCheck">The list of input transactions.</param>
+        /// <returns>The list of transactions that are completed (or unknown) wihdrawals.</returns>
+        List<Transaction> CompletedWithdrawals(IEnumerable<Transaction> transactionsToCheck);
     }
 }
