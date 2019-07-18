@@ -44,6 +44,7 @@ namespace Stratis.Sidechains.Networks
             this.RootFolderName = NetworkRootFolderName;
             this.DefaultConfigFilename = NetworkDefaultConfigFilename;
             this.MaxTimeOffsetSeconds = 25 * 60;
+            this.DefaultBanTimeSeconds = 1920; // 240 (MaxReorg) * 16 (TargetSpacing) / 2 = 32 Minutes
 
             var consensusFactory = new SmartContractCollateralPoAConsensusFactory();
 
@@ -156,6 +157,9 @@ namespace Stratis.Sidechains.Networks
             this.SeedNodes = new List<NetworkAddress>();
 
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
+
+            // 16 below should be changed to TargetSpacingSeconds when we move that field.
+            Assert(this.DefaultBanTimeSeconds <= this.Consensus.MaxReorgLength * 16 / 2);
 
             // TODO: Do we need Asserts for block hash
         }

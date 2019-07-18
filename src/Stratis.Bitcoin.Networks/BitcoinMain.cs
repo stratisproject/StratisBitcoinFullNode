@@ -33,6 +33,7 @@ namespace Stratis.Bitcoin.Networks
             this.FallbackFee = 20000;
             this.MinRelayTxFee = 1000;
             this.CoinTicker = "BTC";
+            this.DefaultBanTimeSeconds = 60 * 60 * 24; // 24 Hours
 
             var consensusFactory = new ConsensusFactory();
 
