@@ -460,26 +460,27 @@ namespace Stratis.Bitcoin.Consensus
             try
             {
                 result = this.ConsensusManager.HeadersPresented(peer, headers, triggerDownload);
-            }
-            catch (ConnectHeaderException)
-            {
-                // This is typically thrown when the first header refers to a previous block hash that is not in
-                // the header tree currently. This is not regarded as bannable, as it could be a legitimate reorg.
-                this.logger.LogDebug("Unable to connect headers.");
 
-                if (this.CheckIfUnsolicitedFutureHeader(headers))
+                if (result?.CantConnect ?? false)
                 {
-                    // However, during IBD it is much more likely that the unconnectable header is an unsolicited
-                    // block advertisement. In that case we just ignore the failed header and don't modify the cache.
-                    // TODO: Review more closely what Bitcoin Core does here - they seem to allow 8 unconnectable headers before
-                    // applying partial DoS points to a peer. Incorporate that into rate limiting code?
-                    this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT_2]");
-                }
-                else
-                {
-                    // Resync in case we can't connect the header.
-                    this.cachedHeaders.Clear();
-                    await this.ResyncAsync().ConfigureAwait(false);
+                    // This is typically thrown when the first header refers to a previous block hash that is not in
+                    // the header tree currently. This is not regarded as bannable, as it could be a legitimate reorg.
+                    this.logger.LogDebug("Unable to connect headers.");
+
+                    if (this.CheckIfUnsolicitedFutureHeader(headers))
+                    {
+                        // However, during IBD it is much more likely that the unconnectable header is an unsolicited
+                        // block advertisement. In that case we just ignore the failed header and don't modify the cache.
+                        // TODO: Review more closely what Bitcoin Core does here - they seem to allow 8 unconnectable headers before
+                        // applying partial DoS points to a peer. Incorporate that into rate limiting code?
+                        this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT_2]");
+                    }
+                    else
+                    {
+                        // Resync in case we can't connect the header.
+                        this.cachedHeaders.Clear();
+                        await this.ResyncAsync().ConfigureAwait(false);
+                    }
                 }
             }
             catch (ConsensusRuleException exception)
