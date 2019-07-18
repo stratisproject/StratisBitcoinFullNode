@@ -124,6 +124,8 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ConsensusManagerPerformanceCounter performanceCounter;
 
         private readonly ConsensusSettings consensusSettings;
+        
+        private readonly IDateTimeProvider dateTimeProvider;
 
         private bool isIbd;
 
@@ -201,6 +203,7 @@ namespace Stratis.Bitcoin.Consensus
             this.ibdState = ibdState;
 
             this.blockPuller = blockPuller;
+            this.dateTimeProvider = dateTimeProvider;
 
             this.consensusSettings = consensusSettings;
             this.maxUnconsumedBlocksDataBytes = consensusSettings.MaxBlockMemoryInMB * 1024 * 1024;
@@ -874,13 +877,9 @@ namespace Stratis.Bitcoin.Consensus
             {
                 var badPeers = new List<int>();
 
-                // Ban the peers only in case block is invalid and not temporary rejected.
-                if (validationContext.RejectUntil == null)
+                lock (this.peerLock)
                 {
-                    lock (this.peerLock)
-                    {
-                        badPeers = this.chainedHeaderTree.PartialOrFullValidationFailed(blockToConnect.ChainedHeader);
-                    }
+                    badPeers = this.chainedHeaderTree.PartialOrFullValidationFailed(blockToConnect.ChainedHeader);
                 }
 
                 var failureResult = new ConnectBlocksResult(false)
@@ -891,6 +890,15 @@ namespace Stratis.Bitcoin.Consensus
                     Error = validationContext.Error,
                     PeersToBan = badPeers
                 };
+
+                // If set, use the block reject until time as the ban duration instead of the default 10 minute ban.
+                if (validationContext.RejectUntil != null)
+                {
+                    failureResult.BanDurationSeconds = (int)(validationContext.RejectUntil.Value.ToUnixTimestamp() - this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp());
+
+                    if (failureResult.BanDurationSeconds < 1)
+                        failureResult.BanDurationSeconds = 1;
+                }
 
                 this.logger.LogTrace("(-)[FAILED]:'{0}'", failureResult);
                 return failureResult;
