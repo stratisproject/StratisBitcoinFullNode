@@ -142,10 +142,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         public IPEndPoint RemoteSocketEndpoint { get; private set; }
 
         /// <inheritdoc/>
-        public IPAddress RemoteSocketAddress { get; private set; }
+        public IPAddress RemoteSocketAddress => this.RemoteSocketEndpoint.Address;
 
         /// <inheritdoc/>
-        public int RemoteSocketPort { get; private set; }
+        public int RemoteSocketPort => this.RemoteSocketEndpoint.Port;
 
         /// <inheritdoc/>
         public bool Inbound { get; private set; }
@@ -211,12 +211,13 @@ namespace Stratis.Bitcoin.P2P.Peer
                                                 && (!port.HasValue || port == this.PeerVersion.AddressFrom.Port);
 
             return (isConnectedOrHandShaked && isAddressMatching) || isPeerVersionAddressMatching;
-        }
 
-        /// <inheritdoc />
-        public bool MatchRemoteEndPoint(IPEndPoint ep, bool matchPort = true)
-        {
-            return this.MatchRemoteIPAddress(ep.Address, matchPort ? ep.Port : (int?)null);
+            // TODO: The following code should work equally well or better.
+            /*
+            IPEndPoint compareTo = this.Inbound ? this.PeerVersion?.AddressFrom : this.RemoteSocketEndpoint;
+
+            return compareTo.Address.Equals(ip) && (!port.HasValue || port == compareTo.Port);
+            */
         }
 
         /// <summary><c>true</c> to advertise "addr" message with our external endpoint to the peer when passing to <see cref="NetworkPeerState.HandShaked"/> state.</summary>
@@ -307,8 +308,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Inbound = inbound;
             this.PeerEndPoint = peerEndPoint;
             this.RemoteSocketEndpoint = this.PeerEndPoint;
-            this.RemoteSocketAddress = this.RemoteSocketEndpoint.Address;
-            this.RemoteSocketPort = this.RemoteSocketEndpoint.Port;
 
             this.Network = network;
             this.Behaviors = new List<INetworkPeerBehavior>();
@@ -435,8 +434,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                 await this.Connection.ConnectAsync(this.PeerEndPoint, cancellation).ConfigureAwait(false);
 
                 this.RemoteSocketEndpoint = this.Connection.RemoteEndPoint;
-                this.RemoteSocketAddress = this.RemoteSocketEndpoint.Address;
-                this.RemoteSocketPort = this.RemoteSocketEndpoint.Port;
 
                 this.State = NetworkPeerState.Connected;
 
@@ -477,7 +474,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="previous">Previous network state of the peer.</param>
         private async Task OnStateChangedAsync(NetworkPeerState previous)
         {
-            bool insideCallback = this.onDisconnectedAsyncContext.Value == null;
+            bool insideCallback = this.onDisconnectedAsyncContext.Value != null;
             if (!insideCallback)
                 this.onDisconnectedAsyncContext.Value = new DisconnectedExecutionAsyncContext();
 
@@ -894,7 +891,14 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return;
             }
 
-            this.Disconnect("Peer disposed");
+            try
+            {
+                this.Disconnect("Peer disposed");
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError("Error while disconnecting peer: {0}", ex.ToString());
+            }
 
             this.logger.LogDebug("Behaviors detachment started.");
 
@@ -911,7 +915,15 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
             }
 
-            this.asyncPayloadsQueue.Dispose();
+            try
+            {
+                this.asyncPayloadsQueue.Dispose();
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError("Error while disposing `{0}`: {1}", nameof(this.asyncPayloadsQueue), ex.ToString());
+            }
+
             this.Connection.Dispose();
 
             this.MessageReceived.Dispose();
