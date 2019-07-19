@@ -51,6 +51,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Option to skip (most) non-standard transaction checks, for testnet/regtest only.</summary>
         public bool RequireStandard { get; set; }
 
+        /// <summary>Regard bare (non-P2SH) multisig transactions as standard.</summary>
+        public bool PermitBareMultisig { get; set; }
+
         /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
@@ -74,6 +77,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.MaxOrphanTx = config.GetOrDefault("maxorphantx", MempoolOrphans.DefaultMaxOrphanTransactions, this.logger);
             this.WhiteListRelay = config.GetOrDefault("whitelistrelay", DefaultWhiteListRelay, this.logger);
             this.RequireStandard = !(config.GetOrDefault("acceptnonstdtxn", nodeSettings.Network.IsTest(), this.logger));
+            this.PermitBareMultisig = config.GetOrDefault("permitbaremultisig", MempoolValidator.DefaultPermitBareMultisig, this.logger);
         }
 
         /// <summary>Prints the help information on how to configure the mempool settings to the logger.</summary>
@@ -93,6 +97,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             builder.AppendLine($"-maxorphantx=<kB>         Maximum number of orphan transactions kept in memory. Defaults to { MempoolOrphans.DefaultMaxOrphanTransactions }.");
             builder.AppendLine($"-whitelistrelay=<0 or 1>  Enable to accept relayed transactions received from whitelisted peers even when not relaying transactions. Defaults to { DefaultWhiteListRelay }.");
             builder.AppendLine($"-acceptnonstdtxn=<0 or 1> Accept non-standard transactions. Default {(!(network.IsTest())?1:0)}.");
+            builder.AppendLine($"-permitbaremultisig=<0 or 1> Relay non-P2SH multisig. Defaults to { MempoolValidator.DefaultPermitBareMultisig }.");
 
             NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
         }
@@ -127,6 +132,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             builder.AppendLine($"#whitelistrelay={ (DefaultWhiteListRelay?1:0) }");
             builder.AppendLine($"#Accept non-standard transactions. Default {(!(network.IsTest())?1:0)}.");
             builder.AppendLine($"#acceptnonstdtxn={(!(network.IsTest())?1:0)}");
+            builder.AppendLine($"#Relay non-P2SH multisig. Defaults to { MempoolValidator.DefaultPermitBareMultisig }.");
+            builder.AppendLine($"#permitbaremultisig={ MempoolValidator.DefaultPermitBareMultisig }");
         }
     }
 }

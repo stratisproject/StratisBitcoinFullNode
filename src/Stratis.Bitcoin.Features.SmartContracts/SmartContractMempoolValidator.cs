@@ -2,6 +2,7 @@
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -32,8 +33,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings,
             IConsensusRuleEngine consensusRules, ICallDataSerializer callDataSerializer, Network network,
             IStateRepositoryRoot stateRepositoryRoot,
-            IEnumerable<IContractTransactionFullValidationRule> txFullValidationRules)
-            : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chainIndexer, coinView, loggerFactory, nodeSettings, consensusRules)
+            IEnumerable<IContractTransactionFullValidationRule> txFullValidationRules, NodeDeployments nodeDeployments)
+            : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chainIndexer, coinView, loggerFactory, nodeSettings, consensusRules, nodeDeployments)
         {
             // Dirty hack, but due to AllowedScriptTypeRule we don't need to check for standard scripts on any network, even live.
             // TODO: Remove ASAP. Ensure RequireStandard isn't used on SC mainnets, or the StandardScripts check is modular.

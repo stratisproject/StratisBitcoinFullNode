@@ -19,6 +19,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
     /// </summary>
     public class CreateMempoolEntryMempoolRule : IMempoolRule
     {
+        public const int WitnessV0ScriptHashSize = 32;
+        public const int MaxStandardP2wshScriptSize = 3600;
+        public const int MaxStandardP2wshStackItems = 100;
+        public const int MaxStandardP2wshStackItemSize = 80;
+
         // TODO: Workaround to avoid passing these into the non-static public methods, need to keep these somewhere higher-level so all rules automatically get them set the same way
         private ILogger logger;
         private Network network;
@@ -268,12 +273,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                 }
 
                 // Version 0 segregated witness program validation.
-                if (wit.Version == 0 && wit.Program.Length == 32)
+                if (wit.Version == 0 && wit.Program.Length == WitnessV0ScriptHashSize)
                 {
-                    const int MaxStandardP2wshScriptSize = 3600;
-                    const int MaxStandardP2wshStackItems = 100;
-                    const int MaxStandardP2wshStackItemSize = 80;
-
                     WitScript witness = input.WitScript;
 
                     // Get P2WSH script from top of stack.
