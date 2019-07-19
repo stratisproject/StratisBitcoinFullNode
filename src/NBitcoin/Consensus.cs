@@ -98,6 +98,9 @@ namespace NBitcoin
         /// <inheritdoc />
         public List<IFullValidationConsensusRule> FullValidationRules { get; set; }
 
+        /// <inheritdoc />
+        public List<Type> MempoolRules { get; set; }
+
         public Consensus(
             ConsensusFactory consensusFactory,
             ConsensusOptions consensusOptions,
@@ -168,6 +171,7 @@ namespace NBitcoin
             this.IsProofOfStake = isProofOfStake;
             this.DefaultAssumeValid = defaultAssumeValid;
             this.ConsensusFactory = consensusFactory;
+            this.MempoolRules = new List<Type>();
         }
     }
 }

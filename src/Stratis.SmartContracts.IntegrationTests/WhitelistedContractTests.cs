@@ -92,6 +92,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         private void SetupNodes(IMockChain chain, MockChainNode node1, MockChainNode node2)
         {
+            // TODO: Use ready chain data
             // Get premine
             chain.MineBlocks(10);
 

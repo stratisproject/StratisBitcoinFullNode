@@ -9,9 +9,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
     /// Validates the transaction with the coin view.
     /// Checks if already in coin view, and missing and unavailable inputs.
     /// </summary>
-    public class CheckCoinViewMempoolRule : IMempoolRule
+    public class CheckCoinViewMempoolRule : MempoolRule
     {
-        public void CheckTransaction(MempoolRuleContext ruleContext, MempoolValidationContext context)
+        public CheckCoinViewMempoolRule(Network network,
+            ITxMempool mempool,
+            MempoolSettings mempoolSettings,
+            ChainIndexer chainIndexer,
+            ILoggerFactory loggerFactory) : base(network, mempool, mempoolSettings, chainIndexer, loggerFactory)
+        {
+        }
+
+        public override void CheckTransaction(MempoolValidationContext context)
         {
             Guard.Assert(context.View != null);
 
@@ -20,7 +28,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
             // Do we already have it?
             if (context.View.HaveCoins(context.TransactionHash))
             {
-                ruleContext.Logger.LogTrace("(-)[INVALID_ALREADY_KNOWN]");
+                this.logger.LogTrace("(-)[INVALID_ALREADY_KNOWN]");
                 context.State.Invalid(MempoolErrors.AlreadyKnown).Throw();
             }
 
@@ -32,7 +40,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                 if (!context.View.HaveCoins(txin.PrevOut.Hash))
                 {
                     context.State.MissingInputs = true;
-                    ruleContext.Logger.LogTrace("(-)[FAIL_MISSING_INPUTS]");
+                    this.logger.LogTrace("(-)[FAIL_MISSING_INPUTS]");
                     context.State.Fail(MempoolErrors.MissingInputs).Throw(); // fMissingInputs and !state.IsInvalid() is used to detect this condition, don't set state.Invalid()
                 }
             }
@@ -40,7 +48,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
             // Are the actual inputs available?
             if (!context.View.HaveInputs(context.Transaction))
             {
-                ruleContext.Logger.LogTrace("(-)[INVALID_BAD_INPUTS]");
+                this.logger.LogTrace("(-)[INVALID_BAD_INPUTS]");
                 context.State.Invalid(MempoolErrors.BadInputsSpent).Throw();
             }
         }

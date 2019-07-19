@@ -13,9 +13,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
     /// The new transaction must have all inputs confirmed.
     /// The new transaction must have sufficient fees to pay for it's bandwidth.
     /// </summary>
-    public class CheckReplacementMempoolRule : IMempoolRule
+    public class CheckReplacementMempoolRule : MempoolRule
     {
-        public void CheckTransaction(MempoolRuleContext ruleContext, MempoolValidationContext context)
+        public CheckReplacementMempoolRule(Network network,
+            ITxMempool mempool,
+            MempoolSettings mempoolSettings,
+            ChainIndexer chainIndexer,
+            ILoggerFactory loggerFactory) : base(network, mempool, mempoolSettings, chainIndexer, loggerFactory)
+        {
+        }
+
+        public override void CheckTransaction(MempoolValidationContext context)
         {
             // Check if it's economically rational to mine this transaction rather
             // than the ones it replaces.
@@ -36,7 +44,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                 var setIterConflicting = new TxMempool.SetEntries();
                 foreach (uint256 hashConflicting in context.SetConflicts)
                 {
-                    TxMempoolEntry mi = ruleContext.Mempool.MapTx.TryGet(hashConflicting);
+                    TxMempoolEntry mi = this.mempool.MapTx.TryGet(hashConflicting);
                     if (mi == null)
                         continue;
 
@@ -62,7 +70,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                     var oldFeeRate = new FeeRate(mi.ModifiedFee, (int)mi.GetTxSize());
                     if (newFeeRate <= oldFeeRate)
                     {
-                        ruleContext.Logger.LogTrace("(-)[FAIL_INSUFFICIENT_FEE]");
+                        this.logger.LogTrace("(-)[FAIL_INSUFFICIENT_FEE]");
                         context.State.Fail(MempoolErrors.InsufficientFee,
                             $"rejecting replacement {context.TransactionHash}; new feerate {newFeeRate} <= old feerate {oldFeeRate}").Throw();
                     }
@@ -83,7 +91,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                     // transactions that would have to be evicted
                     foreach (TxMempoolEntry it in setIterConflicting)
                     {
-                        ruleContext.Mempool.CalculateDescendants(it, context.AllConflicting);
+                        this.mempool.CalculateDescendants(it, context.AllConflicting);
                     }
                     foreach (TxMempoolEntry it in context.AllConflicting)
                     {
@@ -93,7 +101,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                 }
                 else
                 {
-                    ruleContext.Logger.LogTrace("(-)[FAIL_TOO_MANY_POTENTIAL_REPLACEMENTS]");
+                    this.logger.LogTrace("(-)[FAIL_TOO_MANY_POTENTIAL_REPLACEMENTS]");
                     context.State.Fail(MempoolErrors.TooManyPotentialReplacements,
                             $"rejecting replacement {context.TransactionHash}; too many potential replacements ({context.ConflictingCount} > {MaxDescendantsToVisit})").Throw();
                 }
@@ -109,9 +117,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                         // Rather than check the UTXO set - potentially expensive -
                         // it's cheaper to just check if the new input refers to a
                         // tx that's in the mempool.
-                        if (ruleContext.Mempool.MapTx.ContainsKey(context.Transaction.Inputs[j].PrevOut.Hash))
+                        if (this.mempool.MapTx.ContainsKey(context.Transaction.Inputs[j].PrevOut.Hash))
                         {
-                            ruleContext.Logger.LogTrace("(-)[FAIL_REPLACEMENT_ADDS_UNCONFIRMED]");
+                            this.logger.LogTrace("(-)[FAIL_REPLACEMENT_ADDS_UNCONFIRMED]");
                             context.State.Fail(MempoolErrors.ReplacementAddsUnconfirmed,
                                 $"replacement {context.TransactionHash} adds unconfirmed input, idx {j}").Throw();
                         }
@@ -123,7 +131,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                 // transactions would not be paid for.
                 if (context.ModifiedFees < context.ConflictingFees)
                 {
-                    ruleContext.Logger.LogTrace("(-)[FAIL_INSUFFICIENT_FEE]");
+                    this.logger.LogTrace("(-)[FAIL_INSUFFICIENT_FEE]");
                     context.State.Fail(MempoolErrors.Insufficientfee,
                             $"rejecting replacement {context.TransactionHash}, less fees than conflicting txs; {context.ModifiedFees} < {context.ConflictingFees}").Throw();
                 }
@@ -131,11 +139,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                 // Finally in addition to paying more fees than the conflicts the
                 // new transaction must pay for its own bandwidth.
                 Money nDeltaFees = context.ModifiedFees - context.ConflictingFees;
-                if (nDeltaFees < ruleContext.MinRelayTxFee.GetFee(context.EntrySize))
+                if (nDeltaFees < context.MinRelayTxFee.GetFee(context.EntrySize))
                 {
-                    ruleContext.Logger.LogTrace("(-)[FAIL_INSUFFICIENT_DELTA_FEE]");
+                    this.logger.LogTrace("(-)[FAIL_INSUFFICIENT_DELTA_FEE]");
                     context.State.Fail(MempoolErrors.Insufficientfee,
-                            $"rejecting replacement {context.TransactionHash}, not enough additional fees to relay; {nDeltaFees} < {ruleContext.MinRelayTxFee.GetFee(context.EntrySize)}").Throw();
+                            $"rejecting replacement {context.TransactionHash}, not enough additional fees to relay; {nDeltaFees} < {context.MinRelayTxFee.GetFee(context.EntrySize)}").Throw();
                 }
             }
         }

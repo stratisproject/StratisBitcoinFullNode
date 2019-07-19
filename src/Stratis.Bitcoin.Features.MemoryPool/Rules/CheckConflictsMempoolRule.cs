@@ -9,14 +9,22 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
     /// Check for conflicts with in-memory transactions.
     /// If a conflict is found it is added to the validation context.
     /// </summary>
-    public class CheckConflictsMempoolRule : IMempoolRule
+    public class CheckConflictsMempoolRule : MempoolRule
     {
-        public void CheckTransaction(MempoolRuleContext ruleContext, MempoolValidationContext context)
+        public CheckConflictsMempoolRule(Network network,
+            ITxMempool mempool,
+            MempoolSettings mempoolSettings,
+            ChainIndexer chainIndexer,
+            ILoggerFactory loggerFactory) : base(network, mempool, mempoolSettings, chainIndexer, loggerFactory)
+        {
+        }
+
+        public override void CheckTransaction(MempoolValidationContext context)
         {
             context.SetConflicts = new List<uint256>();
             foreach (TxIn txin in context.Transaction.Inputs)
             {
-                TxMempool.NextTxPair itConflicting = ruleContext.Mempool.MapNextTx.Find(f => f.OutPoint == txin.PrevOut);
+                TxMempool.NextTxPair itConflicting = this.mempool.MapNextTx.Find(f => f.OutPoint == txin.PrevOut);
                 if (itConflicting != null)
                 {
                     Transaction ptxConflicting = itConflicting.Transaction;
@@ -35,7 +43,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                         // unconfirmed ancestors anyway; doing otherwise is hopelessly
                         // insecure.
                         bool replacementOptOut = true;
-                        if (ruleContext.Settings.EnableReplacement)
+                        if (this.settings.EnableReplacement)
                         {
                             foreach (TxIn txiner in ptxConflicting.Inputs)
                             {
@@ -49,7 +57,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
 
                         if (replacementOptOut)
                         {
-                            ruleContext.Logger.LogTrace("(-)[INVALID_CONFLICT]");
+                            this.logger.LogTrace("(-)[INVALID_CONFLICT]");
                             context.State.Invalid(MempoolErrors.Conflict).Throw();
                         }
 

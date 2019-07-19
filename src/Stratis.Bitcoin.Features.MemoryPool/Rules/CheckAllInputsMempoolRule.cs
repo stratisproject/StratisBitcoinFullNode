@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 
@@ -9,12 +10,24 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
     /// Validate inputs against previous transactions.
     /// Checks against <see cref="ScriptVerify.Standard"/> and <see cref="ScriptVerify.P2SH"/>
     /// </summary>
-    public class CheckAllInputsMempoolRule : IMempoolRule
+    public class CheckAllInputsMempoolRule : MempoolRule
     {
-        public void CheckTransaction(MempoolRuleContext ruleContext, MempoolValidationContext context)
+        private readonly IConsensusRuleEngine consensusRuleEngine;
+
+        public CheckAllInputsMempoolRule(Network network,
+            ITxMempool mempool,
+            MempoolSettings mempoolSettings,
+            ChainIndexer chainIndexer,
+            IConsensusRuleEngine consensusRuleEngine,
+            ILoggerFactory loggerFactory) : base(network, mempool, mempoolSettings, chainIndexer, loggerFactory)
+        {
+            this.consensusRuleEngine = consensusRuleEngine;
+        }
+
+        public override void CheckTransaction(MempoolValidationContext context)
         {
             var scriptVerifyFlags = ScriptVerify.Standard;
-            if (!ruleContext.Settings.RequireStandard)
+            if (!this.settings.RequireStandard)
             {
                 // TODO: implement -promiscuousmempoolflags
                 // scriptVerifyFlags = GetArg("-promiscuousmempoolflags", scriptVerifyFlags);
@@ -23,7 +36,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
             // Check against previous transactions
             // This is done last to help prevent CPU exhaustion denial-of-service attacks.
             var txdata = new PrecomputedTransactionData(context.Transaction);
-            if (!this.CheckInputs(ruleContext, context, scriptVerifyFlags, txdata))
+            if (!this.CheckInputs(context, scriptVerifyFlags, txdata))
             {
                 // TODO: Implement Witness Code
                 //// SCRIPT_VERIFY_CLEANSTACK requires SCRIPT_VERIFY_WITNESS, so we
@@ -36,7 +49,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                 //  state.SetCorruptionPossible();
                 //}
 
-                ruleContext.Logger.LogTrace("(-)[FAIL_INPUTS_PREV_TXS]");
+                this.logger.LogTrace("(-)[FAIL_INPUTS_PREV_TXS]");
                 context.State.Fail(new MempoolError()).Throw();
             }
 
@@ -49,9 +62,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
             // There is a similar check in CreateNewBlock() to prevent creating
             // invalid blocks, however allowing such transactions into the mempool
             // can be exploited as a DoS attack.
-            if (!this.CheckInputs(ruleContext, context, ScriptVerify.P2SH, txdata))
+            if (!this.CheckInputs(context, ScriptVerify.P2SH, txdata))
             {
-                ruleContext.Logger.LogTrace("(-)[FAIL_SCRIPT_VERIFY]");
+                this.logger.LogTrace("(-)[FAIL_SCRIPT_VERIFY]");
                 context.State.Fail(new MempoolError(), $"CheckInputs: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags {context.TransactionHash}").Throw();
             }
         }
@@ -67,13 +80,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
         /// <param name="scriptVerify">Script verify flag.</param>
         /// <param name="txData">Transaction data.</param>
         /// <returns>Whether inputs are valid.</returns>
-        private bool CheckInputs(MempoolRuleContext ruleContext, MempoolValidationContext context, ScriptVerify scriptVerify,
+        private bool CheckInputs(MempoolValidationContext context, ScriptVerify scriptVerify,
             PrecomputedTransactionData txData)
         {
             Transaction tx = context.Transaction;
             if (!context.Transaction.IsCoinBase)
             {
-                ruleContext.ConsensusRules.GetRule<CoinViewRule>().CheckInputs(context.Transaction, context.View.Set, ruleContext.ChainIndexer.Height + 1);
+                this.consensusRuleEngine.GetRule<CoinViewRule>().CheckInputs(context.Transaction, context.View.Set, this.chainIndexer.Height + 1);
 
                 for (int iInput = 0; iInput < tx.Inputs.Count; iInput++)
                 {
@@ -82,11 +95,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                     TxOut txout = context.View.GetOutputFor(input);
 
                     var checker = new TransactionChecker(tx, iiIntput, txout.Value, txData);
-                    var ctx = new ScriptEvaluationContext(ruleContext.Network);
+                    var ctx = new ScriptEvaluationContext(this.network);
                     ctx.ScriptVerify = scriptVerify;
                     if (ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker))
                     {
-                        ruleContext.Logger.LogTrace("(-)[SCRIPT_VERIFIED]:true");
+                        this.logger.LogTrace("(-)[SCRIPT_VERIFIED]:true");
                         return true;
                     }
                     else
@@ -113,7 +126,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                         //// as to the correct behavior - we may want to continue
                         //// peering with non-upgraded nodes even after soft-fork
                         //// super-majority signaling has occurred.
-                        ruleContext.Logger.LogTrace("(-)[FAIL_SCRIPT_VERIFY]");
+                        this.logger.LogTrace("(-)[FAIL_SCRIPT_VERIFY]");
                         context.State.Fail(MempoolErrors.MandatoryScriptVerifyFlagFailed, ctx.Error.ToString()).Throw();
                     }
                 }

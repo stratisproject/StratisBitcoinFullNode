@@ -121,6 +121,8 @@ namespace Stratis.Bitcoin.Networks
             this.StandardScriptsRegistry = new StratisStandardScriptsRegistry();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
+
+            this.RegisterMempoolRules(this.Consensus);
         }
     }
 }

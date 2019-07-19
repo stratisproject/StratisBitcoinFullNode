@@ -17,53 +17,56 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
     /// Validates the transactions can be mined, and the pay to script hashs are standard.
     /// Calculates the fees related to the transaction.
     /// </summary>
-    public class CreateMempoolEntryMempoolRule : IMempoolRule
+    public class CreateMempoolEntryMempoolRule : MempoolRule
     {
         public const int WitnessV0ScriptHashSize = 32;
         public const int MaxStandardP2wshScriptSize = 3600;
         public const int MaxStandardP2wshStackItems = 100;
         public const int MaxStandardP2wshStackItemSize = 80;
 
-        // TODO: Workaround to avoid passing these into the non-static public methods, need to keep these somewhere higher-level so all rules automatically get them set the same way
         private ILogger logger;
         private Network network;
         private ChainIndexer chainIndexer;
         private IConsensusRuleEngine consensusRules;
 
-        public void CheckTransaction(MempoolRuleContext ruleContext, MempoolValidationContext context)
+        public CreateMempoolEntryMempoolRule(Network network,
+            ITxMempool mempool,
+            MempoolSettings mempoolSettings,
+            ChainIndexer chainIndexer,
+            IConsensusRuleEngine consensusRules,
+            ILoggerFactory loggerFactory) : base(network, mempool, mempoolSettings, chainIndexer, loggerFactory)
         {
-            this.logger = ruleContext.Logger;
-            this.network = ruleContext.Network;
-            this.chainIndexer = ruleContext.ChainIndexer;
-            this.consensusRules = ruleContext.ConsensusRules;
+            this.consensusRules = consensusRules;
+        }
 
+        public override void CheckTransaction(MempoolValidationContext context)
+        {
             // Only accept BIP68 sequence locked transactions that can be mined in the next
             // block; we don't want our mempool filled up with transactions that can't
             // be mined yet.
             // Must keep pool.cs for this unless we change CheckSequenceLocks to take a
             // CoinsViewCache instead of create its own
-            if (!CheckSequenceLocks(ruleContext.Network, ruleContext.ChainIndexer.Tip, context, MempoolValidator.StandardLocktimeVerifyFlags, context.LockPoints))
+            if (!CheckSequenceLocks(this.network, this.chainIndexer.Tip, context, MempoolValidator.StandardLocktimeVerifyFlags, context.LockPoints))
             {
                 this.logger.LogTrace("(-)[FAIL_BIP68_SEQLOCK]");
                 context.State.Fail(MempoolErrors.NonBIP68Final).Throw();
             }
 
             // Check for non-standard pay-to-script-hash in inputs
-            if (ruleContext.Settings.RequireStandard && !this.AreInputsStandard(ruleContext.Network, context.Transaction, context.View))
+            if (this.settings.RequireStandard && !this.AreInputsStandard(this.network, context.Transaction, context.View))
             {
                 this.logger.LogTrace("(-)[INVALID_NONSTANDARD_INPUTS]");
                 context.State.Invalid(MempoolErrors.NonstandardInputs).Throw();
             }
 
             // Check for non-standard witness in P2WSH
-            if (context.Transaction.HasWitness && ruleContext.Settings.RequireStandard && !this.IsWitnessStandard(context.Transaction, context.View))
+            if (context.Transaction.HasWitness && this.settings.RequireStandard && !this.IsWitnessStandard(context.Transaction, context.View))
             {
                 this.logger.LogTrace("(-)[INVALID_NONSTANDARD_WITNESS]");
                 context.State.Invalid(MempoolErrors.NonstandardWitness).Throw();
             }
 
-            context.SigOpsCost = this.consensusRules.GetRule<CoinViewRule>().GetTransactionSignatureOperationCost(context.Transaction, context.View.Set,
-                new DeploymentFlags { ScriptFlags = ScriptVerify.Standard });
+            context.SigOpsCost = this.consensusRules.GetRule<CoinViewRule>().GetTransactionSignatureOperationCost(context.Transaction, context.View.Set, new DeploymentFlags { ScriptFlags = ScriptVerify.Standard });
 
             Money nValueIn = context.View.GetValueIn(context.Transaction);
 
@@ -72,17 +75,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
             // nModifiedFees includes any fee deltas from PrioritiseTransaction
             Money nModifiedFees = context.Fees;
             double priorityDummy = 0;
-            ruleContext.Mempool.ApplyDeltas(context.TransactionHash, ref priorityDummy, ref nModifiedFees);
+            this.mempool.ApplyDeltas(context.TransactionHash, ref priorityDummy, ref nModifiedFees);
             context.ModifiedFees = nModifiedFees;
 
-            (double dPriority, Money inChainInputValue) = context.View.GetPriority(context.Transaction, ruleContext.ChainIndexer.Height);
+            (double dPriority, Money inChainInputValue) = context.View.GetPriority(context.Transaction, this.chainIndexer.Height);
 
             // Keep track of transactions that spend a coinbase, which we re-scan
             // during reorgs to ensure COINBASE_MATURITY is still met.
             bool spendsCoinbase = context.View.SpendsCoinBase(context.Transaction);
 
-            context.Entry = new TxMempoolEntry(context.Transaction, context.Fees, context.State.AcceptTime, dPriority, ruleContext.ChainIndexer.Height, inChainInputValue,
-                spendsCoinbase, context.SigOpsCost, context.LockPoints, ruleContext.Network.Consensus.Options);
+            context.Entry = new TxMempoolEntry(context.Transaction, context.Fees, context.State.AcceptTime, dPriority, this.chainIndexer.Height, inChainInputValue,
+                spendsCoinbase, context.SigOpsCost, context.LockPoints, this.network.Consensus.Options);
             context.EntrySize = (int)context.Entry.GetTxSize();
         }
 
