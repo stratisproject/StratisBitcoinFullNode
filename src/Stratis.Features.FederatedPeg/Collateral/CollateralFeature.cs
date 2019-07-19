@@ -52,7 +52,6 @@ namespace Stratis.Features.FederatedPeg.Collateral
                         services.AddSingleton<CollateralVotingController>();
 
                         services.AddSingleton<IRuleRegistration, SmartContractCollateralPoARuleRegistration>();
-                        services.AddSingleton<CheckCollateralFullValidationRule>();
                         services.AddSingleton<IConsensusRuleEngine>(f =>
                         {
                             PoAConsensusRuleEngine concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();

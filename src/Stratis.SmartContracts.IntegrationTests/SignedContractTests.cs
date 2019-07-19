@@ -76,7 +76,9 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 // Try to send create but ensure it fails because code is in incorrect format.
                 BuildCreateContractTransactionResponse sendResponse = node1.SendCreateContractTransaction(contractBytes, 30);
-                Assert.False(sendResponse.Success);
+
+                // SendCreateContractTransaction returns null for an ErrorResponse
+                Assert.Null(sendResponse);
             }
         }
 
@@ -94,7 +96,9 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 // Try to send create but ensure it fails because code is signed by different key.
                 BuildCreateContractTransactionResponse sendResponse = node1.SendCreateContractTransaction(toSend, 30);
-                Assert.False(sendResponse.Success);
+
+                // SendCreateContractTransaction returns null for an ErrorResponse
+                Assert.Null(sendResponse);
             }
         }
 

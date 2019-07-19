@@ -52,7 +52,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             FederatedPegSettings fedPegSettings = FedPegTestsHelper.CreateSettings(network, out NodeSettings nodeSettings);
 
-            CounterChainSettings settings = new CounterChainSettings(nodeSettings, new CounterChainNetworkWrapper(Networks.Stratis.Regtest()));
+            CounterChainSettings settings = new CounterChainSettings(nodeSettings, Networks.Stratis.Regtest());
             var asyncMock = new Mock<IAsyncProvider>();
             asyncMock.Setup(a => a.RegisterTask(It.IsAny<string>(), It.IsAny<Task>()));
 
@@ -80,9 +80,8 @@ namespace Stratis.Features.FederatedPeg.Tests
         {
             var blockStoreClientMock = new Mock<IBlockStoreClient>();
 
-            var collateralData = new VerboseAddressBalancesResult()
+            var collateralData = new VerboseAddressBalancesResult(this.collateralCheckHeight + 1000)
             {
-                ConsensusTipHeight = this.collateralCheckHeight + 1000,
                 BalancesData = new List<AddressIndexerData>()
                 {
                     new AddressIndexerData()
