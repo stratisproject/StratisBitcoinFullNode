@@ -169,9 +169,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         services.AddSingleton<MempoolController>();
                         services.AddSingleton<MempoolSettings>();
 
-                        // TODO: Should the smart contract-specific rule injection be separated out?
                         foreach (var ruleType in fullNodeBuilder.Network.Consensus.MempoolRules)
-                            services.AddSingleton(typeof(MempoolRule), ruleType);
+                            services.AddSingleton(typeof(IMempoolRule), ruleType);
                     });
             });
 

@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock,
             IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ChainIndexer chainIndexer,
             ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings,
-            IConsensusRuleEngine consensusRules, IEnumerable<MempoolRule> mempoolRules)
+            IConsensusRuleEngine consensusRules, IEnumerable<IMempoolRule> mempoolRules)
             : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chainIndexer, coinView, loggerFactory, nodeSettings, consensusRules, mempoolRules)
         {
             // Dirty hack, but due to AllowedScriptTypeRule we don't need to check for standard scripts on any network, even live.

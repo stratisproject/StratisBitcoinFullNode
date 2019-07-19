@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         private Network network;
 
-        private readonly List<MempoolRule> mempoolRules;
+        private readonly List<IMempoolRule> mempoolRules;
 
         public MempoolValidator(
             ITxMempool memPool,
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             ILoggerFactory loggerFactory,
             NodeSettings nodeSettings,
             IConsensusRuleEngine consensusRules,
-            IEnumerable<MempoolRule> mempoolRules)
+            IEnumerable<IMempoolRule> mempoolRules)
         {
             this.memPool = memPool;
             this.mempoolLock = mempoolLock;
@@ -318,7 +318,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     return;
                 }
 
-                foreach (MempoolRule rule in this.mempoolRules)
+                foreach (IMempoolRule rule in this.mempoolRules)
                 {
                     rule.CheckTransaction(context);
                 }
