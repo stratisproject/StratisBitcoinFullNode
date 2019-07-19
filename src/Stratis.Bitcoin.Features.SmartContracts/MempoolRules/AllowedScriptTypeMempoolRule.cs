@@ -1,11 +1,8 @@
-﻿using System.Linq;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
-using Stratis.SmartContracts.Core;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.MempoolRules
 {

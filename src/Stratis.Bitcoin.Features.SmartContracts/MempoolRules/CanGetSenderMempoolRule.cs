@@ -13,8 +13,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.MempoolRules
     {
         private readonly ISenderRetriever senderRetriever;
 
-        // TODO: It does not appear this was getting called in the smart contract mempool validator. Should it be?
-
         public CanGetSenderMempoolRule(Network network,
             ITxMempool mempool,
             MempoolSettings mempoolSettings,

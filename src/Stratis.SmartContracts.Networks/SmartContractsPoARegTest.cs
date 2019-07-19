@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.MempoolRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
+using Stratis.Bitcoin.Features.SmartContracts.PoA.MempoolRules;
 using Stratis.SmartContracts.Networks.Policies;
 
 namespace Stratis.SmartContracts.Networks
@@ -160,7 +161,8 @@ namespace Stratis.SmartContracts.Networks
                 // The smart contract mempool needs to do more fee checks than its counterpart, so include extra rules.
                 // These rules occur directly after the fee check rule in the non- smart contract mempool.
                 typeof(ContractTransactionPartialValidationMempoolRule),
-                typeof(ContractTransactionFullValidationMempoolRule),
+                typeof(CanGetSenderMempoolRule),
+                typeof(AllowedCodeHashLogicMempoolRule), // PoA-specific
                 typeof(CheckMinGasLimitSmartContractMempoolRule),
 
                 // Remaining non-SC rules.

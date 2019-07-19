@@ -34,7 +34,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.MempoolRules
             ContractTxData callData = callDataDeserializationResult.Value;
             if (callData.GasPrice < SmartContractMempoolValidator.MinGasPrice)
                 context.State.Fail(MempoolErrors.InsufficientFee, $"Gas price {callData.GasPrice} is below required price: {SmartContractMempoolValidator.MinGasPrice}").Throw();
-
         }
     }
 }
