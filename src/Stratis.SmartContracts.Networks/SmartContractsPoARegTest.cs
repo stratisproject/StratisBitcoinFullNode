@@ -162,7 +162,7 @@ namespace Stratis.SmartContracts.Networks
                 // These rules occur directly after the fee check rule in the non- smart contract mempool.
                 typeof(ContractTransactionPartialValidationMempoolRule),
                 typeof(CanGetSenderMempoolRule),
-                typeof(AllowedCodeHashLogicMempoolRule), // PoA-specific
+                // TODO: Should typeof(AllowedCodeHashLogicMempoolRule) also be used on this network?
                 typeof(CheckMinGasLimitSmartContractMempoolRule),
 
                 // Remaining non-SC rules.
