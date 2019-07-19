@@ -143,7 +143,7 @@ namespace Stratis.SmartContracts.Networks
 
                 // The smart contract mempool needs to do more fee checks than its counterpart, so include extra rules.
                 // These rules occur directly after the fee check rule in the non- smart contract mempool.
-                typeof(ContractTransactionPartialValidationMempoolRule),
+                typeof(SmartContractFormatLogicMempoolRule),
                 typeof(CanGetSenderMempoolRule),
                 typeof(CheckMinGasLimitSmartContractMempoolRule),
 

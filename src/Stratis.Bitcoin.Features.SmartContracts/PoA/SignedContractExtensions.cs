@@ -72,6 +72,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             // Add consensus rule.
             services.AddSingleton<IContractTransactionPartialValidationRule>(f => new ContractSignedCodeLogic(f.GetService<IContractSigner>(), signingContractPubKey));
 
+            // TODO: Need to add the ContractSignedCodeLogicMempoolRule with the pubkey somehow
+
             return options;
         }
     }

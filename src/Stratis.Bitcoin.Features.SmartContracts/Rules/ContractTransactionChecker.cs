@@ -35,12 +35,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             return Task.CompletedTask;
         }
-
-        public void CheckTransaction(MempoolValidationContext context, IEnumerable<IContractTransactionValidationRule> rules)
-        {
-            this.CheckTransaction(context.Transaction, rules, context.Fees);
-        }
-
+        
         public static ContractTxData GetContractTxData(ICallDataSerializer callDataSerializer, TxOut scTxOut)
         {
             Result<ContractTxData> callDataDeserializationResult = callDataSerializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
@@ -55,8 +50,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             return txData;
         }
 
-        private void CheckTransaction(Transaction transaction, IEnumerable<IContractTransactionValidationRule> rules,
-            Money suppliedBudget)
+        private void CheckTransaction(Transaction transaction, IEnumerable<IContractTransactionValidationRule> rules, Money suppliedBudget)
         {
             TxOut scTxOut = transaction.TryGetSmartContractTxOut();
 
