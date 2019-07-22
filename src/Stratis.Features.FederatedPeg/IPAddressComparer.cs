@@ -10,6 +10,9 @@ namespace Stratis.Features.FederatedPeg
             if (x == null)
                 return y == null;
 
+            if (y == null)
+                return false;
+
             return x.MapToIPv6().Equals(y.MapToIPv6());
         }
 
