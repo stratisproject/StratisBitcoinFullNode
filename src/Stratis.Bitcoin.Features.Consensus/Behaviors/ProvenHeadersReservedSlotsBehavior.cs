@@ -98,6 +98,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 
         private bool DoesPeerSupportsPH(VersionPayload peerVersion)
         {
+            // TODO: Need to diagnose how this occurs. Is it possible errors were previously getting squashed elsewhere?
+            if (peerVersion == null)
+                return false;
+
             return peerVersion.Version >= NBitcoin.Protocol.ProtocolVersion.PROVEN_HEADER_VERSION;
         }
 
