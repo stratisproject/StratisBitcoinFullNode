@@ -66,6 +66,13 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
                 ChainedHeaderBlock block = this.consensusManager.GetBlockData(currentHeader.HashBlock);
 
+                if (block?.Block?.Transactions == null)
+                {
+                    // Report unexpected results from consenus manager.
+                    this.logger.LogWarning("Stop matured blocks collection due to consensus manager integrity failure. Send what we've collected.");
+                    break;
+                }
+
                 MaturedBlockDepositsModel maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(block);
 
                 if (maturedBlockDeposits == null)

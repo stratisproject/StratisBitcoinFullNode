@@ -11,6 +11,7 @@ using NLog;
 using NLog.Config;
 using NLog.Targets;
 using NLog.Targets.Wrappers;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -73,6 +74,9 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>An interface implementation for the blockstore.</summary>
         private readonly IBlockStore blockStore;
 
+        /// <summary>Provider for creating and managing background async loop tasks.</summary>
+        private readonly IAsyncProvider asyncProvider;
+
         public NodeController(
             ChainIndexer chainIndexer,
             IChainState chainState,
@@ -82,6 +86,7 @@ namespace Stratis.Bitcoin.Controllers
             ILoggerFactory loggerFactory,
             NodeSettings nodeSettings,
             Network network,
+            IAsyncProvider asyncProvider,
             IBlockStore blockStore = null,
             IGetUnspentTransaction getUnspentTransaction = null,
             INetworkDifficulty networkDifficulty = null,
@@ -96,6 +101,7 @@ namespace Stratis.Bitcoin.Controllers
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(connectionManager, nameof(connectionManager));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
+            Guard.NotNull(asyncProvider, nameof(asyncProvider));
 
             this.chainIndexer = chainIndexer;
             this.chainState = chainState;
@@ -105,6 +111,7 @@ namespace Stratis.Bitcoin.Controllers
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.nodeSettings = nodeSettings;
+            this.asyncProvider = asyncProvider;
 
             this.blockStore = blockStore;
             this.getUnspentTransaction = getUnspentTransaction;
@@ -116,7 +123,6 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>
         /// Gets general information about this full node including the version,
         /// protocol version, network name, coin ticker, and consensus height.
-        /// 
         /// </summary>
         /// <returns>A <see cref="StatusModel"/> with information about the node.</returns>
         [HttpGet]
@@ -251,7 +257,7 @@ namespace Stratis.Bitcoin.Controllers
                 Transaction trx = this.pooledTransaction != null ? await this.pooledTransaction.GetTransaction(txid).ConfigureAwait(false) : null;
                 if (trx == null)
                 {
-                    trx = this.blockStore != null ? this.blockStore.GetTransactionById(txid) : null;
+                    trx = this.blockStore?.GetTransactionById(txid);
                 }
 
                 if (trx == null)
@@ -261,7 +267,7 @@ namespace Stratis.Bitcoin.Controllers
 
                 if (verbose)
                 {
-                    ChainedHeader block = await GetTransactionBlockAsync(txid, this.fullNode, this.chainIndexer).ConfigureAwait(false);
+                    ChainedHeader block = this.GetTransactionBlock(txid, this.fullNode, this.chainIndexer);
                     return this.Json(new TransactionVerboseModel(trx, this.network, block, this.chainState?.ConsensusTip));
                 }
                 else
@@ -279,7 +285,7 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>
         /// Gets a JSON representation for a given transaction in hex format.
         /// </summary>
-        /// <param name="rawHex">The raw hexadecimal form of the transaction.</param>
+        /// <param name="request">A class containing the necessary parameters for a block search request.</param>
         /// <returns>The JSON representation of the transaction.</returns>
         [HttpPost]
         [Route("decoderawtransaction")]
@@ -316,8 +322,10 @@ namespace Stratis.Bitcoin.Controllers
             {
                 Guard.NotEmpty(address, nameof(address));
 
-                var res = new ValidatedAddress();
-                res.IsValid = false;
+                var res = new ValidatedAddress
+                {
+                    IsValid = false
+                };
                 // P2WPKH
                 if (BitcoinWitPubKeyAddress.IsValid(address, this.network, out Exception _))
                 {
@@ -506,11 +514,11 @@ namespace Stratis.Bitcoin.Controllers
                     // Retrieve the full path of the current rule's log file.
                     if (rule.Targets.First().GetType().Name == "AsyncTargetWrapper")
                     {
-                        WrapperTargetBase wrapper = (WrapperTargetBase) rule.Targets.First();
+                        WrapperTargetBase wrapper = (WrapperTargetBase)rule.Targets.First();
 
                         if (wrapper.WrappedTarget != null && wrapper.WrappedTarget.GetType().Name == "FileTarget")
                         {
-                            filename = ((FileTarget) wrapper.WrappedTarget).FileName.ToString();
+                            filename = ((FileTarget)wrapper.WrappedTarget).FileName.ToString();
                         }
                     }
                     else if (rule.Targets.First().GetType().Name == "FileTarget")
@@ -536,6 +544,38 @@ namespace Stratis.Bitcoin.Controllers
         }
 
         /// <summary>
+        /// Get the currently running async loops/delegates/tasks for diagnostic purposes.
+        /// </summary>
+        /// <returns>A list of running async loops/delegates/tasks.</returns>
+        [HttpGet]
+        [Route("asyncloops")]
+        public IActionResult GetAsyncLoops()
+        {
+            // Checks the request is valid.
+            if (!this.ModelState.IsValid)
+            {
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                var loops = new List<AsyncLoopModel>();
+
+                foreach ((string loopName, TaskStatus status) in this.asyncProvider.GetAll())
+                {
+                    loops.Add(new AsyncLoopModel() { LoopName = loopName, Status = Enum.GetName(typeof(TaskStatus), status)});
+                }
+
+                return this.Json(loops);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
         /// Retrieves a transaction block given a valid hash.
         /// This function is used by other methods in this class and not explicitly by RPC/API.
         /// </summary>
@@ -544,13 +584,13 @@ namespace Stratis.Bitcoin.Controllers
         /// <param name="chain">The full node's chain. Used to get <see cref="ChainedHeader"/> block.</param>
         /// <returns>A <see cref="ChainedHeader"/> for the given transaction hash. Returns <c>null</c> if fails.</returns>
         /// <exception cref="ArgumentNullException">Thrown if fullnode is not provided.</exception>
-        internal static async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid, IFullNode fullNode, ChainIndexer chain)
+        internal ChainedHeader GetTransactionBlock(uint256 trxid, IFullNode fullNode, ChainIndexer chain)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
 
             ChainedHeader block = null;
             var blockStore = fullNode.NodeFeature<IBlockStore>();
-            uint256 blockid = blockStore != null ? blockStore.GetBlockIdByTransactionId(trxid) : null;
+            uint256 blockid = blockStore?.GetBlockIdByTransactionId(trxid);
             if (blockid != null)
             {
                 block = chain?.GetHeader(blockid);

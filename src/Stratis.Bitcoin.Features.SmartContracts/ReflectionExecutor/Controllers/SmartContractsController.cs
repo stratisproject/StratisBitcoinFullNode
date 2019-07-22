@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -8,9 +9,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -25,6 +28,7 @@ using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
+using State = Stratis.SmartContracts.CLR.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 {
@@ -49,6 +53,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly IReceiptRepository receiptRepository;
         private readonly ILocalExecutor localExecutor;
         private readonly ISmartContractTransactionService smartContractTransactionService;
+        private readonly IConnectionManager connectionManager;
 
         public SmartContractsController(IBroadcasterManager broadcasterManager,
             IBlockStore blockStore,
@@ -62,7 +67,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             ISerializer serializer,
             IReceiptRepository receiptRepository,
             ILocalExecutor localExecutor,
-            ISmartContractTransactionService smartContractTransactionService)
+            ISmartContractTransactionService smartContractTransactionService,
+            IConnectionManager connectionManager)
         {
             this.stateRoot = stateRoot;
             this.contractDecompiler = contractDecompiler;
@@ -76,6 +82,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.receiptRepository = receiptRepository;
             this.localExecutor = localExecutor;
             this.smartContractTransactionService = smartContractTransactionService;
+            this.connectionManager = connectionManager;
         }
 
         /// <summary>
@@ -101,13 +108,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                     Message = string.Format("No contract execution code exists at {0}", address)
                 });
             }
-            
+
+            string typeName = this.stateRoot.GetContractType(addressNumeric);
+
             Result<string> sourceResult = this.contractDecompiler.GetSource(contractCode);
 
             return this.Json(new GetCodeResponse
             {
                 Message = string.Format("Contract execution code retrieved at {0}", address),
                 Bytecode = contractCode.ToHexString(),
+                Type = typeName,
                 CSharp = sourceResult.IsSuccess ? sourceResult.Value : sourceResult.Error // Show the source, or the reason why the source couldn't be retrieved.
             });
         }
@@ -282,7 +292,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             if (!this.ModelState.IsValid)
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
-            return this.Json(this.smartContractTransactionService.BuildCreateTx(request));
+            BuildCreateContractTransactionResponse response = this.smartContractTransactionService.BuildCreateTx(request);
+
+            if (!response.Success)
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, response.Message, string.Empty);
+
+            return this.Json(response);
         }
 
         /// <summary>
@@ -304,7 +319,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             if (!this.ModelState.IsValid)
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
-            return this.Json(this.smartContractTransactionService.BuildCallTx(request));
+            var response = this.smartContractTransactionService.BuildCallTx(request);
+
+            if (!response.Success)
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, response.Message, string.Empty);
+
+            return this.Json(response);
         }
 
         /// <summary>
@@ -326,11 +346,26 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             BuildCreateContractTransactionResponse response = this.smartContractTransactionService.BuildCreateTx(request);
 
             if (!response.Success)
-                return this.Json(response);
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, response.Message, string.Empty);
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
-            this.walletManager.ProcessTransaction(transaction, null, null, false);
+
+            if (!this.connectionManager.ConnectedPeers.Any())
+            {
+                this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]");
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, "Can't send transaction: sending transaction requires at least one connection!", string.Empty);
+            }
+
             this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+
+            // Check if transaction was actually added to a mempool.
+            TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
+
+            if (transactionBroadCastEntry?.State == Features.Wallet.Broadcasting.State.CantBroadcast)
+            {
+                this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
+            }
 
             return this.Json(response);
         }
@@ -357,8 +392,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 return this.Json(response);
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
-            this.walletManager.ProcessTransaction(transaction, null, null, false);
+
+            if (!this.connectionManager.ConnectedPeers.Any())
+            {
+                this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]");
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, "Can't send transaction: sending transaction requires at least one connection!", string.Empty);
+            }
+
             this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+
+            // Check if transaction was actually added to a mempool.
+            TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
+
+            if (transactionBroadCastEntry?.State == Features.Wallet.Broadcasting.State.CantBroadcast)
+            {
+                this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
+            }
 
             return this.Json(response);
         }

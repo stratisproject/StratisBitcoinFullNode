@@ -1869,6 +1869,20 @@ namespace NBitcoin
 
         public Transaction CombineSignatures(params Transaction[] transactions)
         {
+            // Necessary because we can't use params and default parameters together
+            return this.CombineSignatures(false, transactions);
+        }
+
+        /// <summary>
+        /// Combine transactions by merging their signatures.
+        /// </summary>
+        /// <param name="requireFirstSigned">
+        /// An optional optimisation to exit early. If set and the merging of the first input doesn't change the transaction, the method will exit.
+        /// </param>
+        /// <param name="transactions">The transactions to merge signatures for.</param>
+        /// <returns>The merged transaction.</returns>
+        public Transaction CombineSignatures(bool requireFirstSigned, params Transaction[] transactions)
+        {
             if(transactions.Length == 1)
                 return transactions[0];
 
@@ -1879,7 +1893,7 @@ namespace NBitcoin
             for(int i = 1; i < transactions.Length; i++)
             {
                 Transaction signed = transactions[i];
-                tx = CombineSignaturesCore(tx, signed);
+                tx = this.CombineSignaturesCore(tx, signed, requireFirstSigned);
             }
             return tx;
         }
@@ -1892,8 +1906,16 @@ namespace NBitcoin
                 return this._Extensions;
             }
         }
-
-        private Transaction CombineSignaturesCore(Transaction signed1, Transaction signed2)
+        /// <summary>
+        /// Combine multiple transactions into one, merging signatures for all of their inputs.
+        /// </summary>
+        /// <param name="signed1">First transaction to sign.</param>
+        /// <param name="signed2">Second transaction to sign.</param>
+        /// <param name="requireFirstSigned">
+        /// An optional optimisation to exit early. If set and the merging of the first input doesn't change the transaction, the method will exit.
+        /// </param>
+        /// <returns>The combined transaction.</returns>
+        private Transaction CombineSignaturesCore(Transaction signed1, Transaction signed2, bool requireFirstSigned)
         {
             if(signed1 == null)
                 return signed2;
@@ -1902,7 +1924,11 @@ namespace NBitcoin
                 return signed1;
 
             Transaction tx = this.Network.CreateTransaction(signed1.ToHex());
-            for(int i = 0; i < tx.Inputs.Count; i++)
+
+            IndexedTxIn[] signed1Inputs = signed1.Inputs.AsIndexedInputs().ToArray();
+            IndexedTxIn[] signed2Inputs = signed2.Inputs.AsIndexedInputs().ToArray();
+
+            for (int i = 0; i < tx.Inputs.Count; i++)
             {
                 if(i >= signed2.Inputs.Count)
                     break;
@@ -1921,11 +1947,18 @@ namespace NBitcoin
                                     this.Network,
                                     scriptPubKey,
                                     new TransactionChecker(tx, i, amount),
-                                     GetScriptSigs(signed1.Inputs.AsIndexedInputs().Skip(i).First()),
-                                     GetScriptSigs(signed2.Inputs.AsIndexedInputs().Skip(i).First()));
+                                     GetScriptSigs(signed1Inputs[i]),
+                                     GetScriptSigs(signed2Inputs[i]));
                 IndexedTxIn input = tx.Inputs.AsIndexedInputs().Skip(i).First();
                 input.WitScript = result.WitSig;
                 input.ScriptSig = result.ScriptSig;
+
+                // In certain cases we're expecting every input to be signed.
+                // If merging the first input doesn't affect the transaction, exit early.
+                if (i == 0 && requireFirstSigned && tx.GetHash() == signed1.GetHash())
+                {
+                    return tx;
+                }
             }
             return tx;
         }

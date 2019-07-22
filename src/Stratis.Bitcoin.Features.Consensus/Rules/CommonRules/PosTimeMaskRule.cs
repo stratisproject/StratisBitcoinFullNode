@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 return Task.CompletedTask;
 
             ChainedHeader chainedHeader = context.ValidationContext.ChainedHeaderToValidate;
-            this.Logger.LogTrace("Height of block is {0}, block timestamp is {1}, previous block timestamp is {2}, block version is 0x{3:x}.", chainedHeader.Height, chainedHeader.Header.Time, chainedHeader.Previous?.Header.Time, chainedHeader.Header.Version);
+            this.Logger.LogDebug("Height of block is {0}, block timestamp is {1}, previous block timestamp is {2}, block version is 0x{3:x}.", chainedHeader.Height, chainedHeader.Header.Time, chainedHeader.Previous?.Header.Time, chainedHeader.Header.Version);
 
             var posRuleContext = context as PosRuleContext;
             posRuleContext.BlockStake = BlockStake.Load(context.ValidationContext.BlockToValidate);

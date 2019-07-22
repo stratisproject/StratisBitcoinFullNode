@@ -21,6 +21,8 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg;
+using Stratis.Features.FederatedPeg.Collateral;
+using Stratis.Features.FederatedPeg.CounterChain;
 using Stratis.Sidechains.Networks;
 
 namespace Stratis.CirrusPegD
@@ -33,7 +35,7 @@ namespace Stratis.CirrusPegD
         private static readonly Dictionary<NetworkType, Func<Network>> SidechainNetworks = new Dictionary<NetworkType, Func<Network>>
         {
             { NetworkType.Mainnet, CirrusNetwork.NetworksSelector.Mainnet },
-            { NetworkType.Testnet, CirrusNetwork.NetworksSelector.Testnet},
+            { NetworkType.Testnet, CirrusNetwork.NetworksSelector.Testnet },
             { NetworkType.Regtest, CirrusNetwork.NetworksSelector.Regtest }
         };
 
@@ -74,6 +76,8 @@ namespace Stratis.CirrusPegD
 
         private static IFullNode GetMainchainFullNode(string[] args)
         {
+            // TODO: Hardcode -addressindex
+
             var nodeSettings = new NodeSettings(networksSelector: Networks.Stratis, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: args)
             {
                 MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
@@ -82,14 +86,14 @@ namespace Stratis.CirrusPegD
             NetworkType networkType = nodeSettings.Network.NetworkType;
 
             var fedPegOptions = new FederatedPegOptions(
-                counterChainNetwork: SidechainNetworks[networkType](),
                 walletSyncFromHeight: new int[] { FederationGatewaySettings.StratisMainDepositStartBlock, 1, 1 }[(int)networkType]
             );
 
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
-                .AddFederationGateway(fedPegOptions)
+                .SetCounterChainNetwork(SidechainNetworks[nodeSettings.Network.NetworkType]())
+                .AddFederatedPeg(fedPegOptions)
                 .UseTransactionNotification()
                 .UseBlockNotification()
                 .UseApi()
@@ -113,15 +117,16 @@ namespace Stratis.CirrusPegD
             NetworkType networkType = nodeSettings.Network.NetworkType;
 
             var fedPegOptions = new FederatedPegOptions(
-                counterChainNetwork: MainChainNetworks[networkType](),
                 walletSyncFromHeight: new int[] { 1, 1, 1 }[(int)networkType]
             );
 
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
+                .SetCounterChainNetwork(MainChainNetworks[nodeSettings.Network.NetworkType]())
                 .UseFederatedPegPoAMining()
-                .AddFederationGateway(fedPegOptions)
+                .AddFederatedPeg(fedPegOptions)
+                .CheckForPoAMembersCollateral()
                 .UseTransactionNotification()
                 .UseBlockNotification()
                 .UseApi()

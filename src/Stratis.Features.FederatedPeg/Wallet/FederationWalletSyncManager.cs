@@ -147,7 +147,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     this.walletManager.RemoveBlocks(fork);
                     this.walletTip = fork;
 
-                    this.logger.LogTrace("Wallet tip set to '{0}'.", this.walletTip);
+                    this.logger.LogDebug("Wallet tip set to '{0}'.", this.walletTip);
                 }
 
                 // The new tip can be ahead or behind the wallet.
@@ -162,7 +162,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         return;
                     }
 
-                    this.logger.LogTrace("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
+                    this.logger.LogDebug("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
 
                     ChainedHeader next = this.walletTip;
                     while (next != newTip)
@@ -221,10 +221,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         return;
                     }
 
-                    this.logger.LogTrace("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip);
+                    this.logger.LogDebug("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip);
                 }
             }
-            else this.logger.LogTrace("New block follows the previously known block '{0}'.", this.walletTip);
+            else this.logger.LogDebug("New block follows the previously known block '{0}'.", this.walletTip);
 
             this.walletTip = newTip;
             this.walletManager.ProcessBlock(block, newTip);
@@ -242,6 +242,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
         public virtual void ProcessTransaction(Transaction transaction)
         {
             Guard.NotNull(transaction, nameof(transaction));
+
+            this.logger.LogDebug("Processing transaction from mempool: {0}", transaction.GetHash());
 
             this.walletManager.ProcessTransaction(transaction);
         }

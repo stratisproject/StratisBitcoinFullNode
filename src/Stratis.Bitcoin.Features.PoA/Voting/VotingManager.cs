@@ -273,8 +273,14 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             {
                 foreach (VotingData votingData in votingDataList)
                 {
-                    // Poll that was finished in the block being disconnected.
-                    Poll targetPoll = this.polls.Single(x => x.VotingData == votingData);
+                    // If the poll is pending, that's the one we want. There should be maximum 1 of these.
+                    Poll targetPoll = this.polls.SingleOrDefault(x => x.VotingData == votingData && x.IsPending);
+
+                    // Otherwise, get the most recent poll. There could currently be unlimited of these, though they're harmless.
+                    if (targetPoll == null)
+                    {
+                        targetPoll = this.polls.Last(x => x.VotingData == votingData);
+                    }
 
                     this.logger.LogDebug("Reverting poll voting in favor: '{0}'.", targetPoll);
 
@@ -308,7 +314,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             lock (this.locker)
             {
-                log.AppendLine($"{this.polls.Count(x => x.IsPending)} polls are pending, {this.polls.Count(x => !x.IsPending)} polls are finished.");
+                log.AppendLine($"{this.polls.Count(x => x.IsPending)} polls are pending, {this.polls.Count(x => !x.IsPending)} polls are finished, {this.polls.Count(x => x.IsExecuted)} polls are executed.");
                 log.AppendLine($"{this.scheduledVotingData.Count} votes are scheduled to be added to the next block this node mines.");
             }
         }

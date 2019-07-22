@@ -1,19 +1,21 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
+using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg.Wallet
 {
+    [NoTrace]
     public static class DeterministicCoinOrdering
     {
         /// <summary>
         /// Returns the unspent outputs in the preferred order of consumption.
         /// </summary>
-        /// <param name="context">The context associated with the current transaction being built.</param>
+        /// <param name="unspentOutputs">The unspent outputs to order.</param>
         /// <returns>The unspent outputs in the preferred order of consumption.</returns>
-        public static IOrderedEnumerable<UnspentOutputReference> GetOrderedUnspentOutputs(TransactionBuildContext context)
+        public static IOrderedEnumerable<UnspentOutputReference> GetOrderedUnspentOutputs(List<UnspentOutputReference> unspentOutputs)
         {
-            return context.UnspentOutputs.OrderBy(a => a, Comparer<UnspentOutputReference>.Create(CompareUnspentOutputReferences));
+            return unspentOutputs.OrderBy(a => a, Comparer<UnspentOutputReference>.Create(CompareUnspentOutputReferences));
         }
 
         /// <summary>

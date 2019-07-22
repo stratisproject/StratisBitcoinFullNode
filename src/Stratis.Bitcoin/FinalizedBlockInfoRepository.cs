@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin
@@ -57,7 +58,7 @@ namespace Stratis.Bitcoin
 
         private readonly AsyncManualResetEvent queueUpdatedEvent;
 
-        public FinalizedBlockInfoRepository(IKeyValueRepository keyValueRepo, ILoggerFactory loggerFactory)
+        public FinalizedBlockInfoRepository(IKeyValueRepository keyValueRepo, ILoggerFactory loggerFactory, IAsyncProvider asyncProvider)
         {
             Guard.NotNull(keyValueRepo, nameof(keyValueRepo));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -71,6 +72,8 @@ namespace Stratis.Bitcoin
             this.queueUpdatedEvent = new AsyncManualResetEvent(false);
             this.cancellation = new CancellationTokenSource();
             this.finalizedBlockInfoPersistingTask = this.PersistFinalizedBlockInfoContinuouslyAsync();
+
+            asyncProvider.RegisterTask($"{nameof(FinalizedBlockInfoRepository)}.{nameof(this.finalizedBlockInfoPersistingTask)}", this.finalizedBlockInfoPersistingTask);
         }
 
         private async Task PersistFinalizedBlockInfoContinuouslyAsync()
@@ -103,7 +106,7 @@ namespace Stratis.Bitcoin
 
                 this.keyValueRepo.SaveValue(FinalizedBlockKey, lastFinalizedBlock);
 
-                this.logger.LogTrace("Finalized info saved: '{0}'.", lastFinalizedBlock);
+                this.logger.LogDebug("Finalized info saved: '{0}'.", lastFinalizedBlock);
             }
         }
 

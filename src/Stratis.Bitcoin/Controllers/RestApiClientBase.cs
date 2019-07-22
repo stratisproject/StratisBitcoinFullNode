@@ -13,8 +13,14 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Controllers
 {
+    public interface IRestApiClientBase
+    {
+        /// <summary>Api endpoint URL that client uses to make calls.</summary>
+        string EndpointUrl { get; }
+    }
+
     /// <summary>Client for making API calls for methods provided by controllers.</summary>
-    public abstract class RestApiClientBase
+    public abstract class RestApiClientBase : IRestApiClientBase
     {
         private readonly IHttpClientFactory httpClientFactory;
 
@@ -32,7 +38,10 @@ namespace Stratis.Bitcoin.Controllers
 
         private readonly RetryPolicy policy;
 
-        public RestApiClientBase(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, int port, string controllerName, string url = "http://localhost")
+        /// <inheritdoc />
+        public string EndpointUrl => this.endpointUrl;
+
+        public RestApiClientBase(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, int port, string controllerName, string url)
         {
             this.httpClientFactory = httpClientFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -76,7 +85,6 @@ namespace Stratis.Bitcoin.Controllers
 
                         response = await client.PostAsync(publicationUri, request, cancellation).ConfigureAwait(false);
                         this.logger.LogDebug("Response received: {0}", response);
-
                     }, cancellation);
                 }
                 catch (OperationCanceledException)
@@ -87,8 +95,8 @@ namespace Stratis.Bitcoin.Controllers
                 }
                 catch (HttpRequestException ex)
                 {
-                    this.logger.LogError("Target node is not ready to receive API calls at this time ({0})", publicationUri);
-                    this.logger.LogError("Failed to send a message. Exception: '{0}'.", ex);
+                    this.logger.LogError("Target node is not ready to receive API calls at this time on {0}. Reason: {1}.", this.EndpointUrl, ex.Message);
+                    this.logger.LogDebug("Failed to send a message. Exception: '{0}'.", ex);
                     return new HttpResponseMessage() { ReasonPhrase = ex.Message, StatusCode = HttpStatusCode.InternalServerError };
                 }
             }
@@ -171,8 +179,9 @@ namespace Stratis.Bitcoin.Controllers
                         this.logger.LogDebug("Sending request to Url '{1}'.", url);
 
                         response = await client.GetAsync(url, cancellation).ConfigureAwait(false);
-                        this.logger.LogDebug("Response received: {0}", response);
 
+                        if (response != null)
+                            this.logger.LogDebug("Response received: {0}", response);
                     }, cancellation);
                 }
                 catch (OperationCanceledException)
@@ -183,8 +192,8 @@ namespace Stratis.Bitcoin.Controllers
                 }
                 catch (HttpRequestException ex)
                 {
-                    this.logger.LogError("Target node is not ready to receive API calls at this time ({0})", url);
-                    this.logger.LogError("Failed to send a message. Exception: '{0}'.", ex);
+                    this.logger.LogError("Target node is not ready to receive API calls at this time ({0})", this.EndpointUrl);
+                    this.logger.LogDebug("Failed to send a message to '{0}'. Exception: '{1}'.", url, ex);
                     return new HttpResponseMessage() { ReasonPhrase = ex.Message, StatusCode = HttpStatusCode.InternalServerError };
                 }
             }
@@ -195,7 +204,7 @@ namespace Stratis.Bitcoin.Controllers
 
         protected virtual void OnRetry(Exception exception, TimeSpan delay)
         {
-            this.logger.LogDebug("Exception while calling API method: {0}.", exception.ToString());
+            this.logger.LogDebug("Exception while calling API method: {0}. Retrying...", exception.ToString());
         }
     }
 
@@ -207,12 +216,13 @@ namespace Stratis.Bitcoin.Controllers
         public JsonContent(object obj) :
             base(JsonConvert.SerializeObject(obj), Encoding.UTF8, "application/json")
         {
-
         }
     }
 
-    //todo: this should be removed when compatible with full node API, instead, we should use
-    //services.AddHttpClient from Microsoft.Extensions.Http
+    /// <summary>
+    /// TODO: this should be removed when compatible with full node API, instead, we should use
+    /// services.AddHttpClient from Microsoft.Extensions.Http
+    /// </summary>
     public class HttpClientFactory : IHttpClientFactory
     {
         /// <inheritdoc />

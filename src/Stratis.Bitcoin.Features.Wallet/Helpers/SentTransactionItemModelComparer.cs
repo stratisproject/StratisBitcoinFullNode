@@ -31,7 +31,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Helpers
 
             bool propertiesAreEqual = (x.Id == y.Id &&
                 x.ConfirmedInBlock == y.ConfirmedInBlock &&
-                x.Type == y.Type && x.Amount == y.Amount && x.Payments.Count == y.Payments.Count);
+                x.Type == y.Type && 
+                x.Amount == y.Amount && 
+                x.Payments.Count == y.Payments.Count);
 
             if (!propertiesAreEqual)
             {
@@ -68,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Helpers
 
             foreach (PaymentDetailModel payment in obj.Payments)
             {
-                hashValue = hashValue ^ payment.Amount.GetHashCode() ^ payment.DestinationAddress.GetHashCode();
+                hashValue = hashValue ^ payment.Amount.GetHashCode() ^ (payment.DestinationAddress ?? string.Empty).GetHashCode();
             }
 
             return hashValue;

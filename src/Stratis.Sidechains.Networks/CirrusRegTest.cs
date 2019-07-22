@@ -26,7 +26,7 @@ namespace Stratis.Sidechains.Networks
         // public IList<Mnemonic> FederationMnemonics { get; }
         public IList<Key> FederationKeys { get; private set; }
 
-        internal CirrusRegTest()
+        public CirrusRegTest()
         {
             this.Name = "CirrusRegTest";
             this.NetworkType = NetworkType.Regtest;
@@ -37,13 +37,14 @@ namespace Stratis.Sidechains.Networks
             this.DefaultMaxInboundConnections = 109;
             this.DefaultRPCPort = 26175;
             this.DefaultAPIPort = 38223;
-            this.MaxTipAge = 2 * 60 * 60;
+            this.MaxTipAge = 768; // 20% of the fastest time it takes for one MaxReorgLength of blocks to be mined.
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
             this.MinRelayTxFee = 10000;
             this.RootFolderName = NetworkRootFolderName;
             this.DefaultConfigFilename = NetworkDefaultConfigFilename;
             this.MaxTimeOffsetSeconds = 25 * 60;
+            this.DefaultBanTimeSeconds = 1920; // 240 (MaxReorg) * 16 (TargetSpacing) / 2 = 32 Minutes
 
             var consensusFactory = new SmartContractCollateralPoAConsensusFactory();
 
@@ -82,7 +83,7 @@ namespace Stratis.Sidechains.Networks
                 maxStandardTxSigopsCost: 20_000 / 5,
                 genesisFederationMembers: genesisFederationMembers,
                 targetSpacingSeconds: 16,
-                votingEnabled: false,
+                votingEnabled: true,
                 autoKickIdleMembers: false
             );
 
@@ -109,7 +110,7 @@ namespace Stratis.Sidechains.Networks
                 bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
-                maxReorgLength: 0, // No max reorg limit on PoA networks.
+                maxReorgLength: 240, // Heuristic. Roughly 2 * mining members
                 defaultAssumeValid: null,
                 maxMoney: Money.Coins(20_000_000),
                 coinbaseMaturity: 1,
@@ -156,6 +157,9 @@ namespace Stratis.Sidechains.Networks
             this.SeedNodes = new List<NetworkAddress>();
 
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
+
+            // 16 below should be changed to TargetSpacingSeconds when we move that field.
+            Assert(this.DefaultBanTimeSeconds <= this.Consensus.MaxReorgLength * 16 / 2);
 
             // TODO: Do we need Asserts for block hash
         }

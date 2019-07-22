@@ -16,7 +16,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 {
     public class DepositExtractorTests
     {
-        private readonly IFederationGatewaySettings settings;
+        private readonly IFederatedPegSettings settings;
 
         private readonly IOpReturnDataReader opReturnDataReader;
 
@@ -40,13 +40,20 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.counterChainNetwork = Networks.Stratis.Regtest();
 
             this.loggerFactory = Substitute.For<ILoggerFactory>();
-            this.settings = Substitute.For<IFederationGatewaySettings>();
+            this.settings = Substitute.For<IFederatedPegSettings>();
             this.opReturnDataReader = Substitute.For<IOpReturnDataReader>();
 
             this.addressHelper = new MultisigAddressHelper(this.network, this.counterChainNetwork);
 
             this.settings.MultiSigRedeemScript.Returns(this.addressHelper.PayToMultiSig);
-            this.settings.TransactionFee.Returns(FederationGatewaySettings.DefaultTransactionFee);
+
+            this.settings.GetWithdrawalTransactionFee(Arg.Any<int>()).ReturnsForAnyArgs((x) =>
+            {
+                int numInputs = x.ArgAt<int>(0);
+
+                return FederatedPegSettings.BaseTransactionFee + FederatedPegSettings.InputTransactionFee * numInputs;
+            });
+
             this.opReturnDataReader.TryGetTargetAddress(null, out string address).Returns(callInfo => { callInfo[1] = null; return false; });
 
             this.transactionBuilder = new TestTransactionBuilder();
@@ -163,22 +170,22 @@ namespace Stratis.Features.FederatedPeg.Tests
             BitcoinPubKeyAddress targetAddress = this.addressHelper.GetNewTargetChainPubKeyAddress();
             byte[] opReturnBytes = Encoding.UTF8.GetBytes(targetAddress.ToString());
 
-            // Set amount to be less than withdrawal fee
-            long depositAmount = FederationGatewaySettings.DefaultTransactionFee - 1;
+            // Set amount to be less than deposit minimum
+            long depositAmount = FederatedPegSettings.CrossChainTransferMinimum - 1;
             Transaction depositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
                 this.addressHelper.SourceChainMultisigAddress, opReturnBytes, depositAmount);
             block.AddTransaction(depositTransaction);
             this.opReturnDataReader.TryGetTargetAddress(depositTransaction, out string unused1).Returns(callInfo => { callInfo[1] = targetAddress.ToString(); return true; });
 
-            // Set amount to be exactly withdrawal fee
-            long secondDepositAmount = FederationGatewaySettings.DefaultTransactionFee;
+            // Set amount to be exactly deposit minimum
+            long secondDepositAmount = FederatedPegSettings.CrossChainTransferMinimum;
             Transaction secondDepositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
                 this.addressHelper.SourceChainMultisigAddress, opReturnBytes, secondDepositAmount);
             block.AddTransaction(secondDepositTransaction);
             this.opReturnDataReader.TryGetTargetAddress(secondDepositTransaction, out string unused2).Returns(callInfo => { callInfo[1] = targetAddress.ToString(); return true; });
 
-            // Set amount to be greater than withdrawal fee (just)
-            long thirdDepositAmount = FederationGatewaySettings.DefaultTransactionFee + 1;
+            // Set amount to be greater than deposit minimum
+            long thirdDepositAmount = FederatedPegSettings.CrossChainTransferMinimum + 1;
             Transaction thirdDepositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
                 this.addressHelper.SourceChainMultisigAddress, opReturnBytes, thirdDepositAmount);
             block.AddTransaction(thirdDepositTransaction);
@@ -186,9 +193,12 @@ namespace Stratis.Features.FederatedPeg.Tests
             int blockHeight = 12345;
             IReadOnlyList<IDeposit> extractedDeposits = this.depositExtractor.ExtractDepositsFromBlock(block, blockHeight);
 
-            // Should only be one, with the value just over the withdrawal fee.
-            extractedDeposits.Count.Should().Be(1);
-            extractedDeposits.First().Amount.Should().Be(FederationGatewaySettings.DefaultTransactionFee + 1);
+            // Should only be two, with the value just over the withdrawal fee.
+            extractedDeposits.Count.Should().Be(2);
+            foreach (IDeposit extractedDeposit in extractedDeposits)
+            {
+                Assert.True(extractedDeposit.Amount >= FederatedPegSettings.CrossChainTransferMinimum);
+            }
         }
     }
 }
