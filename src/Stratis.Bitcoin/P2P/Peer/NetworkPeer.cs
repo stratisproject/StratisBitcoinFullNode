@@ -211,13 +211,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                                                 && (!port.HasValue || port == this.PeerVersion.AddressFrom.Port);
 
             return (isConnectedOrHandShaked && isAddressMatching) || isPeerVersionAddressMatching;
-
-            // TODO: The following code should work equally well or better.
-            /*
-            IPEndPoint compareTo = this.Inbound ? this.PeerVersion?.AddressFrom : this.RemoteSocketEndpoint;
-
-            return compareTo.Address.Equals(ip) && (!port.HasValue || port == compareTo.Port);
-            */
         }
 
         /// <summary><c>true</c> to advertise "addr" message with our external endpoint to the peer when passing to <see cref="NetworkPeerState.HandShaked"/> state.</summary>
