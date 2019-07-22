@@ -316,11 +316,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.asyncProvider = asyncProvider;
             this.onDisconnectedAsyncContext = new AsyncLocal<DisconnectedExecutionAsyncContext>();
 
-            if (inbound)
-            {
-                Console.WriteLine("Test");
-            }
-
             this.ConnectionParameters = parameters ?? new NetworkPeerConnectionParameters();
             this.MyVersion = this.ConnectionParameters.CreateVersion(this.selfEndpointTracker.MyExternalAddress, this.PeerEndPoint, network, this.dateTimeProvider.GetTimeOffset());
 
