@@ -219,59 +219,50 @@ namespace Stratis.Bitcoin.Networks
 
         protected void RegisterRules(IConsensus consensus)
         {
-            consensus.ConsensusRules.HeaderValidationRules = new List<Type>()
-            {
-                typeof(HeaderTimeChecksRule),
-                typeof(HeaderTimeChecksPosRule),
-                typeof(StratisBugFixPosFutureDriftRule),
-                typeof(CheckDifficultyPosRule),
-                typeof(StratisHeaderVersionRule),
-                typeof(ProvenHeaderSizeRule),
-                typeof(ProvenHeaderCoinstakeRule)
-            };
+            consensus.ConsensusRules
+                .Register<HeaderTimeChecksRule>()
+                .Register<HeaderTimeChecksPosRule>()
+                .Register<StratisBugFixPosFutureDriftRule>()
+                .Register<CheckDifficultyPosRule>()
+                .Register<StratisHeaderVersionRule>()
+                .Register<ProvenHeaderSizeRule>()
+                .Register<ProvenHeaderCoinstakeRule>();
 
-            consensus.ConsensusRules.IntegrityValidationRules = new List<Type>()
-            {
-                typeof(BlockMerkleRootRule),
-                typeof(PosBlockSignatureRepresentationRule),
-                typeof(PosBlockSignatureRule),
-            };
+            consensus.ConsensusRules
+                .Register<BlockMerkleRootRule>()
+                .Register<PosBlockSignatureRepresentationRule>()
+                .Register<PosBlockSignatureRule>();
 
-            consensus.ConsensusRules.PartialValidationRules = new List<Type>()
-            {
-                typeof(SetActivationDeploymentsPartialValidationRule),
-
-                typeof(PosTimeMaskRule),
-
+            consensus.ConsensusRules
+                .Register<SetActivationDeploymentsPartialValidationRule>()
+                .Register<PosTimeMaskRule>()
+                
                 // rules that are inside the method ContextualCheckBlock
-                typeof(TransactionLocktimeActivationRule), // implements BIP113
-                typeof(CoinbaseHeightActivationRule), // implements BIP34
-                typeof(WitnessCommitmentsRule), // BIP141, BIP144
-                typeof(BlockSizeRule),
+                .Register<TransactionLocktimeActivationRule>()
+                .Register<CoinbaseHeightActivationRule>()
+                .Register<WitnessCommitmentsRule>()
+                .Register<BlockSizeRule>()
 
                 // rules that are inside the method CheckBlock
-                typeof(EnsureCoinbaseRule),
-                typeof(CheckPowTransactionRule),
-                typeof(CheckPosTransactionRule),
-                typeof(CheckSigOpsRule),
-                typeof(PosCoinstakeRule),
-            };
+                .Register<EnsureCoinbaseRule>()
+                .Register<CheckPowTransactionRule>()
+                .Register<CheckPosTransactionRule>()
+                .Register<CheckSigOpsRule>()
+                .Register<PosCoinstakeRule>();
 
-            consensus.ConsensusRules.FullValidationRules = new List<Type>()
-            {
-                typeof(SetActivationDeploymentsFullValidationRule),
+            consensus.ConsensusRules
+                .Register<SetActivationDeploymentsFullValidationRule>()
 
-                typeof(CheckDifficultyHybridRule),
+                .Register<CheckDifficultyHybridRule>()
 
                 // rules that require the store to be loaded (coinview)
-                typeof(LoadCoinviewRule),
-                typeof(TransactionDuplicationActivationRule), // implements BIP30
-                typeof(PosCoinviewRule), // implements BIP68, MaxSigOps and BlockReward calculation
+                .Register<LoadCoinviewRule>()
+                .Register<TransactionDuplicationActivationRule>()
+                .Register<PosCoinviewRule>() // implements BIP68, MaxSigOps and BlockReward calculation
                 // Place the PosColdStakingRule after the PosCoinviewRule to ensure that all input scripts have been evaluated
                 // and that the "IsColdCoinStake" flag would have been set by the OP_CHECKCOLDSTAKEVERIFY opcode if applicable.
-                typeof(PosColdStakingRule),
-                typeof(SaveCoinviewRule)
-            };
+                .Register<PosColdStakingRule>()
+                .Register<SaveCoinviewRule>();
         }
 
         protected static Block CreateStratisGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)

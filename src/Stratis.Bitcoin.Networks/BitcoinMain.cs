@@ -162,44 +162,36 @@ namespace Stratis.Bitcoin.Networks
 
         protected void RegisterRules(IConsensus consensus)
         {
-            consensus.ConsensusRules.HeaderValidationRules = new List<Type>()
-            {
-                typeof(HeaderTimeChecksRule),
-                typeof(CheckDifficultyPowRule),
-                typeof(BitcoinActivationRule),
-                typeof(BitcoinHeaderVersionRule)
-            };
+            consensus.ConsensusRules
+                .Register<HeaderTimeChecksRule>()
+                .Register<CheckDifficultyPowRule>()
+                .Register<BitcoinActivationRule>()
+                .Register<BitcoinHeaderVersionRule>();
 
-            consensus.ConsensusRules.IntegrityValidationRules = new List<Type>()
-            {
-                typeof(BlockMerkleRootRule)
-            };
+            consensus.ConsensusRules
+                .Register<BlockMerkleRootRule>();
 
-            consensus.ConsensusRules.PartialValidationRules = new List<Type>()
-            {
-                typeof(SetActivationDeploymentsPartialValidationRule),
+            consensus.ConsensusRules
+                .Register<SetActivationDeploymentsPartialValidationRule>()
 
-                typeof(TransactionLocktimeActivationRule), // implements BIP113
-                typeof(CoinbaseHeightActivationRule), // implements BIP34
-                typeof(WitnessCommitmentsRule), // BIP141, BIP144
-                typeof(BlockSizeRule),
-
+                .Register<TransactionLocktimeActivationRule>() // implements BIP113
+                .Register<CoinbaseHeightActivationRule>() // implements BIP34
+                .Register<WitnessCommitmentsRule>() // BIP141, BIP144
+                .Register<BlockSizeRule>()
+                
                 // rules that are inside the method CheckBlock
-                typeof(EnsureCoinbaseRule),
-                typeof(CheckPowTransactionRule),
-                typeof(CheckSigOpsRule),
-            };
+                .Register<EnsureCoinbaseRule>()
+                .Register<CheckPowTransactionRule>()
+                .Register<CheckSigOpsRule>();
 
-            consensus.ConsensusRules.FullValidationRules = new List<Type>()
-            {
-                typeof(SetActivationDeploymentsFullValidationRule),
+            consensus.ConsensusRules
+                .Register<SetActivationDeploymentsFullValidationRule>()
 
                 // rules that require the store to be loaded (coinview)
-                typeof(LoadCoinviewRule),
-                typeof(TransactionDuplicationActivationRule), // implements BIP30
-                typeof(PowCoinviewRule), // implements BIP68, MaxSigOps and BlockReward calculation
-                typeof(SaveCoinviewRule)
-            };
+                .Register<LoadCoinviewRule>()
+                .Register<TransactionDuplicationActivationRule>() // implements BIP30
+                .Register<PowCoinviewRule>()// implements BIP68, MaxSigOps and BlockReward calculation
+                .Register<SaveCoinviewRule>();
         }
 
         /// <summary> Bitcoin maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
