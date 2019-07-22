@@ -1137,11 +1137,12 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     // needs to rewind this will be used to find the fork.
                     this.Wallet.BlockLocator = chainedHeader.GetLocator().Blocks;
 
-                // Update the wallets with the last processed block height.
-                this.Wallet.LastBlockSyncedHeight = chainedHeader.Height;
-                this.Wallet.LastBlockSyncedHash = chainedHeader.HashBlock;
-                this.WalletTipHash = chainedHeader.HashBlock;
-                this.WalletTipHeight = chainedHeader.Height;
+                    // Update the wallets with the last processed block height.
+                    this.Wallet.LastBlockSyncedHeight = chainedHeader.Height;
+                    this.Wallet.LastBlockSyncedHash = chainedHeader.HashBlock;
+                    this.WalletTipHash = chainedHeader.HashBlock;
+                    this.WalletTipHeight = chainedHeader.Height;
+                }
             }
         }
 
@@ -1154,7 +1155,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             this.logger.LogDebug("Generating the federation wallet file.");
 
-            int lastBlockSyncedHeight = Math.Max(0, this.federationGatewaySettings.WalletSyncFromHeight - 1);
+            int lastBlockSyncedHeight = Math.Max(0, this.federatedPegSettings.WalletSyncFromHeight - 1);
             uint256 lastBlockSyncedHash = (lastBlockSyncedHeight <= this.chainIndexer.Height) ? this.chainIndexer[lastBlockSyncedHeight].HashBlock : null;
 
             var wallet = new FederationWallet

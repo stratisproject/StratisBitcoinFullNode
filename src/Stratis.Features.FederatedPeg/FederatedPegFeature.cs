@@ -359,7 +359,7 @@ namespace Stratis.Features.FederatedPeg
     /// </summary>
     public static class FullNodeBuilderSidechainRuntimeFeatureExtension
     {
-        public static IFullNodeBuilder AddFederatedPeg(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder AddFederatedPeg(this IFullNodeBuilder fullNodeBuilder, IFederatedPegOptions federatedPegOptions = null)
         {
             LoggingConfiguration.RegisterFeatureNamespace<FederatedPegFeature>(
                 FederatedPegFeature.FederationGatewayFeatureNamespace);
@@ -372,6 +372,7 @@ namespace Stratis.Features.FederatedPeg
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IMaturedBlocksProvider, MaturedBlocksProvider>();
+                        services.AddSingleton(federatedPegOptions ?? new FederatedPegOptions());
                         services.AddSingleton<IFederatedPegSettings, FederatedPegSettings>();
                         services.AddSingleton<IOpReturnDataReader, OpReturnDataReader>();
                         services.AddSingleton<IDepositExtractor, DepositExtractor>();

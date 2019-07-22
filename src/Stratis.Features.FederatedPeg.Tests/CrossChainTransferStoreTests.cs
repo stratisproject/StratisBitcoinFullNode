@@ -1017,7 +1017,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         public async Task WalletSyncFromHeightOverridesWalletLastBlockSyncedHeight()
         {
             // Only sync the wallet from the second funding block.
-            this.federationGatewaySettings.WalletSyncFromHeight.Returns(2);
+            this.federatedPegSettings.WalletSyncFromHeight.Returns(2);
 
             var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
 

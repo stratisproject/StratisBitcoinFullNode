@@ -85,9 +85,10 @@ namespace Stratis.CirrusPegD
 
             NetworkType networkType = nodeSettings.Network.NetworkType;
 
-            var fedPegOptions = new FederatedPegOptions(
-                walletSyncFromHeight: new int[] { FederationGatewaySettings.StratisMainDepositStartBlock, 1, 1 }[(int)networkType]
-            );
+            var fedPegOptions = new FederatedPegOptions()
+            {
+                WalletSyncFromHeight = new int[] { FederatedPegSettings.StratisMainDepositStartBlock, 1, 1 }[(int)networkType]
+            };
 
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
@@ -116,9 +117,10 @@ namespace Stratis.CirrusPegD
 
             NetworkType networkType = nodeSettings.Network.NetworkType;
 
-            var fedPegOptions = new FederatedPegOptions(
-                walletSyncFromHeight: new int[] { 1, 1, 1 }[(int)networkType]
-            );
+            var fedPegOptions = new FederatedPegOptions()
+            {
+                WalletSyncFromHeight = new int[] { 1, 1, 1 }[(int)networkType]
+            };
 
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)

@@ -10,6 +10,21 @@ using Stratis.Features.FederatedPeg.Interfaces;
 
 namespace Stratis.Features.FederatedPeg
 {
+    public interface IFederatedPegOptions
+    {
+        int WalletSyncFromHeight { get; set; }
+    }
+
+    public sealed class FederatedPegOptions : IFederatedPegOptions
+    {
+        public int WalletSyncFromHeight { get; set; }
+
+        public FederatedPegOptions()
+        {
+            this.WalletSyncFromHeight = 0;
+        }
+    }
+
     /// <inheritdoc />
     public sealed class FederatedPegSettings : IFederatedPegSettings
     {
@@ -69,7 +84,7 @@ namespace Stratis.Features.FederatedPeg
         /// </summary>
         public const int StratisMainDepositStartBlock = 1_100_000;
 
-        public FederatedPegSettings(NodeSettings nodeSettings)
+        public FederatedPegSettings(NodeSettings nodeSettings, IFederatedPegOptions federatedPegOptions = null)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
