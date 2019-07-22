@@ -37,15 +37,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
                         new SmartContractPoARuleRegistration().RegisterRules(services);
 
-                        //services.AddSingleton<IRuleRegistration, SmartContractPoARuleRegistration>();
-                        //services.AddSingleton<IConsensusRuleEngine>(f =>
-                        //{
-                        //    var concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
-                        //    var ruleRegistration = f.GetService<IRuleRegistration>();
-
-                        //    return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
-                        //});
-
                         // Voting.
                         services.AddSingleton<VotingManager>();
                         services.AddSingleton<DefaultVotingController>();

@@ -30,7 +30,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
         private readonly ISenderRetriever senderRetriever;
         private readonly IReceiptRepository receiptRepository;
         private readonly ICoinView coinView;
-       // private readonly PoAConsensusRulesRegistration baseRuleRegistration;
         private readonly IEnumerable<IContractTransactionPartialValidationRule> partialTxValidationRules;
         private readonly IEnumerable<IContractTransactionFullValidationRule> fullTxValidationRules;
 
@@ -43,18 +42,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             // TODO: this is not needed anymore as the default rules are registered in network
             new PoAConsensusRulesRegistration().RegisterRules(services);
 
-            // Add SC-Specific partial rules
-            //var txValidationRules = new List<IContractTransactionPartialValidationRule>(this.partialTxValidationRules)
-            //{
-            //    new SmartContractFormatLogic()
-            //};
             services.AddSingleton(typeof(IContractTransactionPartialValidationRule), typeof(SmartContractFormatLogic));
 
             services.AddSingleton(typeof(IPartialValidationConsensusRule), typeof(AllowedScriptTypeRule));
-            //consensus.ConsensusRules.PartialValidationRules.Add(typeof(AllowedScriptTypeRule));
 
             services.AddSingleton(typeof(IPartialValidationConsensusRule), typeof(ContractTransactionPartialValidationRule));
-            //consensus.ConsensusRules.PartialValidationRules.Add((Type) new ContractTransactionPartialValidationRule(this.callDataSerializer, txValidationRules));
 
             services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(ContractTransactionFullValidationRule));
 
@@ -77,7 +69,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             // see https://dev.azure.com/Stratisplatformuk/StratisBitcoinFullNode/_workitems/edit/3770
             foreach (ServiceDescriptor serviceDescriptor in services.Where(f => f.ImplementationType == typeof(SaveCoinviewRule)).ToList()) services.Remove(serviceDescriptor);
             services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(SaveCoinviewRule));
-
         }
     }
 }

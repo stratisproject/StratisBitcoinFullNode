@@ -51,17 +51,8 @@ namespace Stratis.Features.FederatedPeg.Collateral
                         services.AddSingleton<ICollateralChecker, CollateralChecker>();
                         services.AddSingleton<CollateralVotingController>();
 
-                        //services.AddSingleton<IRuleRegistration, SmartContractCollateralPoARuleRegistration>();
                         new SmartContractCollateralPoARuleRegistration().RegisterRules(services);
                         services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
-
-                        //services.AddSingleton<IConsensusRuleEngine>(f =>
-                        //{
-                        //    PoAConsensusRuleEngine concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
-                        //    IRuleRegistration ruleRegistration = f.GetService<IRuleRegistration>();
-
-                        //    return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
-                        //});
                     });
             });
 
