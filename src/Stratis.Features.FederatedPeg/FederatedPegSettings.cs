@@ -12,16 +12,19 @@ namespace Stratis.Features.FederatedPeg
 {
     public interface IFederatedPegOptions
     {
-        int WalletSyncFromHeight { get; set; }
+        int WalletSyncFromHeight { get; }
     }
 
     public sealed class FederatedPegOptions : IFederatedPegOptions
     {
-        public int WalletSyncFromHeight { get; set; }
+        /// <summary>
+        /// The height to start syncing the wallet from.
+        /// </summary>
+        public int WalletSyncFromHeight { get; }
 
-        public FederatedPegOptions()
+        public FederatedPegOptions(int walletSyncFromHeight = 1)
         {
-            this.WalletSyncFromHeight = 0;
+            this.WalletSyncFromHeight = walletSyncFromHeight;
         }
     }
 

@@ -14,14 +14,8 @@ namespace Stratis.Features.FederatedPeg.CounterChain
         public Network CounterChainNetwork { get; }
 
         public CounterChainNetworkWrapper(Network counterChainNetwork)
-        /// <summary>
-        /// The height to start syncing the wallet from.
-        /// </summary>
-        public int WalletSyncFromHeight { get; }
-
-        public FederatedPegOptions(int walletSyncFromHeight = 1)
         {
-            this.WalletSyncFromHeight = walletSyncFromHeight;
+            this.CounterChainNetwork = counterChainNetwork;
         }
     }
 }
