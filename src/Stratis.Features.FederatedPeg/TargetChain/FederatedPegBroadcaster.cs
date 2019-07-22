@@ -26,7 +26,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         public async Task BroadcastAsync(Payload payload)
         {
             IEnumerable<INetworkPeer> connectedPeers = this.connectionManager.ConnectedPeers
-                .Where(peer => (peer?.IsConnected ?? false) && this.federatedPegSettings.FederationNodeIpEndPoints.Contains(peer.PeerEndPoint));
+                .Where(peer => (peer?.IsConnected ?? false) && this.federatedPegSettings.FederationNodeIpAddresses.Contains(peer.PeerEndPoint.Address));
 
             Parallel.ForEach<INetworkPeer>(connectedPeers, async (INetworkPeer peer) =>
             {
