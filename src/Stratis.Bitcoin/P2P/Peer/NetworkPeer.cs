@@ -13,6 +13,7 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P.Peer
@@ -198,19 +199,36 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
+        /// <inheritdoc/>
+        public IPEndPoint HandshakedEndPoint
+        {
+            get
+            {
+                if (this.Inbound && this.State == NetworkPeerState.HandShaked)
+                {
+                    // Use AddressFrom if it is not a Loopback address as this means the inbound node was configured with a different external endpoint.
+                    if (!this.PeerVersion?.AddressFrom?.Match(new IPEndPoint(IPAddress.Loopback, this.Network.DefaultPort)) ?? false)
+                    {
+                        return this.PeerVersion.AddressFrom;
+                    }
+                    else
+                    {
+                        // If it is a Loopback address use PeerEndpoint but combine it with the AdressFrom's port as that is the
+                        // other node's listening port.
+                        return new IPEndPoint(this.PeerEndPoint.Address, this.PeerVersion.AddressFrom.Port);
+                    }
+                }
+
+                return this.RemoteSocketEndpoint;
+            }
+        }
+
         /// <inheritdoc />
         public bool MatchRemoteIPAddress(IPAddress ip, int? port = null)
         {
-            bool isConnectedOrHandShaked = (this.State == NetworkPeerState.Connected || this.State == NetworkPeerState.HandShaked);
+            IPEndPoint compareTo = this.HandshakedEndPoint;
 
-            bool isAddressMatching = this.RemoteSocketAddress.Equals(ip)
-                                     && (!port.HasValue || port == this.RemoteSocketPort);
-
-            bool isPeerVersionAddressMatching = this.PeerVersion?.AddressFrom != null
-                                                && this.PeerVersion.AddressFrom.Address.Equals(ip)
-                                                && (!port.HasValue || port == this.PeerVersion.AddressFrom.Port);
-
-            return (isConnectedOrHandShaked && isAddressMatching) || isPeerVersionAddressMatching;
+            return compareTo.Address.Equals(ip) && (!port.HasValue || port == compareTo.Port);
         }
 
         /// <inheritdoc />

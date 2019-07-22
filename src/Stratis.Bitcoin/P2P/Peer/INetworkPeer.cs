@@ -24,6 +24,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>State of the network connection to the peer.</summary>
         NetworkPeerState State { get; }
 
+        /// <summary>IP address and port of the connected peer. Overridden by <see cref="VersionPayload.AddressFrom" />
+        /// if in <see cref="NetworkPeerState.HandShaked"/> state.</summary>
+        IPEndPoint HandshakedEndPoint { get; }
+
         /// <summary>IP address and port of the connected peer.</summary>
         IPEndPoint RemoteSocketEndpoint { get; }
 
