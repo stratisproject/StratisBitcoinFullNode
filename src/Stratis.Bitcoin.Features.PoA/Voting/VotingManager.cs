@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        /// <summary>Checks pending polls against finished polls and removes pending polls that will make no difference.</summary>
+        /// <summary>Checks pending polls against finished polls and removes pending polls that will make no difference and basically are redundant.</summary>
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
         private void CleanFinishedPollsLocked()
         {
