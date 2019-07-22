@@ -221,8 +221,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var signals = new Signals(loggerFactory, null);
                 var asyncProvider = new AsyncProvider(loggerFactory, signals, new NodeLifetime());
 
-                //new SmartContractPowRuleRegistration().RegisterRules();
-
                 var consensusRulesContainer = new ConsensusRulesContainer();
 
                 consensusRulesContainer.HeaderValidationRules.Add(Activator.CreateInstance(typeof(BitcoinHeaderVersionRule)) as HeaderValidationConsensusRule);
@@ -253,8 +251,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                         consensusRulesContainer)
                     .SetupRulesEngineParent();
 
-                //var ruleRegistration = new SmartContractPowRuleRegistration(this.network, this.StateRoot,
-                //    this.ExecutorFactory, this.callDataSerializer, senderRetriever, receiptRepository, this.cachedCoinView);
                 this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chainIndexer: this.ChainIndexer, ruleRegistration: null, consensusRules: this.consensusRules);
 
                 await this.consensusManager.InitializeAsync(chainState.BlockStoreTip);

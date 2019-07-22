@@ -117,8 +117,6 @@ namespace Stratis.SmartContracts.Networks
             this.SeedNodes = new List<NetworkAddress>();
 
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
-
-            //SmartContractPowRuleRegistration.RegisterRules(this.Consensus); // todo: move the logic to this class
         }
     }
 }

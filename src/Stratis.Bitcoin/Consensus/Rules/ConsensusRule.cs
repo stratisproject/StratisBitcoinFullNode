@@ -26,7 +26,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
             this.IntegrityValidationRules = new List<IntegrityValidationConsensusRule>();
             this.PartialValidationRules = new List<PartialValidationConsensusRule>();
             this.FullValidationRules = new List<FullValidationConsensusRule>();
-
         }
 
         public ConsensusRulesContainer(

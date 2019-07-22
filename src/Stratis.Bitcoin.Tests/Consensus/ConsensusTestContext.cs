@@ -109,9 +109,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.selfEndpointTracker = new SelfEndpointTracker(this.loggerFactory, connectionSettings);
             this.Network.Consensus.Options = new ConsensusOptions();
 
-            //this.ruleRegistration = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration();
-            //this.ruleRegistration.RegisterRules(this.Network.Consensus);
-
             this.signals = new Bitcoin.Signals.Signals(this.loggerFactory, null);
             this.asyncProvider = new AsyncProvider(this.loggerFactory, this.signals, this.nodeLifetime);
 
