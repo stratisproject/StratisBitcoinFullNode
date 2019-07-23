@@ -613,7 +613,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
         /// <summary>
         /// The name of the account for which to get the extended public key.
-        /// /// <summary>
+        /// <summary>
         public string AccountName { get; set; }
     }
 
