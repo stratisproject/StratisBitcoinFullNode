@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             IPEndPoint compareTo = this.GetHandshakedEndPoint();
 
-            return compareTo.Address.Equals(ip) && (!port.HasValue || port == compareTo.Port);
+            return compareTo.Address.Equals(ip.EnsureIPv6()) && (!port.HasValue || port == compareTo.Port);
         }
 
         /// <inheritdoc />
