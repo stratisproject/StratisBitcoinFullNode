@@ -199,7 +199,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        /// <inheritdoc/>
         public static IPEndPoint GetHandshakedEndPoint(bool inbound, NetworkPeerState state, VersionPayload peerVersion, IPEndPoint peerEndPoint)
         {
             if (inbound && state == NetworkPeerState.HandShaked && peerVersion?.AddressFrom != null)
@@ -220,6 +219,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             return peerEndPoint;
         }
 
+        /// <inheritdoc />
         public IPEndPoint GetHandshakedEndPoint()
         {
             return GetHandshakedEndPoint(this.Inbound, this.State, this.PeerVersion, this.PeerEndPoint);
