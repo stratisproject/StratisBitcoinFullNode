@@ -814,11 +814,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (OperationCanceledException e)
             {
-                this.logger.LogDebug("Operation canceled during handshake.");
+                this.logger.LogDebug("Operation canceled during outbound connection handshake.");
+                throw;
             }
             catch (Exception e)
             {
-                this.logger.LogDebug("Exception during handshake: " + e);
+                this.logger.LogDebug("Exception during outbound connection handshake: " + e);
+                throw;
             }
             finally
             {
