@@ -12,7 +12,6 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Features.FederatedPeg.InputConsolidation;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
 
@@ -381,6 +380,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(block, nameof(block));
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
 
+            this.logger.LogDebug("Processing block {0}, chained header {1}", block.GetHash(), chainedHeader);
+
             lock (this.lockObject)
             {
                 // If there is no wallet yet, update the wallet tip hash and do nothing else.
@@ -391,6 +392,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     this.logger.LogTrace("(-)[NO_WALLET]");
                     return;
                 }
+
+                this.logger.LogDebug("Wallet is not null");
 
                 // Is this the next block.
                 if (chainedHeader.Header.HashPrevBlock != this.WalletTipHash)
@@ -406,6 +409,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     }
                 }
 
+                this.logger.LogDebug("Block follows on from previous block.");
+
                 bool walletUpdated = false;
                 foreach (Transaction transaction in block.Transactions.Where(t => !(t.IsCoinBase && t.TotalOut == Money.Zero)))
                 {
@@ -416,7 +421,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     }
                 }
 
+                this.logger.LogDebug("CleanTransactionsPastMaxReorg start.");
+
                 walletUpdated |= this.CleanTransactionsPastMaxReorg(chainedHeader.Height);
+
+                this.logger.LogDebug("CleanTransactionsPastMaxReorg finish, wallet updated {0}", walletUpdated);
 
                 // Update the wallets with the last processed block height.
                 // It's important that updating the height happens after the block processing is complete,
@@ -425,7 +434,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 if (walletUpdated)
                 {
+                    this.logger.LogDebug("SaveWallet start {0}", chainedHeader);
+
                     this.SaveWallet();
+
+                    this.logger.LogDebug("SaveWallet finish {0}", chainedHeader);
                 }
             }
         }
@@ -1103,6 +1116,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
 
+            this.logger.LogDebug("UpdateLastBlockSyncedHeight start {0}", chainedHeader);
+
             lock (this.lockObject)
             {
                 // The block locator will help when the wallet
@@ -1115,6 +1130,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 this.WalletTipHash = chainedHeader.HashBlock;
                 this.WalletTipHeight = chainedHeader.Height;
             }
+
+            this.logger.LogDebug("UpdateLastBlockSyncedHeight finish {0}", chainedHeader);
         }
 
         /// <summary>

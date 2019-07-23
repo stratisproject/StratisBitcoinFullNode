@@ -235,6 +235,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(block, nameof(block));
 
+            this.logger.LogDebug("{0}:{1}", nameof(this.WalletTip), this.WalletTip);
+
             this.blockQueueProcessor.TryEnqueue(block);
         }
 
