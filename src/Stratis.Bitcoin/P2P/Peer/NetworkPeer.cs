@@ -206,17 +206,17 @@ namespace Stratis.Bitcoin.P2P.Peer
                 // Use AddressFrom if it is not a Loopback address as this means the inbound node was configured with a different external endpoint.
                 if (!IPAddress.IsLoopback(peerVersion.AddressFrom.Address) && !peerVersion.AddressFrom.Address.IsLocal())
                 {
-                    return peerVersion.AddressFrom;
+                    peerEndPoint = peerVersion.AddressFrom;
                 }
                 else
                 {
                     // If it is a Loopback address use PeerEndpoint but combine it with the AdressFrom's port as that is the
                     // other node's listening port.
-                    return new IPEndPoint(peerEndPoint.Address, peerVersion.AddressFrom.Port);
+                    peerEndPoint = new IPEndPoint(peerEndPoint.Address, peerVersion.AddressFrom.Port);
                 }
             }
 
-            return peerEndPoint;
+            return peerEndPoint.MapToIpv6();
         }
 
         /// <inheritdoc />
