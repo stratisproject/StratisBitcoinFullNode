@@ -93,6 +93,15 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
     }
 
+    /// <summary>
+    /// Contains an (nullable) object and can also add as a lock for the value.
+    /// </summary>
+    /// <typeparam name="T">The type of value this contains.</typeparam>
+    public class ValueContainer<T> where T : class
+    {
+        public T Value { get; set; }
+    }
+
     /// <inheritdoc/>
     /// <remarks>
     /// All instances of this object must be disposed or disconnected. <see cref="Disconnect(string, Exception)"/> and disposing methods
@@ -235,7 +244,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// set to <c>null</c> otherwise.
         /// </para>
         /// </summary>
-        private readonly AsyncLocal<DisconnectedExecutionAsyncContext> onDisconnectedAsyncContext;
+        private readonly ValueContainer<DisconnectedExecutionAsyncContext> onDisconnectedAsyncContext;
 
         /// <summary>Transaction options we would like.</summary>
         private TransactionOptions preferredTransactionOptions;
@@ -306,7 +315,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Behaviors = new List<INetworkPeerBehavior>();
             this.selfEndpointTracker = selfEndpointTracker;
             this.asyncProvider = asyncProvider;
-            this.onDisconnectedAsyncContext = new AsyncLocal<DisconnectedExecutionAsyncContext>();
+            this.onDisconnectedAsyncContext = new ValueContainer<DisconnectedExecutionAsyncContext>();
 
             this.ConnectionParameters = parameters ?? new NetworkPeerConnectionParameters();
             this.MyVersion = this.ConnectionParameters.CreateVersion(this.selfEndpointTracker.MyExternalAddress, this.PeerEndPoint, network, this.dateTimeProvider.GetTimeOffset());
