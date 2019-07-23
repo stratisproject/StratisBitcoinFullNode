@@ -467,9 +467,15 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="previous">Previous network state of the peer.</param>
         private async Task OnStateChangedAsync(NetworkPeerState previous)
         {
-            bool insideCallback = this.onDisconnectedAsyncContext.Value != null;
-            if (!insideCallback)
-                this.onDisconnectedAsyncContext.Value = new DisconnectedExecutionAsyncContext();
+            bool insideCallback;
+
+            lock (this.onDisconnectedAsyncContext)
+            {
+                insideCallback = this.onDisconnectedAsyncContext.Value != null;
+
+                if (!insideCallback)
+                    this.onDisconnectedAsyncContext.Value = new DisconnectedExecutionAsyncContext();
+            }
 
             try
             {
@@ -484,10 +490,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 if (!insideCallback)
                 {
-                    if (this.onDisconnectedAsyncContext.Value.DisconnectCallbackRequested)
-                        this.onDisconnected(this);
+                    lock (this.onDisconnectedAsyncContext)
+                    {
+                        if (this.onDisconnectedAsyncContext.Value.DisconnectCallbackRequested)
+                            this.onDisconnected(this);
 
-                    this.onDisconnectedAsyncContext.Value = null;
+                        this.onDisconnectedAsyncContext.Value = null;
+                    }
                 }
             }
         }
@@ -519,10 +528,18 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return;
             }
 
+            bool insideCallback;
+
+            lock (this.onDisconnectedAsyncContext)
+            {
+                insideCallback = this.onDisconnectedAsyncContext.Value != null;
+
+                if (!insideCallback)
+                    this.onDisconnectedAsyncContext.Value = new DisconnectedExecutionAsyncContext();
+            }
+
             try
             {
-                this.onDisconnectedAsyncContext.Value = new DisconnectedExecutionAsyncContext();
-
                 await this.MessageReceived.ExecuteCallbacksAsync(this, message).ConfigureAwait(false);
             }
             catch (Exception e)
@@ -533,10 +550,16 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             finally
             {
-                if (this.onDisconnectedAsyncContext.Value.DisconnectCallbackRequested)
-                    this.onDisconnected(this);
+                if (!insideCallback)
+                {
+                    lock (this.onDisconnectedAsyncContext)
+                    {
+                        if (this.onDisconnectedAsyncContext.Value.DisconnectCallbackRequested)
+                            this.onDisconnected(this);
 
-                this.onDisconnectedAsyncContext.Value = null;
+                        this.onDisconnectedAsyncContext.Value = null;
+                    }
+                }
             }
         }
 
