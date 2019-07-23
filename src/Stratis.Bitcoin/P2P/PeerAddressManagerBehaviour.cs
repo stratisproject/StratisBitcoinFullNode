@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.P2P
                 this.logger.LogDebug("[INBOUND] {0}:{1}, {2}:{3}", nameof(peer.PeerVersion.AddressFrom), peer.PeerVersion?.AddressFrom, nameof(peer.PeerVersion.AddressReceiver), peer.PeerVersion?.AddressReceiver);
                 this.logger.LogDebug("[INBOUND] {0}:{1}", nameof(peer.PeerEndPoint), peer.PeerEndPoint);
 
-                IPEndPoint inboundPeerEndPoint = peer.HandshakedEndPoint;
+                IPEndPoint inboundPeerEndPoint = peer.GetHandshakedEndPoint();
 
                 this.logger.LogDebug("{0}", inboundPeerEndPoint);
 

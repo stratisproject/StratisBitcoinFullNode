@@ -200,33 +200,35 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc/>
-        public IPEndPoint HandshakedEndPoint
+        public static IPEndPoint GetHandshakedEndPoint(bool inbound, NetworkPeerState state, VersionPayload peerVersion, IPEndPoint peerEndPoint)
         {
-            get
+            if (inbound && state == NetworkPeerState.HandShaked && peerVersion?.AddressFrom != null)
             {
-                if (this.Inbound && this.State == NetworkPeerState.HandShaked)
+                // Use AddressFrom if it is not a Loopback address as this means the inbound node was configured with a different external endpoint.
+                if (!IPAddress.IsLoopback(peerVersion.AddressFrom.Address) && !peerVersion.AddressFrom.Address.IsLocal())
                 {
-                    // Use AddressFrom if it is not a Loopback address as this means the inbound node was configured with a different external endpoint.
-                    if (!this.PeerVersion?.AddressFrom?.Match(new IPEndPoint(IPAddress.Loopback, this.Network.DefaultPort)) ?? false)
-                    {
-                        return this.PeerVersion.AddressFrom;
-                    }
-                    else
-                    {
-                        // If it is a Loopback address use PeerEndpoint but combine it with the AdressFrom's port as that is the
-                        // other node's listening port.
-                        return new IPEndPoint(this.PeerEndPoint.Address, this.PeerVersion.AddressFrom.Port);
-                    }
+                    return peerVersion.AddressFrom;
                 }
-
-                return this.RemoteSocketEndpoint;
+                else
+                {
+                    // If it is a Loopback address use PeerEndpoint but combine it with the AdressFrom's port as that is the
+                    // other node's listening port.
+                    return new IPEndPoint(peerEndPoint.Address, peerVersion.AddressFrom.Port);
+                }
             }
+
+            return peerEndPoint;
+        }
+
+        public IPEndPoint GetHandshakedEndPoint()
+        {
+            return GetHandshakedEndPoint(this.Inbound, this.State, this.PeerVersion, this.PeerEndPoint);
         }
 
         /// <inheritdoc />
         public bool MatchRemoteIPAddress(IPAddress ip, int? port = null)
         {
-            IPEndPoint compareTo = this.HandshakedEndPoint;
+            IPEndPoint compareTo = this.GetHandshakedEndPoint();
 
             return compareTo.Address.Equals(ip) && (!port.HasValue || port == compareTo.Port);
         }

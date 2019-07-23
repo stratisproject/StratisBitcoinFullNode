@@ -24,10 +24,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>State of the network connection to the peer.</summary>
         NetworkPeerState State { get; }
 
-        /// <summary>IP address and port of the connected peer. Overridden by <see cref="VersionPayload.AddressFrom" />
-        /// if in <see cref="NetworkPeerState.HandShaked"/> state.</summary>
-        IPEndPoint HandshakedEndPoint { get; }
-
         /// <summary>IP address and port of the connected peer.</summary>
         IPEndPoint RemoteSocketEndpoint { get; }
 
@@ -91,6 +87,10 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>Queue of the connections' incoming messages distributed to message consumers.</summary>
         MessageProducer<IncomingMessage> MessageProducer { get; }
+
+        /// <summary>IP address and port of the connected peer. Overridden by <see cref="VersionPayload.AddressFrom" />
+        /// if in <see cref="NetworkPeerState.HandShaked"/> state.</summary>
+        IPEndPoint GetHandshakedEndPoint();
 
         /// <summary>
         /// Connects the node to an outbound peer using already initialized information about the peer and starts receiving messages in a separate task.
