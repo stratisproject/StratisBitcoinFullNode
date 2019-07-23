@@ -26,6 +26,7 @@ using Stratis.Bitcoin.Features.SmartContracts.PoW;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Mining;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
@@ -65,7 +66,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 new MinerSettings(testContext.NodeSettings),
                 testContext.network,
                 new SenderRetriever(),
-                testContext.StateRoot);
+                testContext.StateRoot,
+                new NodeDeployments(testContext.network, testContext.ChainIndexer));
         }
 
         public class Blockinfo

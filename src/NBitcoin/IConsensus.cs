@@ -106,6 +106,16 @@ namespace NBitcoin
         int LastPOWBlock { get; set; }
 
         /// <summary>
+        /// This flag will restrict the coinbase in a POS network to be empty.
+        /// For legacy POS the coinbase is required to be empty.
+        /// </summary>
+        /// <remarks>
+        /// Some implementations will put extra data in the coinbase (for example the witness commitment)
+        /// To allow such data to be in the coinbase we use this flag, a POS network that already has that limitation will use the coinbase input instead.
+        /// </remarks>
+        bool PosEmptyCoinbase { get; set; }
+
+        /// <summary>
         /// An indicator whether this is a Proof Of Stake network.
         /// </summary>
         bool IsProofOfStake { get; }

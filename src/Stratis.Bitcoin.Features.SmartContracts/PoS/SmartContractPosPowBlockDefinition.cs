@@ -2,6 +2,7 @@
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -57,8 +58,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
             ISenderRetriever senderRetriever,
             IStakeChain stakeChain,
             IStakeValidator stakeValidator,
-            IStateRepositoryRoot stateRoot)
-            : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
+            IStateRepositoryRoot stateRoot,
+            NodeDeployments nodeDeployments)
+            : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, nodeDeployments)
         {
             this.coinView = coinView;
             this.executorFactory = executorFactory;

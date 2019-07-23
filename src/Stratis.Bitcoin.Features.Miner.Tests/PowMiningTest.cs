@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
+using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -37,6 +38,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private readonly MinerSettings minerSettings;
         private readonly Network network;
         private readonly Mock<INodeLifetime> nodeLifetime;
+        private readonly NodeDeployments nodeDeployments;
+
         public PowMiningTest(PowMiningTestFixture fixture)
         {
             this.fixture = fixture;
@@ -65,7 +68,11 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.initialBlockDownloadState = new Mock<IInitialBlockDownloadState>();
             this.initialBlockDownloadState.Setup(s => s.IsInitialBlockDownload()).Returns(false);
 
+            this.nodeDeployments = new NodeDeployments(this.network, this.chainIndexer);
+
             this.mempoolLock = new MempoolSchedulerLock();
+
+            this.nodeDeployments = new NodeDeployments(this.network, this.chainIndexer);
         }
 
         [Fact]
@@ -157,7 +164,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             Assert.Equal(new uint256(14), hashPrevBlockFieldSelector.GetValue(miner) as uint256);
             Assert.Equal(block.Transactions[0].Inputs[0].ScriptSig, TxIn.CreateCoinbase(3).ScriptSig);
-            Assert.NotEqual(new uint256(0), block.Header.HashMerkleRoot);
             Assert.Equal(1, nExtraNonce);
         }
 
@@ -183,7 +189,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             nExtraNonce = miner.IncrementExtraNonce(block, this.chainIndexer.Tip, nExtraNonce);
 
             Assert.Equal(block.Transactions[0].Inputs[0].ScriptSig, TxIn.CreateCoinbase(3).ScriptSig);
-            Assert.NotEqual(new uint256(0), block.Header.HashMerkleRoot);
             Assert.Equal(16, nExtraNonce);
         }
 
@@ -362,6 +367,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     this.minerSettings,
                     this.network,
                     this.consensusRules.Object,
+                    this.nodeDeployments,
                     null);
         }
 
@@ -425,6 +431,11 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public BlockTemplate BuildPowBlock(ChainedHeader chainTip, Script script)
         {
             return this.blockDefinition.Build(chainTip, script);
+        }
+
+        public void BlockModified(ChainedHeader chainTip, Block block)
+        {
+            this.blockDefinition.BlockModified(chainTip, block);
         }
     }
 

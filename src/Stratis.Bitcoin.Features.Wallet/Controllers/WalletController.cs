@@ -868,7 +868,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     WalletPassword = request.Password,
                     SelectedInputs = request.Outpoints?.Select(u => new OutPoint(uint256.Parse(u.TransactionId), u.Index)).ToList(),
                     AllowOtherInputs = false,
-                    Recipients = recipients
+                    Recipients = recipients,
+                    UseSegwitChangeAddress = request.SegwitChangeAddress
                 };
 
                 if (!string.IsNullOrEmpty(request.FeeType))
@@ -1079,7 +1080,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             try
             {
                 HdAddress result = this.walletManager.GetUnusedAddress(new WalletAccountReference(request.WalletName, request.AccountName));
-                return this.Json(result.Address);
+                return this.Json(request.Segwit ? result.Bech32Address : result.Address);
             }
             catch (Exception e)
             {
@@ -1112,7 +1113,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             try
             {
                 IEnumerable<HdAddress> result = this.walletManager.GetUnusedAddresses(new WalletAccountReference(request.WalletName, request.AccountName), count);
-                return this.Json(result.Select(x => x.Address).ToArray());
+                return this.Json(result.Select(x => request.Segwit ? x.Bech32Address : x.Address).ToArray());
             }
             catch (Exception e)
             {
@@ -1150,7 +1151,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     Addresses = account.GetCombinedAddresses().Select(address => new AddressModel
                     {
-                        Address = address.Address,
+                        Address = request.Segwit ? address.Bech32Address : address.Address,
                         IsUsed = address.Transactions.Any(),
                         IsChange = address.IsChangeAddress()
                     })

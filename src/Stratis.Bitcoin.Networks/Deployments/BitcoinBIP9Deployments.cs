@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Networks.Deployments
     /// </summary>
     public class BitcoinBIP9Deployments : BIP9DeploymentsArray
     {
-        // The position of each deployment in the deployments array.
+        // The position of each deployment in the deployments array. Note that this is decoupled from the actual position of the flag bit for the deployment in the block version.
         public const int TestDummy = 0;
         public const int CSV = 1;
         public const int Segwit = 2;
