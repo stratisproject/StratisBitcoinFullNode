@@ -53,6 +53,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             var selectedInputs = new List<OutPoint>();
             selectedInputs = this.walletManager.GetSpendableInputsForAddress(request.WalletName, request.Sender);
 
+            if (request.Outpoints != null && request.Outpoints.Any())
+            {
+                //Convert outpointRequest to OutPoint
+                var requestedOutPoints = request.Outpoints.Select(outPointRequest => new OutPoint(new uint256(outPointRequest.TransactionId), outPointRequest.Index));
+
+                for (int i = selectedInputs.Count - 1; i >= 0; i--)
+                {
+                    if (!requestedOutPoints.Contains(selectedInputs[i]))
+                        selectedInputs.RemoveAt(i);
+                }
+
+                if (!selectedInputs.Any())
+                    return BuildCallContractTransactionResponse.Failed("Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address");
+            }
+
             uint160 addressNumeric = request.ContractAddress.ToUint160(this.network);
 
             ContractTxData txData;
@@ -115,6 +130,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
             var selectedInputs = new List<OutPoint>();
             selectedInputs = this.walletManager.GetSpendableInputsForAddress(request.WalletName, request.Sender);
+
+            if (request.Outpoints != null && request.Outpoints.Any())
+            {
+                //Convert outpointRequest to OutPoint
+                var requestedOutPoints = request.Outpoints.Select(outPointRequest => new OutPoint(new uint256(outPointRequest.TransactionId), outPointRequest.Index));
+
+                for (int i = selectedInputs.Count - 1; i >= 0; i--)
+                {
+                    if (!requestedOutPoints.Contains(selectedInputs[i]))
+                        selectedInputs.RemoveAt(i);
+                }
+
+                if (!selectedInputs.Any())
+                    return BuildCreateContractTransactionResponse.Failed("Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address");
+            }
 
             ContractTxData txData;
             if (request.Parameters != null && request.Parameters.Any())
