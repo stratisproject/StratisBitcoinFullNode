@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         public WalletHistoryRequest()
         {
-            // this.AccountName = WalletManager.DefaultAccount;
+            this.AccountName = WalletManager.DefaultAccount;
         }
 
         /// <summary>
