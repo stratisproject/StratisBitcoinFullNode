@@ -1134,7 +1134,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             //Create Coin from first tx on chain
             var coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(miner.PubKey));
 
-            //Send 10 to Bob and return the rest as change to miner
+            // Send 0.001 to Bob and return the rest as change to miner
             Transaction originalTx = txBuilder
                .AddCoins(coin)
                .AddKeys(miner)
@@ -1144,7 +1144,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
                .BuildTransaction(true);
             var state = new MempoolValidationState(false);
 
-            //Mempool should accept it, there's nothing wrong
+            // Mempool should accept it, there's nothing wrong
             Assert.True(await validator.AcceptToMemoryPool(state, originalTx).ConfigureAwait(false), $"Transaction: {nameof(originalTx)} failed mempool validation.");
 
             //Create second transaction spending the same coin
@@ -1156,7 +1156,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
                .SetChange(miner)
                .BuildTransaction(true);
 
-            //Mempool should reject the second transaction
+            // Mempool should reject the second transaction
             Assert.False(await validator.AcceptToMemoryPool(state, conflictingTx).ConfigureAwait(false), $"Transaction: {nameof(conflictingTx)} should have failed mempool validation.");
         }
 
@@ -1174,7 +1174,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
 
             // Put a regular valid transaction into the mempool.
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
-            tx.AddOutput(new TxOut(Money.Coins(49), minerSecret.PubKeyHash));
+            tx.AddOutput(new TxOut(Money.Coins(0.049m), minerSecret.PubKeyHash));
 
             // We need the sequence of all the transactions to be lower than (Sequence.Final - 1) to avoid triggering the conflict mempool error.
             // Therefore just use 1 here and 2 for the actual replacing transaction.
@@ -1186,11 +1186,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
 
             Assert.True(await validator.AcceptToMemoryPool(state, tx));
 
-            var tx2 = new Transaction();
+            var tx2 = this.Network.CreateTransaction();
 
             // Put another valid transaction into the mempool.
             tx2.AddInput(new TxIn(new OutPoint(context.SrcTxs[1].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
-            tx2.AddOutput(new TxOut(Money.Coins(49), minerSecret.PubKeyHash));
+            tx2.AddOutput(new TxOut(Money.Coins(0.049m), minerSecret.PubKeyHash));
 
             tx2.Inputs.First().Sequence = 1;
 
@@ -1198,7 +1198,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
 
             Assert.True(await validator.AcceptToMemoryPool(state, tx2));
 
-            var tx3 = new Transaction();
+            var tx3 = this.Network.CreateTransaction();
 
             // This transaction has a higher fee, but refers to the (unconfirmed) output of the first transaction, which is still in the pool.
             tx3.AddInput(new TxIn(new OutPoint(tx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
@@ -1206,7 +1206,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             tx3.AddInput(new TxIn(new OutPoint(context.SrcTxs[1].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
 
             // Ensure the replacement transaction has a lower fee than the transaction it is replacing.
-            tx3.AddOutput(new TxOut(Money.Coins(99), minerSecret.PubKeyHash));
+            tx3.AddOutput(new TxOut(Money.Coins(0.99m), minerSecret.PubKeyHash));
 
             tx3.Inputs.First().Sequence = tx.Inputs.First().Sequence + 1;
 
@@ -1389,7 +1389,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
 
             // Put a regular valid transaction into the mempool.
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
-            tx.AddOutput(new TxOut(Money.Coins(49), minerSecret.PubKeyHash));
+            tx.AddOutput(new TxOut(Money.Coins(3.9m), minerSecret.PubKeyHash));
 
             // We need the sequence of all the transactions to be lower than (Sequence.Final - 1) to avoid triggering the conflict mempool error.
             // Therefore just use 1 here and 2 for the actual replacing transaction.
@@ -1401,11 +1401,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
 
             Assert.True(await validator.AcceptToMemoryPool(state, tx));
 
-            var tx2 = new Transaction();
+            var tx2 = this.Network.CreateTransaction();
 
             // Put another valid transaction into the mempool.
             tx2.AddInput(new TxIn(new OutPoint(context.SrcTxs[1].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
-            tx2.AddOutput(new TxOut(Money.Coins(49), minerSecret.PubKeyHash));
+            tx2.AddOutput(new TxOut(Money.Coins(0.049m), minerSecret.PubKeyHash));
 
             tx2.Inputs.First().Sequence = 1;
 
@@ -1416,7 +1416,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             // To trigger replacement the replacement transaction needs to have a higher fee than the transaction it is replacing.
             // To trigger the specific fault for this test, the replacing transaction needs to refer to an unconfirmed input in the mempool.
 
-            var tx3 = new Transaction();
+            var tx3 = this.Network.CreateTransaction();
 
             // This transaction has a higher fee, but refers to the (unconfirmed) output of the first transaction, which is still in the pool.
             tx3.AddInput(new TxIn(new OutPoint(tx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
@@ -1424,7 +1424,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             tx3.AddInput(new TxIn(new OutPoint(context.SrcTxs[1].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
 
             // The fee should be very much higher than the other transactions, as this transaction has effectively almost two entire block rewards as inputs.
-            tx3.AddOutput(new TxOut(Money.Coins(1), minerSecret.PubKeyHash));
+            tx3.AddOutput(new TxOut(Money.Coins(0.01m), minerSecret.PubKeyHash));
 
             tx3.Inputs.First().Sequence = tx.Inputs.First().Sequence + 1;
 

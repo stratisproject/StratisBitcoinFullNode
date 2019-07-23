@@ -1448,7 +1448,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             Assert.True(await validator.AcceptToMemoryPool(state, tx));
 
-            var tx2 = new Transaction();
+            var tx2 = network.CreateTransaction();
 
             // Put another valid transaction into the mempool.
             tx2.AddInput(new TxIn(new OutPoint(context.SrcTxs[1].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
@@ -1463,7 +1463,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             // To trigger replacement the replacement transaction needs to have a higher fee than the transaction it is replacing.
             // To trigger the specific fault for this test, the replacing transaction needs to refer to an unconfirmed input in the mempool.
 
-            var tx3 = new Transaction();
+            var tx3 = network.CreateTransaction();
 
             // This transaction has a higher fee, but refers to the (unconfirmed) output of the first transaction, which is still in the pool.
             tx3.AddInput(new TxIn(new OutPoint(tx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
