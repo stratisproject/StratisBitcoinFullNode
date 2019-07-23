@@ -414,7 +414,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 if ((newState == NetworkPeerState.Failed) || (newState == NetworkPeerState.Offline))
                 {
-                    this.logger.LogDebug("Communication with the peer has been closed.");
+                    this.logger.LogDebug("Communication with the peer has been closed. newState={0}", newState);
 
                     this.ExecuteDisconnectedCallbackWhenSafe();
                 }
@@ -838,6 +838,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc/>
         public void Disconnect(string reason, Exception exception = null)
         {
+            this.logger.LogDebug("Disconnect called with reason={0} and exception={1}", reason, exception?.ToString());
+
             if (Interlocked.CompareExchange(ref this.disconnected, 1, 0) == 1)
             {
                 this.logger.LogTrace("(-)[DISCONNECTED]");
