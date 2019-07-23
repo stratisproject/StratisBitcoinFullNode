@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         public WalletHistoryRequest()
         {
-            this.AccountName = "account 0";
+            // this.AccountName = WalletManager.DefaultAccount;
         }
 
         /// <summary>
@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         public WalletBalanceRequest()
         {
-            this.AccountName = "account 0";
+            this.AccountName = WalletManager.DefaultAccount;
         }
 
         /// <summary>
@@ -231,7 +231,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         public WalletMaximumBalanceRequest()
         {
-            this.AccountName = "account 0";
+            this.AccountName = WalletManager.DefaultAccount;
         }
 
         /// <summary>
@@ -285,7 +285,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         public TxFeeEstimateRequest()
         {
-            this.AccountName = "account 0";
+            this.AccountName = WalletManager.DefaultAccount;
         }
 
         /// <summary>
@@ -530,7 +530,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         public GetUnusedAddressModel()
         {
-            this.AccountName = "account 0";
+            this.AccountName = WalletManager.DefaultAccount;
         }
 
         /// <summary>
@@ -552,7 +552,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         public GetUnusedAddressesModel()
         {
-            this.AccountName = "account 0";
+            this.AccountName = WalletManager.DefaultAccount;
         }
 
         /// <summary>
@@ -580,7 +580,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         public GetAllAddressesModel()
         {
-            this.AccountName = "account 0";
+            this.AccountName = WalletManager.DefaultAccount;
         }
 
         /// <summary>
@@ -602,7 +602,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         public GetExtPubKeyModel()
         {
-            this.AccountName = "account 0";
+            this.AccountName = WalletManager.DefaultAccount;
         }
 
         /// <summary>
@@ -676,7 +676,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         public SpendableTransactionsRequest()
         {
-            this.AccountName = "account 0";
+            this.AccountName = WalletManager.DefaultAccount;
         }
 
         /// <summary>
@@ -701,7 +701,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         public SplitCoinsRequest()
         {
-            this.AccountName = "account 0";
+            this.AccountName = WalletManager.DefaultAccount;
         }
 
         [Required(ErrorMessage = "The name of the wallet is missing.")]
