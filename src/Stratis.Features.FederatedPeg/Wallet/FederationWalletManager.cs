@@ -419,33 +419,33 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 }
             }
 
-            lock (this.lockObject)
+            //lock (this.lockObject)
+            //{
+            this.logger.LogDebug("CleanTransactionsPastMaxReorg start.");
+
+            walletUpdated |= this.CleanTransactionsPastMaxReorg(chainedHeader.Height);
+
+            this.logger.LogDebug("CleanTransactionsPastMaxReorg finish, wallet updated {0}", walletUpdated);
+
+            // Update the wallets with the last processed block height.
+            // It's important that updating the height happens after the block processing is complete,
+            // as if the node is stopped, on re-opening it will start updating from the previous height.
+
+            this.logger.LogDebug("UpdateLastBlockSyncedHeight start {0}", chainedHeader);
+
+            this.UpdateLastBlockSyncedHeight(chainedHeader);
+
+            this.logger.LogDebug("UpdateLastBlockSyncedHeight finish {0}", chainedHeader);
+
+            if (walletUpdated)
             {
-                this.logger.LogDebug("CleanTransactionsPastMaxReorg start.");
+                this.logger.LogDebug("SaveWallet start {0}", chainedHeader);
 
-                walletUpdated |= this.CleanTransactionsPastMaxReorg(chainedHeader.Height);
+                this.SaveWallet();
 
-                this.logger.LogDebug("CleanTransactionsPastMaxReorg finish, wallet updated {0}", walletUpdated);
-
-                // Update the wallets with the last processed block height.
-                // It's important that updating the height happens after the block processing is complete,
-                // as if the node is stopped, on re-opening it will start updating from the previous height.
-
-                this.logger.LogDebug("UpdateLastBlockSyncedHeight start {0}", chainedHeader);
-
-                this.UpdateLastBlockSyncedHeight(chainedHeader);
-
-                this.logger.LogDebug("UpdateLastBlockSyncedHeight finish {0}", chainedHeader);
-
-                if (walletUpdated)
-                {
-                    this.logger.LogDebug("SaveWallet start {0}", chainedHeader);
-
-                    this.SaveWallet();
-
-                    this.logger.LogDebug("SaveWallet finish {0}", chainedHeader);
-                }
+                this.logger.LogDebug("SaveWallet finish {0}", chainedHeader);
             }
+            //}
 
             this.logger.LogDebug("Processed block '{0}', chained header '{1}'", block.GetHash(), chainedHeader);
         }
