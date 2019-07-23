@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.P2P.Peer
     }
 
     /// <summary>
-    /// Contains an (nullable) object and can also add as a lock for the value.
+    /// Contains a nullable object and can also act as a lock for the value.
     /// </summary>
     /// <typeparam name="T">The type of value this contains.</typeparam>
     public class ValueContainer<T> where T : class
