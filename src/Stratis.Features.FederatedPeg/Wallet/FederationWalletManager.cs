@@ -1123,18 +1123,18 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
 
-            lock (this.lockObject)
-            {
-                // The block locator will help when the wallet
-                // needs to rewind this will be used to find the fork.
-                this.Wallet.BlockLocator = chainedHeader.GetLocator().Blocks;
+            //lock (this.lockObject)
+            //{
+            // The block locator will help when the wallet
+            // needs to rewind this will be used to find the fork.
+            this.Wallet.BlockLocator = chainedHeader.GetLocator().Blocks;
 
-                // Update the wallets with the last processed block height.
-                this.Wallet.LastBlockSyncedHeight = chainedHeader.Height;
-                this.Wallet.LastBlockSyncedHash = chainedHeader.HashBlock;
-                this.WalletTipHash = chainedHeader.HashBlock;
-                this.WalletTipHeight = chainedHeader.Height;
-            }
+            // Update the wallets with the last processed block height.
+            this.Wallet.LastBlockSyncedHeight = chainedHeader.Height;
+            this.Wallet.LastBlockSyncedHash = chainedHeader.HashBlock;
+            this.WalletTipHash = chainedHeader.HashBlock;
+            this.WalletTipHeight = chainedHeader.Height;
+            //}
         }
 
         /// <summary>

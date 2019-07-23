@@ -21,7 +21,7 @@ namespace Stratis.Features.FederatedPeg.Notifications
 
         private readonly ISignals signals;
 
-        private SubscriptionToken blockConnectedSubscription;
+        private readonly SubscriptionToken blockConnectedSubscription;
 
         /// <summary>
         /// Initialize the block observer with the wallet manager and the cross chain monitor.
