@@ -39,7 +39,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 friendlyName = nameof(BlockQueueProcessor);
             }
 
-            this.blocksQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<Block>($"{friendlyName}-{nameof(this.blocksQueue)}", this.OnProcessBlockAsync);
+            this.blocksQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<Block>($"{friendlyName}-{nameof(this.blocksQueue)}", this.OnProcessBlock);
         }
 
         /// <summary>Limits the <see cref="blocksQueue"/> size, in bytes.</summary>
@@ -47,13 +47,15 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         public long QueueSizeBytes => this.blocksQueueSize;
 
-        private async Task OnProcessBlockAsync(Block block, CancellationToken cancellationToken)
+        private Task OnProcessBlock(Block block, CancellationToken cancellationToken)
         {
             long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, -block.BlockSize.Value);
 
-            this.logger.LogDebug("Block '{0}' queued. Queue size {1} bytes.", block.GetHash(), currentBlockQueueSize);
+            this.logger.LogDebug("Block '{0}' queued, queue size {1} bytes.", block.GetHash(), currentBlockQueueSize);
 
-            await this.callback(block, cancellationToken);
+            this.callback(block, cancellationToken);
+
+            return Task.CompletedTask;
         }
 
         /// <summary>

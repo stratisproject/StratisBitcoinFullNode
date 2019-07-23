@@ -380,47 +380,47 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(block, nameof(block));
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
 
-            this.logger.LogDebug("Processing block {0}, chained header {1}", block.GetHash(), chainedHeader);
+            this.logger.LogDebug("Processing block '{0}', chained header '{1}'", block.GetHash(), chainedHeader);
+
+            // If there is no wallet yet, update the wallet tip hash and do nothing else.
+            if (this.Wallet == null)
+            {
+                this.WalletTipHash = chainedHeader.HashBlock;
+                this.WalletTipHeight = chainedHeader.Height;
+                this.logger.LogTrace("(-)[NO_WALLET]");
+                return;
+            }
+
+            this.logger.LogDebug("Wallet is not null");
+
+            // Is this the next block.
+            if (chainedHeader.Header.HashPrevBlock != this.WalletTipHash)
+            {
+                this.logger.LogDebug("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
+
+                // The block coming in to the wallet should never be ahead of the wallet.
+                // If the block is behind, let it pass.
+                if (chainedHeader.Height > this.WalletTipHeight)
+                {
+                    this.logger.LogTrace("(-)[BLOCK_TOO_FAR]");
+                    throw new WalletException("block too far in the future has arrived to the wallet");
+                }
+            }
+
+            this.logger.LogDebug("Block follows on from previous block.");
+
+            bool walletUpdated = false;
+            foreach (Transaction transaction in block.Transactions.Where(t => !(t.IsCoinBase && t.TotalOut == Money.Zero)))
+            {
+                bool trxFound = this.ProcessTransaction(transaction, chainedHeader.Height, chainedHeader.HashBlock, block);
+                if (trxFound)
+                {
+                    walletUpdated = true;
+                }
+            }
 
             lock (this.lockObject)
             {
-                // If there is no wallet yet, update the wallet tip hash and do nothing else.
-                if (this.Wallet == null)
-                {
-                    this.WalletTipHash = chainedHeader.HashBlock;
-                    this.WalletTipHeight = chainedHeader.Height;
-                    this.logger.LogTrace("(-)[NO_WALLET]");
-                    return;
-                }
-
-                this.logger.LogDebug("Wallet is not null");
-
-                // Is this the next block.
-                if (chainedHeader.Header.HashPrevBlock != this.WalletTipHash)
-                {
-                    this.logger.LogDebug("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
-
-                    // The block coming in to the wallet should never be ahead of the wallet.
-                    // If the block is behind, let it pass.
-                    if (chainedHeader.Height > this.WalletTipHeight)
-                    {
-                        this.logger.LogTrace("(-)[BLOCK_TOO_FAR]");
-                        throw new WalletException("block too far in the future has arrived to the wallet");
-                    }
-                }
-
-                this.logger.LogDebug("Block follows on from previous block.");
-
-                bool walletUpdated = false;
-                foreach (Transaction transaction in block.Transactions.Where(t => !(t.IsCoinBase && t.TotalOut == Money.Zero)))
-                {
-                    bool trxFound = this.ProcessTransaction(transaction, chainedHeader.Height, chainedHeader.HashBlock, block);
-                    if (trxFound)
-                    {
-                        walletUpdated = true;
-                    }
-                }
-
                 this.logger.LogDebug("CleanTransactionsPastMaxReorg start.");
 
                 walletUpdated |= this.CleanTransactionsPastMaxReorg(chainedHeader.Height);
@@ -430,7 +430,12 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 // Update the wallets with the last processed block height.
                 // It's important that updating the height happens after the block processing is complete,
                 // as if the node is stopped, on re-opening it will start updating from the previous height.
+
+                this.logger.LogDebug("UpdateLastBlockSyncedHeight start {0}", chainedHeader);
+
                 this.UpdateLastBlockSyncedHeight(chainedHeader);
+
+                this.logger.LogDebug("UpdateLastBlockSyncedHeight finish {0}", chainedHeader);
 
                 if (walletUpdated)
                 {
@@ -441,6 +446,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     this.logger.LogDebug("SaveWallet finish {0}", chainedHeader);
                 }
             }
+
+            this.logger.LogDebug("Processed block '{0}', chained header '{1}'", block.GetHash(), chainedHeader);
         }
 
         /// <inheritdoc />
@@ -1116,8 +1123,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
 
-            this.logger.LogDebug("UpdateLastBlockSyncedHeight start {0}", chainedHeader);
-
             lock (this.lockObject)
             {
                 // The block locator will help when the wallet
@@ -1130,8 +1135,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 this.WalletTipHash = chainedHeader.HashBlock;
                 this.WalletTipHeight = chainedHeader.Height;
             }
-
-            this.logger.LogDebug("UpdateLastBlockSyncedHeight finish {0}", chainedHeader);
         }
 
         /// <summary>
