@@ -678,7 +678,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             // Tests the output script template null case in PreMempoolChecks CheckStandardTransaction
             bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
-            Assert.False(isSuccess, "Transaction with dust output should not have been accepted.");
+            Assert.False(isSuccess, "Transaction with null scriptPubKey should not have been accepted.");
             Assert.Equal(MempoolErrors.Scriptpubkey, state.Error);
         }
 
@@ -933,6 +933,48 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.Equal(MempoolErrors.NonBIP68Final, state.Error);
 
             // TODO: Test for a time-based lock in addition to only a height-based one.
+        }
+
+        [Fact]
+        public async Task AcceptToMemoryPool_NonStandardBareMultiSig_ReturnsFalse()
+        {
+            string dataDir = GetTestDirectoryPath(this);
+
+            var miner = new BitcoinSecret(new Key(), this.Network);
+            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir);
+            IMempoolValidator validator = context.MempoolValidator;
+            Assert.NotNull(validator);
+
+            // Currently bare multisig is standard by default, so disable that for the purposes of this test
+            context.MempoolSettings.PermitBareMultisig = false;
+
+            var alice = new BitcoinSecret(new Key(), this.Network);
+            var bob = new BitcoinSecret(new Key(), this.Network);
+            var carol = new BitcoinSecret(new Key(), this.Network);
+
+            Script corpMultiSig = PayToMultiSigTemplate
+                        .Instance
+                        .GenerateScriptPubKey(2, new[] { alice.PubKey, bob.PubKey, carol.PubKey });
+
+            var coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.ScriptPubKey);
+            var txBuilder = new TransactionBuilder(this.Network);
+            Transaction bareMultiSigTx = txBuilder
+                .AddCoins(new List<Coin> { coin })
+                .AddKeys(miner)
+                .Send(corpMultiSig, "0.042")
+                .SendFees("0.001")
+                .SetChange(miner.GetAddress())
+                .BuildTransaction(true);
+
+            Assert.True(txBuilder.Verify(bareMultiSigTx));
+
+            var state = new MempoolValidationState(false);
+
+            bool isSuccess = await validator.AcceptToMemoryPool(state, bareMultiSigTx);
+
+            // Execute failure case for CheckStandardTransaction bare multisig
+            Assert.False(isSuccess, "Transaction with bare multisig should not have been accepted.");
+            Assert.Equal("bare-multisig", state.Error.Code);
         }
 
         [Fact(Skip = "Not implemented yet.")]

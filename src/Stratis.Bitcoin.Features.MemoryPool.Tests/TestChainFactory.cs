@@ -38,6 +38,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         IMempoolValidator MempoolValidator { get; }
 
         /// <summary>
+        /// The settings for the mempool.
+        /// </summary>
+        MempoolSettings MempoolSettings { get; }
+
+        /// <summary>
         /// List of the source transactions in the test chain.
         /// </summary>
         List<Transaction> SrcTxs { get; }
@@ -50,6 +55,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
     {
         /// <inheritdoc />
         public IMempoolValidator MempoolValidator { get; set; }
+
+        /// <inheritdoc />
+        public MempoolSettings MempoolSettings { get; set; }
 
         /// <inheritdoc />
         public List<Transaction> SrcTxs { get; set; }
@@ -183,7 +191,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             inMemoryCoinView.SaveChanges(outputs, new List<TxOut[]>(), chain.GetHeader(0).HashBlock, chain.GetHeader(1).HashBlock, chain.GetHeader(0).Height);
 
-            return new TestChainContext { MempoolValidator = mempoolValidator, SrcTxs = srcTxs };
+            return new TestChainContext { MempoolValidator = mempoolValidator, MempoolSettings = mempoolSettings, SrcTxs = srcTxs };
         }
 
         /// <summary>

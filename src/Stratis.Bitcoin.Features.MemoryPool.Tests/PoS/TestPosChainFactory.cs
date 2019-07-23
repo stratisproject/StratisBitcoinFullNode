@@ -112,11 +112,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             Assert.Equal(network.Consensus.MempoolRules.Count, mempoolRules.Count);
 
-            var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, mempoolSettings, chain, inMemoryCoinView, loggerFactory, nodeSettings, consensusRules, mempoolRules, new NodeDeployments(network, chain));
+            var nodeDeployments = new NodeDeployments(network, chain);
+            var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, mempoolSettings, chain, inMemoryCoinView, loggerFactory, nodeSettings, consensusRules, mempoolRules, nodeDeployments);
             var srcTxs = new List<Transaction>();
 
             // Simple block creation, nothing special yet:
-            var blockDefinition = new PosPowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, minerSettings, stakeChain, stakeValidator);
+            var blockDefinition = new PosPowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, minerSettings, stakeChain, stakeValidator, nodeDeployments);
             BlockTemplate newBlock = blockDefinition.Build(chain.Tip, scriptPubKey);
 
             await consensus.BlockMinedAsync(newBlock.Block);
@@ -151,7 +152,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             }
 
             // Just to make sure we can still make simple blocks
-            blockDefinition = new PosPowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, minerSettings, stakeChain, stakeValidator);
+            blockDefinition = new PosPowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, minerSettings, stakeChain, stakeValidator, nodeDeployments);
             //blockDefinition.Build(chain.Tip, scriptPubKey);
 
             var outputs = new List<UnspentOutputs>();
@@ -165,7 +166,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             inMemoryCoinView.SaveChanges(outputs, new List<TxOut[]>(), chain.GetHeader(0).HashBlock, chain.GetHeader(1).HashBlock, chain.GetHeader(0).Height);
 
-            return new TestChainContext { MempoolValidator = mempoolValidator, SrcTxs = srcTxs };
+            return new TestChainContext { MempoolValidator = mempoolValidator, MempoolSettings = mempoolSettings, SrcTxs = srcTxs };
         }
 
         /// <summary>

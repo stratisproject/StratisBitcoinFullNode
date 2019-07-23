@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
@@ -282,9 +281,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             Assert.NotNull(validator);
 
             var bob = new BitcoinSecret(new Key(), this.Network);
-
-            // Fund Bob
-            // 50 Coins come from first tx on chain - send bob 42 and change back to miner
             var witnessCoin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.WitHash.ScriptPubKey);
             var txBuilder = new TransactionBuilder(this.Network);
             Transaction p2wpkhTx = txBuilder
@@ -315,8 +311,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
 
             var bob = new BitcoinSecret(new Key(), this.Network);
 
-            // Fund Bob
-            // 50 Coins come from first tx on chain - send bob 42 and change back to miner
             ScriptCoin witnessCoin = ScriptCoin.Create(this.Network, context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey, miner.PubKey.ScriptPubKey).AssertCoherent(this.Network);
             var txBuilder = new TransactionBuilder(this.Network);
             Transaction p2wshTx = txBuilder
@@ -616,7 +610,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
 
             // Tests the output script template null case in PreMempoolChecks CheckStandardTransaction
             bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
-            Assert.False(isSuccess, "Transaction with dust output should not have been accepted.");
+            Assert.False(isSuccess, "Transaction with null scriptPubKey should not have been accepted.");
             Assert.Equal(MempoolErrors.Scriptpubkey, state.Error);
         }
 
@@ -858,10 +852,105 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
         }
 
         [Fact]
-        public void AcceptToMemoryPool_NonStandardP2SH_ReturnsFalse()
+        public async Task AcceptToMemoryPool_NonStandardBareMultiSig_ReturnsFalse()
         {
-            // TODO: Execute failure cases for CreateMempoolEntry AreInputsStandard
+            string dataDir = GetTestDirectoryPath(this);
+
+            var miner = new BitcoinSecret(new Key(), this.Network);
+            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir);
+            IMempoolValidator validator = context.MempoolValidator;
+            Assert.NotNull(validator);
+
+            // Currently bare multisig is standard by default, so disable that for the purposes of this test
+            context.MempoolSettings.PermitBareMultisig = false;
+
+            var alice = new BitcoinSecret(new Key(), this.Network);
+            var bob = new BitcoinSecret(new Key(), this.Network);
+            var carol = new BitcoinSecret(new Key(), this.Network);
+
+            Script corpMultiSig = PayToMultiSigTemplate
+                        .Instance
+                        .GenerateScriptPubKey(2, new[] { alice.PubKey, bob.PubKey, carol.PubKey });
+
+            var coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.ScriptPubKey);
+            var txBuilder = new TransactionBuilder(this.Network);
+            Transaction bareMultiSigTx = txBuilder
+                .AddCoins(new List<Coin> { coin })
+                .AddKeys(miner)
+                .Send(corpMultiSig, "0.042")
+                .SendFees("0.001")
+                .SetChange(miner.GetAddress())
+                .BuildTransaction(true);
+
+            Assert.True(txBuilder.Verify(bareMultiSigTx));
+
+            var state = new MempoolValidationState(false);
+
+            bool isSuccess = await validator.AcceptToMemoryPool(state, bareMultiSigTx);
+
+            // Execute failure case for CheckStandardTransaction bare multisig
+            Assert.False(isSuccess, "Transaction with bare multisig should not have been accepted.");
+            Assert.Equal("bare-multisig", state.Error.Code);
+        }
+
+        [Fact]
+        public async Task AcceptToMemoryPool_NonStandardP2SH_ReturnsFalse()
+        {
             throw new NotImplementedException();
+
+            string dataDir = GetTestDirectoryPath(this);
+
+            var miner = new BitcoinSecret(new Key(), this.Network);
+            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir);
+            IMempoolValidator validator = context.MempoolValidator;
+            Assert.NotNull(validator);
+
+            var alice = new BitcoinSecret(new Key(), this.Network);
+            var bob = new BitcoinSecret(new Key(), this.Network);
+            var satoshi = new BitcoinSecret(new Key(), this.Network);
+            var nico = new BitcoinSecret(new Key(), this.Network);
+
+            // corp needs two out of three of alice, bob, nico
+            Script corpMultiSig = PayToMultiSigTemplate
+                        .Instance
+                        .GenerateScriptPubKey(2, new[] { alice.PubKey, bob.PubKey, nico.PubKey });
+
+            // P2SH address for corp multi-sig
+            BitcoinScriptAddress corpRedeemAddress = corpMultiSig.GetScriptAddress(this.Network);
+
+            // Fund corp
+            // 50 Coins come from first tx on chain - send corp 42 and change back to miner
+            var coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.ScriptPubKey);
+            var txBuilder = new TransactionBuilder(this.Network);
+            Transaction fundP2shTx = txBuilder
+                .AddCoins(new List<Coin> { coin })
+                .AddKeys(miner)
+                .Send(corpRedeemAddress, "0.042")
+                .SendFees("0.001")
+                .SetChange(miner.GetAddress())
+                .BuildTransaction(true);
+            Assert.True(txBuilder.Verify(fundP2shTx)); //check fully signed
+            var state = new MempoolValidationState(false);
+            Assert.True(await validator.AcceptToMemoryPool(state, fundP2shTx), $"Transaction: {nameof(fundP2shTx)} failed mempool validation.");
+
+            // AliceBobNico corp. send 20 to Satoshi
+            Coin[] corpCoins = fundP2shTx.Outputs
+                        .Where(o => o.ScriptPubKey == corpRedeemAddress.ScriptPubKey)
+                        .Select(o => ScriptCoin.Create(this.Network, new OutPoint(fundP2shTx.GetHash(), fundP2shTx.Outputs.IndexOf(o)), o, corpMultiSig))
+                        .ToArray();
+
+            txBuilder = new TransactionBuilder(this.Network);
+            Transaction p2shSpendTx = txBuilder
+                    .AddCoins(corpCoins)
+                    .AddKeys(alice, bob)
+                    .Send(satoshi.GetAddress(), "0.020")
+                    .SendFees("0.001")
+                    .SetChange(corpRedeemAddress)
+                    .BuildTransaction(true);
+            Assert.True(txBuilder.Verify(p2shSpendTx));
+
+            // Execute failure cases for CreateMempoolEntry AreInputsStandard
+            Assert.True(await validator.AcceptToMemoryPool(state, p2shSpendTx), $"Transaction: {nameof(p2shSpendTx)} failed mempool validation.");
         }
 
         [Fact]
