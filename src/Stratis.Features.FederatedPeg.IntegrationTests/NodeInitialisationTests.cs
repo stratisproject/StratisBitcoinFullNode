@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Net;
 using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Flurl;
 using Flurl.Http;
@@ -80,7 +79,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
             mockClient.Setup(x => x.GetVerboseAddressesBalancesDataAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Bitcoin.Controllers.Models.VerboseAddressBalancesResult(100000));
 
-            node.Start(() => {
+            node.Start(() =>
+            {
                 ICollateralChecker collateralChecker = node.FullNode.NodeService<ICollateralChecker>();
                 collateralChecker.SetPrivateVariableValue("blockStoreClient", mockClient.Object);
             });
@@ -156,7 +156,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
         }
 
         [Fact]
-        public async Task GatewayPairStarts()
+        public void GatewayPairStarts()
         {
             using (SidechainNodeBuilder nodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this))
             {
