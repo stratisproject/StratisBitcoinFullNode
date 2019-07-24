@@ -201,16 +201,19 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public static IPEndPoint GetHandshakedEndPoint(NetworkPeerState state, VersionPayload peerVersion, IPEndPoint peerEndPoint)
         {
-            if (state == NetworkPeerState.HandShaked && peerVersion?.AddressFrom != null)
+            if (state == NetworkPeerState.HandShaked)
             {
-                IPEndPoint addressFrom = peerVersion.AddressFrom.MapToIpv6();
+                IPEndPoint addressFrom = peerVersion?.AddressFrom.MapToIpv6();
 
-                // If it is a Loopback address use PeerEndpoint but combine it with the AdressFrom's port as that is the other node's listening port.
-                if (addressFrom.Address.Equals(IPAddress.Loopback.EnsureIPv6()))
-                    return new IPEndPoint(peerEndPoint.Address.EnsureIPv6(), addressFrom.Port);
+                if (addressFrom != null && !addressFrom.Address.Equals(IPAddress.IPv6Any))
+                {
+                    // If it is a Loopback address use PeerEndpoint but combine it with the AdressFrom's port as that is the other node's listening port.
+                    if (addressFrom.Address.Equals(IPAddress.Loopback.EnsureIPv6()))
+                        return new IPEndPoint(peerEndPoint.Address.EnsureIPv6(), addressFrom.Port);
 
-                // Use AddressFrom if it is not a Loopback address as this means the inbound node was configured with a different external endpoint.
-                return addressFrom;
+                    // Use AddressFrom if it is not a Loopback address as this means the inbound node was configured with a different external endpoint.
+                    return addressFrom;
+                }
             }
 
             return peerEndPoint.MapToIpv6();
