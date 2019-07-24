@@ -128,34 +128,31 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <summary>Performs any needed initialisation for the database.</summary>
         public void Initialize()
         {
-            lock (this.lockObj)
+            using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
             {
-                using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
+                dbreezeTransaction.ValuesLazyLoadingIsOn = false;
+
+                this.LoadTipHashAndHeight(dbreezeTransaction);
+                this.LoadNextMatureHeight(dbreezeTransaction);
+
+                // Initialize the lookups.
+                foreach (Row<byte[], byte[]> transferRow in dbreezeTransaction.SelectForward<byte[], byte[]>(transferTableName))
                 {
-                    dbreezeTransaction.ValuesLazyLoadingIsOn = false;
+                    var transfer = new CrossChainTransfer();
+                    transfer.FromBytes(transferRow.Value, this.network.Consensus.ConsensusFactory);
+                    this.depositsIdsByStatus[transfer.Status].Add(transfer.DepositTransactionId);
 
-                    this.LoadTipHashAndHeight(dbreezeTransaction);
-                    this.LoadNextMatureHeight(dbreezeTransaction);
-
-                    // Initialize the lookups.
-                    foreach (Row<byte[], byte[]> transferRow in dbreezeTransaction.SelectForward<byte[], byte[]>(transferTableName))
+                    if (transfer.BlockHash != null && transfer.BlockHeight != null)
                     {
-                        var transfer = new CrossChainTransfer();
-                        transfer.FromBytes(transferRow.Value, this.network.Consensus.ConsensusFactory);
-                        this.depositsIdsByStatus[transfer.Status].Add(transfer.DepositTransactionId);
-
-                        if (transfer.BlockHash != null && transfer.BlockHeight != null)
+                        if (!this.depositIdsByBlockHash.TryGetValue(transfer.BlockHash, out HashSet<uint256> deposits))
                         {
-                            if (!this.depositIdsByBlockHash.TryGetValue(transfer.BlockHash, out HashSet<uint256> deposits))
-                            {
-                                deposits = new HashSet<uint256>();
-                                this.depositIdsByBlockHash[transfer.BlockHash] = deposits;
-                            }
-
-                            deposits.Add(transfer.DepositTransactionId);
-
-                            this.blockHeightsByBlockHash[transfer.BlockHash] = (int)transfer.BlockHeight;
+                            deposits = new HashSet<uint256>();
+                            this.depositIdsByBlockHash[transfer.BlockHash] = deposits;
                         }
+
+                        deposits.Add(transfer.DepositTransactionId);
+
+                        this.blockHeightsByBlockHash[transfer.BlockHash] = (int)transfer.BlockHeight;
                     }
                 }
             }
@@ -164,13 +161,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <summary>Starts the cross-chain-transfer store.</summary>
         public void Start()
         {
-            lock (this.lockObj)
+            this.federationWalletManager.Synchronous(() =>
             {
-                this.federationWalletManager.Synchronous(() =>
-                {
-                    Guard.Assert(this.Synchronize());
-                });
-            }
+                Guard.Assert(this.Synchronize());
+            });
         }
 
         /// <inheritdoc />
@@ -355,8 +349,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 tracker.SetTransferStatus(crossChainTransfer, CrossChainTransferStatus.Rejected);
 
+                this.logger.LogDebug("Lock waiting");
+
                 this.federationWalletManager.Synchronous(() =>
                 {
+                    this.logger.LogDebug("Lock taken");
+
                     Guard.Assert(this.Synchronize());
 
                     using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
@@ -385,6 +383,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                         }
                     }
                 });
+
+                this.logger.LogDebug("Lock released");
             }
         }
 
@@ -430,8 +430,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                     var recordDepositResult = new RecordLatestMatureDepositsResult();
 
+                    this.logger.LogDebug("Lock waiting");
+
                     this.federationWalletManager.Synchronous(() =>
                     {
+                        this.logger.LogDebug("Lock taken");
+
                         Guard.Assert(this.Synchronize());
 
                         foreach (MaturedBlockDepositsModel maturedDeposit in maturedBlockDeposits)
@@ -596,6 +600,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                         }
                     });
 
+                    this.logger.LogDebug("Lock released");
+
                     // If progress was made we will check for more blocks.
                     if (this.NextMatureDepositHeight != originalDepositHeight)
                         return recordDepositResult.Succeeded();
@@ -615,8 +621,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             {
                 lock (this.lockObj)
                 {
+                    this.logger.LogDebug("Lock waiting");
+
                     return this.federationWalletManager.Synchronous(() =>
                     {
+                        this.logger.LogDebug("Lock taken");
+
                         Guard.Assert(this.Synchronize());
 
                         this.logger.LogDebug("ValidateCrossChainTransfers : {0}", depositId);
@@ -627,12 +637,17 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                             this.logger.LogDebug("FAILED ValidateCrossChainTransfers : {0}", depositId);
 
                             this.logger.LogTrace("(-)[MERGE_NOT_FOUND]:null");
+
+                            this.logger.LogDebug("Lock released");
+
                             return null;
                         }
 
                         if (transfer.Status != CrossChainTransferStatus.Partial)
                         {
                             this.logger.LogTrace("(-)[MERGE_BAD_STATUS]");
+                            this.logger.LogDebug("Lock released");
+
                             return transfer.PartialTransaction;
                         }
 
@@ -649,6 +664,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                             this.logger.LogDebug("FAILED to combineSignatures : {0}", transfer.DepositTransactionId);
 
                             this.logger.LogTrace("(-)[MERGE_UNCHANGED]");
+                            this.logger.LogDebug("Lock released");
+
                             return transfer.PartialTransaction;
                         }
 
@@ -690,9 +707,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                                 this.RollbackAndThrowTransactionError(dbreezeTransaction, err, "MERGE_ERROR");
                             }
 
+                            this.logger.LogDebug("Lock released");
+
                             return transfer.PartialTransaction;
                         }
                     });
+
                 }
             });
         }
@@ -1046,11 +1066,18 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             {
                 lock (this.lockObj)
                 {
+                    this.logger.LogDebug("Lock waiting");
+
                     return this.federationWalletManager.Synchronous(() =>
                     {
+                        this.logger.LogDebug("Lock taken");
+
                         Guard.Assert(this.Synchronize());
 
                         ICrossChainTransfer[] res = this.ValidateCrossChainTransfers(this.Get(depositIds));
+
+                        this.logger.LogDebug("Lock released");
+
                         return res;
                     });
                 }
@@ -1138,10 +1165,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             lock (this.lockObj)
             {
+                this.logger.LogDebug("Lock waiting");
+
                 return this.federationWalletManager.Synchronous(() =>
                 {
+                    this.logger.LogDebug("Lock taken");
                     Guard.Assert(this.Synchronize());
-
+                    this.logger.LogDebug("Lock released");
                     return this.GetTransfersByStatusInternalLocked(statuses, sort);
                 });
             }
@@ -1152,9 +1182,15 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             lock (this.lockObj)
             {
+                this.logger.LogDebug("Lock waiting");
+
                 return this.federationWalletManager.Synchronous(() =>
                 {
+                    this.logger.LogDebug("Lock taken");
+
                     Guard.Assert(this.Synchronize());
+
+                    this.logger.LogDebug("Lock released");
 
                     return this.GetTransfersByStatusInternalLocked(statuses, true, false);
                 });
