@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
 using DBreeze.Utils;
-using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin;
@@ -228,7 +227,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 if (partialTransfer.Status != CrossChainTransferStatus.Partial && partialTransfer.Status != CrossChainTransferStatus.FullySigned)
                     continue;
 
+                this.logger.LogDebug("Calling FindWithdrawalTransactions");
+
                 List<(Transaction transaction, IWithdrawal withdrawal)> walletData = this.federationWalletManager.FindWithdrawalTransactions(partialTransfer.DepositTransactionId);
+
+                this.logger.LogDebug("Called FindWithdrawalTransactions");
 
                 if (walletData.Count == 1 && this.ValidateTransaction(walletData[0].transaction))
                 {

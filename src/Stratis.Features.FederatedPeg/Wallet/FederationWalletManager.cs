@@ -287,11 +287,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public int LastBlockHeight()
         {
-            this.logger.LogDebug("Lock out");
+            this.logger.LogDebug("Lock waiting");
 
             lock (this.lockObject)
             {
-                this.logger.LogDebug("Lock in");
+                this.logger.LogDebug("Lock taken");
 
                 if (this.Wallet == null)
                 {
@@ -317,11 +317,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <returns>Hash of the last block received by the wallets.</returns>
         public HashHeightPair LastReceivedBlockHash()
         {
-            this.logger.LogDebug("Lock out");
+            this.logger.LogDebug("Lock waiting");
 
             lock (this.lockObject)
             {
-                this.logger.LogDebug("Lock in");
+                this.logger.LogDebug("Lock taken");
 
                 if (this.Wallet == null)
                 {
@@ -351,14 +351,14 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(int confirmations = 0)
         {
-            this.logger.LogDebug("Lock out");
+            this.logger.LogDebug("Lock waiting");
 
             if (this.Wallet == null)
                 return Enumerable.Empty<UnspentOutputReference>();
 
             lock (this.lockObject)
             {
-                this.logger.LogDebug("Lock in");
+                this.logger.LogDebug("Lock taken");
 
                 UnspentOutputReference[] res;
                 res = this.GetSpendableTransactions(this.chainIndexer.Tip.Height, confirmations).ToArray();
@@ -374,11 +374,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(fork, nameof(fork));
 
-            this.logger.LogDebug("Lock out");
+            this.logger.LogDebug("Lock waiting");
 
             lock (this.lockObject)
             {
-                this.logger.LogDebug("Lock in");
+                this.logger.LogDebug("Lock taken");
 
                 this.logger.LogDebug("Removing blocks back to height {0} from {1}", fork.Height, this.LastBlockHeight());
 
@@ -404,11 +404,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(block, nameof(block));
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
 
-            this.logger.LogDebug("Lock out");
+            this.logger.LogDebug("Lock waiting");
 
             lock (this.lockObject)
             {
-                this.logger.LogDebug("Lock in");
+                this.logger.LogDebug("Lock taken");
 
                 // If there is no wallet yet, update the wallet tip hash and do nothing else.
                 if (this.Wallet == null)
@@ -477,11 +477,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 return false;
             }
 
-            this.logger.LogDebug("Lock out");
+            this.logger.LogDebug("Lock waiting");
 
             lock (this.lockObject)
             {
-                this.logger.LogDebug("Lock in");
+                this.logger.LogDebug("Lock taken");
 
                 bool foundReceivingTrx = false, foundSendingTrx = false;
 
@@ -510,7 +510,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (withdrawal != null)
                 {
                     // Exit if already present and included in a block.
+                    this.logger.LogDebug("Calling FindWithdrawalTransactions");
                     List<(Transaction transaction, IWithdrawal withdrawal)> walletData = this.FindWithdrawalTransactions(withdrawal.DepositId);
+                    this.logger.LogDebug("Called FindWithdrawalTransactions");
+
                     if ((walletData.Count == 1) && (walletData[0].withdrawal.BlockNumber != 0))
                     {
                         this.logger.LogDebug("Deposit {0} Already included in block.", withdrawal.DepositId);
@@ -677,11 +680,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             var removedTransactions = new HashSet<(uint256, DateTimeOffset)>();
 
-            this.logger.LogDebug("Lock out");
+            this.logger.LogDebug("Lock waiting");
 
             lock (this.lockObject)
             {
-                this.logger.LogDebug("Lock in");
+                this.logger.LogDebug("Lock taken");
 
                 removedTransactions = this.Wallet.MultiSigAddress.Transactions.Select(t => (t.Id, t.CreationTime)).ToHashSet();
                 this.Wallet.MultiSigAddress.Transactions.Clear();
@@ -907,11 +910,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
             if (this.Wallet == null)
                 return;
 
-            this.logger.LogDebug("Lock out");
+            this.logger.LogDebug("Lock waiting");
 
             lock (this.lockObject)
             {
-                this.logger.LogDebug("Lock in");
+                this.logger.LogDebug("Lock taken");
 
                 this.fileStorage.SaveToFile(this.Wallet, WalletFileName);
             }
@@ -922,11 +925,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public bool RemoveUnconfirmedTransactionData()
         {
-            this.logger.LogDebug("Lock out");
+            this.logger.LogDebug("Lock waiting");
 
             lock (this.lockObject)
             {
-                this.logger.LogDebug("Lock in");
+                this.logger.LogDebug("Lock taken");
 
                 bool walletUpdated = false;
 
@@ -961,19 +964,24 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             this.logger.LogDebug("Removing transient transactions. DepositId={0}", depositId);
 
-            this.logger.LogDebug("Lock out");
+            this.logger.LogDebug("Lock waiting");
 
             lock (this.lockObject)
             {
-                this.logger.LogDebug("Lock in");
+                this.logger.LogDebug("Lock taken");
 
                 // Remove transient transactions not seen in a block yet.
                 bool walletUpdated = false;
 
-                foreach ((Transaction transaction, IWithdrawal withdrawal) in this.FindWithdrawalTransactions(depositId))
+                this.logger.LogDebug("Calling FindWithdrawalTransactions");
+                List<(Transaction, IWithdrawal)> withdrawalTransactions = this.FindWithdrawalTransactions(depositId);
+                this.logger.LogDebug("Called FindWithdrawalTransactions");
+
+                foreach ((Transaction transaction, IWithdrawal withdrawal) in withdrawalTransactions)
                 {
                     walletUpdated |= this.RemoveTransaction(transaction);
                 }
+
 
                 this.logger.LogDebug("Lock released");
 
@@ -990,11 +998,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public List<(Transaction, IWithdrawal)> FindWithdrawalTransactions(uint256 depositId = null, bool sort = false)
         {
-            this.logger.LogDebug("Lock out");
+            this.logger.LogDebug("Lock waiting");
 
             lock (this.lockObject)
             {
-                this.logger.LogDebug("Lock in");
+                this.logger.LogDebug("Lock taken");
 
                 var withdrawals = new List<(Transaction transaction, IWithdrawal withdrawal)>();
 
@@ -1105,11 +1113,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public bool ValidateTransaction(Transaction transaction, bool checkSignature = false)
         {
-            this.logger.LogDebug("Lock out");
+            this.logger.LogDebug("Lock waiting");
 
             lock (this.lockObject)
             {
-                this.logger.LogDebug("Lock in");
+                this.logger.LogDebug("Lock taken");
 
                 // All the input UTXO's should be present in spending details of the multi-sig address.
                 List<Coin> coins = checkSignature ? new List<Coin>() : null;
@@ -1165,11 +1173,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public bool ValidateConsolidatingTransaction(Transaction transaction, bool checkSignature = false)
         {
-            this.logger.LogDebug("Lock out");
+            this.logger.LogDebug("Lock waiting");
 
             lock (this.lockObject)
             {
-                this.logger.LogDebug("Lock in");
+                this.logger.LogDebug("Lock taken");
 
                 List<Coin> coins = checkSignature ? new List<Coin>() : null;
 
@@ -1212,11 +1220,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
 
-            this.logger.LogDebug("Lock out");
+            this.logger.LogDebug("Lock waiting");
 
             lock (this.lockObject)
             {
-                this.logger.LogDebug("Lock in");
+                this.logger.LogDebug("Lock taken");
 
                 // The block locator will help when the wallet
                 // needs to rewind this will be used to find the fork.
@@ -1367,11 +1375,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public (Money ConfirmedAmount, Money UnConfirmedAmount) GetSpendableAmount()
         {
-            this.logger.LogDebug("Lock out");
+            this.logger.LogDebug("Lock waiting");
 
             lock (this.lockObject)
             {
-                this.logger.LogDebug("Lock in");
+                this.logger.LogDebug("Lock taken");
 
                 IEnumerable<TransactionData> transactions = this.Wallet.MultiSigAddress.Transactions.GetUnspentTransactions();
 
