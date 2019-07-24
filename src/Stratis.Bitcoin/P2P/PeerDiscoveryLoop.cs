@@ -192,7 +192,7 @@ namespace Stratis.Bitcoin.P2P
                     }
                     catch (Exception e)
                     {
-                        // This happens too often to log properly but to help us in future at least log the Message on Trace.
+                        // This happens too often to log properly but we will at least log the Message on Trace.
                         this.logger.LogTrace("Discovery job failed: {0}", e.Message);
 
                         // If we had made it far enough to create the connection we need to discard it.
