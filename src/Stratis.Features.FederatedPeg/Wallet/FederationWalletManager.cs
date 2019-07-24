@@ -297,10 +297,16 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 {
                     int height = this.chainIndexer.Tip.Height;
                     this.logger.LogTrace("(-)[NO_WALLET]:{0}", height);
+
+                    this.logger.LogDebug("Lock released");
+
                     return height;
                 }
 
                 int res = this.Wallet.LastBlockSyncedHeight ?? 0;
+
+                this.logger.LogDebug("Lock released");
+
                 return res;
             }
         }
@@ -321,6 +327,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 {
                     uint256 hash = this.chainIndexer.Tip.HashBlock;
                     this.logger.LogTrace("(-)[NO_WALLET]:'{0}'", hash);
+
+                    this.logger.LogDebug("Lock released");
+
                     return new HashHeightPair(this.chainIndexer.Tip);
                 }
 
@@ -328,8 +337,12 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 if (lastBlockSyncedHash == null)
                 {
+                    this.logger.LogDebug("Lock released");
+
                     return new HashHeightPair(this.chainIndexer.Tip);
                 }
+
+                this.logger.LogDebug("Lock released");
 
                 return new HashHeightPair(this.Wallet.LastBlockSyncedHash, this.Wallet.LastBlockSyncedHeight.Value);
             }
@@ -349,6 +362,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 UnspentOutputReference[] res;
                 res = this.GetSpendableTransactions(this.chainIndexer.Tip.Height, confirmations).ToArray();
+
+                this.logger.LogDebug("Lock released");
 
                 return res;
             }
@@ -379,6 +394,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 this.UpdateLastBlockSyncedHeight(fork);
             }
+
+            this.logger.LogDebug("Lock released");
         }
 
         /// <inheritdoc />
@@ -399,6 +416,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     this.WalletTipHash = chainedHeader.HashBlock;
                     this.WalletTipHeight = chainedHeader.Height;
                     this.logger.LogTrace("(-)[NO_WALLET]");
+
+                    this.logger.LogDebug("Lock released");
+
                     return;
                 }
 
@@ -412,6 +432,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     if (chainedHeader.Height > this.WalletTipHeight)
                     {
                         this.logger.LogTrace("(-)[BLOCK_TOO_FAR]");
+
+                        this.logger.LogDebug("Lock released");
+
                         throw new WalletException("block too far in the future has arrived to the wallet");
                     }
                 }
@@ -438,6 +461,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     this.SaveWallet();
                 }
             }
+
+            this.logger.LogDebug("Lock released");
         }
 
         /// <inheritdoc />
@@ -473,6 +498,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     // FederationWalletTransactionHandler.BuildTransaction and FederationWalletManager.ProcessTransaction.
                     if (blockHeight == null && tTx.SpendingDetails?.BlockHeight != null)
                     {
+                        this.logger.LogDebug("Lock released");
+
                         return false;
                     }
                 }
@@ -487,6 +514,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     if ((walletData.Count == 1) && (walletData[0].withdrawal.BlockNumber != 0))
                     {
                         this.logger.LogDebug("Deposit {0} Already included in block.", withdrawal.DepositId);
+
+                        this.logger.LogDebug("Lock released");
+
                         return false;
                     }
 
@@ -522,7 +552,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     {
                         // If script is empty ignore it.
                         if (o.IsEmpty)
+                        {
+                            this.logger.LogDebug("Lock released");
                             return false;
+                        }
 
                         // Check if the destination script is one of the wallet's.
                         // TODO fix this
@@ -530,12 +563,18 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                         // Include the keys not included in our wallets (external payees).
                         if (!found)
-                            return true;
+                        {
+                            this.logger.LogDebug("Lock released");
 
+                            return true;
+                        }
                         // Include the keys that are in the wallet but that are for receiving
                         // addresses (which would mean the user paid itself).
                         // We also exclude the keys involved in a staking transaction.
                         //return !addr.IsChangeAddress() && !transaction.IsCoinStake;
+
+                        this.logger.LogDebug("Lock released");
+
                         return true;
                     });
 
@@ -552,6 +591,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         this.SaveWallet();
                     }
                 }
+
+                this.logger.LogDebug("Lock released");
 
                 return foundSendingTrx || foundReceivingTrx;
             }
@@ -649,6 +690,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 {
                     this.SaveWallet();
                 }
+
+                this.logger.LogDebug("Lock released");
 
                 return removedTransactions;
             }
@@ -872,6 +915,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 this.fileStorage.SaveToFile(this.Wallet, WalletFileName);
             }
+
+            this.logger.LogDebug("Lock released");
         }
 
         /// <inheritdoc />
@@ -905,6 +950,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     walletUpdated = true;
                 }
 
+                this.logger.LogDebug("Lock released");
+
                 return walletUpdated;
             }
         }
@@ -927,6 +974,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 {
                     walletUpdated |= this.RemoveTransaction(transaction);
                 }
+
+                this.logger.LogDebug("Lock released");
 
                 return walletUpdated;
             }
@@ -980,10 +1029,14 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 if (sort)
                 {
+                    this.logger.LogDebug("Lock released");
+
                     return withdrawals
                         .OrderBy(w => this.EarliestOutput(w.Item1), Comparer<OutPoint>.Create((x, y) => this.CompareOutpoints(x, y)))
                         .ToList();
                 }
+
+                this.logger.LogDebug("Lock released");
 
                 return withdrawals;
             }
@@ -1062,7 +1115,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 List<Coin> coins = checkSignature ? new List<Coin>() : null;
                 // Verify that the transaction has valid UTXOs.
                 if (!this.TransactionHasValidUTXOs(transaction, coins))
+                {
+                    this.logger.LogDebug("Lock released");
                     return false;
+                }
 
                 // Verify that there are no earlier unspent UTXOs.
                 Comparer<TransactionData> comparer = Comparer<TransactionData>.Create(DeterministicCoinOrdering.CompareTransactionData);
@@ -1075,7 +1131,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
                                                              .OrderByDescending(t => t, comparer)
                                                              .FirstOrDefault();
                     if (oldestInput != null && DeterministicCoinOrdering.CompareTransactionData(earliestUnspent, oldestInput) < 0)
+                    {
+                        this.logger.LogDebug("Lock released");
                         return false;
+                    }
                 }
 
                 // Verify that all inputs are signed.
@@ -1091,9 +1150,13 @@ namespace Stratis.Features.FederatedPeg.Wallet
                             this.logger.LogInformation("{0} FAILED - {1}", nameof(TransactionBuilder.Verify), transactionPolicyError.ToString());
                         }
 
+                        this.logger.LogDebug("Lock released");
+
                         return false;
                     }
                 }
+
+                this.logger.LogDebug("Lock released");
 
                 return true;
             }
@@ -1112,7 +1175,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 // Verify that the transaction's UTXOs aren't used yet.
                 if (!this.TransactionIsSpendingUnspentUTXOs(transaction, coins))
+                {
+                    this.logger.LogDebug("Lock released");
                     return false;
+                }
 
                 // TODO: Check the inputs are in order?
 
@@ -1129,9 +1195,13 @@ namespace Stratis.Features.FederatedPeg.Wallet
                             this.logger.LogInformation("{0} FAILED - {1}", nameof(TransactionBuilder.Verify), transactionPolicyError.ToString());
                         }
 
+                        this.logger.LogDebug("Lock released");
+
                         return false;
                     }
                 }
+
+                this.logger.LogDebug("Lock released");
 
                 return true;
             }
@@ -1158,6 +1228,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 this.WalletTipHash = chainedHeader.HashBlock;
                 this.WalletTipHeight = chainedHeader.Height;
             }
+
+            this.logger.LogDebug("Lock released");
         }
 
         /// <summary>
@@ -1305,6 +1377,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 long confirmed = transactions.Sum(t => t.SpendableAmount(true));
                 long total = transactions.Sum(t => t.SpendableAmount(false));
+
+                this.logger.LogDebug("Lock released");
 
                 return (confirmed, total - confirmed);
             }
