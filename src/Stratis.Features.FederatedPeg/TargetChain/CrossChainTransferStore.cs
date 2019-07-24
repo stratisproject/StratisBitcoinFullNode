@@ -917,23 +917,23 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <returns>Returns <c>true</c> if the store is in sync or <c>false</c> otherwise.</returns>
         private bool Synchronize()
         {
+            HashHeightPair tipToChase = this.TipToChase();
+            if (this.TipHashAndHeight == null)
+            {
+                this.logger.LogError("Failed to synchronise. Reason: {0} is null.", nameof(this.TipHashAndHeight));
+                this.logger.LogTrace("(-)[SYNCHRONIZED]:false");
+                return false;
+            }
+
+            if (tipToChase.Hash == this.TipHashAndHeight.HashBlock)
+            {
+                // Indicate that we are synchronized.
+                this.logger.LogTrace("(-)[SYNCHRONIZED]:true");
+                return true;
+            }
+
             lock (this.lockObj)
             {
-                HashHeightPair tipToChase = this.TipToChase();
-                if (this.TipHashAndHeight == null)
-                {
-                    this.logger.LogError("Failed to synchronise. Reason: {0} is null.", nameof(this.TipHashAndHeight));
-                    this.logger.LogTrace("(-)[SYNCHRONIZED]:false");
-                    return false;
-                }
-
-                if (tipToChase.Hash == this.TipHashAndHeight.HashBlock)
-                {
-                    // Indicate that we are synchronized.
-                    this.logger.LogTrace("(-)[SYNCHRONIZED]:true");
-                    return true;
-                }
-
                 while (!this.cancellation.IsCancellationRequested)
                 {
                     if (this.HasSuspended())
@@ -1084,30 +1084,30 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             });
         }
 
-        private ICrossChainTransfer[] Get(uint256[] depositId)
+        private ICrossChainTransfer[] Get(uint256[] depositIds)
         {
             using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
             {
                 dbreezeTransaction.ValuesLazyLoadingIsOn = false;
 
-                return this.Get(dbreezeTransaction, depositId);
+                return this.Get(dbreezeTransaction, depositIds);
             }
         }
 
-        private CrossChainTransfer[] Get(DBreeze.Transactions.Transaction transaction, uint256[] depositId)
+        private CrossChainTransfer[] Get(DBreeze.Transactions.Transaction transaction, uint256[] depositIds)
         {
-            Guard.NotNull(depositId, nameof(depositId));
+            Guard.NotNull(depositIds, nameof(depositIds));
 
             // To boost performance we will access the deposits sorted by deposit id.
             var depositDict = new Dictionary<uint256, int>();
-            for (int i = 0; i < depositId.Length; i++)
-                depositDict[depositId[i]] = i;
+            for (int i = 0; i < depositIds.Length; i++)
+                depositDict[depositIds[i]] = i;
 
             var byteListComparer = new ByteListComparer();
             List<KeyValuePair<uint256, int>> depositList = depositDict.ToList();
             depositList.Sort((pair1, pair2) => byteListComparer.Compare(pair1.Key.ToBytes(), pair2.Key.ToBytes()));
 
-            var res = new CrossChainTransfer[depositId.Length];
+            var res = new CrossChainTransfer[depositIds.Length];
 
             foreach (KeyValuePair<uint256, int> kv in depositList)
             {
@@ -1180,20 +1180,18 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <inheritdoc />
         public ICrossChainTransfer[] QueryTransfersByStatus(CrossChainTransferStatus[] statuses)
         {
+            //lock (this.lockObj)
+            //{
+            //    return this.federationWalletManager.Synchronous(() =>
+            //    {
+            //        Guard.Assert(this.Synchronize());
+            //        return this.GetTransfersByStatusInternalLocked(statuses, true, false);
+            //    });
+            //}
+
             lock (this.lockObj)
             {
-                this.logger.LogDebug("Lock waiting");
-
-                return this.federationWalletManager.Synchronous(() =>
-                {
-                    this.logger.LogDebug("Lock taken");
-
-                    Guard.Assert(this.Synchronize());
-
-                    this.logger.LogDebug("Lock released");
-
-                    return this.GetTransfersByStatusInternalLocked(statuses, true, false);
-                });
+                return this.GetTransfersByStatusInternalLocked(statuses, true, false);
             }
         }
 

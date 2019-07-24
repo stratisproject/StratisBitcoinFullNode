@@ -925,38 +925,31 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public bool RemoveUnconfirmedTransactionData()
         {
-            this.logger.LogDebug("Lock waiting");
+            bool walletUpdated = false;
 
-            lock (this.lockObject)
+            foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions.ToList())
             {
-                this.logger.LogDebug("Lock taken");
-
-                bool walletUpdated = false;
-
-                foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions.ToList())
+                // Change for unconfirmed transaction?
+                if (transactionData.BlockHeight == null)
                 {
-                    // Change for unconfirmed transaction?
-                    if (transactionData.BlockHeight == null)
-                    {
-                        this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
-                    }
-                    // Spend by unconfirmed transaction?
-                    else if (transactionData.SpendingDetails != null && transactionData.SpendingDetails.BlockHeight == null)
-                    {
-                        transactionData.SpendingDetails = null;
-                    }
-                    else
-                    {
-                        continue;
-                    }
-
-                    walletUpdated = true;
+                    this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
+                }
+                // Spend by unconfirmed transaction?
+                else if (transactionData.SpendingDetails != null && transactionData.SpendingDetails.BlockHeight == null)
+                {
+                    transactionData.SpendingDetails = null;
+                }
+                else
+                {
+                    continue;
                 }
 
-                this.logger.LogDebug("Lock released");
-
-                return walletUpdated;
+                walletUpdated = true;
             }
+
+            this.logger.LogDebug("Lock released");
+
+            return walletUpdated;
         }
 
         /// <inheritdoc />
@@ -981,7 +974,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 {
                     walletUpdated |= this.RemoveTransaction(transaction);
                 }
-
 
                 this.logger.LogDebug("Lock released");
 
@@ -1375,21 +1367,12 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public (Money ConfirmedAmount, Money UnConfirmedAmount) GetSpendableAmount()
         {
-            this.logger.LogDebug("Lock waiting");
+            IEnumerable<TransactionData> transactions = this.Wallet.MultiSigAddress.Transactions.GetUnspentTransactions();
 
-            lock (this.lockObject)
-            {
-                this.logger.LogDebug("Lock taken");
+            long confirmed = transactions.Sum(t => t.SpendableAmount(true));
+            long total = transactions.Sum(t => t.SpendableAmount(false));
 
-                IEnumerable<TransactionData> transactions = this.Wallet.MultiSigAddress.Transactions.GetUnspentTransactions();
-
-                long confirmed = transactions.Sum(t => t.SpendableAmount(true));
-                long total = transactions.Sum(t => t.SpendableAmount(false));
-
-                this.logger.LogDebug("Lock released");
-
-                return (confirmed, total - confirmed);
-            }
+            return (confirmed, total - confirmed);
         }
     }
 }
