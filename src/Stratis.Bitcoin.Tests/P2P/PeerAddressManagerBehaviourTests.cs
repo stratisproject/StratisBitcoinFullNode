@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             networkPeer.SetupGet(n => n.PeerVersion).Returns(new VersionPayload() { AddressFrom = addressFromEndpoint });
             networkPeer.SetupGet(n => n.State).Returns(NetworkPeerState.HandShaked);
             networkPeer.Setup(n => n.GetHandshakedEndPoint())
-                .Returns(NetworkPeer.GetHandshakedEndPoint(networkPeer.Object.Inbound, networkPeer.Object.State, networkPeer.Object.PeerVersion, networkPeer.Object.PeerEndPoint));
+                .Returns(NetworkPeer.GetHandshakedEndPoint(networkPeer.Object.State, networkPeer.Object.PeerVersion, networkPeer.Object.PeerEndPoint));
 
             var messageReceived = new AsyncExecutionEvent<INetworkPeer, IncomingMessage>();
             networkPeer.SetupGet(n => n.MessageReceived).Returns(messageReceived);
@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             networkPeer.SetupGet(n => n.PeerVersion).Returns(new VersionPayload() { AddressFrom = addressFromEndpoint });
             networkPeer.SetupGet(n => n.State).Returns(NetworkPeerState.HandShaked);
             networkPeer.Setup(n => n.GetHandshakedEndPoint())
-                .Returns(NetworkPeer.GetHandshakedEndPoint(networkPeer.Object.Inbound, networkPeer.Object.State, networkPeer.Object.PeerVersion, networkPeer.Object.PeerEndPoint));
+                .Returns(NetworkPeer.GetHandshakedEndPoint(networkPeer.Object.State, networkPeer.Object.PeerVersion, networkPeer.Object.PeerEndPoint));
 
             var messageReceived = new AsyncExecutionEvent<INetworkPeer, IncomingMessage>();
             networkPeer.SetupGet(n => n.MessageReceived).Returns(messageReceived);

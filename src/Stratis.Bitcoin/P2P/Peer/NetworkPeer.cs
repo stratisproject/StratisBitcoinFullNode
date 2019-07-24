@@ -199,21 +199,18 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        public static IPEndPoint GetHandshakedEndPoint(bool inbound, NetworkPeerState state, VersionPayload peerVersion, IPEndPoint peerEndPoint)
+        public static IPEndPoint GetHandshakedEndPoint(NetworkPeerState state, VersionPayload peerVersion, IPEndPoint peerEndPoint)
         {
-            if (inbound && state == NetworkPeerState.HandShaked && peerVersion?.AddressFrom != null)
+            if (state == NetworkPeerState.HandShaked && peerVersion?.AddressFrom != null)
             {
+                IPEndPoint addressFrom = peerVersion.AddressFrom.MapToIpv6();
+
+                // If it is a Loopback address use PeerEndpoint but combine it with the AdressFrom's port as that is the other node's listening port.
+                if (addressFrom.Address.Equals(IPAddress.Loopback.EnsureIPv6()))
+                    return new IPEndPoint(peerEndPoint.Address.EnsureIPv6(), addressFrom.Port);
+
                 // Use AddressFrom if it is not a Loopback address as this means the inbound node was configured with a different external endpoint.
-                if (!IPAddress.IsLoopback(peerVersion.AddressFrom.Address) && !peerVersion.AddressFrom.Address.IsLocal())
-                {
-                    peerEndPoint = peerVersion.AddressFrom;
-                }
-                else
-                {
-                    // If it is a Loopback address use PeerEndpoint but combine it with the AdressFrom's port as that is the
-                    // other node's listening port.
-                    peerEndPoint = new IPEndPoint(peerEndPoint.Address, peerVersion.AddressFrom.Port);
-                }
+                return addressFrom;
             }
 
             return peerEndPoint.MapToIpv6();
@@ -222,7 +219,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc />
         public IPEndPoint GetHandshakedEndPoint()
         {
-            return GetHandshakedEndPoint(this.Inbound, this.State, this.PeerVersion, this.PeerEndPoint);
+            return GetHandshakedEndPoint(this.State, this.PeerVersion, this.PeerEndPoint);
         }
 
         /// <inheritdoc />
