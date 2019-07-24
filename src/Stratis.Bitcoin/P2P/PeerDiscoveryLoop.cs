@@ -10,7 +10,6 @@ using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 
@@ -191,12 +190,13 @@ namespace Stratis.Bitcoin.P2P
 
                         connectTokenSource.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(5));
                     }
-                    catch
+                    catch (Exception e)
                     {
-                    }
-                    finally
-                    {
-                        networkPeer?.Disconnect("Discovery job done");
+                        // This happens too often to log properly but to help us in future at least log the Message on Trace.
+                        this.logger.LogTrace("Discovery job failed: {0}", e.Message);
+
+                        // If we had made it far enough to create the connection we need to discard it.
+                        networkPeer?.Disconnect("Discovery job threw an exception", e);
                         networkPeer?.Dispose();
                     }
 
