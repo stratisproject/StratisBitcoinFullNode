@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.AsyncWork;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -415,7 +416,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 if ((newState == NetworkPeerState.Failed) || (newState == NetworkPeerState.Offline))
                 {
                     this.logger.LogDebug("Communication with the peer has been closed.");
-
+                    this.asyncProvider.Signals.Publish(new PeerDisconnected(this.Inbound, this.PeerEndPoint, this.DisconnectReason?.Reason, this.DisconnectReason?.Exception));
                     this.ExecuteDisconnectedCallbackWhenSafe();
                 }
             }
