@@ -5,11 +5,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 {
     public class AddressIndexerTipData
     {
+        [BsonId]
         public int Id { get; set; }
 
         public byte[] TipHashBytes { get; set; }
 
         public int Height { get; set; }
+
+        public override string ToString()
+        {
+            return $"{nameof(this.Height)}:{this.Height}";
+        }
     }
 
     public class OutPointData
@@ -24,7 +30,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
     public class AddressIndexerRewindData
     {
-        [BsonId]
+        [BsonId(false)]
         public string BlockHash { get; set; }
 
         public int BlockHeight { get; set; }
