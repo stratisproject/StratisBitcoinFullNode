@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 var stratisXBestBlockHash = default(uint256);
 
                 // Wait for the nodes to settle on the same tip.
-                TestHelper.WaitLoop(() =>
+                TestBase.WaitLoop(() =>
                     {
                         stratisBestBlockHash = stratisNodeRpc.GetBestBlockHash();
                         stratisXBestBlockHash = stratisXRpc.GetBestBlockHash();
@@ -178,16 +178,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 stratisNodeRpc.WalletPassphrase("password", 60);
                 stratisNodeRpc.SendToAddress(aliceAddress, Money.Coins(1.0m));
 
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 1, waitTimeSeconds: 60);
+                TestBase.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 1, waitTimeSeconds: 60);
 
                 // Transaction should percolate through to X's mempool.
-                TestHelper.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 1, waitTimeSeconds: 60);
+                TestBase.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 1, waitTimeSeconds: 60);
 
                 // Now SBFN must mine the block.
                 TestHelper.MineBlocks(stratisNode, 1);
 
                 // Wait for the nodes to settle on the same tip.
-                TestHelper.WaitLoop(() =>
+                TestBase.WaitLoop(() =>
                     {
                         stratisBestBlockHash = stratisNodeRpc.GetBestBlockHash();
                         stratisXBestBlockHash = stratisXRpc.GetBestBlockHash();
@@ -197,9 +197,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                     waitTimeSeconds: 15 * 60);
 
                 // Sanity check - mempools should both become empty.
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 0, waitTimeSeconds: 60);
+                TestBase.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 0, waitTimeSeconds: 60);
 
-                TestHelper.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 0, waitTimeSeconds: 60);
+                TestBase.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 0, waitTimeSeconds: 60);
             }
         }
 
