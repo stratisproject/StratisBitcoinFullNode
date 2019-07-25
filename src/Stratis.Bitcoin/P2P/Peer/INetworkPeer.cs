@@ -59,6 +59,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary><c>true</c> if the connection to the peer is considered active, <c>false</c> otherwise, including any case of error.</summary>
         bool IsConnected { get; }
 
+        /// <summary><c>true</c> if the connection to the peer is purely to discover peers from our side, <c>false</c> otherwise.</summary>
+        bool IsForPeerDiscovery { get; }
+
         /// <summary>Node's version message payload that is sent to the peer.</summary>
         VersionPayload MyVersion { get; }
 

@@ -37,6 +37,8 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public CancellationToken ConnectCancellation { get; set; }
 
+        public bool IsForPeerDiscovery { get; set; }
+
         public List<INetworkPeerBehavior> TemplateBehaviors { get; }
 
         public NetworkPeerConnectionParameters()
@@ -77,6 +79,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Nonce = other.Nonce;
             this.Advertize = other.Advertize;
             this.PreferredTransactionOptions = other.PreferredTransactionOptions;
+            this.IsForPeerDiscovery = other.IsForPeerDiscovery;
 
             foreach (INetworkPeerBehavior behavior in other.TemplateBehaviors)
             {

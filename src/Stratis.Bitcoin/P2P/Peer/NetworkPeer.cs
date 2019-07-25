@@ -163,6 +163,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc/>
         public NetworkPeerConnection Connection { get; private set; }
 
+        /// <inheritdoc/>
+        public bool IsForPeerDiscovery { get; private set; }
+
         /// <summary>Statistics about the number of bytes transferred from and to the peer.</summary>
         private PerformanceCounter counter;
 
