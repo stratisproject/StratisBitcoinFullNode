@@ -114,9 +114,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             StoreSettings.BuildDefaultConfigurationFile(builder, network);
         }
 
-        public override async Task InitializeAsync()
+        public override Task InitializeAsync()
         {
-            await this.prunedBlockRepository.InitializeAsync().ConfigureAwait(false);
+            this.prunedBlockRepository.Initialize();
 
             if (!this.storeSettings.PruningEnabled && this.prunedBlockRepository.PrunedTip != null)
                 throw new BlockStoreException("The node cannot start as it has been previously pruned, please clear the data folders and resync.");
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     throw new BlockStoreException($"The amount of blocks to prune [{this.storeSettings.AmountOfBlocksToKeep}] (blocks to keep) cannot be less than the node's max reorg length of {this.network.Consensus.MaxReorgLength}.");
 
                 this.logger.LogInformation("Pruning BlockStore...");
-                await this.prunedBlockRepository.PruneAndCompactDatabase(this.chainState.BlockStoreTip, this.network, true);
+                this.prunedBlockRepository.PruneAndCompactDatabase(this.chainState.BlockStoreTip, this.network, true);
             }
 
             // Use ProvenHeadersBlockStoreBehavior for PoS Networks
@@ -153,6 +153,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blockStoreSignaled.Initialize();
 
             this.addressIndexer.Initialize();
+
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
