@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.network = network;
             this.performanceCounter = new BackendPerformanceCounter(dateTimeProvider);
 
-            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 400);
+            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, this.GetType().Name, 400);
 
         }
 

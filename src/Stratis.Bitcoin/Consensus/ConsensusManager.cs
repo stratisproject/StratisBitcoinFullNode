@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ConsensusManagerPerformanceCounter performanceCounter;
 
         private readonly ConsensusSettings consensusSettings;
-        
+
         private readonly IDateTimeProvider dateTimeProvider;
 
         private bool isIbd;
@@ -204,9 +204,9 @@ namespace Stratis.Bitcoin.Consensus
             this.consensusSettings = consensusSettings;
             this.maxUnconsumedBlocksDataBytes = consensusSettings.MaxBlockMemoryInMB * 1024 * 1024;
 
-            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1000);
-            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 1000);
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name, 1000);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name, 1000);
+            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, this.GetType().Name, 1000);
         }
 
         /// <inheritdoc />
@@ -1008,10 +1008,10 @@ namespace Stratis.Bitcoin.Consensus
                     }
                     else
                     {
-                       if (downloadedCallbacks.Callbacks == null)
-                           downloadedCallbacks.Callbacks = new List<OnBlockDownloadedCallback>();
+                        if (downloadedCallbacks.Callbacks == null)
+                            downloadedCallbacks.Callbacks = new List<OnBlockDownloadedCallback>();
 
-                       downloadedCallbacks.Callbacks.Add(onBlockDownloadedCallback);
+                        downloadedCallbacks.Callbacks.Add(onBlockDownloadedCallback);
                     }
 
                     bool blockIsNotConsecutive = (previousHeader != null) && (chainedHeader.Previous.HashBlock != previousHeader.HashBlock);

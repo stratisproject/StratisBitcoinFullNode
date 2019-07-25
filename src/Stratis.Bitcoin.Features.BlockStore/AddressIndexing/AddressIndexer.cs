@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             this.asyncProvider.RegisterTask($"{nameof(AddressIndexer)}.{nameof(this.indexingTask)}", this.indexingTask);
 
-            this.nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 400);
+            this.nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name, 400);
         }
 
         private async Task IndexAddressesContinuouslyAsync()
