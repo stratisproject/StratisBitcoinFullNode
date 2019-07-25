@@ -118,14 +118,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             {
                 var itemsToPurge = this.addressIndexerRewindData.Find(x => x.BlockHeight < height).ToArray();
 
-                this.logger.LogInformation("Purging {0} rewind data items.", itemsToPurge.Count());
-
-                for (int i = 0; i < itemsToPurge.Count(); i++)
+                if (itemsToPurge.Length > 0)
                 {
-                    this.addressIndexerRewindData.Delete(itemsToPurge[i].BlockHash);
+                    this.logger.LogInformation("Purging {0} rewind data items.", itemsToPurge.Count());
 
-                    if (i % 100 == 0)
-                        this.logger.LogInformation("Purging {0}/{1} rewind data items.", i, itemsToPurge.Count());
+                    for (int i = 0; i < itemsToPurge.Count(); i++)
+                    {
+                        this.addressIndexerRewindData.Delete(itemsToPurge[i].BlockHash);
+
+                        if (i % 100 == 0)
+                            this.logger.LogInformation("Purging {0}/{1} rewind data items.", i, itemsToPurge.Count());
+                    }
                 }
             }
         }
