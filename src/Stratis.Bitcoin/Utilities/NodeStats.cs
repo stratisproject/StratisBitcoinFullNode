@@ -26,6 +26,9 @@ namespace Stratis.Bitcoin.Utilities
 
     public class NodeStats : INodeStats
     {
+        // The amount of seconds the period loop will wait on a component to return it's stats before cancelling.
+        private const int ComponentStatsWaitSeconds = 10;
+
         /// <summary>Protects access to <see cref="stats"/>.</summary>
         private readonly object locker;
 
@@ -69,16 +72,13 @@ namespace Stratis.Bitcoin.Utilities
             {
                 string date = this.dateTimeProvider.GetUtcNow().ToString(CultureInfo.InvariantCulture);
 
-                // The amount of seconds the period loop will wait on a component to return its stats before cancelling.
-                int componentStatsWaitSeconds = 10;
-
                 statsBuilder.AppendLine($"======Node stats====== {date}");
 
                 foreach (StatsItem inlineStatItem in this.stats.Where(x => x.StatsType == StatsType.Inline))
                 {
                     try
                     {
-                        using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(componentStatsWaitSeconds)))
+                        using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(ComponentStatsWaitSeconds)))
                         {
                             Task.Run(() =>
                             {
@@ -88,7 +88,11 @@ namespace Stratis.Bitcoin.Utilities
                     }
                     catch (OperationCanceledException)
                     {
-                        this.logger.LogWarning("{0} failed to provide inline statistics after {1} seconds, please investigate...", inlineStatItem.ComponentName, componentStatsWaitSeconds);
+                        this.logger.LogWarning("{0} failed to provide inline statistics after {1} seconds, please investigate...", inlineStatItem.ComponentName, ComponentStatsWaitSeconds);
+                    }
+                    catch (Exception ex)
+                    {
+                        this.logger.LogError("{0} failed to provide inline statistics: {1}", inlineStatItem.ComponentName, ex.ToString());
                     }
                 }
 
@@ -96,7 +100,7 @@ namespace Stratis.Bitcoin.Utilities
                 {
                     try
                     {
-                        using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(componentStatsWaitSeconds)))
+                        using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(ComponentStatsWaitSeconds)))
                         {
                             Task.Run(() =>
                             {
@@ -106,7 +110,11 @@ namespace Stratis.Bitcoin.Utilities
                     }
                     catch (OperationCanceledException)
                     {
-                        this.logger.LogWarning("{0} failed to provide statistics after {1} seconds, please investigate...", componentStatItem.ComponentName, componentStatsWaitSeconds);
+                        this.logger.LogWarning("{0} failed to provide statistics after {1} seconds, please investigate...", componentStatItem.ComponentName, ComponentStatsWaitSeconds);
+                    }
+                    catch (Exception ex)
+                    {
+                        this.logger.LogError("{0} failed to provide statistics: {1}", componentStatItem.ComponentName, ex.ToString());
                     }
                 }
             }

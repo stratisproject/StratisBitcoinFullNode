@@ -192,7 +192,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
                 var inMemoryCoinView = new InMemoryCoinView(this.ChainIndexer.Tip.HashBlock);
-                this.cachedCoinView = new CachedCoinView(inMemoryCoinView, dateTimeProvider, new LoggerFactory(), new NodeStats(dateTimeProvider, this.loggerFactory));
+                this.cachedCoinView = new CachedCoinView(inMemoryCoinView, dateTimeProvider, this.loggerFactory, new NodeStats(dateTimeProvider, this.loggerFactory));
 
                 this.NodeSettings = new NodeSettings(this.network, args: new string[] { "-checkpoints" });
                 var consensusSettings = new ConsensusSettings(this.NodeSettings);
