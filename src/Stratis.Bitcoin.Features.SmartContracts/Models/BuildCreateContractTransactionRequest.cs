@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.Wallet.Validations;
@@ -28,6 +29,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         /// Amount field. Defaults to "account 0".
         /// </summary>
         public string AccountName { get; set; }
+
+        /// <summary>
+        /// A list of outpoints to use as inputs for the transaction.
+        /// </summary> 
+        public List<OutpointRequestModel> Outpoints { get; set; }
 
         /// <summary>
         /// The amount of STRAT (or the sidechain coin) to send to the smart contract address on creation.

@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var stakeChain = new StakeChainStore(network, chain, null, loggerFactory);
             consensusRules = new PosConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(),
                 inMemoryCoinView, stakeChain, new StakeValidator(network, stakeChain, chain, inMemoryCoinView, loggerFactory), chainState, new InvalidBlockHashStore(dateTimeProvider),
-                new NodeStats(dateTimeProvider), new RewindDataIndexCache(dateTimeProvider, network), asyncProvider, consensusRulesContainer).SetupRulesEngineParent();
+                new NodeStats(dateTimeProvider, loggerFactory), new RewindDataIndexCache(dateTimeProvider, network), asyncProvider, consensusRulesContainer).SetupRulesEngineParent();
 
             ConsensusManager consensus = ConsensusManagerHelper.CreateConsensusManager(network, dataDir, chainState, chainIndexer: chain, consensusRules: consensusRules, inMemoryCoinView: inMemoryCoinView);
 
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var deployments = new NodeDeployments(network, chain);
 
             ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(),
-                inMemoryCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), asyncProvider, consensusRulesContainer).SetupRulesEngineParent();
+                inMemoryCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider, loggerFactory), asyncProvider, consensusRulesContainer).SetupRulesEngineParent();
 
             ConsensusManager consensus = ConsensusManagerHelper.CreateConsensusManager(network, dataDir, chainState, chainIndexer: chain, consensusRules: consensusRules, inMemoryCoinView: inMemoryCoinView);
 

@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.cachedRewindDataIndex = new SortedDictionary<int, RewindData>();
             this.random = new Random();
 
-            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 300);
+            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, this.GetType().Name, 300);
         }
 
         /// <inheritdoc />

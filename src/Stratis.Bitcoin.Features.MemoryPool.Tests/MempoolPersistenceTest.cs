@@ -299,7 +299,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var asyncProvider = new AsyncProvider(nodeSettings.LoggerFactory, new Mock<ISignals>().Object, new NodeLifetime());
 
             ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, chain, new NodeDeployments(this.network, chain),
-                consensusSettings, new Checkpoints(), coins, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), asyncProvider, consensusRulesContainer).SetupRulesEngineParent();
+                consensusSettings, new Checkpoints(), coins, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider, loggerFactory), asyncProvider, consensusRulesContainer).SetupRulesEngineParent();
             var mempoolValidator = new MempoolValidator(txMemPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coins, loggerFactory, settings, consensusRules);
             return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, loggerFactory, settings.Network);
         }

@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Stratis.Bitcoin.Utilities.Extensions
+namespace Stratis.Bitcoin
 {
     public static class TaskExtensions
     {
@@ -30,7 +30,6 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         /// Allows to cancel awaitable operations with a cancellationToken.
         /// https://devblogs.microsoft.com/pfxteam/how-do-i-cancel-non-cancelable-async-operations/
         /// </summary>
-        /// <typeparam name="T">Task return type</typeparam>
         /// <param name="task">The task.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns></returns>

@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Connection
 
             this.Parameters.Version = this.NodeSettings.ProtocolVersion;
 
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1100);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name, 1100);
         }
 
         /// <inheritdoc />

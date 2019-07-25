@@ -101,8 +101,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
             this.lightWalletBlockStoreService = lightWalletBlockStoreService;
 
-            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline);
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name);
         }
 
         /// <summary>
