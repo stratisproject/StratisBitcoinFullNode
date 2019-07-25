@@ -146,9 +146,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             #region Smart Contract Components
 
             internal AddressGenerator AddressGenerator { get; private set; }
-            private bool useCheckpoints = true;
             public Key privateKey;
-            private ReflectionVirtualMachine vm;
             private ISerializer serializer;
             private ContractAssemblyLoader assemblyLoader;
             public ICallDataSerializer callDataSerializer;

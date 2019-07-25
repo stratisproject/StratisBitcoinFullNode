@@ -51,7 +51,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         {
             long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, -block.BlockSize.Value);
 
-            this.logger.LogDebug("Queue sized changed to {0} bytes.", currentBlockQueueSize);
+            this.logger.LogDebug("Block '{0}' queued for processing. Queue size changed to {1} bytes.", block.GetHash(), currentBlockQueueSize);
 
             await this.callback(block, cancellationToken);
         }

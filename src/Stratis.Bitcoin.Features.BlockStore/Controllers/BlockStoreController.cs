@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -30,7 +29,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
     {
         private readonly IAddressIndexer addressIndexer;
 
-        /// <see cref="IBlockStore"/>
+        /// <summary>Provides access to the block store on disk.</summary>
         private readonly IBlockStore blockStore;
 
         /// <summary>Instance logger.</summary>
@@ -93,12 +92,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         /// <returns><see cref="BlockModel"/> if block is found, <see cref="NotFoundObjectResult"/> if not found. Returns <see cref="IActionResult"/> with error information if exception thrown.</returns>
         [Route(BlockStoreRouteEndPoint.GetBlock)]
         [HttpGet]
-        public async Task<IActionResult> GetBlockAsync([FromQuery] SearchByHashRequest query)
+        public IActionResult GetBlock([FromQuery] SearchByHashRequest query)
         {
             if (!this.ModelState.IsValid)
-            {
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
 
             try
             {
@@ -106,7 +103,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
                 if (block == null)
                 {
-                    return new NotFoundObjectResult("Block not found");
+                    return Ok("Block not found");
                 }
 
                 if (!query.OutputJson)
@@ -147,6 +144,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
         /// <summary>Provides balance of the given addresses confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
         /// <param name="addresses">A comma delimited set of addresses that will be queried.</param>
+        /// <param name="minConfirmations">Only blocks below consensus tip less this parameter will be considered.</param>
         /// <returns>A result object containing the balance for each requested address and if so, a meesage stating why the indexer is not queryable.</returns>
         [Route(BlockStoreRouteEndPoint.GetAddressesBalances)]
         [HttpGet]
