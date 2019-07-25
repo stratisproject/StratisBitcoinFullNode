@@ -5,4 +5,11 @@
     <Version>0.0.2-beta</Version>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Tracer.Fody" Version="2.2.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
 </Project>

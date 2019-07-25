@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,7 +10,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using NSubstitute;
-using NSubstitute.Extensions;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
@@ -139,7 +137,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             dnsSettings.DnsHostName = "stratis.test.com";
             ConnectionManagerSettings connectionManagerSettings = new ConnectionManagerSettings(NodeSettings.Default(this.Network));
 
-            Action a = () => new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, dnsServer, connectionManagerSettings, dnsSettings, 
+            Action a = () => new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, dnsServer, connectionManagerSettings, dnsSettings,
                     null);
 
             // Act and Assert.
@@ -590,7 +588,8 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             mockLoggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(mockLogger.Object);
             ILoggerFactory loggerFactory = mockLoggerFactory.Object;
 
-            IPeerAddressManager peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, loggerFactory, new SelfEndpointTracker(loggerFactory));
+            ConnectionManagerSettings connectionManagerSettings = new ConnectionManagerSettings(NodeSettings.Default(this.Network));
+            IPeerAddressManager peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, loggerFactory, new SelfEndpointTracker(loggerFactory, connectionManagerSettings));
 
             foreach (Tuple<IPEndPoint, DateTimeOffset> testData in testDataSet)
             {

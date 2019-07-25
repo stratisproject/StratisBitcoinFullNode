@@ -6,7 +6,6 @@ using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.SmartContracts.Networks;
-using Stratis.SmartContracts.Tests.Common.MockChain;
 
 namespace Stratis.SmartContracts.Tests.Common
 {
@@ -44,6 +43,18 @@ namespace Stratis.SmartContracts.Tests.Common
             var tool = new KeyTool(settings.DataFolder);
             tool.SavePrivateKey(network.FederationKeys[nodeIndex]);
 
+            return node;
+        }
+
+        public CoreNode CreateWhitelistedContractPoANode(SmartContractsPoARegTest network, int nodeIndex)
+        {
+            string dataFolder = this.GetNextDataFolderName();
+
+            CoreNode node = this.CreateNode(new WhitelistedContractPoARunner(dataFolder, network, this.TimeProvider), "poa.conf");
+            var settings = new NodeSettings(network, args: new string[] { "-conf=poa.conf", "-datadir=" + dataFolder });
+
+            var tool = new KeyTool(settings.DataFolder);
+            tool.SavePrivateKey(network.FederationKeys[nodeIndex]);
             return node;
         }
 

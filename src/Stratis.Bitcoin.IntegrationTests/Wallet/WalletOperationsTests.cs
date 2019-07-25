@@ -9,6 +9,7 @@ using FluentAssertions;
 using Flurl;
 using Flurl.Http;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Models;
@@ -28,6 +29,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         public CoreNode Node { get; }
 
         internal readonly string walletWithFundsName = "wallet-with-funds";
+
+        internal readonly string walletWithFundsPassword = "123456";
+
+        internal readonly string addressWithFunds = "TRCT9QP3ipb6zCvW15yKoEtaU418UaKVE2";
+
+        internal readonly string addressWithoutFunds = "TDQAiMyvWZeQxuL9U1BJXt8XrTRMgwjCBe";
+
+        internal readonly string signatureMessage = "This is a test";
+
+        internal readonly string validSignature = "IFpsneU79ikNfeqljDgSwrvdgOyEmrydaib1Xdc/npr7O1s+9GrAzaVOMfvz5x9mq4395JZQfNhSNiUqK0qTW4M=";
 
         public string WalletWithFundsFilePath { get; }
 
@@ -159,10 +170,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             wallet.Network.Should().Be(this.fixture.Node.FullNode.Network);
 
             // Check only one account is created.
-            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+            wallet.GetAccounts().Should().ContainSingle();
 
             // Check the created account.
-            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            HdAccount account = wallet.GetAccounts().Single();
             account.Name.Should().Be("account 0");
             account.ExternalAddresses.Count().Should().Be(20);
             account.InternalAddresses.Count().Should().Be(20);
@@ -210,10 +221,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             wallet.Network.Should().Be(this.fixture.Node.FullNode.Network);
 
             // Check only one account is created.
-            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+            wallet.GetAccounts().Should().ContainSingle();
 
             // Check the created account.
-            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            HdAccount account = wallet.GetAccounts().Single();
             account.Name.Should().Be("account 0");
             account.ExternalAddresses.Count().Should().Be(20);
             account.InternalAddresses.Count().Should().Be(20);
@@ -244,7 +255,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Check the mnemonic returned.
             response = response.Replace("\"", "");
             response.Split(" ").Length.Should().Be(12);
-            Wordlist.AutoDetectLanguage(response).Should().Be(Language.ChineseTraditional);
+            Language detectedLanguage = Wordlist.AutoDetectLanguage(response);
+
+            // Relax the test due to the potential language ambiguity of the words returned.
+            detectedLanguage.Should().Match(p => p.Equals(Language.ChineseTraditional) || p.Equals(Language.ChineseSimplified));
+
             response.Should().Be(mnemonic);
 
             // Check a wallet file has been created.
@@ -261,10 +276,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             wallet.Network.Should().Be(this.fixture.Node.FullNode.Network);
 
             // Check only one account is created.
-            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+            wallet.GetAccounts().Should().ContainSingle();
 
             // Check the created account.
-            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            HdAccount account = wallet.GetAccounts().Single();
             account.Name.Should().Be("account 0");
             account.ExternalAddresses.Count().Should().Be(20);
             account.InternalAddresses.Count().Should().Be(20);
@@ -312,10 +327,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             wallet.Network.Should().Be(this.fixture.Node.FullNode.Network);
 
             // Check only one account is created.
-            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+            wallet.GetAccounts().Should().ContainSingle();
 
             // Check the created account.
-            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            HdAccount account = wallet.GetAccounts().Single();
             account.Name.Should().Be("account 0");
             account.ExternalAddresses.Count().Should().Be(20);
             account.InternalAddresses.Count().Should().Be(20);
@@ -360,10 +375,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             wallet.Network.Should().Be(this.fixture.Node.FullNode.Network);
 
             // Check only one account is created.
-            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+            wallet.GetAccounts().Should().ContainSingle();
 
             // Check the created account.
-            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            HdAccount account = wallet.GetAccounts().Single();
             account.Name.Should().Be("account 0");
             account.ExternalAddresses.Count().Should().Be(20);
             account.InternalAddresses.Count().Should().Be(20);
@@ -758,10 +773,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             wallet.Network.Should().Be(this.fixture.Node.FullNode.Network);
 
             // Check only one account is created.
-            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+            wallet.GetAccounts().Should().ContainSingle();
 
             // Check the created account.
-            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            HdAccount account = wallet.GetAccounts().Single();
             account.Name.Should().Be("account 0");
             account.ExternalAddresses.Count().Should().Be(20);
             account.InternalAddresses.Count().Should().Be(20);
@@ -803,10 +818,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             wallet.Network.Should().Be(this.fixture.Node.FullNode.Network);
 
             // Check only one account is created.
-            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+            wallet.GetAccounts().Should().ContainSingle();
 
             // Check the created account.
-            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            HdAccount account = wallet.GetAccounts().Single();
             account.Name.Should().Be("account 0");
             account.ExternalAddresses.Count().Should().Be(20);
             account.InternalAddresses.Count().Should().Be(20);
@@ -1364,57 +1379,63 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task EstimateFee()
+        public async Task EstimateFeeAsync()
         {
             // Arrange.
             var address1 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
             var address2 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
 
             // Act.
-            string query = $"http://localhost:{this.fixture.Node.ApiPort}/" +
-                           $"api/wallet/estimate-txfee?" +
-                           $"walletname={this.fixture.walletWithFundsName}" +
-                           $"&accountname=account 0" +
-                           $"&recipients[0].destinationaddress={address1}" +
-                           $"&recipients[0].amount=240000" +
-                           $"&recipients[1].destinationaddress={address2}" +
-                           $"&recipients[1].amount=1000" +
-                           $"&feetype=low" +
-                           $"&allowunconfirmed=true" +
-                           $"&shuffleoutputs=true";
-
-            Money estimatedFee = await query.GetJsonAsync<Money>();
+            Money act = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                        .AppendPathSegment("wallet/estimate-txfee")
+                        .PostJsonAsync(new TxFeeEstimateRequest
+                        {
+                            WalletName = this.fixture.walletWithFundsName,
+                            AccountName = "account 0",
+                            Recipients = new List<RecipientModel>
+                            {
+                                new RecipientModel { DestinationAddress = address1, Amount = "240000" },
+                                new RecipientModel { DestinationAddress = address2, Amount = "1000" },
+                            },
+                            FeeType = FeeType.Low.ToString(),
+                            AllowUnconfirmed = true,
+                            ShuffleOutputs = true
+                        })
+                        .ReceiveJson<Money>();
 
             // Assert.
-            estimatedFee.Should().Be(new Money(10000));
+            act.Should().Be(new Money(10000));
         }
 
         [Fact]
-        public async Task EstimateFeeWithOpReturn()
+        public async Task EstimateFeeWithOpReturnAsync()
         {
             // Arrange.
             var address1 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
             var address2 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
 
             // Act.
-            string query = $"http://localhost:{this.fixture.Node.ApiPort}/" +
-                           $"api/wallet/estimate-txfee?" +
-                           $"walletname={this.fixture.walletWithFundsName}" +
-                           $"&accountname=account 0" +
-                           $"&recipients[0].destinationaddress={address1}" +
-                           $"&recipients[0].amount=240000" +
-                           $"&recipients[1].destinationaddress={address2}" +
-                           $"&recipients[1].amount=2000" +
-                           $"&feetype=low" +
-                           $"&opreturndata=always something interesting to say here" +
-                           $"&opreturnamount=1" +
-                           $"&allowunconfirmed=true" +
-                           $"&shuffleoutputs=true";
-
-            Money estimatedFee = await query.GetJsonAsync<Money>();
+            Money act = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                        .AppendPathSegment("wallet/estimate-txfee")
+                        .PostJsonAsync(new TxFeeEstimateRequest
+                        {
+                            WalletName = this.fixture.walletWithFundsName,
+                            AccountName = "account 0",
+                            Recipients = new List<RecipientModel>
+                            {
+                                new RecipientModel { DestinationAddress = address1, Amount = "240000" },
+                                new RecipientModel { DestinationAddress = address2, Amount = "2000" },
+                            },
+                            FeeType = FeeType.Low.ToString(),
+                            OpReturnData = "always something interesting to say here",
+                            OpReturnAmount = "1",
+                            AllowUnconfirmed = true,
+                            ShuffleOutputs = true
+                        })
+                        .ReceiveJson<Money>();
 
             // Assert.
-            estimatedFee.Should().Be(new Money(10000));
+            act.Should().Be(new Money(10000));
         }
 
         [Fact]
@@ -1453,6 +1474,116 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             walletFileModel.WalletsPath.Should().Be(Path.GetDirectoryName(this.fixture.WalletWithFundsFilePath));
             walletFileModel.WalletsFiles.Count().Should().BeGreaterThan(0);
             walletFileModel.WalletsFiles.Should().Contain(Path.GetFileName(this.fixture.WalletWithFundsFilePath));
+        }
+
+        [Fact]
+        public async Task SignMessage()
+        {
+            // Act.
+            string signatureResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/signmessage")
+                .PostJsonAsync(new SignMessageRequest
+                {
+                    WalletName = this.fixture.walletWithFundsName,
+                    ExternalAddress = this.fixture.addressWithFunds,
+                    Password = this.fixture.walletWithFundsPassword,
+                    Message = this.fixture.signatureMessage
+                })
+                .ReceiveJson<string>();
+
+            // Assert.
+            signatureResult.Should().Be(this.fixture.validSignature, $"Signature is invalid.");
+            Encoders.Base64.DecodeData(signatureResult).Should().BeOfType<byte[]>($"Signature was not a {typeof(byte[])} type.");
+        }
+
+        [Fact]
+        public async Task VerifyValidSignature()
+        {
+            // Act.
+            bool verifyMessageResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/verifymessage")
+                .PostJsonAsync(new VerifyRequest
+                {
+                    Signature = this.fixture.validSignature,
+                    ExternalAddress = this.fixture.addressWithFunds,
+                    Message = this.fixture.signatureMessage
+                })
+                .ReceiveJson<bool>();
+
+            // Assert.
+            verifyMessageResult.Should().Be(true, "Invalid signature detected.");
+        }
+
+        [Fact]
+        public async Task VerifyInvalidSignature()
+        {
+            // Act.
+            bool verifyMessageResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/verifymessage")
+                .PostJsonAsync(new VerifyRequest
+                {
+                    Signature = "invalid signature",
+                    ExternalAddress = this.fixture.addressWithFunds,
+                    Message = this.fixture.signatureMessage
+                })
+                .ReceiveJson<bool>();
+
+            // Assert.
+            verifyMessageResult.Should().Be(false, "Signature Verification failed");
+        }
+
+        [Fact]
+        public async Task VerifyMessageWithInvalidAddress()
+        {
+            // Act.
+            bool verifyMessageResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/verifymessage")
+                .PostJsonAsync(new VerifyRequest
+                {
+                    Signature = this.fixture.validSignature,
+                    ExternalAddress = this.fixture.addressWithoutFunds,
+                    Message = this.fixture.signatureMessage
+                })
+                .ReceiveJson<bool>();
+
+            // Assert.
+            verifyMessageResult.Should().Be(false, "Signature Verification failed");
+        }
+
+        [Fact]
+        public async Task VerifyMessageWithInvalidMessage()
+        {
+            // Act.
+            bool verifyMessageResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/verifymessage")
+                .PostJsonAsync(new VerifyRequest
+                {
+                    Signature = this.fixture.validSignature,
+                    ExternalAddress = this.fixture.addressWithFunds,
+                    Message = "Test test..."
+                })
+                .ReceiveJson<bool>();
+
+            // Assert.
+            verifyMessageResult.Should().Be(false, "Signature Verification failed");
+        }
+
+        [Fact]
+        public async Task VerifyMessageWithAllInvalid()
+        {
+            // Act.
+            bool verifyMessageResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/verifymessage")
+                .PostJsonAsync(new VerifyRequest
+                {
+                    Signature = "invalid signature",
+                    ExternalAddress = this.fixture.addressWithoutFunds,
+                    Message = "Test test..."
+                })
+                .ReceiveJson<bool>();
+
+            // Assert.
+            verifyMessageResult.Should().Be(false, "Signature Verification failed");
         }
     }
 }

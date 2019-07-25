@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Util;
-using Block = NBitcoin.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
@@ -29,7 +28,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             foreach (Transaction transaction in block.Transactions)
             {
-                CheckTransactionInsideBlock(transaction, this.PowParent.UtxoSet, processedTxs);
+                this.CheckTransactionInsideBlock(transaction, this.PowParent.UtxoSet, processedTxs);
                 processedTxs.Add(transaction);
             }
 

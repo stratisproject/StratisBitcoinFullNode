@@ -2,8 +2,9 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
@@ -40,6 +41,9 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 
         private readonly ISignals signals;
 
+        private SubscriptionToken blockConnectedSubscription;
+        private SubscriptionToken transactionReceivedSubscription;
+
         /// <summary>
         /// Provides a rapid lookup of transactions appearing in the watch-only wallet.
         /// This includes both transactions under watched addresses, as well as stored
@@ -60,8 +64,8 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// <inheritdoc />
         public void Dispose()
         {
-            this.signals.OnBlockConnected.Detach(this.OnBlockConnected);
-            this.signals.OnTransactionReceived.Detach(this.OnTransactionAvailable);
+            this.signals.Unsubscribe(this.blockConnectedSubscription);
+            this.signals.Unsubscribe(this.transactionReceivedSubscription);
 
             this.SaveWatchOnlyWallet();
         }
@@ -72,20 +76,20 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             // load the watch only wallet into memory
             this.Wallet = this.LoadWatchOnlyWallet();
 
-            this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
-            this.signals.OnTransactionReceived.Attach(this.OnTransactionAvailable);
+            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
+            this.transactionReceivedSubscription = this.signals.Subscribe<TransactionReceived>(this.OnTransactionAvailable);
 
             this.LoadTransactionLookup();
         }
 
-        private void OnTransactionAvailable(Transaction transaction)
+        private void OnTransactionAvailable(TransactionReceived transactionReceived)
         {
-            this.ProcessTransaction(transaction);
+            this.ProcessTransaction(transactionReceived.ReceivedTransaction);
         }
 
-        private void OnBlockConnected(ChainedHeaderBlock chainedheaderblock)
+        private void OnBlockConnected(BlockConnected blockConnected)
         {
-            this.ProcessBlock(chainedheaderblock.Block);
+            this.ProcessBlock(blockConnected.ConnectedBlock.Block);
         }
 
         /// <inheritdoc />
@@ -281,7 +285,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                 // So now update the block hash and Merkle proof since it has
                 // appeared in a block.
                 existingWatchedTransaction.BlockHash = block.GetHash();
-                existingWatchedTransaction.MerkleProof = new MerkleBlock(block, new[] {transaction.GetHash()}).PartialMerkleTree;
+                existingWatchedTransaction.MerkleProof = new MerkleBlock(block, new[] { transaction.GetHash() }).PartialMerkleTree;
 
                 // Update the lookup cache with the new transaction information.
                 this.txLookup.AddOrUpdate(existingWatchedTransaction.Id, existingWatchedTransaction, (key, oldValue) => existingWatchedTransaction);

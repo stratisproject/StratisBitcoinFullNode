@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Consensus
     public abstract class ConsensusRuleEngine : IConsensusRuleEngine
     {
         /// <summary>Instance logger.</summary>
-        protected readonly ILogger logger;
+        private readonly ILogger logger;
 
         /// <summary>A factory to creates logger instances for each rule.</summary>
         public ILoggerFactory LoggerFactory { get; }
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Consensus
         public IDateTimeProvider DateTimeProvider { get; }
 
         /// <summary>A chain of the longest block headers all the way to genesis.</summary>
-        public ConcurrentChain Chain { get; }
+        public ChainIndexer ChainIndexer { get; }
 
         /// <summary>A deployment construction that tracks activation of features on the chain.</summary>
         public NodeDeployments NodeDeployments { get; }
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Consensus
             Network network,
             ILoggerFactory loggerFactory,
             IDateTimeProvider dateTimeProvider,
-            ConcurrentChain chain,
+            ChainIndexer chainIndexer,
             NodeDeployments nodeDeployments,
             ConsensusSettings consensusSettings,
             ICheckpoints checkpoints,
@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Consensus
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
-            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chainIndexer, nameof(chainIndexer));
             Guard.NotNull(nodeDeployments, nameof(nodeDeployments));
             Guard.NotNull(consensusSettings, nameof(consensusSettings));
             Guard.NotNull(checkpoints, nameof(checkpoints));
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Consensus
             Guard.NotNull(nodeStats, nameof(nodeStats));
 
             this.Network = network;
-            this.Chain = chain;
+            this.ChainIndexer = chainIndexer;
             this.ChainState = chainState;
             this.NodeDeployments = nodeDeployments;
             this.LoggerFactory = loggerFactory;
@@ -113,9 +113,8 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public virtual Task InitializeAsync(ChainedHeader chainTip)
+        public virtual void Initialize(ChainedHeader chainTip)
         {
-            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -203,7 +202,10 @@ namespace Stratis.Bitcoin.Consensus
             await this.ExecuteRulesAsync(this.fullValidationRules, ruleContext).ConfigureAwait(false);
 
             if (validationContext.Error != null)
+            {
+                this.logger.LogWarning("Block '{0}' failed full validation with error: '{1}'.", header, validationContext.Error);
                 this.HandleConsensusError(validationContext);
+            }
 
             return validationContext;
         }
@@ -220,7 +222,10 @@ namespace Stratis.Bitcoin.Consensus
             await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);
 
             if (validationContext.Error != null)
+            {
+                this.logger.LogWarning("Block '{0}' failed partial validation with error: '{1}'.", header, validationContext.Error);
                 this.HandleConsensusError(validationContext);
+            }
 
             return validationContext;
         }
@@ -263,7 +268,7 @@ namespace Stratis.Bitcoin.Consensus
 
             uint256 hashToBan = validationContext.ChainedHeaderToValidate.HashBlock;
 
-            this.logger.LogTrace("Marking '{0}' invalid.", hashToBan);
+            this.logger.LogWarning("Marking '{0}' invalid.", hashToBan);
             this.invalidBlockHashStore.MarkInvalid(hashToBan, validationContext.RejectUntil);
         }
 
@@ -296,7 +301,7 @@ namespace Stratis.Bitcoin.Consensus
         public abstract RuleContext CreateRuleContext(ValidationContext validationContext);
 
         /// <inheritdoc />
-        public abstract Task<uint256> GetBlockHashAsync();
+        public abstract uint256 GetBlockHash();
 
         /// <inheritdoc />
         public abstract Task<RewindState> RewindAsync();

@@ -22,12 +22,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc/>
-        protected override bool IsProtocolTransaction(Transaction transaction)
-        {
-            return transaction.IsCoinBase;
-        }
-
-        /// <inheritdoc/>
         public override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
         {
             Money blockReward = fees + this.GetProofOfWorkReward(height);
@@ -60,6 +54,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             return subsidy;
         }
 
+        protected override Money GetTransactionFee(UnspentOutputSet view, Transaction tx)
+        {
+            return view.GetValueIn(tx) - tx.TotalOut;
+        }
+
         /// <inheritdoc />
         protected override bool IsTxFinal(Transaction transaction, RuleContext context)
         {
@@ -81,7 +80,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             return transaction.CheckSequenceLocks(prevheights, index, context.Flags.LockTimeFlags);
         }
-
         /// <inheritdoc/>
         public override void CheckMaturity(UnspentOutputs coins, int spendHeight)
         {

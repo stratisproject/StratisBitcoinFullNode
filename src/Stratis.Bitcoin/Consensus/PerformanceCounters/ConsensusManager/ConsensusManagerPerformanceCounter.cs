@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Threading;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Consensus.PerformanceCounters.ConsensusManager
 {
@@ -17,21 +17,25 @@ namespace Stratis.Bitcoin.Consensus.PerformanceCounters.ConsensusManager
         /// <summary>
         /// Measures time to execute <c>OnPartialValidationSucceededAsync</c>.
         /// </summary>
+        [NoTrace]
         public IDisposable MeasureTotalConnectionTime()
         {
             return new StopwatchDisposable((elapsed) => this.currentSnapshot.TotalConnectionTime.Increment(elapsed));
         }
 
+        [NoTrace]
         public IDisposable MeasureBlockConnectionFV()
         {
             return new StopwatchDisposable((elapsed) => this.currentSnapshot.ConnectBlockFV.Increment(elapsed));
         }
 
+        [NoTrace]
         public IDisposable MeasureBlockConnectedSignal()
         {
             return new StopwatchDisposable((elapsed) => this.currentSnapshot.BlockConnectedSignal.Increment(elapsed));
         }
 
+        [NoTrace]
         public IDisposable MeasureBlockDisconnectedSignal()
         {
             return new StopwatchDisposable((elapsed) => this.currentSnapshot.BlockDisconnectedSignal.Increment(elapsed));
@@ -39,6 +43,7 @@ namespace Stratis.Bitcoin.Consensus.PerformanceCounters.ConsensusManager
 
         /// <summary>Takes current snapshot.</summary>
         /// <remarks>Not thread-safe. Caller should ensure that it's not called from different threads at once.</remarks>
+        [NoTrace]
         public ConsensusManagerPerformanceSnapshot TakeSnapshot()
         {
             var newSnapshot = new ConsensusManagerPerformanceSnapshot();

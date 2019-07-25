@@ -11,6 +11,8 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Connectivity
@@ -26,6 +28,30 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
             this.powNetwork = new BitcoinRegTest();
         }
 
+        [Fact]
+        public void Ensure_Node_DoesNot_ReconnectTo_SameNode()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var nodeConfig = new NodeConfigParameters
+                {
+                    { "-debug", "1" }
+                };
+
+                CoreNode nodeA = builder.CreateStratisPowNode(this.powNetwork, "conn-1-nodeA", configParameters: nodeConfig).Start();
+                CoreNode nodeB = builder.CreateStratisPowNode(this.powNetwork, "conn-1-nodeB", configParameters: nodeConfig).Start();
+
+                TestHelper.Connect(nodeA, nodeB);
+                TestHelper.ConnectNoCheck(nodeA, nodeB);
+
+                TestBase.WaitLoop(() => nodeA.FullNode.ConnectionManager.ConnectedPeers.Count() == 1);
+                TestBase.WaitLoop(() => nodeB.FullNode.ConnectionManager.ConnectedPeers.Count() == 1);
+
+                Assert.False(nodeA.FullNode.ConnectionManager.ConnectedPeers.First().Inbound);
+                Assert.True(nodeB.FullNode.ConnectionManager.ConnectedPeers.First().Inbound);
+            }
+        }
+
         /// <summary>
         /// Peer A_1 connects to Peer A_2
         /// Peer B_1 connects to Peer B_2
@@ -35,35 +61,37 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
         /// Peer A_1 now also connects to Peer B_2
         /// </summary>
         [Fact]
-        [Trait("Unstable", "True")]
         public void Ensure_Peer_CanDiscover_Address_From_ConnectedPeers_And_Connect_ToThem()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode nodeGroupA_1 = builder.CreateStratisPowNode(this.powNetwork, "nodeGroupA_1").EnablePeerDiscovery().Start();
-                CoreNode nodeGroupB_1 = builder.CreateStratisPowNode(this.powNetwork, "nodeGroupB_1").EnablePeerDiscovery().Start();
-                CoreNode nodeGroupB_2 = builder.CreateStratisPowNode(this.powNetwork, "nodeGroupB_2").EnablePeerDiscovery().Start();
+                CoreNode nodeGroupA_1 = builder.CreateStratisPowNode(this.powNetwork, "conn-2-nodeGroupA_1").EnablePeerDiscovery().Start();
+                CoreNode nodeGroupB_1 = builder.CreateStratisPowNode(this.powNetwork, "conn-2-nodeGroupB_1").EnablePeerDiscovery().Start();
+                CoreNode nodeGroupB_2 = builder.CreateStratisPowNode(this.powNetwork, "conn-2-nodeGroupB_2").EnablePeerDiscovery().Start();
 
-                // Connect group 2 nodes.
-                TestHelper.WaitLoop(() => nodeGroupB_1.FullNode.NodeService<IPeerAddressManager>().Peers.Count == 0);
+                // Connect B_1 to B_2.
                 nodeGroupB_1.FullNode.NodeService<IPeerAddressManager>().AddPeer(nodeGroupB_2.Endpoint, IPAddress.Loopback);
-                TestHelper.WaitLoop(() => TestHelper.IsNodeConnectedTo(nodeGroupB_1, nodeGroupB_2));
-
-                // Connect group 1 to group 2
-                // This will add all nodeGroupB_1's addresses which includes nodeGroupB_2 to nodeGroupA_1
-                nodeGroupA_1.FullNode.NodeService<IPeerAddressManager>().AddPeer(nodeGroupB_1.Endpoint, IPAddress.Loopback);
-                TestHelper.WaitLoop(() => TestHelper.IsNodeConnectedTo(nodeGroupA_1, nodeGroupB_1));
-
-                // First check that B_2 now has more than the initial connection to B_1
-                TestHelper.WaitLoop(() => nodeGroupB_2.FullNode.ConnectionManager.ConnectedPeers.Count() > 1);
-
-                // Ensure that B_2 got connected to via either A_1 or A_2
-                TestHelper.WaitLoop(() =>
+                TestBase.WaitLoop(() => TestHelper.IsNodeConnectedTo(nodeGroupB_1, nodeGroupB_2));
+                TestBase.WaitLoop(() =>
                 {
-                    if (TestHelper.IsNodeConnectedTo(nodeGroupA_1, nodeGroupB_2))
-                        return true;
-                    return false;
+                    return nodeGroupB_1.FullNode.NodeService<IPeerAddressManager>().Peers.Any(p => p.Endpoint.Match(nodeGroupB_2.Endpoint));
                 });
+
+                // Connect group A_1 to B_1
+                // A_1 will receive B_1's addresses which includes B_2.
+                TestHelper.Connect(nodeGroupA_1, nodeGroupB_1);
+
+                //Wait until A_1 contains both B_1 and B_2's addresses in its address manager.
+                TestBase.WaitLoop(() =>
+                 {
+                     var result = nodeGroupA_1.FullNode.NodeService<IPeerAddressManager>().Peers.Any(p => p.Endpoint.Match(nodeGroupB_1.Endpoint));
+                     if (result)
+                         return nodeGroupA_1.FullNode.NodeService<IPeerAddressManager>().Peers.Any(p => p.Endpoint.Match(nodeGroupB_2.Endpoint));
+                     return false;
+                 });
+
+                // Wait until A_1 connected to B_2.
+                TestBase.WaitLoop(() => TestHelper.IsNodeConnectedTo(nodeGroupA_1, nodeGroupB_2));
             }
         }
 
@@ -74,10 +102,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPosNode(this.posNetwork).Start();
-                CoreNode node2 = builder.CreateStratisPosNode(this.posNetwork).Start();
-                CoreNode node3 = builder.CreateStratisPosNode(this.posNetwork).Start();
-                CoreNode syncerNode = builder.CreateStratisPosNode(this.posNetwork).Start();
+                CoreNode node1 = builder.CreateStratisPosNode(this.posNetwork, "conn-3-node1").Start();
+                CoreNode node2 = builder.CreateStratisPosNode(this.posNetwork, "conn-3-node2").Start();
+                CoreNode node3 = builder.CreateStratisPosNode(this.posNetwork, "conn-3-node3").Start();
+                CoreNode syncerNode = builder.CreateStratisPosNode(this.posNetwork, "conn-3-syncerNode").Start();
 
                 TestHelper.Connect(node1, syncerNode);
 
@@ -87,7 +115,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
                 syncerNode.FullNode.NodeService<IConnectionManager>().AddNodeAddress(node2.Endpoint);
                 syncerNode.FullNode.NodeService<IConnectionManager>().AddNodeAddress(node3.Endpoint);
 
-                TestHelper.WaitLoop(() => syncerNode.FullNode.ConnectionManager.ConnectedPeers.Count() == 3);
+                TestBase.WaitLoop(() => syncerNode.FullNode.ConnectionManager.ConnectedPeers.Count() == 3);
 
                 node1.FullNode.ConnectionManager.ConnectedPeers.Should().ContainSingle();
                 node2.FullNode.ConnectionManager.ConnectedPeers.Should().ContainSingle();
@@ -98,27 +126,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
         [Fact]
         public void When_Connecting_WithConnectOnly_Connect_ToTheRequestedPeer()
         {
-            // TS102_Connectivity_CallConnect.
-
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPosNode(this.posNetwork).Start();
-                CoreNode node2 = builder.CreateStratisPosNode(this.posNetwork).Start();
+                CoreNode node1 = builder.CreateStratisPosNode(this.posNetwork, "conn-4-node1").Start();
 
-                var node2ConnectionMgr = node2.FullNode.NodeService<IConnectionManager>();
+                var nodeConfig = new NodeConfigParameters
+                {
+                    { "-connect", node1.Endpoint.ToString() }
+                };
 
-                var node2PeerNodeConnector = node2ConnectionMgr.PeerConnectors.
-                    Where(p => p.GetType() == typeof(PeerConnectorConnectNode)).First() as PeerConnectorConnectNode;
+                CoreNode node2 = builder.CreateStratisPosNode(this.posNetwork, "conn-4-node2", configParameters: nodeConfig).Start();
 
-                node1.FullNode.ConnectionManager.ConnectedPeers.Should().BeEmpty();
-
-                node2PeerNodeConnector.ConnectionSettings.Connect = new List<IPEndPoint>() { node1.Endpoint };
-
-                node2ConnectionMgr.Initialize(node2.FullNode.NodeService<IConsensusManager>());
-
-                TestHelper.WaitLoop(() => node2ConnectionMgr.ConnectedPeers.Count() == 1);
-
-                node1.FullNode.ConnectionManager.ConnectedPeers.Should().ContainSingle();
+                TestBase.WaitLoop(() => TestHelper.IsNodeConnectedTo(node1, node2));
             }
         }
 
@@ -129,8 +148,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPosNode(this.posNetwork).Start();
-                CoreNode node2 = builder.CreateStratisPosNode(this.posNetwork).Start();
+                CoreNode node1 = builder.CreateStratisPosNode(this.posNetwork, "conn-5-node1").Start();
+                CoreNode node2 = builder.CreateStratisPosNode(this.posNetwork, "conn-5-node2").Start();
 
                 node1 = BanNode(node1, node2);
 
@@ -155,7 +174,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPosNode(this.posNetwork).Start();
+                CoreNode node1 = builder.CreateStratisPosNode(this.posNetwork, "conn-6-node1").Start();
 
                 var node1ConnectionMgr = node1.FullNode.NodeService<IConnectionManager>();
 
@@ -182,8 +201,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
                     { "-connect", "0" }
                 };
 
-                CoreNode node1 = builder.CreateStratisPowNode(this.powNetwork, configParameters: nodeConfig).Start();
-                CoreNode node2 = builder.CreateStratisPowNode(this.powNetwork).Start();
+                CoreNode node1 = builder.CreateStratisPowNode(this.powNetwork, "conn-7-node1", configParameters: nodeConfig).Start();
+                CoreNode node2 = builder.CreateStratisPowNode(this.powNetwork, "conn-7-node2").Start();
 
                 Assert.False(node1.FullNode.ConnectionManager.Servers.Any());
 
@@ -198,6 +217,59 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
                 }
 
                 Assert.False(TestHelper.IsNodeConnectedTo(node2, node1));
+            }
+        }
+
+        [Fact]
+        public void NodeServer_Disabled_When_Listen_Specified_AsFalse()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var nodeConfig = new NodeConfigParameters
+                {
+                    { "-listen", "0" }
+                };
+
+                CoreNode node1 = builder.CreateStratisPowNode(this.powNetwork, "conn-8-node1", configParameters: nodeConfig).Start();
+                CoreNode node2 = builder.CreateStratisPowNode(this.powNetwork, "conn-8-node2").Start();
+
+                Assert.False(node1.FullNode.ConnectionManager.Servers.Any());
+
+                try
+                {
+                    // Manually call AddNode so that we can catch the exception.
+                    node2.CreateRPCClient().AddNode(node1.Endpoint, true);
+                }
+                catch (Exception ex)
+                {
+                    Assert.IsType<RPCException>(ex);
+                }
+
+                Assert.False(TestHelper.IsNodeConnectedTo(node2, node1));
+            }
+        }
+
+        [Fact]
+        public void NodeServer_Enabled_When_ConnectNode_Args_Specified_And_Listen_Specified()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var nodeConfig = new NodeConfigParameters
+                {
+                    { "-connect", "0" },
+                    { "-listen", "1" }
+                };
+
+                CoreNode node1 = builder.CreateStratisPowNode(this.powNetwork, "conn-9-node1", configParameters: nodeConfig).Start();
+                CoreNode node2 = builder.CreateStratisPowNode(this.powNetwork, "conn-9-node2").Start();
+
+                Assert.True(node1.FullNode.ConnectionManager.Servers.Any());
+
+                TestHelper.Connect(node1, node2);
+
+                Assert.True(TestHelper.IsNodeConnectedTo(node2, node1));
+
+                TestHelper.DisconnectAll(node1, node2);
             }
         }
 

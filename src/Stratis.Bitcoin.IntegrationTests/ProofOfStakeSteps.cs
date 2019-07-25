@@ -18,6 +18,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -34,26 +35,16 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         private readonly HashSet<uint256> transactionsBeforeStaking = new HashSet<uint256>();
 
-        private ConcurrentDictionary<uint256, TransactionData> txLookup = new ConcurrentDictionary<uint256, TransactionData>();
+        private readonly ConcurrentDictionary<uint256, TransactionData> txLookup = new ConcurrentDictionary<uint256, TransactionData>();
 
         public ProofOfStakeSteps(string displayName)
         {
             this.nodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, displayName));
         }
 
-        public void GenerateCoins()
+        public void PremineNodeWithWallet(string testId)
         {
-            PremineNodeWithWallet();
-            MineGenesisAndPremineBlocks();
-            MineCoinsToMaturity();
-            PremineNodeMinesTenBlocksMoreEnsuringTheyCanBeStaked();
-            PremineNodeStartsStaking();
-            PremineNodeWalletHasEarnedCoinsThroughStaking();
-        }
-
-        public void PremineNodeWithWallet()
-        {
-            this.PremineNodeWithCoins = this.nodeBuilder.CreateStratisPosNode(new StratisRegTest()).WithWallet().Start();
+            this.PremineNodeWithCoins = this.nodeBuilder.CreateStratisPosNode(new StratisRegTest(), testId).WithWallet().Start();
         }
 
         public void PremineNodeWithWalletWithOverrides()
@@ -71,7 +62,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 .UseTestChainedHeaderTree()
                 .OverrideDateTimeProviderFor<MiningFeature>());
 
-            this.PremineNodeWithCoins = this.nodeBuilder.CreateCustomNode(callback, new StratisRegTest(), ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
+            this.PremineNodeWithCoins = this.nodeBuilder.CreateCustomNode(callback, new StratisRegTest(), ProtocolVersion.PROTOCOL_VERSION, agent: "mint-pmnode", configParameters: configParameters);
             this.PremineNodeWithCoins.WithWallet().Start();
         }
 
@@ -103,10 +94,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             // Get set of transaction IDs present in wallet before staking is started.
             this.transactionsBeforeStaking.Clear();
-            foreach (TransactionData transactionData in this.PremineNodeWithCoins.FullNode.WalletManager().Wallets
-                .First()
-                .GetAllTransactionsByCoinType((CoinType)this.PremineNodeWithCoins.FullNode.Network.Consensus
-                    .CoinType))
+            foreach (TransactionData transactionData in this.GetTransactionsSnapshot())
             {
                 this.transactionsBeforeStaking.Add(transactionData.Id);
             }
@@ -120,12 +108,11 @@ namespace Stratis.Bitcoin.IntegrationTests
             // If new transactions are appearing in the wallet, staking has been successful. Due to coin maturity settings the
             // spendable balance of the wallet actually drops after staking, so the wallet balance should not be used to
             // determine whether staking occurred.
-            TestHelper.WaitLoop(() =>
+            TestBase.WaitLoop(() =>
             {
-                foreach (TransactionData transactionData in this.PremineNodeWithCoins.FullNode.WalletManager().Wallets
-                    .First()
-                    .GetAllTransactionsByCoinType((CoinType)this.PremineNodeWithCoins.FullNode.Network.Consensus
-                        .CoinType))
+                List<TransactionData> transactions = this.GetTransactionsSnapshot();
+
+                foreach (TransactionData transactionData in transactions)
                 {
                     if (!this.transactionsBeforeStaking.Contains(transactionData.Id) && (transactionData.IsCoinStake ?? false))
                     {
@@ -140,18 +127,16 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void PosRewardForAllCoinstakeTransactionsIsCorrect()
         {
             // build a dictionary of coinstake tx's indexed by tx id.
-            foreach (var tx in this.PremineNodeWithCoins.FullNode.WalletManager().Wallets.First().GetAllTransactionsByCoinType((CoinType)
-                this.PremineNodeWithCoins.FullNode.Network.Consensus.CoinType))
+            foreach (var tx in this.GetTransactionsSnapshot())
             {
                 this.txLookup[tx.Id] = tx;
             }
 
-            TestHelper.WaitLoop(() =>
+            TestBase.WaitLoop(() =>
             {
-                foreach (TransactionData transactionData in this.PremineNodeWithCoins.FullNode.WalletManager().Wallets
-                    .First()
-                    .GetAllTransactionsByCoinType((CoinType)this.PremineNodeWithCoins.FullNode.Network.Consensus
-                        .CoinType))
+                List<TransactionData> transactions = this.GetTransactionsSnapshot();
+
+                foreach (TransactionData transactionData in transactions)
                 {
                     if (!this.transactionsBeforeStaking.Contains(transactionData.Id) && (transactionData.IsCoinStake ?? false))
                     {
@@ -185,6 +170,16 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 return false;
             });
+        }
+
+        /// <summary>
+        /// Returns a snapshot of the current transactions by coin type in the first wallet.
+        /// </summary>
+        /// <returns>A list of TransactionData.</returns>
+        private List<TransactionData> GetTransactionsSnapshot()
+        {
+            // Enumerate to a list otherwise the enumerable can change during enumeration as new transactions are added to the wallet.
+            return this.PremineNodeWithCoins.FullNode.WalletManager().Wallets.First().GetAllTransactions().ToList();
         }
     }
 }

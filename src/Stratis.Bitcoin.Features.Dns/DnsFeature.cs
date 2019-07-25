@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
@@ -72,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>
         /// Factory for creating background async loop tasks.
         /// </summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>Manager of node's network connections.</summary>
         private readonly IConnectionManager connectionManager;
@@ -104,10 +102,10 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="nodeSettings">The node settings object containing node configuration.</param>
         /// <param name="dnsSettings">Defines the DNS settings for the node</param>
         /// <param name="dataFolders">The data folders of the system.</param>
-        /// <param name="asyncLoopFactory">The asynchronous loop factory.</param>
+        /// <param name="asyncProvider">The asynchronous loop factory.</param>
         /// <param name="connectionManager">Manager of node's network connections.</param>
         /// <param name="unreliablePeerBehavior">Instance of the UnreliablePeerBehavior that will be added to the connectionManager Template.</param>
-        public DnsFeature(IDnsServer dnsServer, IWhitelistManager whitelistManager, ILoggerFactory loggerFactory, INodeLifetime nodeLifetime, DnsSettings dnsSettings, NodeSettings nodeSettings, DataFolder dataFolders, IAsyncLoopFactory asyncLoopFactory, IConnectionManager connectionManager, UnreliablePeerBehavior unreliablePeerBehavior)
+        public DnsFeature(IDnsServer dnsServer, IWhitelistManager whitelistManager, ILoggerFactory loggerFactory, INodeLifetime nodeLifetime, DnsSettings dnsSettings, NodeSettings nodeSettings, DataFolder dataFolders, IAsyncProvider asyncProvider, IConnectionManager connectionManager, UnreliablePeerBehavior unreliablePeerBehavior)
         {
             Guard.NotNull(dnsServer, nameof(dnsServer));
             Guard.NotNull(whitelistManager, nameof(whitelistManager));
@@ -115,14 +113,14 @@ namespace Stratis.Bitcoin.Features.Dns
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
             Guard.NotNull(dataFolders, nameof(dataFolders));
-            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
+            Guard.NotNull(asyncProvider, nameof(asyncProvider));
             Guard.NotNull(connectionManager, nameof(connectionManager));
             Guard.NotNull(unreliablePeerBehavior, nameof(unreliablePeerBehavior));
 
             this.dnsServer = dnsServer;
             this.whitelistManager = whitelistManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.nodeLifetime = nodeLifetime;
             this.nodeSettings = nodeSettings;
             this.dnsSettings = dnsSettings;
@@ -186,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Dns
                         break;
                     }
 
-                    this.logger.LogTrace("Restarting DNS server following previous failure.");
+                    this.logger.LogDebug("Restarting DNS server following previous failure.");
                 }
             }
         }
@@ -244,7 +242,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </summary>
         private void StartWhitelistRefreshLoop()
         {
-            this.whitelistRefreshLoop = this.asyncLoopFactory.Run($"{nameof(DnsFeature)}.WhitelistRefreshLoop", token =>
+            this.whitelistRefreshLoop = this.asyncProvider.CreateAndRunAsyncLoop($"{nameof(DnsFeature)}.WhitelistRefreshLoop", token =>
             {
                 this.whitelistManager.RefreshWhitelist();
                 return Task.CompletedTask;

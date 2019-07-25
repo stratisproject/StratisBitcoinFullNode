@@ -2,6 +2,7 @@
 using System.Linq;
 using NBitcoin;
 using Stratis.SmartContracts.Core.Hashing;
+using TracerAttributes;
 
 namespace Stratis.SmartContracts.Core
 {
@@ -63,7 +64,7 @@ namespace Stratis.SmartContracts.Core
                 uint low8Bits = (uint)hashBytes[i + 1];
                 uint high3Bits = ((uint)hashBytes[i] << 8) & 2047; // AND with 2047 wipes any bits higher than our desired 11.
                 uint index = low8Bits + high3Bits;
-                SetBit((int)index);
+                this.SetBit((int)index);
             }
         }
 
@@ -92,6 +93,7 @@ namespace Stratis.SmartContracts.Core
             this.data[byteIndex] |= mask;
         }
 
+        [NoTrace]
         public void ReadWrite(BitcoinStream stream)
         {
             if (stream.Serializing)

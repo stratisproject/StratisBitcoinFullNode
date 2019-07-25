@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Utilities;
@@ -66,7 +64,7 @@ namespace Stratis.Bitcoin.Builder.Feature
     public class FeatureRegistration<TImplementation> : IFeatureRegistration where TImplementation : class, IFullNodeFeature
     {
         /// <summary>List of delegates to configure services of the feature.</summary>
-        public readonly List<Action<IServiceCollection>> ConfigureServicesDelegates;
+        public List<Action<IServiceCollection>> ConfigureServicesDelegates { get; private set; }
 
         /// <summary>Initializes the instance of the object.</summary>
         public FeatureRegistration()

@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Base.Deployments.Models;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Utilities;
@@ -23,11 +26,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             ILoggerFactory loggerFactory,
             IChainState chainState,
             IConsensusManager consensusManager,
-            ConcurrentChain chain)
-            : base(chainState: chainState, consensusManager: consensusManager, chain: chain)
+            ChainIndexer chainIndexer)
+            : base(chainState: chainState, consensusManager: consensusManager, chainIndexer: chainIndexer)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chainIndexer, nameof(chainIndexer));
             Guard.NotNull(chainState, nameof(chainState));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -46,10 +49,39 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// Get the hash of the block at the consensus tip.
-        /// API wrapper of RPC call.
+        /// Get the threshold states of softforks currently being deployed.
+        /// Allowable states are: Defined, Started, LockedIn, Failed, Active.
+        /// </summary>
+        /// <returns>A <see cref="JsonResult"/> object derived from a list of
+        /// <see cref="ThresholdStateModel"/> objects - one per deployment.
+        /// Returns an <see cref="ErrorResult"/> if the method fails.</returns>
+        [Route("api/[controller]/deploymentflags")]
+        [HttpGet]
+        public IActionResult DeploymentFlags()
+        {
+            try
+            {
+                ConsensusRuleEngine ruleEngine = this.ConsensusManager.ConsensusRules as ConsensusRuleEngine;
+
+                // Ensure threshold conditions cached.
+                ThresholdState[] thresholdStates = ruleEngine.NodeDeployments.BIP9.GetStates(this.ChainState.ConsensusTip.Previous);
+
+                List<ThresholdStateModel> metrics = ruleEngine.NodeDeployments.BIP9.GetThresholdStateMetrics(this.ChainState.ConsensusTip.Previous, thresholdStates);
+
+                return this.Json(metrics);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Gets the hash of the block at the consensus tip.
         /// </summary>
         /// <returns>Json formatted <see cref="uint256"/> hash of the block at the consensus tip. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
+        /// <remarks>This is an API implementation of an RPC call.</remarks>
         [Route("api/[controller]/getbestblockhash")]
         [HttpGet]
         public IActionResult GetBestBlockHashAPI()
@@ -78,19 +110,19 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogDebug("GetBlockHash {0}", height);
 
             uint256 bestBlockHash = this.ConsensusManager.Tip?.HashBlock;
-            ChainedHeader bestBlock = bestBlockHash == null ? null : this.Chain.GetBlock(bestBlockHash);
+            ChainedHeader bestBlock = bestBlockHash == null ? null : this.ChainIndexer.GetHeader(bestBlockHash);
             if (bestBlock == null)
                 return null;
-            ChainedHeader block = this.Chain.GetBlock(height);
+            ChainedHeader block = this.ChainIndexer.GetHeader(height);
             return block == null || block.Height > bestBlock.Height ? null : block.HashBlock;
         }
 
         /// <summary>
-        /// Gets the hash of the block at the given height.
-        /// API wrapper of RPC call.
+        /// Gets the hash of the block at a given height.
         /// </summary>
-        /// <param name="request">A <see cref="GetBlockHashRequestModel"/> request containing the height.</param>
+        /// <param name="height">The height of the block to get the hash for.</param>
         /// <returns>Json formatted <see cref="uint256"/> hash of the block at the given height. <c>Null</c> if block not found. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
+        /// <remarks>This is an API implementation of an RPC call.</remarks>
         [Route("api/[controller]/getblockhash")]
         [HttpGet]
         public IActionResult GetBlockHashAPI([FromQuery] int height)
@@ -101,6 +133,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
             catch (Exception e)
             {
+                this.logger.LogTrace("(-)[EXCEPTION]");
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }

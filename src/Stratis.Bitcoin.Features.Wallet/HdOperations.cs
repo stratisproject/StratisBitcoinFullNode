@@ -1,6 +1,7 @@
 ﻿using System;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -25,6 +26,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             int change = isChange ? 1 : 0;
             var keyPath = new KeyPath($"{change}/{index}");
+            // TODO: Should probably explicitly be passing the network into Parse
             ExtPubKey extPubKey = ExtPubKey.Parse(accountExtPubKey).Derive(keyPath);
             return extPubKey.PubKey;
         }
@@ -37,6 +39,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="hdPath">The HD path of the account for which to get the extended private key.</param>
         /// <param name="network">The network for which to generate this extended private key.</param>
         /// <returns></returns>
+        [NoTrace]
         public static ISecret GetExtendedPrivateKey(Key privateKey, byte[] chainCode, string hdPath, Network network)
         {
             Guard.NotNull(privateKey, nameof(privateKey));
@@ -173,6 +176,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>A value indicating if the HD path corresponds to a change address.</returns>
         /// <exception cref="FormatException">An exception is thrown if the HD path is not well-formed.</exception>
         /// <remarks>Refer to <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki#path-levels"/> for the format of the HD path.</remarks>
+        [NoTrace]
         public static bool IsChangeAddress(string hdPath)
         {
             Guard.NotEmpty(hdPath, nameof(hdPath));
@@ -196,7 +200,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="encryptedSeed">The encrypted seed to decrypt.</param>
         /// <param name="password">The password used to decrypt the encrypted seed.</param>
         /// <param name="network">The network this seed applies to.</param>
-        /// <returns></returns>
+        /// <returns>The decrypted private key.</returns>
+        [NoTrace]
         public static Key DecryptSeed(string encryptedSeed, string password, Network network)
         {
             Guard.NotEmpty(encryptedSeed, nameof(encryptedSeed));

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
@@ -81,6 +80,13 @@ namespace Stratis.Bitcoin.Features.RPC
                         // also copies over singleton instances already defined
                         foreach (ServiceDescriptor service in this.fullNodeBuilder.Services)
                         {
+                            // open types can't be singletons
+                            if (service.ServiceType.IsGenericType || service.Lifetime == ServiceLifetime.Scoped)
+                            {
+                                collection.Add(service);
+                                continue;
+                            }
+
                             object obj = this.fullNode.Services.ServiceProvider.GetService(service.ServiceType);
 
                             if (obj != null && service.Lifetime == ServiceLifetime.Singleton && service.ImplementationInstance == null)

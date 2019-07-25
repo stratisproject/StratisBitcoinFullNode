@@ -2,6 +2,7 @@
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
 
@@ -17,12 +18,6 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
             base.Initialize();
 
             this.network = this.Parent.Network as PoANetwork;
-        }
-
-        /// <inheritdoc/>
-        protected override bool IsProtocolTransaction(Transaction transaction)
-        {
-            return transaction.IsCoinBase;
         }
 
         /// <inheritdoc/>
@@ -47,6 +42,11 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
                 return this.network.Consensus.PremineReward;
 
             return 0;
+        }
+
+        protected override Money GetTransactionFee(UnspentOutputSet view, Transaction tx)
+        {
+            return view.GetValueIn(tx) - tx.TotalOut;
         }
 
         /// <inheritdoc/>

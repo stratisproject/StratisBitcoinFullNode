@@ -1,6 +1,6 @@
-﻿using System;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
@@ -30,8 +30,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
             IProvenBlockHeaderStore provenBlockHeaderStore,
-            ISignals signals)
-            : base(blockStoreQueue, storeSettings, chainState, connection, nodeLifetime, loggerFactory, initialBlockDownloadState, signals)
+            ISignals signals,
+            IAsyncProvider asyncProvider)
+            : base(blockStoreQueue, storeSettings, chainState, connection, nodeLifetime, loggerFactory, initialBlockDownloadState, signals, asyncProvider)
         {
             this.network = Guard.NotNull(network, nameof(network));
             this.provenBlockHeaderStore = Guard.NotNull(provenBlockHeaderStore, nameof(provenBlockHeaderStore));
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (blockPair.ChainedHeader.Header is ProvenBlockHeader phHeader)
             {
-                this.logger.LogTrace("Current header is already a Proven Header.");
+                this.logger.LogDebug("Current header is already a Proven Header.");
 
                 // Add to the store, to be sure we actually store it anyway.
                 // It's ProvenBlockHeaderStore responsibility to prevent us to store it twice.
@@ -59,7 +60,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 // Proven Header not found? create it now.
                 if (provenHeader == null)
                 {
-                    this.logger.LogTrace("Proven Header at height {0} NOT found.", blockHeight);
+                    this.logger.LogDebug("Proven Header at height {0} NOT found.", blockHeight);
 
                     this.CreateAndStoreProvenHeader(blockHeight, blockPair, isIBD);
                 }
@@ -71,11 +72,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     uint256 provenHeaderHash = provenHeader.GetHash();
                     if (provenHeaderHash == signaledHeaderHash)
                     {
-                        this.logger.LogTrace("Proven Header {0} found.", signaledHeaderHash);
+                        this.logger.LogDebug("Proven Header {0} found.", signaledHeaderHash);
                     }
                     else
                     {
-                        this.logger.LogTrace("Found a proven header with a different hash, recreating PH. Expected Hash: {0}, found Hash: {1}.", signaledHeaderHash, provenHeaderHash);
+                        this.logger.LogDebug("Found a proven header with a different hash, recreating PH. Expected Hash: {0}, found Hash: {1}.", signaledHeaderHash, provenHeaderHash);
 
                         // A reorg happened so we recreate a new Proven Header to replace the wrong one.
                         this.CreateAndStoreProvenHeader(blockHeight, blockPair, isIBD);
@@ -102,7 +103,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             uint256 provenHeaderHash = newProvenHeader.GetHash();
             this.provenBlockHeaderStore.AddToPendingBatch(newProvenHeader, new HashHeightPair(provenHeaderHash, blockHeight));
 
-            this.logger.LogTrace("Created Proven Header at height {0} with hash {1} and adding to the pending batch to be stored.", blockHeight, provenHeaderHash);
+            this.logger.LogDebug("Created Proven Header at height {0} with hash {1} and adding to the pending batch to be stored.", blockHeight, provenHeaderHash);
 
             // If our node is in IBD the block will not be announced to peers.
             // If not in IBD the signaler may expect the block header to be of type PH.

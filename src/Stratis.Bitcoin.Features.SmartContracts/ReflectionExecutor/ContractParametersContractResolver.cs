@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NBitcoin;
 using Newtonsoft.Json.Serialization;
 using Stratis.SmartContracts;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor
 {
-    public class ContractParametersContractResolver : DefaultContractResolver
+    public class ContractParametersContractResolver : CamelCasePropertyNamesContractResolver
     {
         private readonly Network network;
 

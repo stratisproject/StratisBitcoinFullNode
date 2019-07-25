@@ -23,12 +23,12 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
 
                 if (instruction.OpCode.Code == Code.Newarr)
                 {
-                    CheckArrayCreationSize(instruction, il, context);
+                    this.CheckArrayCreationSize(instruction, il, context);
                 }
 
                 if (instruction.Operand is MethodReference called)
                 {
-                    PossiblyRewriteCalledMethod(called, instruction, il, context);
+                    this.PossiblyRewriteCalledMethod(called, instruction, il, context);
                 }
 
                 // If we rewrote, need to increase our iterator by the number of instructions we inserted.
@@ -45,7 +45,7 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
         {
             if (called.DeclaringType.FullName == typeof(Array).FullName && called.Name == nameof(Array.Resize))
             {
-                CheckArrayCreationSize(instruction, il, context);
+                this.CheckArrayCreationSize(instruction, il, context);
                 return;
             }
 
@@ -53,23 +53,23 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
             {
                 if (called.Name == nameof(string.ToCharArray))
                 {
-                    CheckArrayReturnSize(instruction, il, context);
+                    this.CheckArrayReturnSize(instruction, il, context);
                 }
                 else if (called.Name == nameof(string.Split))
                 {
-                    CheckArrayReturnSize(instruction, il, context);
+                    this.CheckArrayReturnSize(instruction, il, context);
                 }
                 else if (called.Name == nameof(string.Concat))
                 {
-                    CheckArrayReturnSize(instruction, il, context);
+                    this.CheckArrayReturnSize(instruction, il, context);
                 }
                 else if (called.Name == nameof(string.Join))
                 {
-                    CheckArrayReturnSize(instruction, il, context);
+                    this.CheckArrayReturnSize(instruction, il, context);
                 }
                 else if (called.Name == ".ctor")
                 {
-                    CheckStringConstructor(instruction, il, context);
+                    this.CheckStringConstructor(instruction, il, context);
                 }
             }
         }
@@ -83,7 +83,7 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
             // Ensure is the constructor with a count param (not all string constructors have a count param)
             if (method.Parameters.Any(x => x.Name == "count"))
             {
-                CheckArrayCreationSize(instruction, il, context);
+                this.CheckArrayCreationSize(instruction, il, context);
             }
         }
 

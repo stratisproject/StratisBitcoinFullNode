@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
@@ -55,10 +56,10 @@ namespace Stratis.Bitcoin
         public IConnectionManager ConnectionManager { get; set; }
 
         /// <summary>Best chain of block headers from genesis.</summary>
-        public ConcurrentChain Chain { get; set; }
+        public ChainIndexer ChainIndexer { get; set; }
 
         /// <summary>Factory for creating and execution of asynchronous loops.</summary>
-        public IAsyncLoopFactory AsyncLoopFactory { get; set; }
+        public IAsyncProvider AsyncProvider { get; set; }
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; internal set; }
@@ -78,6 +79,8 @@ namespace Stratis.Bitcoin
         private IAsyncLoop periodicLogLoop;
 
         private IAsyncLoop periodicBenchmarkLoop;
+
+        private NodeRunningLock nodeRunningLock;
 
         /// <inheritdoc />
         public INodeLifetime NodeLifetime
@@ -159,15 +162,14 @@ namespace Stratis.Bitcoin
             Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
             this.Services = serviceProvider;
-
             this.logger = this.Services.ServiceProvider.GetService<ILoggerFactory>().CreateLogger(this.GetType().FullName);
-
             this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
+
             this.DateTimeProvider = this.Services.ServiceProvider.GetService<IDateTimeProvider>();
             this.Network = this.Services.ServiceProvider.GetService<Network>();
             this.Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
             this.ChainBehaviorState = this.Services.ServiceProvider.GetService<IChainState>();
-            this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
+            this.ChainIndexer = this.Services.ServiceProvider.GetService<ChainIndexer>();
             this.Signals = this.Services.ServiceProvider.GetService<Signals.ISignals>();
             this.InitialBlockDownloadState = this.Services.ServiceProvider.GetService<IInitialBlockDownloadState>();
             this.NodeStats = this.Services.ServiceProvider.GetService<INodeStats>();
@@ -175,7 +177,7 @@ namespace Stratis.Bitcoin
             this.ConnectionManager = this.Services.ServiceProvider.GetService<IConnectionManager>();
             this.loggerFactory = this.Services.ServiceProvider.GetService<NodeSettings>().LoggerFactory;
 
-            this.AsyncLoopFactory = this.Services.ServiceProvider.GetService<IAsyncLoopFactory>();
+            this.AsyncProvider = this.Services.ServiceProvider.GetService<IAsyncProvider>();
 
             this.logger.LogInformation(Properties.Resources.AsciiLogo);
             this.logger.LogInformation("Full node initialized on {0}.", this.Network.Name);
@@ -192,6 +194,14 @@ namespace Stratis.Bitcoin
 
             if (this.State == FullNodeState.Disposing || this.State == FullNodeState.Disposed)
                 throw new ObjectDisposedException(nameof(FullNode));
+
+            this.nodeRunningLock = new NodeRunningLock(this.DataFolder);
+
+            if (!this.nodeRunningLock.TryLockNodeFolder())
+            {
+                this.logger.LogCritical("Node folder is being used by another instance of the application!");
+                throw new Exception("Node folder is being used!");
+            }
 
             this.nodeLifetime = this.Services.ServiceProvider.GetRequiredService<INodeLifetime>() as NodeLifetime;
             this.fullNodeFeatureExecutor = this.Services.ServiceProvider.GetRequiredService<FullNodeFeatureExecutor>();
@@ -227,7 +237,7 @@ namespace Stratis.Bitcoin
         /// </summary>
         private void StartPeriodicLog()
         {
-            this.periodicLogLoop = this.AsyncLoopFactory.Run("PeriodicLog", (cancellation) =>
+            this.periodicLogLoop = this.AsyncProvider.CreateAndRunAsyncLoop("PeriodicLog", (cancellation) =>
             {
                 string stats = this.NodeStats.GetStats();
 
@@ -240,7 +250,7 @@ namespace Stratis.Bitcoin
             repeatEvery: TimeSpans.FiveSeconds,
             startAfter: TimeSpans.FiveSeconds);
 
-            this.periodicBenchmarkLoop = this.AsyncLoopFactory.Run("PeriodicBenchmarkLog", (cancellation) =>
+            this.periodicBenchmarkLoop = this.AsyncProvider.CreateAndRunAsyncLoop("PeriodicBenchmarkLog", (cancellation) =>
             {
                 if (this.InitialBlockDownloadState.IsInitialBlockDownload())
                 {
@@ -290,6 +300,8 @@ namespace Stratis.Bitcoin
             // Fire INodeLifetime.Stopped.
             this.logger.LogInformation("Notify application has stopped.");
             this.nodeLifetime.NotifyStopped();
+
+            this.nodeRunningLock.UnlockNodeFolder();
 
             this.State = FullNodeState.Disposed;
         }

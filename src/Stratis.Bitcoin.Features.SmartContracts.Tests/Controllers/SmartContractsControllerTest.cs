@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Networks;
@@ -53,6 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
                 this.loggerFactory.Object,
                 this.network,
                 this.stateRoot.Object,
+                null,
                 null,
                 null,
                 null,

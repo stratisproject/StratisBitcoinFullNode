@@ -36,9 +36,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
-        /// Add an entry to the address book.
+        /// Adds an entry to the address book.
         /// </summary>
-        /// <param name="request">The object containing the parameters used to create an entry in the address book.</param>
+        /// <param name="request">An object containing the necessary parameters to add an address book entry.</param>
         /// <returns>A JSON object containing the newly added entry.</returns>
         [Route("address")]
         [HttpPost]
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
-        /// Remove an entry from the address book.
+        /// Removes an entry from the address book.
         /// </summary>
         /// <param name="label">The label of the entry to remove.</param>
         /// <returns>A JSON object containing the removed entry.</returns>
@@ -100,10 +100,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
-        /// Get the address book, with optional pagination.
+        /// Gets the address book entries with the option to implement pagination.
+        /// For example, specifying a value of 40 for skip and a value of 20 for take
+        /// gets entries 21 to 40.
+        /// If neither skip or take arguments are provided, then the entire address
+        /// book is retrieved.
+        /// An address book can be accessed from a wallet, but it is a standalone feature,
+        /// which is not attached to any wallet.
         /// </summary>
-        /// <param name="skip">A value representing how many entries to skip.</param>
-        /// <param name="take">A value representing how many entries to take.</param>
+        /// <param name="skip">A value representing how many entries to skip before retrieving the first entry.</param>
+        /// <param name="take">A value representing how many entries to retrieve.</param>
         /// <returns>A JSON object containing the address book.</returns>
         [Route("")]
         [HttpGet]

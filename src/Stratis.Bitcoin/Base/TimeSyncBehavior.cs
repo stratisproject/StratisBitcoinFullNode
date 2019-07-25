@@ -5,6 +5,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -125,7 +126,7 @@ namespace Stratis.Bitcoin.Base
         private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncProvider asyncProvider;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -178,15 +179,15 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
-        /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
+        /// <param name="asyncProvider">Factory for creating background async loop tasks.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="network">The network the node is running on.</param>
-        public TimeSyncBehaviorState(IDateTimeProvider dateTimeProvider, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory, ILoggerFactory loggerFactory, Network network)
+        public TimeSyncBehaviorState(IDateTimeProvider dateTimeProvider, INodeLifetime nodeLifetime, IAsyncProvider asyncProvider, ILoggerFactory loggerFactory, Network network)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dateTimeProvider = dateTimeProvider;
             this.nodeLifetime = nodeLifetime;
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.asyncProvider = asyncProvider;
             this.network = network;
 
             this.inboundTimestampOffsets = new CircularArray<TimestampOffsetSample>(MaxInboundSamples);
@@ -226,7 +227,7 @@ namespace Stratis.Bitcoin.Base
                         {
                             // If we reached the maximum number of samples, we need to remove oldest sample.
                             sources.Remove(oldSample.Source);
-                            this.logger.LogTrace("Oldest sample {0} from peer '{1}' removed.", oldSample.TimeOffset, oldSample.Source);
+                            this.logger.LogDebug("Oldest sample {0} from peer '{1}' removed.", oldSample.TimeOffset, oldSample.Source);
                         }
 
                         this.RecalculateTimeOffsetLocked();
@@ -242,9 +243,9 @@ namespace Stratis.Bitcoin.Base
 
                         res = true;
                     }
-                    else this.logger.LogTrace("Sample from peer '{0}' is already included.", peerAddress);
+                    else this.logger.LogDebug("Sample from peer '{0}' is already included.", peerAddress);
                 }
-                else this.logger.LogTrace("Time sync feature is switched off.");
+                else this.logger.LogDebug("Time sync feature is switched off.");
             }
 
             if (startWarningLoopNow)
@@ -275,7 +276,7 @@ namespace Stratis.Bitcoin.Base
         {
             if (this.outboundTimestampOffsets.Count >= MinOutboundSampleCount)
             {
-                this.logger.LogTrace("We have {0} outbound samples and {1} inbound samples.", this.outboundTimestampOffsets.Count, this.inboundSampleSources.Count);
+                this.logger.LogDebug("We have {0} outbound samples and {1} inbound samples.", this.outboundTimestampOffsets.Count, this.inboundSampleSources.Count);
                 List<double> inboundOffsets = this.inboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds).ToList();
                 List<double> outboundOffsets = this.outboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds).ToList();
 
@@ -306,7 +307,7 @@ namespace Stratis.Bitcoin.Base
                     this.dateTimeProvider.SetAdjustedTimeOffset(TimeSpan.Zero);
                 }
             }
-            else this.logger.LogTrace("We have {0} outbound samples, which is below required minimum of {1} outbound samples.", this.outboundTimestampOffsets.Count, MinOutboundSampleCount);
+            else this.logger.LogDebug("We have {0} outbound samples, which is below required minimum of {1} outbound samples.", this.outboundTimestampOffsets.Count, MinOutboundSampleCount);
         }
 
         /// <summary>
@@ -314,7 +315,7 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         private void StartWarningLoop()
         {
-            this.warningLoop = this.asyncLoopFactory.Run($"{nameof(TimeSyncBehavior)}.WarningLoop", token =>
+            this.warningLoop = this.asyncProvider.CreateAndRunAsyncLoop($"{nameof(TimeSyncBehavior)}.WarningLoop", token =>
             {
                 if (!this.SwitchedOffLimitReached)
                 {
@@ -446,9 +447,9 @@ namespace Stratis.Bitcoin.Base
                         TimeSpan timeOffset = version.Timestamp - this.dateTimeProvider.GetTimeOffset();
                         if (timeOffset != null) this.state.AddTimeData(address, timeOffset, peer.Inbound);
                     }
-                    else this.logger.LogTrace("Node '{0}' does not have an initialized time offset.", peer.RemoteSocketEndpoint);
+                    else this.logger.LogDebug("Node '{0}' does not have an initialized time offset.", peer.RemoteSocketEndpoint);
                 }
-                else this.logger.LogTrace("Message received from unknown node's address.");
+                else this.logger.LogDebug("Message received from unknown node's address.");
             }
 
             return Task.CompletedTask;

@@ -1,6 +1,4 @@
 using System;
-using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.P2P.Peer;
@@ -22,7 +20,7 @@ namespace Stratis.Bitcoin.Connection
     public class ConnectionManagerBehavior : NetworkPeerBehavior, IConnectionManagerBehavior
     {
         /// <summary>Logger factory to create loggers.</summary>
-        protected readonly ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -33,7 +31,7 @@ namespace Stratis.Bitcoin.Connection
         /// </summary>
         private readonly ILogger infoLogger;
 
-        protected readonly IConnectionManager connectionManager;
+        private readonly IConnectionManager connectionManager;
 
         public bool Whitelisted { get; internal set; }
 
@@ -87,7 +85,7 @@ namespace Stratis.Bitcoin.Connection
 
                 if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline))
                 {
-                    this.infoLogger.LogInformation("Peer '{0}' offline, reason: '{1}'.", peer.RemoteSocketEndpoint, peer.DisconnectReason?.Reason ?? "unknown");
+                    this.infoLogger.LogInformation("Peer '{0}' offline, reason: '{1}'.{2}", peer.RemoteSocketEndpoint, peer.DisconnectReason?.Reason ?? "unknown", peer.DisconnectReason?.Exception?.Message ?? string.Empty);
 
                     this.connectionManager.RemoveConnectedPeer(peer, "Peer offline");
                 }
@@ -101,7 +99,9 @@ namespace Stratis.Bitcoin.Connection
         protected override void DetachCore()
         {
             this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
-            this.connectionManager.PeerDisconnected(this.AttachedPeer.Connection.Id);
+
+            if (this.AttachedPeer.Connection != null)
+                this.connectionManager.PeerDisconnected(this.AttachedPeer.Connection.Id);
         }
     }
 }

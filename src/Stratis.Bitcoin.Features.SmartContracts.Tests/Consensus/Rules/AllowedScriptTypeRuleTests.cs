@@ -1,21 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.Extensions.Logging;
-using Moq;
-using NBitcoin;
+﻿using NBitcoin;
 using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Configuration.Settings;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
-using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Networks;
 using Xunit;
 
@@ -25,42 +12,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
     {
         private readonly Network network;
 
-        private readonly TestContractRulesEngine rulesEngine;
-
         private readonly AllowedScriptTypeRule rule;
 
         public AllowedScriptTypesRuleTest()
         {
             this.network = new SmartContractsRegTest();
-
-            var loggerFactory = new Mock<ILoggerFactory>();
-            var dateTimeProvider = new Mock<IDateTimeProvider>();
-            var chain = new Mock<ConcurrentChain>();
-            var nodeDeployments = new Mock<NodeDeployments>();
-            var consensusSettings = new ConsensusSettings(NodeSettings.Default(this.network));
-            var checkpoints = new Mock<ICheckpoints>();
-            var coinView = new Mock<ICoinView>();
-            var chainState = new Mock<ChainState>();
-            var invalidBlockHashStore = new Mock<IInvalidBlockHashStore>();
-
-            this.rulesEngine = new TestContractRulesEngine(this.network,
-                loggerFactory.Object,
-                dateTimeProvider.Object,
-                chain.Object,
-                new NodeDeployments(this.network, chain.Object),
-                consensusSettings,
-                checkpoints.Object,
-                coinView.Object,
-                chainState.Object,
-                invalidBlockHashStore.Object,
-                new NodeStats(new DateTimeProvider())
-            );
-
-            this.rule = new AllowedScriptTypeRule
-            {
-                Parent = this.rulesEngine
-            };
-            rule.Initialize();
+            this.rule = new AllowedScriptTypeRule(this.network);
         }
 
         [Fact]

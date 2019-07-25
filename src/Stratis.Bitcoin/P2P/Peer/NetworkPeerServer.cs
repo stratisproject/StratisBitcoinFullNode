@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -74,12 +74,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             ILoggerFactory loggerFactory,
             INetworkPeerFactory networkPeerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
-            ConnectionManagerSettings connectionManagerSettings)
+            ConnectionManagerSettings connectionManagerSettings,
+            IAsyncProvider asyncProvider)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{localEndPoint}] ");
 
             this.networkPeerFactory = networkPeerFactory;
-            this.networkPeerDisposer = new NetworkPeerDisposer(loggerFactory);
+            this.networkPeerDisposer = new NetworkPeerDisposer(loggerFactory, asyncProvider);
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.connectionManagerSettings = connectionManagerSettings;
 
@@ -100,7 +101,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.acceptTask = Task.CompletedTask;
 
-            this.logger.LogTrace("Network peer server ready to listen on '{0}'.", this.LocalEndpoint);
+            this.logger.LogDebug("Network peer server ready to listen on '{0}'.", this.LocalEndpoint);
         }
 
         /// <summary>
@@ -116,7 +117,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception e)
             {
-                this.logger.LogTrace("Exception occurred: {0}", e.ToString());
+                this.logger.LogDebug("Exception occurred: {0}", e.ToString());
                 throw;
             }
         }
@@ -126,7 +127,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         private async Task AcceptClientsAsync()
         {
-            this.logger.LogTrace("Accepting incoming connections.");
+            this.logger.LogDebug("Accepting incoming connections.");
 
             try
             {
@@ -157,12 +158,12 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                     if (!this.AllowClientConnection(tcpClient))
                     {
-                        this.logger.LogTrace("Connection from client '{0}' was rejected and will be closed.", tcpClient.Client.RemoteEndPoint);
+                        this.logger.LogDebug("Connection from client '{0}' was rejected and will be closed.", tcpClient.Client.RemoteEndPoint);
                         tcpClient.Close();
                         continue;
                     }
 
-                    this.logger.LogTrace("Connection accepted from client '{0}'.", tcpClient.Client.RemoteEndPoint);
+                    this.logger.LogDebug("Connection accepted from client '{0}'.", tcpClient.Client.RemoteEndPoint);
 
                     this.networkPeerFactory.CreateNetworkPeer(tcpClient, this.CreateNetworkPeerConnectionParameters(), this.networkPeerDisposer);
                 }
@@ -182,10 +183,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             this.serverCancel.Cancel();
 
-            this.logger.LogTrace("Stopping TCP listener.");
+            this.logger.LogDebug("Stopping TCP listener.");
             this.tcpListener.Stop();
 
-            this.logger.LogTrace("Waiting for accepting task to complete.");
+            this.logger.LogDebug("Waiting for accepting task to complete.");
             this.acceptTask.Wait();
 
             if (this.networkPeerDisposer.ConnectedPeersCount > 0)
@@ -227,15 +228,15 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             var clientLocalEndPoint = tcpClient.Client.LocalEndPoint as IPEndPoint;
 
-            bool endpointCanBeWhiteListed = clientLocalEndPoint.CanBeMappedTo(this.connectionManagerSettings.Listen.Select(x => x.Endpoint).ToList(), out IPEndPoint endpoint);
+            bool endpointCanBeWhiteListed = this.connectionManagerSettings.Bind.Where(x => x.Whitelisted).Any(x => x.Endpoint.Contains(clientLocalEndPoint));
 
-            if ((endpoint != null) && endpointCanBeWhiteListed)
+            if (endpointCanBeWhiteListed)
             {
                 this.logger.LogTrace("(-)[ENDPOINT_WHITELISTED_ALLOW_CONNECTION]:true");
                 return true;
             }
 
-            this.logger.LogTrace("Node '{0}' is not white listed during initial block download.", clientLocalEndPoint);
+            this.logger.LogDebug("Node '{0}' is not white listed during initial block download.", clientLocalEndPoint);
 
             return false;
         }

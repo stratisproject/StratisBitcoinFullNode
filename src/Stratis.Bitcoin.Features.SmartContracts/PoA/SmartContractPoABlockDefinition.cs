@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -32,9 +31,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             Network network,
             ISenderRetriever senderRetriever,
             IStateRepositoryRoot stateRoot,
-            NodeSettings nodeSettings)
+            MinerSettings minerSettings)
             : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool,
-                mempoolLock, new MinerSettings(nodeSettings), network, senderRetriever, stateRoot)
+                mempoolLock, minerSettings, network, senderRetriever, stateRoot)
         {
             // TODO: Fix gross MinerSettings injection ^^
         }

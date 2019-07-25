@@ -32,7 +32,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
         {
             var sb = new List<string>();
 
-            foreach (var obj in methodParameters)
+            foreach (object obj in methodParameters)
             {
                 sb.Add(this.SerializeObject(obj));
             }
@@ -42,7 +42,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
         private string SerializeObject(object obj)
         {
-            var prefix = Prefix.ForObject(obj);
+            Prefix prefix = Prefix.ForObject(obj);
 
             string serialized = Serialize(obj, this.network);
 
@@ -51,7 +51,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
         public static string Serialize(object obj, Network network)
         {
-            var primitiveType = GetPrimitiveType(obj);
+            MethodParameterDataType primitiveType = GetPrimitiveType(obj);
 
             // ToString works fine for all of our data types except byte arrays and addresses
             string serialized;
@@ -110,12 +110,12 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
         public object[] Deserialize(string[] parameters)
         {
-            return StringToObjects(this.EscapeAndJoin(parameters));
+            return this.StringToObjects(this.EscapeAndJoin(parameters));
         }
 
         public object[] Deserialize(string parameters)
         {
-            return StringToObjects(parameters);
+            return this.StringToObjects(parameters);
         }
 
         private object[] StringToObjects(string parameters)
@@ -124,13 +124,22 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
             var processedParameters = new List<object>();
 
-            foreach (var parameter in split)
+            foreach (string parameter in split)
             {
+                string parameterType = "";
+                string parameterValue = "";
+
                 try
                 {
                     string[] parameterSignature =
                         Regex.Split(parameter.Replace(@"\|", "|"), @"(?<!(?<!\\)*\\)\#").ToArray();
                     parameterSignature[1] = parameterSignature[1].Replace(@"\#", "#");
+
+                    parameterType = ulong.TryParse(parameterSignature[0], out var parsedParameterType) 
+                        ? Enum.GetName(typeof(MethodParameterDataType), parsedParameterType) ?? parameterSignature[0]
+                        : parameterSignature[0];
+
+                    parameterValue = parameterSignature[1];
 
                     if (parameterSignature[0] == MethodParameterDataType.Bool.ToString("d"))
                         processedParameters.Add(bool.Parse(parameterSignature[1]));
@@ -163,12 +172,11 @@ namespace Stratis.SmartContracts.CLR.Serialization
                         processedParameters.Add(parameterSignature[1].HexToByteArray());
 
                     else
-                        throw new MethodParameterStringSerializerException(string.Format("{0} is not supported.",
-                            parameterSignature[0]));
+                        throw new MethodParameterStringSerializerException($"Parameter type '{parameterType}' is not supported.");
                 }
                 catch (Exception e) when (e is FormatException || e is OverflowException || e is ArgumentException || e is ArgumentNullException)
                 {
-                    throw new MethodParameterStringSerializerException(string.Format("Error deserializing parameter {0}", parameter), e);
+                    throw new MethodParameterStringSerializerException($"Error deserializing parameter {parameterType} with value {parameterValue}", e);
                 }
             }
 
@@ -217,7 +225,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
                     reconstructed.Add(hashes[i]);
                 }
 
-                var result = string.Join('#', reconstructed).Replace("#", @"\#");
+                string result = string.Join('#', reconstructed).Replace("#", @"\#");
                 return hashes[0].Insert(hashes[0].Length, "#" + result);
             });
 

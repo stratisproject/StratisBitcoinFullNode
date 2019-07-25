@@ -36,12 +36,12 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
         {
             Guid id = Guid.NewGuid();
 
-            (FieldDefinition observerInstanceField, TypeDefinition observerType) = GetObserverInstance(module, id);
+            (FieldDefinition observerInstanceField, TypeDefinition observerType) = this.GetObserverInstance(module, id);
             var observer = new ObserverReferences(observerInstanceField, module);
 
             foreach (TypeDefinition type in module.GetTypes())
             {
-                RewriteType(type, observer);
+                this.RewriteType(type, observer);
             }
 
             ObserverInstances.Set(id, this.observerToInject);
@@ -92,7 +92,7 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
         {
             foreach (MethodDefinition method in type.Methods)
             {
-                RewriteMethod(method, observer);
+                this.RewriteMethod(method, observer);
             }
         }
 

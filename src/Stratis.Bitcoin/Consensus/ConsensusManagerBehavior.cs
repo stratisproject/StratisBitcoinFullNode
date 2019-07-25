@@ -13,6 +13,7 @@ using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -20,19 +21,19 @@ namespace Stratis.Bitcoin.Consensus
     public class ConsensusManagerBehavior : NetworkPeerBehavior
     {
         /// <summary>Provider of IBD state.</summary>
-        private readonly IInitialBlockDownloadState initialBlockDownloadState;
+        protected IInitialBlockDownloadState InitialBlockDownloadState { get; private set; }
 
-        /// <inheritdoc cref="ConsensusManager"/>
-        private readonly IConsensusManager consensusManager;
+        /// <inheritdoc cref="Consensus.ConsensusManager"/>
+        protected IConsensusManager ConsensusManager { get; private set; }
 
-        /// <inheritdoc cref="ConcurrentChain"/>
-        protected ConcurrentChain chain;
+        /// <inheritdoc cref="NBitcoin.ChainIndexer"/>
+        protected ChainIndexer ChainIndexer { get; private set; }
 
         /// <inheritdoc cref="IPeerBanning"/>
-        private readonly IPeerBanning peerBanning;
+        protected IPeerBanning PeerBanning { get; private set; }
 
         /// <summary>Factory for creating loggers.</summary>
-        private readonly ILoggerFactory loggerFactory;
+        protected ILoggerFactory LoggerFactory { get; private set; }
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -62,23 +63,23 @@ namespace Stratis.Bitcoin.Consensus
         /// <seealso cref="https://en.bitcoin.it/wiki/Protocol_documentation#getheaders"/>
         protected const int MaxItemsPerHeadersMessage = 2000;
 
-        /// <summary>List of block headers that were not yet consumed by <see cref="ConsensusManager"/>.</summary>
+        /// <summary>List of block headers that were not yet consumed by <see cref="Consensus.ConsensusManager"/>.</summary>
         /// <remarks>Should be protected by <see cref="asyncLock"/>.</remarks>
-        protected readonly List<BlockHeader> cachedHeaders;
+        private readonly List<BlockHeader> cachedHeaders;
 
         /// <summary>Protects access to <see cref="cachedHeaders"/>.</summary>
-        protected readonly AsyncLock asyncLock;
+        private readonly AsyncLock asyncLock;
 
         /// <summary>Protects write access to the <see cref="BestSentHeader"/>.</summary>
         private readonly object bestSentHeaderLock;
 
-        public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
+        public ConsensusManagerBehavior(ChainIndexer chainIndexer, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
         {
-            this.loggerFactory = loggerFactory;
-            this.initialBlockDownloadState = initialBlockDownloadState;
-            this.consensusManager = consensusManager;
-            this.chain = chain;
-            this.peerBanning = peerBanning;
+            this.LoggerFactory = loggerFactory;
+            this.InitialBlockDownloadState = initialBlockDownloadState;
+            this.ConsensusManager = consensusManager;
+            this.ChainIndexer = chainIndexer;
+            this.PeerBanning = peerBanning;
 
             this.cachedHeaders = new List<BlockHeader>();
             this.asyncLock = new AsyncLock();
@@ -87,7 +88,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }
 
-        /// <summary>Presents cached headers to <see cref="ConsensusManager"/> from the cache if any and removes consumed from the cache.</summary>
+        /// <summary>Presents cached headers to <see cref="Consensus.ConsensusManager"/> from the cache if any and removes consumed from the cache.</summary>
         public async Task<ConnectNewHeadersResult> ConsensusTipChangedAsync()
         {
             ConnectNewHeadersResult result = null;
@@ -111,7 +112,8 @@ namespace Stratis.Bitcoin.Consensus
                     this.BestReceivedTip = result.Consumed;
                     this.UpdateBestSentHeader(this.BestReceivedTip);
 
-                    int consumedCount = this.cachedHeaders.IndexOf(result.Consumed.Header) + 1;
+                    int consumedCount = this.GetConsumedHeadersCount(this.cachedHeaders, result.Consumed.Header);
+
                     this.cachedHeaders.RemoveRange(0, consumedCount);
                     int cacheSize = this.cachedHeaders.Count;
 
@@ -137,6 +139,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <param name="peer">Peer from which the message was received.</param>
         /// <param name="message">Received message to process.</param>
+        [NoTrace]
         protected virtual async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             switch (message.Message.Payload)
@@ -184,7 +187,7 @@ namespace Stratis.Bitcoin.Consensus
             // Ignoring "getheaders" from peers because node is in initial block download unless the peer is whitelisted.
             // We don't want to reveal our position in IBD which can be used by attacker. Also we don't won't to deliver peers any blocks
             // because that will slow down our own syncing process.
-            if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.IsWhitelisted())
+            if (this.InitialBlockDownloadState.IsInitialBlockDownload() && !peer.IsWhitelisted())
             {
                 this.logger.LogDebug("GetHeaders message from {0} was ignored because node is in IBD.", peer.PeerEndPoint);
                 this.logger.LogTrace("(-)[IGNORE_ON_IBD]");
@@ -198,7 +201,10 @@ namespace Stratis.Bitcoin.Consensus
                 try
                 {
                     await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
-                    this.BestSentHeader = lastHeader;
+
+                    // Do not set best sent header if no new headers were sent.
+                    if (lastHeader != null)
+                        this.BestSentHeader = lastHeader;
                 }
                 catch (OperationCanceledException)
                 {
@@ -210,7 +216,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Find last header that should be included in headers payload.</summary>
         protected ChainedHeader GetLastHeaderToSend(ChainedHeader fork, uint256 hashStop)
         {
-            ChainedHeader lastHeader = this.consensusManager.Tip;
+            ChainedHeader lastHeader = this.ConsensusManager.Tip;
 
             // If the hash stop has been given, calculate the last chained header from it.
             if (hashStop != null && hashStop != uint256.Zero)
@@ -238,7 +244,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>Payload with headers from locator towards consensus tip or <c>null</c> in case locator was invalid.</returns>
         protected virtual Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
         {
-            ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
+            ChainedHeader fork = this.ChainIndexer.FindFork(getHeadersPayload.BlockLocator);
 
             lastHeader = null;
 
@@ -296,7 +302,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (!this.ValidateHeadersFromPayload(peer, headers, out string validationError))
             {
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, validationError);
+                this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, validationError);
 
                 this.logger.LogDebug("Headers are invalid. Peer was banned.");
                 this.logger.LogTrace("(-)[VALIDATION_FAILED]");
@@ -319,7 +325,7 @@ namespace Stratis.Bitcoin.Consensus
                     uint256 cachedHeader = this.cachedHeaders.Last().GetHash();
                     uint256 prevNewHeader = headers.First().HashPrevBlock;
 
-                    // ensure headers can connect to cached headers.
+                    // Ensure headers can connect to cached headers.
                     if (cachedHeader == prevNewHeader)
                     {
                         this.cachedHeaders.AddRange(headers);
@@ -330,21 +336,16 @@ namespace Stratis.Bitcoin.Consensus
                     }
 
                     // Workaround for special case when peer announces new block but we don't want to clean the cache.
-                    if (headers.Count == 1 && this.BestReceivedTip != null)
+                    // For example, we are busy syncing and have D E F in the cache (assume A B C are already in the
+                    // CHT). The peer now advertises new block M because we haven't completed IBD yet.
+                    // We do not want to clear the currently useful cache unnecessarily.
+                    if (this.CheckIfUnsolicitedFutureHeader(headers))
                     {
-                        // Distance of header from the peer expected tip.
-                        double distanceSeconds = (headers[0].BlockTime - this.BestReceivedTip.Header.BlockTime).TotalSeconds;
-
-                        if (this.chain.Network.MaxTipAge < distanceSeconds)
-                        {
-                            // A single header that is not connected to last header is likely an
-                            // unsolicited header that is a result of the peer tip being extended.
-                            // If the header time is far in the future we ignore it.
-                            this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT]");
-                            return;
-                        }
+                        this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT]");
+                        return;
                     }
 
+                    // The header(s) could not be connected and were not an unsolicited block advertisement.
                     this.cachedHeaders.Clear();
                     await this.ResyncAsync().ConfigureAwait(false);
 
@@ -371,13 +372,23 @@ namespace Stratis.Bitcoin.Consensus
                     return;
                 }
 
+                if (result.Consumed == this.BestReceivedTip)
+                {
+                    this.logger.LogDebug("No new headers were presented");
+                    this.logger.LogTrace("(-)[NO_NEW_HEADERS_PRESENTED]");
+
+                    return;
+                }
+
+                this.logger.LogDebug("{0} is {1} and {2} is {3}", nameof(this.BestReceivedTip), this.BestReceivedTip, nameof(result.Consumed), result.Consumed);
+
                 this.BestReceivedTip = result.Consumed;
                 this.UpdateBestSentHeader(this.BestReceivedTip);
 
                 if (result.Consumed.HashBlock != headers.Last().GetHash())
                 {
                     // Some headers were not consumed, add to cache.
-                    int consumedCount = headers.IndexOf(result.Consumed.Header) + 1;
+                    int consumedCount = this.GetConsumedHeadersCount(headers, result.Consumed.Header);
                     this.cachedHeaders.AddRange(headers.Skip(consumedCount));
 
                     this.logger.LogDebug("{0} out of {1} items were not consumed and added to cache.", headers.Count - consumedCount, headers.Count);
@@ -429,7 +440,7 @@ namespace Stratis.Bitcoin.Consensus
             return true;
         }
 
-        /// <summary>Presents the headers to <see cref="ConsensusManager"/> and handles exceptions if any.</summary>
+        /// <summary>Presents the headers to <see cref="Consensus.ConsensusManager"/> and handles exceptions if any.</summary>
         /// <remarks>Have to be locked by <see cref="asyncLock"/>.</remarks>
         /// <param name="headers">List of headers that the peer presented.</param>
         /// <param name="triggerDownload">Specifies if the download should be scheduled for interesting blocks.</param>
@@ -448,38 +459,72 @@ namespace Stratis.Bitcoin.Consensus
 
             try
             {
-                result = this.consensusManager.HeadersPresented(peer, headers, triggerDownload);
+                result = this.ConsensusManager.HeadersPresented(peer, headers, triggerDownload);
             }
             catch (ConnectHeaderException)
             {
+                // This is typically thrown when the first header refers to a previous block hash that is not in
+                // the header tree currently. This is not regarded as bannable, as it could be a legitimate reorg.
                 this.logger.LogDebug("Unable to connect headers.");
-                this.cachedHeaders.Clear();
 
-                // Resync in case can't connect.
-                await this.ResyncAsync().ConfigureAwait(false);
+                if (this.CheckIfUnsolicitedFutureHeader(headers))
+                {
+                    // However, during IBD it is much more likely that the unconnectable header is an unsolicited
+                    // block advertisement. In that case we just ignore the failed header and don't modify the cache.
+                    // TODO: Review more closely what Bitcoin Core does here - they seem to allow 8 unconnectable headers before
+                    // applying partial DoS points to a peer. Incorporate that into rate limiting code?
+                    this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT_2]");
+                }
+                else
+                {
+                    // Resync in case we can't connect the header.
+                    this.cachedHeaders.Clear();
+                    await this.ResyncAsync().ConfigureAwait(false);
+                }
             }
             catch (ConsensusRuleException exception)
             {
                 this.logger.LogDebug("Peer's header is invalid. Peer will be banned and disconnected. Error: {0}.", exception.ConsensusError);
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, $"Peer presented invalid header, error: {exception.ConsensusError}.");
+                this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, $"Peer presented invalid header, error: {exception.ConsensusError}.");
             }
             catch (HeaderInvalidException)
             {
                 this.logger.LogDebug("Peer's header is invalid. Peer will be banned and disconnected.");
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, $"Peer presented invalid header.");
+                this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, $"Peer presented invalid header.");
             }
             catch (CheckpointMismatchException)
             {
                 this.logger.LogDebug("Peer's headers violated a checkpoint. Peer will be banned and disconnected.");
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer presented header that violates a checkpoint.");
+                this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer presented header that violates a checkpoint.");
             }
             catch (MaxReorgViolationException)
             {
                 this.logger.LogDebug("Peer violates max reorg. Peer will be banned and disconnected.");
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer violates max reorg rule.");
+                this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer violates max reorg rule.");
             }
 
             return result;
+        }
+
+        private bool CheckIfUnsolicitedFutureHeader(List<BlockHeader> headers)
+        {
+            if (headers.Count == 1 && this.BestReceivedTip != null)
+            {
+                // Distance of header from the peer expected tip.
+                double distanceSeconds = (headers[0].BlockTime - this.BestReceivedTip.Header.BlockTime).TotalSeconds;
+
+                if (this.ChainIndexer.Network.MaxTipAge < distanceSeconds)
+                {
+                    // A single header that is not connected to last header is likely an
+                    // unsolicited header that is a result of the peer tip being extended.
+                    // If the header time is far in the future we ignore it.
+                    return true;
+                }
+            }
+
+            // If there was more than one header received, or the single received header was not far in the future,
+            // then we may need to take further action.
+            return false;
         }
 
         /// <summary>Sync when handshake is finished.</summary>
@@ -495,6 +540,7 @@ namespace Stratis.Bitcoin.Consensus
             this.BestReceivedTip = null;
             this.BestSentHeader = null;
 
+            this.cachedHeaders.Clear();
             await this.ResyncAsync().ConfigureAwait(false);
         }
 
@@ -529,6 +575,12 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Tries to sync the chain with the peer by sending it <see cref="GetHeadersPayload"/> in case peer's state is <see cref="NetworkPeerState.HandShaked"/>.</summary>
         public async Task ResyncAsync()
         {
+            if (this.cachedHeaders.Any())
+            {
+                this.logger.LogTrace("(-)[CACHE_NOT_EMPTY]");
+                throw new ConsensusException($"Resync is only allowed to be called when the cache is empty. The current cache count is {this.cachedHeaders.Count}.");
+            }
+
             INetworkPeer peer = this.AttachedPeer;
 
             if ((peer != null) && (peer.State == NetworkPeerState.HandShaked))
@@ -563,7 +615,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             return new GetHeadersPayload()
             {
-                BlockLocator = (this.BestReceivedTip ?? this.consensusManager.Tip).GetLocator(),
+                BlockLocator = (this.BestReceivedTip ?? this.ConsensusManager.Tip).GetLocator(),
                 HashStop = null
             };
         }
@@ -582,7 +634,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </remarks>
         protected async Task ProcessInvAsync(INetworkPeer peer, List<InventoryVector> inventory)
         {
-            if (this.initialBlockDownloadState.IsInitialBlockDownload())
+            if (this.InitialBlockDownloadState.IsInitialBlockDownload())
             {
                 this.logger.LogTrace("(-)[IGNORE_DURING_IBD]");
                 return;
@@ -597,7 +649,7 @@ namespace Stratis.Bitcoin.Consensus
             if (inventory.Count > InvPayload.MaxInventorySize)
             {
                 this.logger.LogDebug("Peer sent oversize inventory message. Peer will be banned and disconnected.");
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer sent oversize inventory message.");
+                this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer sent oversize inventory message.");
                 this.logger.LogTrace("(-)[OVERSIZE_INVENTORY]");
                 return;
             }
@@ -606,7 +658,7 @@ namespace Stratis.Bitcoin.Consensus
             bool blockHashAnnounced = false;
             foreach (InventoryVector inventoryVector in inventory)
             {
-                if ((inventoryVector.Type == InventoryType.MSG_BLOCK) && (this.chain.GetBlock(inventoryVector.Hash) == null))
+                if ((inventoryVector.Type == InventoryType.MSG_BLOCK) && (this.ChainIndexer.GetHeader(inventoryVector.Hash) == null))
                 {
                     blockHashAnnounced = true;
                     break;
@@ -615,29 +667,35 @@ namespace Stratis.Bitcoin.Consensus
 
             if (blockHashAnnounced)
             {
-                this.logger.LogDebug("Block was announced, sending getheaders.");
-                await this.ResyncAsync().ConfigureAwait(false);
+                if (this.cachedHeaders.Count == 0)
+                {
+                    this.logger.LogDebug("An 'Inv' was received, requesting new headers.");
+                    await this.ResyncAsync().ConfigureAwait(false);
+                }
             }
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void AttachCore()
         {
             // Initialize auto sync timer.
             int interval = (int)TimeSpan.FromMinutes(AutosyncIntervalMinutes).TotalMilliseconds;
             this.autosyncTimer = new Timer(async (o) =>
             {
-                await this.ResyncAsync().ConfigureAwait(false);
+                if (this.cachedHeaders.Count == 0)
+                    await this.ResyncAsync().ConfigureAwait(false);
             }, null, interval, interval);
 
             if (this.AttachedPeer.State == NetworkPeerState.Connected)
-                this.AttachedPeer.MyVersion.StartHeight = this.consensusManager.Tip.Height;
+                this.AttachedPeer.MyVersion.StartHeight = this.ConsensusManager.Tip.Height;
 
             this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void DetachCore()
         {
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
@@ -645,6 +703,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public override void Dispose()
         {
             this.autosyncTimer?.Dispose();
@@ -653,9 +712,38 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public override object Clone()
         {
-            return new ConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory);
+            return new ConsensusManagerBehavior(this.ChainIndexer, this.InitialBlockDownloadState, this.ConsensusManager, this.PeerBanning, this.LoggerFactory);
+        }
+
+        [NoTrace]
+        internal int GetCachedItemsCount()
+        {
+            return this.cachedHeaders.Count;
+        }
+
+        /// <summary>
+        /// Gets the count of consumed headers in a <paramref name="headers"/> list, giving a <paramref name="consumedHeader"/> reference.
+        /// All items up to <paramref name="consumedHeader"/> are considered consumed.
+        /// </summary>
+        /// <param name="headers">List of headers to use to get the consumed count.</param>
+        /// <param name="consumedHeader">The consumed header reference.</param>
+        /// <returns>The number of consumed cached items.</returns>
+        private int GetConsumedHeadersCount(List<BlockHeader> headers, BlockHeader consumedHeader)
+        {
+            uint256 consumedHeaderHash = consumedHeader.GetHash();
+
+            for (int i = 0; i < headers.Count; i++)
+            {
+                if (headers[i].GetHash() == consumedHeaderHash)
+                {
+                    return i + 1;
+                }
+            }
+
+            return 0;
         }
     }
 }

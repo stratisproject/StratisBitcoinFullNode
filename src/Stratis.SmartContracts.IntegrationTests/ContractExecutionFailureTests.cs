@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using CSharpFunctionalExtensions;
 using Mono.Cecil;
 using NBitcoin;
@@ -9,11 +8,12 @@ using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.Wallet.Models;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Util;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Util;
+using Stratis.SmartContracts.RuntimeObserver;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
 
@@ -60,6 +60,42 @@ namespace Stratis.SmartContracts.IntegrationTests
             Result<WalletSendTransactionModel> result = this.node1.SendTransaction(new Script(garbageTxData), 25);
             Assert.True(result.IsFailure);
             Assert.Equal("Invalid ContractTxData format", result.Error); // TODO: const error message
+        }
+
+        [Fact]
+        public void EmptyMethodNameFails()
+        {
+            // Ensure fixture is funded.
+            this.mockChain.MineBlocks(1);
+
+            // Deploy contract to send to
+            ContractCompilationResult receiveCompilationResult = ContractCompiler.CompileFile("SmartContracts/BasicReceive.cs");
+            Assert.True(receiveCompilationResult.Success);
+            BuildCreateContractTransactionResponse receiveResponse = this.node1.SendCreateContractTransaction(receiveCompilationResult.Compilation, 0);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(receiveResponse.NewContractAddress));
+
+            decimal amount = 25;
+            Money senderBalanceBefore = this.node1.WalletSpendableBalance;
+            uint256 currentHash = this.node1.GetLastBlock().GetHash();
+
+            // Send to empty method name on contract
+            string[] parameters = new string[] { string.Format("{0}#{1}", (int)MethodParameterDataType.Address, receiveResponse.NewContractAddress) };
+            BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(
+                "",
+                receiveResponse.NewContractAddress,
+                amount,
+                parameters);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
+
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+
+            // Receipt shows failure
+            ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
+            Assert.False(receipt.Success);
+            Assert.Equal(StateTransitionErrors.NoMethodName, receipt.Error);
         }
 
         [Fact]

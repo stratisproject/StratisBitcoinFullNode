@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -15,7 +14,7 @@ using Xunit;
 namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
     /// <summary>
-    /// These tests are for RPC tests that require modifying the chain/nodes. 
+    /// These tests are for RPC tests that require modifying the chain/nodes.
     /// Setup of the chain or nodes can be done in each test.
     /// </summary>
     public class RpcBitcoinMutableTests
@@ -68,7 +67,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 rpc.AddNode(nodeB.Endpoint);
 
                 AddedNodeInfo[] info = null;
-                TestHelper.WaitLoop(() =>
+                TestBase.WaitLoop(() =>
                 {
                     info = rpc.GetAddedNodeInfo(true);
                     return info != null && info.Length > 0;
@@ -85,7 +84,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 Assert.Null(oneInfo);
                 rpc.RemoveNode(nodeB.Endpoint);
 
-                TestHelper.WaitLoop(() =>
+                TestBase.WaitLoop(() =>
                 {
                     info = rpc.GetAddedNodeInfo(true);
                     return info.Length == 0;
@@ -376,13 +375,14 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 rpcClient = node.CreateRPCClient();
                 rpcClient.GetBlockCount();
 
-                string invalidCookiePath = Path.Combine("Data","invalid.cookie");
+                string invalidCookiePath = Path.Combine("Data", "invalid.cookie");
                 string notFoundCookiePath = Path.Combine("Data", "not_found.cookie");
                 Assert.Throws<ArgumentException>(() => new RPCClient($"cookiefile={invalidCookiePath}", new Uri("http://localhost/"), this.regTest));
                 Assert.Throws<FileNotFoundException>(() => new RPCClient($"cookiefile={notFoundCookiePath}", new Uri("http://localhost/"), this.regTest));
 
-                rpcClient = new RPCClient("bla:bla", null as Uri, this.regTest);
-                Assert.Equal("http://127.0.0.1:" + this.regTest.RPCPort + "/", rpcClient.Address.AbsoluteUri);
+                var uri = new Uri("http://127.0.0.1:" + this.regTest.DefaultRPCPort + "/");
+                rpcClient = new RPCClient("bla:bla", uri, this.regTest);
+                Assert.Equal(uri.OriginalString, rpcClient.Address.AbsoluteUri);
 
                 rpcClient = node.CreateRPCClient();
                 rpcClient = rpcClient.PrepareBatch();
@@ -397,7 +397,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 rpcClient.SendBatch();
                 blockCount = blockCountAsync.GetAwaiter().GetResult();
 
-                rpcClient = new RPCClient("bla:bla", "http://toto/", this.regTest);
+                rpcClient = new RPCClient("bla:bla", new Uri("http://toto/"), this.regTest);
             }
         }
     }

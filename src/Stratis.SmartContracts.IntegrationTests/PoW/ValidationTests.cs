@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using Stratis.Bitcoin.Features.SmartContracts.Models;
-using Stratis.SmartContracts.CLR;
+﻿using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;

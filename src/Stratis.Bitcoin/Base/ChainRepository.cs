@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Base
         Task<ChainedHeader> LoadAsync(ChainedHeader genesisHeader);
 
         /// <summary>Persists chain of headers to the database.</summary>
-        Task SaveAsync(ConcurrentChain chain);
+        Task SaveAsync(ChainIndexer chainIndexer);
     }
 
     public class ChainRepository : IChainRepository
@@ -93,16 +93,16 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <inheritdoc />
-        public Task SaveAsync(ConcurrentChain chain)
+        public Task SaveAsync(ChainIndexer chainIndexer)
         {
-            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(chainIndexer, nameof(chainIndexer));
 
             Task task = Task.Run(() =>
             {
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    ChainedHeader fork = this.locator == null ? null : chain.FindFork(this.locator);
-                    ChainedHeader tip = chain.Tip;
+                    ChainedHeader fork = this.locator == null ? null : chainIndexer.FindFork(this.locator);
+                    ChainedHeader tip = chainIndexer.Tip;
                     ChainedHeader toSave = tip;
 
                     var headers = new List<ChainedHeader>();
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Base
                         if (header is ProvenBlockHeader)
                         {
                             // copy the header parameters, untill we dont make PH a normal header we store it in its own repo.
-                            BlockHeader newHeader = chain.Network.Consensus.ConsensusFactory.CreateBlockHeader();
+                            BlockHeader newHeader = chainIndexer.Network.Consensus.ConsensusFactory.CreateBlockHeader();
                             newHeader.Bits = header.Bits;
                             newHeader.Time = header.Time;
                             newHeader.Nonce = header.Nonce;

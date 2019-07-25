@@ -1,5 +1,6 @@
 ﻿using System;
-using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -15,6 +16,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private static TimeSpan adjustedTimeOffset;
         private static DateTime startFrom;
 
+        private SubscriptionToken blockConnectedSubscription;
+
         static GenerateCoinsFastDateTimeProvider()
         {
             adjustedTimeOffset = TimeSpan.Zero;
@@ -23,7 +26,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public GenerateCoinsFastDateTimeProvider(ISignals signals)
         {
-            signals.OnBlockConnected.Attach(this.OnBlockConnected);
+            this.blockConnectedSubscription =  signals.Subscribe<BlockConnected>(this.OnBlockConnected);
         }
 
         public long GetTime()
@@ -83,7 +86,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// Every time a new block gets generated, this date time provider will be signaled,
         /// updating the last block time by 65 seconds.
         /// </summary>
-        private void OnBlockConnected(ChainedHeaderBlock value)
+        private void OnBlockConnected(BlockConnected blockConnected)
         {
             startFrom = startFrom.AddSeconds(65);
         }

@@ -20,12 +20,15 @@ namespace Stratis.Bitcoin.Networks
             uint magic = BitConverter.ToUInt32(messageStart, 0); // 0xefc0f2cd
 
             this.Name = "StratisRegTest";
+            this.NetworkType = NetworkType.Regtest;
             this.Magic = magic;
             this.DefaultPort = 18444;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
-            this.RPCPort = 18442;
+            this.DefaultRPCPort = 18442;
+            this.DefaultAPIPort = 38221;
             this.CoinTicker = "TSTRAT";
+            this.DefaultBanTimeSeconds = 16000; // 500 (MaxReorg) * 64 (TargetSpacing) / 2 = 4 hours, 26 minutes and 40 seconds
 
             var powLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
 
@@ -92,6 +95,7 @@ namespace Stratis.Bitcoin.Networks
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
                 powAllowMinDifficultyBlocks: true,
+                posNoRetargeting: true,
                 powNoRetargeting: true,
                 powLimit: powLimit,
                 minimumChainWork: null,
@@ -110,13 +114,15 @@ namespace Stratis.Bitcoin.Networks
             {
                 // Fake checkpoint to prevent PH to be activated.
                 // TODO: Once PH is complete, this should be removed
-               // { 100_000 , new CheckpointInfo(uint256.Zero, uint256.Zero) }
+                // { 100_000 , new CheckpointInfo(uint256.Zero, uint256.Zero) }
             };
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();
 
             this.StandardScriptsRegistry = new StratisStandardScriptsRegistry();
 
+            // 64 below should be changed to TargetSpacingSeconds when we move that field.
+            Assert(this.DefaultBanTimeSeconds <= this.Consensus.MaxReorgLength * 64 / 2);
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
         }
     }

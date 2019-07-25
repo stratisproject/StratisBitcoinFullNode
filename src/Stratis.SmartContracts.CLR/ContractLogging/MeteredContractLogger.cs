@@ -1,5 +1,5 @@
-﻿using Stratis.SmartContracts.Core.Receipts;
-using Stratis.SmartContracts.CLR.Serialization;
+﻿using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core.Receipts;
 
 namespace Stratis.SmartContracts.CLR.ContractLogging
 {
