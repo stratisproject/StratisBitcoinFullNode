@@ -53,8 +53,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             var selectedInputs = new List<OutPoint>();
             selectedInputs = this.walletManager.GetSpendableInputsForAddress(request.WalletName, request.Sender);
 
-            bool success = this.ReduceToRequestedInputs(request.Outpoints, selectedInputs);
-            if (!success)
+            bool selectInputsSuccess = this.ReduceToRequestedInputs(request.Outpoints, selectedInputs);
+            if (!selectInputsSuccess)
                 return BuildCallContractTransactionResponse.Failed("Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address");
 
             uint160 addressNumeric = request.ContractAddress.ToUint160(this.network);
@@ -120,8 +120,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             var selectedInputs = new List<OutPoint>();
             selectedInputs = this.walletManager.GetSpendableInputsForAddress(request.WalletName, request.Sender);
 
-            bool success = this.ReduceToRequestedInputs(request.Outpoints, selectedInputs);
-            if (!success)
+            bool selectInputsSuccess = this.ReduceToRequestedInputs(request.Outpoints, selectedInputs);
+            if (!selectInputsSuccess)
                 return BuildCreateContractTransactionResponse.Failed("Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address");
 
             ContractTxData txData;
