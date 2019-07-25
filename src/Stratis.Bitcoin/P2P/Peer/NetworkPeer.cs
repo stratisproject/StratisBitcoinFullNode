@@ -309,6 +309,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             this.State = inbound ? NetworkPeerState.Connected : NetworkPeerState.Created;
             this.Inbound = inbound;
+            this.IsForPeerDiscovery = parameters.IsForPeerDiscovery;
             this.PeerEndPoint = peerEndPoint;
             this.RemoteSocketEndpoint = this.PeerEndPoint;
             this.RemoteSocketAddress = this.RemoteSocketEndpoint.Address;
