@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Stratis.CirrusD": {
-      "commandName": "Project",
-      "commandLineArgs": "-addnode=137.59.252.216"
-    }
-  }
-}
