@@ -232,7 +232,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         [HttpGet]
         public async Task<IActionResult> ReceiptSearch([FromQuery] string contractAddress, [FromQuery] string eventName)
         {
-            // Build the bytes we can use to check for this event.
+            List<Receipt> receipts = this.SearchReceipts(contractAddress, eventName);
+
+            IEnumerable<ReceiptResponse> mapped = receipts.Select(receipt => new ReceiptResponse(receipt, this.network));
+
+            return this.Json(mapped);
+        }
+
+        private List<Receipt> SearchReceipts(string contractAddress, string eventName)
+        {
+// Build the bytes we can use to check for this event.
             uint160 addressUint160 = contractAddress.ToUint160(this.network);
             byte[] addressBytes = addressUint160.ToBytes();
             byte[] eventBytes = Encoding.UTF8.GetBytes(eventName);
@@ -240,37 +249,39 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // Loop through all headers and check bloom.
             IEnumerable<ChainedHeader> blockHeaders = this.chainIndexer.EnumerateToTip(this.chainIndexer.Genesis);
             List<ChainedHeader> matches = new List<ChainedHeader>();
-            foreach(ChainedHeader chainedHeader in blockHeaders)
+            foreach (ChainedHeader chainedHeader in blockHeaders)
             {
                 var scHeader = (ISmartContractBlockHeader) chainedHeader.Header;
-                if (scHeader.LogsBloom.Test(addressBytes) && scHeader.LogsBloom.Test(eventBytes)) // TODO: This is really inefficient, should build bloom for query and then compare.
+                if (scHeader.LogsBloom.Test(addressBytes) && scHeader.LogsBloom.Test(eventBytes)
+                ) // TODO: This is really inefficient, should build bloom for query and then compare.
                     matches.Add(chainedHeader);
             }
 
             // For all matching headers, get the block from local db.
             List<NBitcoin.Block> blocks = new List<NBitcoin.Block>();
-            foreach(ChainedHeader chainedHeader in matches)
+            foreach (ChainedHeader chainedHeader in matches)
             {
                 blocks.Add(this.blockStore.GetBlock(chainedHeader.HashBlock));
             }
 
             // For each block, get all receipts, and if they match, add to list to return.
-            List<ReceiptResponse> receiptResponses = new List<ReceiptResponse>();
-            foreach(NBitcoin.Block block in blocks)
+            List<Receipt> receiptResponses = new List<Receipt>();
+            foreach (NBitcoin.Block block in blocks)
             {
-                foreach(Transaction transaction in block.Transactions)
+                foreach (Transaction transaction in block.Transactions)
                 {
                     Receipt storedReceipt = this.receiptRepository.Retrieve(transaction.GetHash());
                     if (storedReceipt == null) // not a smart contract transaction. Move to next transaction.
                         continue;
 
                     // Check if address and first topic (event name) match.
-                    if (storedReceipt.Logs.Any(x => x.Address == addressUint160 && Enumerable.SequenceEqual(x.Topics[0], eventBytes)))
-                        receiptResponses.Add(new ReceiptResponse(storedReceipt, this.network));
+                    if (storedReceipt.Logs.Any(x =>
+                        x.Address == addressUint160 && Enumerable.SequenceEqual(x.Topics[0], eventBytes)))
+                        receiptResponses.Add(storedReceipt);
                 }
             }
 
-            return this.Json(receiptResponses);
+            return receiptResponses;
         }
 
         /// <summary>
