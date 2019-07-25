@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Utilities
                 {
                     if (!cts.IsCancellationRequested)
                     {
-                        Console.WriteLine("Application is shutting down.");
+                        Console.WriteLine("Application is shutting down...");
                         try
                         {
                             cts.Cancel();
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Utilities
 
                 try
                 {
-                    await node.RunAsync(cts.Token, "Application started. Press Ctrl+C to shut down.", "Application stopped.").ConfigureAwait(false);
+                    await node.RunAsync(cts.Token).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -65,9 +65,7 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         /// <param name="node">Full node to run.</param>
         /// <param name="cancellationToken">Cancellation token that triggers when the node should be shut down.</param>
-        /// <param name="shutdownMessage">Message to display on the console to instruct the user on how to invoke the shutdown.</param>
-        /// <param name="shutdownCompleteMessage">Message to display on the console when the shutdown is complete.</param>
-        public static async Task RunAsync(this IFullNode node, CancellationToken cancellationToken, string shutdownMessage, string shutdownCompleteMessage)
+        public static async Task RunAsync(this IFullNode node, CancellationToken cancellationToken)
         {
             // node.NodeLifetime is not initialized yet. Use this temporary variable as to avoid side-effects to node.
             var nodeLifetime = node.Services.ServiceProvider.GetRequiredService<INodeLifetime>() as NodeLifetime;
@@ -85,25 +83,23 @@ namespace Stratis.Bitcoin.Utilities
                 tcs.TrySetResult(null);
             }, waitForStop);
 
-            if (!string.IsNullOrEmpty(shutdownMessage))
-            {
-                Console.WriteLine();
-                Console.WriteLine(shutdownMessage);
-                Console.WriteLine();
-            }
+            Console.WriteLine();
+            Console.WriteLine("Application starting, press Ctrl+C to cancel.");
+            Console.WriteLine();
 
             node.Start();
+
+            Console.WriteLine();
+            Console.WriteLine("Application started, press Ctrl+C to stop.");
+            Console.WriteLine();
 
             await waitForStop.Task.ConfigureAwait(false);
 
             node.Dispose();
 
-            if (!string.IsNullOrEmpty(shutdownCompleteMessage))
-            {
-                Console.WriteLine();
-                Console.WriteLine(shutdownCompleteMessage);
-                Console.WriteLine();
-            }
+            Console.WriteLine();
+            Console.WriteLine("Application stopped.");
+            Console.WriteLine();
         }
     }
 }
