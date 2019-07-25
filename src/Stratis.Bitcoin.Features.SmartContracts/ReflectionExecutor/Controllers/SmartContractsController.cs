@@ -523,6 +523,63 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             return this.Json(result);
         }
 
+        /// <summary>
+        /// Searches a smart contract's receipts for those which match a token transfer event. Interprets the encoded receipt data and returns it in a human-readable form.
+        /// </summary>
+        /// 
+        /// <param name="contractAddress">The address of the token contract to retrieve the receipts for.</param>
+        /// 
+        /// <returns>A list of receipts for transactions relating to a specific token contract and its transfer events. This will return a result for ANY contract that emits events conforming to the
+        /// <see cref="TransferLog"/> event structure.
+        /// </returns>
+        [Route("token-transfer-history")]
+        [HttpGet]
+        public async Task<IActionResult> TokenTransferHistory([FromQuery] string contractAddress, [FromQuery] bool csv = false)
+        {
+            const string eventName = "TransferLog";
+
+            List<Receipt> receipts = this.SearchReceipts(contractAddress, eventName);
+
+            IEnumerable<StandardTokenTransferLogResponse> mapped = receipts
+                .Where(r => r.Logs.Length == 1) // We can assume all token transfers only emit a single log event
+                .Select(r =>
+                {
+                    Log transferLogData = r.Logs[0];
+
+                    TransferLog transferLog = this.serializer.ToStruct<TransferLog>(transferLogData.Data);
+
+                    return new StandardTokenTransferLogResponse
+                    {
+                        AddressFrom = transferLog.From.ToUint160().ToBase58Address(this.network),
+                        AddressTo = transferLog.To.ToUint160().ToBase58Address(this.network),
+                        Amount = transferLog.Amount
+                    };
+                });
+
+            // Purely for debugging purposes, this is not part of the supported API.
+            if (csv)
+            {
+                var csvText = 
+                    "AddressFrom,AddressTo,Amount" + Environment.NewLine +
+                    string.Join(Environment.NewLine, mapped.Select(response => $"{response.AddressFrom},{response.AddressTo},{response.Amount}"));
+
+                return new FileContentResult(Encoding.UTF8.GetBytes(csvText), "text/csv");
+            }
+
+            return this.Json(mapped);
+        }
+
+        private struct TransferLog
+        {
+            [Index]
+            public Address From;
+
+            [Index]
+            public Address To;
+
+            public ulong Amount;
+        }
+
         private object InterpretStorageValue(MethodParameterDataType dataType, byte[] bytes)
         {
             switch (dataType)
