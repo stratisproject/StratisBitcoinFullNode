@@ -534,7 +534,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// </returns>
         [Route("token-transfer-history")]
         [HttpGet]
-        public async Task<IActionResult> TokenTransferHistory([FromQuery] string contractAddress, [FromQuery] bool csv = false)
+        public async Task<IActionResult> TokenTransferHistory([FromQuery] string contractAddress)
         {
             const string eventName = "TransferLog";
 
@@ -555,16 +555,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                         Amount = transferLog.Amount
                     };
                 });
-
-            // Purely for debugging purposes, this is not part of the supported API.
-            if (csv)
-            {
-                var csvText = 
-                    "AddressFrom,AddressTo,Amount" + Environment.NewLine +
-                    string.Join(Environment.NewLine, mapped.Select(response => $"{response.AddressFrom},{response.AddressTo},{response.Amount}"));
-
-                return new FileContentResult(Encoding.UTF8.GetBytes(csvText), "text/csv");
-            }
 
             return this.Json(mapped);
         }
