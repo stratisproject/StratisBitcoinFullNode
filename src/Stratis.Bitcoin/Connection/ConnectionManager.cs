@@ -240,6 +240,7 @@ namespace Stratis.Bitcoin.Connection
 
         private void AddComponentStats(StringBuilder builder)
         {
+            Thread.Sleep(TimeSpan.FromSeconds(8));
             // The total traffic will be the sum of the disconnected peers' traffic and the currently connected peers' traffic.
             long totalRead = this.disconnectedPerfCounter.ReadBytes;
             long totalWritten = this.disconnectedPerfCounter.WrittenBytes;

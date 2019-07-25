@@ -69,43 +69,44 @@ namespace Stratis.Bitcoin.Utilities
             {
                 string date = this.dateTimeProvider.GetUtcNow().ToString(CultureInfo.InvariantCulture);
 
+                // The amount of seconds the period loop will wait on a component to return its stats before cancelling.
+                int componentStatsWaitSeconds = 10;
+
                 statsBuilder.AppendLine($"======Node stats====== {date}");
 
                 foreach (StatsItem inlineStatItem in this.stats.Where(x => x.StatsType == StatsType.Inline))
                 {
-                    using (var cts = new CancellationTokenSource())
+                    try
                     {
-                        var task = Task.Run(() =>
+                        using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(componentStatsWaitSeconds)))
                         {
-                            inlineStatItem.AppendStatsAction(statsBuilder);
-                        }, cts.Token);
-
-                        var delayTask = Task.Delay(TimeSpan.FromSeconds(10));
-
-                        if (Task.WhenAny(task, delayTask).Result == delayTask)
-                        {
-                            this.logger.LogError("Component {0} failed to provide inline statistics.", inlineStatItem.ComponentName);
-                            cts.Cancel();
+                            Task.Run(() =>
+                            {
+                                inlineStatItem.AppendStatsAction(statsBuilder);
+                            }).WithCancellationAsync(cts.Token).ConfigureAwait(false).GetAwaiter().GetResult();
                         }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        this.logger.LogWarning("{0} failed to provide inline statistics after {1} seconds, please investigate...", inlineStatItem.ComponentName, componentStatsWaitSeconds);
                     }
                 }
 
                 foreach (StatsItem componentStatItem in this.stats.Where(x => x.StatsType == StatsType.Component))
                 {
-                    using (var cts = new CancellationTokenSource())
+                    try
                     {
-                        var task = Task.Run(() =>
+                        using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(componentStatsWaitSeconds)))
                         {
-                            componentStatItem.AppendStatsAction(statsBuilder);
-                        }, cts.Token);
-
-                        var delayTask = Task.Delay(TimeSpan.FromSeconds(10));
-
-                        if (Task.WhenAny(task, delayTask).Result == delayTask)
-                        {
-                            this.logger.LogWarning("Component {0} failed to provide statistics.", componentStatItem.ComponentName);
-                            cts.Cancel();
+                            Task.Run(() =>
+                            {
+                                componentStatItem.AppendStatsAction(statsBuilder);
+                            }).WithCancellationAsync(cts.Token).ConfigureAwait(false).GetAwaiter().GetResult();
                         }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        this.logger.LogWarning("{0} failed to provide statistics after {1} seconds, please investigate...", componentStatItem.ComponentName, componentStatsWaitSeconds);
                     }
                 }
             }

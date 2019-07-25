@@ -2,6 +2,7 @@
   "profiles": {
     "Stratis.StratisD": {
       "commandName": "Project",
+      "commandLineArgs": "-testnet"
     },
     "Stratis.StratisD Test": {
       "commandName": "Project",
