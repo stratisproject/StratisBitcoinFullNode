@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public string ReturnValue { get; }
         public string Bloom { get; }
         public string Error { get; }
-        public LogResponse[] Logs { get; }
+        public LogResponse[] Logs { get; set; }
         public ReceiptResponse(Receipt receipt, Network network)
         {
             this.TransactionHash = receipt.TransactionHash.ToString();
@@ -33,7 +33,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
             this.Success = receipt.Success;
             this.Bloom = receipt.Bloom.ToString();
             this.Error = receipt.ErrorMessage;
-            this.Logs = receipt.Logs.Select(x => new LogResponse(x, network)).ToArray();
         }
     }
 
@@ -42,6 +41,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public string Address { get; }
         public string[] Topics { get; }
         public string Data { get; }
+
+        public object Log { get; set; }
 
         public LogResponse(Log log, Network network)
         {

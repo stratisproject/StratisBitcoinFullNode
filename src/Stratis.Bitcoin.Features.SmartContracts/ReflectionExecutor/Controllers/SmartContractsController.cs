@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
@@ -28,7 +29,6 @@ using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
-using State = Stratis.SmartContracts.CLR.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 {
@@ -50,6 +50,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly IStateRepositoryRoot stateRoot;
         private readonly IWalletManager walletManager;
         private readonly ISerializer serializer;
+        private readonly IContractPrimitiveSerializer primitiveSerializer;
         private readonly IReceiptRepository receiptRepository;
         private readonly ILocalExecutor localExecutor;
         private readonly ISmartContractTransactionService smartContractTransactionService;
@@ -59,12 +60,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             IBlockStore blockStore,
             ChainIndexer chainIndexer,
             CSharpContractDecompiler contractDecompiler,
-            IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
             IStateRepositoryRoot stateRoot,
             IWalletManager walletManager,
             ISerializer serializer,
+            IContractPrimitiveSerializer primitiveSerializer,
             IReceiptRepository receiptRepository,
             ILocalExecutor localExecutor,
             ISmartContractTransactionService smartContractTransactionService,
@@ -79,6 +80,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.walletManager = walletManager;
             this.broadcasterManager = broadcasterManager;
             this.serializer = serializer;
+            this.primitiveSerializer = primitiveSerializer;
             this.receiptRepository = receiptRepository;
             this.localExecutor = localExecutor;
             this.smartContractTransactionService = smartContractTransactionService;
@@ -232,16 +234,78 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         [HttpGet]
         public async Task<IActionResult> ReceiptSearch([FromQuery] string contractAddress, [FromQuery] string eventName)
         {
+            uint160 address = contractAddress.ToUint160(this.network);
+
+            byte[] contractCode = this.stateRoot.GetCode(address);
+
+            if (contractCode == null || !contractCode.Any())
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, "No code exists", $"No contract execution code exists at {address}");
+            }
+
+            Assembly assembly = null;
+
+            try
+            {
+                assembly = Assembly.Load(contractCode);
+
+            }
+            catch
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, "Error reading contract module", "The contract code was found but it was not a valid module.");
+            }
+
+            var deserializer = new ApiLogDeserializer(this.primitiveSerializer, this.network);
+
             List<Receipt> receipts = this.SearchReceipts(contractAddress, eventName);
 
-            IEnumerable<ReceiptResponse> mapped = receipts.Select(receipt => new ReceiptResponse(receipt, this.network));
+            var result = new List<ReceiptResponse>();
 
-            return this.Json(mapped);
+            foreach (Receipt receipt in receipts)
+            {
+                var logResponses = new List<LogResponse>();
+
+                foreach (Log log in receipt.Logs)
+                {
+                    var logResponse = new LogResponse(log, this.network);
+
+                    logResponses.Add(logResponse);
+
+                    if (log.Topics.Count == 0)
+                        continue;
+
+                    // Get receipt struct name
+                    string eventTypeName = Encoding.UTF8.GetString(log.Topics[0]);
+
+                    // Find the type in the module def
+                    Type eventType = assembly.DefinedTypes.FirstOrDefault(t => t.Name == eventTypeName);
+
+                    if (eventType == null)
+                    {
+                        // Couldn't match the type, continue?
+                        continue;
+                    }
+
+                    // Deserialize it
+                    dynamic deserialized = deserializer.DeserializeLogData(log.Data, eventType);
+
+                    logResponse.Log = deserialized;
+                }
+
+                var receiptResponse = new ReceiptResponse(receipt, this.network)
+                {
+                    Logs = logResponses.ToArray()
+                };
+
+                result.Add(receiptResponse);
+            }
+
+            return this.Json(result);
         }
 
         private List<Receipt> SearchReceipts(string contractAddress, string eventName)
         {
-// Build the bytes we can use to check for this event.
+            // Build the bytes we can use to check for this event.
             uint160 addressUint160 = contractAddress.ToUint160(this.network);
             byte[] addressBytes = addressUint160.ToBytes();
             byte[] eventBytes = Encoding.UTF8.GetBytes(eventName);
