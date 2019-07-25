@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Pruning
@@ -12,7 +11,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Pruning
         /// <summary>
         /// Initializes the pruned block repository.
         /// </summary>
-        Task InitializeAsync();
+        void Initialize();
 
         /// <summary>
         /// Prunes and compacts the block and transaction database.
@@ -26,7 +25,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Pruning
         /// <param name="blockStoreTip">The current tip of the store.</param>
         /// <param name="network">The network the node is running on.</param>
         /// <param name="nodeInitializing">Indicates whether or not this method is called from node startup or not.</param>
-        Task PruneAndCompactDatabase(ChainedHeader blockStoreTip, Network network, bool nodeInitializing);
+        void PruneAndCompactDatabase(ChainedHeader blockStoreTip, Network network, bool nodeInitializing);
 
         /// <summary> 
         /// The lowest block hash and height that the repository has.

@@ -12,9 +12,9 @@ using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Tests.Wallet.Common;
-using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Networks;
 using Xunit;
 
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
             int vmVersion = 1;
             var gasLimit = (Stratis.SmartContracts.RuntimeObserver.Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
-            var contractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit, new byte[]{0, 1, 2, 3});
+            var contractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit, new byte[] { 0, 1, 2, 3 });
             var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(new SmartContractsRegTest()));
             var contractCreateScript = new Script(callDataSerializer.Serialize(contractTxData));
 
@@ -88,13 +88,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
             var accountsHistory = new List<AccountHistory> { new AccountHistory { History = flat, Account = account } };
             this.walletManager.Setup(w => w.GetHistory(walletName, It.IsAny<string>())).Returns(accountsHistory);
             this.walletManager.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
-            this.walletManager.Setup(w => w.GetAccounts(walletName)).Returns(new List<HdAccount> {account});
+            this.walletManager.Setup(w => w.GetAccounts(walletName)).Returns(new List<HdAccount> { account });
 
             var receipt = new Receipt(null, 12345, new Log[0], null, null, null, uint160.Zero, true, null, null, 2, 100000);
             this.receiptRepository.Setup(x => x.Retrieve(It.IsAny<uint256>()))
                 .Returns(receipt);
             this.callDataSerializer.Setup(x => x.Deserialize(It.IsAny<byte[]>()))
-                .Returns(Result.Ok(new ContractTxData(0, 0, (Stratis.SmartContracts.RuntimeObserver.Gas) 0, new uint160(0), null, null)));
+                .Returns(Result.Ok(new ContractTxData(0, 0, (Stratis.SmartContracts.RuntimeObserver.Gas)0, new uint160(0), null, null)));
 
             var controller = new SmartContractWalletController(
                 this.broadcasterManager.Object,
@@ -108,11 +108,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
 
             IActionResult result = controller.GetHistory(walletName, address.Address);
 
-            var viewResult = Assert.IsType<JsonResult>(result);
+            JsonResult viewResult = Assert.IsType<JsonResult>(result);
             var model = viewResult.Value as IEnumerable<ContractTransactionItem>;
 
             Assert.NotNull(model);
-            Assert.Equal(1, model.Count());
+            Assert.Single(model);
 
             ContractTransactionItem resultingTransaction = model.ElementAt(0);
 

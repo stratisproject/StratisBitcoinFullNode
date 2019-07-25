@@ -52,6 +52,7 @@ namespace Stratis.Bitcoin.Networks
             this.DefaultConfigFilename = StratisDefaultConfigFilename;
             this.MaxTimeOffsetSeconds = 25 * 60;
             this.CoinTicker = "STRAT";
+            this.DefaultBanTimeSeconds = 16000; // 500 (MaxReorg) * 64 (TargetSpacing) / 2 = 4 hours, 26 minutes and 40 seconds
 
             var consensusFactory = new PosConsensusFactory();
 
@@ -205,6 +206,8 @@ namespace Stratis.Bitcoin.Networks
 
             this.StandardScriptsRegistry = new StratisStandardScriptsRegistry();
 
+            // 64 below should be changed to TargetSpacingSeconds when we move that field.
+            Assert(this.DefaultBanTimeSeconds <= this.Consensus.MaxReorgLength * 64 / 2);
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x65a26bc20b0351aebf05829daefa8f7db2f800623439f3c114257c91447f1518"));
         }
