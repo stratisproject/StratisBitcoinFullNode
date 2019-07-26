@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         private async Task<ConsensusManager> CreateConsensusManagerAsync(Dictionary<uint256, UnspentOutputs> unspentOutputs)
         {
             this.consensusSettings = new ConsensusSettings(Configuration.NodeSettings.Default(this.network));
-            var initialBlockDownloadState = new InitialBlockDownloadState(this.chainState.Object, this.network, this.consensusSettings, new Checkpoints(), this.loggerFactory.Object);
+            var initialBlockDownloadState = new InitialBlockDownloadState(this.chainState.Object, this.network, this.consensusSettings, new Checkpoints(), this.loggerFactory.Object, DateTimeProvider.Default);
             var signals = new Signals.Signals(this.loggerFactory.Object, null);
             var asyncProvider = new AsyncProvider(this.loggerFactory.Object, signals, new Mock<INodeLifetime>().Object);
 
@@ -58,9 +58,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var consensus = new ConsensusManager(chainedHeaderTree, this.network, this.loggerFactory.Object, this.chainState.Object, integrityValidator,
                 partialValidator, fullValidator, consensusRuleEngine, new Mock<IFinalizedBlockInfoRepository>().Object, signals,
                 new Mock<IPeerBanning>().Object, initialBlockDownloadState, this.ChainIndexer, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object,
-                new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object, new Mock<INodeLifetime>().Object, this.consensusSettings, new DateTimeProvider());
+                new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object, new Mock<INodeLifetime>().Object, this.consensusSettings, this.dateTimeProvider.Object);
 
-            // Mock the coinviews "FetchCoinsAsync" method. We will use the "unspentOutputs" dictionary to track spendable outputs.
+                // Mock the coinviews "FetchCoinsAsync" method. We will use the "unspentOutputs" dictionary to track spendable outputs.
             this.coinView.Setup(d => d.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .Returns((uint256[] txIds, CancellationToken cancel) =>
                 {
