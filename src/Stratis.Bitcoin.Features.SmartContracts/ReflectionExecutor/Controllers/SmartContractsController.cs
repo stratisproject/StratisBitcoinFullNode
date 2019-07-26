@@ -206,7 +206,31 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                     "No stored transaction could be found for the supplied hash.");
             }
 
-            var receiptResponse = new ReceiptResponse(receipt, this.network);
+            uint160 address = receipt.To;
+
+            byte[] contractCode = this.stateRoot.GetCode(address);
+
+            if (contractCode == null || !contractCode.Any())
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, "No code exists", $"No contract execution code exists at {address}");
+            }
+
+            Assembly assembly = null;
+
+            try
+            {
+                assembly = Assembly.Load(contractCode);
+            }
+            catch
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, "Error reading contract module", "The contract code was found but it was not a valid module.");
+            }
+
+            var deserializer = new ApiLogDeserializer(this.primitiveSerializer, this.network);
+
+            List<LogResponse> logResponses = this.MapLogResponses(receipt, assembly, deserializer);
+
+            var receiptResponse = new ReceiptResponse(receipt, logResponses, this.network);
 
             return this.Json(receiptResponse);
         }
@@ -248,7 +272,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             try
             {
                 assembly = Assembly.Load(contractCode);
-
             }
             catch
             {
@@ -263,44 +286,48 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             foreach (Receipt receipt in receipts)
             {
-                var logResponses = new List<LogResponse>();
+                List<LogResponse> logResponses = this.MapLogResponses(receipt, assembly, deserializer);
 
-                foreach (Log log in receipt.Logs)
-                {
-                    var logResponse = new LogResponse(log, this.network);
-
-                    logResponses.Add(logResponse);
-
-                    if (log.Topics.Count == 0)
-                        continue;
-
-                    // Get receipt struct name
-                    string eventTypeName = Encoding.UTF8.GetString(log.Topics[0]);
-
-                    // Find the type in the module def
-                    Type eventType = assembly.DefinedTypes.FirstOrDefault(t => t.Name == eventTypeName);
-
-                    if (eventType == null)
-                    {
-                        // Couldn't match the type, continue?
-                        continue;
-                    }
-
-                    // Deserialize it
-                    dynamic deserialized = deserializer.DeserializeLogData(log.Data, eventType);
-
-                    logResponse.Log = deserialized;
-                }
-
-                var receiptResponse = new ReceiptResponse(receipt, this.network)
-                {
-                    Logs = logResponses.ToArray()
-                };
+                var receiptResponse = new ReceiptResponse(receipt, logResponses, this.network);
 
                 result.Add(receiptResponse);
             }
 
             return this.Json(result);
+        }
+
+        private List<LogResponse> MapLogResponses(Receipt receipt, Assembly assembly, ApiLogDeserializer deserializer)
+        {
+            var logResponses = new List<LogResponse>();
+
+            foreach (Log log in receipt.Logs)
+            {
+                var logResponse = new LogResponse(log, this.network);
+
+                logResponses.Add(logResponse);
+
+                if (log.Topics.Count == 0)
+                    continue;
+
+                // Get receipt struct name
+                string eventTypeName = Encoding.UTF8.GetString(log.Topics[0]);
+
+                // Find the type in the module def
+                Type eventType = assembly.DefinedTypes.FirstOrDefault(t => t.Name == eventTypeName);
+
+                if (eventType == null)
+                {
+                    // Couldn't match the type, continue?
+                    continue;
+                }
+
+                // Deserialize it
+                dynamic deserialized = deserializer.DeserializeLogData(log.Data, eventType);
+
+                logResponse.Log = deserialized;
+            }
+
+            return logResponses;
         }
 
         private List<Receipt> SearchReceipts(string contractAddress, string eventName)

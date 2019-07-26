@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
@@ -19,8 +20,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public string ReturnValue { get; }
         public string Bloom { get; }
         public string Error { get; }
-        public LogResponse[] Logs { get; set; }
-        public ReceiptResponse(Receipt receipt, Network network)
+        public LogResponse[] Logs { get; }
+        public ReceiptResponse(Receipt receipt, List<LogResponse> logs, Network network)
         {
             this.TransactionHash = receipt.TransactionHash.ToString();
             this.BlockHash = receipt.BlockHash.ToString();
@@ -33,6 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
             this.Success = receipt.Success;
             this.Bloom = receipt.Bloom.ToString();
             this.Error = receipt.ErrorMessage;
+            this.Logs = logs.ToArray();
         }
     }
 
