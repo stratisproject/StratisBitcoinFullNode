@@ -12,7 +12,6 @@ using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
@@ -154,8 +153,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception ex) when (ex is IOException || ex is OperationCanceledException || ex is ObjectDisposedException)
             {
-                this.logger.LogDebug("Receiving cancelled. Exception: {0}", ex.ToString());
-                this.peer.Disconnect("Receiving cancelled.");
+                this.logger.LogDebug("Connection closed whilst receiving messages. May be a peer in discovery. Exception: {0}", ex.ToString());
+                this.peer.Disconnect("Connection closed whilst receiving messages. Peer may be in discovery.");
             }
             catch (Exception ex)
             {
