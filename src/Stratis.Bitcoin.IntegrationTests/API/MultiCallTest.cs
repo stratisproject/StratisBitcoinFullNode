@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-//using FluentAssertions;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.Common;
