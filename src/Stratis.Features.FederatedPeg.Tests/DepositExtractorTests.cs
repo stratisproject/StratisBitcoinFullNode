@@ -32,8 +32,6 @@ namespace Stratis.Features.FederatedPeg.Tests
 
         private readonly TestTransactionBuilder transactionBuilder;
 
-        private readonly ChainIndexer chainIndexer;
-
         public DepositExtractorTests()
         {
             this.network = CirrusNetwork.NetworksSelector.Regtest();

@@ -146,11 +146,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
-                var inMemoryCoinView = new InMemoryCoinView(this.ChainIndexer.Tip.HashBlock);
-                this.cachedCoinView = new CachedCoinView(inMemoryCoinView, dateTimeProvider, new LoggerFactory(), new NodeStats(dateTimeProvider));
-
                 var loggerFactory = new ExtendedLoggerFactory();
                 loggerFactory.AddConsoleWithFilters();
+
+                var inMemoryCoinView = new InMemoryCoinView(this.ChainIndexer.Tip.HashBlock);
+                var nodeStats = new NodeStats(dateTimeProvider, loggerFactory);
+                this.cachedCoinView = new CachedCoinView(inMemoryCoinView, dateTimeProvider, new LoggerFactory(), nodeStats);
 
                 var nodeSettings = new NodeSettings(this.network, args: new string[] { "-checkpoints" });
                 var consensusSettings = new ConsensusSettings(nodeSettings);
@@ -179,7 +180,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 };
 
                 this.ConsensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, this.ChainIndexer, deployments, consensusSettings,
-                    new Checkpoints(), this.cachedCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), asyncProvider).Register();
+                    new Checkpoints(), this.cachedCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), nodeStats, asyncProvider).Register();
 
                 this.consensus = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chainIndexer: this.ChainIndexer);
 

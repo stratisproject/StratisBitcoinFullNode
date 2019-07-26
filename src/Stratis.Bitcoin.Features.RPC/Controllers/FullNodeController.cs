@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (hash == null)
             {
                 // Look for the transaction in the mempool, and if not found, look in the indexed transactions.
-                trx = (this.pooledTransaction == null ? null : await this.pooledTransaction.GetTransaction(trxid)) ??
+                trx = (this.pooledTransaction == null ? null : await this.pooledTransaction.GetTransaction(trxid).ConfigureAwait(false)) ??
                       this.blockStore.GetTransactionById(trxid);
 
                 if (trx == null)
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             if (verbose != 0)
             {
-                ChainedHeader block = chainedHeaderBlock != null ? chainedHeaderBlock.ChainedHeader : await this.GetTransactionBlockAsync(trxid);
+                ChainedHeader block = chainedHeaderBlock != null ? chainedHeaderBlock.ChainedHeader : this.GetTransactionBlock(trxid);
                 return new TransactionVerboseModel(trx, this.Network, block, this.ChainState?.ConsensusTip);
             }
             else
@@ -204,19 +204,17 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 throw new ArgumentException(nameof(txid));
 
             UnspentOutputs unspentOutputs = null;
-            if (includeMemPool)
-            {
-                unspentOutputs = this.pooledGetUnspentTransaction != null ? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid).ConfigureAwait(false) : null;
-            }
-            else
-            {
-                unspentOutputs = this.getUnspentTransaction != null ? await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid).ConfigureAwait(false) : null;
-            }
 
-            if (unspentOutputs == null)
-                return null;
+            if (includeMemPool && this.pooledGetUnspentTransaction != null)
+                unspentOutputs = await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid).ConfigureAwait(false);
 
-            return new GetTxOutModel(unspentOutputs, vout, this.Network, this.ChainIndexer.Tip);
+            if (!includeMemPool && this.getUnspentTransaction != null)
+                unspentOutputs = await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid).ConfigureAwait(false);
+
+            if (unspentOutputs != null)
+                return new GetTxOutModel(unspentOutputs, vout, this.Network, this.ChainIndexer.Tip);
+
+            return null;
         }
 
         /// <summary>
@@ -278,24 +276,18 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             this.logger.LogDebug("RPC GetBlockHeader {0}", hash);
 
-            BlockHeaderModel model = null;
-            if (this.ChainIndexer != null)
-            {
-                BlockHeader blockHeader = this.ChainIndexer.GetHeader(uint256.Parse(hash))?.Header;
-                if (blockHeader != null)
-                {
-                    if (isJsonFormat)
-                    {
-                        return new BlockHeaderModel(blockHeader);
-                    }
-                    else
-                    {
-                        return new HexModel(blockHeader.ToHex(this.Network));
-                    }
-                }
-            }
+            if (this.ChainIndexer == null)
+                return null;
 
-            return null;
+            BlockHeader blockHeader = this.ChainIndexer.GetHeader(uint256.Parse(hash))?.Header;
+
+            if (blockHeader == null)
+                return null;
+
+            if (isJsonFormat)
+                return new BlockHeaderModel(blockHeader);
+
+            return new HexModel(blockHeader.ToHex(this.Network));
         }
 
         /// <summary>
@@ -340,7 +332,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                     result.IsScript = true;
                 }
             }
-            catch(NotImplementedException)
+            catch (NotImplementedException)
             {
                 result.IsValid = false;
             }
@@ -366,9 +358,9 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <returns>The block according to format specified in <see cref="verbosity"/></returns>
         [ActionName("getblock")]
         [ActionDescription("Returns the block in hex, given a block hash.")]
-        public async Task<object> GetBlockAsync(string blockHash, int verbosity = 1)
+        public object GetBlock(string blockHash, int verbosity = 1)
         {
-            Block block = this.blockStore != null ? this.blockStore.GetBlock(uint256.Parse(blockHash)) : null;
+            Block block = this.blockStore?.GetBlock(uint256.Parse(blockHash));
 
             if (verbosity == 0)
                 return new HexModel(block?.ToHex(this.Network));
@@ -428,11 +420,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             return blockchainInfo;
         }
 
-        private async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid)
+        private ChainedHeader GetTransactionBlock(uint256 trxid)
         {
             ChainedHeader block = null;
 
-            uint256 blockid = this.blockStore != null ? this.blockStore.GetBlockIdByTransactionId(trxid) : null;
+            uint256 blockid = this.blockStore?.GetBlockIdByTransactionId(trxid);
             if (blockid != null)
                 block = this.ChainIndexer?.GetHeader(blockid);
 
