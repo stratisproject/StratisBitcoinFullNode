@@ -49,7 +49,6 @@ namespace Stratis.Features.FederatedPeg.Collateral
                     {
                         services.AddSingleton<IFederationManager, CollateralFederationManager>();
                         services.AddSingleton<ICollateralChecker, CollateralChecker>();
-                        services.AddSingleton<CollateralVotingController>();
 
                         services.AddSingleton<IRuleRegistration, SmartContractCollateralPoARuleRegistration>();
                         services.AddSingleton<IConsensusRuleEngine>(f =>

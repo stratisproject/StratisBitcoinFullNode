@@ -234,7 +234,6 @@ namespace Stratis.Bitcoin.Features.PoA
                     {
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<ICoinView, CachedCoinView>();
-                        services.AddSingleton<ConsensusController>();
                         services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
                         services.AddSingleton<IChainState, ChainState>();
                         services.AddSingleton<ConsensusQuery>()
@@ -245,8 +244,6 @@ namespace Stratis.Bitcoin.Features.PoA
 
                         // Voting.
                         services.AddSingleton<VotingManager>();
-                        services.AddSingleton<DefaultVotingController>();
-                        services.AddSingleton<FederationVotingController>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
                         services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
                         services.AddSingleton<IdleFederationMembersKicker>();
