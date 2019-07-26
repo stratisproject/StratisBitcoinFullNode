@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public override Task<RewindState> RewindAsync(int? targetHeight)
+        public override Task<RewindState> RewindAsync(int targetHeight)
         {
             var state = new RewindState()
             {

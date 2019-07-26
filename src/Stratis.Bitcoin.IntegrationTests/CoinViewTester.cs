@@ -75,8 +75,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public uint256 Rewind()
         {
-            this.hash = this.coinView.Rewind();
-            this.blockHeight--;
+            this.hash = this.coinView.Rewind(--this.blockHeight);
             return this.hash;
         }
     }

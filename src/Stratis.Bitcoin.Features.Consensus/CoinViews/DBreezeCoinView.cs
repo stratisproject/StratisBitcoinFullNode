@@ -296,14 +296,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public uint256 Rewind(int? targetHeight = null)
+        public uint256 Rewind(int targetHeight)
         {
             uint256 res = null;
             using (DBreeze.Transactions.Transaction transaction = this.CreateTransaction())
             {
                 int currentHeight = this.GetRewindIndex(transaction);
-
-                targetHeight = targetHeight ?? (currentHeight - 1);
 
                 Guard.Assert(targetHeight >= 0 && targetHeight < currentHeight);
 

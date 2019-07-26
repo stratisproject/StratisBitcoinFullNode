@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ConsensusManagerPerformanceCounter performanceCounter;
 
         private readonly ConsensusSettings consensusSettings;
-        
+
         private readonly IDateTimeProvider dateTimeProvider;
 
         private bool isIbd;
@@ -713,7 +713,7 @@ namespace Stratis.Bitcoin.Consensus
                     }
                 }
 
-                await this.ConsensusRules.RewindAsync().ConfigureAwait(false);
+                await this.ConsensusRules.RewindAsync(current.Previous.Height).ConfigureAwait(false);
 
                 lock (this.peerLock)
                 {
