@@ -47,16 +47,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.Pruning
         {
             this.PrunedUpToHeaderTip = this.chainState.BlockStoreTip.GetAncestor(this.prunedBlockRepository.PrunedTip.Height);
 
-            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop($"{this.GetType().Name}.{nameof(this.PruneBlocksAsync)}", async token =>
-            {
-                await this.PruneBlocksAsync().ConfigureAwait(false);
-            },
+            this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop($"{this.GetType().Name}.{nameof(this.PruneBlocks)}", token =>
+           {
+               this.PruneBlocks();
+               return Task.CompletedTask;
+           },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.TenSeconds);
         }
 
         /// <inheritdoc/>
-        public async Task PruneBlocksAsync()
+        public void PruneBlocks()
         {
             if (this.PrunedUpToHeaderTip == null)
                 throw new BlockStoreException($"{nameof(this.PrunedUpToHeaderTip)} has not been set, please call initialize first.");

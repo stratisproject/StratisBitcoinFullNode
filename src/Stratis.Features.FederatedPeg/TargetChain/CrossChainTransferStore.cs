@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
 using DBreeze.Utils;
-using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin;
@@ -1037,7 +1036,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <inheritdoc />
-        public Task<ICrossChainTransfer[]> GetAsync(uint256[] depositIds)
+        public Task<ICrossChainTransfer[]> GetAsync(uint256[] depositIds, bool validate = true)
         {
             return Task.Run(() =>
             {
@@ -1047,8 +1046,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     {
                         Guard.Assert(this.Synchronize());
 
-                        ICrossChainTransfer[] res = this.ValidateCrossChainTransfers(this.Get(depositIds));
-                        return res;
+                        ICrossChainTransfer[] transfers = this.Get(depositIds);
+
+                        if (validate)
+                        {
+                            transfers = this.ValidateCrossChainTransfers(transfers);
+                        }
+
+                        return transfers;
                     });
                 }
             });
@@ -1100,38 +1105,8 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             return transaction.Inputs.Select(i => i.PrevOut).OrderBy(t => t, comparer).FirstOrDefault();
         }
 
-        private ICrossChainTransfer[] GetTransfersByStatusInternalLocked(CrossChainTransferStatus[] statuses, bool sort = false, bool validate = true)
-        {
-            var depositIds = new HashSet<uint256>();
-            foreach (CrossChainTransferStatus status in statuses)
-                depositIds.UnionWith(this.depositsIdsByStatus[status]);
-
-            uint256[] partialTransferHashes = depositIds.ToArray();
-            ICrossChainTransfer[] partialTransfers = this.Get(partialTransferHashes).Where(t => t != null).ToArray();
-
-            if (validate)
-            {
-                this.ValidateCrossChainTransfers(partialTransfers);
-                partialTransfers = partialTransfers.Where(t => statuses.Contains(t.Status)).ToArray();
-            }
-
-            if (!sort)
-            {
-                return partialTransfers;
-            }
-
-            // When sorting, Suspended transactions will have null PartialTransactions. Always put them last in the order they're in.
-            IEnumerable<ICrossChainTransfer> unsortable = partialTransfers.Where(x => x.Status == CrossChainTransferStatus.Suspended || x.Status == CrossChainTransferStatus.Rejected);
-            IEnumerable<ICrossChainTransfer> sortable = partialTransfers.Where(x => x.Status != CrossChainTransferStatus.Suspended && x.Status != CrossChainTransferStatus.Rejected);
-
-            return sortable.OrderBy(t => this.EarliestOutput(t.PartialTransaction), Comparer<OutPoint>.Create((x, y) =>
-                    ((FederationWalletManager)this.federationWalletManager).CompareOutpoints(x, y)))
-                .Concat(unsortable)
-                .ToArray();
-        }
-
         /// <inheritdoc />
-        public ICrossChainTransfer[] GetTransfersByStatus(CrossChainTransferStatus[] statuses, bool sort = false)
+        public ICrossChainTransfer[] GetTransfersByStatus(CrossChainTransferStatus[] statuses, bool sort = false, bool validate = true)
         {
             lock (this.lockObj)
             {
@@ -1139,31 +1114,33 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 {
                     Guard.Assert(this.Synchronize());
 
-                    return this.GetTransfersByStatusInternalLocked(statuses, sort);
+                    var depositIds = new HashSet<uint256>();
+                    foreach (CrossChainTransferStatus status in statuses)
+                        depositIds.UnionWith(this.depositsIdsByStatus[status]);
+
+                    uint256[] partialTransferHashes = depositIds.ToArray();
+                    ICrossChainTransfer[] partialTransfers = this.Get(partialTransferHashes).Where(t => t != null).ToArray();
+
+                    if (validate)
+                    {
+                        this.ValidateCrossChainTransfers(partialTransfers);
+                        partialTransfers = partialTransfers.Where(t => statuses.Contains(t.Status)).ToArray();
+                    }
+
+                    if (!sort)
+                    {
+                        return partialTransfers;
+                    }
+
+                    // When sorting, Suspended transactions will have null PartialTransactions. Always put them last in the order they're in.
+                    IEnumerable<ICrossChainTransfer> unsortable = partialTransfers.Where(x => x.Status == CrossChainTransferStatus.Suspended || x.Status == CrossChainTransferStatus.Rejected);
+                    IEnumerable<ICrossChainTransfer> sortable = partialTransfers.Where(x => x.Status != CrossChainTransferStatus.Suspended && x.Status != CrossChainTransferStatus.Rejected);
+
+                    return sortable.OrderBy(t => this.EarliestOutput(t.PartialTransaction), Comparer<OutPoint>.Create((x, y) =>
+                            ((FederationWalletManager)this.federationWalletManager).CompareOutpoints(x, y)))
+                        .Concat(unsortable)
+                        .ToArray();
                 });
-            }
-        }
-
-        /// <inheritdoc />
-        public ICrossChainTransfer[] QueryTransfersByStatus(CrossChainTransferStatus[] statuses)
-        {
-            lock (this.lockObj)
-            {
-                return this.federationWalletManager.Synchronous(() =>
-                {
-                    Guard.Assert(this.Synchronize());
-
-                    return this.GetTransfersByStatusInternalLocked(statuses, true, false);
-                });
-            }
-        }
-
-        /// <inheritdoc />
-        public ICrossChainTransfer[] QueryTransfersById(uint256[] depositIds)
-        {
-            lock (this.lockObj)
-            {
-                return this.Get(depositIds);
             }
         }
 

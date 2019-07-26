@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Consensus
             this.partialValidationRules = new List<PartialValidationConsensusRule>();
             this.fullValidationRules = new List<FullValidationConsensusRule>();
 
-            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 500);
+            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, this.GetType().Name, 500);
         }
 
         /// <inheritdoc />

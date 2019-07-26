@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Base
 
             this.chainState.ConsensusTip = this.consensusManager.Tip;
 
-            this.nodeStats.RegisterStats(sb => sb.Append(this.asyncProvider.GetStatistics(!this.nodeSettings.Log.DebugArgs.Any())), StatsType.Component, 100);
+            this.nodeStats.RegisterStats(sb => sb.Append(this.asyncProvider.GetStatistics(!this.nodeSettings.Log.DebugArgs.Any())), StatsType.Component, this.GetType().Name, 100);
         }
 
         /// <summary>
@@ -436,8 +436,9 @@ namespace Stratis.Bitcoin.Base
                         connectionManager: provider.GetService<IConnectionManager>(),
                         nodeStats: provider.GetService<INodeStats>(),
                         nodeLifetime: provider.GetService<INodeLifetime>(),
-                        consensusSettings: provider.GetService<ConsensusSettings>()
-                        ));
+                        consensusSettings: provider.GetService<ConsensusSettings>(),
+                        dateTimeProvider: provider.GetService<IDateTimeProvider>()));
+
                     services.AddSingleton<IChainedHeaderTree, ChainedHeaderTree>();
                     services.AddSingleton<IHeaderValidator, HeaderValidator>();
                     services.AddSingleton<IIntegrityValidator, IntegrityValidator>();

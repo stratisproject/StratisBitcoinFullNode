@@ -138,7 +138,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
 
             // Broadcast to the other node.
 
-            IActionResult result = coreNode.FullNode.NodeService<SmartContractWalletController>().SendTransaction(new SendTransactionRequest(trx.ToHex()));
+            IActionResult result = coreNode.FullNode.NodeController<SmartContractWalletController>().SendTransaction(new SendTransactionRequest(trx.ToHex()));
             if (result is ErrorResult errorResult)
             {
                 var errorResponse = (ErrorResponse)errorResult.Value;
