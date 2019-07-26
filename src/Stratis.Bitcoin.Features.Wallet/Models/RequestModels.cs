@@ -349,7 +349,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// The address to which the change from the transaction should be returned. If this is not set,
         /// the default behaviour from the <see cref="WalletTransactionHandler"/> will be used to determine the change address.
         /// </summary>
-        [IsBitcoinAddress()]
+        [IsBitcoinAddress(Required = false)]
         public string ChangeAddress { get; set; }
     }
 
