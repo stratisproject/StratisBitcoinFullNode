@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Base
 
             this.chainState.ConsensusTip = this.consensusManager.Tip;
 
-            this.nodeStats.RegisterStats(sb => sb.Append(this.asyncProvider.GetStatistics(!this.nodeSettings.Log.DebugArgs.Any())), StatsType.Component, 100);
+            this.nodeStats.RegisterStats(sb => sb.Append(this.asyncProvider.GetStatistics(!this.nodeSettings.Log.DebugArgs.Any())), StatsType.Component, this.GetType().Name, 100);
         }
 
         /// <summary>
