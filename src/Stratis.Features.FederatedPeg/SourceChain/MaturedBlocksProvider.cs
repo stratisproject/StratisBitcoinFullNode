@@ -99,10 +99,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                     }
 
                     MaturedBlockDepositsModel maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(chainedHeaderBlock);
-
-                    if (maturedBlockDeposits == null)
-                        throw new InvalidOperationException($"Unable to get deposits for block at height {chainedHeaderBlock.ChainedHeader.Height}");
-
+                    
                     maturedBlocks.Add(maturedBlockDeposits);
 
                     numDeposits += maturedBlockDeposits.Deposits?.Count ?? 0;
