@@ -512,7 +512,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
             var transaction = sender.FullNode.WalletTransactionHandler().BuildTransaction(context);
 
-            sender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
+            sender.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
             TestBase.WaitLoop(() => receiver.CreateRPCClient().GetRawMempool().Length > 0);
             TestBase.WaitLoop(() => receiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Any());
