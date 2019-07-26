@@ -51,13 +51,4 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
             this.Data = log.Data.ToHexString();
         }
     }
-
-    public class StandardTokenTransferLogResponse
-    {
-        public string AddressFrom { get; set; }
-
-        public string AddressTo { get; set; }
-
-        public ulong Amount { get; set; }
-    }
 }
