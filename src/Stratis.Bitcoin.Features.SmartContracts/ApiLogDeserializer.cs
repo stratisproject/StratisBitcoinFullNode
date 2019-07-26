@@ -10,6 +10,9 @@ using Stratis.SmartContracts.CLR.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
+    /// <summary>
+    /// Deserializer for smart contract event logs. 
+    /// </summary>
     public class ApiLogDeserializer
     {
         private readonly IContractPrimitiveSerializer primitiveSerializer;
@@ -21,6 +24,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.network = network;
         }
 
+        /// <summary>
+        /// Deserializes event log data. Uses the supplied type to determine field information and attempts to deserialize these
+        /// fields from the supplied data. For <see cref="Address"/> types, an additional conversion to a base58 string is applied.
+        /// </summary>
+        /// <param name="bytes">The raw event log data.</param>
+        /// <param name="type">The type to attempt to deserialize.</param>
+        /// <returns>An <see cref="ExpandoObject"/> containing the fields of the Type and its deserialized values.</returns>
         public dynamic DeserializeLogData(byte[] bytes, Type type)
         {
             RLPCollection collection = (RLPCollection)RLP.Decode(bytes)[0];
