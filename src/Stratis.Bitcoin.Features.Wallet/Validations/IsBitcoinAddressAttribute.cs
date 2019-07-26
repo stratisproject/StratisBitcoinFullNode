@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Validations
     {
         protected override ValidationResult IsValid(object value, ValidationContext validationContext)
         {
-            if (!this.Required)
+            if (!this.Required && value == null)
             {
                 return ValidationResult.Success;
             }
