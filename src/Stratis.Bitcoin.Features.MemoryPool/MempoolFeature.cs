@@ -167,7 +167,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         services.AddSingleton<MempoolSignaled>();
                         services.AddSingleton<BlocksDisconnectedSignaled>();
                         services.AddSingleton<IMempoolPersistence, MempoolPersistence>();
-                        services.AddSingleton<MempoolController>();
                         services.AddSingleton<MempoolSettings>();
 
                         if (injectRules)

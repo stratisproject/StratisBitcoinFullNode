@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     new WalletAccountReference(WalletName, Account), Password, sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
 
                 // Broadcast to the other node
-                stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(trx.ToHex()));
+                stratisSender.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(trx.ToHex()));
 
                 // Wait for the transaction to arrive
                 TestBase.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Transaction transaction1 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(stratisSender.FullNode.Network, new WalletAccountReference(WalletName, Account), Password, sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
 
                 // Broadcast to the other node.
-                stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction1.ToHex()));
+                stratisSender.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(transaction1.ToHex()));
 
                 // Wait for the transaction to arrive.
                 TestBase.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Send more coins to the wallet
                 sendto = stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, Account));
                 Transaction transaction2 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(stratisSender.FullNode.Network, new WalletAccountReference(WalletName, Account), Password, sendto.ScriptPubKey, Money.COIN * 10, FeeType.Medium, 101));
-                stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction2.ToHex()));
+                stratisSender.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(transaction2.ToHex()));
 
                 // Wait for the transaction to arrive
                 TestBase.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // ReBuild Transaction 2.
                 // After the reorg transaction2 was returned back to mempool.
-                stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction2.ToHex()));
+                stratisSender.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(transaction2.ToHex()));
                 TestBase.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
 
                 // Mine the transaction again.

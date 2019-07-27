@@ -245,9 +245,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                     services.AddSingleton<IWalletTransactionHandler, WalletTransactionHandler>();
                     services.AddSingleton<IWalletManager, ColdStakingManager>();
                     services.AddSingleton<IWalletFeePolicy, WalletFeePolicy>();
-                    services.AddSingleton<ColdStakingController>();
-                    services.AddSingleton<WalletController>();
-                    services.AddSingleton<WalletRPCController>();
                     services.AddSingleton<IBroadcasterManager, FullNodeBroadcasterManager>();
                     services.AddSingleton<BroadcasterBehavior>();
                     services.AddSingleton<WalletSettings>();
