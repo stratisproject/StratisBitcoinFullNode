@@ -101,38 +101,6 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         }
 
         [Fact]
-        public async Task GetMaturedBlockDeposits_Fails_When_Block_Not_In_Chain_Async()
-        {
-            FederationGatewayController controller = this.CreateController();
-
-            ChainedHeader tip = ChainedHeadersHelper.CreateConsecutiveHeaders(3, null, true)[2];
-
-            this.consensusManager.Tip.Returns(tip);
-
-            this.consensusManager.GetBlockData(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) => {
-                List<uint256> hashes = x.ArgAt<List<uint256>>(0);
-                return hashes.Select((h) => new ChainedHeaderBlock(new Block(), tip)).ToArray();
-            });
-
-            IActionResult result = await controller.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(1, 1000)).ConfigureAwait(false);
-
-            result.Should().BeOfType<ErrorResult>();
-
-            var error = result as ErrorResult;
-            error.Should().NotBeNull();
-
-            var errorResponse = error.Value as ErrorResponse;
-            errorResponse.Should().NotBeNull();
-            errorResponse.Errors.Should().HaveCount(1);
-
-            errorResponse.Errors.Should().Contain(
-                e => e.Status == (int)HttpStatusCode.BadRequest);
-
-            errorResponse.Errors.Should().Contain(
-                e => e.Message.Contains("Unable to get deposits for block at height"));
-        }
-
-        [Fact]
         public async Task GetMaturedBlockDeposits_Fails_When_Block_Height_Greater_Than_Minimum_Deposit_Confirmations_Async()
         {
             ChainedHeader tip = ChainedHeadersHelper.CreateConsecutiveHeaders(5, null, true).Last();
