@@ -184,6 +184,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
         /// Whether transaction inputs are standard.
         /// Check for standard transaction types.
         /// </summary>
+        /// <seealso>https://github.com/bitcoin/bitcoin/blob/febf3a856bcfb8fef2cb4ddcb8d1e0cab8a22580/src/policy/policy.cpp#L156</seealso>
         /// <param name="tx">Transaction to verify.</param>
         /// <param name="mapInputs">Map of previous transactions that have outputs we're spending.</param>
         /// <returns>Whether all inputs (scriptSigs) use only standard transaction forms.</returns>
@@ -192,7 +193,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
             if (tx.IsCoinBase)
             {
                 this.logger.LogTrace("(-)[IS_COINBASE]:true");
-                return true; // Coinbases don't use vin normally
+                return true; // Coinbases don't use vin normally.
             }
 
             for (int i=0; i<tx.Inputs.Count; i++)
@@ -200,7 +201,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                 TxIn txin = tx.Inputs[i];
                 TxOut prev = mapInputs.GetOutputFor(txin);
                 ScriptTemplate template = network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(prev.ScriptPubKey);
-                if (template == null)
+                if (template == null) // i.e. the TX_NONSTANDARD case
                 {
                     this.logger.LogTrace("(-)[BAD_SCRIPT_TEMPLATE]:false");
                     return false;

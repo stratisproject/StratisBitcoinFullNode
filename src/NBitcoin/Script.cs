@@ -153,7 +153,12 @@ namespace NBitcoin
             | Witness
             | DiscourageUpgradableWitnessProgram
             | NullFail
-            | MinimalIf
+            | MinimalIf,
+
+        /// <summary>
+        /// For convenience, standard but not mandatory verify flags
+        /// </summary>
+        StandardNotMandatory = Standard & ~Mandatory
     }
 
     /// <summary>
