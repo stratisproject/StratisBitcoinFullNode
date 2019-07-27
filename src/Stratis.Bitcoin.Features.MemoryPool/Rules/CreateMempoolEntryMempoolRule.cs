@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Rules
 {
@@ -14,7 +15,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
 
     /// <summary>
     /// Creates a memory pool entry in the validation context.
-    /// Validates the transactions can be mined, and the pay to script hashs are standard.
+    /// Validates the transactions can be mined, and the pay to script hashes are standard.
     /// Calculates the fees related to the transaction.
     /// </summary>
     public class CreateMempoolEntryMempoolRule : MempoolRule
@@ -23,6 +24,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
         public const int MaxStandardP2wshScriptSize = 3600;
         public const int MaxStandardP2wshStackItems = 100;
         public const int MaxStandardP2wshStackItemSize = 80;
+        public const int MaxP2SHSigOps = 15;
 
         private IConsensusRuleEngine consensusRules;
 
@@ -193,8 +195,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                 return true; // Coinbases don't use vin normally
             }
 
-            foreach (TxIn txin in tx.Inputs)
+            for (int i=0; i<tx.Inputs.Count; i++)
             {
+                TxIn txin = tx.Inputs[i];
                 TxOut prev = mapInputs.GetOutputFor(txin);
                 ScriptTemplate template = network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(prev.ScriptPubKey);
                 if (template == null)
@@ -203,9 +206,31 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                     return false;
                 }
 
+                /* Check transaction inputs to mitigate two potential denial-of-service attacks:
+                 *
+                 * 1. scriptSigs with extra data stuffed into them, not consumed by scriptPubKey (or P2SH script)
+                 * 2. P2SH scripts with a crazy number of expensive CHECKSIG/CHECKMULTISIG operations
+                 *
+                 * Why bother? To avoid denial-of-service attacks; an attacker can submit a standard HASH... OP_EQUAL transaction,
+                 * which will get accepted into blocks. The redemption script can be anything; an attacker could use a very
+                 * expensive-to-check-upon-redemption script like:
+                 *   DUP CHECKSIG DROP ... repeated 100 times... OP_1
+                */
                 if (template.Type == TxOutType.TX_SCRIPTHASH)
                 {
-                    if (prev.ScriptPubKey.GetSigOpCount(true) > 15) //MAX_P2SH_SIGOPS
+                    // Convert the scriptSig into a stack, so we can inspect the redeemScript.
+                    var ctx = new ScriptEvaluationContext(this.network) { ScriptVerify = ScriptVerify.None };
+
+                    if (!ctx.EvalScript(txin.ScriptSig, tx, i)) // TODO: Check the semantics of SigVersion::BASE from original code
+                        return false;
+
+                    if (ctx.Stack.IsEmpty())
+                        return false;
+
+                    // Get redeemScript from stack.
+                    var redeemScript = new Script(ctx.Stack.Top(-1));
+
+                    if (redeemScript.GetSigOpCount(true) > MaxP2SHSigOps)
                     {
                         this.logger.LogTrace("(-)[SIG_OP_MAX]:false");
                         return false;
