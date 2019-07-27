@@ -306,7 +306,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 new CheckRateLimitMempoolRule(network, txMemPool, mempoolSettings, chain, loggerFactory),
                 new CheckAncestorsMempoolRule(network, txMemPool, mempoolSettings, chain, loggerFactory),
                 new CheckReplacementMempoolRule(network, txMemPool, mempoolSettings, chain, loggerFactory),
-                new CheckAllInputsMempoolRule(network, txMemPool, mempoolSettings, chain, consensusRules, loggerFactory)
+                new CheckAllInputsMempoolRule(network, txMemPool, mempoolSettings, chain, consensusRules, new NodeDeployments(this.network, chain), loggerFactory)
             };
 
             // We also have to check that the manually instantiated rules match the ones in the network, or the test isn't valid

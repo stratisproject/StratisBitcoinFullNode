@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -16,20 +17,24 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
         public const uint STANDARD_NOT_MANDATORY_VERIFY_FLAGS = (uint)(ScriptVerify.Standard & ~ScriptVerify.Mandatory);
 
         private readonly IConsensusRuleEngine consensusRuleEngine;
+        private readonly NodeDeployments nodeDeployments;
 
         public CheckAllInputsMempoolRule(Network network,
             ITxMempool mempool,
             MempoolSettings mempoolSettings,
             ChainIndexer chainIndexer,
             IConsensusRuleEngine consensusRuleEngine,
+            NodeDeployments nodeDeployments,
             ILoggerFactory loggerFactory) : base(network, mempool, mempoolSettings, chainIndexer, loggerFactory)
         {
             this.consensusRuleEngine = consensusRuleEngine;
+            this.nodeDeployments = nodeDeployments;
         }
 
         /// <seealso>https://github.com/bitcoin/bitcoin/blob/febf3a856bcfb8fef2cb4ddcb8d1e0cab8a22580/src/validation.cpp#L770</seealso>
         public override void CheckTransaction(MempoolValidationContext context)
         {
+            // TODO: How should the RequireStandard setting interact with this?
             var scriptVerifyFlags = ScriptVerify.Standard;
 
             // Check against previous transactions.
@@ -52,16 +57,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                 context.State.Fail(new MempoolError()).Throw();
             }
 
-            // Check again against just the consensus-critical mandatory script
-            // verification flags, in case of bugs in the standard flags that cause
-            // transactions to pass as valid when they're actually invalid. For
-            // instance the STRICTENC flag was incorrectly allowing certain
+            // Check again against just the consensus-critical mandatory script verification flags, in case of bugs in the standard flags that cause
+            // transactions to pass as valid when they're actually invalid. For instance the STRICTENC flag was incorrectly allowing certain
             // CHECKSIG NOT scripts to pass, even though they were invalid.
             //
-            // There is a similar check in CreateNewBlock() to prevent creating
-            // invalid blocks, however allowing such transactions into the mempool
+            // There is a similar check during block creation to prevent creating invalid blocks, however allowing such transactions into the mempool
             // can be exploited as a DoS attack.
-            if (!this.CheckInputs(context, ScriptVerify.P2SH, txdata))
+
+            DeploymentFlags flags = this.nodeDeployments.GetFlags(this.chainIndexer.Tip);
+
+            if (!this.CheckInputs(context, flags.ScriptFlags, txdata))
             {
                 this.logger.LogTrace("(-)[FAIL_SCRIPT_VERIFY]");
                 context.State.Fail(new MempoolError(), $"CheckInputs: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags {context.TransactionHash}").Throw();
