@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             var chainState = new ChainState();
             var deployments = new NodeDeployments(network, chain);
-            var nodeStats = new NodeStats(dateTimeProvider);
+            var nodeStats = new NodeStats(dateTimeProvider, loggerFactory);
             var dbreezeSerializer = new DBreezeSerializer(network.Consensus.ConsensusFactory);
             var dbreezeCoinView = new DBreezeCoinView(network, new DataFolder(dataDir), dateTimeProvider, loggerFactory, nodeStats, dbreezeSerializer);
             var stakeChain = new StakeChainStore(network, chain, dbreezeCoinView, loggerFactory);
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var rewindDataIndexCache = new RewindDataIndexCache(dateTimeProvider, network);
 
             ConsensusRuleEngine consensusRules = new PosConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(),
-                inMemoryCoinView, stakeChain, stakeValidator, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), rewindDataIndexCache, asyncProvider).Register();
+                inMemoryCoinView, stakeChain, stakeValidator, chainState, new InvalidBlockHashStore(dateTimeProvider), nodeStats, rewindDataIndexCache, asyncProvider).Register();
 
             ConsensusManager consensus = ConsensusManagerHelper.CreateConsensusManager(network, dataDir, chainState);
 

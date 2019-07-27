@@ -139,11 +139,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 rule.CheckTransaction(network, options, tx);
         }
 
-        private void TestSegwit_MinedOnStratisNode_ActivatedOn_CoreNode()
-        {
-            // TODO: mine segwit onh a stratis node on the bitcoin network
-            // write a tests that mines segwit blocks on the stratis node
-            // and signals them to a core not, then segwit will get activated on core
         [Fact]
         public void TestSegwit_AlwaysActivatedOn_StratisNode()
         {
