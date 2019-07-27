@@ -27,14 +27,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
             this.consensusRuleEngine = consensusRuleEngine;
         }
 
+        /// <seealso>https://github.com/bitcoin/bitcoin/blob/febf3a856bcfb8fef2cb4ddcb8d1e0cab8a22580/src/validation.cpp#L770</seealso>
         public override void CheckTransaction(MempoolValidationContext context)
         {
             var scriptVerifyFlags = ScriptVerify.Standard;
-            if (!this.settings.RequireStandard)
-            {
-                // TODO: implement -promiscuousmempoolflags
-                // scriptVerifyFlags = GetArg("-promiscuousmempoolflags", scriptVerifyFlags);
-            }
 
             // Check against previous transactions.
             // This is done last to help prevent CPU exhaustion denial-of-service attacks.
