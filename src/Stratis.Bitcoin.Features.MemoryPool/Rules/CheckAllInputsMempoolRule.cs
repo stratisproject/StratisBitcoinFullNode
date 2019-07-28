@@ -13,9 +13,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
     /// </summary>
     public class CheckAllInputsMempoolRule : MempoolRule
     {
-        // TODO: Should this be in the actual ScriptVerify enum?
-        public const uint STANDARD_NOT_MANDATORY_VERIFY_FLAGS = (uint)(ScriptVerify.Standard & ~ScriptVerify.Mandatory);
-
         private readonly IConsensusRuleEngine consensusRuleEngine;
         private readonly NodeDeployments nodeDeployments;
 

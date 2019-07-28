@@ -38,9 +38,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.MempoolRules
 
             ContractTxData txData = ContractTransactionChecker.GetContractTxData(this.callDataSerializer, scTxOut);
 
-            if (!txData.IsCreateContract)
-                return;
-
             SmartContractFormatLogic.Check(txData, context.Fees);
         }
     }
