@@ -38,15 +38,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<ICoinView, CachedCoinView>();
 
-                    services.AddSingleton<PowConsensusRuleEngine>();
+                    services.AddSingleton<IConsensusRuleEngine, PowConsensusRuleEngine>();
                     services.AddSingleton<IRuleRegistration, SmartContractPowRuleRegistration>();
-                    services.AddSingleton<IConsensusRuleEngine>(f =>
-                    {
-                        var concreteRuleEngine = f.GetService<PowConsensusRuleEngine>();
-                        var ruleRegistration = f.GetService<IRuleRegistration>();
-
-                        return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
-                    });
+                    new SmartContractPowRuleRegistration().RegisterRules(services);
                 });
             });
 

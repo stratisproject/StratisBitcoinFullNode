@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
@@ -15,6 +16,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.Interfaces;
@@ -224,8 +226,6 @@ namespace Stratis.Bitcoin.Base
 
             this.consensusRules.Initialize(this.chainIndexer.Tip);
 
-            this.consensusRules.Register();
-
             await this.consensusManager.InitializeAsync(this.chainIndexer.Tip).ConfigureAwait(false);
 
             this.chainState.ConsensusTip = this.consensusManager.Tip;
@@ -395,6 +395,19 @@ namespace Stratis.Bitcoin.Base
                     // Consensus
                     services.AddSingleton<ConsensusSettings>();
                     services.AddSingleton<ICheckpoints, Checkpoints>();
+                    services.AddSingleton<ConsensusRulesContainer>();
+
+                    foreach (var ruleType in fullNodeBuilder.Network.Consensus.ConsensusRules.HeaderValidationRules)
+                        services.AddSingleton(typeof(IHeaderValidationConsensusRule), ruleType);
+
+                    foreach (var ruleType in fullNodeBuilder.Network.Consensus.ConsensusRules.IntegrityValidationRules)
+                        services.AddSingleton(typeof(IIntegrityValidationConsensusRule), ruleType);
+
+                    foreach (var ruleType in fullNodeBuilder.Network.Consensus.ConsensusRules.PartialValidationRules)
+                        services.AddSingleton(typeof(IPartialValidationConsensusRule), ruleType);
+
+                    foreach (var ruleType in fullNodeBuilder.Network.Consensus.ConsensusRules.FullValidationRules)
+                        services.AddSingleton(typeof(IFullValidationConsensusRule), ruleType);
 
                     // Connection
                     services.AddSingleton<INetworkPeerFactory, NetworkPeerFactory>();

@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -27,76 +29,64 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
         private readonly IStakeChain stakeChain;
         private readonly IStakeValidator stakeValidator;
 
-        public SmartContractPosRuleRegistration(Network network,
-            IStateRepositoryRoot stateRepositoryRoot,
-            IContractExecutorFactory executorFactory,
-            ICallDataSerializer callDataSerializer,
-            ISenderRetriever senderRetriever,
-            IReceiptRepository receiptRepository,
-            ICoinView coinView,
-            IStakeChain stakeChain,
-            IStakeValidator stakeValidator)
+        public SmartContractPosRuleRegistration()
         {
-            this.network = network;
-            this.stateRepositoryRoot = stateRepositoryRoot;
-            this.executorFactory = executorFactory;
-            this.callDataSerializer = callDataSerializer;
-            this.senderRetriever = senderRetriever;
-            this.receiptRepository = receiptRepository;
-            this.coinView = coinView;
-            this.stakeChain = stakeChain;
-            this.stakeValidator = stakeValidator;
         }
 
-        public void RegisterRules(IConsensus consensus)
+        public void RegisterRules(IServiceCollection services)
         {
-            consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
+            foreach (Type ruleType in new List<Type>()
             {
-                new HeaderTimeChecksRule(),
-                new HeaderTimeChecksPosRule(),
-                new StratisBugFixPosFutureDriftRule(),
-                new CheckDifficultyPosRule(),
-                new StratisHeaderVersionRule(),
-            };
+                typeof(HeaderTimeChecksRule),
+                typeof(HeaderTimeChecksPosRule),
+                typeof(StratisBugFixPosFutureDriftRule),
+                typeof(CheckDifficultyPosRule),
+                typeof(StratisHeaderVersionRule),
+            })
+                services.AddSingleton(typeof(IHeaderValidationConsensusRule), ruleType);
 
-            consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+            foreach (Type ruleType in new List<Type>()
             {
-                new BlockMerkleRootRule(),
-                new PosBlockSignatureRepresentationRule(),
-                new SmartContractPosBlockSignatureRule(),
-            };
+                typeof(BlockMerkleRootRule),
+                typeof(PosBlockSignatureRepresentationRule),
+                typeof(SmartContractPosBlockSignatureRule),
+            })
+                services.AddSingleton(typeof(IIntegrityValidationConsensusRule), ruleType);
 
-            consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
+            foreach (Type ruleType in new List<Type>()
             {
-                new SetActivationDeploymentsPartialValidationRule(),
+                typeof(SetActivationDeploymentsPartialValidationRule),
 
-                new PosTimeMaskRule(),
+                typeof(PosTimeMaskRule),
 
                 // rules that are inside the method ContextualCheckBlock
-                new TransactionLocktimeActivationRule(), // implements BIP113
-                new CoinbaseHeightActivationRule(), // implements BIP34
-                new WitnessCommitmentsRule(), // BIP141, BIP144
-                new BlockSizeRule(),
+                typeof(TransactionLocktimeActivationRule), // implements BIP113
+                typeof(CoinbaseHeightActivationRule), // implements BIP34
+                typeof(WitnessCommitmentsRule), // BIP141, BIP144
+                typeof(BlockSizeRule),
 
                 // rules that are inside the method CheckBlock
-                new EnsureCoinbaseRule(),
-                new CheckPowTransactionRule(),
-                new CheckPosTransactionRule(),
-                new CheckSigOpsRule(),
-                new PosCoinstakeRule()
-            };
+                typeof(EnsureCoinbaseRule),
+                typeof(CheckPowTransactionRule),
+                typeof(CheckPosTransactionRule),
+                typeof(CheckSigOpsRule),
+                typeof(PosCoinstakeRule)
+            })
+                services.AddSingleton(typeof(IPartialValidationConsensusRule), ruleType);
 
             // TODO: When looking to make PoS work again, will need to add several of the smart contract consensus rules below (see PoA and PoW implementations)
-            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+            foreach (Type ruleType in new List<Type>()
             {
-                new SetActivationDeploymentsFullValidationRule(),
+                typeof(SetActivationDeploymentsFullValidationRule),
 
-                new CheckDifficultyHybridRule(),
-                new LoadCoinviewRule(),
-                new TransactionDuplicationActivationRule(), // implements BIP30
-                new SmartContractPosCoinviewRule(this.network, this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView, this.stakeChain, this.stakeValidator), // implements BIP68, MaxSigOps and BlockReward 
-                new SaveCoinviewRule()
-            };
+                typeof(CheckDifficultyHybridRule),
+                typeof(LoadCoinviewRule),
+                typeof(TransactionDuplicationActivationRule), // implements BIP30
+                typeof(SmartContractPosCoinviewRule), // implements BIP68, MaxSigOps and BlockReward 
+                typeof(SaveCoinviewRule)
+            })
+                services.AddSingleton(typeof(IFullValidationConsensusRule), ruleType);
+
         }
     }
 }
