@@ -165,15 +165,18 @@ namespace Stratis.Bitcoin.Features.PoA
                 catch (OperationCanceledException)
                 {
                 }
-                // TODO: Find a better way to do this.
-                catch (ConsensusErrorException ce) when (ce.ConsensusError.Code == "invalid-collateral-amount")
+                catch (ConsensusErrorException ce) when (ce.ConsensusError.Code == PoAConsensusErrors.InvalidCollateralAmount.Code)
                 {
                     this.logger.LogInformation("Miner failed to mine block due to: '{0}'.", ce.ConsensusError.Message);
                 }
                 catch (Exception exception)
                 {
                     this.logger.LogCritical("Exception occurred during mining: {0}", exception.ToString());
-                    break;
+
+                    // This can happen due to the race condition, we shouldn't break mining loop because of this.
+                    // TODO: Find a better way to do this.
+                    if (exception.Message != "Output has already been spent.")
+                        break;
                 }
             }
         }
