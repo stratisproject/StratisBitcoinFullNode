@@ -1,5 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.PoA;
@@ -25,27 +28,21 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
         private readonly IDateTimeProvider dateTime;
 
-        public SmartContractCollateralPoARuleRegistration(Network network, IStateRepositoryRoot stateRepositoryRoot, IContractExecutorFactory executorFactory,
-            ICallDataSerializer callDataSerializer, ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView,
-            IEnumerable<IContractTransactionPartialValidationRule> partialTxValidationRules, IEnumerable<IContractTransactionFullValidationRule> fullTxValidationRules,
-            IInitialBlockDownloadState ibdState, ISlotsManager slotsManager, ICollateralChecker collateralChecker, IDateTimeProvider dateTime)
-        : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView, partialTxValidationRules, fullTxValidationRules)
+        public SmartContractCollateralPoARuleRegistration()
+        : base()
         {
-            this.ibdState = ibdState;
-            this.slotsManager = slotsManager;
-            this.collateralChecker = collateralChecker;
-            this.dateTime = dateTime;
         }
 
-        public override void RegisterRules(IConsensus consensus)
+        public override void RegisterRules(IServiceCollection services)
         {
-            base.RegisterRules(consensus);
+            base.RegisterRules(services);
+
+            services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(CheckCollateralFullValidationRule));
 
             // SaveCoinviewRule must be the last rule executed because actually it calls CachedCoinView.SaveChanges that causes internal CachedCoinView to be updated
             // see https://dev.azure.com/Stratisplatformuk/StratisBitcoinFullNode/_workitems/edit/3770
-            // TODO: re-design how rules gets called, which order they have and prevent a rule to change internal service statuses (rules should just check)
-            int saveCoinviewRulePosition = consensus.FullValidationRules.FindIndex(c => c is SaveCoinviewRule);
-            consensus.FullValidationRules.Insert(saveCoinviewRulePosition, new CheckCollateralFullValidationRule(this.ibdState, this.collateralChecker, this.slotsManager, this.dateTime, this.network));
+            foreach (ServiceDescriptor serviceDescriptor in services.Where(f => f.ImplementationType == typeof(SaveCoinviewRule)).ToList()) services.Remove(serviceDescriptor);
+            services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(SaveCoinviewRule));
         }
     }
 }

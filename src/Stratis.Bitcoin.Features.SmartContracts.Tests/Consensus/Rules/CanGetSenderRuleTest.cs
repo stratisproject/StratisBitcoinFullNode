@@ -42,9 +42,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             this.network = new SmartContractsRegTest();
             this.senderRetriever = new Mock<ISenderRetriever>();
-            this.rule = new CanGetSenderRule(this.senderRetriever.Object);
             this.mempoolRule = new CanGetSenderMempoolRule(this.network, new Mock<ITxMempool>().Object, new MempoolSettings(new NodeSettings(this.network)), new ChainIndexer(this.network), this.senderRetriever.Object, new Mock<ILoggerFactory>().Object);
-            this.rule.Parent = new PowConsensusRuleEngine(
+            this.rule = new CanGetSenderRule(this.senderRetriever.Object)
+            {
+                Parent = new PowConsensusRuleEngine(
                 this.network,
                 new Mock<ILoggerFactory>().Object,
                 new Mock<IDateTimeProvider>().Object,
@@ -53,7 +54,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 new ConsensusSettings(NodeSettings.Default(this.network)), new Mock<ICheckpoints>().Object, new Mock<ICoinView>().Object, new Mock<IChainState>().Object,
                 new InvalidBlockHashStore(null),
                 new NodeStats(null, loggerFactory),
-                new AsyncProvider(new Mock<ILoggerFactory>().Object, new Mock<ISignals>().Object, new NodeLifetime()));
+                new AsyncProvider(new Mock<ILoggerFactory>().Object, new Mock<ISignals>().Object, new NodeLifetime()),
+                new ConsensusRulesContainer())
+            };
 
             this.rule.Initialize();
         }
