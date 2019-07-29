@@ -1004,7 +1004,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 };
 
                 RecordLatestMatureDepositsResult recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[crossChainTransferStore.NextMatureDepositHeight]);
-                
+
                 // The CCTS won't create any transactions until the InputConsolidator consolidates some inputs
                 Assert.Empty(recordMatureDepositResult.WithDrawalTransactions);
 
@@ -1012,7 +1012,34 @@ namespace Stratis.Features.FederatedPeg.Tests
             }
         }
 
-        private Q Post<T, Q>(string url, T body)
+        [Fact]
+        public async Task WalletSyncFromHeightOverridesWalletLastBlockSyncedHeight()
+        {
+            // Only sync the wallet from the second funding block.
+            this.federatedPegSettings.WalletSyncFromHeight.Returns(2);
+
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+
+            this.Init(dataFolder);
+
+            FederationWallet wallet = this.federationWalletManager.GetWallet();
+
+            // LastBlockSyncedHeight = WalletSyncFromHeight - 1.
+            Assert.Equal(1, wallet.LastBlockSyncedHeight);
+
+            // Add 2 blocks with 2 and 1 transactions respectively.
+            this.AddFunding();
+
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
+            {
+                crossChainTransferStore.Initialize();
+
+                // Only the second block containing 1 transaction should be processed.
+                Assert.Equal(1, wallet.MultiSigAddress.Transactions.Count);
+            }
+        }
+
+        private Q Post<T,Q>(string url, T body)
         {
             // Request is sent to mainchain user.
             var request = (HttpWebRequest)WebRequest.Create(url);

@@ -189,15 +189,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <returns>The height to which the wallet has been synced.</returns>
         private HashHeightPair TipToChase()
         {
-            FederationWallet wallet = this.federationWalletManager.GetWallet();
-
-            if (wallet?.LastBlockSyncedHeight == null)
-            {
-                this.logger.LogTrace("(-)[GENESIS]");
-                return new HashHeightPair(this.network.GenesisHash, 0);
-            }
-
-            return new HashHeightPair(wallet.LastBlockSyncedHash, (int)wallet.LastBlockSyncedHeight);
+            return new HashHeightPair(this.chainIndexer.GetHeader(this.federationWalletManager.LastBlockHeight()));
         }
 
         /// <summary>
