@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC
@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             string dir = CreateTestDir(this);
             IFullNode fullNode = this.BuildServicedNode(dir);
-            var controller = fullNode.Services.ServiceProvider.GetService<MempoolController>();
+            var controller = fullNode.NodeController<MempoolController>();
 
             List<uint256> result = await controller.GetRawMempool();
 

@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// <summary>The maximum allowed size for a serialized block, in bytes (network rule).</summary>
         public const int MaxBlockSize = 1000000;
 
-        ///<summary>The maximum size for mined blocks.</summary>
+        /// <summary>The maximum size for mined blocks.</summary>
         public const int MaxBlockSizeGen = MaxBlockSize / 2;
 
         /// <summary>Builder that creates a proof-of-stake block template.</summary>
@@ -406,7 +406,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     return;
                 }
 
-                List<UtxoStakeDescription> utxoStakeDescriptions = await this.GetUtxoStakeDescriptionsAsync(walletSecret, cancellationToken).ConfigureAwait(false);
+                List<UtxoStakeDescription> utxoStakeDescriptions = this.GetUtxoStakeDescriptions(walletSecret, cancellationToken);
 
                 blockTemplate = blockTemplate ?? this.blockProvider.BuildPosBlock(chainTip, new Script());
                 var posBlock = (PosBlock)blockTemplate.Block;
@@ -434,9 +434,10 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             }
         }
 
-        internal async Task<List<UtxoStakeDescription>> GetUtxoStakeDescriptionsAsync(WalletSecret walletSecret, CancellationToken cancellationToken)
+        internal List<UtxoStakeDescription> GetUtxoStakeDescriptions(WalletSecret walletSecret, CancellationToken cancellationToken)
         {
             var utxoStakeDescriptions = new List<UtxoStakeDescription>();
+
             List<UnspentOutputReference> stakableUtxos = this.walletManager
                 .GetSpendableTransactionsInWalletForStaking(walletSecret.WalletName, 1)
                 .Where(utxo => utxo.Transaction.Amount >= this.MinimumStakingCoinValue) // exclude dust from stake process
@@ -606,7 +607,10 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             // Mark coinstake transaction.
             coinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(Money.Zero, new Script()));
 
-            long balance = (await this.GetMatureBalanceAsync(utxoStakeDescriptions).ConfigureAwait(false)).Satoshi;
+            // TODO: Is the difference and duplication in logic between GetMatureBalanceAsync and GetStakeMinConfirmations acceptable?
+            (Money balance, Money immature) = await this.GetMatureBalanceAsync(utxoStakeDescriptions).ConfigureAwait(false);
+            this.rpcGetStakingInfoModel.Immature = immature.Satoshi;
+
             if (balance <= this.targetReserveBalance)
             {
                 this.rpcGetStakingInfoModel.PauseStaking();
@@ -917,19 +921,24 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         }
 
         /// <inheritdoc/>
-        public async Task<Money> GetMatureBalanceAsync(List<UtxoStakeDescription> utxoStakeDescriptions)
+        public async Task<(Money balance, Money immature)> GetMatureBalanceAsync(List<UtxoStakeDescription> utxoStakeDescriptions)
         {
             var money = new Money(0);
+            var immature = new Money(0);
+
             foreach (UtxoStakeDescription utxoStakeDescription in utxoStakeDescriptions)
             {
                 // Must wait until coinbase is safely deep enough in the chain before valuing it.
                 if ((utxoStakeDescription.UtxoSet.IsCoinbase || utxoStakeDescription.UtxoSet.IsCoinstake) && (await this.GetBlocksCountToMaturityAsync(utxoStakeDescription).ConfigureAwait(false) > 0))
+                {
+                    immature += utxoStakeDescription.TxOut.Value;
                     continue;
+                }
 
                 money += utxoStakeDescription.TxOut.Value;
             }
 
-            return money;
+            return (money, immature);
         }
 
         /// <summary>

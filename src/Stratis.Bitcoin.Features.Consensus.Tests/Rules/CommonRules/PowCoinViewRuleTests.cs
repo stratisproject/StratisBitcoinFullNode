@@ -8,6 +8,7 @@ using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -91,6 +92,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 this.logger = new Mock<ILogger>();
                 rule.Logger = this.logger.Object;
 
+                var loggerFactory = new ExtendedLoggerFactory();
+                loggerFactory.AddConsoleWithFilters();
+
                 var dateTimeProvider = new DateTimeProvider();
 
                 rule.Parent = new PowConsensusRuleEngine(
@@ -101,8 +105,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                     new NodeDeployments(KnownNetworks.RegTest, new ChainIndexer(this.network)),
                     new ConsensusSettings(NodeSettings.Default(KnownNetworks.RegTest)), new Mock<ICheckpoints>().Object, new Mock<ICoinView>().Object, new Mock<IChainState>().Object,
                     new InvalidBlockHashStore(dateTimeProvider),
-                    new NodeStats(dateTimeProvider),
-                    new AsyncProvider(new LoggerFactory(), new Mock<ISignals>().Object, new Mock<NodeLifetime>().Object));
+                    new NodeStats(dateTimeProvider, loggerFactory),
+                    new AsyncProvider(loggerFactory, new Mock<ISignals>().Object, new Mock<NodeLifetime>().Object),
+                    new ConsensusRulesContainer());
 
                 rule.Initialize();
 

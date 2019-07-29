@@ -121,6 +121,10 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly ConsensusManagerPerformanceCounter performanceCounter;
 
+        private readonly ConsensusSettings consensusSettings;
+
+        private readonly IDateTimeProvider dateTimeProvider;
+
         private bool isIbd;
 
         internal ConsensusManager(
@@ -142,7 +146,8 @@ namespace Stratis.Bitcoin.Consensus
             IConnectionManager connectionManager,
             INodeStats nodeStats,
             INodeLifetime nodeLifetime,
-            ConsensusSettings consensusSettings)
+            ConsensusSettings consensusSettings,
+            IDateTimeProvider dateTimeProvider)
         {
             Guard.NotNull(chainedHeaderTree, nameof(chainedHeaderTree));
             Guard.NotNull(network, nameof(network));
@@ -162,6 +167,8 @@ namespace Stratis.Bitcoin.Consensus
             Guard.NotNull(connectionManager, nameof(connectionManager));
             Guard.NotNull(nodeStats, nameof(nodeStats));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
+            Guard.NotNull(consensusSettings, nameof(consensusSettings));
+            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
 
             this.network = network;
             this.chainState = chainState;
@@ -177,6 +184,7 @@ namespace Stratis.Bitcoin.Consensus
             this.connectionManager = connectionManager;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.dateTimeProvider = dateTimeProvider;
 
             this.chainedHeaderTree = chainedHeaderTree;
 
@@ -193,12 +201,14 @@ namespace Stratis.Bitcoin.Consensus
             this.ibdState = ibdState;
 
             this.blockPuller = blockPuller;
+            this.dateTimeProvider = dateTimeProvider;
 
+            this.consensusSettings = consensusSettings;
             this.maxUnconsumedBlocksDataBytes = consensusSettings.MaxBlockMemoryInMB * 1024 * 1024;
 
-            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1000);
-            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 1000);
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name, 1000);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name, 1000);
+            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, this.GetType().Name, 1000);
         }
 
         /// <inheritdoc />
@@ -865,13 +875,9 @@ namespace Stratis.Bitcoin.Consensus
             {
                 var badPeers = new List<int>();
 
-                // Ban the peers only in case block is invalid and not temporary rejected.
-                if (validationContext.RejectUntil == null)
+                lock (this.peerLock)
                 {
-                    lock (this.peerLock)
-                    {
-                        badPeers = this.chainedHeaderTree.PartialOrFullValidationFailed(blockToConnect.ChainedHeader);
-                    }
+                    badPeers = this.chainedHeaderTree.PartialOrFullValidationFailed(blockToConnect.ChainedHeader);
                 }
 
                 var failureResult = new ConnectBlocksResult(false)
@@ -882,6 +888,15 @@ namespace Stratis.Bitcoin.Consensus
                     Error = validationContext.Error,
                     PeersToBan = badPeers
                 };
+
+                // If set, use the block reject until time as the ban duration instead of the default 10 minute ban.
+                if (validationContext.RejectUntil != null)
+                {
+                    failureResult.BanDurationSeconds = (int)(validationContext.RejectUntil.Value.ToUnixTimestamp() - this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp());
+
+                    if (failureResult.BanDurationSeconds < 1)
+                        failureResult.BanDurationSeconds = 1;
+                }
 
                 this.logger.LogTrace("(-)[FAILED]:'{0}'", failureResult);
                 return failureResult;
@@ -995,10 +1010,10 @@ namespace Stratis.Bitcoin.Consensus
                     }
                     else
                     {
-                       if (downloadedCallbacks.Callbacks == null)
-                           downloadedCallbacks.Callbacks = new List<OnBlockDownloadedCallback>();
+                        if (downloadedCallbacks.Callbacks == null)
+                            downloadedCallbacks.Callbacks = new List<OnBlockDownloadedCallback>();
 
-                       downloadedCallbacks.Callbacks.Add(onBlockDownloadedCallback);
+                        downloadedCallbacks.Callbacks.Add(onBlockDownloadedCallback);
                     }
 
                     bool blockIsNotConsecutive = (previousHeader != null) && (chainedHeader.Previous.HashBlock != previousHeader.HashBlock);
@@ -1369,7 +1384,19 @@ namespace Stratis.Bitcoin.Consensus
 
             lock (this.peerLock)
             {
-                if (this.isIbd) log.AppendLine("IBD Stage");
+                // Having the Tip Age and Max Tip Age displayed together with the IBD Stage serves as a reminder
+                // to the user how this affects being in IBD (makes it less magical) and provide a hint that
+                // Max Tip Age should be changed if it is set to an absurd value. Perhaps the user made the
+                // assumption that it is minutes or milliseconds. This will show up such issues. It also
+                // gives us easier access to these values if issues are reported in the field.
+
+                // Use the default time provider - same as in InitialBlockDownloadState.IsInitialBlockDownload.
+                long currentTime = this.dateTimeProvider.GetTime();
+                long tipAge = currentTime - this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds();
+                long maxTipAge = this.consensusSettings.MaxTipAge;
+
+                log.AppendLine($"Tip Age: { TimeSpan.FromSeconds(tipAge).ToString(@"hh\:mm\:ss") } (maximum is { TimeSpan.FromSeconds(maxTipAge).ToString(@"hh\:mm\:ss") })");
+                log.AppendLine($"In IBD Stage: { (this.isIbd ? "Yes" : "No") }");
 
                 log.AppendLine($"Chained header tree size: {this.chainedHeaderTree.ChainedBlocksDataBytes.BytesToMegaBytes()} MB");
 

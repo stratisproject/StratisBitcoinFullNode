@@ -275,7 +275,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 return this.runner.FullNode.NodeService<IAsyncProvider>();
         }
 
-        public CoreNode Start()
+        public CoreNode Start(Action startAction = null)
         {
             lock (this.lockObject)
             {
@@ -283,7 +283,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 this.runner.EnablePeerDiscovery = this.builderEnablePeerDiscovery;
                 this.runner.OverrideDateTimeProvider = this.builderOverrideDateTimeProvider;
 
+                if (this.builderNoValidation)
+                    this.DisableValidation();
+
                 this.runner.BuildNode();
+                startAction?.Invoke();
                 this.runner.Start();
                 this.State = CoreNodeState.Starting;
             }
@@ -385,9 +389,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     this.builderWalletPassphrase,
                     string.IsNullOrEmpty(this.builderWalletMnemonic) ? null : new Mnemonic(this.builderWalletMnemonic));
             }
-
-            if (this.builderNoValidation)
-                DisableValidation();
         }
 
         /// <summary>
@@ -395,12 +396,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// </summary>
         public void DisableValidation()
         {
-            this.FullNode.Network.Consensus.FullValidationRules.Clear();
-            this.FullNode.Network.Consensus.HeaderValidationRules.Clear();
-            this.FullNode.Network.Consensus.IntegrityValidationRules.Clear();
-            this.FullNode.Network.Consensus.PartialValidationRules.Clear();
-
-            this.FullNode.NodeService<IConsensusRuleEngine>().Register();
+            this.runner.Network.Consensus.ConsensusRules.FullValidationRules.Clear();
+            this.runner.Network.Consensus.ConsensusRules.HeaderValidationRules.Clear();
+            this.runner.Network.Consensus.ConsensusRules.IntegrityValidationRules.Clear();
+            this.runner.Network.Consensus.ConsensusRules.PartialValidationRules.Clear();
         }
 
         public void Broadcast(Transaction transaction)

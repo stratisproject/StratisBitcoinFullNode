@@ -32,12 +32,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         /// <summary>Returns balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
         /// <param name="addresses">The set of addresses that will be queried.</param>
+        /// <param name="minConfirmations">Only blocks below consensus tip less this parameter will be considered.</param>
         /// <returns>Balance of a given address or <c>null</c> if address wasn't indexed or doesn't exists.</returns>
         AddressBalancesResult GetAddressBalances(string[] addresses, int minConfirmations = 0);
 
         /// <summary>Returns verbose balances data.</summary>
         /// <param name="addresses">The set of addresses that will be queried.</param>
-        VerboseAddressBalancesResult GetVerboseAddressBalancesData(string[] addresses);
+        VerboseAddressBalancesResult GetAddressIndexerState(string[] addresses);
     }
 
     public class AddressIndexer : IAddressIndexer
@@ -206,7 +207,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             this.asyncProvider.RegisterTask($"{nameof(AddressIndexer)}.{nameof(this.indexingTask)}", this.indexingTask);
 
-            this.nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 400);
+            this.nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name, 400);
         }
 
         private async Task IndexAddressesContinuouslyAsync()
@@ -375,8 +376,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                                 $"Ms/block: {Math.Round(this.averageTimePerBlock.Average, 2)}");
         }
 
-        /// <summary>Processes block that was added or removed from consensus chain.</summary>
-        /// <returns><c>true</c> if block was processed.</returns>
+        /// <summary>Processes a block that was added or removed from the consensus chain.</summary>
+        /// <param name="block">The block to process.</param>
+        /// <param name="header">The chained header associated to the block being processed.</param>
+        /// <returns><c>true</c> if block was sucessfully processed.</returns>
         private bool ProcessBlock(Block block, ChainedHeader header)
         {
             lock (this.lockObject)
@@ -486,6 +489,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
 
         /// <summary>Adds a new balance change entry to to the <see cref="addressIndexRepository"/>.</summary>
+        /// <param name="height">The height of the block this being processed.</param>
+        /// <param name="address">The address receiving the funds.</param>
+        /// <param name="amount">The amount being received.</param>
+        /// <param name="deposited"><c>false</c> if this is an output being spent, <c>true</c> otherwise.</param>
         /// <remarks>Should be protected by <see cref="lockObject"/>.</remarks>
         private void ProcessBalanceChangeLocked(int height, string address, Money amount, bool deposited)
         {
@@ -580,14 +587,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         }
 
         /// <inheritdoc />
-        public VerboseAddressBalancesResult GetVerboseAddressBalancesData(string[] addresses)
+        public VerboseAddressBalancesResult GetAddressIndexerState(string[] addresses)
         {
+            var result = new VerboseAddressBalancesResult(this.consensusManager.Tip.Height);
+
+            if (addresses.Length == 0)
+                return result;
+
             (bool isQueryable, string reason) = this.IsQueryable();
 
             if (!isQueryable)
                 return VerboseAddressBalancesResult.RequestFailed(reason);
-
-            var result = new VerboseAddressBalancesResult();
 
             lock (this.lockObject)
             {
@@ -604,8 +614,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     result.BalancesData.Add(copy);
                 }
             }
-
-            result.ConsensusTipHeight = this.consensusManager.Tip.Height;
 
             return result;
         }

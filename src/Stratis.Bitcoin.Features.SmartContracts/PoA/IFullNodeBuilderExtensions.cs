@@ -29,24 +29,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                     {
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<ICoinView, CachedCoinView>();
-                        services.AddSingleton<ConsensusController>();
                         services.AddSingleton<VotingManager>();
                         services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
 
-                        services.AddSingleton<PoAConsensusRuleEngine>();
-                        services.AddSingleton<IRuleRegistration, SmartContractPoARuleRegistration>();
-                        services.AddSingleton<IConsensusRuleEngine>(f =>
-                        {
-                            var concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
-                            var ruleRegistration = f.GetService<IRuleRegistration>();
-
-                            return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
-                        });
+                        services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
+                        new SmartContractPoARuleRegistration().RegisterRules(services);
 
                         // Voting.
                         services.AddSingleton<VotingManager>();
-                        services.AddSingleton<DefaultVotingController>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
                         services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
                         services.AddSingleton<IdleFederationMembersKicker>();

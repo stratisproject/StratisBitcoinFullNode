@@ -32,10 +32,11 @@ namespace NBitcoin
         /// <summary>
         /// Gets the IP addresses of nodes associated with the host.
         /// </summary>
+        /// <param name="forceRefresh">Normally the DNS lookups get cached after the first resolution. This indicates that the results should be discarded and overwritten.</param>
         /// <returns>A list of IP addresses.</returns>
-        public IPAddress[] GetAddressNodes()
+        public IPAddress[] GetAddressNodes(bool forceRefresh = false)
         {
-            if (this.addresses != null)
+            if (this.addresses != null && !forceRefresh)
             {
                 return this.addresses;
             }

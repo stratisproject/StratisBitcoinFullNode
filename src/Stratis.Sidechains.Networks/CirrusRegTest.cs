@@ -40,13 +40,14 @@ namespace Stratis.Sidechains.Networks
             this.DefaultMaxInboundConnections = 109;
             this.DefaultRPCPort = 26175;
             this.DefaultAPIPort = 38223;
-            this.MaxTipAge = 30 * 60; // Node will be considered in IBD when blocks are more than 30 minutes away.
+            this.MaxTipAge = 768; // 20% of the fastest time it takes for one MaxReorgLength of blocks to be mined.
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
             this.MinRelayTxFee = 10000;
             this.RootFolderName = NetworkRootFolderName;
             this.DefaultConfigFilename = NetworkDefaultConfigFilename;
             this.MaxTimeOffsetSeconds = 25 * 60;
+            this.DefaultBanTimeSeconds = 1920; // 240 (MaxReorg) * 16 (TargetSpacing) / 2 = 32 Minutes
 
             var consensusFactory = new SmartContractCollateralPoAConsensusFactory();
 
@@ -159,6 +160,9 @@ namespace Stratis.Sidechains.Networks
             this.SeedNodes = new List<NetworkAddress>();
 
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
+
+            // 16 below should be changed to TargetSpacingSeconds when we move that field.
+            Assert(this.DefaultBanTimeSeconds <= this.Consensus.MaxReorgLength * 16 / 2);
 
             // TODO: Do we need Asserts for block hash
 
