@@ -478,39 +478,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async Task AcceptToMemoryPool_TxIsCoinstake_ReturnsFalseAsync()
-        {
-            string dataDir = GetTestDirectoryPath(this);
-
-            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
-            var network = KnownNetworks.StratisMain;
-            var minerSecret = new BitcoinSecret(new Key(), network);
-            ITestChainContext context = await TestChainFactory.CreatePosAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
-            IMempoolValidator validator = context.MempoolValidator;
-            Assert.NotNull(validator);
-
-            Transaction tx = network.CreateTransaction();
-
-            // Create a transaction that looks like a coinstake.
-            // It is not a true PosTransaction coinstake, but this is sufficient to trigger the test condition.
-            tx.AddInput(new TxIn()
-            {
-                PrevOut = new OutPoint(new uint256(15), 1),
-                ScriptSig = new Script()
-            });
-            tx.AddOutput(new TxOut(Money.Zero, (IDestination)null));
-            tx.AddOutput(new TxOut(Money.Zero, (IDestination)null));
-            Assert.True(tx.IsCoinStake);
-
-            var state = new MempoolValidationState(false);
-            bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
-
-            // Tests PreMempoolChecks context.Transaction.IsCoinStake
-            Assert.False(isSuccess, "Coinstake should not be accepted to mempool.");
-            Assert.Equal(MempoolErrors.Coinstake, state.Error);
-        }
-
-        [Fact]
         public async Task AcceptToMemoryPool_TxIsNonStandardVersionUnsupported_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
@@ -941,7 +908,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             string dataDir = GetTestDirectoryPath(this);
 
             var miner = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreateAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 

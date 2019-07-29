@@ -25,15 +25,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
-            Network network = KnownNetworks.Main;
-            var minerSecret = new BitcoinSecret(new Key(), network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            var minerSecret = new BitcoinSecret(new Key(), this.Network);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
-            var destSecret = new BitcoinSecret(new Key(), network);
-            Transaction tx = network.CreateTransaction();
+            var destSecret = new BitcoinSecret(new Key(), this.Network);
+            Transaction tx = this.Network.CreateTransaction();
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
 
             tx.Inputs.First().Sequence = new Sequence(Sequence.SEQUENCE_LOCKTIME_DISABLE_FLAG);
@@ -44,7 +42,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
 
             // Non-PoS chains do not have the concept of a transaction time, so do not set that.
 
-            tx.Sign(network, minerSecret, false);
+            tx.Sign(this.Network, minerSecret, false);
 
             var state = new MempoolValidationState(false);
 
@@ -58,7 +56,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -84,7 +82,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var miner = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -148,7 +146,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var miner = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -216,7 +214,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var miner = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -276,7 +274,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var miner = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, miner.PubKey.WitHash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.WitHash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -305,7 +303,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var miner = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -334,7 +332,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var miner = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -370,7 +368,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -397,7 +395,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -427,7 +425,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -458,7 +456,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -497,7 +495,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -527,7 +525,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -563,7 +561,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -597,7 +595,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -620,7 +618,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -644,7 +642,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -671,7 +669,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -706,7 +704,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -732,7 +730,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -765,7 +763,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -793,7 +791,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -821,7 +819,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -857,7 +855,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var miner = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -901,7 +899,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var miner = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -966,7 +964,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -1001,7 +999,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -1031,7 +1029,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -1063,7 +1061,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -1090,7 +1088,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -1126,7 +1124,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var miner = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir).ConfigureAwait(false);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir).ConfigureAwait(false);
             IMempoolValidator validator = context.MempoolValidator;
             var bob = new BitcoinSecret(new Key(), this.Network);
             var txBuilder = new TransactionBuilder(this.Network);
@@ -1166,7 +1164,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -1224,7 +1222,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -1381,7 +1379,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -1392,7 +1390,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             tx.AddOutput(new TxOut(Money.Coins(3.9m), minerSecret.PubKeyHash));
 
             // We need the sequence of all the transactions to be lower than (Sequence.Final - 1) to avoid triggering the conflict mempool error.
-            // Therefore just use 1 here and 2 for the actual replacing transaction.
             tx.Inputs.First().Sequence = 1;
 
             tx.Sign(this.Network, minerSecret, false);
@@ -1405,7 +1402,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
 
             // Put another valid transaction into the mempool.
             tx2.AddInput(new TxIn(new OutPoint(context.SrcTxs[1].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
-            tx2.AddOutput(new TxOut(Money.Coins(0.049m), minerSecret.PubKeyHash));
+            tx2.AddOutput(new TxOut(Money.Coins(3.9m), minerSecret.PubKeyHash));
 
             tx2.Inputs.First().Sequence = 1;
 
@@ -1423,8 +1420,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             // It also has a conflict with the second transaction.
             tx3.AddInput(new TxIn(new OutPoint(context.SrcTxs[1].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
 
-            // The fee should be very much higher than the other transactions, as this transaction has effectively almost two entire block rewards as inputs.
-            tx3.AddOutput(new TxOut(Money.Coins(0.01m), minerSecret.PubKeyHash));
+            // The fee will be very much higher than the other transactions, as this transaction has effectively almost two entire block rewards as inputs.
+            // Therefore set the only output reasonably low, so that the rest of the input funds are allocated to fees.
+            tx3.AddOutput(new TxOut(Money.Coins(0.001m), minerSecret.PubKeyHash));
 
             tx3.Inputs.First().Sequence = tx.Inputs.First().Sequence + 1;
 
@@ -1442,7 +1440,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -1470,7 +1468,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -1521,7 +1519,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -1548,7 +1546,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
             
             var minerSecret = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestPosChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 

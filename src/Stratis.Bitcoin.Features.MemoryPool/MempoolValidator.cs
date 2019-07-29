@@ -101,6 +101,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Minimum fee rate for a relay transaction.</summary>
         private readonly FeeRate minRelayTxFee;
 
+        // TODO: Verify these
         /// <summary>Flags that determine how transaction should be validated in non-consensus code.</summary>
         public static Transaction.LockTimeFlags StandardLocktimeVerifyFlags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
 
@@ -309,7 +310,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // TODO: Convert these into rules too
             this.PreMempoolChecks(context);
 
-            // create the MemPoolCoinView and load relevant utxoset
+            // Create the MemPoolCoinView and load relevant utxoset
             context.View = new MempoolCoinView(this.coinView, this.memPool, this.mempoolLock, this);
 
             // adding to the mem pool can only be done sequentially

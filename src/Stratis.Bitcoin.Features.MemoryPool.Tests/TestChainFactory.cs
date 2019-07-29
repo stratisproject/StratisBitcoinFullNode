@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
     /// </summary>
     internal class TestChainFactory
     {
-        public static async Task<ITestChainContext> CreatePosAsync(Network network, Script scriptPubKey, string dataDir)
+        public static async Task<ITestChainContext> CreatePosAsync(Network network, Script scriptPubKey, string dataDir, bool requireStandard = true)
         {
             var nodeSettings = new NodeSettings(network, args: new string[] { $"-datadir={dataDir}" });
 
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var consensusRulesContainer = new ConsensusRulesContainer();
             foreach (var ruleType in network.Consensus.ConsensusRules.HeaderValidationRules)
             {
-                // Dont check PoW of a header in this test.
+                // Don't check PoW of a header in this test.
                 if (ruleType == typeof(CheckDifficultyPowRule))
                     continue;
 
@@ -101,12 +101,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             var chainState = new ChainState();
             var deployments = new NodeDeployments(network, chain);
-            ConsensusRuleEngine consensusRules;
 
             var asyncProvider = new AsyncProvider(loggerFactory, new Mock<ISignals>().Object, new NodeLifetime());
 
             var stakeChain = new StakeChainStore(network, chain, null, loggerFactory);
-            consensusRules = new PosConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(),
+            ConsensusRuleEngine consensusRules = new PosConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(),
                 inMemoryCoinView, stakeChain, new StakeValidator(network, stakeChain, chain, inMemoryCoinView, loggerFactory), chainState, new InvalidBlockHashStore(dateTimeProvider),
                 new NodeStats(dateTimeProvider, loggerFactory), new RewindDataIndexCache(dateTimeProvider, network), asyncProvider, consensusRulesContainer).SetupRulesEngineParent();
 
@@ -117,6 +116,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             await consensus.InitializeAsync(genesis).ConfigureAwait(false);
 
             var mempoolSettings = new MempoolSettings(nodeSettings);
+            mempoolSettings.RequireStandard = requireStandard;
+
             var blockPolicyEstimator = new BlockPolicyEstimator(mempoolSettings, loggerFactory, nodeSettings);
             var mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, nodeSettings);
             var mempoolLock = new MempoolSchedulerLock();
@@ -132,7 +133,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 new CheckRateLimitMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
                 new CheckAncestorsMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
                 new CheckReplacementMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
-                new CheckAllInputsMempoolRule(network, mempool, mempoolSettings, chain, consensusRules, loggerFactory)
+                new CheckAllInputsMempoolRule(network, mempool, mempoolSettings, chain, consensusRules, deployments, loggerFactory)
             };
 
             // We also have to check that the manually instantiated rules match the ones in the network, or the test isn't valid
@@ -144,8 +145,35 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 }
             }
 
-            var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, new MempoolSettings(nodeSettings), chain, inMemoryCoinView, loggerFactory, nodeSettings, consensusRules, mempoolRules);
-            return new TestChainContext { MempoolValidator = mempoolValidator };
+            var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, mempoolSettings, chain, inMemoryCoinView, loggerFactory, nodeSettings, consensusRules, mempoolRules, deployments);
+            
+            var blocks = new List<Block>();
+            var srcTxs = new List<Transaction>();
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            for (int i = 0; i < 50; i++)
+            {
+                uint nonce = 0;
+                Block block = network.CreateBlock();
+                block.Header.HashPrevBlock = chain.Tip.HashBlock;
+                block.Header.Bits = block.Header.GetWorkRequired(network, chain.Tip);
+                block.Header.UpdateTime(now, network, chain.Tip);
+
+                Transaction coinbase = network.CreateTransaction();
+                coinbase.AddInput(TxIn.CreateCoinbase(chain.Height + 1));
+                coinbase.AddOutput(new TxOut(network.Consensus.ProofOfWorkReward, scriptPubKey));
+                block.AddTransaction(coinbase);
+                block.UpdateMerkleRoot();
+                while (!block.CheckProofOfWork())
+                    block.Header.Nonce = ++nonce;
+                block.Header.PrecomputeHash();
+                blocks.Add(block);
+                chain.SetTip(block.Header);
+                srcTxs.Add(block.Transactions[0]);
+
+                inMemoryCoinView.SaveChanges(new List<UnspentOutputs>() { new UnspentOutputs((uint)(i + 1), block.Transactions[0]) }, new List<TxOut[]>(), chain.Tip.Previous.HashBlock, chain.Tip.HashBlock, chain.Tip.Height);
+            }
+
+            return new TestChainContext { MempoolValidator = mempoolValidator, MempoolSettings = mempoolSettings, SrcTxs = srcTxs};
         }
 
         /// <summary>
@@ -153,8 +181,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// </summary>
         /// <param name="network">Network to create the chain on.</param>
         /// <param name="scriptPubKey">Public key to create blocks/txs with.</param>
+        /// <param name="requireStandard">By default testnet and regtest networks do not require transactions to be standard. This changes that default.</param>
         /// <returns>Context object representing the test chain.</returns>
-        public static async Task<ITestChainContext> CreateAsync(Network network, Script scriptPubKey, string dataDir)
+        public static async Task<ITestChainContext> CreateAsync(Network network, Script scriptPubKey, string dataDir, bool requireStandard = true)
         {
             var nodeSettings = new NodeSettings(network, args: new string[] { $"-datadir={dataDir}" });
 
@@ -166,7 +195,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var consensusRulesContainer = new ConsensusRulesContainer();
             foreach (var ruleType in network.Consensus.ConsensusRules.HeaderValidationRules)
             {
-                // Dont check PoW of a header in this test.
+                // Don't check PoW of a header in this test.
                 if (ruleType == typeof(CheckDifficultyPowRule))
                     continue;
 
@@ -210,7 +239,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             List<BlockInfo> blockinfo = CreateBlockInfoList();
 
             // We can't make transactions until we have inputs therefore, load 100 blocks.
-            var blocks = new List<Block>();
+
             var srcTxs = new List<Transaction>();
             for (int i = 0; i < blockinfo.Count; ++i)
             {
@@ -242,6 +271,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             blockDefinition.Build(chain.Tip, scriptPubKey);
 
             var mempoolSettings = new MempoolSettings(nodeSettings);
+            mempoolSettings.RequireStandard = requireStandard;
 
             // The mempool rule constructors aren't parameterless, so we have to manually inject the dependencies for every rule
             var mempoolRules = new List<MempoolRule>
@@ -268,7 +298,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             Assert.Equal(network.Consensus.MempoolRules.Count, mempoolRules.Count);
 
-            var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, mempoolSettings, chain, inMemoryCoinView, loggerFactory, nodeSettings, consensusRules, mempoolRules, new NodeDeployments(network, chain));
+            var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, mempoolSettings, chain, inMemoryCoinView, loggerFactory, nodeSettings, consensusRules, mempoolRules, deployments);
 
             var outputs = new List<UnspentOutputs>();
 
