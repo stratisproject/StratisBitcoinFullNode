@@ -20,8 +20,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     /// </summary>
     public class DBreezeCoinView : ICoinView, IDisposable
     {
-        public const int MaxBlocksToRewind = 1000;
-
         /// <summary>Database key under which the block hash of the coin view's current tip is stored.</summary>
         private static readonly byte[] blockHashKey = new byte[0];
 
