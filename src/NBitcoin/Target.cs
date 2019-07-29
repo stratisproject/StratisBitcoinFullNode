@@ -172,7 +172,7 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            return ToUInt256().ToString();
+            return this.ToUInt256().ToString();
         }
     }
 }

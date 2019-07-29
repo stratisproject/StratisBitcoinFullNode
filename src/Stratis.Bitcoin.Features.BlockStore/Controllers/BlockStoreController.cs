@@ -99,7 +99,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
             try
             {
-                Block block = this.blockStore.GetBlock(uint256.Parse(query.Hash));
+                uint256 blockId = null;
+                if (!uint256.TryParse(query.Hash, out blockId))
+                    throw new ArgumentException(nameof(query.Hash));
+
+                Block block = this.blockStore.GetBlock(blockId);
 
                 if (block == null)
                 {
@@ -111,9 +115,22 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                     return this.Json(block);
                 }
 
-                return query.ShowTransactionDetails
-                    ? this.Json(new BlockTransactionDetailsModel(block, this.chainIndexer.GetHeader(block.GetHash()), this.chainIndexer.Tip, this.network))
-                    : this.Json(new BlockModel(block, this.chainIndexer.GetHeader(block.GetHash()), this.chainIndexer.Tip, this.network));
+                ChainedHeader chainedHeader = this.chainIndexer.GetHeader(blockId);
+
+                BlockModel blockModel = query.ShowTransactionDetails
+                    ? new BlockTransactionDetailsModel(block, this.chainIndexer.GetHeader(block.GetHash()), this.chainIndexer.Tip, this.network)
+                    : new BlockModel(block, this.chainIndexer.GetHeader(block.GetHash()), this.chainIndexer.Tip, this.network);
+
+                if (this.network.Consensus.IsProofOfStake)
+                {
+                    var posBlock = block as PosBlock;
+
+                    blockModel.PosBlockSignature = posBlock.BlockSignature.ToHex(this.network);
+                    blockModel.PosBlockTrust = new Target(chainedHeader.GetBlockProof()).ToUInt256().ToString();
+                    blockModel.PosChainTrust = chainedHeader.ChainWork.ToString(); // this should be similar to ChainWork
+                }
+
+                return this.Json(blockModel);
             }
             catch (Exception e)
             {
