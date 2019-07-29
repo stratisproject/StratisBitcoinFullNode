@@ -48,7 +48,7 @@ namespace Stratis.Features.FederatedPeg
         /// <summary>
         /// The extra fee given to a withdrawal transaction per input it spends. This number should be high enough such that the built transactions are always valid, yet low enough such that the federation can turn a profit.
         /// </summary>
-        public static readonly Money InputTransactionFee = Money.Coins(0.0001m);
+        public static readonly Money InputTransactionFee = Money.Coins(0.00012m);
 
         /// <summary>
         /// Fee applied to consolidating transactions.
