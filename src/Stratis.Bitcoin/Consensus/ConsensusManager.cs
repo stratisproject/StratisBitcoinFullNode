@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ConsensusManagerPerformanceCounter performanceCounter;
 
         private readonly ConsensusSettings consensusSettings;
-        
+
         private readonly IDateTimeProvider dateTimeProvider;
 
         private bool isIbd;
@@ -1254,17 +1254,28 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public ChainedHeaderBlock[] GetBlockData(List<uint256> blockHashes)
         {
-            Dictionary<uint256, ChainedHeaderBlock> chainedHeaderBlocks;
+            var chainedHeaderBlocks = new Dictionary<uint256, ChainedHeaderBlock>();
 
+            // First look in the chained header tree if we can find the headers and blocks.
             lock (this.peerLock)
             {
-                chainedHeaderBlocks = this.chainedHeaderTree.GetChainedHeaderBlocks(blockHashes).ToDictionary(chb => chb.ChainedHeader.HashBlock, chb => chb);
+                ChainedHeaderBlock[] blocks = this.chainedHeaderTree.GetChainedHeaderBlocks(blockHashes);
+
+                for (int i = 0; i < blocks.Length; i++)
+                {
+                    ChainedHeaderBlock chainedHeaderBlock = blocks[i];
+                    chainedHeaderBlocks[blockHashes[i]] = chainedHeaderBlock;
+                }
             }
 
+            // We are only interested in chained headers that were found but have no blocks, similar to the single block method.
             List<uint256> getFromStore = chainedHeaderBlocks.Where(kv => kv.Value != null && kv.Value.Block == null).Select(kv => kv.Key).ToList();
+
+            // Read those blocks from store and create new chained header block entries for them.
             foreach ((Block block, int index) in this.blockStore.GetBlocks(getFromStore).Select((b, n) => (b, n)))
                 chainedHeaderBlocks[getFromStore[index]] = new ChainedHeaderBlock(block, chainedHeaderBlocks[getFromStore[index]].ChainedHeader);
 
+            // Return the blocks in the requested order.
             return blockHashes.Select(h => chainedHeaderBlocks[h]).ToArray();
         }
 
