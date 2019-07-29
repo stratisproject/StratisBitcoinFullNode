@@ -29,7 +29,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             Script redeemScript = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(m, keys.Select(x => x.PubKey).ToArray());
 
-            const int inputCount = 16;
+            const int inputCount = 50;
             const decimal fundingInputAmount = 100;
             const decimal fundingAmount = 99; // Must be less than fundingInputAmount.
 
