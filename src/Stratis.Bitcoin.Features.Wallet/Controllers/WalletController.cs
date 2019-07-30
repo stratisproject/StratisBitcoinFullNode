@@ -459,7 +459,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     int itemsCount = 0;
                     foreach (FlatHistory item in history)
                     {
-
                         if (itemsCount == MaxHistoryItemsPerAccount)
                         {
                             break;
@@ -559,20 +558,30 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         // Create a record for a 'receive' transaction.
                         if (transaction.IsCoinStake == null && !address.IsChangeAddress())
                         {
-                            // Add incoming fund transaction details.
-                            var receivedItem = new TransactionItemModel
-                            {
-                                Type = TransactionItemType.Received,
-                                ToAddress = address.Address,
-                                Amount = transaction.Amount,
-                                Id = transaction.Id,
-                                Timestamp = transaction.CreationTime,
-                                ConfirmedInBlock = transaction.BlockHeight,
-                                BlockIndex = transaction.BlockIndex
-                            };
+                            // First check if we already have a similar transaction output, in which case we just sum up the amounts
+                            TransactionItemModel existingReceivedItem = this.FindSimilarReceivedTransactionOutput(transactionItems, transaction);
 
-                            transactionItems.Add(receivedItem);
-                            itemsCount++;
+                            if (existingReceivedItem == null)
+                            {
+                                // Add incoming fund transaction details.
+                                var receivedItem = new TransactionItemModel
+                                {
+                                    Type = TransactionItemType.Received,
+                                    ToAddress = address.Address,
+                                    Amount = transaction.Amount,
+                                    Id = transaction.Id,
+                                    Timestamp = transaction.CreationTime,
+                                    ConfirmedInBlock = transaction.BlockHeight,
+                                    BlockIndex = transaction.BlockIndex
+                                };
+
+                                transactionItems.Add(receivedItem);
+                                itemsCount++;
+                            }
+                            else
+                            {
+                                existingReceivedItem.Amount += transaction.Amount;
+                            }
                         }
                     }
 
@@ -848,6 +857,25 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     });
                 }
 
+                // If specified, get the change address, which must already exist in the wallet.
+                HdAddress changeAddress = null;
+                if (!string.IsNullOrWhiteSpace(request.ChangeAddress))
+                {
+                    Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+                    HdAccount account = wallet.GetAccount(request.AccountName);
+                    if (account == null)
+                    {
+                        return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Account not found.", $"No account with the name '{request.AccountName}' could be found in wallet {wallet.Name}.");
+                    }
+
+                    changeAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.ChangeAddress);
+
+                    if (changeAddress == null)
+                    {
+                        return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Change address not found.", $"No changed address '{request.ChangeAddress}' could be found in wallet {wallet.Name}.");
+                    }
+                }
+
                 var context = new TransactionBuildContext(this.network)
                 {
                     AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
@@ -859,7 +887,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     WalletPassword = request.Password,
                     SelectedInputs = request.Outpoints?.Select(u => new OutPoint(uint256.Parse(u.TransactionId), u.Index)).ToList(),
                     AllowOtherInputs = false,
-                    Recipients = recipients
+                    Recipients = recipients,
+                    ChangeAddress = changeAddress
                 };
 
                 if (!string.IsNullOrEmpty(request.FeeType))
@@ -1375,6 +1404,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 this.walletSyncManager.SyncFromHeight(blockHeightToSyncFrom);
             }
+        }
+
+        private TransactionItemModel FindSimilarReceivedTransactionOutput(List<TransactionItemModel> items, TransactionData transaction)
+        {
+            TransactionItemModel existingTransaction = items.FirstOrDefault(i => i.Id == transaction.Id &&
+                                                                                 i.Type == TransactionItemType.Received &&
+                                                                                 i.ConfirmedInBlock == transaction.BlockHeight);
+            return existingTransaction;
         }
     }
 }

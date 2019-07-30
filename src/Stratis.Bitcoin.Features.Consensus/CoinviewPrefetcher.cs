@@ -10,7 +10,12 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    /// <summary>Fetches coins for blocks that are likely to be validated in the near future to speed-up full validation.</summary>
+    /// <summary>
+    /// Pre-fetches coins (UTXOs) for blocks that are likely to be validated in the near future.
+    /// <para>
+    /// This speeds up full block validation.
+    /// </para>
+    /// </summary>
     public class CoinviewPrefetcher : IDisposable
     {
         /// <summary>
@@ -42,17 +47,19 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.chainIndexer = chainIndexer;
             this.asyncProvider = asyncProvider;
 
-            this.headersQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<ChainedHeader>($"{nameof(CoinviewPrefetcher)}-{nameof(this.headersQueue)}", this.OnHeaderEnqueuedAsync);
+            this.headersQueue = asyncProvider.CreateAndRunAsyncDelegateDequeuer<ChainedHeader>($"{nameof(CoinviewPrefetcher)}-{nameof(this.headersQueue)}", this.OnHeaderEnqueued);
             this.coinviewHelper = new CoinviewHelper();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <summary>
-        /// Pre-fetches UTXOs for a block and some blocks with higher height.
-        /// pre-fetching is done on the background.
+        /// Pre-fetch UTXOs for a block and some blocks with higher height.
+        /// <para>
+        /// This task runs in the background.
+        /// </para>
         /// </summary>
-        /// <param name="header">Header of a block that is about to be partially validated and requires pre-fetching.</param>
-        private async Task OnHeaderEnqueuedAsync(ChainedHeader header, CancellationToken cancellation)
+        /// <param name="header">Header of a block that is about to be partially validated and that requires pre-fetching.</param>
+        private Task OnHeaderEnqueued(ChainedHeader header, CancellationToken cancellation)
         {
             ChainedHeader currentHeader = header;
 
@@ -65,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 if (currentHeader.Next.Count == 0)
                 {
                     this.logger.LogTrace("(-)[NO_HEADERS]");
-                    return;
+                    return Task.CompletedTask;
                 }
 
                 currentHeader = currentHeader.Next.FirstOrDefault();
@@ -73,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 if (currentHeader == null)
                 {
                     this.logger.LogTrace("(-)[NO_NEXT_HEADER]");
-                    return;
+                    return Task.CompletedTask;
                 }
             }
 
@@ -82,16 +89,16 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (block == null)
             {
                 this.logger.LogTrace("(-)[NO_BLOCK_DATA]");
-                return;
+                return Task.CompletedTask;
             }
 
             bool farFromTip = currentHeader.Height > this.chainIndexer.Tip.Height + (Lookahead / 2);
 
             if (!farFromTip)
             {
-                this.logger.LogDebug("Block selected for pre-fetching is too close to the tip! Skipping pre-fetching.");
-                this.logger.LogTrace("(-)[TOO_CLOSE_TO_PREFETCH]");
-                return;
+                this.logger.LogDebug("Skipping pre-fetch, the block selected is too close to the tip.");
+                this.logger.LogTrace("(-)[TOO_CLOSE_TO_PREFETCH_HEIGHT]");
+                return Task.CompletedTask;
             }
 
             bool enforceBIP30 = DeploymentFlags.EnforceBIP30ForBlock(currentHeader);
@@ -101,13 +108,17 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 this.coinview.FetchCoins(idsToFetch, cancellation);
 
-                this.logger.LogTrace("{0} ids were pre-fetched.", idsToFetch.Length);
+                this.logger.LogDebug("{0} ids were pre-fetched.", idsToFetch.Length);
             }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
         /// Pre-fetches UTXOs for a block and some blocks with higher height.
-        /// Pre-fetching is done on the background.
+        /// <para>
+        /// Pre-fetching is done in the background.
+        /// </para>
         /// </summary>
         /// <param name="header">Header of a block that was fully validated and requires pre-fetching.</param>
         public void Prefetch(ChainedHeader header)

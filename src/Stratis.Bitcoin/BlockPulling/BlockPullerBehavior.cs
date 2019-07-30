@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.BlockPulling
             if (this.QualityScore > MaxQualityScore)
                 this.QualityScore = MaxQualityScore;
 
-            this.logger.LogTrace("Quality score was set to {0}.", this.QualityScore);
+            this.logger.LogDebug("Quality score was set to {0}.", this.QualityScore);
         }
 
         private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
@@ -196,7 +196,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 block.Obj.Header.PrecomputeHash(true, true);
                 uint256 blockHash = block.Obj.GetHash();
 
-                this.logger.LogTrace("Block '{0}' delivered.", blockHash);
+                this.logger.LogDebug("Block '{0}' delivered.", blockHash);
 
                 this.blockPuller.PushBlock(blockHash, block.Obj, peer.Connection.Id);
                 this.lastDeliveryTime = this.dateTimeProvider.GetUtcNow();

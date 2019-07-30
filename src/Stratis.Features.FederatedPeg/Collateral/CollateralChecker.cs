@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Events;
 using Stratis.Bitcoin.Signals;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 
 namespace Stratis.Features.FederatedPeg.Collateral
@@ -69,14 +70,14 @@ namespace Stratis.Features.FederatedPeg.Collateral
         private bool collateralUpdated;
 
         public CollateralChecker(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, ICounterChainSettings settings,
-            IFederationManager federationManager, ISignals signals, Network network, IAsyncProvider asyncProvider)
+            IFederationManager federationManager, ISignals signals, Network network, IAsyncProvider asyncProvider, INodeLifetime nodeLifetime)
         {
             this.federationManager = federationManager;
             this.signals = signals;
             this.asyncProvider = asyncProvider;
 
             this.maxReorgLength = AddressIndexer.GetMaxReorgOrFallbackMaxReorg(network);
-            this.cancellationSource = new CancellationTokenSource();
+            this.cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(nodeLifetime.ApplicationStopping);
             this.locker = new object();
             this.balancesDataByAddress = new Dictionary<string, AddressIndexerData>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -158,11 +159,7 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
             if (addressesToCheck.Count == 0)
             {
-                this.collateralUpdated = true;
-
                 this.logger.LogInformation("None of the federation members has a collateral requirement configured.");
-                this.logger.LogTrace("(-)[NOTHING_TO_CHECK]:true");
-                return;
             }
 
             this.logger.LogDebug("Addresses to check {0}.", addressesToCheck.Count);

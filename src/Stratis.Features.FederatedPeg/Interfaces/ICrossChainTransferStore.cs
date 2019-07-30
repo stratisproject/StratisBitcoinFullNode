@@ -47,8 +47,9 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// </summary>
         /// <param name="statuses">Set of statuses to get transfers for.</param>
         /// <param name="sort">Set to <c>true</c> to sort the transfers by their earliest inputs.</param>
+        /// <param name="validate">Whether to validate the status of the transfers.</param>
         /// <returns>Transfers for the given statuses.</returns>
-        ICrossChainTransfer[] GetTransfersByStatus(CrossChainTransferStatus[] statuses, bool sort = false);
+        ICrossChainTransfer[] GetTransfersByStatus(CrossChainTransferStatus[] statuses, bool sort = false, bool validate = true);
 
         /// <summary>
         /// Updates partial transactions in the store with signatures obtained from the passed transactions.
@@ -67,8 +68,9 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// Get the cross-chain transfer information from the database, identified by the deposit transaction ids.
         /// </summary>
         /// <param name="depositIds">The deposit transaction ids.</param>
+        /// <param name="validate">Whether to validate the status of the transfers.</param>
         /// <returns>The cross-chain transfer information.</returns>
-        Task<ICrossChainTransfer[]> GetAsync(uint256[] depositIds);
+        Task<ICrossChainTransfer[]> GetAsync(uint256[] depositIds, bool validate = true);
 
         /// <summary>Determines if the store contains suspended transactions.</summary>
         /// <returns><c>True</c> if the store contains suspended transaction and <c>false</c> otherwise.</returns>
@@ -96,14 +98,10 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         Dictionary<CrossChainTransferStatus, int> GetCrossChainTransferStatusCounter();
 
         /// <summary>
-        /// Get transfers by status without validating or locking. Useful for retrieving console data.
+        /// Determines, for a list of input transactions, which of those are completed or unknown withdrawals.
         /// </summary>
-        ICrossChainTransfer[] QueryTransfersByStatus(CrossChainTransferStatus[] statuses);
-
-
-        /// <summary>
-        /// Get transfers by ID without validating or locking. Useful for retrieving console data.
-        /// </summary>
-        ICrossChainTransfer[] QueryTransfersById(uint256[] depositIds);
+        /// <param name="transactionsToCheck">The list of input transactions.</param>
+        /// <returns>The list of transactions that are completed (or unknown) wihdrawals.</returns>
+        List<Transaction> CompletedWithdrawals(IEnumerable<Transaction> transactionsToCheck);
     }
 }

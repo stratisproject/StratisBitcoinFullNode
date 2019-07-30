@@ -415,15 +415,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         }
 
         [Fact]
-        public async Task ThrowIfConsensusIsInitializedBeforeBlockStoreAsync()
+        public void ThrowIfConsensusIsInitializedBeforeBlockStore()
         {
             this.repositoryTipHashAndHeight = new HashHeightPair(this.chainIndexer.Genesis.HashBlock, 0);
             this.chainState.ConsensusTip = this.chainIndexer.Tip;
 
-            await Assert.ThrowsAsync<BlockStoreException>(async () =>
+            Assert.Throws<BlockStoreException>(() =>
             {
                 this.blockStoreQueue.Initialize();
-            }).ConfigureAwait(false);
+            });
         }
 
         [Fact]

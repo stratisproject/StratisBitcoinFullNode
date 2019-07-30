@@ -67,7 +67,7 @@ namespace NBitcoin.OpenAsset
                 var result = new ColoredTransaction();
 
                 string url = string.Empty;
-                if (this.network.Name.ToLowerInvariant().Contains("test"))
+                if (this.network.NetworkType == NetworkType.Testnet || this.network.NetworkType == NetworkType.Regtest)
                     url = string.Format("https://testnet.api.coinprism.com/v1/transactions/{0}", txId);
                 else
                     url = string.Format("https://api.coinprism.com/v1/transactions/{0}", txId);
@@ -154,7 +154,7 @@ namespace NBitcoin.OpenAsset
                 throw new ArgumentNullException(nameof(transaction));
 
             string url = string.Empty;
-            if (this.network.Name.ToLowerInvariant().Contains("test"))
+            if (this.network.NetworkType == NetworkType.Testnet || this.network.NetworkType == NetworkType.Regtest)
                 url = "https://testnet.api.coinprism.com/v1/sendrawtransaction";
             else
                 url = "https://api.coinprism.com/v1/transactions/v1/sendrawtransaction";
