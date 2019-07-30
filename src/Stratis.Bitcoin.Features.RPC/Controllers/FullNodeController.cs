@@ -398,7 +398,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                     BlockStake blockStake = this.stakeChain.Get(blockId);
 
                     blockModel.PosModifierv2 = blockStake?.StakeModifierV2.ToString();
-                    blockModel.PosFlags = blockStake?.Flags == BlockFlag.BLOCK_PROOF_OF_STAKE ? "proof-of-stake" : "proof=of-work";
+                    blockModel.PosFlags = blockStake?.Flags == BlockFlag.BLOCK_PROOF_OF_STAKE ? "proof-of-stake" : "proof-of-work";
                     blockModel.PosHashProof = blockStake?.HashProof.ToString();
                 }
             }
