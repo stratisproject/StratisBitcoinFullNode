@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -16,10 +17,12 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         /// <summary>
         /// Retrieves deposits for the indicated blocks from the block repository.
         /// </summary>
-        /// <param name="retrieveFromBlockHeight">The block height at which to start retrieving blocks from.</param>
-        /// <param name="amountOfBlocksToRetrieve">The number of blocks to retrieve.</param>
+        /// <param name="blockHeight">The block height at which to start retrieving blocks.</param>
+        /// <param name="maxBlocks">The number of blocks to retrieve.</param>
+        /// <param name="maxDeposits">The number of deposits to retrieve.</param>
         /// <returns>A list of mature block deposits.</returns>
-        SerializableResult<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int retrieveFromBlockHeight, int amountOfBlocksToRetrieve);
+        /// <exception cref="InvalidOperationException">Thrown if the blocks are not mature or not found.</exception>
+        Task<Result<List<MaturedBlockDepositsModel>>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks, int maxDeposits = int.MaxValue);
     }
 
     public sealed class MaturedBlocksProvider : IMaturedBlocksProvider
@@ -42,11 +45,16 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         }
 
         /// <inheritdoc />
-        public SerializableResult<List<MaturedBlockDepositsModel>> GetMaturedDeposits(int retrieveFromBlockHeight, int amountOfBlocksToRetrieve)
+        public async Task<Result<List<MaturedBlockDepositsModel>>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks, int maxDeposits = int.MaxValue)
         {
             ChainedHeader consensusTip = this.consensusManager.Tip;
 
-            int maturedTipBlockHeight = (consensusTip.Height - (int)this.depositExtractor.MinimumDepositConfirmations);
+            if (consensusTip == null)
+            {
+                return Result<List<MaturedBlockDepositsModel>>.Fail("Not ready to provide blocks.");
+            }
+
+            int matureTipHeight = (consensusTip.Height - (int)this.depositExtractor.MinimumDepositConfirmations);
 
             if (retrieveFromBlockHeight > maturedTipBlockHeight)
             {
@@ -60,30 +68,52 @@ namespace Stratis.Features.FederatedPeg.SourceChain
             int maxTimeCollectionCanTakeMs = RestApiClientBase.TimeoutMs / 2;
             var cancellation = new CancellationTokenSource(maxTimeCollectionCanTakeMs);
 
-            for (int i = retrieveFromBlockHeight; (i <= maturedTipBlockHeight) && (i < retrieveFromBlockHeight + amountOfBlocksToRetrieve); i++)
+            int maxBlockHeight = Math.Min(matureTipHeight, blockHeight + maxBlocks - 1);
+
+            var headers = new List<ChainedHeader>();
+            ChainedHeader header = consensusTip.GetAncestor(maxBlockHeight);
+            for (int i = maxBlockHeight; i >= blockHeight; i--)
             {
-                ChainedHeader currentHeader = consensusTip.GetAncestor(i);
+                headers.Add(header);
+                header = header.Previous;
+            }
 
-                ChainedHeaderBlock block = this.consensusManager.GetBlockData(currentHeader.HashBlock);
+            headers.Reverse();
 
-                if (block?.Block?.Transactions == null)
+            int numDeposits = 0;
+
+            for (int ndx = 0; ndx < headers.Count; ndx += 100)
+            {
+                List<ChainedHeader> currentHeaders = headers.GetRange(ndx, Math.Min(100, headers.Count - ndx));
+
+                List<uint256> hashes = currentHeaders.Select(h => h.HashBlock).ToList();
+
+                ChainedHeaderBlock[] blocks = this.consensusManager.GetBlockData(hashes);
+
+                foreach (ChainedHeaderBlock chainedHeaderBlock in blocks)
                 {
-                    this.logger.LogDebug(UnableToRetrieveBlockDataFromConsensusMessage, currentHeader);
-                    this.logger.LogTrace("(-)[BLOCKDATA_MISSING_FROM_CONSENSUS]");
-                    return SerializableResult<List<MaturedBlockDepositsModel>>.Ok(maturedBlockDepositModels, string.Format(UnableToRetrieveBlockDataFromConsensusMessage, currentHeader));
-                }
+                    if (chainedHeaderBlock?.Block?.Transactions == null)
+                    {
+                        this.logger.LogDebug("Unexpected null data. Send what we've collected.");
 
-                MaturedBlockDepositsModel maturedBlockDepositModel = this.depositExtractor.ExtractBlockDeposits(block);
+                        return Result<List<MaturedBlockDepositsModel>>.Ok(maturedBlocks);
+                    }
 
-                if (maturedBlockDepositModel.Deposits != null && maturedBlockDepositModel.Deposits.Count > 0)
-                    this.logger.LogDebug("{0} deposits extracted at block {1}", maturedBlockDepositModel.Deposits.Count, currentHeader);
+                    MaturedBlockDepositsModel maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(chainedHeaderBlock);
+                    
+                    maturedBlocks.Add(maturedBlockDeposits);
 
-                maturedBlockDepositModels.Add(maturedBlockDepositModel);
+                    numDeposits += maturedBlockDeposits.Deposits?.Count ?? 0;
 
-                if (cancellation.IsCancellationRequested && maturedBlockDepositModels.Count > 0)
-                {
-                    this.logger.LogDebug("Stopping mature block collection and sending what has been collected. Reason: The operation took longer than {0} ms.", maxTimeCollectionCanTakeMs);
-                    break;
+                    if (maturedBlocks.Count >= maxBlocks || numDeposits >= maxDeposits)
+                        return Result<List<MaturedBlockDepositsModel>>.Ok(maturedBlocks);
+
+                    if (cancellation.IsCancellationRequested)
+                    {
+                        this.logger.LogDebug("Stop matured blocks collection because it's taking too long. Send what we've collected.");
+
+                        return Result<List<MaturedBlockDepositsModel>>.Ok(maturedBlocks);
+                    }
                 }
             }
 

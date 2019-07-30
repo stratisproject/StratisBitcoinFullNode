@@ -25,6 +25,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             "weight",
             "netStakeWeight",
             "expectedTime",
+            "immature"
         };
 
         /// <summary>
@@ -61,7 +62,8 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
                 + "  \"searchInterval\": 16,\n"
                 + "  \"weight\": 98076279000000,\n"
                 + "  \"netStakeWeight\": 101187415332927,\n"
-                + "  \"expectedTime\": 66\n"
+                + "  \"expectedTime\": 66,\n"
+                + "  \"immature\": 100\n"
                 + "}\n";
 
             JObject obj = JObject.Parse(json);
@@ -80,6 +82,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             Assert.Equal(98076279000000, model.Weight);
             Assert.Equal(101187415332927, model.NetStakeWeight);
             Assert.Equal(66, model.ExpectedTime);
+            Assert.Equal(100, model.Immature);
         }
     }
 }

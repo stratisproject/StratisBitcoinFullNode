@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.BatchThresholdSizeBytes = storeSettings.MaxCacheSize * 1024 * 1024;
 
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name);
         }
 
         /// <summary>
@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     if (tx != null)
                     {
-                        this.logger.LogTrace("Transaction '{0}' was found in the pending blocks cache.", trxid);
+                        this.logger.LogDebug("Transaction '{0}' was found in the pending blocks cache.", trxid);
                         return tx;
                     }
                 }
@@ -239,7 +239,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     if (tx != null)
                     {
-                        this.logger.LogTrace("Transaction '{0}' was found in the pending blocks cache.", txId);
+                        this.logger.LogDebug("Transaction '{0}' was found in the pending blocks cache.", txId);
                         txes[i] = tx;
                     }
                 }
@@ -290,7 +290,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         uint256 blockId = chainedHeaderBlock.Block.GetHash();
 
-                        this.logger.LogTrace("Block Id '{0}' with tx '{1}' was found in the pending blocks cache.", blockId, trxid);
+                        this.logger.LogDebug("Block Id '{0}' with tx '{1}' was found in the pending blocks cache.", blockId, trxid);
                         return blockId;
                     }
                 }
@@ -313,9 +313,30 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             Block block = this.blockRepository.GetBlock(blockHash);
 
-            this.logger.LogTrace("Block '{0}' was{1} found in the repository.", blockHash, (block == null) ? " not" : "");
+            this.logger.LogDebug("Block '{0}' was{1} found in the repository.", blockHash, (block == null) ? " not" : "");
 
             return block;
+        }
+
+        public List<Block> GetBlocks(List<uint256> blockHashes)
+        {
+            lock (this.blocksCacheLock)
+            {
+                var res = new Dictionary<uint256, Block>();
+
+                foreach (uint256 key in blockHashes.Intersect(this.pendingBlocksCache.Keys))
+                    res[key] = this.pendingBlocksCache[key].Block;
+
+                int cacheCount = res.Count;
+
+                var storeHashes = blockHashes.Except(this.pendingBlocksCache.Keys).ToList();
+                foreach ((Block block, int hashIndex) in this.blockRepository.GetBlocks(storeHashes).Select((x, n) => (x, n)))
+                    res[storeHashes[hashIndex]] = block;
+
+                this.logger.LogTrace("{0} blocks were found in the cache of a total of {1} blocks.", cacheCount, res.Count);
+
+                return blockHashes.Select(bh => res[bh]).ToList();
+            }
         }
 
         /// <summary>Sets the internal store tip and exposes the store tip to other components through the chain state.</summary>
@@ -392,14 +413,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 if (this.pendingBlocksCache.TryAdd(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock))
                 {
-                    this.logger.LogTrace("Block '{0}' was added to pending.", chainedHeaderBlock.ChainedHeader);
+                    this.logger.LogDebug("Block '{0}' was added to pending.", chainedHeaderBlock.ChainedHeader);
                 }
                 else
                 {
                     // If the chained header block already exists, we need to remove it and add to the back of the collection.
                     this.pendingBlocksCache.Remove(chainedHeaderBlock.ChainedHeader.HashBlock);
                     this.pendingBlocksCache.Add(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
-                    this.logger.LogTrace("Block '{0}' was re-added to pending.", chainedHeaderBlock.ChainedHeader);
+                    this.logger.LogDebug("Block '{0}' was re-added to pending.", chainedHeaderBlock.ChainedHeader);
                 }
 
                 this.BlockStoreCacheTip = chainedHeaderBlock.ChainedHeader;

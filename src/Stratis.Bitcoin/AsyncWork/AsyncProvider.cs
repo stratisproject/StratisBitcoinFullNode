@@ -45,6 +45,9 @@ namespace Stratis.Bitcoin.AsyncWork
             (Name: "Health", Width: 15)
         };
 
+        /// <inheritdoc />
+        public ISignals Signals => this.signals;
+
         public AsyncProvider(ILoggerFactory loggerFactory, ISignals signals, INodeLifetime nodeLifetime)
         {
             this.lockAsyncDelegates = new object();
@@ -350,7 +353,7 @@ namespace Stratis.Bitcoin.AsyncWork
 
             if (itemToRemove != null)
             {
-                this.logger.LogTrace("Registered task '{0}' Removed. Id: {1}.", itemToRemove.FriendlyName, task.Id);
+                this.logger.LogDebug("Registered task '{0}' Removed. Id: {1}.", itemToRemove.FriendlyName, task.Id);
             }
             else
             {
@@ -454,7 +457,7 @@ namespace Stratis.Bitcoin.AsyncWork
 
             if (itemToRemove != null)
             {
-                this.logger.LogTrace("IAsyncDelegate task '{0}' Removed. Id: {1}.", itemToRemove.FriendlyName, task.Id);
+                this.logger.LogDebug("IAsyncDelegate task '{0}' Removed. Id: {1}.", itemToRemove.FriendlyName, task.Id);
             }
             else
             {

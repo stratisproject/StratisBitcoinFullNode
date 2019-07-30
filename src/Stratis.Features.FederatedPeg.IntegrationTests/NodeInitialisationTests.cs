@@ -1,11 +1,15 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
+using System.Threading;
 using FluentAssertions;
 using Flurl;
 using Flurl.Http;
+using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.IntegrationTests;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
@@ -63,10 +67,23 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
 
                 CoreNode miner = nodeBuilder.CreateSidechainMinerNode(this.sidechainNetwork, this.mainNetwork, federationKey);
 
-                miner.Start();
+                this.StartNodeWithMockCounterNodeAPI(miner);
 
                 Assert.Equal(CoreNodeState.Running, miner.State);
             }
+        }
+
+        private void StartNodeWithMockCounterNodeAPI(CoreNode node)
+        {
+            var mockClient = new Mock<IBlockStoreClient>();
+            mockClient.Setup(x => x.GetVerboseAddressesBalancesDataAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Bitcoin.Controllers.Models.VerboseAddressBalancesResult(100000));
+
+            node.Start(() =>
+            {
+                ICollateralChecker collateralChecker = node.FullNode.NodeService<ICollateralChecker>();
+                collateralChecker.SetPrivateVariableValue("blockStoreClient", mockClient.Object);
+            });
         }
 
         [Fact]
@@ -82,7 +99,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 gateway.AppendToConfig($"publickey={this.sidechainNetwork.FederationMnemonics[0].DeriveExtKey().PrivateKey.PubKey}");
                 gateway.AppendToConfig("federationips=0.0.0.0,0.0.0.1"); // Placeholders
 
-                gateway.Start();
+                this.StartNodeWithMockCounterNodeAPI(gateway);
 
                 Assert.Equal(CoreNodeState.Running, gateway.State);
             }
@@ -139,7 +156,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
         }
 
         [Fact]
-        public async Task GatewayPairStarts()
+        public void GatewayPairStarts()
         {
             using (SidechainNodeBuilder nodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this))
             {
@@ -160,8 +177,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 side.AppendToConfig($"counterchainapiport={main.ApiPort}");
                 main.AppendToConfig($"counterchainapiport={side.ApiPort}");
 
-                side.Start();
                 main.Start();
+                side.Start();
 
                 Assert.Equal(CoreNodeState.Running, main.State);
                 Assert.Equal(CoreNodeState.Running, side.State);

@@ -83,7 +83,6 @@ namespace Stratis.Bitcoin.Features.Notifications
                 .FeatureServices(services =>
                 {
                     services.AddSingleton<IBlockNotification, BlockNotification>();
-                    services.AddSingleton<NotificationsController>();
                 });
             });
 

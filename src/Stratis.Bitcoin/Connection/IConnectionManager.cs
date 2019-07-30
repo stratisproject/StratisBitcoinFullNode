@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Connection
         /// Adds a peer to the address manager's collection as well as
         /// the connection manager's add node collection.
         /// </summary>
-        void AddNodeAddress(IPEndPoint ipEndpoint);
+        void AddNodeAddress(IPEndPoint ipEndpoint, bool excludeFromIpRangeFiltering = false);
 
         /// <summary>
         /// Adds a peer to the address manager's connected nodes collection.

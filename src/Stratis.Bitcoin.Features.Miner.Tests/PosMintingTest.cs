@@ -180,7 +180,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 .Returns(asyncLoop.Object)
                 .Verifiable();
 
-
             bool isSystemTimeOutOfSyncCalled = false;
             this.timeSyncBehaviorState.Setup(c => c.IsSystemTimeOutOfSync)
                 .Returns(() =>
@@ -208,13 +207,14 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         }
 
         [Fact]
-        public async Task GenerateBlocksAsync_does_not_use_small_coins()
+        public void GenerateBlocks_does_not_use_small_coins()
         {
             var walletSecret = new WalletSecret() { WalletName = "wallet", WalletPassword = "password" };
             var wallet = new Wallet.Wallet()
             {
                 Network = this.network
             };
+
             var milliseconds550MinutesAgo = (uint)Math.Max(this.chainIndexer.Tip.Header.Time - TimeSpan.FromMinutes(550).Milliseconds, 0);
             this.AddAccountWithSpendableOutputs(wallet);
             var spendableTransactions = wallet.GetAllSpendableTransactions(this.chainIndexer.Tip.Height, 0).ToList();
@@ -249,8 +249,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.dateTimeProvider.Setup(c => c.GetAdjustedTimeAsUnixTimestamp())
                 .Returns(this.chainIndexer.Tip.Header.Time + 16);
             var ct = CancellationToken.None;
-            var utxoStakeDescriptions = await this.posMinting.GetUtxoStakeDescriptionsAsync(walletSecret, ct);
-
+            var utxoStakeDescriptions = this.posMinting.GetUtxoStakeDescriptions(walletSecret, ct);
 
             utxoStakeDescriptions.Select(d => d.TxOut.Value).Where(v => v < this.posMinting.MinimumStakingCoinValue)
                 .Should().BeEmpty("small coins should not be included");

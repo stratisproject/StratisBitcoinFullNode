@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
@@ -15,6 +16,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.Interfaces;
@@ -224,13 +226,11 @@ namespace Stratis.Bitcoin.Base
 
             this.consensusRules.Initialize(this.chainIndexer.Tip);
 
-            this.consensusRules.Register();
-
             await this.consensusManager.InitializeAsync(this.chainIndexer.Tip).ConfigureAwait(false);
 
             this.chainState.ConsensusTip = this.consensusManager.Tip;
 
-            this.nodeStats.RegisterStats(sb => sb.Append(this.asyncProvider.GetStatistics(!this.nodeSettings.Log.DebugArgs.Any())), StatsType.Component, 100);
+            this.nodeStats.RegisterStats(sb => sb.Append(this.asyncProvider.GetStatistics(!this.nodeSettings.Log.DebugArgs.Any())), StatsType.Component, this.GetType().Name, 100);
         }
 
         /// <summary>
@@ -395,6 +395,19 @@ namespace Stratis.Bitcoin.Base
                     // Consensus
                     services.AddSingleton<ConsensusSettings>();
                     services.AddSingleton<ICheckpoints, Checkpoints>();
+                    services.AddSingleton<ConsensusRulesContainer>();
+
+                    foreach (var ruleType in fullNodeBuilder.Network.Consensus.ConsensusRules.HeaderValidationRules)
+                        services.AddSingleton(typeof(IHeaderValidationConsensusRule), ruleType);
+
+                    foreach (var ruleType in fullNodeBuilder.Network.Consensus.ConsensusRules.IntegrityValidationRules)
+                        services.AddSingleton(typeof(IIntegrityValidationConsensusRule), ruleType);
+
+                    foreach (var ruleType in fullNodeBuilder.Network.Consensus.ConsensusRules.PartialValidationRules)
+                        services.AddSingleton(typeof(IPartialValidationConsensusRule), ruleType);
+
+                    foreach (var ruleType in fullNodeBuilder.Network.Consensus.ConsensusRules.FullValidationRules)
+                        services.AddSingleton(typeof(IFullValidationConsensusRule), ruleType);
 
                     // Connection
                     services.AddSingleton<INetworkPeerFactory, NetworkPeerFactory>();
@@ -436,8 +449,9 @@ namespace Stratis.Bitcoin.Base
                         connectionManager: provider.GetService<IConnectionManager>(),
                         nodeStats: provider.GetService<INodeStats>(),
                         nodeLifetime: provider.GetService<INodeLifetime>(),
-                        consensusSettings: provider.GetService<ConsensusSettings>()
-                        ));
+                        consensusSettings: provider.GetService<ConsensusSettings>(),
+                        dateTimeProvider: provider.GetService<IDateTimeProvider>()));
+
                     services.AddSingleton<IChainedHeaderTree, ChainedHeaderTree>();
                     services.AddSingleton<IHeaderValidator, HeaderValidator>();
                     services.AddSingleton<IIntegrityValidator, IntegrityValidator>();

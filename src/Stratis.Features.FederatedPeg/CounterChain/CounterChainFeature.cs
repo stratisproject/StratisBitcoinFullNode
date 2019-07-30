@@ -13,9 +13,9 @@ namespace Stratis.Features.FederatedPeg.CounterChain
     /// </summary>
     public class CounterChainFeature : FullNodeFeature
     {
-        public override async Task InitializeAsync()
+        public override Task InitializeAsync()
         {
-            // Don't need to initialise anything, it's just settings injected at the moment.
+            return Task.CompletedTask;
         }
     }
 

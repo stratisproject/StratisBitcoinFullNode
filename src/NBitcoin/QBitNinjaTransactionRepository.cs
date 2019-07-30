@@ -16,7 +16,10 @@ namespace NBitcoin
         public QBitNinjaTransactionRepository(Network network)
         {
             this.network = network ?? throw new ArgumentNullException("network");
-            this.BaseUri = new Uri("http://" + (network.Name.ToLowerInvariant().Contains("test") ? "t" : string.Empty) + "api.qbit.ninja/");
+
+            bool isTest = this.network.NetworkType == NetworkType.Testnet || this.network.NetworkType == NetworkType.Regtest;
+
+            this.BaseUri = new Uri("http://" + (isTest ? "t" : string.Empty) + "api.qbit.ninja/");
         }
 
         public QBitNinjaTransactionRepository(Uri baseUri)

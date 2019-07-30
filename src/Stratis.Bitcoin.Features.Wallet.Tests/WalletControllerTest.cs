@@ -820,7 +820,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             string walletName = "myWallet";
             var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.GetHistory(walletName, null)).Returns(new List<AccountHistory>
+            mockWalletManager.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount)).Returns(new List<AccountHistory>
             {
                 new AccountHistory
                 {
@@ -866,7 +866,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var accountsHistory = new List<AccountHistory> { new AccountHistory { History = flat, Account = account } };
             var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.GetHistory(walletName, null)).Returns(accountsHistory);
+            mockWalletManager.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount)).Returns(accountsHistory);
             mockWalletManager.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
@@ -922,7 +922,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var accountsHistory = new List<AccountHistory> { new AccountHistory { History = flat, Account = account } };
 
             var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.GetHistory(walletName, null)).Returns(accountsHistory);
+            mockWalletManager.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount)).Returns(accountsHistory);
             mockWalletManager.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
@@ -997,7 +997,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var accountsHistory = new List<AccountHistory> { new AccountHistory { History = flat, Account = account } };
 
             var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.GetHistory(walletName, null)).Returns(accountsHistory);
+            mockWalletManager.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount)).Returns(accountsHistory);
             mockWalletManager.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
@@ -1094,7 +1094,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var mockWalletManager = new Mock<IWalletManager>();
             mockWalletManager.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
-            mockWalletManager.Setup(w => w.GetHistory(walletName, null)).Returns(accountsHistory);
+            mockWalletManager.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount)).Returns(accountsHistory);
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetHistory(new WalletHistoryRequest
@@ -1129,7 +1129,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             string walletName = "myWallet";
             var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.GetHistory("myWallet", null)).Throws(new InvalidOperationException("Issue retrieving wallets."));
+            mockWalletManager.Setup(w => w.GetHistory("myWallet", WalletManager.DefaultAccount)).Throws(new InvalidOperationException("Issue retrieving wallets."));
             mockWalletManager.Setup(w => w.GetWalletByName(walletName)).Returns(new Wallet());
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
@@ -1192,7 +1192,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var mockWalletManager = new Mock<IWalletManager>();
             var accountsHistory = new List<AccountHistory> { new AccountHistory { History = flat, Account = account } };
-            mockWalletManager.Setup(w => w.GetHistory(walletName, null)).Returns(accountsHistory);
+            mockWalletManager.Setup(w => w.GetHistory(walletName, WalletManager.DefaultAccount)).Returns(accountsHistory);
             mockWalletManager.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
@@ -1286,7 +1286,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             };
 
             var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(w => w.GetBalances("myWallet", null)).Returns(accountsBalances);
+            mockWalletManager.Setup(w => w.GetBalances("myWallet", WalletManager.DefaultAccount)).Returns(accountsBalances);
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             IActionResult result = controller.GetBalance(new WalletBalanceRequest
@@ -1363,7 +1363,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetBalanceWithExceptionReturnsBadRequest()
         {
             var mockWalletManager = new Mock<IWalletManager>();
-            mockWalletManager.Setup(m => m.GetBalances("myWallet", null))
+            mockWalletManager.Setup(m => m.GetBalances("myWallet", WalletManager.DefaultAccount))
                   .Throws(new InvalidOperationException("Issue retrieving accounts."));
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);

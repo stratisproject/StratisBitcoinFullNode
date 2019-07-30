@@ -15,6 +15,8 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
+using Stratis.Bitcoin.IntegrationTests.Common.TestNetworks;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -251,7 +253,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
 
                 var transaction = stratisNode.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
 
-                stratisNode.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
+                stratisNode.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
                 TestBase.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
 
@@ -394,6 +396,40 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 TestBase.WaitLoop(() => xRpc1.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
                 TestBase.WaitLoop(() => sbfnRpc2.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
                 TestBase.WaitLoop(() => xRpc3.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+            }
+        }
+
+        [Fact]
+        public void GatewayNodeCanSyncFirst15KBlocks()
+        {
+            Network network = new StratisMain10KCheckpoint();
+
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // TODO: Add the necessary executables for Linux & OSX
+                return;
+            }
+
+            using (NodeBuilder builder = NodeBuilder.Create(this).WithLogsEnabled())
+            {
+                CoreNode stratisXNode = builder.CreateMainnetStratisXNode()
+                    .WithReadyBlockchainData(ReadyBlockchain.StratisXMainnet15K);
+
+                var gatewayParameters = new NodeConfigParameters();
+                gatewayParameters.Add("regtest", "0");
+                gatewayParameters.Add("gateway", "1");
+                gatewayParameters.Add("whitelist", stratisXNode.Endpoint.ToString());
+                CoreNode gatewayNode = builder.CreateStratisPosNode(network, configParameters: gatewayParameters, isGateway:true);
+
+                gatewayNode.Start();
+                stratisXNode.Start();
+
+                RPCClient stratisXRpc = stratisXNode.CreateRPCClient();
+                RPCClient gatewayNodeRpc = gatewayNode.CreateRPCClient();
+
+                gatewayNodeRpc.AddNode(stratisXNode.Endpoint);
+
+                TestBase.WaitLoop(() => gatewayNode.FullNode.ChainIndexer.Height >= 15_000, waitTimeSeconds: 600);
             }
         }
 

@@ -96,29 +96,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
         }
 
         [Fact]
-        public void GetMaturedBlockDeposits_When_Block_Not_In_Chain_Send_What_HasBeen_Collected()
-        {
-            FederationGatewayController controller = this.CreateController();
-
-            ChainedHeader tip = ChainedHeadersHelper.CreateConsecutiveHeaders(3, null, true)[2];
-
-            this.consensusManager.Tip.Returns(tip);
-
-            this.consensusManager.GetBlockData(Arg.Any<uint256>()).ReturnsForAnyArgs((x) =>
-            {
-                return null;
-            });
-
-            IActionResult result = controller.GetMaturedBlockDeposits(new MaturedBlockRequestModel(1, 1000));
-
-            var maturedBlockDepositsResult = (result as JsonResult).Value as SerializableResult<List<MaturedBlockDepositsModel>>;
-            maturedBlockDepositsResult.Should().NotBeNull();
-            maturedBlockDepositsResult.IsSuccess.Should().Be(true);
-            maturedBlockDepositsResult.Message.Should().Be(string.Format(MaturedBlocksProvider.UnableToRetrieveBlockDataFromConsensusMessage, tip.Previous));
-        }
-
-        [Fact]
-        public void GetMaturedBlockDeposits_Fails_When_Block_Height_Greater_Than_Minimum_Deposit_Confirmations()
+        public async Task GetMaturedBlockDeposits_Fails_When_Block_Height_Greater_Than_Minimum_Deposit_Confirmations_Async()
         {
             ChainedHeader tip = ChainedHeadersHelper.CreateConsecutiveHeaders(5, null, true).Last();
             this.consensusManager.Tip.Returns(tip);
@@ -164,9 +142,9 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
                 depositExtractorCallCount++;
             });
 
-            this.consensusManager.GetBlockData(Arg.Any<uint256>()).ReturnsForAnyArgs((x) =>
-            {
-                return new ChainedHeaderBlock(new Block(), earlierBlock);
+            this.consensusManager.GetBlockData(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) => {
+                List<uint256> hashes = x.ArgAt<List<uint256>>(0);
+                return hashes.Select((h) => new ChainedHeaderBlock(new Block(), earlierBlock)).ToArray();
             });
 
             IActionResult result = controller.GetMaturedBlockDeposits(new MaturedBlockRequestModel(earlierBlock.Height, 1000));

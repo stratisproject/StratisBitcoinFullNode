@@ -160,7 +160,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             // Controllers + utils
             services.AddSingleton<CSharpContractDecompiler>();
-            services.AddSingleton<SmartContractsController>();
 
             return options;
         }
