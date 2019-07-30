@@ -117,7 +117,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
                     if (cancellation.IsCancellationRequested)
                     {
-                        this.logger.LogDebug("Stoppring matured blocks collection, the request is taking too long. Sending what has been collected.");
+                        this.logger.LogDebug("Stopping matured blocks collection, the request is taking too long. Sending what has been collected.");
 
                         return SerializableResult<List<MaturedBlockDepositsModel>>.Ok(maturedBlockDepositModels);
                     }
