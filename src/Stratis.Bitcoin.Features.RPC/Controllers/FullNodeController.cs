@@ -365,16 +365,23 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionDescription("Returns the block in hex, given a block hash.")]
         public object GetBlock(string blockHash, int verbosity = 1)
         {
-            uint256 blockId = null;
-            if (!uint256.TryParse(blockHash, out blockId))
-                throw new ArgumentException(nameof(blockHash));
+            uint256 blockId = uint256.Parse(blockHash);
 
-            Block block = this.blockStore?.GetBlock(blockId);
+            // Does the block exist.
+            ChainedHeader chainedHeader = this.ChainIndexer.GetHeader(blockId);
+
+            if (chainedHeader == null)
+                return null;
+
+            Block block = chainedHeader.Block ?? this.blockStore?.GetBlock(blockId);
+
+            // In rare occasions a block that is found in the
+            // indexer may not have been pushed to the store yet. 
+            if (block == null)
+                return null;
 
             if (verbosity == 0)
-                return new HexModel(block?.ToHex(this.Network));
-
-            ChainedHeader chainedHeader = this.ChainIndexer.GetHeader(blockId);
+                return new HexModel(block.ToHex(this.Network));
 
             var blockModel = new BlockModel(block, chainedHeader, this.ChainIndexer.Tip, this.Network, verbosity);
 

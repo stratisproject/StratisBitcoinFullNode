@@ -99,27 +99,28 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
             try
             {
-                uint256 blockId = null;
-                if (!uint256.TryParse(query.Hash, out blockId))
-                    throw new ArgumentException(nameof(query.Hash));
+                uint256 blockId = uint256.Parse(query.Hash);
 
-                Block block = this.blockStore.GetBlock(blockId);
+                ChainedHeader chainedHeader = this.chainIndexer.GetHeader(blockId);
 
+                if (chainedHeader == null)
+                    return this.Ok("Block not found");
+
+                Block block = chainedHeader.Block ?? this.blockStore.GetBlock(blockId);
+
+                // In rare occasions a block that is found in the
+                // indexer may not have been pushed to the store yet. 
                 if (block == null)
-                {
-                    return Ok("Block not found");
-                }
+                    return this.Ok("Block not found");
 
                 if (!query.OutputJson)
                 {
                     return this.Json(block);
                 }
 
-                ChainedHeader chainedHeader = this.chainIndexer.GetHeader(blockId);
-
                 BlockModel blockModel = query.ShowTransactionDetails
-                    ? new BlockTransactionDetailsModel(block, this.chainIndexer.GetHeader(block.GetHash()), this.chainIndexer.Tip, this.network)
-                    : new BlockModel(block, this.chainIndexer.GetHeader(block.GetHash()), this.chainIndexer.Tip, this.network);
+                    ? new BlockTransactionDetailsModel(block, chainedHeader, this.chainIndexer.Tip, this.network)
+                    : new BlockModel(block, chainedHeader, this.chainIndexer.Tip, this.network);
 
                 if (this.network.Consensus.IsProofOfStake)
                 {
