@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -247,7 +248,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 context.TransactionBuilder.SetChange(context.ChangeAddress.ScriptPubKey);
             }
-        }
         }
 
         /// <summary>
