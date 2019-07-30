@@ -153,13 +153,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception ex) when (ex is IOException || ex is OperationCanceledException || ex is ObjectDisposedException)
             {
-                this.logger.LogDebug("Connection closed whilst receiving messages. May be a peer in discovery. Exception: {0}", ex.ToString());
-                this.peer.Disconnect("Connection closed whilst receiving messages. Peer may be in discovery.");
+                this.logger.LogDebug("The node stopped receiving messages, exception: {1}", ex.ToString());
+                this.peer.Disconnect("The node stopped receiving messages.", ex);
             }
             catch (Exception ex)
             {
-                this.logger.LogDebug("Exception occurred: '{0}'", ex.ToString());
-                this.peer.Disconnect("Unexpected failure while waiting for a message", ex);
+                this.logger.LogDebug("Unexpected failure whilst receiving messages, exception: {0}", ex.ToString());
+                this.peer.Disconnect($"Unexpected failure whilst receiving messages.", ex);
             }
         }
 
