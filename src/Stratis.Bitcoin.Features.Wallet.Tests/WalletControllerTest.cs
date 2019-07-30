@@ -1571,6 +1571,138 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
+        public void BuildTransactionWithChangeAddressReturnsWalletBuildTransactionModel()
+        {
+            string walletName = "myWallet";
+
+            HdAddress usedReceiveAddress = WalletTestsHelpers.CreateAddress();
+
+            var receiveAddresses = new List<HdAddress> { usedReceiveAddress };
+            var changeAddresses = new List<HdAddress>();
+            Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
+            wallet.AccountsRoot.Add(new AccountRoot()
+            {
+                Accounts = new List<HdAccount> {
+                    new HdAccount
+                    {
+                        ExternalAddresses = receiveAddresses,
+                        InternalAddresses = changeAddresses,
+                        Name = "Account 0"
+                    }
+                }
+            });
+
+            var mockWalletManager = new Mock<IWalletManager>();
+
+            mockWalletManager.Setup(m => m.GetWallet(walletName)).Returns(wallet);
+
+            var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
+
+            var sentTrx = new Transaction();
+            mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.Is<TransactionBuildContext>(t => t.ChangeAddress == usedReceiveAddress)))
+                .Returns(sentTrx);
+
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            IActionResult result = controller.BuildTransaction(new BuildTransactionRequest
+            {
+                AccountName = "Account 0",
+                Recipients = new List<RecipientModel>(),
+                WalletName = walletName,
+                ChangeAddress = usedReceiveAddress.Address
+            });
+
+            var viewResult = Assert.IsType<JsonResult>(result);
+            var model = viewResult.Value as WalletBuildTransactionModel;
+
+            // Verify the transaction builder was invoked with the change address.
+            mockWalletTransactionHandler.Verify(w => w.BuildTransaction(It.Is<TransactionBuildContext>(t => t.ChangeAddress == usedReceiveAddress)), Times.Once);
+
+            Assert.NotNull(model);
+        }
+
+        [Fact]
+        public void BuildTransactionWithChangeAddressNotInWalletReturnsBadRequest()
+        {
+            string walletName = "myWallet";
+
+            Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
+            wallet.AccountsRoot.Add(new AccountRoot()
+            {
+                Accounts = new List<HdAccount> { new HdAccount
+                {
+                    ExternalAddresses = new List<HdAddress>(),
+                    InternalAddresses = new List<HdAddress>(),
+                    Name = "Account 0"
+                } }
+            });
+
+            var mockWalletManager = new Mock<IWalletManager>();
+
+            mockWalletManager.Setup(m => m.GetWallet(walletName)).Returns(wallet);
+
+            var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
+
+            HdAddress addressNotInWallet = WalletTestsHelpers.CreateAddress();
+
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            IActionResult result = controller.BuildTransaction(new BuildTransactionRequest
+            {
+                AccountName = "Account 0",
+                Recipients = new List<RecipientModel>(),
+                WalletName = walletName,
+                ChangeAddress = addressNotInWallet.Address
+            });
+
+            // Verify the transaction builder was never invoked.
+            mockWalletTransactionHandler.Verify(w => w.BuildTransaction(It.IsAny<TransactionBuildContext>()), Times.Never);
+
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            Assert.Single(errorResponse.Errors);
+
+            ErrorModel error = errorResponse.Errors[0];
+            Assert.Equal(400, error.Status);
+            Assert.Equal("Change address not found.", error.Message);
+        }
+
+        [Fact]
+        public void BuildTransactionWithChangeAddressAccountNotInWalletReturnsBadRequest()
+        {
+            string walletName = "myWallet";
+            
+            // Create a wallet with no accounts.
+            Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
+
+            var mockWalletManager = new Mock<IWalletManager>();
+
+            mockWalletManager.Setup(m => m.GetWallet(walletName)).Returns(wallet);
+
+            var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
+
+            HdAddress addressNotInWallet = WalletTestsHelpers.CreateAddress();
+
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            IActionResult result = controller.BuildTransaction(new BuildTransactionRequest
+            {
+                AccountName = "Account 0",
+                Recipients = new List<RecipientModel>(),
+                WalletName = walletName,
+                ChangeAddress = addressNotInWallet.Address
+            });
+
+            // Verify the transaction builder was never invoked.
+            mockWalletTransactionHandler.Verify(w => w.BuildTransaction(It.IsAny<TransactionBuildContext>()), Times.Never);
+
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            Assert.Single(errorResponse.Errors);
+
+            ErrorModel error = errorResponse.Errors[0];
+            Assert.Equal(400, error.Status);
+            Assert.Equal("Account not found.", error.Message);
+        }
+
+        [Fact]
         public void BuildTransactionWithInvalidModelStateReturnsBadRequest()
         {
             var mockWalletManager = new Mock<IWalletManager>();
