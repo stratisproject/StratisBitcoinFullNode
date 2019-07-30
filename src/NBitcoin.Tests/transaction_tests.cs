@@ -222,7 +222,11 @@ namespace NBitcoin.Tests
             Assert.Single(selected);
         }
 
-        // These 2 next tests cater for the specific situation where the 
+        // These 2 next tests cater for the specific situation where the DefaultCoinSelector
+        // performs a random sampling of coins in an attempt to get as close as possible to 
+        // the required total.
+        // Previously this code wasn't functioning correctly and running virtually forever
+        // for large input sizes.
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
