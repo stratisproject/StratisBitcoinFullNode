@@ -108,6 +108,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private DateTime lastFlushTime;
 
+        private const int PurgeIntervalSeconds = 2 * 60;
+
+        /// <summary>Last time rewind data was purged.</summary>
+        private DateTime lastPurgeTime;
+
         private Task<ChainedHeaderBlock> prefetchingTask;
 
         /// <summary>Indexer height at the last save.</summary>
@@ -477,8 +482,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                 int purgeRewindDataThreshold = Math.Min(this.consensusManager.Tip.Height - this.compactionTriggerDistance, this.lastSavedHeight);
 
-                if (purgeRewindDataThreshold % 1000 == 0)
+                if ((DateTime.Now - this.lastPurgeTime).TotalSeconds > PurgeIntervalSeconds)
+                {
                     this.outpointsRepository.PurgeOldRewindData(purgeRewindDataThreshold);
+                    this.lastPurgeTime = DateTime.Now;
+                }
 
                 // Remove outpoints that were consumed.
                 foreach (OutPoint consumedOutPoint in inputs.Select(x => x.PrevOut))
