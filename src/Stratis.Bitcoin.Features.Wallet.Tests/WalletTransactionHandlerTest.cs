@@ -178,6 +178,45 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
+        public void BuildTransactionUsesGivenChangeAddress()
+        {
+            WalletTransactionHandlerTestContext testContext = SetupWallet();
+            TransactionBuildContext context = CreateContext(this.Network, testContext.WalletReference, "password", testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
+
+            var key = new Key();
+            BitcoinPubKeyAddress address = key.PubKey.GetAddress(this.Network);
+            HdAddress changeAddress = context.ChangeAddress = new HdAddress
+            {
+                Index = 0,
+                HdPath = $"m/44'/0'/0'/0/0",
+                Address = address.ToString(),
+                Pubkey = key.PubKey.ScriptPubKey,
+                ScriptPubKey = address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            Transaction transactionResult = testContext.WalletTransactionHandler.BuildTransaction(context);
+
+            Transaction result = this.Network.CreateTransaction(transactionResult.ToHex());
+
+            Assert.Single(result.Inputs);
+            Assert.Equal(testContext.AddressTransaction.Id, result.Inputs[0].PrevOut.Hash);
+
+            Assert.Equal(2, result.Outputs.Count);
+            TxOut output = result.Outputs[0];
+            Assert.Equal((testContext.AddressTransaction.Amount - context.TransactionFee - 7500), output.Value);
+            Assert.Equal(changeAddress.ScriptPubKey, output.ScriptPubKey);
+
+            output = result.Outputs[1];
+            Assert.Equal(7500, output.Value);
+            Assert.Equal(testContext.DestinationKeys.PubKey.ScriptPubKey, output.ScriptPubKey);
+
+            Assert.Equal(testContext.AddressTransaction.Amount - context.TransactionFee, result.TotalOut);
+            Assert.NotNull(transactionResult.GetHash());
+            Assert.Equal(result.GetHash(), transactionResult.GetHash());
+        }
+
+        [Fact]
         public void BuildTransaction_When_OpReturnData_Is_Empty_Should_Not_Add_Extra_Output()
         {
             WalletTransactionHandlerTestContext testContext = SetupWallet();

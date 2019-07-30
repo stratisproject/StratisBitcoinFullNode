@@ -848,6 +848,25 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     });
                 }
 
+                // If specified, get the change address, which must already exist in the wallet.
+                HdAddress changeAddress = null;
+                if (!string.IsNullOrWhiteSpace(request.ChangeAddress))
+                {
+                    Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+                    HdAccount account = wallet.GetAccount(request.AccountName);
+                    if (account == null)
+                    {
+                        return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Account not found.", $"No account with the name '{request.AccountName}' could be found in wallet {wallet.Name}.");
+                    }
+
+                    changeAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.ChangeAddress);
+
+                    if (changeAddress == null)
+                    {
+                        return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Change address not found.", $"No changed address '{request.ChangeAddress}' could be found in wallet {wallet.Name}.");
+                    }
+                }
+
                 var context = new TransactionBuildContext(this.network)
                 {
                     AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
@@ -859,7 +878,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     WalletPassword = request.Password,
                     SelectedInputs = request.Outpoints?.Select(u => new OutPoint(uint256.Parse(u.TransactionId), u.Index)).ToList(),
                     AllowOtherInputs = false,
-                    Recipients = recipients
+                    Recipients = recipients,
+                    ChangeAddress = changeAddress
                 };
 
                 if (!string.IsNullOrEmpty(request.FeeType))
