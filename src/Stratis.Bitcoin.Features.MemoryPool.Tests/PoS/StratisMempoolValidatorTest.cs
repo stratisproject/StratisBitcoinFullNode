@@ -850,7 +850,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
         }
 
         [Fact]
-        public async Task AcceptToMemoryPool_NonStandardBareMultiSig_ReturnsFalse()
+        public async Task AcceptToMemoryPool_NonStandardBareMultiSig_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -892,7 +892,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
         }
 
         [Fact]
-        public async Task AcceptToMemoryPool_NonStandardP2SH_ReturnsFalse()
+        public async Task AcceptToMemoryPool_NonStandardP2SH_ReturnsFalseAsync()
         {
             throw new NotImplementedException();
 

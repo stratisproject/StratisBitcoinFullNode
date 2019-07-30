@@ -83,11 +83,17 @@ namespace Stratis.CirrusPegD
                 MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
             };
 
+            NetworkType networkType = nodeSettings.Network.NetworkType;
+
+            var fedPegOptions = new FederatedPegOptions(
+                walletSyncFromHeight: new int[] { FederatedPegSettings.StratisMainDepositStartBlock, 1, 1 }[(int)networkType]
+            );
+
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
                 .SetCounterChainNetwork(SidechainNetworks[nodeSettings.Network.NetworkType]())
-                .AddFederatedPeg()
+                .AddFederatedPeg(fedPegOptions)
                 .UseTransactionNotification()
                 .UseBlockNotification()
                 .UseApi()
@@ -108,12 +114,18 @@ namespace Stratis.CirrusPegD
                 MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
             };
 
+            NetworkType networkType = nodeSettings.Network.NetworkType;
+
+            var fedPegOptions = new FederatedPegOptions(
+                walletSyncFromHeight: new int[] { 1, 1, 1 }[(int)networkType]
+            );
+
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
                 .SetCounterChainNetwork(MainChainNetworks[nodeSettings.Network.NetworkType]())
                 .UseFederatedPegPoAMining()
-                .AddFederatedPeg()
+                .AddFederatedPeg(fedPegOptions)
                 .CheckForPoAMembersCollateral()
                 .UseTransactionNotification()
                 .UseBlockNotification()

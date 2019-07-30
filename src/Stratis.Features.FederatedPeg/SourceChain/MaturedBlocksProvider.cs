@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -19,9 +20,10 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         /// </summary>
         /// <param name="blockHeight">The block height at which to start retrieving blocks.</param>
         /// <param name="maxBlocks">The number of blocks to retrieve.</param>
+        /// <param name="maxDeposits">The number of deposits to retrieve.</param>
         /// <returns>A list of mature block deposits.</returns>
         /// <exception cref="InvalidOperationException">Thrown if the blocks are not mature or not found.</exception>
-        Task<Result<List<MaturedBlockDepositsModel>>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks);
+        Task<Result<List<MaturedBlockDepositsModel>>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks, int maxDeposits = int.MaxValue);
     }
 
     public class MaturedBlocksProvider : IMaturedBlocksProvider
@@ -41,9 +43,14 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         }
 
         /// <inheritdoc />
-        public async Task<Result<List<MaturedBlockDepositsModel>>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks)
+        public async Task<Result<List<MaturedBlockDepositsModel>>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks, int maxDeposits = int.MaxValue)
         {
             ChainedHeader consensusTip = this.consensusManager.Tip;
+
+            if (consensusTip == null)
+            {
+                return Result<List<MaturedBlockDepositsModel>>.Fail("Not ready to provide blocks.");
+            }
 
             int matureTipHeight = (consensusTip.Height - (int)this.depositExtractor.MinimumDepositConfirmations);
 
@@ -60,30 +67,52 @@ namespace Stratis.Features.FederatedPeg.SourceChain
             int maxTimeCollectionCanTakeMs = RestApiClientBase.TimeoutMs / 2;
             var cancellation = new CancellationTokenSource(maxTimeCollectionCanTakeMs);
 
-            for (int i = blockHeight; (i <= matureTipHeight) && (i < blockHeight + maxBlocks); i++)
+            int maxBlockHeight = Math.Min(matureTipHeight, blockHeight + maxBlocks - 1);
+
+            var headers = new List<ChainedHeader>();
+            ChainedHeader header = consensusTip.GetAncestor(maxBlockHeight);
+            for (int i = maxBlockHeight; i >= blockHeight; i--)
             {
-                ChainedHeader currentHeader = consensusTip.GetAncestor(i);
+                headers.Add(header);
+                header = header.Previous;
+            }
 
-                ChainedHeaderBlock block = this.consensusManager.GetBlockData(currentHeader.HashBlock);
+            headers.Reverse();
 
-                if (block?.Block?.Transactions == null)
+            int numDeposits = 0;
+
+            for (int ndx = 0; ndx < headers.Count; ndx += 100)
+            {
+                List<ChainedHeader> currentHeaders = headers.GetRange(ndx, Math.Min(100, headers.Count - ndx));
+
+                List<uint256> hashes = currentHeaders.Select(h => h.HashBlock).ToList();
+
+                ChainedHeaderBlock[] blocks = this.consensusManager.GetBlockData(hashes);
+
+                foreach (ChainedHeaderBlock chainedHeaderBlock in blocks)
                 {
-                    // Report unexpected results from consenus manager.
-                    this.logger.LogWarning("Stop matured blocks collection due to consensus manager integrity failure. Send what we've collected.");
-                    break;
-                }
+                    if (chainedHeaderBlock?.Block?.Transactions == null)
+                    {
+                        this.logger.LogDebug("Unexpected null data. Send what we've collected.");
 
-                MaturedBlockDepositsModel maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(block);
+                        return Result<List<MaturedBlockDepositsModel>>.Ok(maturedBlocks);
+                    }
 
-                if (maturedBlockDeposits == null)
-                    throw new InvalidOperationException($"Unable to get deposits for block at height {currentHeader.Height}");
+                    MaturedBlockDepositsModel maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(chainedHeaderBlock);
+                    
+                    maturedBlocks.Add(maturedBlockDeposits);
 
-                maturedBlocks.Add(maturedBlockDeposits);
+                    numDeposits += maturedBlockDeposits.Deposits?.Count ?? 0;
 
-                if (cancellation.IsCancellationRequested && maturedBlocks.Count > 0)
-                {
-                    this.logger.LogDebug("Stop matured blocks collection because it's taking too long. Send what we've collected.");
-                    break;
+                    if (maturedBlocks.Count >= maxBlocks || numDeposits >= maxDeposits)
+                        return Result<List<MaturedBlockDepositsModel>>.Ok(maturedBlocks);
+
+                    if (cancellation.IsCancellationRequested)
+                    {
+                        this.logger.LogDebug("Stop matured blocks collection because it's taking too long. Send what we've collected.");
+
+                        return Result<List<MaturedBlockDepositsModel>>.Ok(maturedBlocks);
+                    }
                 }
             }
 

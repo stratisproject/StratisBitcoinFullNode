@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
             CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2);
 
             // Node 2 votes. After that it will be enough to change the federation.
-            this.node2.FullNode.NodeService<FederationVotingController>().VoteAddFedMember(model);
+            this.node2.FullNode.NodeController<FederationVotingController>().VoteAddFedMember(model);
 
             await this.node2.MineBlocksAsync((int)this.network.Consensus.MaxReorgLength + 1);
 
@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
             await this.VoteAndMineBlockAsync(key, add, this.node2);
             await this.VoteAndMineBlockAsync(key, add, this.node3);
 
-            await this.node1.MineBlocksAsync((int) this.network.Consensus.MaxReorgLength + 1);
+            await this.node1.MineBlocksAsync((int)this.network.Consensus.MaxReorgLength + 1);
         }
 
         private async Task VoteAndMineBlockAsync(PubKey key, bool add, CoreNode node)
@@ -209,14 +209,14 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
         [Fact]
         public async Task CanVoteToWhitelistAndRemoveHashesAsync()
         {
-            int maxReorg = (int) this.network.Consensus.MaxReorgLength;
+            int maxReorg = (int)this.network.Consensus.MaxReorgLength;
 
             Assert.Empty(this.node1.FullNode.NodeService<IWhitelistedHashesRepository>().GetHashes());
             TestHelper.Connect(this.node1, this.node2);
 
             await this.node1.MineBlocksAsync(1);
 
-            var model = new HashModel() { Hash = Hashes.Hash256(RandomUtils.GetUInt64().ToBytes()).ToString()};
+            var model = new HashModel() { Hash = Hashes.Hash256(RandomUtils.GetUInt64().ToBytes()).ToString() };
 
             // Node 1 votes to add hash
             this.node1.FullNode.NodeController<DefaultVotingController>().VoteWhitelistHash(model);

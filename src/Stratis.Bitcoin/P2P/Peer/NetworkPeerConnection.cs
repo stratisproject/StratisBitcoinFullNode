@@ -12,7 +12,6 @@ using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
@@ -154,13 +153,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception ex) when (ex is IOException || ex is OperationCanceledException || ex is ObjectDisposedException)
             {
-                this.logger.LogDebug("Receiving cancelled. Exception: {0}", ex.ToString());
-                this.peer.Disconnect("Receiving cancelled.");
+                this.logger.LogDebug("The node stopped receiving messages, exception: {1}", ex.ToString());
+                this.peer.Disconnect("The node stopped receiving messages.", ex);
             }
             catch (Exception ex)
             {
-                this.logger.LogDebug("Exception occurred: '{0}'", ex.ToString());
-                this.peer.Disconnect("Unexpected failure while waiting for a message", ex);
+                this.logger.LogDebug("Unexpected failure whilst receiving messages, exception: {0}", ex.ToString());
+                this.peer.Disconnect($"Unexpected failure whilst receiving messages.", ex);
             }
         }
 
