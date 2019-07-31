@@ -568,8 +568,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Sync the network, minerA should switch to minerB.
                 TestHelper.Connect(minerA, minerB);
 
-                TestBase.WaitLoopMessage(() => { return (TestHelper.IsNodeSyncedAtHeight(minerA, expectedValidChainHeight), $"MinerA.Tip {minerA.FullNode.ConsensusManager().Tip}, expectedValidChainHeight{expectedValidChainHeight}"); });
-                TestBase.WaitLoopMessage(() => { return (TestHelper.IsNodeSyncedAtHeight(minerB, expectedValidChainHeight), $"MinerB.Tip {minerB.FullNode.ConsensusManager().Tip}, expectedValidChainHeight{expectedValidChainHeight}"); });
+                TestHelper.IsNodeSyncedAtHeight(minerA, expectedValidChainHeight);
+                TestHelper.IsNodeSyncedAtHeight(minerB, expectedValidChainHeight);
             }
         }
 
