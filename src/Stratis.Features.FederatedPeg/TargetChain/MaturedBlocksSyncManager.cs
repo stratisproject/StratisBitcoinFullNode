@@ -38,7 +38,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private Task blockRequestingTask;
 
         /// <summary>The maximum amount of blocks to request at a time from alt chain.</summary>
-        private const int MaxBlocksToRequest = 100;
+        private const int MaxBlocksToRequest = 1000;
+
+        /// <summary>The maximum amount of deposits to request at a time from alt chain.</summary>
+        private const int MaxDepositsToRequest = 100;
 
         /// <summary>When we are fully synced we stop asking for more blocks for this amount of time.</summary>
         private const int RefreshDelayMs = 10_000;
@@ -104,7 +107,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 blocksToRequest = MaxBlocksToRequest;
 
             // API method that provides blocks should't give us blocks that are not mature!
-            var model = new MaturedBlockRequestModel(this.store.NextMatureDepositHeight, blocksToRequest);
+            var model = new MaturedBlockRequestModel(this.store.NextMatureDepositHeight, blocksToRequest, MaxDepositsToRequest);
 
             this.logger.LogDebug("Request model created: {0}:{1}, {2}:{3}.", nameof(model.BlockHeight), model.BlockHeight,
                 nameof(model.MaxBlocksToSend), model.MaxBlocksToSend);

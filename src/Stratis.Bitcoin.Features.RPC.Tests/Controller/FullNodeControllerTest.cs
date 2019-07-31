@@ -290,7 +290,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 .ReturnsAsync((UnspentOutputs)null)
                 .Verifiable();
 
-            GetTxOutModel result = await this.controller.GetTxOutAsync(txId.ToString(), 0, true).ConfigureAwait(true);
+            GetTxOutModel result = await this.controller.GetTxOutAsync(txId.ToString(), 0, true).ConfigureAwait(false);
 
             Assert.Null(result);
             this.pooledGetUnspentTransaction.Verify();

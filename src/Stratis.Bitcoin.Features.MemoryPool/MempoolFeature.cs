@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolManager = mempoolManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name);
         }
 
         private void AddComponentStats(StringBuilder log)
@@ -165,7 +165,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         services.AddSingleton<MempoolSignaled>();
                         services.AddSingleton<BlocksDisconnectedSignaled>();
                         services.AddSingleton<IMempoolPersistence, MempoolPersistence>();
-                        services.AddSingleton<MempoolController>();
                         services.AddSingleton<MempoolSettings>();
                     });
             });

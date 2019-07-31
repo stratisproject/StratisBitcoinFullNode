@@ -171,6 +171,7 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.CirrusMinerD", "Stratis.CirrusMinerD\Stratis.CirrusMinerD.csproj", "{4548A1D1-C4E2-460C-A06A-FF8A994919D8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Bitcoin.Features.SignalR", "Stratis.Bitcoin.Features.SignalR\Stratis.Bitcoin.Features.SignalR.csproj", "{6BBFFE59-0597-4ADA-A592-CED25C05C01A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Features.Diagnostic", "Stratis.Features.Diagnostic\Stratis.Features.Diagnostic.csproj", "{53209209-7239-4FEB-BE8D-B2DF6145BBDA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -446,6 +447,10 @@ Global
 		{6BBFFE59-0597-4ADA-A592-CED25C05C01A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6BBFFE59-0597-4ADA-A592-CED25C05C01A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6BBFFE59-0597-4ADA-A592-CED25C05C01A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{53209209-7239-4FEB-BE8D-B2DF6145BBDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53209209-7239-4FEB-BE8D-B2DF6145BBDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53209209-7239-4FEB-BE8D-B2DF6145BBDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53209209-7239-4FEB-BE8D-B2DF6145BBDA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -508,6 +513,7 @@ Global
 		{B8BC6552-6409-4BE1-B085-E8E6513EC251} = {7FFED910-450B-4D6E-9085-6E5A6731D72A}
 		{C83A089D-7B30-46BB-BBE3-AFBBAFB9A40D} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{6BBFFE59-0597-4ADA-A592-CED25C05C01A} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
+    {53209209-7239-4FEB-BE8D-B2DF6145BBDA} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6C780ABA-5872-4B83-AD3F-A5BD423AD907}

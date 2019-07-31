@@ -53,6 +53,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             var selectedInputs = new List<OutPoint>();
             selectedInputs = this.walletManager.GetSpendableInputsForAddress(request.WalletName, request.Sender);
 
+            bool selectInputsSuccess = this.ReduceToRequestedInputs(request.Outpoints, selectedInputs);
+            if (!selectInputsSuccess)
+                return BuildCallContractTransactionResponse.Failed("Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address");
+
             uint160 addressNumeric = request.ContractAddress.ToUint160(this.network);
 
             ContractTxData txData;
@@ -115,6 +119,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
             var selectedInputs = new List<OutPoint>();
             selectedInputs = this.walletManager.GetSpendableInputsForAddress(request.WalletName, request.Sender);
+
+            bool selectInputsSuccess = this.ReduceToRequestedInputs(request.Outpoints, selectedInputs);
+            if (!selectInputsSuccess)
+                return BuildCreateContractTransactionResponse.Failed("Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address");
 
             ContractTxData txData;
             if (request.Parameters != null && request.Parameters.Any())
@@ -207,6 +215,29 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             }
 
             return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, contractAddress, request.MethodName);
+        }
+
+        /// <summary>
+        /// Reduces the selectedInputs to consist of only those asked for by the request, or leaves them the same if none were requested.
+        /// </summary>
+        private bool ReduceToRequestedInputs(List<OutpointRequestModel> requestedOutpoints, List<OutPoint> selectedInputs)
+        {
+            if (requestedOutpoints != null && requestedOutpoints.Any())
+            {
+                //Convert outpointRequest to OutPoint
+                IEnumerable<OutPoint> requestedOutPoints = requestedOutpoints.Select(outPointRequest => new OutPoint(new uint256(outPointRequest.TransactionId), outPointRequest.Index));
+
+                for (int i = selectedInputs.Count - 1; i >= 0; i--)
+                {
+                    if (!requestedOutPoints.Contains(selectedInputs[i]))
+                        selectedInputs.RemoveAt(i);
+                }
+
+                if (!selectedInputs.Any())
+                    return false;
+            }
+
+            return true;
         }
 
     }
