@@ -457,16 +457,6 @@ namespace Stratis.Bitcoin.Connection
             return this.connectedPeers.FindByEndpoint(ipEndpoint);
         }
 
-        public INetworkPeer FindNodeByIp(IPAddress ipAddress)
-        {
-            return this.connectedPeers.FindByIp(ipAddress).FirstOrDefault();
-        }
-
-        public INetworkPeer FindLocalNode()
-        {
-            return this.connectedPeers.FindLocal();
-        }
-
         public INetworkPeer FindNodeById(int peerId)
         {
             return this.connectedPeers.FindById(peerId);
