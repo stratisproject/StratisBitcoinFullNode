@@ -812,14 +812,8 @@ namespace Stratis.Bitcoin.P2P.Peer
                 // Ask the just-handshaked peer for the peers they know about to aid in our own peer discovery.
                 await this.SendMessageAsync(new GetAddrPayload(), cancellationToken).ConfigureAwait(false);
             }
-            catch (OperationCanceledException e)
+            catch
             {
-                this.logger.LogDebug("Operation canceled during outbound connection handshake.");
-                throw;
-            }
-            catch (Exception e)
-            {
-                this.logger.LogDebug("Exception during outbound connection handshake: " + e);
                 throw;
             }
             finally
