@@ -530,7 +530,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return;
             }
 
-            bool insideCallback = insideCallback = this.onDisconnectedAsyncContext.Value != null;
+            bool insideCallback = this.onDisconnectedAsyncContext.Value != null;
             if (!insideCallback)
                 this.onDisconnectedAsyncContext.Value = new DisconnectedExecutionAsyncContext();
 
