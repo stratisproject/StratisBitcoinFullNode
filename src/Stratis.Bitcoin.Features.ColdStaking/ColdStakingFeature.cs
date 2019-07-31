@@ -221,6 +221,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// <exception cref="InvalidOperationException">Thrown if this is not a Stratis network.</exception>
     public static class FullNodeBuilderColdStakingExtension
     {
+        // TODO: Move to IServiceCollection helper class.
         public static bool RemoveSingleton<T>(this IServiceCollection services)
         {
             // Remove the service if it exists.
