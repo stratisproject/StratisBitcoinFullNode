@@ -104,6 +104,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
         private readonly AverageCalculator averageTimePerBlock;
 
+        private readonly IDateTimeProvider dateTimeProvider;
+
         private Task indexingTask;
 
         private DateTime lastFlushTime;
@@ -129,8 +131,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         /// </summary>
         public const int SyncBuffer = 50;
 
-        public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network,
-            INodeStats nodeStats, IConsensusManager consensusManager, IAsyncProvider asyncProvider, ChainIndexer chainIndexer)
+        public AddressIndexer(StoreSettings storeSettings, DataFolder dataFolder, ILoggerFactory loggerFactory, Network network, INodeStats nodeStats,
+            IConsensusManager consensusManager, IAsyncProvider asyncProvider, ChainIndexer chainIndexer, IDateTimeProvider dateTimeProvider)
         {
             this.storeSettings = storeSettings;
             this.network = network;
@@ -138,12 +140,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.dataFolder = dataFolder;
             this.consensusManager = consensusManager;
             this.asyncProvider = asyncProvider;
+            this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.scriptAddressReader = new ScriptAddressReader();
 
             this.lockObject = new object();
             this.flushChangesInterval = TimeSpan.FromMinutes(2);
-            this.lastFlushTime = DateTime.Now;
+            this.lastFlushTime = this.dateTimeProvider.GetUtcNow();
             this.cancellation = new CancellationTokenSource();
             this.chainIndexer = chainIndexer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -221,13 +224,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
             while (!this.cancellation.IsCancellationRequested)
             {
-                if (DateTime.Now - this.lastFlushTime > this.flushChangesInterval)
+                if (this.dateTimeProvider.GetUtcNow() - this.lastFlushTime > this.flushChangesInterval)
                 {
                     this.logger.LogDebug("Flushing changes.");
 
                     this.SaveAll();
 
-                    this.lastFlushTime = DateTime.Now;
+                    this.lastFlushTime = this.dateTimeProvider.GetUtcNow();
 
                     this.logger.LogDebug("Flush completed.");
                 }
@@ -482,10 +485,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 
                 int purgeRewindDataThreshold = Math.Min(this.consensusManager.Tip.Height - this.compactionTriggerDistance, this.lastSavedHeight);
 
-                if ((DateTime.Now - this.lastPurgeTime).TotalSeconds > PurgeIntervalSeconds)
+                if ((this.dateTimeProvider.GetUtcNow() - this.lastPurgeTime).TotalSeconds > PurgeIntervalSeconds)
                 {
                     this.outpointsRepository.PurgeOldRewindData(purgeRewindDataThreshold);
-                    this.lastPurgeTime = DateTime.Now;
+                    this.lastPurgeTime = this.dateTimeProvider.GetUtcNow();
                 }
 
                 // Remove outpoints that were consumed.
