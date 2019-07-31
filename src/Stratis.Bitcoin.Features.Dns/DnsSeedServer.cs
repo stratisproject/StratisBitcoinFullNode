@@ -350,6 +350,8 @@ namespace Stratis.Bitcoin.Features.Dns
                 }
             }
 
+            response.AuthorativeServer = true;
+
             // Set new start index.
             Interlocked.Increment(ref this.startIndex);
 
