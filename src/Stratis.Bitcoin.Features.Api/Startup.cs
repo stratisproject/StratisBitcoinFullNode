@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Api
                 })
                 // add serializers for NBitcoin objects
                 .AddJsonOptions(options => Utilities.JsonConverters.Serializer.RegisterFrontConverters(options.SerializerSettings))
-                .AddControllers(this.fullNode.Services.Features);
+                .AddControllers(this.fullNode.Services.Features, services);
 
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(setup =>
