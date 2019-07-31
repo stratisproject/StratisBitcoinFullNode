@@ -557,7 +557,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestBase.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 25);
                 minterA.StopStake();
 
-                TestHelper.MineBlocks(minerB, 2); // this will push minerb total work to be highest
+                TestHelper.MineBlocks(minerB, 2); // this will push minerB total work to be highest
                 var minterB = minerB.FullNode.NodeService<IPosMinting>();
                 minterB.Stake(new WalletSecret() { WalletName = WalletName, WalletPassword = Password });
                 TestBase.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 27);
