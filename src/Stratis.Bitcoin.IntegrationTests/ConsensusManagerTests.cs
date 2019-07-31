@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public class FailValidation15_2 : FailValidation
         {
-            public FailValidation15_2() : base(15,2)
+            public FailValidation15_2() : base(15, 2)
             {
             }
         }
@@ -508,7 +508,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        /// <remarks>This test assumes CoinbaseMaturity is 10 and at block 2 there is a huge premine, adjust the test if this changes.</remarks>
+        /// <summary>This test assumes CoinbaseMaturity is 10 and at block 2 there is a huge premine, adjust the test if this changes.</summary>
         [Fact]
         public void ConsensusManager_Fork_Occurs_When_Stake_Coins_Are_Spent_And_Found_In_Rewind_Data()
         {
@@ -568,8 +568,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Sync the network, minerA should switch to minerB.
                 TestHelper.Connect(minerA, minerB);
 
-                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, expectedValidChainHeight));
-                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerB, expectedValidChainHeight));
+                TestBase.WaitLoopMessage(() => { return (TestHelper.IsNodeSyncedAtHeight(minerA, expectedValidChainHeight), $"MinerA.Tip {minerA.FullNode.ConsensusManager().Tip}, expectedValidChainHeight{expectedValidChainHeight}"); });
+                TestBase.WaitLoopMessage(() => { return (TestHelper.IsNodeSyncedAtHeight(minerB, expectedValidChainHeight), $"MinerB.Tip {minerB.FullNode.ConsensusManager().Tip}, expectedValidChainHeight{expectedValidChainHeight}"); });
             }
         }
 
