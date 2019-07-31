@@ -232,6 +232,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
             LoggingConfiguration.RegisterFeatureNamespace<ColdStakingFeature>("wallet");
 
+            fullNodeBuilder.UseWallet();
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
@@ -241,16 +243,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 .DependOn<RPCFeature>()
                 .FeatureServices(services =>
                 {
-                    services.AddSingleton<IWalletSyncManager, WalletSyncManager>();
-                    services.AddSingleton<IWalletTransactionHandler, WalletTransactionHandler>();
                     services.AddSingleton<IWalletManager, ColdStakingManager>();
-                    services.AddSingleton<IWalletFeePolicy, WalletFeePolicy>();
-                    services.AddSingleton<IBroadcasterManager, FullNodeBroadcasterManager>();
-                    services.AddSingleton<BroadcasterBehavior>();
-                    services.AddSingleton<WalletSettings>();
-                    services.AddSingleton<IScriptAddressReader>(new ScriptAddressReader());
-                    services.AddSingleton<StandardTransactionPolicy>();
-                    services.AddSingleton<IAddressBookManager, AddressBookManager>();
                 });
             });
 
