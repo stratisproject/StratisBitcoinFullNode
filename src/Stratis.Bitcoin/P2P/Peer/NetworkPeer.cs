@@ -478,8 +478,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="previous">Previous network state of the peer.</param>
         private async Task OnStateChangedAsync(NetworkPeerState previous)
         {
-            bool insideCallback = this.onDisconnectedAsyncContext.Value == null;
-            if (!insideCallback)
+            bool iCreatedContext = this.onDisconnectedAsyncContext.Value == null;
+            if (iCreatedContext)
                 this.onDisconnectedAsyncContext.Value = new DisconnectedExecutionAsyncContext();
 
             try
@@ -493,7 +493,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             finally
             {
-                if (!insideCallback)
+                if (iCreatedContext)
                 {
                     if (this.onDisconnectedAsyncContext.Value.DisconnectCallbackRequested)
                         this.onDisconnected(this);
