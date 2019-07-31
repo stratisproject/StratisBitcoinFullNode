@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <returns>Returns <c>true</c> if the node is synced at a given height.</returns>
         public static bool IsNodeSyncedAtHeight(CoreNode node, int height)
         {
-            TestBase.WaitLoop(() => node.FullNode.ConsensusManager().Tip.Height == height);
+            TestBase.WaitLoopMessage(() => { return (node.FullNode.ConsensusManager().Tip.Height == height, $"Node height: {node.FullNode.ConsensusManager().Tip.Height}; Expected height: {height}"); });
             return true;
         }
 

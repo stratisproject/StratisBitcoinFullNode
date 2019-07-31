@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public class FailValidation15_2 : FailValidation
         {
-            public FailValidation15_2() : base(15,2)
+            public FailValidation15_2() : base(15, 2)
             {
             }
         }
@@ -508,7 +508,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        /// <remarks>This test assumes CoinbaseMaturity is 10 and at block 2 there is a huge premine, adjust the test if this changes.</remarks>
+        /// <summary>This test assumes CoinbaseMaturity is 10 and at block 2 there is a huge premine, adjust the test if this changes.</summary>
         [Fact]
         public void ConsensusManager_Fork_Occurs_When_Stake_Coins_Are_Spent_And_Found_In_Rewind_Data()
         {
@@ -557,7 +557,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestBase.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 25);
                 minterA.StopStake();
 
-                TestHelper.MineBlocks(minerB, 2); // this will push minerb total work to be highest
+                TestHelper.MineBlocks(minerB, 2); // this will push minerB total work to be highest
                 var minterB = minerB.FullNode.NodeService<IPosMinting>();
                 minterB.Stake(new WalletSecret() { WalletName = WalletName, WalletPassword = Password });
                 TestBase.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 27);
@@ -568,8 +568,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Sync the network, minerA should switch to minerB.
                 TestHelper.Connect(minerA, minerB);
 
-                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, expectedValidChainHeight));
-                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerB, expectedValidChainHeight));
+                TestHelper.IsNodeSyncedAtHeight(minerA, expectedValidChainHeight);
+                TestHelper.IsNodeSyncedAtHeight(minerB, expectedValidChainHeight);
             }
         }
 
