@@ -944,16 +944,104 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.Equal("bare-multisig", state.Error.Code);
         }
 
-        [Fact(Skip = "Not implemented yet.")]
-        public void AcceptToMemoryPool_NonStandardP2SH_ReturnsFalse()
+        [Fact]
+        public async Task AcceptToMemoryPool_NonStandardP2SH_ReturnsFalseAsync()
         {
-            // TODO: Execute failure cases for CreateMempoolEntry AreInputsStandard
+            string dataDir = GetTestDirectoryPath(this);
+
+            var miner = new BitcoinSecret(new Key(), this.Network);
+            ITestChainContext context = await TestChainFactory.CreateAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir);
+            IMempoolValidator validator = context.MempoolValidator;
+            Assert.NotNull(validator);
+
+            // We need the redeemScript to be non-standard. So make the script nonsensical.
+            var redeemScript = new Script("OP_NOP OP_NOP OP_NOP");
+
+            // P2SH address for nonstandard redeemScript.
+            BitcoinScriptAddress p2shAddress = redeemScript.GetScriptAddress(this.Network);
+
+            var coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.ScriptPubKey);
+            var txBuilder = new TransactionBuilder(this.Network);
+            Transaction fundP2shTx = txBuilder
+                .AddCoins(new List<Coin> { coin })
+                .AddKeys(miner)
+                .Send(p2shAddress, "0.042")
+                .SendFees("0.001")
+                .SetChange(miner.GetAddress())
+                .BuildTransaction(true);
+            Assert.True(txBuilder.Verify(fundP2shTx));
+
+            var state = new MempoolValidationState(false);
+            Assert.True(await validator.AcceptToMemoryPool(state, fundP2shTx), $"Transaction: {nameof(fundP2shTx)} failed mempool validation.");
+
+            Coin[] p2shCoins = fundP2shTx.Outputs
+                        .Where(o => o.ScriptPubKey == p2shAddress.ScriptPubKey)
+                        .Select(o => ScriptCoin.Create(this.Network, new OutPoint(fundP2shTx.GetHash(), fundP2shTx.Outputs.IndexOf(o)), o, redeemScript))
+                        .ToArray();
+
+            txBuilder = new TransactionBuilder(this.Network);
+            Transaction p2shSpendTx = txBuilder
+                    .AddCoins(p2shCoins)
+                    .Send(miner.GetAddress(), "0.020")
+                    .SendFees("0.001")
+                    .SetChange(p2shAddress)
+                    .BuildTransaction(false);
+
+            // We cannot sign or verify the built transaction as the transaction is essentially garbage. But it will trigger failure in the desired code path.
+            bool isSuccess = await validator.AcceptToMemoryPool(state, p2shSpendTx);
+            Assert.False(isSuccess, $"Transaction {nameof(p2shSpendTx)} with nonstandard redeemScript should not have been accepted.");
+            Assert.Equal(MempoolErrors.NonstandardInputs, state.Error);
         }
 
-        [Fact(Skip = "Not implemented yet.")]
-        public void AcceptToMemoryPool_NonStandardP2WSH_ReturnsFalse()
+        [Fact]
+        public async Task AcceptToMemoryPool_NonStandardP2WSH_ReturnsFalseAsync()
         {
-            // TODO: Execute failure cases for P2WSH Transactions CreateMempoolEntry
+            string dataDir = GetTestDirectoryPath(this);
+
+            var miner = new BitcoinSecret(new Key(), this.Network);
+            ITestChainContext context = await TestChainFactory.CreateAsync(this.Network, miner.PubKey.Hash.ScriptPubKey, dataDir);
+            IMempoolValidator validator = context.MempoolValidator;
+            Assert.NotNull(validator);
+
+            // We need the redeemScript to be non-standard. So make the script nonsensical.
+            var redeemScript = new Script("OP_NOP OP_NOP OP_NOP");
+
+            // P2WSH address for nonstandard redeemScript.
+            BitcoinWitScriptAddress p2wshAddress = redeemScript.GetWitScriptAddress(this.Network);
+
+            var coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.ScriptPubKey);
+            var txBuilder = new TransactionBuilder(this.Network);
+            Transaction fundP2wshTx = txBuilder
+                .AddCoins(new List<Coin> { coin })
+                .AddKeys(miner)
+                .Send(p2wshAddress, "0.042")
+                .SendFees("0.001")
+                .SetChange(p2wshAddress)
+                .BuildTransaction(true);
+            Assert.True(txBuilder.Verify(fundP2wshTx));
+
+            var state = new MempoolValidationState(false);
+            Assert.True(await validator.AcceptToMemoryPool(state, fundP2wshTx), $"Transaction: {nameof(fundP2wshTx)} failed mempool validation.");
+
+            Coin[] p2wshCoins = fundP2wshTx.Outputs
+                        .Where(o => o.ScriptPubKey == p2wshAddress.ScriptPubKey)
+                        .Select(o => ScriptCoin.Create(this.Network, new OutPoint(fundP2wshTx.GetHash(), fundP2wshTx.Outputs.IndexOf(o)), o, redeemScript))
+                        .ToArray();
+
+            //ScriptCoin coin = received.Outputs.AsCoins().First().ToScriptCoin(redeemScript);
+
+            txBuilder = new TransactionBuilder(this.Network);
+            Transaction p2wshSpendTx = txBuilder
+                    .AddCoins(p2wshCoins)
+                    .Send(miner.GetAddress(), "0.020")
+                    .SendFees("0.001")
+                    .SetChange(p2wshAddress)
+                    .BuildTransaction(false);
+
+            // This fails the CheckInputs test; the mandatory script verify flags are passed but the non-mandatory ones are not (in this case the witness program is detected as being empty)
+            bool isSuccess = await validator.AcceptToMemoryPool(state, p2wshSpendTx);
+            Assert.False(isSuccess, $"Transaction {nameof(p2wshSpendTx)} with nonstandard redeemScript should not have been accepted.");
+            Assert.Equal(MempoolErrors.NonMandatoryScriptVerifyFlagFailed, state.Error);
         }
 
         [Fact(Skip = "This is triggering the wrong error case. Also awaiting fix for issue #2470")]

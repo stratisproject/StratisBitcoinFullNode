@@ -225,7 +225,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                     if (!ctx.EvalScript(txin.ScriptSig, tx, i)) // TODO: Check the semantics of SigVersion::BASE from original code
                         return false;
 
-                    if (ctx.Stack.IsEmpty())
+                    // TODO: Investigate why IsEmpty is failing to return true when there is nothing on the stack. It is possible that nowhere else in the codebase is using IsEmpty on an IEnumerable
+                    if (ctx.Stack.IsEmpty() || ctx.Stack.Count == 0)
                         return false;
 
                     // Get redeemScript from stack.
