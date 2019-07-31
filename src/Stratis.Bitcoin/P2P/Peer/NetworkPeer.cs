@@ -530,10 +530,18 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return;
             }
 
+            bool insideCallback;
+
+            lock (this.onDisconnectedAsyncContext)
+            {
+                insideCallback = this.onDisconnectedAsyncContext.Value != null;
+
+                if (!insideCallback)
+                    this.onDisconnectedAsyncContext.Value = new DisconnectedExecutionAsyncContext();
+            }
+
             try
             {
-                this.onDisconnectedAsyncContext.Value = new DisconnectedExecutionAsyncContext();
-
                 await this.MessageReceived.ExecuteCallbacksAsync(this, message).ConfigureAwait(false);
             }
             catch (Exception e)
@@ -544,10 +552,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             finally
             {
-                if (this.onDisconnectedAsyncContext.Value.DisconnectCallbackRequested)
-                    this.onDisconnected(this);
+                if (!insideCallback)
+                {
+                    if (this.onDisconnectedAsyncContext.Value.DisconnectCallbackRequested)
+                        this.onDisconnected(this);
 
-                this.onDisconnectedAsyncContext.Value = null;
+                    this.onDisconnectedAsyncContext.Value = null;
+                }
             }
         }
 
