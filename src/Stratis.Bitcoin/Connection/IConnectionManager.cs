@@ -35,11 +35,7 @@ namespace Stratis.Bitcoin.Connection
 
         IReadOnlyNetworkPeerCollection ConnectedPeers { get; }
 
-        INetworkPeer FindLocalNode();
-
         INetworkPeer FindNodeByEndpoint(IPEndPoint ipEndpoint);
-
-        INetworkPeer FindNodeByIp(IPAddress ipAddress);
 
         INetworkPeer FindNodeById(int peerId);
 
