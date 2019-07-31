@@ -1,28 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Flurl;
-using Flurl.Http;
-using Microsoft.Extensions.DependencyInjection;
-using NBitcoin;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Miner.Interfaces;
-using Stratis.Bitcoin.Features.Miner.Staking;
-using Stratis.Bitcoin.Features.Wallet.Models;
-using Stratis.Bitcoin.IntegrationTests.Common;
-using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
-using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Networks;
-using Stratis.Bitcoin.Tests.Common;
-using Stratis.Bitcoin.Utilities;
-using Xunit;
-
-namespace Stratis.Bitcoin.IntegrationTests
+﻿namespace Stratis.Bitcoin.IntegrationTests
 {
     public class ConsensusManagerTests
     {
@@ -84,7 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public class FailValidation15_2 : FailValidation
         {
-            public FailValidation15_2() : base(15,2)
+            public FailValidation15_2() : base(15, 2)
             {
             }
         }
@@ -557,7 +533,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestBase.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 25);
                 minterA.StopStake();
 
-                TestHelper.MineBlocks(minerB, 2); // this will push minerb total work to be highest
+                TestHelper.MineBlocks(minerB, 2); // this will push minerB total work to be highest
                 var minterB = minerB.FullNode.NodeService<IPosMinting>();
                 minterB.Stake(new WalletSecret() { WalletName = WalletName, WalletPassword = Password });
                 TestBase.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 27);
