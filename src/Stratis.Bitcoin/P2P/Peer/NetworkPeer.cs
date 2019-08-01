@@ -722,11 +722,15 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc/>
         public async Task VersionHandshakeAsync(NetworkPeerRequirement requirements, CancellationToken cancellationToken)
         {
+            // Note that this method gets called for outbound peers. When our peer is inbound we receive the initial version handshake from the initiating peer, and it is handled via this.ProcessMessageAsync() only.
+
             // In stratisX, the equivalent functionality is contained in main.cpp, method ProcessMessage()
 
             requirements = requirements ?? new NetworkPeerRequirement();
-            using (var listener = new NetworkPeerListener(this, this.asyncProvider))
+            NetworkPeerListener listener = null;
+            try
             {
+                listener = new NetworkPeerListener(this, this.asyncProvider);
                 this.logger.LogDebug("Sending my version.");
                 await this.SendMessageAsync(this.MyVersion, cancellationToken).ConfigureAwait(false);
 
@@ -746,7 +750,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                             versionReceived = true;
 
                             this.PeerVersion = versionPayload;
-                            if (!versionPayload.AddressReceiver.Address.Equals(this.MyVersion.AddressFrom.Address))
+                            if (!versionPayload.AddressReceiver.Address.MapToIPv6().Equals(this.MyVersion.AddressFrom.Address.MapToIPv6()))
                             {
                                 this.logger.LogDebug("Different external address detected by the node '{0}' instead of '{1}'.", versionPayload.AddressReceiver.Address, this.MyVersion.AddressFrom.Address);
                             }
@@ -769,7 +773,12 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                             this.logger.LogDebug("Sending version acknowledgement.");
                             await this.SendMessageAsync(new VerAckPayload(), cancellationToken).ConfigureAwait(false);
-                            this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(versionPayload.AddressFrom, false);
+
+                            // Note that we only update our external address data from information returned by outbound peers.
+                            // TODO: Is this due to a security assumption or is it an oversight? There is a higher risk the inbounds could be spoofing what they claim our external IP is. We would then use it in future version payloads, so that could be considered an attack.
+                            // For outbounds: AddressFrom is our current external endpoint from our perspective, and could easily be incorrect if it has been automatically detected from local NICs.
+                            // Whereas AddressReceiver is the endpoint from the peer's perspective, so we update our view using that.
+                            this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(versionPayload.AddressReceiver, false);
                             break;
 
                         case VerAckPayload verAckPayload:
@@ -795,6 +804,14 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 // Ask the just-handshaked peer for the peers they know about to aid in our own peer discovery.
                 await this.SendMessageAsync(new GetAddrPayload(), cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                throw;
+            }
+            finally
+            {
+                listener?.Dispose();
             }
         }
 

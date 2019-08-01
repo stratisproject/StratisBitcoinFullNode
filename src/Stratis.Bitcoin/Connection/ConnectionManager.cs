@@ -160,7 +160,10 @@ namespace Stratis.Bitcoin.Connection
             // If external IP address supplied this overrides all.
             if (this.ConnectionSettings.ExternalEndpoint != null)
             {
-                this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(this.ConnectionSettings.ExternalEndpoint, true);
+                if (this.ConnectionSettings.ExternalEndpoint.Address.Equals(IPAddress.Loopback))
+                    this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(this.ConnectionSettings.ExternalEndpoint, false);
+                else
+                    this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(this.ConnectionSettings.ExternalEndpoint, true);
             }
             else
             {
