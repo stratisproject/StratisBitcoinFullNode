@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="network">The network to extract values from.</param>
         public static void PrintHelp(Network network)
         {
-            WalletSettings.PrintHelp(network);
+            // The wallet feature will print the help.
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="network">The network to base the defaults off.</param>
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
-            WalletSettings.BuildDefaultConfigurationFile(builder, network);
+            // The wallet feature will add its own settings to the config.
         }
 
         private void AddInlineStats(StringBuilder benchLogs)
