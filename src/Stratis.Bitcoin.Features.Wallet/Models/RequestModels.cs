@@ -172,6 +172,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string AccountName { get; set; }
 
         /// <summary>
+        /// Optional. If set, will filter the transaction history for all transactions made to or from the given address.
+        /// </summary>
+        [IsBitcoinAddress(Required = false)]
+        public string Address { get; set; }
+
+        /// <summary>
         /// An optional value allowing (with Take) pagination of the wallet's history. If given,
         /// the member specifies the numbers of records in the wallet's history to skip before
         /// beginning record retrieval; otherwise the wallet history records are retrieved starting from 0.
