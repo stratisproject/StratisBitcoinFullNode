@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     {
         /// <summary>Maximum interval between saving batches.</summary>
         /// <remarks>Interval value is a prime number that wasn't used as an interval in any other component. That prevents having CPU consumption spikes.</remarks>
-        private const int BatchMaxSaveIntervalSeconds = 37;
+        private const int BatchMaxSaveIntervalSeconds = 17;
 
         /// <summary>Maximum number of bytes the batch can hold until the downloaded blocks are stored to the disk.</summary>
         internal long BatchThresholdSizeBytes;
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.BatchThresholdSizeBytes = storeSettings.MaxCacheSize * 1024 * 1024;
 
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name);
         }
 
         /// <summary>
@@ -316,6 +316,27 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogDebug("Block '{0}' was{1} found in the repository.", blockHash, (block == null) ? " not" : "");
 
             return block;
+        }
+
+        public List<Block> GetBlocks(List<uint256> blockHashes)
+        {
+            lock (this.blocksCacheLock)
+            {
+                var res = new Dictionary<uint256, Block>();
+
+                foreach (uint256 key in blockHashes.Intersect(this.pendingBlocksCache.Keys))
+                    res[key] = this.pendingBlocksCache[key].Block;
+
+                int cacheCount = res.Count;
+
+                var storeHashes = blockHashes.Except(this.pendingBlocksCache.Keys).ToList();
+                foreach ((Block block, int hashIndex) in this.blockRepository.GetBlocks(storeHashes).Select((x, n) => (x, n)))
+                    res[storeHashes[hashIndex]] = block;
+
+                this.logger.LogTrace("{0} blocks were found in the cache of a total of {1} blocks.", cacheCount, res.Count);
+
+                return blockHashes.Select(bh => res[bh]).ToList();
+            }
         }
 
         /// <summary>Sets the internal store tip and exposes the store tip to other components through the chain state.</summary>

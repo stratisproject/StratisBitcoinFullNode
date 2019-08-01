@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading;
 using LiteDB;
 using Moq;
 using NBitcoin;
@@ -12,7 +11,6 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
@@ -45,11 +43,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
             var stats = new Mock<INodeStats>();
+            var indexer = new ChainIndexer(this.network);
+
             this.consensusManagerMock = new Mock<IConsensusManager>();
 
             this.asyncProviderMock = new Mock<IAsyncProvider>();
 
-            this.addressIndexer = new AddressIndexer(storeSettings, dataFolder, new ExtendedLoggerFactory(), this.network, stats.Object, this.consensusManagerMock.Object, this.asyncProviderMock.Object);
+            this.addressIndexer = new AddressIndexer(storeSettings, dataFolder, new ExtendedLoggerFactory(), this.network, stats.Object,
+                this.consensusManagerMock.Object, this.asyncProviderMock.Object, indexer, new DateTimeProvider());
 
             this.genesisHeader = new ChainedHeader(this.network.GetGenesis().Header, this.network.GetGenesis().Header.GetHash(), 0);
         }

@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Connection
 
             this.Parameters.Version = this.NodeSettings.ProtocolVersion;
 
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1100);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name, 1100);
         }
 
         /// <inheritdoc />
@@ -455,16 +455,6 @@ namespace Stratis.Bitcoin.Connection
         public INetworkPeer FindNodeByEndpoint(IPEndPoint ipEndpoint)
         {
             return this.connectedPeers.FindByEndpoint(ipEndpoint);
-        }
-
-        public INetworkPeer FindNodeByIp(IPAddress ipAddress)
-        {
-            return this.connectedPeers.FindByIp(ipAddress).FirstOrDefault();
-        }
-
-        public INetworkPeer FindLocalNode()
-        {
-            return this.connectedPeers.FindLocal();
         }
 
         public INetworkPeer FindNodeById(int peerId)
