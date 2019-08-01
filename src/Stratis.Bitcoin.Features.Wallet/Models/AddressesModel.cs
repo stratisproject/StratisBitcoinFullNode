@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using NBitcoin;
 using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models
@@ -45,5 +46,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// </summary>
         [JsonProperty(PropertyName = "isChange")]
         public bool IsChange { get; set; }
+
+        /// <summary>
+        /// The balance of confirmed transactions. 
+        /// </summary>
+        public Money AmountConfirmed { get; set; }
+
+        /// <summary>
+        /// The balance of unconfirmed transactions.
+        /// </summary>
+        public Money AmountUnconfirmed { get; set; }
     }
 }

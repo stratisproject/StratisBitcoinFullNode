@@ -18,6 +18,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
+using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
@@ -460,6 +461,9 @@ namespace Stratis.Bitcoin.Base
 
                     // Console
                     services.AddSingleton<INodeStats, NodeStats>();
+
+                    // Controller
+                    services.AddTransient<NodeController>();
                 });
             });
 
