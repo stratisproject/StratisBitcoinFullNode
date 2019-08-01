@@ -10,6 +10,7 @@ using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.PoA.Voting
 {
@@ -334,6 +335,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        [NoTrace]
         private void AddComponentStats(StringBuilder log)
         {
             log.AppendLine();
@@ -346,6 +348,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        [NoTrace]
         private void EnsureInitialized()
         {
             if (!this.isInitialized)
