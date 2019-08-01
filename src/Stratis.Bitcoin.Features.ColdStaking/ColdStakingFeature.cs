@@ -196,11 +196,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
-            this.coldStakingManager.Start();
-            this.walletSyncManager.Start();
-            this.addressBookManager.Initialize();
-
-            this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
 
             return Task.CompletedTask;
         }
@@ -208,8 +203,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <inheritdoc />
         public override void Dispose()
         {
-            this.coldStakingManager.Stop();
-            this.walletSyncManager.Stop();
         }
     }
 
