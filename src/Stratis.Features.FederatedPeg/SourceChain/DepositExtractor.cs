@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using TracerAttributes;
@@ -98,8 +99,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
 
         public MaturedBlockDepositsModel ExtractBlockDeposits(ChainedHeaderBlock newlyMaturedBlock)
         {
-            if (newlyMaturedBlock == null)
-                return null;
+            Guard.NotNull(newlyMaturedBlock, nameof(newlyMaturedBlock));
 
             var maturedBlock = new MaturedBlockInfoModel()
             {

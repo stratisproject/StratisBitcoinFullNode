@@ -25,8 +25,6 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly Script payToMultisigScript;
 
-        private readonly Script payToMemberScript;
-
         private readonly ICoinbaseSplitter premineSplitter;
 
         /// <inheritdoc />

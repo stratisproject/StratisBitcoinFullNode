@@ -74,12 +74,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             if (walletTransactionModel == null)
                 return null;
 
-            return this.proofOfStakeSteps.PremineNodeWithCoins.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex));
+            return this.proofOfStakeSteps.PremineNodeWithCoins.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex));
         }
 
         private IActionResult BuildTransaction()
         {
-            IActionResult transactionResult = this.proofOfStakeSteps.PremineNodeWithCoins.FullNode.NodeService<WalletController>()
+            IActionResult transactionResult = this.proofOfStakeSteps.PremineNodeWithCoins.FullNode.NodeController<WalletController>()
                 .BuildTransaction(new BuildTransactionRequest
                 {
                     AccountName = this.proofOfStakeSteps.PremineWalletAccount,
@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private WalletHistoryModel GetWalletHistory(CoreNode node, string walletName)
         {
-            var walletHistory = node.FullNode.NodeService<WalletController>().GetHistory(new WalletHistoryRequest { WalletName = walletName }) as JsonResult;
+            var walletHistory = node.FullNode.NodeController<WalletController>().GetHistory(new WalletHistoryRequest { WalletName = walletName }) as JsonResult;
             return walletHistory?.Value as WalletHistoryModel;
         }
 
