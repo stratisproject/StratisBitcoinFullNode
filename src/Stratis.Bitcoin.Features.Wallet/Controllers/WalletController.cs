@@ -1166,11 +1166,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                 var model = new AddressesModel
                 {
-                    Addresses = account.GetCombinedAddresses().Select(address => new AddressModel
+                    Addresses = account.GetCombinedAddresses().Select(address =>
                     {
-                        Address = address.Address,
-                        IsUsed = address.Transactions.Any(),
-                        IsChange = address.IsChangeAddress()
+                        (Money confirmedAmount, Money unConfirmedAmount) = address.GetBalances();
+
+                        return new AddressModel
+                        {
+                            Address = address.Address,
+                            IsUsed = address.Transactions.Any(),
+                            IsChange = address.IsChangeAddress(),
+                            AmountConfirmed = confirmedAmount,
+                            AmountUnconfirmed = unConfirmedAmount
+                        };
                     })
                 };
 
