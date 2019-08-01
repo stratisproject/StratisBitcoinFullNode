@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public bool IsChange { get; set; }
 
         /// <summary>
-        /// The balance of confirmed transactions.
+        /// The balance of confirmed transactions. 
         /// </summary>
         public Money AmountConfirmed { get; set; }
 
