@@ -12,9 +12,9 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Features.FederatedPeg.InputConsolidation;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
+using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg.Wallet
 {
@@ -1251,6 +1251,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             return this.isFederationActive;
         }
 
+        [NoTrace]
         public FederationWallet GetWallet()
         {
             return this.Wallet;

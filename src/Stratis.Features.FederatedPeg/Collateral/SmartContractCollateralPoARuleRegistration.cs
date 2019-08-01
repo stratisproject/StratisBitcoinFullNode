@@ -1,20 +1,12 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
-using NBitcoin;
 using NBitcoin.Rules;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
-using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using Stratis.SmartContracts.CLR;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
-using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.Util;
+using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg.Collateral
 {
@@ -28,11 +20,11 @@ namespace Stratis.Features.FederatedPeg.Collateral
 
         private readonly IDateTimeProvider dateTime;
 
-        public SmartContractCollateralPoARuleRegistration()
-        : base()
+        public SmartContractCollateralPoARuleRegistration() : base()
         {
         }
 
+        [NoTrace]
         public override void RegisterRules(IServiceCollection services)
         {
             base.RegisterRules(services);
