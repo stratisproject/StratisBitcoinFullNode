@@ -46,8 +46,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
         public BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request)
         {
-            AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
-            if (addressBalance.AmountConfirmed == 0 && addressBalance.AmountUnconfirmed == 0)
+            if(!this.CheckBalance(request.Sender))
                 return BuildCallContractTransactionResponse.Failed(SenderNoBalanceError);
 
             var selectedInputs = new List<OutPoint>();
@@ -113,8 +112,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
         public BuildCreateContractTransactionResponse BuildCreateTx(BuildCreateContractTransactionRequest request)
         {
-            AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
-            if (addressBalance.AmountConfirmed == 0 && addressBalance.AmountUnconfirmed == 0)
+            if(!this.CheckBalance(request.Sender))
                 return BuildCreateContractTransactionResponse.Failed(SenderNoBalanceError);
 
             var selectedInputs = new List<OutPoint>();
@@ -215,6 +213,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             }
 
             return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, contractAddress, request.MethodName);
+        }
+
+        private bool CheckBalance(string address)
+        {
+            AddressBalance addressBalance = this.walletManager.GetAddressBalance(address);
+            return !(addressBalance.AmountConfirmed == 0 && addressBalance.AmountUnconfirmed == 0);
         }
 
         /// <summary>
