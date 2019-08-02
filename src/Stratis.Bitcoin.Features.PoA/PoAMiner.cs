@@ -180,8 +180,6 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private async Task<uint> WaitUntilMiningSlotAsync()
         {
-            uint? myTimestamp = null;
-
             while (!this.cancellation.IsCancellationRequested)
             {
                 uint timeNow = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
@@ -192,24 +190,23 @@ namespace Stratis.Bitcoin.Features.PoA
                     continue;
                 }
 
-                if (myTimestamp == null)
-                {
-                    try
-                    {
-                        myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
-                    }
-                    catch (NotAFederationMemberException)
-                    {
-                        this.logger.LogWarning("This node is no longer a federation member!");
+                uint myTimestamp;
 
-                        throw new OperationCanceledException();
-                    }
+                try
+                {
+                    myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
+                }
+                catch (NotAFederationMemberException)
+                {
+                    this.logger.LogWarning("This node is no longer a federation member!");
+
+                    throw new OperationCanceledException();
                 }
 
                 int estimatedWaitingTime = (int)(myTimestamp - timeNow) - 1;
 
                 if (estimatedWaitingTime <= 0)
-                    return myTimestamp.Value;
+                    return myTimestamp;
 
                 await Task.Delay(TimeSpan.FromMilliseconds(500), this.cancellation.Token).ConfigureAwait(false);
             }
