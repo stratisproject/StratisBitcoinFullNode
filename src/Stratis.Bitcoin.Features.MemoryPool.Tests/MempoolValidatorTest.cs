@@ -6,6 +6,7 @@ using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Networks.Policies;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -18,6 +19,65 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
     {
         public MempoolValidatorTest() : base(KnownNetworks.RegTest)
         {
+        }
+
+        [Fact]
+        public async Task AcceptToMemoryPool_WithOpReturn_IsSuccessfulAsync()
+        {
+            string dataDir = GetTestDirectoryPath(this);
+
+            var minerSecret = new BitcoinSecret(new Key(), this.Network);
+            ITestChainContext context = await TestChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            IMempoolValidator validator = context.MempoolValidator;
+            Assert.NotNull(validator);
+
+            Transaction tx = this.Network.CreateTransaction();
+            tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
+            
+            var ops = new Op[BitcoinStandardScriptsRegistry.MaxOpReturnRelay];
+            ops[0] = OpcodeType.OP_RETURN;
+
+            for (int i = 1; i < ops.Length; i++)
+            {
+                ops[i] = Op.GetPushOp(0);
+            }
+
+            tx.AddOutput(new TxOut(new Money(0), new Script(ops)));
+            tx.Sign(this.Network, minerSecret, false);
+
+            var state = new MempoolValidationState(false);
+            bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
+            Assert.True(isSuccess, "Transaction with standard OP_RETURN size should have been accepted.");
+        }
+
+        [Fact]
+        public async Task AcceptToMemoryPool_WithLargeOpReturn_ReturnsFalseAsync()
+        {
+            string dataDir = GetTestDirectoryPath(this);
+
+            var minerSecret = new BitcoinSecret(new Key(), this.Network);
+            ITestChainContext context = await TestChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            IMempoolValidator validator = context.MempoolValidator;
+            Assert.NotNull(validator);
+
+            Transaction tx = this.Network.CreateTransaction();
+            tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
+
+            var ops = new Op[BitcoinStandardScriptsRegistry.MaxOpReturnRelay + 1];
+            ops[0] = OpcodeType.OP_RETURN;
+
+            for (int i = 1; i < ops.Length; i++)
+            {
+                ops[i] = Op.GetPushOp(0);
+            }
+
+            tx.AddOutput(new TxOut(new Money(0), new Script(ops)));
+            tx.Sign(this.Network, minerSecret, false);
+
+            var state = new MempoolValidationState(false);
+            bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
+            Assert.False(isSuccess, "Transaction with nonstandard OP_RETURN size should not have been accepted.");
+            Assert.Equal(MempoolErrors.Scriptpubkey, state.Error);
         }
 
         [Fact]
