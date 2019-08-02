@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -165,10 +166,13 @@ namespace Stratis.Bitcoin.Features.PoA
                 catch (OperationCanceledException)
                 {
                 }
-                // TODO: Find a better way to do this.
-                catch (ConsensusErrorException ce) when (ce.ConsensusError.Code == "invalid-collateral-amount")
+                catch (ConsensusErrorException ce)
                 {
-                    this.logger.LogInformation("Miner failed to mine block due to: '{0}'.", ce.ConsensusError.Message);
+                    // Text from PosMinting:
+                    // All consensus exceptions should be ignored. It means that the miner
+                    // ran into problems while constructing block or verifying it
+                    // but it should not halt the mining operation.
+                    this.logger.LogWarning("Miner failed to mine block due to: '{0}'.", ce.ConsensusError.Message);
                 }
                 catch (Exception exception)
                 {
@@ -328,6 +332,7 @@ namespace Stratis.Bitcoin.Features.PoA
             blockTemplate.Block.Transactions[0].AddOutput(Money.Zero, votingOutputScript);
         }
 
+        [NoTrace]
         private void AddComponentStats(StringBuilder log)
         {
             log.AppendLine();

@@ -182,12 +182,12 @@ namespace NBitcoin
         /// </summary>
         private void CalculateChainWork()
         {
-            this.chainWork = (this.Previous == null ? BigInteger.Zero : this.Previous.chainWork).Add(GetBlockProof());
+            this.chainWork = (this.Previous == null ? BigInteger.Zero : this.Previous.chainWork).Add(this.GetBlockProof());
         }
 
         /// <summary>Calculates the amount of work that this block contributes to the total chain work.</summary>
         /// <returns>Amount of work.</returns>
-        private BigInteger GetBlockProof()
+        public BigInteger GetBlockProof()
         {
             BigInteger target = this.Header.Bits.ToBigInteger();
             if ((target.CompareTo(BigInteger.Zero) <= 0) || (target.CompareTo(Pow256) >= 0))

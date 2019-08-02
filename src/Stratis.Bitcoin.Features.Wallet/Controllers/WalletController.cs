@@ -440,11 +440,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     var transactionItems = new List<TransactionItemModel>();
 
+                    IEnumerable<FlatHistory> query = accountHistory.History;
+
+                    if (!string.IsNullOrEmpty(request.Address))
+                    {
+                        query = query.Where(x => x.Address.Address == request.Address);
+                    }
+
                     // Sorting the history items by descending dates. That includes received and sent dates.
-                    List<FlatHistory> items = accountHistory.History
-                                                            .OrderBy(o => o.Transaction.IsConfirmed() ? 1 : 0)
-                                                            .ThenByDescending(o => o.Transaction.SpendingDetails?.CreationTime ?? o.Transaction.CreationTime)
-                                                            .ToList();
+                    List<FlatHistory> items = query
+                                                .OrderBy(o => o.Transaction.IsConfirmed() ? 1 : 0)
+                                                .ThenByDescending(o => o.Transaction.SpendingDetails?.CreationTime ?? o.Transaction.CreationTime)
+                                                .ToList();
 
                     // Represents a sublist containing only the transactions that have already been spent.
                     List<FlatHistory> spendingDetails = items.Where(t => t.Transaction.SpendingDetails != null).ToList();
@@ -1169,11 +1176,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                 var model = new AddressesModel
                 {
-                    Addresses = account.GetCombinedAddresses().Select(address => new AddressModel
+                    Addresses = account.GetCombinedAddresses().Select(address =>
                     {
-                        Address = request.Segwit ? address.Bech32Address : address.Address,
-                        IsUsed = address.Transactions.Any(),
-                        IsChange = address.IsChangeAddress()
+                        (Money confirmedAmount, Money unConfirmedAmount) = address.GetBalances();
+
+                        return new AddressModel
+                        {
+                            Address = request.Segwit ? address.Bech32Address : address.Address,
+                            IsUsed = address.Transactions.Any(),
+                            IsChange = address.IsChangeAddress(),
+                            AmountConfirmed = confirmedAmount,
+                            AmountUnconfirmed = unConfirmedAmount
+                        };
                     })
                 };
 

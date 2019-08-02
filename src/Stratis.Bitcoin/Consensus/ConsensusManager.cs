@@ -1400,6 +1400,7 @@ namespace Stratis.Bitcoin.Consensus
             log.AppendLine(consensusLog);
         }
 
+        [NoTrace]
         private void AddBenchStats(StringBuilder benchLog)
         {
             benchLog.AppendLine(this.performanceCounter.TakeSnapshot().ToString());
