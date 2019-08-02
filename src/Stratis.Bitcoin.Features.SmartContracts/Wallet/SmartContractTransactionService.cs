@@ -45,16 +45,65 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.addressGenerator = addressGenerator;
         }
 
-        public BuildContractTransactionResult BuildTransferTx(BuildContractTransactionRequest request)
+        public BuildContractTransactionResult BuildTx(BuildContractTransactionRequest request)
         {
-            if(!this.CheckBalance(request.Sender))
+            Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+
+            HdAccount account = wallet.GetAccount(request.AccountName);
+
+            if (account == null)
+                return BuildContractTransactionResult.Failure("No account.", $"No account with the name '{request.AccountName}' could be found.");
+
+            HdAddress senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
+
+            if (senderAddress == null)
+            {
+                return BuildContractTransactionResult.Failure("Address not found in wallet.", $"The given address {request.Sender} was not found in the wallet.");
+            }
+
+            if (!this.CheckBalance(senderAddress.Address))
                 return BuildContractTransactionResult.Failure("Insufficient balance.", SenderNoBalanceError);
 
             List<OutPoint> selectedInputs = this.SelectInputs(request.WalletName, request.Sender, request.Outpoints);
+
             if (!selectedInputs.Any())
                 return BuildContractTransactionResult.Failure("Invalid outpoints.", "Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address");
+            
+            var recipients = new List<Recipient>();
+            foreach (RecipientModel recipientModel in request.Recipients)
+            {
+                recipients.Add(new Recipient
+                {
+                    ScriptPubKey = BitcoinAddress.Create(recipientModel.DestinationAddress, this.network).ScriptPubKey,
+                    Amount = recipientModel.Amount
+                });
+            }
 
-            return null;
+            var context = new TransactionBuildContext(this.network)
+            {
+                AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
+                TransactionFee = string.IsNullOrEmpty(request.FeeAmount) ? null : Money.Parse(request.FeeAmount),
+                MinConfirmations = MinConfirmationsAllChecks,
+                Shuffle = false,
+                OpReturnData = request.OpReturnData,
+                OpReturnAmount = string.IsNullOrEmpty(request.OpReturnAmount) ? null : Money.Parse(request.OpReturnAmount),
+                WalletPassword = request.Password,
+                SelectedInputs = selectedInputs,
+                AllowOtherInputs = false,
+                Recipients = recipients,
+                ChangeAddress = senderAddress
+            };
+
+            Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
+
+            var model = new WalletBuildTransactionModel
+            {
+                Hex = transaction.ToHex(),
+                Fee = context.TransactionFee,
+                TransactionId = transaction.GetHash()
+            };
+
+            return BuildContractTransactionResult.Success(model);
         }
 
         public BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request)
@@ -257,6 +306,5 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
             return result;
         }
-
     }
 }
