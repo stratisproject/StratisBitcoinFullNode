@@ -11,6 +11,7 @@ using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.ContractSigning;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
@@ -22,12 +23,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         private const int MinConfirmationsAllChecks = 0;
 
         private const string SenderNoBalanceError = "The 'Sender' address you're trying to spend from doesn't have a balance available to spend. Please check the address and try again.";
+        public const string TransferFundsToContractError = "Can't transfer funds to contract.";
         private readonly Network network;
         private readonly IWalletManager walletManager;
         private readonly IWalletTransactionHandler walletTransactionHandler;
         private readonly IMethodParameterStringSerializer methodParameterStringSerializer;
         private readonly ICallDataSerializer callDataSerializer;
         private readonly IAddressGenerator addressGenerator;
+        private readonly IStateRepositoryRoot stateRoot;
 
         public SmartContractTransactionService(
             Network network,
@@ -35,7 +38,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             IWalletTransactionHandler walletTransactionHandler,
             IMethodParameterStringSerializer methodParameterStringSerializer,
             ICallDataSerializer callDataSerializer,
-            IAddressGenerator addressGenerator)
+            IAddressGenerator addressGenerator,
+            IStateRepositoryRoot stateRoot)
         {
             this.network = network;
             this.walletManager = walletManager;
@@ -43,6 +47,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.methodParameterStringSerializer = methodParameterStringSerializer;
             this.callDataSerializer = callDataSerializer;
             this.addressGenerator = addressGenerator;
+            this.stateRoot = stateRoot;
         }
 
         public BuildContractTransactionResult BuildTx(BuildContractTransactionRequest request)
@@ -67,11 +72,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             List<OutPoint> selectedInputs = this.SelectInputs(request.WalletName, request.Sender, request.Outpoints);
 
             if (!selectedInputs.Any())
-                return BuildContractTransactionResult.Failure("Invalid outpoints.", "Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address");
+                return BuildContractTransactionResult.Failure("Invalid outpoints.", "Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address.");
             
             var recipients = new List<Recipient>();
             foreach (RecipientModel recipientModel in request.Recipients)
             {
+                uint160 address = recipientModel.DestinationAddress.ToUint160(this.network);
+
+                if (this.stateRoot.IsExist(address))
+                {
+                    return BuildContractTransactionResult.Failure(TransferFundsToContractError, $"The recipient address {recipientModel.DestinationAddress} is a contract. Transferring funds directly to a contract is not supported.");
+                }
+
                 recipients.Add(new Recipient
                 {
                     ScriptPubKey = BitcoinAddress.Create(recipientModel.DestinationAddress, this.network).ScriptPubKey,
