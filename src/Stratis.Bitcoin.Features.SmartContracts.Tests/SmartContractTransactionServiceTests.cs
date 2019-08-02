@@ -374,7 +374,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             BuildContractTransactionResult result = service.BuildTx(request);
 
-            Assert.NotNull(result.Error);
+            Assert.Equal(SmartContractTransactionService.SenderNotInWalletError, result.Error);
             Assert.NotNull(result.Message);
             Assert.Null(result.Response);
         }
@@ -423,7 +423,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             BuildContractTransactionResult result = service.BuildTx(request);
 
-            Assert.NotNull(result.Error);
+            Assert.Equal(SmartContractTransactionService.AccountNotInWalletError, result.Error);
             Assert.NotNull(result.Message);
             Assert.Null(result.Response);
         }
@@ -480,7 +480,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             BuildContractTransactionResult result = service.BuildTx(request);
 
-            Assert.NotNull(result.Error);
+            Assert.Equal(SmartContractTransactionService.InsufficientBalanceError, result.Error);
             Assert.NotNull(result.Message);
             Assert.Null(result.Response);
         }

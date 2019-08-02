@@ -24,6 +24,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
         private const string SenderNoBalanceError = "The 'Sender' address you're trying to spend from doesn't have a balance available to spend. Please check the address and try again.";
         public const string TransferFundsToContractError = "Can't transfer funds to contract.";
+        public const string SenderNotInWalletError = "Address not found in wallet.";
+        public const string AccountNotInWalletError = "No account.";
+        public const string InsufficientBalanceError = "Insufficient balance.";
+        public const string InvalidOutpointsError = "Invalid outpoints.";
+
         private readonly Network network;
         private readonly IWalletManager walletManager;
         private readonly IWalletTransactionHandler walletTransactionHandler;
@@ -57,22 +62,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             HdAccount account = wallet.GetAccount(request.AccountName);
 
             if (account == null)
-                return BuildContractTransactionResult.Failure("No account.", $"No account with the name '{request.AccountName}' could be found.");
+                return BuildContractTransactionResult.Failure(AccountNotInWalletError, $"No account with the name '{request.AccountName}' could be found.");
 
             HdAddress senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
 
             if (senderAddress == null)
             {
-                return BuildContractTransactionResult.Failure("Address not found in wallet.", $"The given address {request.Sender} was not found in the wallet.");
+                return BuildContractTransactionResult.Failure(SenderNotInWalletError, $"The given address {request.Sender} was not found in the wallet.");
             }
 
             if (!this.CheckBalance(senderAddress.Address))
-                return BuildContractTransactionResult.Failure("Insufficient balance.", SenderNoBalanceError);
+                return BuildContractTransactionResult.Failure(InsufficientBalanceError, SenderNoBalanceError);
 
             List<OutPoint> selectedInputs = this.SelectInputs(request.WalletName, request.Sender, request.Outpoints);
 
             if (!selectedInputs.Any())
-                return BuildContractTransactionResult.Failure("Invalid outpoints.", "Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address.");
+                return BuildContractTransactionResult.Failure(InvalidOutpointsError, "Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address.");
             
             var recipients = new List<Recipient>();
             foreach (RecipientModel recipientModel in request.Recipients)
