@@ -6,6 +6,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
@@ -49,13 +50,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             if(!this.CheckBalance(request.Sender))
                 return BuildContractTransactionResult.Failure("Insufficient balance.", SenderNoBalanceError);
 
-            List<OutPoint> selectedInputs = null;
-            if (request.Outpoints != null)
-            {
-                selectedInputs = this.SelectInputs(request.WalletName, request.Sender, request.Outpoints.Select(o => new OutpointRequestModel { Index = o.Index, TransactionId = o.TransactionId }).ToList());
-                if (!selectedInputs.Any())
-                    return BuildContractTransactionResult.Failure("Invalid outpoints.", "Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address");
-            }
+            List<OutPoint> selectedInputs = this.SelectInputs(request.WalletName, request.Sender, request.Outpoints);
+            if (!selectedInputs.Any())
+                return BuildContractTransactionResult.Failure("Invalid outpoints.", "Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address");
 
             return null;
         }
@@ -231,7 +228,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             return !(addressBalance.AmountConfirmed == 0 && addressBalance.AmountUnconfirmed == 0);
         }
 
-        private List<OutPoint> SelectInputs(string walletName, string sender, List<OutpointRequestModel> outpoints)
+        private List<OutPoint> SelectInputs(string walletName, string sender, List<OutpointRequest> outpoints)
         {
             List<OutPoint> selectedInputs = this.walletManager.GetSpendableInputsForAddress(walletName, sender);
 
@@ -242,7 +239,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// Reduces the selectedInputs to consist of only those asked for by the request, or leaves them the same if none were requested.
         /// </summary>
         /// <returns>The new list of outpoints.</returns>
-        private List<OutPoint> ReduceToRequestedInputs(IReadOnlyList<OutpointRequestModel> requestedOutpoints, IReadOnlyList<OutPoint> selectedInputs)
+        private List<OutPoint> ReduceToRequestedInputs(IReadOnlyList<OutpointRequest> requestedOutpoints, IReadOnlyList<OutPoint> selectedInputs)
         {
             var result = new List<OutPoint>(selectedInputs);
 

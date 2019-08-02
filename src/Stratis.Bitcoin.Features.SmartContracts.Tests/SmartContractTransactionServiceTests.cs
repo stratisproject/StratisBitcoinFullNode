@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Networks;
@@ -55,9 +56,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 WalletName = "wallet",
                 Password = "password",
                 Sender = senderAddress,
-                Outpoints = new List<OutpointRequestModel>
+                Outpoints = new List<OutpointRequest>
                 {
-                    new OutpointRequestModel
+                    new OutpointRequest
                     {
                         Index = utxoIndex,
                         TransactionId = utxoId.ToString()
@@ -159,9 +160,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 WalletName = "wallet",
                 Password = "password",
                 Sender = senderAddress,
-                Outpoints = new List<OutpointRequestModel>
+                Outpoints = new List<OutpointRequest>
                 {
-                    new OutpointRequestModel
+                    new OutpointRequest
                     {
                         Index = utxoIndex,
                         TransactionId = new uint256(64).ToString() // A tx we don't have.
@@ -237,9 +238,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 WalletName = "wallet",
                 Password = "password",
                 Sender = senderAddress,
-                Outpoints = new List<OutpointRequestModel>
+                Outpoints = new List<OutpointRequest>
                 {
-                    new OutpointRequestModel
+                    new OutpointRequest
                     {
                         Index = utxoIndex,
                         TransactionId = utxoId.ToString()
