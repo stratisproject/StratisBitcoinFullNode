@@ -39,16 +39,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
             var txdata = new PrecomputedTransactionData(context.Transaction);
             if (!this.CheckInputs(context, scriptVerifyFlags, txdata))
             {
-                // TODO: Implement Witness Code
-                //// SCRIPT_VERIFY_CLEANSTACK requires SCRIPT_VERIFY_WITNESS, so we
-                //// need to turn both off, and compare against just turning off CLEANSTACK
-                //// to see if the failure is specifically due to witness validation.
-                //if (!tx.HasWitness() && CheckInputs(Trx, state, view, true, scriptVerifyFlags & ~(SCRIPT_VERIFY_WITNESS | SCRIPT_VERIFY_CLEANSTACK), true, txdata) &&
-                //  !CheckInputs(tx, state, view, true, scriptVerifyFlags & ~SCRIPT_VERIFY_CLEANSTACK, true, txdata))
-                //{
-                //  // Only the witness is missing, so the transaction itself may be fine.
-                //  state.SetCorruptionPossible();
-                //}
+                // SCRIPT_VERIFY_CLEANSTACK requires SCRIPT_VERIFY_WITNESS, so we
+                // need to turn both off, and compare against just turning off CLEANSTACK
+                // to see if the failure is specifically due to witness validation.
+                if (!context.Transaction.HasWitness && this.CheckInputs(context, scriptVerifyFlags & ~(ScriptVerify.Witness | ScriptVerify.CleanStack), txdata) && !this.CheckInputs(context, scriptVerifyFlags & ~ScriptVerify.CleanStack, txdata))
+                {
+                    // Only the witness is missing, so the transaction itself may be fine.
+                    this.logger.LogTrace("(-)[FAIL_WITNESS_MUTATED]");
+                    context.State.Fail(MempoolErrors.WitnessMutated).Throw();
+                }
 
                 this.logger.LogTrace("(-)[FAIL_INPUTS_PREV_TXS]");
                 context.State.Fail(new MempoolError()).Throw();
