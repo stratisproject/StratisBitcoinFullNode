@@ -333,21 +333,26 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var miner = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.WitHash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
             var bob = new BitcoinSecret(new Key(), this.Network);
-            var witnessCoin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.WitHash.ScriptPubKey);
+            var coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey);
             var txBuilder = new TransactionBuilder(this.Network);
             Transaction p2wpkhTx = txBuilder
-                .AddCoins(witnessCoin)
+                .AddCoins(coin)
                 .AddKeys(miner)
                 .Send(bob.PubKey.WitHash.ScriptPubKey, "0.042")
                 .SendFees("0.001")
                 .SetChange(miner)
                 .BuildTransaction(true);
             Assert.True(txBuilder.Verify(p2wpkhTx)); //check fully signed
+
+            // Make sure the transaction does actually contain a recognisable P2WPKH output.
+            var output = p2wpkhTx.Outputs.Where(o => o.ScriptPubKey.IsScriptType(ScriptType.P2WPKH));
+            Assert.NotEmpty(output);
+
             var state = new MempoolValidationState(false);
             var isSuccess = await validator.AcceptToMemoryPool(state, p2wpkhTx);
             Assert.True(isSuccess, $"Transaction: {nameof(p2wpkhTx)} failed mempool validation.");
@@ -359,17 +364,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var miner = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.WitHash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
             // We need to create a P2WPKH output in the mempool.
             var bob = new BitcoinSecret(new Key(), this.Network);
-            var witnessCoin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.WitHash.ScriptPubKey);
+            var coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey);
             var txBuilder = new TransactionBuilder(this.Network);
 
             Transaction p2wpkhTx = txBuilder
-                .AddCoins(witnessCoin)
+                .AddCoins(coin)
                 .AddKeys(miner)
                 .Send(bob.PubKey.WitHash.ScriptPubKey, "0.042")
                 .SendFees("0.001")
@@ -384,17 +389,26 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             // Now we need to spend the P2WPKH output in a new transaction.
             var p2wpkhCoin = p2wpkhTx.Outputs.AsCoins().Where(o => o.ScriptPubKey.IsScriptType(ScriptType.P2WPKH));
 
+            Assert.NotEmpty(p2wpkhCoin);
+
             txBuilder = new TransactionBuilder(this.Network);
 
             Transaction spends = txBuilder
                 .AddCoins(p2wpkhCoin)
                 .AddKeys(bob)
-                .Send(miner, "0.020")
+                .Send(miner.PubKey.ScriptPubKey, "0.020")
                 .SendFees("0.001")
                 .SetChange(miner)
                 .BuildTransaction(true);
 
             Assert.True(txBuilder.Verify(spends));
+
+            // Remove witness data from transaction.
+            Transaction noWitTx = spends.WithOptions(TransactionOptions.None, this.Network.Consensus.ConsensusFactory);
+
+            // As witness data is present in the input scriptSigs, we needed a Segwit prevOut to test that the stripped transaction is definitely smaller as we expect.
+            Assert.Equal(spends.GetHash(), noWitTx.GetHash());
+            Assert.True(noWitTx.GetSerializedSize() < spends.GetSerializedSize());
 
             state = new MempoolValidationState(false);
             isSuccess = await validator.AcceptToMemoryPool(state, spends);
@@ -407,17 +421,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var miner = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.WitHash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
             // We need to create a P2WPKH output in the mempool.
             var bob = new BitcoinSecret(new Key(), this.Network);
-            var witnessCoin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.WitHash.ScriptPubKey);
+            var coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey);
             var txBuilder = new TransactionBuilder(this.Network);
 
             Transaction p2wpkhTx = txBuilder
-                .AddCoins(witnessCoin)
+                .AddCoins(coin)
                 .AddKeys(miner)
                 .Send(bob.PubKey.WitHash.ScriptPubKey, "0.042")
                 .SendFees("0.001")
@@ -463,63 +477,29 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
             string dataDir = GetTestDirectoryPath(this);
 
             var miner = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey, dataDir);
+            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
             var bob = new BitcoinSecret(new Key(), this.Network);
 
-            ScriptCoin witnessCoin = ScriptCoin.Create(this.Network, context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey, miner.PubKey.ScriptPubKey).AssertCoherent(this.Network);
+            var coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey);
             var txBuilder = new TransactionBuilder(this.Network);
             Transaction p2wshTx = txBuilder
-                .AddCoins(witnessCoin)
+                .AddCoins(coin)
                 .AddKeys(miner)
-                .Send(bob, "0.042")
+                .Send(bob.PubKey.ScriptPubKey.WitHash.ScriptPubKey, "0.042") // Send as a P2WSH output
                 .SendFees("0.001")
                 .SetChange(miner)
                 .BuildTransaction(true);
             Assert.True(txBuilder.Verify(p2wshTx)); //check fully signed
+
+            // Make sure the transaction does actually contain a recognisable P2WPSH output.
+            var output = p2wshTx.Outputs.Where(o => o.ScriptPubKey.IsScriptType(ScriptType.P2WSH));
+            Assert.NotEmpty(output);
+
             var state = new MempoolValidationState(false);
             Assert.True(await validator.AcceptToMemoryPool(state, p2wshTx), $"Transaction: {nameof(p2wshTx)} failed mempool validation.");
-        }
-
-        /// <summary>
-        /// Validate SegWit transaction in memory pool.
-        /// </summary>
-        [Fact]
-        public async Task AcceptToMemoryPool_WithSegWitValidTxns_IsSuccessfulAsync()
-        {
-            string dataDir = GetTestDirectoryPath(this);
-
-            var miner = new BitcoinSecret(new Key(), this.Network);
-            ITestChainContext context = await TestChainFactory.CreatePosAsync(this.Network, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey.Hash.ScriptPubKey, dataDir);
-            IMempoolValidator validator = context.MempoolValidator;
-            Assert.NotNull(validator);
-
-            var bob = new BitcoinSecret(new Key(), this.Network);
-
-            // Fund Bob
-            // 50 Coins come from first tx on chain - send bob 42 and change back to miner
-            ScriptCoin witnessCoin = ScriptCoin.Create(this.Network, context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey.Hash.ScriptPubKey, miner.PubKey.ScriptPubKey);
-            var txBuilder = new TransactionBuilder(this.Network);
-            Transaction p2shOverp2wpkh = txBuilder
-                .AddCoins(witnessCoin)
-                .AddKeys(miner)
-                .Send(bob, "0.042")
-                .SendFees("0.001")
-                .SetChange(miner)
-                .BuildTransaction(true);
-            Assert.True(txBuilder.Verify(p2shOverp2wpkh)); //check fully signed
-
-            // remove witness data from tx
-            Transaction noWitTx = p2shOverp2wpkh.WithOptions(TransactionOptions.None, this.Network.Consensus.ConsensusFactory);
-
-            Assert.Equal(p2shOverp2wpkh.GetHash(), noWitTx.GetHash());
-            Assert.True(noWitTx.GetSerializedSize() < p2shOverp2wpkh.GetSerializedSize());
-
-            Assert.True(txBuilder.Verify(p2shOverp2wpkh)); //check fully signed
-            var state = new MempoolValidationState(false);
-            Assert.True(await validator.AcceptToMemoryPool(state, p2shOverp2wpkh), $"Transaction: {nameof(p2shOverp2wpkh)} failed mempool validation.");
         }
 
         [Fact]
