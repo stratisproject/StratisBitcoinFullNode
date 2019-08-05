@@ -19,7 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Tracer.Fody" Version="2.2.0" />
+    <PackageReference Include="Tracer.Fody" Version="3.1.0" />
   </ItemGroup>
 
   <ItemGroup>
