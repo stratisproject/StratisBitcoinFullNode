@@ -738,7 +738,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
                 return null;
             }
 
-            public List<INetworkPeer> FindByIp(IPAddress ip)
+            public List<INetworkPeer> FindByIp(IPAddress ip, int? port = null)
             {
                 return null;
             }

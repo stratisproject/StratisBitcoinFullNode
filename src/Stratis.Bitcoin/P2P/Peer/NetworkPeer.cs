@@ -200,30 +200,47 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
         }
 
-        public static IPEndPoint GetHandshakedEndPoint(NetworkPeerState state, VersionPayload peerVersion, IPEndPoint peerEndPoint)
+        public static IPEndPoint GetHandshakedEndPoint(INetworkPeer peer)
         {
-            if (state == NetworkPeerState.HandShaked)
+            if (peer.Inbound && peer.State == NetworkPeerState.HandShaked)
             {
-                IPEndPoint addressFrom = peerVersion?.AddressFrom.MapToIpv6();
+                IPEndPoint addressFrom = peer.PeerVersion?.AddressFrom.MapToIpv6();
 
                 if (addressFrom != null && !addressFrom.Address.Equals(IPAddress.IPv6Any))
                 {
-                    // If it is a Loopback address use PeerEndpoint but combine it with the AdressFrom's port as that is the other node's listening port.
-                    if (addressFrom.Address.Equals(IPAddress.Loopback.EnsureIPv6()))
-                        return new IPEndPoint(peerEndPoint.Address.EnsureIPv6(), addressFrom.Port);
+                    if (peer.PeerEndPoint.Address.IsRoutable(false) || !addressFrom.Address.IsRoutable(false))
+                        return new IPEndPoint(peer.PeerEndPoint.Address.EnsureIPv6(), addressFrom.Port);
 
-                    // Use AddressFrom if it is not a Loopback address as this means the inbound node was configured with a different external endpoint.
                     return addressFrom;
                 }
             }
 
-            return peerEndPoint.MapToIpv6();
+            return peer.PeerEndPoint.MapToIpv6();
         }
 
         /// <inheritdoc />
         public IPEndPoint GetHandshakedEndPoint()
         {
-            return GetHandshakedEndPoint(this.State, this.PeerVersion, this.PeerEndPoint);
+            return GetHandshakedEndPoint(this);
+        }
+
+        /// <inheritdoc />
+        public bool MatchLocalIPAddress(IPAddress ip, int? port = null)
+        {
+            IPAddress compareAddress = this.PeerEndPoint.Address.EnsureIPv6();
+            int? comparePort = this.PeerEndPoint.Port;
+
+            if (this.Inbound)
+            {
+                IPEndPoint addressFrom = this.PeerVersion?.AddressFrom.MapToIpv6();
+
+                if (addressFrom != null && !addressFrom.Address.Equals(IPAddress.IPv6Any))
+                    comparePort = addressFrom.Port;
+                else
+                    comparePort = null;
+            }
+
+            return compareAddress.Equals(ip.EnsureIPv6()) && (!port.HasValue || !comparePort.HasValue || port == comparePort);
         }
 
         /// <inheritdoc />

@@ -27,7 +27,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
                 var nodeA = builder.CreateStratisPosNode(network, "nc-1-nodeA").Start();
 
-                var nodeBIp = "127.0.0.2";
+                // Choose a legitimate (routable) external address otherwise it will be rejected in favour of the peer endpoint.
+                var nodeBIp =  "104.25.144.118"; // stratisplatform.com
                 var nodeBIpAddress = IPAddress.Parse(nodeBIp);
 
                 var nodeBConfig = new NodeConfigParameters

@@ -258,7 +258,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
 
             var peerCollection = new Mock<IReadOnlyNetworkPeerCollection>();
-            peerCollection.Setup(p => p.FindByIp(It.IsAny<IPAddress>())).Returns(new List<INetworkPeer>());
+            peerCollection.Setup(p => p.FindByIp(It.IsAny<IPAddress>(), It.IsAny<int?>())).Returns(new List<INetworkPeer>());
 
             var connectionManager = new Mock<IConnectionManager>();
             connectionManager.Setup(c => c.ConnectionSettings).Returns(connectionManagerSettings);
@@ -301,7 +301,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             networkPeerFactory.Setup(n => n.CreateConnectedNetworkPeerAsync(endpoint, null, null)).ReturnsAsync(networkPeer.Object);
 
             var peerCollection = new Mock<IReadOnlyNetworkPeerCollection>();
-            peerCollection.Setup(p => p.FindByIp(It.IsAny<IPAddress>())).Returns(new List<INetworkPeer>() { networkPeer.Object });
+            peerCollection.Setup(p => p.FindByIp(It.IsAny<IPAddress>(), It.IsAny<int?>())).Returns(new List<INetworkPeer>() { networkPeer.Object });
 
             var connectionManager = new Mock<IConnectionManager>();
             connectionManager.Setup(c => c.ConnectionSettings).Returns(connectionManagerSettings);
@@ -339,7 +339,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
 
             var peerCollection = new Mock<IReadOnlyNetworkPeerCollection>();
-            peerCollection.Setup(p => p.FindByIp(It.IsAny<IPAddress>())).Returns(new List<INetworkPeer>());
+            peerCollection.Setup(p => p.FindByIp(It.IsAny<IPAddress>(), It.IsAny<int?>())).Returns(new List<INetworkPeer>());
 
             var connectionManager = new Mock<IConnectionManager>();
             connectionManager.Setup(c => c.ConnectionSettings).Returns(connectionManagerSettings);
@@ -378,7 +378,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
 
             var peerCollection = new Mock<IReadOnlyNetworkPeerCollection>();
-            peerCollection.Setup(p => p.FindByIp(It.IsAny<IPAddress>())).Returns(new List<INetworkPeer>());
+            peerCollection.Setup(p => p.FindByIp(It.IsAny<IPAddress>(), It.IsAny<int?>())).Returns(new List<INetworkPeer>());
 
             var connectionManager = new Mock<IConnectionManager>();
             connectionManager.Setup(c => c.ConnectionSettings).Returns(connectionManagerSettings);
@@ -415,7 +415,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
 
             var peerCollection = new Mock<IReadOnlyNetworkPeerCollection>();
-            peerCollection.Setup(p => p.FindByIp(It.IsAny<IPAddress>())).Returns(new List<INetworkPeer>());
+            peerCollection.Setup(p => p.FindByIp(It.IsAny<IPAddress>(), It.IsAny<int?>())).Returns(new List<INetworkPeer>());
 
             var connectionManager = new Mock<IConnectionManager>();
             connectionManager.Setup(c => c.ConnectionSettings).Returns(connectionManagerSettings);

@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             networkPeer.SetupGet(n => n.PeerVersion).Returns(new VersionPayload() { AddressFrom = addressFromEndpoint });
             networkPeer.SetupGet(n => n.State).Returns(NetworkPeerState.HandShaked);
             networkPeer.Setup(n => n.GetHandshakedEndPoint())
-                .Returns(NetworkPeer.GetHandshakedEndPoint(networkPeer.Object.State, networkPeer.Object.PeerVersion, networkPeer.Object.PeerEndPoint));
+                .Returns(NetworkPeer.GetHandshakedEndPoint(networkPeer.Object));
 
             var messageReceived = new AsyncExecutionEvent<INetworkPeer, IncomingMessage>();
             networkPeer.SetupGet(n => n.MessageReceived).Returns(messageReceived);
@@ -239,7 +239,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         [Fact]
         public void PeerAddressManagerBehaviour_InboundConnectionIsNotLoopBack_Add_AddressFrom_ToAddressBook()
         {
-            IPAddress addressFromIPAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            IPAddress addressFromIPAddress = IPAddress.Parse("::ffff:104.25.144.118");
             var addressFromEndpoint = new IPEndPoint(addressFromIPAddress, this.Network.DefaultPort);
 
             IPAddress peerEndPointAddress = IPAddress.Parse("::ffff:192.168.0.2");
@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             networkPeer.SetupGet(n => n.PeerVersion).Returns(new VersionPayload() { AddressFrom = addressFromEndpoint });
             networkPeer.SetupGet(n => n.State).Returns(NetworkPeerState.HandShaked);
             networkPeer.Setup(n => n.GetHandshakedEndPoint())
-                .Returns(NetworkPeer.GetHandshakedEndPoint(networkPeer.Object.State, networkPeer.Object.PeerVersion, networkPeer.Object.PeerEndPoint));
+                .Returns(NetworkPeer.GetHandshakedEndPoint(networkPeer.Object));
 
             var messageReceived = new AsyncExecutionEvent<INetworkPeer, IncomingMessage>();
             networkPeer.SetupGet(n => n.MessageReceived).Returns(messageReceived);

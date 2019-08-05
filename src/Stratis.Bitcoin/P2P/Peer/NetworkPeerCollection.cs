@@ -26,11 +26,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         INetworkPeer FindByEndpoint(IPEndPoint endpoint);
 
         /// <summary>
-        /// Returns all connected peers from a given IP address (the port is irrelevant).
+        /// Returns all connected peers from a given IP address (the port is optional).
         /// </summary>
         /// <param name="ip">The IP address to filter on.</param>
+        /// <param name="port">The port to filter on (if any)</param>
         /// <returns>The set of connected peers that matched the given IP address.</returns>
-        List<INetworkPeer> FindByIp(IPAddress ip);
+        List<INetworkPeer> FindByIp(IPAddress ip, int? port = null);
 
         INetworkPeer FindLocal();
     }
@@ -96,17 +97,17 @@ namespace Stratis.Bitcoin.P2P.Peer
             return this.networkPeers.FirstOrDefault(n => n.Connection.Id == peerId);
         }
 
-        public List<INetworkPeer> FindByIp(IPAddress ip)
+        public List<INetworkPeer> FindByIp(IPAddress ip, int? port = null)
         {
-            ip = ip.EnsureIPv6();
-            return this.networkPeers.Where(n => n.MatchRemoteIPAddress(ip)).ToList();
+            if (!ip.IsRoutable(false))
+                return this.networkPeers.Where(n => n.MatchLocalIPAddress(ip, port)).ToList();
+
+            return this.networkPeers.Where(n => n.MatchRemoteIPAddress(ip, port)).ToList();
         }
 
         public INetworkPeer FindByEndpoint(IPEndPoint endpoint)
         {
-            IPAddress ip = endpoint.Address.EnsureIPv6();
-            int port = endpoint.Port;
-            return this.networkPeers.FirstOrDefault(n => n.MatchRemoteIPAddress(ip, port));
+            return this.FindByIp(endpoint.Address, endpoint.Port).FirstOrDefault();
         }
 
         public IEnumerator<INetworkPeer> GetEnumerator()

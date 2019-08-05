@@ -2413,7 +2413,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             return null;
         }
 
-        public List<INetworkPeer> FindByIp(IPAddress ip)
+        public List<INetworkPeer> FindByIp(IPAddress ip, int? port = null)
         {
             return null;
         }
