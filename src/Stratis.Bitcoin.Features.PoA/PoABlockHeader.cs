@@ -1,4 +1,5 @@
 ﻿using NBitcoin;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -14,6 +15,7 @@ namespace Stratis.Bitcoin.Features.PoA
             set => this.blockSignature = value;
         }
 
+        [NoTrace]
         public override void ReadWrite(BitcoinStream stream)
         {
             base.ReadWrite(stream);

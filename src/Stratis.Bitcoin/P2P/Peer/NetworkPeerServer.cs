@@ -235,6 +235,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             var clientLocalEndPoint = tcpClient.Client.LocalEndPoint as IPEndPoint;
+            var clientRemoteEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
 
             bool endpointCanBeWhiteListed = this.connectionManagerSettings.Bind.Where(x => x.Whitelisted).Any(x => x.Endpoint.Contains(clientLocalEndPoint));
 
@@ -244,7 +245,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return (true, "Inbound Accepted: Whitelisted endpoint connected during IBD.");
             }
 
-            this.logger.LogDebug("Node '{0}' is not white listed during initial block download.", clientLocalEndPoint);
+            this.logger.LogDebug("Node '{0}' is not whitelisted via endpoint '{1}' during initial block download.", clientRemoteEndPoint, clientLocalEndPoint);
 
             return (false, "Inbound Refused: Non Whitelisted endpoint connected during IBD.");
         }
