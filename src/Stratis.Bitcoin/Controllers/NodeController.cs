@@ -19,6 +19,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -77,6 +78,8 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>Provider for creating and managing background async loop tasks.</summary>
         private readonly IAsyncProvider asyncProvider;
 
+        private readonly ISelfEndpointTracker selfEndpointTracker;
+
         public NodeController(
             ChainIndexer chainIndexer,
             IChainState chainState,
@@ -87,6 +90,7 @@ namespace Stratis.Bitcoin.Controllers
             NodeSettings nodeSettings,
             Network network,
             IAsyncProvider asyncProvider,
+            ISelfEndpointTracker selfEndpointTracker,
             IBlockStore blockStore = null,
             IGetUnspentTransaction getUnspentTransaction = null,
             INetworkDifficulty networkDifficulty = null,
@@ -102,6 +106,7 @@ namespace Stratis.Bitcoin.Controllers
             Guard.NotNull(connectionManager, nameof(connectionManager));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
             Guard.NotNull(asyncProvider, nameof(asyncProvider));
+            Guard.NotNull(selfEndpointTracker, nameof(selfEndpointTracker));
 
             this.chainIndexer = chainIndexer;
             this.chainState = chainState;
@@ -112,6 +117,7 @@ namespace Stratis.Bitcoin.Controllers
             this.network = network;
             this.nodeSettings = nodeSettings;
             this.asyncProvider = asyncProvider;
+            this.selfEndpointTracker = selfEndpointTracker;
 
             this.blockStore = blockStore;
             this.getUnspentTransaction = getUnspentTransaction;
@@ -136,6 +142,7 @@ namespace Stratis.Bitcoin.Controllers
                 ProtocolVersion = (uint)(this.nodeSettings.ProtocolVersion),
                 Difficulty = GetNetworkDifficulty(this.networkDifficulty)?.Difficulty ?? 0,
                 Agent = this.connectionManager.ConnectionSettings.Agent,
+                ExternalAddress = this.selfEndpointTracker.MyExternalAddress.Address.ToString(),
                 ProcessId = Process.GetCurrentProcess().Id,
                 Network = this.fullNode.Network.Name,
                 ConsensusHeight = this.chainState.ConsensusTip?.Height,
@@ -563,7 +570,7 @@ namespace Stratis.Bitcoin.Controllers
 
                 foreach ((string loopName, TaskStatus status) in this.asyncProvider.GetAll())
                 {
-                    loops.Add(new AsyncLoopModel() { LoopName = loopName, Status = Enum.GetName(typeof(TaskStatus), status)});
+                    loops.Add(new AsyncLoopModel() { LoopName = loopName, Status = Enum.GetName(typeof(TaskStatus), status) });
                 }
 
                 return this.Json(loops);

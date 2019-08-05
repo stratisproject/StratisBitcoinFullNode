@@ -31,7 +31,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// <param name="broadcasterBehavior">The broadcaster behavior.</param>
         /// <param name="chainIndexer">The chain of blocks.</param>
         /// <param name="connectionManager">The connection manager.</param>
-        /// <param name="signals">The signals responsible for receiving blocks and transactions from the network.</param>
         /// <param name="walletManager">The wallet manager.</param>
         /// <param name="walletSyncManager">The synchronization manager for the wallet, tasked with keeping the wallet synced with the network.</param>
         public SmartContractWalletFeature(
@@ -50,8 +49,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.walletManager = walletManager;
             this.walletSyncManager = walletSyncManager;
 
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
-            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name);
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name);
         }
 
         private void AddComponentStats(StringBuilder log)
@@ -121,12 +120,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     services.AddSingleton<IWalletTransactionHandler, SmartContractWalletTransactionHandler>();
                     services.AddSingleton<IWalletManager, WalletManager>();
                     services.AddSingleton<IWalletFeePolicy, WalletFeePolicy>();
-                    services.AddSingleton<SmartContractWalletController>();
                     services.AddSingleton<ISmartContractTransactionService, SmartContractTransactionService>();
-                    services.AddSingleton<WalletRPCController>();
                     services.AddSingleton<IBroadcasterManager, FullNodeBroadcasterManager>();
                     services.AddSingleton<BroadcasterBehavior>();
                     services.AddSingleton<WalletSettings>();
+                    services.AddSingleton<IAddressBookManager, AddressBookManager>();
+
+                    services.AddTransient<WalletRPCController>();
                 });
             });
 

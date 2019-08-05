@@ -195,6 +195,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
+        [NoTrace]
         public void StartConnectAsync()
         {
             if (!this.CanStartConnect)
