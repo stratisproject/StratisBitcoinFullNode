@@ -5,7 +5,6 @@ namespace Stratis.SmartContracts.Core
 {
     public static class SmartContractScript
     {
-
         [NoTrace]
         public static bool IsSmartContractExec(this Script script)
         {
