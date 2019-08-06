@@ -202,24 +202,22 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public static IPEndPoint GetHandshakedEndPoint(INetworkPeer peer)
         {
-            // In-bound peers can suggest a routable address different from the one we received the connection on.
-            if (peer.Inbound)
+            // Peers can suggest a routable address different from the one we received the connection on.
+            IPEndPoint addressFrom = peer.PeerVersion?.AddressFrom.MapToIpv6();
+
+            if (addressFrom != null && !addressFrom.Address.Equals(IPAddress.IPv6Any))
             {
-                IPEndPoint addressFrom = peer.PeerVersion?.AddressFrom.MapToIpv6();
+                // Give precedence to the verified PeerEndPoint if routable.
+                if (peer.PeerEndPoint.Address.IsRoutable(false) || !addressFrom.Address.IsRoutable(false))
+                    return new IPEndPoint(peer.PeerEndPoint.Address.EnsureIPv6(), addressFrom.Port);
 
-                if (addressFrom != null && !addressFrom.Address.Equals(IPAddress.IPv6Any))
-                {
-                    // Give precedence to the verifiable address if routable.
-                    if (peer.PeerEndPoint.Address.IsRoutable(false) || !addressFrom.Address.IsRoutable(false))
-                        return new IPEndPoint(peer.PeerEndPoint.Address.EnsureIPv6(), addressFrom.Port);
-
-                    // Use the address suggested by the peer.
-                    return addressFrom;
-                }
-
-                // Can't resolve port. Make a best guess.
-                return new IPEndPoint(peer.PeerEndPoint.Address.EnsureIPv6(), peer.Network.DefaultPort);
+                // Use the address suggested by the peer.
+                return addressFrom;
             }
+
+            // Can't resolve port. Make a best guess.
+            if (peer.Inbound)
+                return new IPEndPoint(peer.PeerEndPoint.Address.EnsureIPv6(), peer.Network.DefaultPort);
 
             return peer.PeerEndPoint.MapToIpv6();
         }
