@@ -30,6 +30,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.addressIndexerOutPointData = db.GetCollection<OutPointData>(DbOutputsDataKey);
             this.addressIndexerRewindData = db.GetCollection<AddressIndexerRewindData>(DbOutputsRewindDataKey);
+            this.addressIndexerRewindData.EnsureIndex("BlockHeightIndex", "$.BlockHeight", true);
             this.maxCacheItems = maxItems;
         }
 
