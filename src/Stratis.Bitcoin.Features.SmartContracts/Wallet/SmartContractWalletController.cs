@@ -156,31 +156,33 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// <returns>A list of smart contract create and call transaction items as well as transaction items at a specific wallet address.</returns>
         [Route("history")]
         [HttpGet]
-        public IActionResult GetHistory(string walletName, string address)
+        public IActionResult GetHistory(GetHistoryRequest request)
         {
-            if (string.IsNullOrWhiteSpace(walletName))
+            if (string.IsNullOrWhiteSpace(request.WalletName))
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No wallet name", "No wallet name provided");
 
-            if (string.IsNullOrWhiteSpace(address))
+            if (string.IsNullOrWhiteSpace(request.Address))
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No address", "No address provided");
 
             try
             {
                 var transactionItems = new List<ContractTransactionItem>();
 
-                HdAccount account = this.walletManager.GetAccounts(walletName).First();
+                HdAccount account = this.walletManager.GetAccounts(request.WalletName).First();
 
                 // Get a list of all the transactions found in an account (or in a wallet if no account is specified), with the addresses associated with them.
-                IEnumerable<AccountHistory> accountsHistory = this.walletManager.GetHistory(walletName, account.Name);
+                IEnumerable<AccountHistory> accountsHistory = this.walletManager.GetHistory(request.WalletName, account.Name);
 
                 // Wallet manager returns only 1 when an account name is specified.
                 AccountHistory accountHistory = accountsHistory.First();
 
-                List<FlatHistory> items = accountHistory.History.Where(x => x.Address.Address == address).ToList();
+                List<FlatHistory> items = accountHistory.History.Where(x => x.Address.Address == request.Address).ToList();
 
                 // Represents a sublist of transactions associated with receive addresses + a sublist of already spent transactions associated with change addresses.
                 // In effect, we filter out 'change' transactions that are not spent, as we don't want to show these in the history.
                 List<FlatHistory> history = items.Where(t => !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && t.Transaction.IsSpent())).ToList();
+
+
 
                 // TransactionData in history is confusingly named. A "TransactionData" actually represents an input, and the outputs that spend it are "SpendingDetails".
                 // There can be multiple "TransactionData" which have the same "SpendingDetails".
@@ -192,6 +194,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     .Where(item => item.Transaction.SpendingDetails != null)
                     .Where(item => item.Transaction.SpendingDetails.Payments.Any(x => x.DestinationScriptPubKey.IsSmartContractExec()))
                     .GroupBy(item => item.Transaction.SpendingDetails.TransactionId)
+                    .Skip(request.Skip ?? 0)
+                    .Take(request.Take ?? history.Count)
                     .Select(g => new
                     {
                         TransactionId = g.Key,
