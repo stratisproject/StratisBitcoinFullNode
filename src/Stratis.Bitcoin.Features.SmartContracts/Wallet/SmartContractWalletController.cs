@@ -208,19 +208,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
                 foreach (var scTransaction in scTransactions)
                 {
-                    // Consensus rules state that each transaction can have only one smart contract exec output, so FirstOrDefault is correct.
-                    PaymentDetails scPayment = scTransaction.Outputs?.FirstOrDefault(x => x.DestinationScriptPubKey.IsSmartContractExec());
-
-                    if (scPayment == null)
-                        continue;
+                    // Consensus rules state that each transaction can have only one smart contract exec output.
+                    PaymentDetails scPayment = scTransaction.Outputs.First(x => x.DestinationScriptPubKey.IsSmartContractExec());
 
                     Receipt receipt = this.receiptRepository.Retrieve(scTransaction.TransactionId);
 
+                    // This will always give us a value - the transaction has to be serializable to get past consensus.
                     Result<ContractTxData> txDataResult = this.callDataSerializer.Deserialize(scPayment.DestinationScriptPubKey.ToBytes());
-
-                    if (txDataResult.IsFailure)
-                        continue;
-
                     ContractTxData txData = txDataResult.Value;
 
                     // If the receipt is not available yet, we don't know how much gas was consumed so use the full gas budget.
