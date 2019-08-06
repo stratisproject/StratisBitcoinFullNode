@@ -202,24 +202,25 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public static IPEndPoint GetHandshakedEndPoint(INetworkPeer peer)
         {
+            // Initial best guess for address and port.
+            IPAddress address = peer.PeerEndPoint.Address.EnsureIPv6();
+            int port = peer.Inbound ? peer.Network.DefaultPort : peer.PeerEndPoint.Port;
+
             // Peers can suggest a routable address different from the one we received the connection on.
             IPEndPoint addressFrom = peer.PeerVersion?.AddressFrom.MapToIpv6();
 
             if (addressFrom != null && !addressFrom.Address.Equals(IPAddress.IPv6Any))
             {
-                // Give precedence to the verified PeerEndPoint if routable.
-                if (peer.PeerEndPoint.Address.IsRoutable(false) || !addressFrom.Address.IsRoutable(false))
-                    return new IPEndPoint(peer.PeerEndPoint.Address.EnsureIPv6(), addressFrom.Port);
-
-                // Use the address suggested by the peer.
-                return addressFrom;
+                // If the PeerEndPoint is not routable but the AddressFrom is then use the latter.
+                if (!peer.PeerEndPoint.Address.IsRoutable(false) && addressFrom.Address.IsRoutable(false))
+                    // Use the address suggested by the peer.
+                    return addressFrom;
+                else if (peer.Inbound)
+                    // Update port received from peer.
+                    port = addressFrom.Port;
             }
 
-            // Can't resolve port. Make a best guess.
-            if (peer.Inbound)
-                return new IPEndPoint(peer.PeerEndPoint.Address.EnsureIPv6(), peer.Network.DefaultPort);
-
-            return peer.PeerEndPoint.MapToIpv6();
+            return new IPEndPoint(address, port);
         }
 
         /// <inheritdoc />
@@ -231,22 +232,27 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc />
         public bool MatchLocalIPAddress(IPAddress ip, int? port = null)
         {
-            // For outbound peers use the proven address.
+            // Initial best guess for address and port.
             IPAddress compareAddress = this.PeerEndPoint.Address.EnsureIPv6();
-            int? comparePort = this.PeerEndPoint.Port;
 
-            // If its inbound we have to rely on the peer telling us its port number.
-            if (this.Inbound && port.HasValue)
+            if (port.HasValue)
             {
-                IPEndPoint addressFrom = this.PeerVersion?.AddressFrom.MapToIpv6();
+                int? comparePort = this.Inbound ? this.Network.DefaultPort : this.PeerEndPoint.Port;
 
-                if (addressFrom != null && !addressFrom.Address.Equals(IPAddress.IPv6Any))
-                    comparePort = addressFrom.Port;
-                else
-                    comparePort = this.Network.DefaultPort;
+                // If its inbound we have to rely on the peer telling us its port number.
+                if (this.Inbound)
+                {
+                    IPEndPoint addressFrom = this.PeerVersion?.AddressFrom.MapToIpv6();
+
+                    if (addressFrom != null && !addressFrom.Address.Equals(IPAddress.IPv6Any))
+                        comparePort = addressFrom.Port;
+                }
+
+                if (port != comparePort)
+                    return false;
             }
 
-            return compareAddress.Equals(ip.EnsureIPv6()) && (!port.HasValue || port == comparePort);
+            return compareAddress.Equals(ip.EnsureIPv6());
         }
 
         /// <inheritdoc />
