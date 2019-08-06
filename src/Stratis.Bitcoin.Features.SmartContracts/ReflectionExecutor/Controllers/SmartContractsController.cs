@@ -317,6 +317,33 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         }
 
         /// <summary>
+        /// Builds a transaction to transfer funds on a smart contract network.
+        /// </summary>
+        /// 
+        /// <param name="request">An object containing the necessary parameters to build the transaction.</param>
+        /// 
+        /// <returns>The build transaction hex.</returns>
+        [Route("build-transaction")]
+        [HttpPost]
+        public IActionResult BuildTransaction([FromBody] BuildContractTransactionRequest request)
+        {
+            if (!this.ModelState.IsValid)
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+
+            try
+            {
+                BuildContractTransactionResult result = this.smartContractTransactionService.BuildTx(request);
+
+                return this.Json(result.Response);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
         /// Builds a transaction to create a smart contract and then broadcasts the transaction to the network.
         /// If the deployment is successful, methods on the smart contract can be subsequently called.
         /// </summary>
