@@ -202,17 +202,23 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public static IPEndPoint GetHandshakedEndPoint(INetworkPeer peer)
         {
-            if (peer.Inbound && peer.State == NetworkPeerState.HandShaked)
+            // In-bound peers can suggest a routable address different from the one we received the connection on.
+            if (peer.Inbound)
             {
                 IPEndPoint addressFrom = peer.PeerVersion?.AddressFrom.MapToIpv6();
 
                 if (addressFrom != null && !addressFrom.Address.Equals(IPAddress.IPv6Any))
                 {
+                    // Give precedence to the verifiable address if routable.
                     if (peer.PeerEndPoint.Address.IsRoutable(false) || !addressFrom.Address.IsRoutable(false))
                         return new IPEndPoint(peer.PeerEndPoint.Address.EnsureIPv6(), addressFrom.Port);
 
+                    // Use the address suggested by the peer.
                     return addressFrom;
                 }
+
+                // Can't resolve port. Make a best guess.
+                return new IPEndPoint(peer.PeerEndPoint.Address.EnsureIPv6(), peer.Network.DefaultPort);
             }
 
             return peer.PeerEndPoint.MapToIpv6();
@@ -227,20 +233,22 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc />
         public bool MatchLocalIPAddress(IPAddress ip, int? port = null)
         {
+            // For outbound peers use the proven address.
             IPAddress compareAddress = this.PeerEndPoint.Address.EnsureIPv6();
             int? comparePort = this.PeerEndPoint.Port;
 
-            if (this.Inbound)
+            // If its inbound we have to rely on the peer telling us its port number.
+            if (this.Inbound && port.HasValue)
             {
                 IPEndPoint addressFrom = this.PeerVersion?.AddressFrom.MapToIpv6();
 
                 if (addressFrom != null && !addressFrom.Address.Equals(IPAddress.IPv6Any))
                     comparePort = addressFrom.Port;
                 else
-                    comparePort = null;
+                    comparePort = this.Network.DefaultPort;
             }
 
-            return compareAddress.Equals(ip.EnsureIPv6()) && (!port.HasValue || !comparePort.HasValue || port == comparePort);
+            return compareAddress.Equals(ip.EnsureIPv6()) && (!port.HasValue || port == comparePort);
         }
 
         /// <inheritdoc />
