@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     .ToList();
 
                 // Get all receipts in one transaction
-                IList<Receipt> receipts = this.receiptRepository.RetrieveMany(scTransactions.Select(x => x.TransactionId));
+                IList<Receipt> receipts = this.receiptRepository.RetrieveMany(scTransactions.Select(x => x.TransactionId).ToList());
 
                 for (int i = 0; i < scTransactions.Count; i++)
                 {
