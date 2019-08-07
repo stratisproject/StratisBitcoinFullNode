@@ -108,9 +108,8 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// Finds all withdrawal transactions with optional filtering by deposit id or transaction id.
         /// </summary>
         /// <param name="depositId">Filters by this deposit id if not <c>null</c>.</param>
-        /// <param name="sort">Sorts the results ascending according to earliest input UTXO.</param>
         /// <returns>The transaction data containing the withdrawal transaction.</returns>
-        List<(Transaction, IWithdrawal)> FindWithdrawalTransactions(uint256 depositId = null, bool sort = false);
+        List<(Transaction, IWithdrawal)> FindWithdrawalTransactions(uint256 depositId = null);
 
         /// <summary>
         /// Removes the withdrawal transaction(s) associated with the corresponding deposit id.
