@@ -2,24 +2,78 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Networks.Deployments;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
+    // TODO: This is also used in the block store integration tests, perhaps move it into the common namespace
+    /// <summary>
+    /// Used for recording messages coming into a test node. Does not respond to them in any way.
+    /// </summary>
+    internal class TestBehavior : NetworkPeerBehavior
+    {
+        public readonly Dictionary<string, List<IncomingMessage>> receivedMessageTracker = new Dictionary<string, List<IncomingMessage>>();
+
+        protected override void AttachCore()
+        {
+            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
+        }
+
+        protected override void DetachCore()
+        {
+            this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
+        }
+
+        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
+        {
+            try
+            {
+                await this.ProcessMessageAsync(peer, message).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+
+        private async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
+        {
+            if (!this.receivedMessageTracker.ContainsKey(message.Message.Payload.Command))
+                this.receivedMessageTracker[message.Message.Payload.Command] = new List<IncomingMessage>();
+
+            this.receivedMessageTracker[message.Message.Payload.Command].Add(message);
+        }
+
+        public override object Clone()
+        {
+            var res = new TestBehavior();
+
+            return res;
+        }
+    }
+
     public class SegWitTests
     {
         [Fact]
@@ -232,6 +286,121 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // We presume that the consensus rules are checking the actual validity of the commitment, we just ensure that it exists here.
                 Assert.NotNull(commitment);
+            }
+        }
+
+        [Fact]
+        public void CheckSegwitP2PSerialisationForWitnessNode()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode node = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).Start();
+                CoreNode listener = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).Start();
+
+                IConnectionManager listenerConnMan = listener.FullNode.NodeService<IConnectionManager>();
+                listenerConnMan.Parameters.TemplateBehaviors.Add(new TestBehavior());
+
+                // The listener node will have default settings, i.e. it should ask for witness data in P2P messages.
+                Assert.True(listenerConnMan.Parameters.Services.HasFlag(NetworkPeerServices.NODE_WITNESS));
+
+                TestHelper.Connect(listener, node);
+
+                // Mine a Segwit block on the first node.
+                var script = new Key().PubKey.WitHash.ScriptPubKey;
+                var miner = node.FullNode.NodeService<IPowMining>() as PowMining;
+                List<uint256> res = miner.GenerateBlocks(new ReserveScript(script), 1, int.MaxValue);
+                Block block = node.FullNode.ChainIndexer.GetHeader(res.First()).Block;
+                Script commitment = WitnessCommitmentsRule.GetWitnessCommitment(node.FullNode.Network, block);
+                Assert.NotNull(commitment);
+
+                var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+                TestBase.WaitLoop(() => listener.CreateRPCClient().GetBlockCount() >= 1, cancellationToken: cancellationToken);
+
+                // We need to capture a message on the witness-enabled destination node and see that it contains a block serialised with witness data.
+                INetworkPeer connectedPeer = listenerConnMan.ConnectedPeers.FindByEndpoint(node.Endpoint);
+                TestBehavior testBehavior = connectedPeer.Behavior<TestBehavior>();
+
+                var blockMessages = testBehavior.receivedMessageTracker["block"];
+                var blockReceived = blockMessages.First();
+
+                var receivedBlock = blockReceived.Message.Payload as BlockPayload;
+                var parsedBlock = receivedBlock.Obj;
+                var nonWitnessBlock = parsedBlock.WithOptions(listener.FullNode.Network.Consensus.ConsensusFactory, TransactionOptions.None);
+
+                Assert.True(parsedBlock.GetSerializedSize() > nonWitnessBlock.GetSerializedSize());
+            }
+        }
+
+        [Fact]
+        public void CheckSegwitP2PSerialisationForNonWitnessNode()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // We have to name the networks differently because the NBitcoin network registration won't allow two identical networks to coexist otherwise.
+                var network = new StratisRegTest();
+                network.SetPrivatePropertyValue("Name", "StratisRegTestWithDeployments");
+                Assert.NotNull(network.Consensus.BIP9Deployments[2]);
+
+                var networkNoBIP9 = new StratisRegTest();
+                networkNoBIP9.SetPrivatePropertyValue("Name", "StratisRegTestWithoutDeployments");
+                Assert.NotNull(networkNoBIP9.Consensus.BIP9Deployments[2]);
+
+                // Remove BIP9 deployments (i.e. segwit).
+                for (int i = 0; i < networkNoBIP9.Consensus.BIP9Deployments.Length; i++)
+                    networkNoBIP9.Consensus.BIP9Deployments[i] = null;
+
+                // Ensure the workaround had the desired effect.
+                Assert.Null(networkNoBIP9.Consensus.BIP9Deployments[2]);
+                Assert.NotNull(network.Consensus.BIP9Deployments[2]);
+
+                // Explicitly use new & separate instances of StratisRegTest because we modified the BIP9 deployments on one instance.
+                CoreNode node = builder.CreateStratisPosNode(network).Start();
+                CoreNode listener = builder.CreateStratisPosNode(networkNoBIP9).Start();
+
+                // Sanity check.
+                Assert.Null(listener.FullNode.Network.Consensus.BIP9Deployments[2]);
+                Assert.NotNull(node.FullNode.Network.Consensus.BIP9Deployments[2]);
+
+                // By disabling Segwit on the listener node we also prevent the WitnessCommitments rule from rejecting the mining node's blocks once we modify the listener's peer services.
+
+                IConnectionManager listenerConnMan = listener.FullNode.NodeService<IConnectionManager>();
+                listenerConnMan.Parameters.TemplateBehaviors.Add(new TestBehavior());
+
+                // Override the listener node's default settings, so that it will not ask for witness data in P2P messages.
+                listenerConnMan.Parameters.Services &= ~NetworkPeerServices.NODE_WITNESS;
+
+                TestHelper.Connect(listener, node);
+
+                // Mine a Segwit block on the first node. It should have commitment data as its settings have not been modified.
+                var script = new Key().PubKey.WitHash.ScriptPubKey;
+                var miner = node.FullNode.NodeService<IPowMining>() as PowMining;
+                List<uint256> res = miner.GenerateBlocks(new ReserveScript(script), 1, int.MaxValue);
+                Block block = node.FullNode.ChainIndexer.GetHeader(res.First()).Block;
+                Script commitment = WitnessCommitmentsRule.GetWitnessCommitment(node.FullNode.Network, block);
+                Assert.NotNull(commitment);
+
+                // The listener should sync the mined block without validation failures.
+                var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+                TestBase.WaitLoop(() => listener.CreateRPCClient().GetBlockCount() >= 1, cancellationToken: cancellationToken);
+
+                // We need to capture a message on the non-witness-enabled destination node and see that it contains a block serialised without witness data.
+                INetworkPeer connectedPeer = listenerConnMan.ConnectedPeers.FindByEndpoint(node.Endpoint);
+                TestBehavior testBehavior = connectedPeer.Behavior<TestBehavior>();
+
+                var blockMessages = testBehavior.receivedMessageTracker["block"];
+                var blockReceived = blockMessages.First();
+
+                var receivedBlock = blockReceived.Message.Payload as BlockPayload;
+                var parsedBlock = receivedBlock.Obj;
+
+                // The block mined on the mining node (witness) should be bigger than the one received by the listener (no witness).
+                Assert.True(block.GetSerializedSize() > parsedBlock.GetSerializedSize());
+
+                // Reserialise the received block without witness data (this should have no effect on its size).
+                var nonWitnessBlock = parsedBlock.WithOptions(listener.FullNode.Network.Consensus.ConsensusFactory, TransactionOptions.None);
+
+                // We received a block without witness data in the first place.
+                Assert.True(parsedBlock.GetSerializedSize() == nonWitnessBlock.GetSerializedSize());
             }
         }
     }
