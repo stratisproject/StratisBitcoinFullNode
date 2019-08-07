@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using NBitcoin;
 using NBitcoin.DataEncoders;
@@ -6,6 +8,9 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
+using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks.Deployments;
@@ -164,6 +169,69 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Check that segwit got activated at genesis.
                 Assert.Equal(ThresholdState.Active, segwitActiveState.GetValue((int)BitcoinBIP9Deployments.Segwit));
+            }
+        }
+
+        [Fact]
+        public void MineSegwitBlock()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Even though we are mining, we still want to use PoS consensus rules.
+                CoreNode node = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).Start();
+
+                // Create a Segwit P2WPKH scriptPubKey.
+                var script = new Key().PubKey.WitHash.ScriptPubKey;
+
+                var miner = node.FullNode.NodeService<IPowMining>() as PowMining;
+                List<uint256> res = miner.GenerateBlocks(new ReserveScript(script), 1, int.MaxValue);
+
+                // Retrieve mined block.
+                Block block = node.FullNode.ChainIndexer.GetHeader(res.First()).Block;
+
+                // Confirm that the mined block is Segwit-ted.
+                Script commitment = WitnessCommitmentsRule.GetWitnessCommitment(node.FullNode.Network, block);
+
+                // We presume that the consensus rules are checking the actual validity of the commitment, we just ensure that it exists here.
+                Assert.NotNull(commitment);
+            }
+        }
+
+        [Fact]
+        public void StakeSegwitBlock()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Even though we are mining, we still want to use PoS consensus rules.
+                CoreNode node = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).WithWallet().Start();
+
+                // Need the premine to be past coinbase maturity so that we can stake with it.
+                RPCClient rpc = node.CreateRPCClient();
+                rpc.Generate(12);
+
+                var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetBlockCount() >= 12, cancellationToken: cancellationToken);
+
+                // Now need to start staking.
+                var staker = node.FullNode.NodeService<IPosMinting>() as PosMinting;
+
+                staker.Stake(new WalletSecret()
+                {
+                    WalletName = node.WalletName,
+                    WalletPassword = node.WalletPassword
+                });
+
+                // Wait for the chain height to increase.
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetBlockCount() >= 13, cancellationToken: cancellationToken);
+
+                // Get the last staked block.
+                Block block = node.FullNode.ChainIndexer.Tip.Block;
+
+                // Confirm that the staked block is Segwit-ted.
+                Script commitment = WitnessCommitmentsRule.GetWitnessCommitment(node.FullNode.Network, block);
+
+                // We presume that the consensus rules are checking the actual validity of the commitment, we just ensure that it exists here.
+                Assert.NotNull(commitment);
             }
         }
     }
