@@ -14,7 +14,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
-using Stratis.Features.FederatedPeg.CounterChain;
+using Stratis.Features.Collateral.CounterChain;
 using Stratis.Features.FederatedPeg.Events;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
