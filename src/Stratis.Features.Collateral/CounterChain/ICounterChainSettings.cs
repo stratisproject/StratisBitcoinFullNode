@@ -1,6 +1,6 @@
 ﻿using NBitcoin;
 
-namespace Stratis.Features.FederatedPeg.Interfaces
+namespace Stratis.Features.Collateral.CounterChain
 {
     public interface ICounterChainSettings
     {
