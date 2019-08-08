@@ -61,6 +61,10 @@ rm "src\Stratis.Bitcoin.Networks\bin\debug\" -Recurse -Force
 dotnet pack src\Stratis.Bitcoin.Networks --configuration Debug --include-source --include-symbols
 dotnet nuget push "src\Stratis.Bitcoin.Networks\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
 
+rm "src\Stratis.Features.FederatedPeg\bin\debug\" -Recurse -Force
+dotnet pack src\Stratis.Features.FederatedPeg --configuration Debug --include-source --include-symbols
+dotnet nuget push "src\Stratis.Features.FederatedPeg\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
+
 # TESTS PROJECTS
 rm "src\Stratis.Bitcoin.IntegrationTests.Common\bin\debug\" -Recurse -Force
 dotnet pack src\Stratis.Bitcoin.IntegrationTests.Common --configuration Debug --include-source --include-symbols
@@ -80,8 +84,9 @@ dotnet nuget push "src\Stratis.Bitcoin.Features.PoA.IntegrationTests.Common\bin\
 
 # TOOLS PROJECTS
 
-rm "src\FodyNlogAdapter\bin\debug\" -Recurse -Force
-dotnet pack src\FodyNlogAdapter --configuration Debug --include-source --include-symbols 
-dotnet nuget push "src\FodyNlogAdapter\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
+#FodyNlogAdapter is currently only in master [version 3.0.5 and up]
+#rm "src\FodyNlogAdapter\bin\debug\" -Recurse -Force
+#dotnet pack src\FodyNlogAdapter --configuration Debug --include-source --include-symbols 
+#dotnet nuget push "src\FodyNlogAdapter\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
 
 PAUSE
