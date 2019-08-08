@@ -22,14 +22,13 @@ using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.SmartContracts;
-using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Features.FederatedPeg.Collateral;
+using Stratis.Features.Collateral;
+using Stratis.Features.Collateral.CounterChain;
 using Stratis.Features.FederatedPeg.Controllers;
-using Stratis.Features.FederatedPeg.CounterChain;
 using Stratis.Features.FederatedPeg.InputConsolidation;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
@@ -180,7 +179,7 @@ namespace Stratis.Features.FederatedPeg
         /// </summary>
         private void CheckConfiguration()
         {
-            var wallet = this.federationWalletManager.GetWallet();
+            FederationWallet wallet = this.federationWalletManager.GetWallet();
 
             if (wallet.MultiSigAddress.RedeemScript != this.federatedPegSettings.MultiSigRedeemScript)
             {
@@ -202,6 +201,7 @@ namespace Stratis.Features.FederatedPeg
             this.crossChainTransferStore.Dispose();
         }
 
+        [NoTrace]
         private void AddInlineStats(StringBuilder benchLogs)
         {
             if (this.federationWalletManager == null)
@@ -217,6 +217,7 @@ namespace Stratis.Features.FederatedPeg
                                  (federationWallet != null ? (" Fed.Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
         }
 
+        [NoTrace]
         private void AddComponentStats(StringBuilder benchLog)
         {
             try
@@ -335,22 +336,24 @@ namespace Stratis.Features.FederatedPeg
             return benchLog.ToString();
         }
 
+        [NoTrace]
         private void AddBenchmarkLine(StringBuilder benchLog, (string Value, int ValuePadding)[] items, int maxItemsPerLine = int.MaxValue)
         {
-            if (items != null)
+            if (items == null)
+                return;
+
+            int itemsAdded = 0;
+            foreach ((string Value, int ValuePadding) in items)
             {
-                int itemsAdded = 0;
-                foreach (var item in items)
+                if (itemsAdded++ >= maxItemsPerLine)
                 {
-                    if (itemsAdded++ >= maxItemsPerLine)
-                    {
-                        benchLog.AppendLine();
-                        itemsAdded = 1;
-                    }
-                    benchLog.Append(item.Value.PadRight(item.ValuePadding));
+                    benchLog.AppendLine();
+                    itemsAdded = 1;
                 }
-                benchLog.AppendLine();
+                benchLog.Append(Value.PadRight(ValuePadding));
             }
+
+            benchLog.AppendLine();
         }
     }
 
@@ -359,6 +362,7 @@ namespace Stratis.Features.FederatedPeg
     /// </summary>
     public static class FullNodeBuilderSidechainRuntimeFeatureExtension
     {
+        [NoTrace]
         public static IFullNodeBuilder AddFederatedPeg(this IFullNodeBuilder fullNodeBuilder, IFederatedPegOptions federatedPegOptions = null)
         {
             LoggingConfiguration.RegisterFeatureNamespace<FederatedPegFeature>(
@@ -445,31 +449,6 @@ namespace Stratis.Features.FederatedPeg
                     // Consensus Rules
                     services.AddSingleton<PoAConsensusRuleEngine>();
                 });
-            });
-
-            return fullNodeBuilder;
-        }
-
-        /// <summary>
-        /// Adds mining to the smart contract node when on a proof-of-authority network with collateral enabled.
-        /// </summary>
-        public static IFullNodeBuilder UseSmartContractCollateralPoAMining(this IFullNodeBuilder fullNodeBuilder)
-        {
-            fullNodeBuilder.ConfigureFeature(features =>
-            {
-                features
-                    .AddFeature<PoAFeature>()
-                    .FeatureServices(services =>
-                    {
-                        services.AddSingleton<IFederationManager, FederationManager>();
-                        services.AddSingleton<PoABlockHeaderValidator>();
-                        services.AddSingleton<IPoAMiner, CollateralPoAMiner>();
-                        services.AddSingleton<PoAMinerSettings>();
-                        services.AddSingleton<MinerSettings>();
-                        services.AddSingleton<ISlotsManager, SlotsManager>();
-                        services.AddSingleton<BlockDefinition, SmartContractPoABlockDefinition>();
-                        services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();
-                    });
             });
 
             return fullNodeBuilder;
