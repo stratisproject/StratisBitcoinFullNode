@@ -4,9 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
-using Stratis.Features.FederatedPeg.Interfaces;
 
-namespace Stratis.Features.FederatedPeg.CounterChain
+namespace Stratis.Features.Collateral.CounterChain
 {
     /// <summary>
     /// A pre-requisite for other sidechains-related features.

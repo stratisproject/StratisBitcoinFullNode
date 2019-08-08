@@ -247,56 +247,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 // Miner B = 13
                 TestHelper.MineBlocks(minerA, 1, false);
                 TestHelper.MineBlocks(minerB, 1, false);
+
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(syncer, 13));
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(minerA, 13));
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(minerB, 13));
-
-                //TestHelper.MineBlocks(minerB, 1);
-
-                //// Disconnect syncer from miner B
-                //TestHelper.DisableBlockPropagation(syncer, minerB);
-
-                //// MinerA = 15
-                //// MinerB = 10
-                //// Syncer = 15
-                //TestHelper.MineBlocks(minerA, 5);
-                //TestBase.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
-
-                //// MinerA = 15
-                //// MinerB = 15
-                //// Syncer = 15
-                //TestHelper.EnableBlockPropagation(syncer, minerB);
-                ////TestHelper.Connect(syncer, minerB);
-
-                //// Disconnect syncer from miner A
-                //TestHelper.DisableBlockPropagation(syncer, minerA);
-                ////TestHelper.Disconnect(syncer, minerA);
-
-                //// MinerA = 15
-                //// MinerB = 25
-                //// Syncer = 25
-                //TestHelper.MineBlocks(minerB, 10);
-                //TestBase.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
-
-                //// MinerA = 35
-                //// MinerB = 25
-                //// Syncer = 25
-                //TestHelper.MineBlocks(minerA, 20);
-                //TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 35));
-                //TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerB, 25));
-                //TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(syncer, 25));
-
-                //TestHelper.EnableBlockPropagation(syncer, minerA);
-
-                ////TestHelper.Connect(syncer, minerA);
-
-                //Assert.True(TestHelper.IsNodeSyncedAtHeight(syncer, 35));
-                //Assert.True(TestHelper.IsNodeSyncedAtHeight(minerA, 35));
-                //Assert.True(TestHelper.IsNodeSyncedAtHeight(minerB, 35));
-
-                //TestBase.WaitLoop(() => minerA.FullNode.NodeService<IAddressIndexer>().IndexerTip.Height == 35);
-                //TestBase.WaitLoop(() => minerB.FullNode.NodeService<IAddressIndexer>().IndexerTip.Height == 35);
-                //TestBase.WaitLoop(() => syncer.FullNode.NodeService<IAddressIndexer>().IndexerTip.Height == 35);
             }
         }
     }
