@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
 
-namespace Stratis.Features.FederatedPeg.Collateral
+namespace Stratis.Features.Collateral
 {
     public class SmartContractCollateralPoARuleRegistration : SmartContractPoARuleRegistration
     {
