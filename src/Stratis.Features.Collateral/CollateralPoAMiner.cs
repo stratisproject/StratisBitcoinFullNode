@@ -16,7 +16,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Features.FederatedPeg.Collateral
+namespace Stratis.Features.Collateral
 {
     /// <summary>
     /// Collateral aware version of <see cref="PoAMiner"/>. At the block template creation it will check our own collateral at a commitment height which is

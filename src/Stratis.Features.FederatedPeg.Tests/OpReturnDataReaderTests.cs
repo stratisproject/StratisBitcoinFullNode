@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
 using Stratis.Bitcoin.Networks;
-using Stratis.Features.FederatedPeg.CounterChain;
+using Stratis.Features.Collateral.CounterChain;
 using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
 using Xunit;
