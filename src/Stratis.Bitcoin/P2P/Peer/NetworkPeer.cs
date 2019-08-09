@@ -523,7 +523,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             // Creates a context that can be used to postpone / flag disconnect.
-            bool iCreatedContext = this.onDisconnectedAsyncContext.Value != null;
+            bool iCreatedContext = this.onDisconnectedAsyncContext.Value == null;
             if (iCreatedContext)
                 this.onDisconnectedAsyncContext.Value = new DisconnectedExecutionAsyncContext();
 
