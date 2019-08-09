@@ -369,9 +369,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             try
             {
-                BuildContractTransactionResult result = this.smartContractTransactionService.EstimateFee(request);
+                EstimateFeeResult result = this.smartContractTransactionService.EstimateFee(request);
 
-                return this.Json(result.Response.Fee);
+                return this.Json(result.Fee);
             }
             catch (Exception e)
             {

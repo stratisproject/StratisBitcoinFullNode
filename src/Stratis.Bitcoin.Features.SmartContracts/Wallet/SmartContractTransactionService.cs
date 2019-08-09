@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.stateRoot = stateRoot;
         }
 
-        public BuildContractTransactionResult EstimateFee(ScTxFeeEstimateRequest request)
+        public EstimateFeeResult EstimateFee(ScTxFeeEstimateRequest request)
         {
             // Sign: false
             // FeeType: feetype
@@ -67,22 +67,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             HdAccount account = wallet.GetAccount(request.AccountName);
 
             if (account == null)
-                return BuildContractTransactionResult.Failure(AccountNotInWalletError, $"No account with the name '{request.AccountName}' could be found.");
+                return EstimateFeeResult.Failure(AccountNotInWalletError, $"No account with the name '{request.AccountName}' could be found.");
 
             HdAddress senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
 
             if (senderAddress == null)
             {
-                return BuildContractTransactionResult.Failure(SenderNotInWalletError, $"The given address {request.Sender} was not found in the wallet.");
+                return EstimateFeeResult.Failure(SenderNotInWalletError, $"The given address {request.Sender} was not found in the wallet.");
             }
 
             if (!this.CheckBalance(senderAddress.Address))
-                return BuildContractTransactionResult.Failure(InsufficientBalanceError, SenderNoBalanceError);
+                return EstimateFeeResult.Failure(InsufficientBalanceError, SenderNoBalanceError);
 
             List<OutPoint> selectedInputs = this.SelectInputs(request.WalletName, request.Sender, request.Outpoints);
 
             if (!selectedInputs.Any())
-                return BuildContractTransactionResult.Failure(InvalidOutpointsError, "Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address.");
+                return EstimateFeeResult.Failure(InvalidOutpointsError, "Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address.");
 
             var recipients = new List<Recipient>();
             foreach (RecipientModel recipientModel in request.Recipients)
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
                 if (this.stateRoot.IsExist(address))
                 {
-                    return BuildContractTransactionResult.Failure(TransferFundsToContractError, $"The recipient address {recipientModel.DestinationAddress} is a contract. Transferring funds directly to a contract is not supported.");
+                    return EstimateFeeResult.Failure(TransferFundsToContractError, $"The recipient address {recipientModel.DestinationAddress} is a contract. Transferring funds directly to a contract is not supported.");
                 }
 
                 recipients.Add(new Recipient
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
             Money fee = this.walletTransactionHandler.EstimateFee(context);
 
-            return BuildContractTransactionResult.Success(new WalletBuildTransactionModel { Fee = fee });
+            return EstimateFeeResult.Success(fee);
         }
 
         public BuildContractTransactionResult BuildTx(BuildContractTransactionRequest request)

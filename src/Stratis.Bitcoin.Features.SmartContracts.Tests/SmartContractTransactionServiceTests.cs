@@ -787,7 +787,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.walletTransactionHandler.Setup(x => x.BuildTransaction(It.IsAny<TransactionBuildContext>()))
                 .Returns(new Transaction());
 
-            BuildContractTransactionResult result = service.EstimateFee(request);
+            EstimateFeeResult result = service.EstimateFee(request);
 
             // Check that the transaction builder is invoked, and that we:
             // - Ignore shuffleOutputs,
