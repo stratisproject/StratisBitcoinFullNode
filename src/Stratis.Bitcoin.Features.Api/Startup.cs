@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -76,6 +77,12 @@ namespace Stratis.Bitcoin.Features.Api
             {
                 // reporting api versions will return the headers "api-supported-versions" and "api-deprecated-versions"
                 options.ReportApiVersions = true;
+
+                // Only set versions via URL path.
+                options.ApiVersionReader = new UrlSegmentApiVersionReader();
+
+                // When no API, use v1.
+                options.AssumeDefaultVersionWhenUnspecified = true;
             });
 
             // Add the versioned API explorer, which adds the IApiVersionDescriptionProvider service and allows Swagger integration.
@@ -85,8 +92,8 @@ namespace Stratis.Bitcoin.Features.Api
                     // Format the version as "'v'major[.minor][-status]"
                     options.GroupNameFormat = "'v'VVV";
 
-                    //// Version by url segment. TODO: Check if this is the right thing to do.
-                    //options.SubstituteApiVersionInUrl = true;
+                    // Substitute in the version in the URLs as they appear in the interface
+                    options.SubstituteApiVersionInUrl = true;
                 });
 
             // Add custom Options injectable for Swagger. Necessary because it is injected with the IApiVersionDescriptionProvider service.
@@ -122,7 +129,7 @@ namespace Stratis.Bitcoin.Features.Api
 
                 // Register all ongoing versions.
                 // build a swagger endpoint for each discovered API version
-                foreach (var description in provider.ApiVersionDescriptions)
+                foreach (ApiVersionDescription description in provider.ApiVersionDescriptions)
                 {
                     c.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", description.GroupName.ToUpperInvariant());
                 }

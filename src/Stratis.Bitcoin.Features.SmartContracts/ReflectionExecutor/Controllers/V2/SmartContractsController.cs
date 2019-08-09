@@ -3,15 +3,15 @@
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers.V2
 {
 
-    [ApiVersion("2")]
+    [ApiVersion("2.0-dev")]
     [Route("api/v{version:apiVersion}/[controller]")]
     public class SmartContractsController : Controller
     {
-        [Route("test")]
+        [Route("demo")]
         [HttpGet]
-        public IActionResult Test()
+        public IActionResult Demo()
         {
-            return this.Json("Working!");
+            return this.Json("This endpoint demonstrates how easy it is to set up a version 2 API.");
         }
     }
 }

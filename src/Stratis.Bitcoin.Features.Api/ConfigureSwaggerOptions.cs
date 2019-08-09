@@ -34,12 +34,7 @@ namespace Stratis.Bitcoin.Features.Api
         /// <inheritdoc />
         public void Configure(SwaggerGenOptions options)
         {
-            // First add our original API version. Consider this separate from the versioning process for now 
-            // as we don't want to mess with the original urls etc.
-            // options.SwaggerDoc("v1", new Info { Title = "Stratis.Bitcoin.Api", Version = "v1" });
-
-            // add a swagger document for each discovered API version
-            // note: you might choose to skip or document deprecated API versions differently
+            // Add a swagger document for each discovered API version
             foreach (ApiVersionDescription description in this.provider.ApiVersionDescriptions)
             {
                 options.SwaggerDoc(description.GroupName, CreateInfoForApiVersion(description));
@@ -67,10 +62,15 @@ namespace Stratis.Bitcoin.Features.Api
         {
             var info = new Info()
             {
-                Title = "Sample API",
+                Title = "Stratis Node API",
                 Version = description.ApiVersion.ToString(),
-                Description = "A sample application with Swagger, Swashbuckle, and API versioning."
+                Description = "Access to the Stratis Node's core features."
             };
+
+            if (info.Version.Contains("dev"))
+            {
+                info.Description += " This version of the API is in development and subject to change. Use an earlier version for production applications.";
+            }
 
             if (description.IsDeprecated)
             {

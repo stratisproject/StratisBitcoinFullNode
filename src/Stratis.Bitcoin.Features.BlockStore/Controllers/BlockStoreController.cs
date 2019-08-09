@@ -24,6 +24,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
     }
 
     /// <summary>Controller providing operations on a blockstore.</summary>
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public class BlockStoreController : Controller
     {

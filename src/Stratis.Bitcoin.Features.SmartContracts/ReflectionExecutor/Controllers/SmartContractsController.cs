@@ -31,7 +31,7 @@ using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 {
-    [ApiVersionNeutral]
+    [ApiVersion("1.0")]
     [Route("api/[controller]")]
     public class SmartContractsController : Controller
     {
