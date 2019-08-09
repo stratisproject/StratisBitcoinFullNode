@@ -1,0 +1,52 @@
+namespace Stratis.Bitcoin.Features.SignalR.Controllers
+{
+    using System;
+    using System.Net;
+    using Microsoft.AspNetCore.Mvc;
+    using Microsoft.Extensions.Logging;
+    using Stratis.Bitcoin.Utilities;
+    using Stratis.Bitcoin.Utilities.JsonErrors;
+
+    /// <summary>
+    /// Controller for connecting to SignalR.
+    /// </summary>
+    [Route("api/[controller]")]
+    public class SignalRController : Controller
+    {
+        private readonly SignalRSettings signalRSettings;
+        private ILogger logger;
+
+        public SignalRController(SignalRSettings signalRSettings, ILoggerFactory loggerFactory)
+        {
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(signalRSettings, nameof(signalRSettings));
+
+            this.signalRSettings = signalRSettings;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+
+        /// <summary>
+        /// Returns SignalR Connection Info.
+        /// </summary>
+        /// <returns>Returns SignalR Connection Info as Json {SignalRUri,SignalPort}</returns>
+        [Route("getConnectionInfo")]
+        [HttpPost]
+        public IActionResult GetConnectionInfo()
+        {
+            try
+            {
+                return this.Json(new
+                {
+                    this.signalRSettings.SignalRUri,
+                    this.signalRSettings.SignalPort
+                });
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+    }
+}
