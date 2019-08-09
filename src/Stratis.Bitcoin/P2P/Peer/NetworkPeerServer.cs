@@ -139,8 +139,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 while (!this.serverCancel.IsCancellationRequested)
                 {
                     TcpClient tcpClient = await this.tcpListener.AcceptTcpClientAsync()
-                        .WithCancellationAsync(this.serverCancel.Token)
-                        .ConfigureAwait(false);
+                        .WithCancellationAsync(this.serverCancel.Token);
 
                     (bool successful, string reason) connectionAttempt = this.AllowClientConnection(tcpClient);
                     if (!connectionAttempt.successful)
