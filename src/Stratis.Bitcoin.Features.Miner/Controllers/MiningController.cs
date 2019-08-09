@@ -20,6 +20,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
     /// <summary>
     /// API controller for calls related to PoW mining and PoS minting.
     /// </summary>
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public class MiningController : Controller
     {

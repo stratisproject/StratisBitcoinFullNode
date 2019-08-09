@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -9,6 +10,7 @@ using Stratis.Bitcoin.Interfaces;
 namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
 {
     /// <summary> All functionality is in WalletRPCController, just inherit the functionality in this feature.</summary>
+    [ApiVersion("1")]
     public class ColdStakingWalletRPCController : WalletRPCController
     {
         public ColdStakingWalletRPCController(

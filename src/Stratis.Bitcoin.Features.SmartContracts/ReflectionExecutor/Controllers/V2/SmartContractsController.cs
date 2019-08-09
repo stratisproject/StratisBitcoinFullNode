@@ -7,6 +7,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
     [Route("api/v{version:apiVersion}/[controller]")]
     public class SmartContractsController : Controller
     {
+
+        // Note that it's also possible to have v2 calls on older controllers. See https://github.com/Microsoft/aspnet-api-versioning/wiki/Versioning-via-the-URL-Path
+
         [Route("demo")]
         [HttpGet]
         public IActionResult Demo()

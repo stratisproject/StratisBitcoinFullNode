@@ -16,6 +16,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
     /// <summary>
     /// RPC controller for calls related to PoW mining and PoS minting.
     /// </summary>
+    [ApiVersion("1")]
     [Controller]
     public class MiningRpcController : FeatureController
     {

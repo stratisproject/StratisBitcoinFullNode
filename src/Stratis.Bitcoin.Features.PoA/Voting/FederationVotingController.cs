@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Utilities.ModelStateErrors;
 
 namespace Stratis.Bitcoin.Features.PoA.Voting
 {
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public class FederationVotingController : Controller
     {

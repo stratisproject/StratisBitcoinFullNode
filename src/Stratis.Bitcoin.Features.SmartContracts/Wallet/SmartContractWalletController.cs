@@ -23,6 +23,7 @@ using State = Stratis.Bitcoin.Features.Wallet.Broadcasting.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public sealed class SmartContractWalletController : Controller
     {

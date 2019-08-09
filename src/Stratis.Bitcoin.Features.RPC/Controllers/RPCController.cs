@@ -17,6 +17,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
     /// <summary>
     /// Controller providing API operations on the RPC feature.
     /// </summary>
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public class RPCController : Controller
     {
