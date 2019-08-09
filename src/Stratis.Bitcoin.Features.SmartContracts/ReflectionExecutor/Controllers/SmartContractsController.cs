@@ -355,6 +355,37 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         }
 
         /// <summary>
+        /// Builds a transaction to transfer funds on a smart contract network.
+        /// </summary>
+        /// 
+        /// <param name="request">An object containing the necessary parameters to build the transaction.</param>
+        /// 
+        /// <returns>The build transaction hex.</returns>
+        [Route("estimate-fee")]
+        [HttpPost]
+        public IActionResult EstimateFee([FromBody] ScTxFeeEstimateRequest request)
+        {
+            // Can't use this request because a password is required.
+            if (!this.ModelState.IsValid)
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+
+            try
+            {
+                // sign: false
+                // fee: null
+                // feetype: medium
+                BuildContractTransactionResult result = this.smartContractTransactionService.EstimateFee(request);
+
+                return this.Json(result.Response.Fee);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
         /// Builds a transaction to create a smart contract and then broadcasts the transaction to the network.
         /// If the deployment is successful, methods on the smart contract can be subsequently called.
         /// </summary>

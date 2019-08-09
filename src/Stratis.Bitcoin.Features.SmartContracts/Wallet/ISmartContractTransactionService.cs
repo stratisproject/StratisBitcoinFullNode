@@ -5,6 +5,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
     public interface ISmartContractTransactionService
     {
+        BuildContractTransactionResult EstimateFee(ScTxFeeEstimateRequest request);
         BuildContractTransactionResult BuildTx(BuildContractTransactionRequest request);
         BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request);
         BuildCreateContractTransactionResponse BuildCreateTx(BuildCreateContractTransactionRequest request);
