@@ -797,7 +797,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // - Set the fee type correctly
             // - Set sign to false
             // - Set transaction fee to null
-            this.walletTransactionHandler.Verify(w => w.BuildTransaction(It.Is<TransactionBuildContext>(context =>
+            this.walletTransactionHandler.Verify(w => w.EstimateFee(It.Is<TransactionBuildContext>(context =>
                 context.AllowOtherInputs == false &&
                 context.Shuffle == false &&
                 context.SelectedInputs.All(i => outputs.Select(o => o.Transaction.Id).Contains(i.Hash)) &&
