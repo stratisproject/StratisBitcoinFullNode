@@ -12,7 +12,7 @@
     <DebugType>Full</DebugType>
     <CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
     <Authors>Stratis Group Ltd.</Authors>
-    <Version>1.0.2.0-beta</Version>
+    <Version>3.0.6.0-beta</Version>
   </PropertyGroup>
 
   <ItemGroup>
