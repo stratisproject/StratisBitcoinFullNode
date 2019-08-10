@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.PoA.Behaviors
                 }
             }
 
-            this.logger.LogTrace("{0} headers were selected for sending, last one is '{1}'.", headersPayload.Headers.Count, headersPayload.Headers.LastOrDefault()?.GetHash());
+            this.logger.LogDebug("{0} headers were selected for sending, last one is '{1}'.", headersPayload.Headers.Count, headersPayload.Headers.LastOrDefault()?.GetHash());
 
             return headersPayload;
         }
