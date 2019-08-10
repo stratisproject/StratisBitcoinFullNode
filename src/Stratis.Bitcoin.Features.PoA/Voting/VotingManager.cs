@@ -10,6 +10,7 @@ using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.PoA.Voting
 {
@@ -78,7 +79,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
             this.blockDisconnectedSubscription = this.signals.Subscribe<BlockDisconnected>(this.OnBlockDisconnected);
 
-            this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1200);
+            this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name, 1200);
 
             this.isInitialized = true;
             this.logger.LogDebug("VotingManager initialized.");
@@ -99,6 +100,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             lock (this.locker)
             {
                 this.scheduledVotingData.Add(votingData);
+
+                this.CleanFinishedPollsLocked();
             }
 
             this.logger.LogDebug("Vote was scheduled with key: {0}.", votingData.Key);
@@ -111,6 +114,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             lock (this.locker)
             {
+                this.CleanFinishedPollsLocked();
+
                 return new List<VotingData>(this.scheduledVotingData);
             }
         }
@@ -123,6 +128,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             lock (this.locker)
             {
+                this.CleanFinishedPollsLocked();
+
                 List<VotingData> votingData = this.scheduledVotingData;
 
                 this.scheduledVotingData = new List<VotingData>();
@@ -131,6 +138,27 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                     this.logger.LogDebug("{0} scheduled votes were taken.", votingData.Count);
 
                 return votingData;
+            }
+        }
+
+        /// <summary>Checks pending polls against finished polls and removes pending polls that will make no difference and basically are redundant.</summary>
+        /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
+        private void CleanFinishedPollsLocked()
+        {
+            // We take polls that are not pending (collected enough votes in favor) but not executed yet (maxReorg blocks
+            // didn't pass since the vote that made the poll pass). We can't just take not pending polls because of the
+            // following scenario: federation adds a hash or fed member or does any other revertable action, then reverts
+            // the action (removes the hash) and then reapplies it again. To allow for this scenario we have to exclude
+            // executed polls here.
+            List<Poll> finishedPolls = this.polls.Where(x => !x.IsPending && !x.IsExecuted).ToList();
+
+            for (int i = this.scheduledVotingData.Count - 1; i >= 0; i--)
+            {
+                VotingData currentScheduledData = this.scheduledVotingData[i];
+
+                // Remove scheduled voting data that can be found in finished polls that were not yet executed.
+                if (finishedPolls.Any(x => x.VotingData == currentScheduledData))
+                    this.scheduledVotingData.RemoveAt(i);
             }
         }
 
@@ -273,8 +301,14 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             {
                 foreach (VotingData votingData in votingDataList)
                 {
-                    // Poll that was finished in the block being disconnected.
-                    Poll targetPoll = this.polls.Single(x => x.VotingData == votingData);
+                    // If the poll is pending, that's the one we want. There should be maximum 1 of these.
+                    Poll targetPoll = this.polls.SingleOrDefault(x => x.VotingData == votingData && x.IsPending);
+
+                    // Otherwise, get the most recent poll. There could currently be unlimited of these, though they're harmless.
+                    if (targetPoll == null)
+                    {
+                        targetPoll = this.polls.Last(x => x.VotingData == votingData);
+                    }
 
                     this.logger.LogDebug("Reverting poll voting in favor: '{0}'.", targetPoll);
 
@@ -301,6 +335,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        [NoTrace]
         private void AddComponentStats(StringBuilder log)
         {
             log.AppendLine();
@@ -313,6 +348,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        [NoTrace]
         private void EnsureInitialized()
         {
             if (!this.isInitialized)

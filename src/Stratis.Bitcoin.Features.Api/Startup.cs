@@ -11,8 +11,10 @@ namespace Stratis.Bitcoin.Features.Api
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env)
+        public Startup(IHostingEnvironment env, IFullNode fullNode)
         {
+            this.fullNode = fullNode;
+
             IConfigurationBuilder builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
@@ -21,6 +23,8 @@ namespace Stratis.Bitcoin.Features.Api
 
             this.Configuration = builder.Build();
         }
+
+        private IFullNode fullNode;
 
         public IConfigurationRoot Configuration { get; }
 
@@ -63,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Api
                 })
                 // add serializers for NBitcoin objects
                 .AddJsonOptions(options => Utilities.JsonConverters.Serializer.RegisterFrontConverters(options.SerializerSettings))
-                .AddControllers(services);
+                .AddControllers(this.fullNode.Services.Features, services);
 
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(setup =>
@@ -96,6 +100,9 @@ namespace Stratis.Bitcoin.Features.Api
             loggerFactory.AddDebug();
 
             app.UseCors("CorsPolicy");
+
+            // Register this before MVC and Swagger.
+            app.UseMiddleware<NoCacheMiddleware>();
 
             app.UseMvc();
 

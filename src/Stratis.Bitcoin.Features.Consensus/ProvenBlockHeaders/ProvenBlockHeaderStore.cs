@@ -108,8 +108,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.Cache = new MemorySizeCache<int, ProvenBlockHeader>(this.MemoryCacheSizeLimitInBytes);
 
             this.performanceCounter = new BackendPerformanceCounter(dateTimeProvider);
-            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark);
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
+            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, this.GetType().Name);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name);
         }
 
         /// <inheritdoc />
@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                     if (tip == null)
                     {
-                        this.logger.LogTrace("[TIP_NOT_FOUND]:{0}", highestHeader);
+                        this.logger.LogDebug("[TIP_NOT_FOUND]:{0}", highestHeader);
                         throw new ProvenBlockHeaderException($"{highestHeader} was not found in the store.");
                     }
                 }
@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public void AddToPendingBatch(ProvenBlockHeader provenBlockHeader, HashHeightPair newTip)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(provenBlockHeader), provenBlockHeader, nameof(newTip), newTip);
+            this.logger.LogDebug("({0}:'{1}',{2}:'{3}')", nameof(provenBlockHeader), provenBlockHeader, nameof(newTip), newTip);
 
             Guard.Assert(provenBlockHeader.GetHash() == newTip.Hash);
 

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -291,7 +292,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             if (!this.ModelState.IsValid)
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
-            return this.Json(this.smartContractTransactionService.BuildCreateTx(request));
+            BuildCreateContractTransactionResponse response = this.smartContractTransactionService.BuildCreateTx(request);
+
+            if (!response.Success)
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, response.Message, string.Empty);
+
+            return this.Json(response);
         }
 
         /// <summary>
@@ -313,7 +319,39 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             if (!this.ModelState.IsValid)
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
-            return this.Json(this.smartContractTransactionService.BuildCallTx(request));
+            var response = this.smartContractTransactionService.BuildCallTx(request);
+
+            if (!response.Success)
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, response.Message, string.Empty);
+
+            return this.Json(response);
+        }
+
+        /// <summary>
+        /// Builds a transaction to transfer funds on a smart contract network.
+        /// </summary>
+        /// 
+        /// <param name="request">An object containing the necessary parameters to build the transaction.</param>
+        /// 
+        /// <returns>The build transaction hex.</returns>
+        [Route("build-transaction")]
+        [HttpPost]
+        public IActionResult BuildTransaction([FromBody] BuildContractTransactionRequest request)
+        {
+            if (!this.ModelState.IsValid)
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+
+            try
+            {
+                BuildContractTransactionResult result = this.smartContractTransactionService.BuildTx(request);
+
+                return this.Json(result.Response);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
         }
 
         /// <summary>
@@ -335,7 +373,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             BuildCreateContractTransactionResponse response = this.smartContractTransactionService.BuildCreateTx(request);
 
             if (!response.Success)
-                return this.Json(response);
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, response.Message, string.Empty);
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
 

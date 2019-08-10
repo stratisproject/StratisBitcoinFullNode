@@ -7,14 +7,15 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Tests.Wallet.Common;
-using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Networks;
 using Xunit;
 
@@ -49,7 +50,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
             int vmVersion = 1;
             var gasLimit = (Stratis.SmartContracts.RuntimeObserver.Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
-            var contractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit, new byte[]{0, 1, 2, 3});
+            var contractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit, new byte[] { 0, 1, 2, 3 });
             var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(new SmartContractsRegTest()));
             var contractCreateScript = new Script(callDataSerializer.Serialize(contractTxData));
 
@@ -88,12 +89,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
             var accountsHistory = new List<AccountHistory> { new AccountHistory { History = flat, Account = account } };
             this.walletManager.Setup(w => w.GetHistory(walletName, It.IsAny<string>())).Returns(accountsHistory);
             this.walletManager.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
-            this.walletManager.Setup(w => w.GetAccounts(walletName)).Returns(new List<HdAccount> {account});
+            this.walletManager.Setup(w => w.GetAccounts(walletName)).Returns(new List<HdAccount> { account });
 
-            this.receiptRepository.Setup(x => x.Retrieve(It.IsAny<uint256>()))
-                .Returns(new Receipt(null, 0, new Log[0], null, null, null, uint160.Zero, true, null, null, 1, 100000));
+            var receipt = new Receipt(null, 12345, new Log[0], null, null, null, uint160.Zero, true, null, null, 2, 100000);
+            this.receiptRepository.Setup(x => x.RetrieveMany(It.IsAny<IList<uint256>>()))
+                .Returns(new List<Receipt> {receipt});
             this.callDataSerializer.Setup(x => x.Deserialize(It.IsAny<byte[]>()))
-                .Returns(Result.Ok(new ContractTxData(0, 0, (Stratis.SmartContracts.RuntimeObserver.Gas) 0, new uint160(0), null, null)));
+                .Returns(Result.Ok(new ContractTxData(0, 0, (Stratis.SmartContracts.RuntimeObserver.Gas)0, new uint160(0), null, null)));
 
             var controller = new SmartContractWalletController(
                 this.broadcasterManager.Object,
@@ -105,72 +107,124 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
                 this.walletManager.Object,
                 this.smartContractTransactionService.Object);
 
-            IActionResult result = controller.GetHistory(walletName, address.Address);
+            var request = new GetHistoryRequest
+            {
+                Address = address.Address,
+                WalletName = walletName
+            };
 
-            var viewResult = Assert.IsType<JsonResult>(result);
+            IActionResult result = controller.GetHistory(request);
+
+            JsonResult viewResult = Assert.IsType<JsonResult>(result);
             var model = viewResult.Value as IEnumerable<ContractTransactionItem>;
 
             Assert.NotNull(model);
-            Assert.Equal(3, model.Count());
+            Assert.Single(model);
 
-            ContractTransactionItem resultingTransaction = model.ElementAt(2);
+            ContractTransactionItem resultingTransaction = model.ElementAt(0);
 
             ContractTransactionItem resultingCreate = model.ElementAt(0);
-            Assert.Equal(ContractTransactionItemType.ContractCreate, resultingCreate.Type);
-            Assert.Equal(createTransaction.SpendingDetails.TransactionId, resultingCreate.Hash);
-            Assert.Equal(createTransaction.SpendingDetails.Payments.First().Amount.ToUnit(MoneyUnit.Satoshi), resultingCreate.Amount);
-            Assert.Equal(uint160.Zero.ToBase58Address(this.network), resultingCreate.To);
-            Assert.Equal(createTransaction.SpendingDetails.BlockHeight, resultingCreate.BlockHeight);
-
-            Assert.Equal(ContractTransactionItemType.Received, resultingTransaction.Type);
-            Assert.Equal(address.Address, resultingTransaction.To);
-            Assert.Equal(normalTransaction.Id, resultingTransaction.Hash);
-            Assert.Equal(normalTransaction.Amount.ToUnit(MoneyUnit.Satoshi), resultingTransaction.Amount);
-            Assert.Equal(1, resultingTransaction.BlockHeight);
+            Assert.Equal(ContractTransactionItemType.ContractCreate, resultingTransaction.Type);
+            Assert.Equal(createTransaction.SpendingDetails.TransactionId, resultingTransaction.Hash);
+            Assert.Equal(createTransaction.SpendingDetails.Payments.First().Amount.ToUnit(MoneyUnit.Satoshi), resultingTransaction.Amount);
+            Assert.Equal(uint160.Zero.ToBase58Address(this.network), resultingTransaction.To);
+            Assert.Equal(createTransaction.SpendingDetails.BlockHeight, resultingTransaction.BlockHeight);
+            Assert.Equal((createTransaction.Amount - createTransaction.SpendingDetails.Payments.First().Amount).ToUnit(MoneyUnit.Satoshi), resultingTransaction.TransactionFee);
+            Assert.Equal(receipt.GasPrice * receipt.GasUsed, resultingTransaction.GasFee);
         }
 
         [Fact]
-        public void ReceivedType_Is_Receive()
+        public void GetHistoryWithValidModelWithSkipAndTakeReturnsWalletHistoryModel()
         {
-            var transactionData = new TransactionData();
-            transactionData.IsCoinBase = false;
-            transactionData.Index = 1;
+            ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
+            int vmVersion = 1;
+            var gasLimit = (Stratis.SmartContracts.RuntimeObserver.Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
+            var contractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit, new byte[] { 0, 1, 2, 3 });
+            var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(new SmartContractsRegTest()));
+            var contractCreateScript = new Script(callDataSerializer.Serialize(contractTxData));
 
-            Assert.Equal(ContractTransactionItemType.Received, SmartContractWalletController.ReceivedTransactionType(transactionData));
-        }
+            string walletName = "myWallet";
+            HdAddress address = WalletTestsHelpers.CreateAddress();
 
-        [Fact]
-        public void ReceivedType_Is_Receive_Null_Coinbase()
-        {
-            var transactionData = new TransactionData();
-            transactionData.IsCoinBase = null;
+            const int totalHistoryLength = 100;
+            const int toSkip = 10;
+            const int toTake = 10;
 
-            // Should be true for all indexes
-            for (var i = 0; i < 10; i++)
+            for (int i = 0; i < totalHistoryLength; i++)
             {
-                transactionData.Index = i;
-                Assert.Equal(ContractTransactionItemType.Received, SmartContractWalletController.ReceivedTransactionType(transactionData));
+                TransactionData createTransaction = WalletTestsHelpers.CreateTransaction(new uint256((ulong) i), new Money(500000), 100 + i);
+                createTransaction.SpendingDetails = new SpendingDetails
+                {
+                    BlockHeight = 100 + i,
+                    CreationTime = DateTimeOffset.Now,
+                    TransactionId = new uint256((ulong) i),
+                    Payments = new List<PaymentDetails>
+                    {
+                        new PaymentDetails
+                        {
+                            Amount = new Money(100000),
+                            DestinationScriptPubKey = contractCreateScript
+                        }
+                    }
+                };
+
+                address.Transactions.Add(createTransaction);
             }
-        }
 
-        [Fact]
-        public void ReceivedType_Is_GasRefund()
-        {
-            var transactionData = new TransactionData();
-            transactionData.IsCoinBase = true;
-            transactionData.Index = 1;
+            var addresses = new List<HdAddress> { address };
+            Features.Wallet.Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
+            var account = new HdAccount { ExternalAddresses = addresses };
+            wallet.AccountsRoot.Add(new AccountRoot()
+            {
+                Accounts = new List<HdAccount> { account }
+            });
 
-            Assert.Equal(ContractTransactionItemType.GasRefund, SmartContractWalletController.ReceivedTransactionType(transactionData));
-        }
+            List<FlatHistory> flat = addresses.SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToList();
 
-        [Fact]
-        public void ReceivedType_Is_MiningReward()
-        {
-            var transactionData = new TransactionData();
-            transactionData.IsCoinBase = true;
-            transactionData.Index = 0;
+            var accountsHistory = new List<AccountHistory> { new AccountHistory { History = flat, Account = account } };
+            this.walletManager.Setup(w => w.GetHistory(walletName, It.IsAny<string>())).Returns(accountsHistory);
+            this.walletManager.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
+            this.walletManager.Setup(w => w.GetAccounts(walletName)).Returns(new List<HdAccount> { account });
 
-            Assert.Equal(ContractTransactionItemType.Staked, SmartContractWalletController.ReceivedTransactionType(transactionData));
+            var receipt = new Receipt(null, 12345, new Log[0], null, null, null, uint160.Zero, true, null, null, 2, 100000);
+            var receiptList = new List<Receipt>();
+            for (int i = 0; i < totalHistoryLength; i++)
+            {
+                receiptList.Add(receipt);
+            }
+
+            this.receiptRepository.Setup(x => x.RetrieveMany(It.IsAny<IList<uint256>>()))
+                .Returns(receiptList);
+            this.callDataSerializer.Setup(x => x.Deserialize(It.IsAny<byte[]>()))
+                .Returns(Result.Ok(new ContractTxData(0, 0, (Stratis.SmartContracts.RuntimeObserver.Gas)0, new uint160(0), null, null)));
+
+            var controller = new SmartContractWalletController(
+                this.broadcasterManager.Object,
+                this.callDataSerializer.Object,
+                this.connectionManager.Object,
+                this.loggerFactory.Object,
+                this.network,
+                this.receiptRepository.Object,
+                this.walletManager.Object,
+                this.smartContractTransactionService.Object);
+
+            var request = new GetHistoryRequest
+            {
+                Address = address.Address,
+                WalletName = walletName,
+                Skip = toSkip,
+                Take = toTake
+            };
+
+            IActionResult result = controller.GetHistory(request);
+
+            JsonResult viewResult = Assert.IsType<JsonResult>(result);
+            var model = viewResult.Value as IEnumerable<ContractTransactionItem>;
+
+            Assert.NotNull(model);
+            Assert.Equal(toTake, model.Count());
+            Assert.Equal(new uint256(toSkip), model.ElementAt(toTake - 1).Hash);
+            Assert.Equal(new uint256(toSkip + toTake - 1), model.ElementAt(0).Hash);
         }
     }
 }

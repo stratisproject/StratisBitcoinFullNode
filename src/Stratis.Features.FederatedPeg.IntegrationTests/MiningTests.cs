@@ -32,7 +32,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 CoreNode node2 = builder.CreatePoANode(network).Start();
 
                 Assert.False(node2.FullNode.NodeService<IFederationManager>().IsFederationMember);
-                Assert.Equal(node2.FullNode.NodeService<IFederationManager>().CurrentFederationKey, null);
+                Assert.Null(node2.FullNode.NodeService<IFederationManager>().CurrentFederationKey);
                 // Assert.False(node2.FullNode.NodeService<IPoAMiner>().IsMining()); Old method
             }
         }
@@ -70,7 +70,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 CoreNode node = builder.CreatePoANode(network, network.FederationKeys[0]).WithWallet("pass", walletName).Start();
                 // node.EnableFastMining(); Old method
 
-                var walletManager = node.FullNode.NodeService<IWalletManager>();
+                IWalletManager walletManager = node.FullNode.NodeService<IWalletManager>();
                 long balanceOnStart = walletManager.GetBalances(walletName, "account 0").Sum(x => x.AmountConfirmed);
                 Assert.Equal(0, balanceOnStart);
 

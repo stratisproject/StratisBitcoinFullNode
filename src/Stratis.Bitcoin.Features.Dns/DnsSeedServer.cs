@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Features.Dns
                     {
                         Tuple<IPEndPoint, byte[]> request = await this.udpClient.ReceiveAsync();
 
-                        this.logger.LogTrace("DNS request received of size {0} from endpoint {1}.", request.Item2.Length, request.Item1);
+                        this.logger.LogDebug("DNS request received of size {0} from endpoint {1}.", request.Item2.Length, request.Item1);
 
                         // Received a request, now handle it. (measured)
                         using (new StopwatchDisposable((elapsed) => { this.metrics.CaptureRequestMetrics(this.GetPeerCount(), elapsed, false); }))
@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.Features.Dns
                 }
 
                 // We've been cancelled.
-                this.logger.LogTrace("Cancellation requested, shutting down DNS listener.");
+                this.logger.LogDebug("Cancellation requested, shutting down DNS listener.");
                 token.ThrowIfCancellationRequested();
             }
             catch (Exception e) when (!(e is OperationCanceledException))
@@ -322,7 +322,7 @@ namespace Stratis.Bitcoin.Features.Dns
                     }
                 }
 
-                this.logger.LogTrace("{0} answers to the question: domain = {1}, record type = {2}", answers.Count, question.Name, question.Type);
+                this.logger.LogDebug("{0} answers to the question: domain = {1}, record type = {2}", answers.Count, question.Name, question.Type);
             }
 
             // Sort output so same order isn't returned every time.
@@ -349,6 +349,8 @@ namespace Stratis.Bitcoin.Features.Dns
                     response.AnswerRecords.Add(allAnswers[i]);
                 }
             }
+
+            response.AuthorativeServer = true;
 
             // Set new start index.
             Interlocked.Increment(ref this.startIndex);

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.PoA.Voting.ConsensusRules
 {
@@ -11,6 +12,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting.ConsensusRules
     {
         private VotingDataEncoder votingDataEncoder;
 
+        [NoTrace]
         public override void Initialize()
         {
             this.votingDataEncoder = new VotingDataEncoder(this.Parent.LoggerFactory);

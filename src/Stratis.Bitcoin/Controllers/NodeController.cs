@@ -11,6 +11,7 @@ using NLog;
 using NLog.Config;
 using NLog.Targets;
 using NLog.Targets.Wrappers;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -18,6 +19,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -73,6 +75,11 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>An interface implementation for the blockstore.</summary>
         private readonly IBlockStore blockStore;
 
+        /// <summary>Provider for creating and managing background async loop tasks.</summary>
+        private readonly IAsyncProvider asyncProvider;
+
+        private readonly ISelfEndpointTracker selfEndpointTracker;
+
         public NodeController(
             ChainIndexer chainIndexer,
             IChainState chainState,
@@ -82,6 +89,8 @@ namespace Stratis.Bitcoin.Controllers
             ILoggerFactory loggerFactory,
             NodeSettings nodeSettings,
             Network network,
+            IAsyncProvider asyncProvider,
+            ISelfEndpointTracker selfEndpointTracker,
             IBlockStore blockStore = null,
             IGetUnspentTransaction getUnspentTransaction = null,
             INetworkDifficulty networkDifficulty = null,
@@ -96,6 +105,8 @@ namespace Stratis.Bitcoin.Controllers
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(connectionManager, nameof(connectionManager));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
+            Guard.NotNull(asyncProvider, nameof(asyncProvider));
+            Guard.NotNull(selfEndpointTracker, nameof(selfEndpointTracker));
 
             this.chainIndexer = chainIndexer;
             this.chainState = chainState;
@@ -105,6 +116,8 @@ namespace Stratis.Bitcoin.Controllers
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.nodeSettings = nodeSettings;
+            this.asyncProvider = asyncProvider;
+            this.selfEndpointTracker = selfEndpointTracker;
 
             this.blockStore = blockStore;
             this.getUnspentTransaction = getUnspentTransaction;
@@ -129,6 +142,7 @@ namespace Stratis.Bitcoin.Controllers
                 ProtocolVersion = (uint)(this.nodeSettings.ProtocolVersion),
                 Difficulty = GetNetworkDifficulty(this.networkDifficulty)?.Difficulty ?? 0,
                 Agent = this.connectionManager.ConnectionSettings.Agent,
+                ExternalAddress = this.selfEndpointTracker.MyExternalAddress.Address.ToString(),
                 ProcessId = Process.GetCurrentProcess().Id,
                 Network = this.fullNode.Network.Name,
                 ConsensusHeight = this.chainState.ConsensusTip?.Height,
@@ -528,6 +542,38 @@ namespace Stratis.Bitcoin.Controllers
                 }
 
                 return this.Json(rules);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Get the currently running async loops/delegates/tasks for diagnostic purposes.
+        /// </summary>
+        /// <returns>A list of running async loops/delegates/tasks.</returns>
+        [HttpGet]
+        [Route("asyncloops")]
+        public IActionResult GetAsyncLoops()
+        {
+            // Checks the request is valid.
+            if (!this.ModelState.IsValid)
+            {
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                var loops = new List<AsyncLoopModel>();
+
+                foreach ((string loopName, TaskStatus status) in this.asyncProvider.GetAll())
+                {
+                    loops.Add(new AsyncLoopModel() { LoopName = loopName, Status = Enum.GetName(typeof(TaskStatus), status) });
+                }
+
+                return this.Json(loops);
             }
             catch (Exception e)
             {

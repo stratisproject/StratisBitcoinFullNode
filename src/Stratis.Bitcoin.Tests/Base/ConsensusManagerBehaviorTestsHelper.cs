@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -223,6 +224,11 @@ namespace Stratis.Bitcoin.Tests.Base
             }
 
             public void ClearBannedPeers()
+            {
+                throw new NotImplementedException();
+            }
+
+            public List<PeerAddress> GetAllBanned()
             {
                 throw new NotImplementedException();
             }

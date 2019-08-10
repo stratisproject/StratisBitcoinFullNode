@@ -1,14 +1,14 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.InputConsolidation;
 using Stratis.Features.FederatedPeg.Interfaces;
-using Stratis.Features.FederatedPeg.NetworkHelpers;
 using Stratis.Features.FederatedPeg.Payloads;
+using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg
 {
@@ -24,16 +24,17 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly IFederatedPegSettings federatedPegSettings;
 
-        private readonly IPAddressComparer ipAddressComparer;
-
         private readonly ICrossChainTransferStore crossChainTransferStore;
+
+        private readonly IInputConsolidator inputConsolidator;
 
         public PartialTransactionsBehavior(
             ILoggerFactory loggerFactory,
             IFederationWalletManager federationWalletManager,
             Network network,
             IFederatedPegSettings federatedPegSettings,
-            ICrossChainTransferStore crossChainTransferStore)
+            ICrossChainTransferStore crossChainTransferStore,
+            IInputConsolidator inputConsolidator)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(federationWalletManager, nameof(federationWalletManager));
@@ -47,24 +48,25 @@ namespace Stratis.Features.FederatedPeg
             this.network = network;
             this.federatedPegSettings = federatedPegSettings;
             this.crossChainTransferStore = crossChainTransferStore;
-            this.ipAddressComparer = new IPAddressComparer();
+            this.inputConsolidator = inputConsolidator;
         }
 
+        [NoTrace]
         public override object Clone()
         {
             return new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager, this.network,
-                this.federatedPegSettings, this.crossChainTransferStore);
+                this.federatedPegSettings, this.crossChainTransferStore, this.inputConsolidator);
         }
 
         protected override void AttachCore()
         {
-            if (this.federatedPegSettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
+            if (this.federatedPegSettings.FederationNodeIpAddresses.Contains(this.AttachedPeer.PeerEndPoint.Address))
                 this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
         }
 
         protected override void DetachCore()
         {
-            if (this.federatedPegSettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
+            if (this.federatedPegSettings.FederationNodeIpAddresses.Contains(this.AttachedPeer.PeerEndPoint.Address))
                 this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
         }
 
@@ -74,7 +76,7 @@ namespace Stratis.Features.FederatedPeg
         /// <param name="payload">The payload to broadcast.</param>
         private async Task BroadcastAsync(RequestPartialTransactionPayload payload)
         {
-            if (this.federatedPegSettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
+            if (this.AttachedPeer.IsConnected && this.federatedPegSettings.FederationNodeIpAddresses.Contains(this.AttachedPeer.PeerEndPoint.Address))
                 await this.AttachedPeer.SendMessageAsync(payload).ConfigureAwait(false);
         }
 
@@ -84,6 +86,14 @@ namespace Stratis.Features.FederatedPeg
 
             if (payload == null)
                 return;
+
+            // Is a consolidation request.
+            if (payload.DepositId == RequestPartialTransactionPayload.ConsolidationDepositId)
+            {
+                this.logger.LogDebug("Received request to sign consolidation transaction.");
+                await this.HandleConsolidationTransactionRequest(peer, payload);
+                return;
+            }
 
             ICrossChainTransfer[] transfer = await this.crossChainTransferStore.GetAsync(new[] { payload.DepositId });
 
@@ -121,6 +131,17 @@ namespace Stratis.Features.FederatedPeg
 
                 // Respond back to the peer that requested a signature.
                 await this.BroadcastAsync(payload.AddPartial(signedTransaction));
+            }
+        }
+
+        private async Task HandleConsolidationTransactionRequest(INetworkPeer peer, RequestPartialTransactionPayload payload)
+        {
+            ConsolidationSignatureResult result = this.inputConsolidator.CombineSignatures(payload.PartialTransaction);
+
+            if (result.Signed)
+            {
+                this.logger.LogDebug("Signed consolidating transaction to produce {0} from {1}", result.TransactionResult.GetHash(), payload.PartialTransaction.GetHash());
+                await this.BroadcastAsync(payload.AddPartial(result.TransactionResult));
             }
         }
     }
