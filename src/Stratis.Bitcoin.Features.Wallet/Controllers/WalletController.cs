@@ -897,7 +897,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     SelectedInputs = request.Outpoints?.Select(u => new OutPoint(uint256.Parse(u.TransactionId), u.Index)).ToList(),
                     AllowOtherInputs = false,
                     Recipients = recipients,
-                    ChangeAddress = changeAddress
+                    ChangeAddress = changeAddress,
                     UseSegwitChangeAddress = request.SegwitChangeAddress
                 };
 
