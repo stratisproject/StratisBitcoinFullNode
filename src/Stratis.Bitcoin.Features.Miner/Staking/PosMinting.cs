@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// <summary>The maximum allowed size for a serialized block, in bytes (network rule).</summary>
         public const int MaxBlockSize = 1000000;
 
-        ///<summary>The maximum size for mined blocks.</summary>
+        /// <summary>The maximum size for mined blocks.</summary>
         public const int MaxBlockSizeGen = MaxBlockSize / 2;
 
         /// <summary>Builder that creates a proof-of-stake block template.</summary>
@@ -406,7 +406,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     return;
                 }
 
-                List<UtxoStakeDescription> utxoStakeDescriptions = await this.GetUtxoStakeDescriptionsAsync(walletSecret, cancellationToken).ConfigureAwait(false);
+                List<UtxoStakeDescription> utxoStakeDescriptions = this.GetUtxoStakeDescriptions(walletSecret, cancellationToken);
 
                 blockTemplate = blockTemplate ?? this.blockProvider.BuildPosBlock(chainTip, new Script());
                 var posBlock = (PosBlock)blockTemplate.Block;
@@ -434,7 +434,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             }
         }
 
-        internal async Task<List<UtxoStakeDescription>> GetUtxoStakeDescriptionsAsync(WalletSecret walletSecret, CancellationToken cancellationToken)
+        internal List<UtxoStakeDescription> GetUtxoStakeDescriptions(WalletSecret walletSecret, CancellationToken cancellationToken)
         {
             var utxoStakeDescriptions = new List<UtxoStakeDescription>();
 

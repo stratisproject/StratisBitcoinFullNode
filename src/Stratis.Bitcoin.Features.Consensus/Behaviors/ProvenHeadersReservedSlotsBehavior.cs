@@ -98,6 +98,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 
         private bool DoesPeerSupportsPH(VersionPayload peerVersion)
         {
+            if (peerVersion == null)
+                return false;
+
             return peerVersion.Version >= NBitcoin.Protocol.ProtocolVersion.PROVEN_HEADER_VERSION;
         }
 

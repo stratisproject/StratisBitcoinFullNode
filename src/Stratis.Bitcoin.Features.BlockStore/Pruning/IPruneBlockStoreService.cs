@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Pruning
@@ -32,6 +31,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Pruning
         /// <summary>
         /// Delete blocks continuously from the back of the store.
         /// </summary>
-        Task PruneBlocksAsync();
+        void PruneBlocks();
     }
 }
