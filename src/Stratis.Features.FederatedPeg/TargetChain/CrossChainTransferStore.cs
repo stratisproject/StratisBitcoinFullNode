@@ -191,7 +191,15 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             lock (this.lockObj)
             {
-                return new HashHeightPair(this.chainIndexer.GetHeader(this.federationWalletManager.LastBlockHeight()));
+                var fedWalletLastBlockHeight = this.federationWalletManager.LastBlockHeight();
+                ChainedHeader tipToChase = this.chainIndexer.GetHeader(fedWalletLastBlockHeight);
+                if (tipToChase == null)
+                {
+                    this.logger.LogDebug("Federation wallet last block height '{0}' was not found on chain; current chain tip '{1}'", fedWalletLastBlockHeight, this.chainIndexer.Tip);
+                    return new HashHeightPair(this.chainIndexer.Tip);
+                }
+
+                return new HashHeightPair(tipToChase);
             }
         }
 
@@ -898,6 +906,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 }
 
                 HashHeightPair tipToChase = this.TipToChase();
+
                 if (tipToChase.Hash == this.TipHashAndHeight.HashBlock)
                 {
                     // Indicate that we are synchronized.
