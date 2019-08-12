@@ -85,42 +85,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             Assert.False(this.repository.TryGetOutPointData(outPoint, out dataOut));
         }
 
-        [Fact]
-        public void TestCanRewind()
-        {
-            var rewindDataBlockHash = new uint256(RandomUtils.GetUInt64());
-
-            var outPoint = new OutPoint(new uint256(RandomUtils.GetUInt64()), 1);
-            var data = new OutPointData() { Outpoint = outPoint.ToString(), Money = 1, ScriptPubKeyBytes = RandomUtils.GetBytes(20) };
-
-            var rewindData = new AddressIndexerRewindData()
-            {
-                BlockHash = rewindDataBlockHash.ToString(),
-                BlockHeight = 100,
-                SpentOutputs = new List<OutPointData>() { data }
-            };
-
-            this.repository.RecordRewindData(rewindData);
-
-            //Assert.False(this.repository.TryGetOutPointData(outPoint, out OutPointData dataOut));
-
-            this.repository.SaveAllItems();
-
-            this.repository.RewindDataAboveHeight(rewindData.BlockHeight - 1);
-
-            //Assert.True(this.repository.TryGetOutPointData(outPoint, out dataOut));
-
-            // Now record and purge rewind data.
-            this.repository.RecordRewindData(rewindData);
-
-            //this.repository.RemoveOutPointData(outPoint);
-            //Assert.False(this.repository.TryGetOutPointData(outPoint, out dataOut));
-
-            //this.repository.PurgeOldRewindData(rewindData.BlockHeight + 1);
-
-            //Assert.False(this.repository.TryGetOutPointData(outPoint, out dataOut));
-        }
-
         private string RandomString(int length)
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
