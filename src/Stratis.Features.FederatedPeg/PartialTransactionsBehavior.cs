@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.InputConsolidation;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Payloads;
+using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg
 {
@@ -50,6 +51,7 @@ namespace Stratis.Features.FederatedPeg
             this.inputConsolidator = inputConsolidator;
         }
 
+        [NoTrace]
         public override object Clone()
         {
             return new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager, this.network,

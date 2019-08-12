@@ -64,6 +64,24 @@ namespace Stratis.Bitcoin.Controllers.Models
         [JsonProperty("nextblockhash")]
         public string NextBlockHash { get; private set; }
 
+        [JsonProperty("signature")]
+        public string PosBlockSignature { get; set; }
+
+        [JsonProperty("modifierv2")]
+        public string PosModifierv2 { get; set; }
+
+        [JsonProperty("flags")]
+        public string PosFlags { get; set; }
+
+        [JsonProperty("hashproof")]
+        public string PosHashProof { get; set; }
+
+        [JsonProperty("blocktrust")]
+        public string PosBlockTrust { get; set; }
+
+        [JsonProperty("chaintrust")]
+        public string PosChainTrust { get; set; }
+
         /// <summary>
         /// Creates a block model
         /// Used for deserializing from Json

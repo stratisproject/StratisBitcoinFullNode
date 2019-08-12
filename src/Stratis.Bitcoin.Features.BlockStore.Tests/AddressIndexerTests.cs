@@ -49,7 +49,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             this.asyncProviderMock = new Mock<IAsyncProvider>();
 
-            this.addressIndexer = new AddressIndexer(storeSettings, dataFolder, new ExtendedLoggerFactory(), this.network, stats.Object, this.consensusManagerMock.Object, this.asyncProviderMock.Object, indexer);
+            this.addressIndexer = new AddressIndexer(storeSettings, dataFolder, new ExtendedLoggerFactory(), this.network, stats.Object,
+                this.consensusManagerMock.Object, this.asyncProviderMock.Object, indexer, new DateTimeProvider());
 
             this.genesisHeader = new ChainedHeader(this.network.GetGenesis().Header, this.network.GetGenesis().Header.GetHash(), 0);
         }
