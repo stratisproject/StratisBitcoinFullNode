@@ -189,7 +189,10 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <returns>The height to which the wallet has been synced.</returns>
         private HashHeightPair TipToChase()
         {
-            return new HashHeightPair(this.chainIndexer.GetHeader(this.federationWalletManager.LastBlockHeight()));
+            lock (this.lockObj)
+            {
+                return new HashHeightPair(this.chainIndexer.GetHeader(this.federationWalletManager.LastBlockHeight()));
+            }
         }
 
         /// <summary>
@@ -799,7 +802,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <see cref="CrossChainTransferStatus.FullySigned"/>. Also returns a flag to indicate whether we are behind the current tip.
         /// </summary>
         /// <returns>Returns <c>true</c> if a rewind was performed and <c>false</c> otherwise.</returns>
-        private bool RewindIfRequired()
+        private bool RewindIfRequiredLocked()
         {
             HashHeightPair tipToChase = this.TipToChase();
 
@@ -910,7 +913,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                         this.NextMatureDepositHeight = transfers.Min(t => t.DepositHeight) ?? this.NextMatureDepositHeight;
                     }
 
-                    this.RewindIfRequired();
+                    this.RewindIfRequiredLocked();
 
                     if (this.SynchronizeBatch())
                     {
