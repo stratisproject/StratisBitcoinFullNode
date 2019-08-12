@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.AddPeer(endpointAddNode, IPAddress.Loopback);
             peerAddressManager.AddPeer(endpointDiscoveredNode, IPAddress.Loopback);
 
-            connectionManagerSettings.AddNode.Add(endpointAddNode);
+            connectionManagerSettings.AddAddNode(endpointAddNode);
 
             var networkPeer = new Mock<INetworkPeer>();
             networkPeer.SetupGet(np => np.PeerEndPoint).Returns(new IPEndPoint(ipAddressOne, 80));
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.AddPeer(endpointConnectNode, IPAddress.Loopback);
             peerAddressManager.AddPeer(endpointDiscoveredNode, IPAddress.Loopback);
 
-            connectionManagerSettings.AddNode.Add(endpointAddNode);
+            connectionManagerSettings.AddAddNode(endpointAddNode);
             connectionManagerSettings.Connect.Add(endpointConnectNode);
 
             var networkPeer = new Mock<INetworkPeer>();

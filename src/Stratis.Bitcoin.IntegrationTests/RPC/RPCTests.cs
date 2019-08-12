@@ -52,13 +52,13 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         public void CanAddNodeToConnectionManager()
         {
             var connectionManager = this.rpcTestFixture.Node.FullNode.NodeService<IConnectionManager>();
-            Assert.Empty(connectionManager.ConnectionSettings.AddNode);
+            Assert.Empty(connectionManager.ConnectionSettings.RetrieveAddNodes());
 
             IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
             this.rpcTestFixture.RpcClient.AddNode(endpoint);
 
-            Assert.Single(connectionManager.ConnectionSettings.AddNode);
+            Assert.Single(connectionManager.ConnectionSettings.RetrieveAddNodes());
         }
 
         [Fact]

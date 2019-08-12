@@ -25,6 +25,15 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>List of end points that the node should try to connect to.</summary>
+        /// <remarks>All access should be protected under <see cref="addNodeLock"/></remarks>
+        private readonly List<IPEndPoint> addNode;
+
+        /// <summary>
+        /// Protects access to the list of addnode endpoints.
+        /// </summary>
+        private readonly object addNodeLock;
+
         /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
@@ -35,8 +44,15 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ConnectionManagerSettings).FullName);
 
+            this.addNodeLock = new object();
+
             this.Connect = new List<IPEndPoint>();
-            this.AddNode = new List<IPEndPoint>();
+
+            lock (this.addNodeLock)
+            {
+                this.addNode = new List<IPEndPoint>();
+            }
+
             this.Bind = new List<NodeServerEndpoint>();
             this.Whitelist = new List<IPEndPoint>();
 
@@ -53,7 +69,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             try
             {
-                this.AddNode.AddRange(config.GetAll("addnode", this.logger).Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)));
+                foreach (IPEndPoint addNode in config.GetAll("addnode", this.logger).Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)))
+                    this.AddAddNode(addNode);
             }
             catch (FormatException)
             {
@@ -157,6 +174,30 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.IsGateway = config.GetOrDefault<bool>("gateway", false, this.logger);
         }
 
+        public void AddAddNode(IPEndPoint addNode)
+        {
+            lock (this.addNodeLock)
+            {
+                this.addNode.Add(addNode);
+            }
+        }
+
+        public void RemoveAddNode(IPEndPoint addNode)
+        {
+            lock (this.addNodeLock)
+            {
+                this.addNode.Remove(addNode);
+            }
+        }
+
+        public List<IPEndPoint> RetrieveAddNodes()
+        {
+            lock (this.addNodeLock)
+            {
+                return this.addNode.ToList();
+            }
+        }
+
         /// <summary>
         /// Get the default configuration.
         /// </summary>
@@ -235,9 +276,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
         /// <summary>List of exclusive end points that the node should be connected to.</summary>
         public List<IPEndPoint> Connect { get; set; }
-
-        /// <summary>List of end points that the node should try to connect to.</summary>
-        public List<IPEndPoint> AddNode { get; set; }
 
         /// <summary>
         /// Accepts incoming connections by starting the node server.
