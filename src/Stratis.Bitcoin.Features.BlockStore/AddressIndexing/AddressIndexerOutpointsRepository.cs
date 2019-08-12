@@ -147,6 +147,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     // Put the spent outputs back into the cache.
                     foreach (OutPointData outPointData in rewindData.SpentOutputs)
                         this.AddOutPointData(outPointData);
+
+                    this.addressIndexerOutPointData.Delete(rewindData.BlockHash);
                 }
             }
         }
