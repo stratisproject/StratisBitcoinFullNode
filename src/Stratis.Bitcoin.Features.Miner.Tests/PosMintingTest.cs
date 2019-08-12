@@ -603,7 +603,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.stakeChain.Object,
                 this.stakeValidator.Object);
 
-            posBlockAssembler.Setup(a => a.Build(It.IsAny<ChainedHeader>(), It.IsAny<Script>()))
+            posBlockAssembler.Setup(a => a.Build(It.IsAny<ChainedHeader>(), It.IsAny<Script>(), It.IsAny<uint>()))
                 .Returns(new BlockTemplate(this.network));
             var blockBuilder = new MockPosBlockProvider(posBlockAssembler.Object);
 
@@ -646,7 +646,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.blockDefinition = blockDefinition;
         }
 
-        public BlockTemplate BuildPosBlock(ChainedHeader chainTip, Script script)
+        public BlockTemplate BuildPosBlock(ChainedHeader chainTip, Script script, uint filterTimestamp = uint.MaxValue)
         {
             return this.blockDefinition.Build(chainTip, script);
         }

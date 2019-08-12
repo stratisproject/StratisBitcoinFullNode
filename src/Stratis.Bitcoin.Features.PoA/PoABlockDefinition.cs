@@ -33,9 +33,9 @@ namespace Stratis.Bitcoin.Features.PoA
         }
 
         /// <inheritdoc/>
-        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
+        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey, uint filterTimestamp = uint.MaxValue)
         {
-            base.OnBuild(chainTip, scriptPubKey);
+            base.OnBuild(chainTip, scriptPubKey, filterTimestamp);
 
             return this.BlockTemplate;
         }
