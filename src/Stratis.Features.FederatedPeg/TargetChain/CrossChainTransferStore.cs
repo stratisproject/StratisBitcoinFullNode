@@ -887,7 +887,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             lock (this.lockObj)
             {
-                HashHeightPair tipToChase = this.TipToChase();
                 if (this.TipHashAndHeight == null)
                 {
                     this.logger.LogError("Failed to synchronise. Reason: {0} is null.", nameof(this.TipHashAndHeight));
@@ -895,6 +894,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     return false;
                 }
 
+                HashHeightPair tipToChase = this.TipToChase();
                 if (tipToChase.Hash == this.TipHashAndHeight.HashBlock)
                 {
                     // Indicate that we are synchronized.

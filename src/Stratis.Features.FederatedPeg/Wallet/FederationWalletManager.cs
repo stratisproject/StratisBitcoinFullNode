@@ -294,7 +294,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public int LastBlockHeight()
         {
-
             lock (this.lockObject)
             {
                 if (!this.IsWalletActive())
