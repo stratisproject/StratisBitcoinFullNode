@@ -2,36 +2,21 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
-using Stratis.SmartContracts.CLR;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
-using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {
     public class SmartContractPoARuleRegistration : IRuleRegistration
     {
         protected readonly Network network;
-        private readonly IStateRepositoryRoot stateRepositoryRoot;
-        private readonly IContractExecutorFactory executorFactory;
-        private readonly ICallDataSerializer callDataSerializer;
-        private readonly ISenderRetriever senderRetriever;
-        private readonly IReceiptRepository receiptRepository;
-        private readonly ICoinView coinView;
-        private readonly IEnumerable<IContractTransactionPartialValidationRule> partialTxValidationRules;
-        private readonly IEnumerable<IContractTransactionFullValidationRule> fullTxValidationRules;
 
         public SmartContractPoARuleRegistration()
         {
@@ -39,7 +24,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 
         public virtual void RegisterRules(IServiceCollection services)
         {
-            // TODO: this is not needed anymore as the default rules are registered in network
+            // TODO: Do what the rest of the FN code did and move the rule registration to the network class.
             new PoAConsensusRulesRegistration().RegisterRules(services);
 
             services.AddSingleton(typeof(IContractTransactionPartialValidationRule), typeof(SmartContractFormatLogic));
