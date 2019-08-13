@@ -468,7 +468,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="previous">Previous network state of the peer.</param>
         private async Task OnStateChangedAsync(NetworkPeerState previous)
         {
-            // Creates a context that can be used for postponing/flagging disconnect.
+            // Creates a context that can be used to postpone / flag disconnect.
             bool iCreatedContext = this.onDisconnectedAsyncContext.Value == null;
             if (iCreatedContext)
                 this.onDisconnectedAsyncContext.Value = new DisconnectedExecutionAsyncContext();
@@ -522,10 +522,13 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return;
             }
 
-            try
-            {
+            // Creates a context that can be used to postpone / flag disconnect.
+            bool iCreatedContext = this.onDisconnectedAsyncContext.Value == null;
+            if (iCreatedContext)
                 this.onDisconnectedAsyncContext.Value = new DisconnectedExecutionAsyncContext();
 
+            try
+            {
                 await this.MessageReceived.ExecuteCallbacksAsync(this, message).ConfigureAwait(false);
             }
             catch (Exception e)
@@ -536,10 +539,14 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             finally
             {
-                if (this.onDisconnectedAsyncContext.Value.DisconnectCallbackRequested)
-                    this.onDisconnected(this);
+                // Only the caller that created the context should process and remove it.
+                if (iCreatedContext)
+                {
+                    if (this.onDisconnectedAsyncContext.Value.DisconnectCallbackRequested)
+                        this.onDisconnected(this);
 
-                this.onDisconnectedAsyncContext.Value = null;
+                    this.onDisconnectedAsyncContext.Value = null;
+                }
             }
         }
 

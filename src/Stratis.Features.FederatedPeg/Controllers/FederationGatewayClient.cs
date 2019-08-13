@@ -3,8 +3,9 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.Controllers;
-using Stratis.Features.FederatedPeg.Interfaces;
+using Stratis.Features.Collateral.CounterChain;
 using Stratis.Features.FederatedPeg.Models;
 
 namespace Stratis.Features.FederatedPeg.Controllers
@@ -12,8 +13,8 @@ namespace Stratis.Features.FederatedPeg.Controllers
     /// <summary>Rest client for <see cref="FederationGatewayController"/>.</summary>
     public interface IFederationGatewayClient : IRestApiClientBase
     {
-        /// <summary><see cref="FederationGatewayController.GetMaturedBlockDepositsAsync"/></summary>
-        Task<List<MaturedBlockDepositsModel>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model, CancellationToken cancellation = default(CancellationToken));
+        /// <summary><see cref="FederationGatewayController.GetMaturedBlockDeposits"/></summary>
+        Task<SerializableResult<List<MaturedBlockDepositsModel>>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model, CancellationToken cancellation = default(CancellationToken));
     }
 
     /// <inheritdoc cref="IFederationGatewayClient"/>
@@ -31,9 +32,9 @@ namespace Stratis.Features.FederatedPeg.Controllers
         }
 
         /// <inheritdoc />
-        public Task<List<MaturedBlockDepositsModel>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model, CancellationToken cancellation = default(CancellationToken))
+        public Task<SerializableResult<List<MaturedBlockDepositsModel>>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model, CancellationToken cancellation = default(CancellationToken))
         {
-            return this.SendPostRequestAsync<MaturedBlockRequestModel, List<MaturedBlockDepositsModel>>(model, FederationGatewayRouteEndPoint.GetMaturedBlockDeposits, cancellation);
+            return this.SendPostRequestAsync<MaturedBlockRequestModel, SerializableResult<List<MaturedBlockDepositsModel>>>(model, FederationGatewayRouteEndPoint.GetMaturedBlockDeposits, cancellation);
         }
     }
 }

@@ -1,4 +1,4 @@
-$packageNames = @("Stratis.SmartContracts.RuntimeObserver", "Stratis.SmartContracts.Core", "Stratis.SmartContracts.CLR", "Stratis.SmartContracts.CLR.Validation", "Stratis.SmartContracts.Standards", "Stratis.Bitcoin.Features.SmartContracts")
+$packageNames = @("Stratis.Sidechains.Networks","Stratis.SmartContracts.CLR", "Stratis.SmartContracts.CLR.Validation", "Stratis.SmartContracts.Core", "Stratis.SmartContracts.Networks","Stratis.SmartContracts.RuntimeObserver", "Stratis.Bitcoin.Features.SmartContracts")
 
 # A little gross to have to enter src/ and then go back after, but this is where the file is atm 
 cd "src"
