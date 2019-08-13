@@ -219,7 +219,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
         /// </summary>
         private static void VerifyNodeComposition(CoreNode node)
         {
-            // TODO: Add more checks about the sanctity of the node. And break methods down if needed.
+            // TODO: Add more checks about the sanctity of the node. And add specific checks per particular daemon.
 
             // We only want one consensus rule engine. Others can sneak in and will break the periodic log.
             IEnumerable<IConsensusRuleEngine> consensusRuleEngines = node.FullNode.NodeService<IEnumerable<IConsensusRuleEngine>>();
