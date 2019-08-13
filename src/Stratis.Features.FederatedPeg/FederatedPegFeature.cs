@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -447,7 +448,7 @@ namespace Stratis.Features.FederatedPeg
                     services.AddSingleton<MinerSettings>();
 
                     // Consensus Rules
-                    services.AddSingleton<PoAConsensusRuleEngine>();
+                    services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
                 });
             });
 

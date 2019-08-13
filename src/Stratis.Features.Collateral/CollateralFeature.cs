@@ -2,7 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
-using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts;
@@ -52,7 +51,6 @@ namespace Stratis.Features.Collateral
                         services.AddSingleton<ICollateralChecker, CollateralChecker>();
 
                         new SmartContractCollateralPoARuleRegistration().RegisterRules(services);
-                        services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
                     });
             });
 

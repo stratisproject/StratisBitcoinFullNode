@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -76,7 +77,8 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         public override async Task OnConnectAsync()
         {
-            await this.ConnectionSettings.AddNode.ForEachAsync(this.ConnectionSettings.MaxOutboundConnections, this.NodeLifetime.ApplicationStopping,
+            // We have to create a new copy of the list while we are enumerating it here, as items can be getting added/removed from the AddNode list while we are trying to connect to nodes in the list.
+            await this.ConnectionSettings.AddNode.ToList().ForEachAsync(this.ConnectionSettings.MaxOutboundConnections, this.NodeLifetime.ApplicationStopping,
                 async (ipEndpoint, cancellation) =>
                 {
                     if (this.NodeLifetime.ApplicationStopping.IsCancellationRequested)
