@@ -183,27 +183,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <summary>
-        /// The store will chase the wallet tip. This will ensure that we can rely on
-        /// information recorded in the wallet such as the list of unspent UTXO's.
-        /// </summary>
-        /// <returns>The height to which the wallet has been synced.</returns>
-        private HashHeightPair TipToChase()
-        {
-            lock (this.lockObj)
-            {
-                var fedWalletLastBlockHeight = this.federationWalletManager.LastBlockHeight();
-                ChainedHeader tipToChase = this.chainIndexer.GetHeader(fedWalletLastBlockHeight);
-                if (tipToChase == null)
-                {
-                    this.logger.LogDebug("Federation wallet last block height '{0}' was not found on chain; current chain tip '{1}'", fedWalletLastBlockHeight, this.chainIndexer.Tip);
-                    return new HashHeightPair(this.chainIndexer.Tip);
-                }
-
-                return new HashHeightPair(tipToChase);
-            }
-        }
-
-        /// <summary>
         /// Partial or fully signed transfers should have their source UTXO's recorded by an up-to-date wallet.
         /// Sets transfers to <see cref="CrossChainTransferStatus.Suspended"/> if their UTXO's are not reserved
         /// within the wallet.
@@ -809,36 +788,44 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// Used to handle reorg (if required) and revert status from <see cref="CrossChainTransferStatus.SeenInBlock"/> to
         /// <see cref="CrossChainTransferStatus.FullySigned"/>. Also returns a flag to indicate whether we are behind the current tip.
         /// </summary>
-        /// <returns>Returns <c>true</c> if a rewind was performed and <c>false</c> otherwise.</returns>
-        private bool RewindIfRequiredLocked()
+        private void RewindIfRequiredLocked()
         {
-            HashHeightPair tipToChase = this.TipToChase();
-
-            if (tipToChase.Hash == this.TipHashAndHeight.HashBlock)
+            if (this.TipHashAndHeight == null)
             {
-                // Indicate that we are synchronized.
-                this.logger.LogTrace("(-)[SYNCHRONIZED]:false");
-                return false;
+                this.logger.LogTrace("(-)[TIPHASHHEIGHT_NOT_INITIALIZED]");
+                return;
             }
 
-            // We are dependent on the wallet manager having dealt with any fork by now.
+            HashHeightPair tipToChase = this.federationWalletManager.LastBlockSyncedHashHeight();
+
+            // Indicates that the CCTS is synchronized with the Federation Wallet.
+            if (this.TipHashAndHeight.HashBlock == tipToChase.Hash)
+            {
+                this.logger.LogTrace("(-)[SYNCHRONIZED]");
+                return;
+            }
+
+            // If the Federation Wallet's tip is not on chain, rewind.
             if (this.chainIndexer.GetHeader(tipToChase.Hash) == null)
             {
-                ICollection<uint256> locators = this.federationWalletManager.GetWallet().BlockLocator;
-                var blockLocator = new BlockLocator { Blocks = locators.ToList() };
-                ChainedHeader fork = this.chainIndexer.FindFork(blockLocator);
+                var blocks = this.federationWalletManager.GetWallet().BlockLocator.ToList();
+                ChainedHeader fork = this.chainIndexer.FindFork(new BlockLocator { Blocks = blocks });
+
                 this.federationWalletManager.RemoveBlocks(fork);
-                tipToChase = this.TipToChase();
+
+                // Re-set the tip to chase to the federation wallet's new tip.
+                tipToChase = this.federationWalletManager.LastBlockSyncedHashHeight();
             }
 
-            // If the chain does not contain our tip.
-            if (this.TipHashAndHeight != null && (this.TipHashAndHeight.Height > tipToChase.Height ||
-                this.chainIndexer.GetHeader(this.TipHashAndHeight.HashBlock)?.Height != this.TipHashAndHeight.Height))
+            // If the CCTS's tip is higher than the federation wallet's tip 
+            // OR
+            // the CCTS's tip is not on chain, then rewind.
+            if (this.TipHashAndHeight.Height > tipToChase.Height || this.chainIndexer.GetHeader(this.TipHashAndHeight.HashBlock)?.Height != this.TipHashAndHeight.Height)
             {
                 // We are ahead of the current chain or on the wrong chain.
                 ChainedHeader fork = this.chainIndexer.FindFork(this.TipHashAndHeight.GetLocator()) ?? this.chainIndexer.GetHeader(0);
 
-                // Must not exceed wallet height otherise transaction validations may fail.
+                // Must not exceed wallet height otherwise transaction validations may fail.
                 while (fork.Height > tipToChase.Height)
                     fork = fork.Previous;
 
@@ -885,11 +872,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 }
 
                 this.ValidateCrossChainTransfers();
-                return true;
-            }
 
-            // Indicate that we are behind the current chain.
-            return false;
+                return;
+            }
         }
 
         /// <summary>Attempts to synchronizes the store with the chain.</summary>
@@ -905,9 +890,16 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     return false;
                 }
 
-                HashHeightPair tipToChase = this.TipToChase();
+                HashHeightPair federationWalletTip = this.federationWalletManager.LastBlockSyncedHashHeight();
 
-                if (tipToChase.Hash == this.TipHashAndHeight.HashBlock)
+                if (this.chainIndexer.GetHeader(federationWalletTip.Hash) == null)
+                {
+                    // Indicates that the federation wallet's tip is not on chain.
+                    this.logger.LogTrace("(-)[SYNCHRONIZED]:true");
+                    return true;
+                }
+
+                if (federationWalletTip.Hash == this.TipHashAndHeight.HashBlock)
                 {
                     // Indicate that we are synchronized.
                     this.logger.LogTrace("(-)[SYNCHRONIZED]:true");
@@ -949,15 +941,24 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             // Get a batch of blocks.
             int batchSize = 0;
-            HashHeightPair tipToChase = this.TipToChase();
-            Dictionary<uint256, ChainedHeader> chainedHeadersSnapshot = new Dictionary<uint256, ChainedHeader>();
+
+            HashHeightPair federationWalletTip = this.federationWalletManager.LastBlockSyncedHashHeight();
+
+            if (this.chainIndexer.GetHeader(federationWalletTip.Hash) == null)
+            {
+                // Indicates that the federation wallet's tip is not on chain.
+                this.logger.LogTrace("(-)[FEDERATION_WALLET_TIP_NOT_ON CHAIN]:false");
+                return false;
+            }
+
+            var chainedHeadersSnapshot = new Dictionary<uint256, ChainedHeader>();
 
             foreach (ChainedHeader header in this.chainIndexer.EnumerateToTip(this.TipHashAndHeight.HashBlock).Skip(1))
             {
                 if (this.chainIndexer.GetHeader(header.HashBlock) == null)
                     break;
 
-                if (header.Height > tipToChase.Height)
+                if (header.Height > federationWalletTip.Height)
                     break;
 
                 chainedHeadersSnapshot.Add(header.HashBlock, header);
