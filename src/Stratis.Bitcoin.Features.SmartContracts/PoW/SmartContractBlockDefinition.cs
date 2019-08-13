@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
         }
 
         /// <inheritdoc/>
-        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKeyIn)
+        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKeyIn, uint filterTimestamp = uint.MaxValue)
         {
             GetSenderResult getSenderResult = this.senderRetriever.GetAddressFromScript(scriptPubKeyIn);
 
