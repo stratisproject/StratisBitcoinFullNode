@@ -37,7 +37,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
         {
         }
 
-        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey, uint filterTimestamp = uint.MaxValue)
+        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
             return base.Build(chainTip, scriptPubKey);
         }

@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
         }
 
         /// <inheritdoc/>
-        public BlockTemplate BuildPosBlock(ChainedHeader chainTip, Script script, uint filterTimestamp = uint.MaxValue)
+        public BlockTemplate BuildPosBlock(ChainedHeader chainTip, Script script)
         {
             throw new System.NotImplementedException();
         }

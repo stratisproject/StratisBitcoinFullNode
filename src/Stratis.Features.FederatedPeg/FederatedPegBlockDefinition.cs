@@ -50,7 +50,7 @@ namespace Stratis.Features.FederatedPeg
             this.premineSplitter = premineSplitter;
         }
 
-        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey, uint filterTimestamp = uint.MaxValue)
+        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
             // Note: When creating a new chain, ensure that the first nodes mining are the federated peg nodes, 
             // so that the premine goes to the federated peg wallet.
