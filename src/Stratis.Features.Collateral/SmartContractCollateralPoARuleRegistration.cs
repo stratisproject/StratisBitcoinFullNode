@@ -2,24 +2,14 @@
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
-using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
-using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
 using TracerAttributes;
 
-namespace Stratis.Features.FederatedPeg.Collateral
+namespace Stratis.Features.Collateral
 {
     public class SmartContractCollateralPoARuleRegistration : SmartContractPoARuleRegistration
     {
-        private readonly IInitialBlockDownloadState ibdState;
-
-        private readonly ISlotsManager slotsManager;
-
-        private readonly ICollateralChecker collateralChecker;
-
-        private readonly IDateTimeProvider dateTime;
-
         public SmartContractCollateralPoARuleRegistration() : base()
         {
         }
@@ -27,7 +17,18 @@ namespace Stratis.Features.FederatedPeg.Collateral
         [NoTrace]
         public override void RegisterRules(IServiceCollection services)
         {
-            base.RegisterRules(services);
+            // TODO: Fix this so Cirrus also registers the rules on the network rather than this dirty hack.
+
+            // Both SmartContractPoARuleRegistration and SmartContractCollateralPoARuleRegistration need to register the rules, but only if needed.
+            // In the case of CirrusPegD, they won't yet have been registered so registering them here is necessary.
+            // In the case of CirrusMinerD, they were already registered so if we register them again we will have 2x each rule and the node will fail
+            // on some SingleOrDefaults later on.
+
+            // To check whether scpoa rules are already added, we test whether the specific coinview rule only added by the base exists yet.
+            if (services.FirstOrDefault(x => x.ImplementationType == typeof(SmartContractPoACoinviewRule)) == null)
+            {
+                base.RegisterRules(services);
+            }
 
             services.AddSingleton(typeof(IFullValidationConsensusRule), typeof(CheckCollateralFullValidationRule));
 

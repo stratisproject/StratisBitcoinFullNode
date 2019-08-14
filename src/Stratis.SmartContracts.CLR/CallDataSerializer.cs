@@ -6,9 +6,11 @@ using NBitcoin;
 using Nethereum.RLP;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
+using TracerAttributes;
 
 namespace Stratis.SmartContracts.CLR
 {
+    [NoTrace]
     public class CallDataSerializer : ICallDataSerializer
     {
         public const int OpcodeSize = sizeof(byte);
