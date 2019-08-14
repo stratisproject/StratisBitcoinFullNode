@@ -74,6 +74,24 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 ORDER   BY OutputTxTime");
         }
 
+        internal static IEnumerable<HDTransactionData> GetSpendTransaction(DBConnection conn, int walletId, string txId)
+        {
+            return conn.Query<HDTransactionData>($@"
+                SELECT  *
+                FROM    HDTransactionData
+                WHERE   SpendTxId = '{txId}'
+                AND     WalletId = {walletId}");
+        }
+
+        internal static IEnumerable<HDTransactionData> GetReceiveTransaction(DBConnection conn, int walletId, string txId)
+        {
+            return conn.Query<HDTransactionData>($@"
+                SELECT  *
+                FROM    HDTransactionData
+                WHERE   OutputTxId = '{txId}'
+                AND     WalletID = {walletId}");
+        }
+
         internal static IEnumerable<HDTransactionData> GetSpendableTransactions(DBConnection conn, int walletId, int accountIndex, int currentChainHeight, long coinbaseMaturity, int confirmations = 0)
         {
             int maxConfirmationHeight = (currentChainHeight + 1) - confirmations;

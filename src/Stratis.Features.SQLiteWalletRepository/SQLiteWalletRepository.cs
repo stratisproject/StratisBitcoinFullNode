@@ -224,6 +224,10 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <inheritdoc />
         public void ProcessBlock(Block block, ChainedHeader header)
         {
+            Guard.NotNull(header, nameof(header));
+
+            // TODO: Perhaps return a list of hashes of displaced transient transactions.
+
             lock (this.lockObject)
             {
                 // Determine the scripts for creating temporary tables and inserting the block's information into them.
@@ -249,20 +253,24 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public void RemoveTransientTransaction(uint256 txId)
+        public void RemoveUnconfirmedTransaction(string walletName, uint256 txId)
         {
             lock (this.lockObject)
             {
                 using (DBConnection conn = this.GetConnection())
                 {
-                    conn.RemoveTransientTransaction(txId);
+                    HDWallet wallet = conn.GetWalletByName(walletName);
+
+                    conn.RemoveUnconfirmedTransaction(wallet.WalletId, txId);
                 }
             }
         }
 
         /// <inheritdoc />
-        public void ProcessTransaction(Transaction transaction, uint256 fixedTxId = null)
+        public void ProcessTransaction(string walletName, Transaction transaction, uint256 fixedTxId = null)
         {
+            Guard.NotNull(walletName, nameof(walletName));
+
             lock (this.lockObject)
             {
                 // TODO: Check that this transaction does not spend UTXO's of any confirmed transactions.
@@ -281,7 +289,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                             conn.Execute(command);
 
                     conn.BeginTransaction();
-                    conn.ProcessTransactions(null);
+                    conn.ProcessTransactions(null, walletName);
                     conn.Commit();
                 }
             }

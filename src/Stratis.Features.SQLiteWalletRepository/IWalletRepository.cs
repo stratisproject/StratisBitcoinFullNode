@@ -26,6 +26,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <summary>
         /// Updates the relevant wallets from the information contained in the transaction.
         /// </summary>
+        /// <param name="walletName">The wallet name.</param>
         /// <param name="transaction">The transient transaction to process.</param>
         /// <param name="txId">Used to overrides the default transaction id.</param>
         /// <remarks>
@@ -34,7 +35,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// have their addresses topped up to ensure there are always 20 unused addresses after the last
         /// address containing transactions.
         /// </remarks>
-        void ProcessTransaction(Transaction transaction, uint256 txId = null);
+        void ProcessTransaction(string walletName, Transaction transaction, uint256 txId = null);
 
         /// <summary>
         /// Updates all the wallets from the information contained in the block.
@@ -106,8 +107,9 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <summary>
         /// Allows an unconfirmed transaction to be removed.
         /// </summary>
+        /// <param name="walletName">The name of the wallet to return the transactions of.</param>
         /// <param name="txId">The transaction id of the transaction to remove.</param>
-        void RemoveTransientTransaction(uint256 txId);
+        void RemoveUnconfirmedTransaction(string walletName, uint256 txId);
 
         /// <summary>
         /// Only keep wallet transactions up to and including the specified block.
