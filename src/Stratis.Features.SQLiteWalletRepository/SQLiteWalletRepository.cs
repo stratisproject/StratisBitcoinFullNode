@@ -68,6 +68,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                     conn.CreateTable<HDAccount>();
                     conn.CreateTable<HDAddress>();
                     conn.CreateTable<HDTransactionData>();
+                    conn.CreateTable<HDPayment>();
                     conn.Commit();
                 }
             }
@@ -262,7 +263,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                         yield return new UnspentOutputReference()
                         {
                             Account = hdAccount,
-                            Transaction = this.ToTransactionData(transactionData),
+                            Transaction = this.ToTransactionData(transactionData, HDPayment.GetAllPayments(conn, transactionData.OutputTxTime, transactionData.OutputTxId, transactionData.OutputIndex)),
                             Confirmations = (chainTip.Height + 1) - transactionData.OutputBlockHeight,
                             Address = this.ToHdAddress(new HDAddress()
                             {
@@ -313,7 +314,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                                 history.Add(new FlatHistory()
                                 {
                                     Address = hdAddress,
-                                    Transaction = this.ToTransactionData(transaction)
+                                    Transaction = this.ToTransactionData(transaction, HDPayment.GetAllPayments(conn, transaction.OutputTxTime, transaction.OutputTxId, transaction.OutputIndex))
                                 });
                             }
                         }
@@ -347,6 +348,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                         OutputIndex = (int)txIn.PrevOut.N,
                         SpendBlockHeight = header?.Height ?? 0,
                         SpendBlockHash = header?.HashBlock.ToString(),
+                        SpendTxIsCoinBase = (tx.IsCoinBase || tx.IsCoinStake) ? 1 : 0,
                         SpendTxTime = (int)tx.Time,
                         SpendTxId = tx.GetHash().ToString(),
                         SpendTxTotalOut = tx.TotalOut.ToDecimal(MoneyUnit.BTC)

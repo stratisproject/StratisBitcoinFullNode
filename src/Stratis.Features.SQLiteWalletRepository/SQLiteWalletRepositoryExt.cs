@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.Wallet;
@@ -50,7 +52,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             return res;
         }
 
-        internal static TransactionData ToTransactionData(this SQLiteWalletRepository repo, HDTransactionData transactionData)
+        internal static TransactionData ToTransactionData(this SQLiteWalletRepository repo, HDTransactionData transactionData, IEnumerable<HDPayment> payments)
         {
             return new TransactionData()
             {
@@ -69,16 +71,14 @@ namespace Stratis.Features.SQLiteWalletRepository
                     BlockHeight = transactionData.SpendBlockHeight,
                     // BlockIndex // TODO: Is this really required?
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds((int)transactionData.SpendTxTime),
-                    // IsCoinStake // TODO: Is this really required?
+                    IsCoinStake = transactionData.SpendTxIsCoinBase == 1,
                     TransactionId = uint256.Parse(transactionData.SpendTxId),
-                    /*
-                    Payments = new[] { new PaymentDetails() // TODO: Is this really required?
+                    Payments = payments.Select(p => new PaymentDetails()
                     {
-                         Amount = new Money((decimal)transactionData.SpendTxAmount, MoneyUnit.BTC),
-                         DestinationScriptPubKey = new Script(Encoders.Hex.DecodeData(transactionData.SpendTxRecipient)),
-                         OutputIndex = transactionData.SpendTxIndex
-                    } }
-                    */
+                         Amount = new Money((decimal)p.SpendValue, MoneyUnit.BTC),
+                         DestinationScriptPubKey = new Script(Encoders.Hex.DecodeData(p.SpendScriptPubKey)),
+                         OutputIndex = p.SpendIndex
+                    }).ToList()
                 }
             };
         }

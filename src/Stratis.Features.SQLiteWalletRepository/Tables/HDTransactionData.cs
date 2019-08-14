@@ -22,8 +22,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         public int? SpendTxTime { get; set; }
         public string SpendTxId { get; set; }
         public int? SpendBlockHeight { get; set; }
+        public int SpendTxIsCoinBase { get; set; }
         public string SpendBlockHash { get; set; }
-        public string SpendTxRecipient { get; set; }
         public decimal? SpendTxTotalOut { get; set; }
 
         internal static IEnumerable<string> CreateScript()
@@ -46,9 +46,9 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 OutputIndex         INTEGER NOT NULL,
                 SpendBlockHeight    INTEGER,
                 SpendBlockHash      TEXT,
+                SpendTxIsCoinBase   INTEGER,
                 SpendTxTime         INTEGER,
                 SpendTxId           TEXT,
-                SpendTxRecipient    TEXT,
                 SpendTxTotalOut     DECIMAL,
                 PRIMARY KEY(WalletId, AccountIndex, AddressType, AddressIndex, TransactionDataIndex)
             )";

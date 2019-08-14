@@ -106,6 +106,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 HDAddress.CreateTable(this);
             else if (typeof(T) == typeof(HDTransactionData))
                 HDTransactionData.CreateTable(this);
+            else if (typeof(T) == typeof(HDPayment))
+                HDPayment.CreateTable(this);
         }
 
         internal HDWallet GetWalletByName(string walletName)
@@ -208,6 +210,15 @@ namespace Stratis.Features.SQLiteWalletRepository
             GROUP   BY WalletId, AccountIndex, AddressType, AddressIndex");
 
             this.Execute($@"
+            DELETE FROM HDPayment
+            WHERE  (OutputTxTime, OutputTxId, OutputIndex) IN (
+                    SELECT OutputTxTime
+                    ,      OutputTxId
+                    ,      OutputIndex
+                    FROM   HDTransactionData
+                    {spendFilter})");
+
+            this.Execute($@"
             DELETE  FROM HDTransactionData
             WHERE   (WalletId, AccountIndex, AddressType, AddressIndex, TransactionDataIndex) IN (
                     SELECT  WalletId, AccountIndex, AddressType, AddressIndex, TransactionDataIndex
@@ -233,7 +244,6 @@ namespace Stratis.Features.SQLiteWalletRepository
             ,       SpendBlockHash = NULL
             ,       SpendTxTime = NULL
             ,       SpendTxId = NULL
-            ,       SpendTxRecipient = NULL
             ,       SpendTxTotalOut = NULL
             {spendFilter}");
         }
@@ -277,10 +287,11 @@ namespace Stratis.Features.SQLiteWalletRepository
                     ,      NULL
                     ,      NULL
                     ,      NULL
+                    ,      NULL
                     FROM   temp.TempOutput T
                     JOIN   HDAddress A
                     ON     A.ScriptPubKey = T.ScriptPubKey
-                    {((header == null) ? "" : $@"
+                    {/* Restrict non-transient transaction updates to aligned wallets */((header == null) ? "" : $@"
                     JOIN   HDWallet W
                     ON     W.WalletId = A.WalletId
                     AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'
@@ -376,21 +387,15 @@ namespace Stratis.Features.SQLiteWalletRepository
                 ,      TD.OutputIndex
                 ,      T.SpendBlockHeight
                 ,      T.SpendBlockHash
+                ,      T.SpendTxIsCoinBase
                 ,      T.SpendTxTime
                 ,      T.SpendTxId
-                ,      (SELECT  S.ScriptPubKey
-                        FROM    temp.TempOutput S
-                        LEFT    JOIN HDAddress A
-                        ON      A.ScriptPubKey = S.ScriptPubKey
-                        WHERE   A.ScriptPubKey IS NULL
-                        OR      A.AddressType = 0
-                        LIMIT   1) SpendTxRecipient
                 ,      T.SpendTxTotalOut
                 FROM   temp.TempPrevOut T
                 JOIN   HDTransactionData TD
                 ON     TD.OutputTxID = T.OutputTxId
                 AND    TD.OutputIndex = T.OutputIndex
-                {((header == null) ? "" : $@"
+                {/* Restrict non-transient transaction updates to aligned wallets */ ((header == null) ? "" : $@"
                 JOIN   HDWallet W
                 ON     W.WalletId = TD.WalletId
                 AND    W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'
@@ -401,6 +406,27 @@ namespace Stratis.Features.SQLiteWalletRepository
                 ,      TD.AddressIndex
                 ,      TD.TransactionDataIndex
                 ");
+
+            // Insert spending details into HDPayment records.
+            this.Execute($@"
+                REPLACE INTO HDPayment
+                SELECT  TD.OutputTxTime
+                ,       TD.OutputTxId
+                ,       TD.OutputIndex
+                ,       O.OutputIndex
+                ,       O.ScriptPubKey
+                ,       O.Value
+                FROM    temp.TempPrevOut T
+                JOIN    HDTransactionData TD
+                ON      TD.OutputTxId = T.OutputTxId
+                AND     TD.OutputIndex = T.OutputIndex
+                {/* Restrict non-transient transaction updates to aligned wallets */ ((header == null) ? "" : $@"
+                JOIN    HDWallet W
+                ON      W.WalletId = TD.WalletId
+                AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'
+                ")}
+                JOIN    temp.TempOutput O
+                ON      O.OutputTxID = T.SpendTxId");
 
             // Advance participating wallets.
             if (header != null)

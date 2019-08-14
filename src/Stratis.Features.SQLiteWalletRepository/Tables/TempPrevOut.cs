@@ -6,6 +6,7 @@
         public int OutputIndex { get; set; }
         public int SpendBlockHeight { get; set; }
         public string SpendBlockHash { get; set; }
+        public int SpendTxIsCoinBase { get; set; }
         public int SpendTxTime { get; set; }
         public string SpendTxId { get; set; }
         public decimal SpendTxTotalOut { get; set; }
