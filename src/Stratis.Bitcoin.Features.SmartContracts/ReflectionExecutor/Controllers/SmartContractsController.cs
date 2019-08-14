@@ -344,6 +344,32 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         }
 
         /// <summary>
+        /// Gets a fee estimate for a specific smart contract account-based transfer transaction.
+        /// This differs from fee estimation on standard networks due to the way inputs must be selected for account-based transfers.
+        /// </summary>
+        /// <param name="request">An object containing the parameters used to build the the fee estimation transaction.</param>
+        /// <returns>The estimated fee for the transaction.</returns>
+        [Route("estimate-fee")]
+        [HttpPost]
+        public IActionResult EstimateFee([FromBody] ScTxFeeEstimateRequest request)
+        {
+            if (!this.ModelState.IsValid)
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+
+            try
+            {
+                EstimateFeeResult result = this.smartContractTransactionService.EstimateFee(request);
+
+                return this.Json(result.Fee);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
         /// Builds a transaction to create a smart contract and then broadcasts the transaction to the network.
         /// If the deployment is successful, methods on the smart contract can be subsequently called.
         /// </summary>
