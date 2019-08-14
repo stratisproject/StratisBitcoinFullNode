@@ -97,6 +97,12 @@ namespace Stratis.Features.FederatedPeg
 
             ICrossChainTransfer[] transfer = await this.crossChainTransferStore.GetAsync(new[] { payload.DepositId });
 
+            if (transfer == null)
+            {
+                this.logger.LogDebug("{0}: No transfers for deposit {1}.", nameof(this.OnMessageReceivedAsync), payload.DepositId);
+                return;
+            }
+
             if (transfer[0] == null)
             {
                 this.logger.LogDebug("{0}: Deposit {1} does not exist.", nameof(this.OnMessageReceivedAsync), payload.DepositId);
