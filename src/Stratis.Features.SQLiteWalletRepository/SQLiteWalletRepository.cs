@@ -74,15 +74,71 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
         }
 
+        private List<int> GetLocatorHeights(int? tipHeight)
+        {
+            int nStep = 1;
+            var blockHeights = new List<int>();
+
+            while (tipHeight != null)
+            {
+                blockHeights.Add((int)tipHeight);
+
+                // Stop when we have added the genesis block.
+                if (tipHeight == 0)
+                    break;
+
+                // Exponentially larger steps back, plus the genesis block.
+                tipHeight = Math.Max((int)tipHeight - nStep, 0);
+
+                if (blockHeights.Count > 10)
+                    nStep *= 2;
+            }
+
+            return blockHeights;
+        }
+
         /// <inheritdoc />
         public void SetLastBlockSynced(string walletName, ChainedHeader lastBlockSynced)
         {
-            // TODO: lastBlockSynced.Prev must be an existing wallet block.
-
             lock (this.lockObject)
             {
                 using (DBConnection conn = this.GetConnection())
                 {
+                    // Perform a sanity check that the location being set is conceivably "within" the wallet.
+                    HDWallet wallet = conn.GetWalletByName(walletName);
+
+                    if (lastBlockSynced.Height > wallet.LastBlockSyncedHeight)
+                        throw new InvalidProgramException("Can't rewind the wallet using the supplied tip.");
+
+                    if (lastBlockSynced.Height == wallet.LastBlockSyncedHeight)
+                    {
+                        if (lastBlockSynced.HashBlock == uint256.Parse(wallet.LastBlockSyncedHash))
+                            return;
+
+                        throw new InvalidProgramException("Can't rewind the wallet using the supplied tip.");
+                    }
+
+                    var blockLocator = new BlockLocator()
+                    {
+                        Blocks = wallet.BlockLocator.Split(',').Select(strHash => uint256.Parse(strHash)).ToList()
+                    };
+
+                    List<int> locatorHeights = GetLocatorHeights(wallet.LastBlockSyncedHeight);
+
+                    for (int i = 0; i < locatorHeights.Count; i++)
+                    {
+                        if (lastBlockSynced.Height >= locatorHeights[i])
+                        {
+                            lastBlockSynced = lastBlockSynced.GetAncestor(locatorHeights[i]);
+
+                            if (lastBlockSynced.HashBlock != blockLocator.Blocks[i])
+                                throw new InvalidProgramException("Can't rewind the wallet using the supplied tip.");
+
+                            break;
+                        }
+                    }
+
+                    // Ok seems safe. Adjust the tip and rewind relevant transactions.
                     conn.BeginTransaction();
                     conn.SetLastBlockSynced(walletName, lastBlockSynced);
                     conn.Commit();
