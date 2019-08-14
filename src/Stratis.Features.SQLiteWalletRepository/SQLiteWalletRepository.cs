@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 using NBitcoin.DataEncoders;
+using Stratis.Features.SQLiteWalletRepository.Extensions;
 
 namespace Stratis.Features.SQLiteWalletRepository
 {
@@ -74,29 +75,6 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
         }
 
-        private List<int> GetLocatorHeights(int? tipHeight)
-        {
-            int nStep = 1;
-            var blockHeights = new List<int>();
-
-            while (tipHeight != null)
-            {
-                blockHeights.Add((int)tipHeight);
-
-                // Stop when we have added the genesis block.
-                if (tipHeight == 0)
-                    break;
-
-                // Exponentially larger steps back, plus the genesis block.
-                tipHeight = Math.Max((int)tipHeight - nStep, 0);
-
-                if (blockHeights.Count > 10)
-                    nStep *= 2;
-            }
-
-            return blockHeights;
-        }
-
         /// <inheritdoc />
         public void SetLastBlockSynced(string walletName, ChainedHeader lastBlockSynced)
         {
@@ -125,7 +103,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                             Blocks = wallet.BlockLocator.Split(',').Select(strHash => uint256.Parse(strHash)).ToList()
                         };
 
-                        List<int> locatorHeights = GetLocatorHeights(wallet.LastBlockSyncedHeight);
+                        List<int> locatorHeights = ChainedHeaderExt.GetLocatorHeights(wallet.LastBlockSyncedHeight);
 
                         for (int i = 0; i < locatorHeights.Count; i++)
                         {
