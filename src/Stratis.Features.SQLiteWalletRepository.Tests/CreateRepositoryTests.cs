@@ -117,6 +117,14 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 Assert.Equal(0, history[0].Address.Index);
                 Assert.Equal(Money.COIN * 100, (long)history[0].Transaction.Amount);
 
+                // Looking at the spending tx we see 90 coins sent out and 9 sent to internal change address.
+                List<PaymentDetails> payments = history[0].Transaction.SpendingDetails.Payments.ToList();
+                Assert.Equal(2, payments.Count);
+                Assert.Equal(Money.COIN * 90, (long)payments[0].Amount);
+                Assert.Equal(dest, payments[0].DestinationScriptPubKey);
+                Assert.Equal(Money.COIN * 9, (long)payments[1].Amount);
+                Assert.Equal(address2.ScriptPubKey, payments[1].DestinationScriptPubKey);
+
                 // Verify 9 coins sent to first unused change address in the wallet.
                 Assert.Equal("TDGFEq1RsFKNQcATtHAivwtt5xLqfqbohe", history[1].Address.Address);
                 Assert.Equal("m/44'/105'/0'/1/0", history[1].Address.HdPath);
@@ -142,6 +150,9 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 Assert.Equal("m/44'/105'/0'/0/0", history2[0].Address.HdPath);
                 Assert.Equal(0, history2[0].Address.Index);
                 Assert.Equal(Money.COIN * 100, (long)history2[0].Transaction.Amount);
+
+                // Verify that the spending details have been removed.
+                Assert.Null(history2[0].Transaction.SpendingDetails);
             }
         }
     }
