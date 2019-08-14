@@ -57,11 +57,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
         public EstimateFeeResult EstimateFee(ScTxFeeEstimateRequest request)
         {
-            // Sign: false
-            // FeeType: feetype
-            // FeeAmount: null
-
-            // Check preconditions
             Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
 
             HdAccount account = wallet.GetAccount(request.AccountName);
