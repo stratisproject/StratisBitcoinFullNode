@@ -156,18 +156,8 @@ namespace Stratis.Features.SQLiteWalletRepository
             return HDTransactionData.GetAllTransactions(this, walletId, accountIndex, addressType, addressIndex);
         }
 
-        internal void RemoveTransactionsAfterLastBlockSynced(int lastBlockSyncedHeight, int? walletId = null)
+        private void RemoveTransactionsByTxToDelete(string outputFilter, string spendFilter)
         {
-            string outputFilter = (walletId == null) ? $@"
-            WHERE   OutputBlockHeight > {lastBlockSyncedHeight}" : $@"
-            WHERE   WalletId = {walletId}
-            AND     OutputBlockHeight > {lastBlockSyncedHeight}";
-
-            string spendFilter = (walletId == null) ? $@"
-            WHERE   SpendBlockHeight > {lastBlockSyncedHeight}" : $@"
-            WHERE   WalletId = {walletId}
-            AND     SpendBlockHeight > {lastBlockSyncedHeight}";
-
             this.Execute($@"
             CREATE  TABLE temp.TxToDelete (
                     WalletId INT
@@ -244,8 +234,39 @@ namespace Stratis.Features.SQLiteWalletRepository
             ,       SpendBlockHash = NULL
             ,       SpendTxTime = NULL
             ,       SpendTxId = NULL
+            ,       SpendTxIsCoinBase = NULL
             ,       SpendTxTotalOut = NULL
             {spendFilter}");
+        }
+
+        internal void RemoveTransientTransaction(uint256 txId)
+        {
+            string outputFilter = $@"
+            WHERE   OutputTxId = '{txId}'
+            AND     OutputBlockHeight IS NULL
+            AND     OutputBlockHash IS NULL";
+
+            string spendFilter = $@"
+            WHERE   SpendTxId = '{txId}'
+            AND     SpendBlockHeight IS NULL
+            AND     SpendBlockHash IS NULL";
+
+            this.RemoveTransactionsByTxToDelete(outputFilter, spendFilter);
+        }
+
+        internal void RemoveTransactionsAfterLastBlockSynced(int lastBlockSyncedHeight, int? walletId = null)
+        {
+            string outputFilter = (walletId == null) ? $@"
+            WHERE   OutputBlockHeight > {lastBlockSyncedHeight}" : $@"
+            WHERE   WalletId = {walletId}
+            AND     OutputBlockHeight > {lastBlockSyncedHeight}";
+
+            string spendFilter = (walletId == null) ? $@"
+            WHERE   SpendBlockHeight > {lastBlockSyncedHeight}" : $@"
+            WHERE   WalletId = {walletId}
+            AND     SpendBlockHeight > {lastBlockSyncedHeight}";
+
+            this.RemoveTransactionsByTxToDelete(outputFilter, spendFilter);
         }
 
         /// <summary>

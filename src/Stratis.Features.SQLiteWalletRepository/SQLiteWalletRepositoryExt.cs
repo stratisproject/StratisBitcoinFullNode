@@ -62,14 +62,15 @@ namespace Stratis.Features.SQLiteWalletRepository
                 CreationTime = DateTimeOffset.FromUnixTimeSeconds(transactionData.OutputTxTime),
                 Id = uint256.Parse(transactionData.OutputTxId),
                 Index = transactionData.OutputIndex,
-                IsCoinBase = transactionData.OutputTxIsCoinBase == 1, // TODO: Do we readlly need two of these?
+                // These two are always updated and used in tandem so we update them from a single source value.
+                IsCoinBase = transactionData.OutputTxIsCoinBase == 1,
                 IsCoinStake = transactionData.OutputTxIsCoinBase == 1,
-                // IsPropagated  // TODO: Is this really required?
+                // IsPropagated  // Not used currently.
                 ScriptPubKey = new Script(Encoders.Hex.DecodeData(transactionData.ScriptPubKey)),
                 SpendingDetails = (transactionData.SpendTxId == null) ? null : new SpendingDetails()
                 {
                     BlockHeight = transactionData.SpendBlockHeight,
-                    // BlockIndex // TODO: Is this really required?
+                    // BlockIndex // Not used currently.
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds((int)transactionData.SpendTxTime),
                     IsCoinStake = transactionData.SpendTxIsCoinBase == 1,
                     TransactionId = uint256.Parse(transactionData.SpendTxId),

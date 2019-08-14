@@ -251,7 +251,13 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <inheritdoc />
         public void RemoveTransientTransaction(uint256 txId)
         {
-            // TODO
+            lock (this.lockObject)
+            {
+                using (DBConnection conn = this.GetConnection())
+                {
+                    conn.RemoveTransientTransaction(txId);
+                }
+            }
         }
 
         /// <inheritdoc />
