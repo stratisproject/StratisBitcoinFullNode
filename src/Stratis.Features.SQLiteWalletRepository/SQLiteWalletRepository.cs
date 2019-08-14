@@ -265,13 +265,13 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             lock (this.lockObject)
             {
+                // TODO: Check that this transaction does not spend UTXO's of any confirmed transactions.
+
                 IEnumerable<IEnumerable<string>> txToScript;
                 {
                     var lists = TransactionsToLists(new[] { transaction }, null, fixedTxId).ToList();
                     txToScript = lists.Select(list => list.CreateScript());
                 }
-
-                // TODO: Check that this transaction does not spend UTXO's of any confirmed transactions.
 
                 using (DBConnection conn = this.GetConnection())
                 {
