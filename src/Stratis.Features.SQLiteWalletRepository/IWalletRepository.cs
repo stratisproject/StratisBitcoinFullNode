@@ -114,7 +114,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// </summary>
         /// <param name="walletName">The name of the wallet.</param>
         /// <param name="lastBlockSynced">The last block synced to set.</param>
-        /// <remarks>The value in lastBlockSynced.Prev must match the hash of an existing wallet block (or be null).</remarks>
+        /// <remarks>The value of lastBlockSynced must match a block that was conceivably processed by the wallet (or be null).</remarks>
         void SetLastBlockSynced(string walletName, ChainedHeader lastBlockSynced);
     }
 }
