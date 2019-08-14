@@ -37,9 +37,9 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <inheritdoc/>
-        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey, uint filterTimestamp = uint.MaxValue)
+        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
-            base.OnBuild(chainTip, scriptPubKey, filterTimestamp);
+            base.OnBuild(chainTip, scriptPubKey);
 
             return this.BlockTemplate;
         }

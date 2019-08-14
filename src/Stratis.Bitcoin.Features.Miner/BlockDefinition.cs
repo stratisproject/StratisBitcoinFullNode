@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
@@ -182,7 +181,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="chainTip">Tip of the chain that this instance will work with without touching any shared chain resources.</param>
         /// <param name="scriptPubKey">Script that explains what conditions must be met to claim ownership of a coin.</param>
         /// <returns>The contructed <see cref="Mining.BlockTemplate"/>.</returns>
-        protected void OnBuild(ChainedHeader chainTip, Script scriptPubKey, uint filterTimestamp = uint.MaxValue)
+        protected void OnBuild(ChainedHeader chainTip, Script scriptPubKey)
         {
             this.Configure();
 
@@ -217,7 +216,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // add transactions from the mempool
             int nPackagesSelected;
             int nDescendantsUpdated;
-            this.AddTransactions(out nPackagesSelected, out nDescendantsUpdated, filterTimestamp);
+            this.AddTransactions(out nPackagesSelected, out nDescendantsUpdated);
 
             this.LastBlockTx = this.BlockTx;
             this.LastBlockSize = this.BlockSize;
@@ -273,11 +272,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.fees += fee;
         }
 
-        protected virtual List<TxMempoolEntry> GetMempoolEntries(uint filterTimestamp = uint.MaxValue)
-        {
-            return this.MempoolLock.ReadAsync(() => this.Mempool.MapTx.AncestorScore).ConfigureAwait(false).GetAwaiter().GetResult().ToList();
-        }
-
         /// <summary>
         /// Method for how to add transactions to a block.
         /// Add transactions based on feerate including unconfirmed ancestors
@@ -294,7 +288,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// mapModifiedTxs with the next transaction in the mempool to decide what
         /// transaction package to work on next.
         /// </summary>
-        protected virtual void AddTransactions(out int nPackagesSelected, out int nDescendantsUpdated, uint filterTimestamp = uint.MaxValue)
+        protected virtual void AddTransactions(out int nPackagesSelected, out int nDescendantsUpdated)
         {
             nPackagesSelected = 0;
             nDescendantsUpdated = 0;
@@ -309,11 +303,11 @@ namespace Stratis.Bitcoin.Features.Miner
             // Keep track of entries that failed inclusion, to avoid duplicate work.
             var failedTx = new TxMempool.SetEntries();
 
-            // Start by adding all descendants of previously added transactions to mapModifiedTx
+            // Start by adding all descendants of previously added txs to mapModifiedTx
             // and modifying them for their already included ancestors.
             this.UpdatePackagesForAdded(this.inBlock, mapModifiedTx);
 
-            List<TxMempoolEntry> ancestorScoreList = this.GetMempoolEntries(filterTimestamp);
+            List<TxMempoolEntry> ancestorScoreList = this.MempoolLock.ReadAsync(() => this.Mempool.MapTx.AncestorScore).ConfigureAwait(false).GetAwaiter().GetResult().ToList();
 
             TxMempoolEntry iter;
 
@@ -579,7 +573,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>Network specific logic specific as to how the block will be built.</summary>
-        public abstract BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey, uint filterTimestamp = uint.MaxValue);
+        public abstract BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey);
 
         /// <summary>Update the block's header information.</summary>
         protected void UpdateBaseHeaders()

@@ -408,7 +408,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
                 List<UtxoStakeDescription> utxoStakeDescriptions = this.GetUtxoStakeDescriptions(walletSecret, cancellationToken);
 
-                blockTemplate = blockTemplate ?? this.blockProvider.BuildPosBlock(chainTip, new Script(), coinstakeTimestamp);
+                blockTemplate = blockTemplate ?? this.blockProvider.BuildPosBlock(chainTip, new Script());
                 var posBlock = (PosBlock)blockTemplate.Block;
 
                 this.networkWeight = (long)this.GetNetworkWeight();

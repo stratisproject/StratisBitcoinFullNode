@@ -440,7 +440,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.block = this.BlockTemplate.Block;
             }
 
-            public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey, uint filterTimestamp = uint.MaxValue)
+            public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
             {
                 OnBuild(chainTip, scriptPubKey);
 

@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
@@ -55,9 +53,9 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <inheritdoc/>
-        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey, uint filterTimestamp = uint.MaxValue)
+        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
-            this.OnBuild(chainTip, scriptPubKey, filterTimestamp);
+            this.OnBuild(chainTip, scriptPubKey);
 
             this.coinbase.Outputs[0].ScriptPubKey = new Script();
             this.coinbase.Outputs[0].Value = Money.Zero;
@@ -71,16 +69,6 @@ namespace Stratis.Bitcoin.Features.Miner
             base.UpdateBaseHeaders();
 
             this.block.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.Network.Consensus, true);
-        }
-
-        /// <summary>
-        /// We cannot include transactions in a PoS block that have a timestamp greater than that of the coinstake.
-        /// We need to filter them out here so that the coinstake's rewards are correctly computed prior to searching for a kernel.
-        /// </summary>
-        /// <param name="filterTimestamp">The timestamp of the coinstake transaction.</param>
-        protected override List<TxMempoolEntry> GetMempoolEntries(uint filterTimestamp = uint.MaxValue)
-        {
-            return this.MempoolLock.ReadAsync(() => this.Mempool.MapTx.AncestorScore).ConfigureAwait(false).GetAwaiter().GetResult().Where(t => t.Transaction.Time <= filterTimestamp).ToList();
         }
 
         /// <inheritdoc/>

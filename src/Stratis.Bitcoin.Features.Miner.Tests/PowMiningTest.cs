@@ -200,7 +200,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 .ReturnsAsync(new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chainIndexer.Tip));
 
             Mock<PowBlockDefinition> blockBuilder = this.CreateProofOfWorkBlockBuilder();
-            blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript), It.IsAny<uint>())).Returns(blockTemplate);
+            blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
 
             PowMining miner = this.CreateProofOfWorkMiner(blockBuilder.Object);
             List<uint256> blockHashes = miner.GenerateBlocks(this.fixture.ReserveScript, 1, uint.MaxValue);
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             blockTemplate.Block.Header.Bits = KnownNetworks.TestNet.GetGenesis().Header.Bits; // make the difficulty harder.
 
             Mock<PowBlockDefinition> blockBuilder = this.CreateProofOfWorkBlockBuilder();
-            blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript), It.IsAny<uint>())).Returns(blockTemplate);
+            blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
 
             PowMining miner = CreateProofOfWorkMiner(blockBuilder.Object);
             List<uint256> blockHashes = miner.GenerateBlocks(this.fixture.ReserveScript, 1, 15);
@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             int attempts = 0;
 
             Mock<PowBlockDefinition> blockBuilder = this.CreateProofOfWorkBlockBuilder();
-            blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript), It.IsAny<uint>()))
+            blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript)))
                 .Returns(() =>
                 {
                     if (lastChainedHeader == null)
@@ -335,7 +335,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             Mock<PowBlockDefinition> blockBuilder = this.CreateProofOfWorkBlockBuilder();
 
             // As block 2 will fail consensus we need to still return it as block 3 so that the previous block hash is set properly.
-            blockBuilder.SetupSequence(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript), It.IsAny<uint>()))
+            blockBuilder.SetupSequence(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript)))
                         .Returns(block1)
                         .Returns(block2)
                         .Returns(block2);
@@ -417,7 +417,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.blockDefinition = blockDefinition;
         }
 
-        public BlockTemplate BuildPosBlock(ChainedHeader chainTip, Script script, uint filterTimestamp = uint.MaxValue)
+        public BlockTemplate BuildPosBlock(ChainedHeader chainTip, Script script)
         {
             throw new NotImplementedException();
         }

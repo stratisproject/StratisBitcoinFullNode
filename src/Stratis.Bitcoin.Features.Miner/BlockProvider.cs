@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <inheritdoc/>
-        public BlockTemplate BuildPosBlock(ChainedHeader chainTip, Script script, uint coinstakeTimestamp)
+        public BlockTemplate BuildPosBlock(ChainedHeader chainTip, Script script)
         {
             return this.posBlockDefinition.Build(chainTip, script);
         }
