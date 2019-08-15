@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 // Unique for fee estimation
                 TransactionFee = null,
                 FeeType = FeeParser.Parse(request.FeeType),
-                Sign = false,                
+                Sign = false,
             };
 
             Money fee = this.walletTransactionHandler.EstimateFee(context);
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
             if (!selectedInputs.Any())
                 return BuildContractTransactionResult.Failure(InvalidOutpointsError, "Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address.");
-            
+
             var recipients = new List<Recipient>();
             foreach (RecipientModel recipientModel in request.Recipients)
             {
@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
         public BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request)
         {
-            if(!this.CheckBalance(request.Sender))
+            if (!this.CheckBalance(request.Sender))
                 return BuildCallContractTransactionResponse.Failed(SenderNoBalanceError);
 
             List<OutPoint> selectedInputs = this.SelectInputs(request.WalletName, request.Sender, request.Outpoints);
@@ -253,7 +253,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
         public BuildCreateContractTransactionResponse BuildCreateTx(BuildCreateContractTransactionRequest request)
         {
-            if(!this.CheckBalance(request.Sender))
+            if (!this.CheckBalance(request.Sender))
                 return BuildCreateContractTransactionResponse.Failed(SenderNoBalanceError);
 
             List<OutPoint> selectedInputs = this.SelectInputs(request.WalletName, request.Sender, request.Outpoints);
@@ -306,8 +306,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             // If requiring a signature, also check the signature.
             if (this.network is ISignedCodePubKeyHolder holder)
             {
-                var signedTxData = (SignedCodeContractTxData) deserialized.Value;
-                bool validSig =new ContractSigner().Verify(holder.SigningContractPubKey, signedTxData.ContractExecutionCode, signedTxData.CodeSignature);
+                var signedTxData = (SignedCodeContractTxData)deserialized.Value;
+                bool validSig = new ContractSigner().Verify(holder.SigningContractPubKey, signedTxData.ContractExecutionCode, signedTxData.CodeSignature);
 
                 if (!validSig)
                 {
