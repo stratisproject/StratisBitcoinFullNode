@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Controllers
         /// </summary>
         /// <returns>Returns SignalR Connection Info as Json {SignalRUri,SignalPort}</returns>
         [Route("getConnectionInfo")]
-        [HttpPost]
+        [HttpGet]
         public IActionResult GetConnectionInfo()
         {
             try

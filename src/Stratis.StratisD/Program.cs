@@ -12,6 +12,9 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.ColdStaking;
+using Stratis.Bitcoin.Features.SignalR;
+using Stratis.Bitcoin.Features.SignalR.Events;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.Diagnostic;
@@ -24,7 +27,8 @@ namespace Stratis.StratisD
         {
             try
             {
-                var nodeSettings = new NodeSettings(networksSelector: Networks.Stratis, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: args)
+                var nodeSettings = new NodeSettings(networksSelector: Networks.Stratis,
+                    protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: args)
                 {
                     MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
                 };
@@ -36,6 +40,16 @@ namespace Stratis.StratisD
                     .UseMempool()
                     .UseColdStakingWallet()
                     .AddPowPosMining()
+                    .AddSignalR(options =>
+                    {
+                        options.EventsToHandle = new[]
+                        {
+                            (IClientEvent) new BlockConnectedClientEvent(),
+                            new TransactionReceivedClientEvent()
+                            //new PeerConnectedClientEvent()
+                            //new PeerDisconnectedClientEvent()
+                        };
+                    })
                     .UseApi()
                     .UseApps()
                     .AddRPC()
