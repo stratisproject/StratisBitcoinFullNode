@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using SQLite;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 
@@ -12,7 +13,6 @@ namespace Stratis.Features.SQLiteWalletRepository
     public class DBConnection : SQLiteConnection
     {
         public SQLiteWalletRepository repo;
-        private bool disposed = false;
 
         public DBConnection(SQLiteWalletRepository repo, string dbFile) : base(Path.Combine(repo.DBPath, dbFile))
         {
@@ -26,6 +26,34 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.CreateTable<HDAddress>();
             this.CreateTable<HDTransactionData>();
             this.CreateTable<HDPayment>();
+        }
+
+        internal ObjectsOfInterest DetermineObjectsOfInterest(int? walletId)
+        {
+            var res = new ObjectsOfInterest();
+
+            List<HDAddress> addresses = this.Query<HDAddress>($@"
+                SELECT  *
+                FROM    HDAddress {((walletId != null) ? $@"
+                WHERE   WalletId = {walletId}":"")}");
+
+            foreach (HDAddress address in addresses)
+                res.Add(Encoders.Hex.DecodeData(address.ScriptPubKey));
+
+            List<HDTransactionData> spendableTransactions = this.Query<HDTransactionData>($@"
+                SELECT  *
+                FROM    HDTransactionData {((walletId != null) ? $@"
+                WHERE   WalletId = {walletId}" : "")}
+                AND     SpendBlockHash IS NULL
+                AND     SpendBlockHeight IS NULL");
+
+            foreach (HDTransactionData transactonData in spendableTransactions)
+            {
+                uint256 hash = uint256.Parse(transactonData.OutputTxId);
+                res.Add(hash.ToBytes());
+            }
+
+            return res;
         }
 
         internal List<HDAddress> CreateAddresses(HDAccount account, int addressType, int addressesQuantity)
@@ -59,8 +87,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             ExtPubKey extPubKey = ExtPubKey.Parse(account.ExtPubKey, this.repo.Network).Derive(keyPath);
             PubKey pubKey = extPubKey.PubKey;
-            Script pubKeyScript = pubKey.ScriptPubKey;
-            Script scriptPubKey = this.repo.ScriptPubKeyProvider.FromPubKey(pubKey, account.ScriptPubKeyType);
+            NBitcoin.Script pubKeyScript = pubKey.ScriptPubKey;
+            NBitcoin.Script scriptPubKey = this.repo.ScriptPubKeyProvider.FromPubKey(pubKey, account.ScriptPubKeyType);
 
             // Add the new address details to the list of addresses.
             return this.CreateAddress(account, addressType, addressIndex, pubKeyScript.ToHex(), scriptPubKey.ToHex());

@@ -53,6 +53,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 
         internal IEnumerable<string> CreateScript()
         {
+            yield return $"DROP TABLE IF EXISTS temp.{this.RowType.Name}";
             yield return $"CREATE TABLE temp.{this.RowType.Name} {ObjectColumns(true)};";
 
             var props = GetProperties(this.RowType);

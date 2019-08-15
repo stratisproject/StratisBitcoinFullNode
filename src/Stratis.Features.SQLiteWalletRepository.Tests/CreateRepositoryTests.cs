@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using DBreeze.DataTypes;
 using NBitcoin;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
@@ -94,7 +97,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 // Process block 1.
                 var chainedHeader1 = new ChainedHeader(blockHeader1, blockHeader1.GetHash(), null);
-                repo.ProcessBlock(block1, chainedHeader1, account.WalletName);
+                repo.ProcessBlocks(new[] { (chainedHeader1, block1) }, account.WalletName);
 
                 // List the unspent outputs.
                 List<UnspentOutputReference> outputs1 = repo.GetSpendableTransactionsInAccount(account, chainedHeader1, 0).ToList();
@@ -123,7 +126,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 // Process block 2.
                 var chainedHeader2 = new ChainedHeader(blockHeader2, blockHeader2.HashPrevBlock, chainedHeader1);
-                repo.ProcessBlock(block2, chainedHeader2, account.WalletName);
+                repo.ProcessBlocks(new[] { (chainedHeader2, block2) }, account.WalletName);
 
                 // List the unspent outputs.
                 List<UnspentOutputReference> outputs2 = repo.GetSpendableTransactionsInAccount(account, chainedHeader2, 0).ToList();
@@ -178,6 +181,84 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 // Verify that the spending details have been removed.
                 Assert.Null(history2[0].Transaction.SpendingDetails);
+            }
+        }
+
+        [Fact(Skip = "Configure this test then run it manually.")]
+        public void CanProcessBlocks()
+        {
+            using (var dataFolder = new TempDataFolder(this.GetType().Name))
+            {
+                Network network = KnownNetworks.StratisTest;
+
+                var repo = new SQLiteWalletRepository(dataFolder, network, DateTimeProvider.Default, new ScriptPubKeyProvider());
+
+                repo.Initialize(this.multiWallet);
+
+                var walletPassword = "test";
+                var account = new WalletAccountReference("test2", "account 0");
+
+                // Create an "test2" as an empty wallet.
+                byte[] chainCode = Convert.FromBase64String("RUKVp47yWou1VNVBM1U2XYMUSRfJqisI0xATo17VLNU=");
+                repo.CreateWallet(account.WalletName, "6PYQSX5vLVL2FtFWd5tDqk6KTCMEBubhdeFUL4xDRNhYueWR9iYNgiDDLV", chainCode);
+
+                // Verify the wallet exisits.
+                Assert.Equal("test2", repo.GetWalletNames().First());
+
+                // Create "account 0" as P2PKH.
+                repo.CreateAccount(account.WalletName, 0, account.AccountName, walletPassword, "P2PKH");
+
+                // Set up block store.
+                string dataDir = @"E:\RunNodes\SideChains\Data\MainchainUser";
+                var nodeSettings = new NodeSettings(network, args: new[] { $"-datadir={dataDir}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
+                DBreezeSerializer serializer = new DBreezeSerializer(network.Consensus.ConsensusFactory);
+                IBlockRepository blockRepo = new BlockRepository(network, nodeSettings.DataFolder, nodeSettings.LoggerFactory, serializer);
+                blockRepo.Initialize();
+
+                var prevBlock = new Dictionary<uint256, uint256>();
+
+                using (DBreeze.Transactions.Transaction transaction = blockRepo.DBreeze.GetTransaction())
+                {
+                    transaction.ValuesLazyLoadingIsOn = false;
+
+                    byte[] hashBytes = uint256.Zero.ToBytes();
+
+                    foreach (Row<byte[], byte[]> blockRow in transaction.SelectForward<byte[], byte[]>("Block"))
+                    {
+                        Array.Copy(blockRow.Value, sizeof(int), hashBytes, 0, hashBytes.Length);
+                        uint256 hashPrev = serializer.Deserialize<uint256>(hashBytes);
+                        var hashThis = new uint256(blockRow.Key);
+                        prevBlock[hashThis] = hashPrev;
+                    }
+                }
+
+                var nextBlock = prevBlock.ToDictionary(kv => kv.Value, kv => kv.Key);
+                int firstHeight = 1;
+                uint256 firstHash = nextBlock[network.GenesisHash];
+
+                var chainTip = new ChainedHeader(new BlockHeader() { HashPrevBlock = network.GenesisHash }, firstHash, firstHeight);
+                uint256 hash = firstHash;
+
+                for (int height = firstHeight + 1; height <= blockRepo.TipHashAndHeight.Height; height++)
+                {
+                    hash = nextBlock[hash];
+                    chainTip = new ChainedHeader(new BlockHeader() { HashPrevBlock = chainTip.HashBlock }, hash, chainTip);
+                }
+
+                var chainIndexer = new ChainIndexer(network, chainTip);
+
+                for (int height = firstHeight ; height <= blockRepo.TipHashAndHeight.Height; )
+                {
+                    var buffer = new List<(ChainedHeader, Block)>();
+
+                    for (int i = 0; i < 1000 && height <= blockRepo.TipHashAndHeight.Height; height++, i++)
+                    {
+                        ChainedHeader header = chainIndexer.GetHeader(height);
+                        buffer.Add((header, blockRepo.GetBlock(header.HashBlock)));
+                    }
+
+                    repo.ProcessBlocks(buffer, "test2");
+                }
             }
         }
     }

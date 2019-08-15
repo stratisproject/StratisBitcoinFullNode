@@ -42,7 +42,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         private DBConnection GetConnection(string walletName = null)
         {
-            return new DBConnection(this, (this.DatabasePerWallet && walletName != null)? $"{walletName}.db" : "Wallet.db");
+            return new DBConnection(this, (this.DatabasePerWallet && walletName != null) ? $"{walletName}.db" : "Wallet.db");
         }
 
         /// <inheritdoc />
@@ -207,29 +207,73 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <inheritdoc />
         public void ProcessBlock(Block block, ChainedHeader header, string walletName = null)
         {
-            Guard.NotNull(header, nameof(header));
+            ProcessBlocks(new[] { (header, block) }, walletName);
+        }
 
-            // TODO: Perhaps return a list of hashes of displaced transient transactions.
+        /// <inheritdoc />
+        public void ProcessBlocks(IEnumerable<(ChainedHeader header, Block block)> blocks, string walletName = null)
+        {
+            ChainedHeader deferredTip = null;
+            ObjectsOfInterest objectsOfInterest;
 
-            lock (this.lockObject)
+            HDWallet wallet;
+
+            using (DBConnection conn = GetConnection(walletName))
             {
-                // Determine the scripts for creating temporary tables and inserting the block's information into them.
-                IEnumerable<IEnumerable<string>> blockToScript;
-                {
-                    var lists = TransactionsToLists(block.Transactions, header).ToList();
-                    blockToScript = lists.Select(list => list.CreateScript());
-                }
+                wallet = conn.GetWalletByName(walletName);
+                objectsOfInterest = conn.DetermineObjectsOfInterest(wallet.WalletId);
+            }
 
-                // Merge the temporary tables with the wallet tables.
+            foreach ((ChainedHeader header, Block block) in blocks)
+            {
+                lock (this.lockObject)
+                {
+                    // Determine the scripts for creating temporary tables and inserting the block's information into them.
+                    IEnumerable<IEnumerable<string>> blockToScript;
+                    {
+                        var lists = TransactionsToLists(block.Transactions, header, null, objectsOfInterest).ToList();
+                        if (!lists.Any(l => l.Count != 0))
+                        {
+                            // No work to do.
+                            deferredTip = header;
+                            continue;
+                        }
+
+                        blockToScript = lists.Select(list => list.CreateScript());
+                    }
+
+                    // Merge the temporary tables with the wallet tables.
+                    using (DBConnection conn = this.GetConnection(walletName))
+                    {
+                        // Execute the scripts.
+                        foreach (IEnumerable<string> tableScript in blockToScript)
+                            foreach (string command in tableScript)
+                                conn.Execute(command);
+
+                        conn.BeginTransaction();
+
+                        if (deferredTip != null)
+                        {
+                            wallet.SetLastBlockSynced(deferredTip);
+                            conn.Update(wallet);
+                            deferredTip = null;
+                        }
+
+                        conn.ProcessTransactions(header, walletName);
+                        conn.Commit();
+                    }
+                }
+            }
+
+            if (deferredTip != null)
+            {
+                // No work to do.
                 using (DBConnection conn = this.GetConnection(walletName))
                 {
-                    // Execute the scripts.
-                    foreach (IEnumerable<string> tableScript in blockToScript)
-                        foreach (string command in tableScript)
-                            conn.Execute(command);
-
                     conn.BeginTransaction();
-                    conn.ProcessTransactions(header, walletName);
+                    // TODO!!
+                    wallet.SetLastBlockSynced(deferredTip);
+                    conn.Update(wallet);
                     conn.Commit();
                 }
             }
@@ -363,7 +407,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
         }
 
-        private IEnumerable<TempTable> TransactionsToLists(IEnumerable<Transaction> transactions, ChainedHeader header, uint256 fixedTxId = null)
+        private IEnumerable<TempTable> TransactionsToLists(IEnumerable<Transaction> transactions, ChainedHeader header, uint256 fixedTxId = null, ObjectsOfInterest objectsOfInterest = null)
         {
             // Convert relevant information in the block to information that can be joined to the wallet tables.
             var outputs = TempTable.Create<TempOutput>();
@@ -374,23 +418,29 @@ namespace Stratis.Features.SQLiteWalletRepository
                 // Build temp.PrevOuts
                 foreach (TxIn txIn in tx.Inputs)
                 {
-                    // We don't know which of these are actually spending from our
-                    // wallet addresses but we record them for batched resolution.
-                    prevOuts.Add(new TempPrevOut()
+                    if (objectsOfInterest.MayContain(txIn.PrevOut.Hash.ToBytes()))
                     {
-                        OutputTxId = txIn.PrevOut.Hash.ToString(),
-                        OutputIndex = (int)txIn.PrevOut.N,
-                        SpendBlockHeight = header?.Height ?? 0,
-                        SpendBlockHash = header?.HashBlock.ToString(),
-                        SpendTxIsCoinBase = (tx.IsCoinBase || tx.IsCoinStake) ? 1 : 0,
-                        SpendTxTime = (int)tx.Time,
-                        SpendTxId = tx.GetHash().ToString(),
-                        SpendTxTotalOut = tx.TotalOut.ToDecimal(MoneyUnit.BTC)
-                    });
+                        // We don't know which of these are actually spending from our
+                        // wallet addresses but we record them for batched resolution.
+                        prevOuts.Add(new TempPrevOut()
+                        {
+                            OutputTxId = txIn.PrevOut.Hash.ToString(),
+                            OutputIndex = (int)txIn.PrevOut.N,
+                            SpendBlockHeight = header?.Height ?? 0,
+                            SpendBlockHash = header?.HashBlock.ToString(),
+                            SpendTxIsCoinBase = (tx.IsCoinBase || tx.IsCoinStake) ? 1 : 0,
+                            SpendTxTime = (int)tx.Time,
+                            SpendTxId = tx.GetHash().ToString(),
+                            SpendTxTotalOut = tx.TotalOut.ToDecimal(MoneyUnit.BTC)
+                        });
+
+                        objectsOfInterest.Add(tx.GetHash().ToBytes());
+                    }
                 }
 
                 // Build temp.Outputs.
-                string txHash = (fixedTxId ?? tx.GetHash()).ToString();
+                uint256 txId = fixedTxId ?? tx.GetHash();
+                string txHash = txId.ToString();
 
                 for (int i = 0; i < tx.Outputs.Count; i++)
                 {
@@ -402,21 +452,25 @@ namespace Stratis.Features.SQLiteWalletRepository
                     if (txOut.ScriptPubKey.ToBytes(true)[0] == (byte)OpcodeType.OP_RETURN)
                         continue;
 
-                    string scriptPubKey = txOut.ScriptPubKey.ToHex();
-
-                    // We don't know which of these are actually received by our
-                    // wallet addresses but we records them for batched resolution.
-                    outputs.Add(new TempOutput()
+                    if (objectsOfInterest.MayContain(txOut.ScriptPubKey.ToBytes()) ||
+                        objectsOfInterest.MayContain(txId.ToBytes()))
                     {
-                        ScriptPubKey = scriptPubKey,
-                        OutputBlockHeight = header?.Height ?? 0,
-                        OutputBlockHash = header?.HashBlock.ToString(),
-                        OutputTxIsCoinBase = (tx.IsCoinBase || tx.IsCoinStake) ? 1 : 0,
-                        OutputTxTime = (int)tx.Time,
-                        OutputTxId = txHash,
-                        OutputIndex = i,
-                        Value = txOut.Value.ToDecimal(MoneyUnit.BTC)
-                    });
+                        string scriptPubKey = txOut.ScriptPubKey.ToHex();
+
+                        // We don't know which of these are actually received by our
+                        // wallet addresses but we records them for batched resolution.
+                        outputs.Add(new TempOutput()
+                        {
+                            ScriptPubKey = scriptPubKey,
+                            OutputBlockHeight = header?.Height ?? 0,
+                            OutputBlockHash = header?.HashBlock.ToString(),
+                            OutputTxIsCoinBase = (tx.IsCoinBase || tx.IsCoinStake) ? 1 : 0,
+                            OutputTxTime = (int)tx.Time,
+                            OutputTxId = txHash,
+                            OutputIndex = i,
+                            Value = txOut.Value.ToDecimal(MoneyUnit.BTC)
+                        });
+                    }
                 }
 
                 yield return prevOuts;
