@@ -205,7 +205,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
 
             // Will keep track of the height of spending details we're unable to fix.
-            int firstMissingTransactionHeight = this.LastBlockHeight() + 1;
+            int firstMissingTransactionHeight = this.LastBlockSyncedHashHeight().Height + 1;
 
             // Find the spending transactions.
             foreach ((uint256 blockId, Dictionary<uint256, List<TransactionData>> spentOutputsBySpendTxId) in spendTxsByBlockId)
@@ -235,7 +235,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
 
             // If there are unresolvable spending details then re-sync from that point onwards.
-            if (firstMissingTransactionHeight <= this.LastBlockHeight())
+            if (firstMissingTransactionHeight <= this.LastBlockSyncedHashHeight().Height)
             {
                 ChainedHeader fork = this.chainIndexer.GetHeader(Math.Min(firstMissingTransactionHeight - 1, this.chainIndexer.Height));
 
@@ -263,7 +263,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 }
 
                 // find the last chain block received by the wallet manager.
-                HashHeightPair hashHeightPair = this.LastReceivedBlockHash();
+                HashHeightPair hashHeightPair = this.LastBlockSyncedHashHeight();
                 this.WalletTipHash = hashHeightPair.Hash;
                 this.WalletTipHeight = hashHeightPair.Height;
 
@@ -292,43 +292,19 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <inheritdoc />
-        public int LastBlockHeight()
-        {
-
-            lock (this.lockObject)
-            {
-                if (!this.IsWalletActive())
-                {
-                    int height = this.chainIndexer.Tip.Height;
-                    this.logger.LogTrace("(-)[NO_WALLET]:{0}", height);
-                    return height;
-                }
-
-                int res = this.Wallet.LastBlockSyncedHeight ?? 0;
-                return res;
-            }
-        }
-
-        /// <summary>
-        /// Gets the hash of the last block received by the wallets.
-        /// </summary>
-        /// <returns>Hash of the last block received by the wallets.</returns>
-        public HashHeightPair LastReceivedBlockHash()
+        public HashHeightPair LastBlockSyncedHashHeight()
         {
             lock (this.lockObject)
             {
                 if (!this.IsWalletActive())
                 {
-                    uint256 hash = this.chainIndexer.Tip.HashBlock;
-                    this.logger.LogTrace("(-)[NO_WALLET]:'{0}'", hash);
+                    this.logger.LogTrace("(-)[NO_WALLET]:{0}='{1}'", nameof(this.chainIndexer.Tip), this.chainIndexer.Tip);
                     return new HashHeightPair(this.chainIndexer.Tip);
                 }
 
-
-                uint256 lastBlockSyncedHash = this.Wallet.LastBlockSyncedHash;
-
-                if (lastBlockSyncedHash == null)
+                if (this.Wallet.LastBlockSyncedHash == null && this.Wallet.LastBlockSyncedHeight == null)
                 {
+                    this.logger.LogTrace("(-)[WALLET_SYNC_BLOCK_NOT_SET]:{0}='{1}'", nameof(this.chainIndexer.Tip), this.chainIndexer.Tip);
                     return new HashHeightPair(this.chainIndexer.Tip);
                 }
 
@@ -361,7 +337,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             lock (this.lockObject)
             {
-                this.logger.LogDebug("Removing blocks back to height {0} from {1}", fork.Height, this.LastBlockHeight());
+                this.logger.LogDebug("Removing blocks back to height {0} from {1}.", fork.Height, this.LastBlockSyncedHashHeight().Height);
 
                 // Remove all the UTXO that have been reorged.
                 IEnumerable<TransactionData> makeUnspendable = this.Wallet.MultiSigAddress.Transactions.Where(w => w.BlockHeight > fork.Height).ToList();
@@ -1177,7 +1153,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             this.logger.LogTrace("(-)");
             return wallet;
-
         }
 
         /// <inheritdoc />

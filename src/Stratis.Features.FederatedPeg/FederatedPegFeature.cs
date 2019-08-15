@@ -208,7 +208,7 @@ namespace Stratis.Features.FederatedPeg
             if (this.federationWalletManager == null)
                 return;
 
-            int height = this.federationWalletManager.LastBlockHeight();
+            int height = this.federationWalletManager.LastBlockSyncedHashHeight().Height;
             ChainedHeader block = this.chainIndexer.GetHeader(height);
             uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
