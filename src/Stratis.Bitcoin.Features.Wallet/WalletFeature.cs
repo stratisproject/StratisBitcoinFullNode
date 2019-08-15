@@ -16,8 +16,10 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Features.SQLiteWalletRepository;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -46,6 +48,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly BroadcasterBehavior broadcasterBehavior;
 
+        private readonly IWalletRepository walletRepository;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="WalletFeature"/> class.
         /// </summary>
@@ -62,7 +66,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             Signals.ISignals signals,
             IConnectionManager connectionManager,
             BroadcasterBehavior broadcasterBehavior,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            IWalletRepository walletRepository)
         {
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
@@ -70,6 +75,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.signals = signals;
             this.connectionManager = connectionManager;
             this.broadcasterBehavior = broadcasterBehavior;
+            this.walletRepository = walletRepository;
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name);
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name, 800);
@@ -178,6 +184,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         services.AddSingleton<IScriptAddressReader>(new ScriptAddressReader());
                         services.AddSingleton<StandardTransactionPolicy>();
                         services.AddSingleton<IAddressBookManager, AddressBookManager>();
+                        services.AddSingleton<IWalletRepository, SQLiteWalletRepository>();
                     });
             });
 
