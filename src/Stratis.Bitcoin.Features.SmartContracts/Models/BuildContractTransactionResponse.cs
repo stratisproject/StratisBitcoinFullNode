@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         /// <summary>
         /// Constructs a response if the call contract transaction was successfully built.
         /// </summary>
-        /// <param name="methodName">The method name will be called on the contract.</param>
+        /// <param name="methodName">The method name that will be called on the contract.</param>
         /// <param name="transaction">The created call contract transaction.</param>
         /// <param name="transactionFee">The fee associated with the transaction.</param>
         public static BuildCallContractTransactionResponse Succeeded(string methodName, Transaction transaction, Money transactionFee)
