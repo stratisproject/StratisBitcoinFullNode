@@ -82,9 +82,7 @@ namespace Stratis.Features.FederatedPeg
 
         private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
-            var payload = message.Message.Payload as RequestPartialTransactionPayload;
-
-            if (payload == null)
+            if (!(message.Message.Payload is RequestPartialTransactionPayload payload))
                 return;
 
             // Is a consolidation request.
