@@ -22,35 +22,60 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         }
 
         public TempDataFolder([CallerFilePath] string classOrFileName = "", [CallerMemberName] string callingMethod = "")
-            : base(TestBase.GetTestDirectoryPath(Path.Combine(ClassNameFromFileName(classOrFileName), callingMethod)))
+            : base(TestBase.AssureEmptyDir(TestBase.GetTestDirectoryPath(Path.Combine(ClassNameFromFileName(classOrFileName), callingMethod))))
         {
+            try
+            {
+                Directory.Delete(TestBase.GetTestDirectoryPath(ClassNameFromFileName(classOrFileName)), true);
+            }
+            catch (Exception)
+            {
+            }
         }
 
         public void Dispose()
         {
-            Directory.Delete(this.RootPath, true);
         }
     }
 
-    public class CreateRepositoryTests
+    public class MultiWalletRepositoryTests : RepositoryTests
     {
+        public MultiWalletRepositoryTests() : base(true)
+        {
+        }
+    }
+
+    public class RepositoryTests
+    {
+        private readonly bool multiWallet;
+
+        public RepositoryTests(bool multiWallet = false)
+        {
+            this.multiWallet = multiWallet;
+        }
+
         [Fact]
         public void CanCreateWalletAndTransactionsAndAddressesAndCanRewind()
         {
-            using (var dataFolder = new TempDataFolder())
+            using (var dataFolder = new TempDataFolder(this.GetType().Name))
             {
                 Network network = KnownNetworks.StratisRegTest;
 
                 var repo = new SQLiteWalletRepository(dataFolder, network, DateTimeProvider.Default, new ScriptPubKeyProvider());
 
-                repo.Initialize(true);
+                repo.Initialize(this.multiWallet);
 
                 var walletPassword = "test";
                 var account = new WalletAccountReference("test2", "account 0");
 
-                // Create the wallet as well as account 0.
+                // Create an "test2" as an empty wallet.
                 byte[] chainCode = Convert.FromBase64String("RUKVp47yWou1VNVBM1U2XYMUSRfJqisI0xATo17VLNU=");
                 repo.CreateWallet(account.WalletName, "6PYQSX5vLVL2FtFWd5tDqk6KTCMEBubhdeFUL4xDRNhYueWR9iYNgiDDLV", chainCode);
+
+                // Verify the wallet exisits.
+                Assert.Equal("test2", repo.GetWalletNames().First());
+
+                // Create "account 0" as P2PKH.
                 repo.CreateAccount(account.WalletName, 0, account.AccountName, walletPassword, "P2PKH");
 
                 // Create block 1.
@@ -69,7 +94,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 // Process block 1.
                 var chainedHeader1 = new ChainedHeader(blockHeader1, blockHeader1.GetHash(), null);
-                repo.ProcessBlock(block1, chainedHeader1);
+                repo.ProcessBlock(block1, chainedHeader1, account.WalletName);
 
                 // List the unspent outputs.
                 List<UnspentOutputReference> outputs1 = repo.GetSpendableTransactionsInAccount(account, chainedHeader1, 0).ToList();
@@ -98,7 +123,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 // Process block 2.
                 var chainedHeader2 = new ChainedHeader(blockHeader2, blockHeader2.HashPrevBlock, chainedHeader1);
-                repo.ProcessBlock(block2, chainedHeader2);
+                repo.ProcessBlock(block2, chainedHeader2, account.WalletName);
 
                 // List the unspent outputs.
                 List<UnspentOutputReference> outputs2 = repo.GetSpendableTransactionsInAccount(account, chainedHeader2, 0).ToList();
@@ -132,7 +157,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 Assert.Equal(Money.COIN * 9, (long)history[1].Transaction.Amount);
 
                 // REWIND: Remove block 1.
-                repo.SetLastBlockSynced("test2", chainedHeader1);
+                repo.RewindWallet("test2", chainedHeader1);
 
                 // List the unspent outputs.
                 outputs1 = repo.GetSpendableTransactionsInAccount(account, chainedHeader1, 0).ToList();

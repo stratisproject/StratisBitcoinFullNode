@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using NBitcoin;
 using SQLite;
 using Stratis.Features.SQLiteWalletRepository.Tables;
@@ -11,10 +12,20 @@ namespace Stratis.Features.SQLiteWalletRepository
     public class DBConnection : SQLiteConnection
     {
         public SQLiteWalletRepository repo;
+        private bool disposed = false;
 
-        public DBConnection(SQLiteWalletRepository repo) : base(repo.DBFile)
+        public DBConnection(SQLiteWalletRepository repo, string dbFile) : base(Path.Combine(repo.DBPath, dbFile))
         {
             this.repo = repo;
+        }
+
+        internal void CreateDBStructure()
+        {
+            this.CreateTable<HDWallet>();
+            this.CreateTable<HDAccount>();
+            this.CreateTable<HDAddress>();
+            this.CreateTable<HDTransactionData>();
+            this.CreateTable<HDPayment>();
         }
 
         internal List<HDAddress> CreateAddresses(HDAccount account, int addressType, int addressesQuantity)
@@ -95,18 +106,30 @@ namespace Stratis.Features.SQLiteWalletRepository
             return account;
         }
 
+        internal bool TableExists(string tableName)
+        {
+            return this.ExecuteScalar<int>($@"
+                SELECT  COUNT(*)
+                FROM    sqlite_master
+                WHERE   name = ? and type = 'table';",
+                tableName) != 0;
+        }
+
         internal void CreateTable<T>()
         {
-            if (typeof(T) == typeof(HDWallet))
-                HDWallet.CreateTable(this);
-            else if (typeof(T) == typeof(HDAccount))
-                HDAccount.CreateTable(this);
-            else if (typeof(T) == typeof(HDAddress))
-                HDAddress.CreateTable(this);
-            else if (typeof(T) == typeof(HDTransactionData))
-                HDTransactionData.CreateTable(this);
-            else if (typeof(T) == typeof(HDPayment))
-                HDPayment.CreateTable(this);
+            if (!this.TableExists(typeof(T).Name))
+            {
+                if (typeof(T) == typeof(HDWallet))
+                    HDWallet.CreateTable(this);
+                else if (typeof(T) == typeof(HDAccount))
+                    HDAccount.CreateTable(this);
+                else if (typeof(T) == typeof(HDAddress))
+                    HDAddress.CreateTable(this);
+                else if (typeof(T) == typeof(HDTransactionData))
+                    HDTransactionData.CreateTable(this);
+                else if (typeof(T) == typeof(HDPayment))
+                    HDPayment.CreateTable(this);
+            }
         }
 
         internal HDWallet GetWalletByName(string walletName)
@@ -282,10 +305,10 @@ namespace Stratis.Features.SQLiteWalletRepository
                     ON     A.ScriptPubKey = T.ScriptPubKey
                     JOIN   HDWallet W
                     ON     W.WalletId = A.WalletId
-                    {/* Restrict non-transient transaction updates to aligned wallets */((header == null) ? $@"
-                    AND     W.Name = {walletName}" : $@"
-                    AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'
-                    ")}
+                    {/* Respect the wallet name if provided */((walletName != null) ? $@"
+                    AND    W.Name = '{walletName}'" : "")}
+                    {/* Restrict non-transient transaction updates to aligned wallets */((header != null) ? $@"
+                    AND    W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'" : "")}
                     LEFT   JOIN HDTransactionData TD
                     ON     TD.WalletId = A.WalletId
                     AND    TD.AccountIndex  = A.AccountIndex
@@ -354,10 +377,11 @@ namespace Stratis.Features.SQLiteWalletRepository
                         AND     TD.SpendBlockHash IS NULL
                         JOIN    HDWallet W
                         ON      W.WalletId = TD.WalletId
-                        {/* Restrict non-transient transaction updates to aligned wallets */((header == null) ? $@"
-                        AND     W.Name = {walletName}" : $@"
-                        AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'
-                        ")})");
+                        {/* Respect the wallet name if provided */((walletName != null) ? $@"
+                        AND     W.Name = '{walletName}'" : "")}
+                        {/* Restrict non-transient transaction updates to aligned wallets */((header != null) ? $@"
+                        AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'" : "")}
+                        )");
 
             // Insert spending details into HDPayment records.
             // Performs checks that we do not affect a confirmed transaction's payments.
@@ -375,12 +399,12 @@ namespace Stratis.Features.SQLiteWalletRepository
                 AND     TD.OutputIndex = T.OutputIndex
                 AND     TD.SpendBlockHeight IS NULL
                 AND     TD.SpendBlockHash IS NULL
-                JOIN    HDWallet W
-                ON      W.WalletId = TD.WalletId
-                {/* Restrict non-transient transaction updates to aligned wallets */((header == null) ? $@"
-                AND     W.Name = {walletName}" : $@"
-                AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'
-                ")}
+                JOIN   HDWallet W
+                ON     W.WalletId = TD.WalletId
+                {/* Respect the wallet name if provided */((walletName != null) ? $@"
+                AND     W.Name = '{walletName}'" : "")}
+                {/* Restrict non-transient transaction updates to aligned wallets */((header != null) ? $@"
+                AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'" : "")}
                 JOIN    temp.TempOutput O
                 ON      O.OutputTxID = T.SpendTxId");
 
@@ -415,10 +439,10 @@ namespace Stratis.Features.SQLiteWalletRepository
                 AND    TD.SpendBlockHash IS NULL
                 JOIN   HDWallet W
                 ON     W.WalletId = TD.WalletId
-                {/* Restrict non-transient transaction updates to aligned wallets */((header == null) ? $@"
-                AND    W.Name = {walletName}" : $@"
-                AND    W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'
-                ")}
+                {/* Respect the wallet name if provided */((walletName != null) ? $@"
+                AND     W.Name = '{walletName}'" : "")}
+                {/* Restrict non-transient transaction updates to aligned wallets */((header != null) ? $@"
+                AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'" : "")}
                 ORDER BY TD.WalletId
                 ,      TD.AccountIndex
                 ,      TD.AddressType
@@ -434,7 +458,9 @@ namespace Stratis.Features.SQLiteWalletRepository
                     SET    LastBlockSyncedHash = '{header.HashBlock}',
                            LastBlockSyncedHeight = {header.Height},
                            BlockLocator = '{string.Join(",", header.GetLocator().Blocks)}'
-                    WHERE  LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'");
+                    WHERE  LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'
+                    {/* Respect the wallet name if provided */((walletName != null) ? $@"
+                    AND    Name = '{walletName}'" : "")}");
             }
         }
     }

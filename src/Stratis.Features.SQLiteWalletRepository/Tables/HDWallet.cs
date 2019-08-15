@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 using SQLite;
+using Stratis.Features.SQLiteWalletRepository.Extensions;
 
 namespace Stratis.Features.SQLiteWalletRepository.Tables
 {
@@ -48,6 +50,13 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 WHERE  Name = ?", walletName);
         }
 
+        internal static IEnumerable<HDWallet> GetAll(SQLiteConnection conn)
+        {
+            return conn.Query<HDWallet>($@"
+                SELECT *
+                FROM   HDWallet");
+        }
+
         internal static HDWallet GetWalletByEncryptedSeed(SQLiteConnection conn, string encryptedSeed)
         {
             return conn.FindWithQuery<HDWallet>($@"
@@ -67,6 +76,40 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             this.LastBlockSyncedHash = lastBlockSyncedHash.ToString();
             this.LastBlockSyncedHeight = lastBlockSyncedHeight;
             this.BlockLocator = blockLocator;
+        }
+
+        internal bool WalletContainsBlock(ChainedHeader lastBlockSynced)
+        {
+            if (lastBlockSynced == null)
+                return true;
+
+            if (lastBlockSynced.Height > this.LastBlockSyncedHeight)
+                return false;
+
+            if (lastBlockSynced.Height == this.LastBlockSyncedHeight)
+                return lastBlockSynced.HashBlock == uint256.Parse(this.LastBlockSyncedHash);
+
+            var blockLocator = new BlockLocator()
+            {
+                Blocks = this.BlockLocator.Split(',').Select(strHash => uint256.Parse(strHash)).ToList()
+            };
+
+            List<int> locatorHeights = ChainedHeaderExt.GetLocatorHeights(this.LastBlockSyncedHeight);
+
+            for (int i = 0; i < locatorHeights.Count; i++)
+            {
+                if (lastBlockSynced.Height >= locatorHeights[i])
+                {
+                    lastBlockSynced = lastBlockSynced.GetAncestor(locatorHeights[i]);
+
+                    if (lastBlockSynced.HashBlock != blockLocator.Blocks[i])
+                        return false;
+
+                    break;
+                }
+            }
+
+            return true;
         }
     }
 }

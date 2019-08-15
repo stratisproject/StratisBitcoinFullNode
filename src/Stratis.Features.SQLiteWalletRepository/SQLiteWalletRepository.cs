@@ -8,7 +8,6 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 using NBitcoin.DataEncoders;
-using Stratis.Features.SQLiteWalletRepository.Extensions;
 
 namespace Stratis.Features.SQLiteWalletRepository
 {
@@ -19,19 +18,13 @@ namespace Stratis.Features.SQLiteWalletRepository
         internal IDateTimeProvider DateTimeProvider { get; private set; }
         internal IScriptPubKeyProvider ScriptPubKeyProvider { get; private set; }
 
+        public bool DatabasePerWallet { get; private set; }
+
         internal string DBPath
         {
             get
             {
                 return Path.Combine(this.DataFolder.WalletPath, nameof(SQLiteWalletRepository));
-            }
-        }
-
-        internal string DBFile
-        {
-            get
-            {
-                return Path.Combine(this.DBPath, "Wallets.db");
             }
         }
 
@@ -47,77 +40,63 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
         }
 
-        private DBConnection GetConnection()
+        private DBConnection GetConnection(string walletName = null)
         {
-            return new DBConnection(this);
+            return new DBConnection(this, (this.DatabasePerWallet && walletName != null)? $"{walletName}.db" : "Wallet.db");
         }
 
         /// <inheritdoc />
-        public void Initialize(bool wipeDB = false)
+        public void Initialize(bool seperateWallets = true)
         {
             lock (this.lockObject)
             {
                 Directory.CreateDirectory(this.DBPath);
 
-                if (wipeDB && File.Exists(this.DBFile))
-                    File.Delete(this.DBFile);
-
-                using (var conn = GetConnection())
+                this.DatabasePerWallet = seperateWallets;
+                if (!seperateWallets)
                 {
-                    conn.BeginTransaction();
-                    conn.CreateTable<HDWallet>();
-                    conn.CreateTable<HDAccount>();
-                    conn.CreateTable<HDAddress>();
-                    conn.CreateTable<HDTransactionData>();
-                    conn.CreateTable<HDPayment>();
-                    conn.Commit();
+                    using (DBConnection conn = GetConnection())
+                    {
+                        conn.CreateDBStructure();
+                    }
+                }
+            }
+        }
+
+        public List<string> GetWalletNames()
+        {
+            lock (this.lockObject)
+            {
+                if (this.DatabasePerWallet)
+                {
+                    return Directory.EnumerateFiles(this.DBPath, "*.db")
+                        .Select(p => p.Substring(this.DBPath.Length + 1).Split('.')[0])
+                        .ToList();
+                }
+                else
+                {
+                    using (DBConnection conn = this.GetConnection())
+                    {
+                        return HDWallet.GetAll(conn)
+                            .Select(w => w.Name)
+                            .ToList();
+                    }
                 }
             }
         }
 
         /// <inheritdoc />
-        public void SetLastBlockSynced(string walletName, ChainedHeader lastBlockSynced)
+        public void RewindWallet(string walletName, ChainedHeader lastBlockSynced)
         {
             lock (this.lockObject)
             {
-                using (DBConnection conn = this.GetConnection())
+                using (DBConnection conn = this.GetConnection(walletName))
                 {
-                    if (lastBlockSynced != null)
-                    {
-                        // Perform a sanity check that the location being set is conceivably "within" the wallet.
-                        HDWallet wallet = conn.GetWalletByName(walletName);
+                    HDWallet wallet = conn.GetWalletByName(walletName);
 
-                        if (lastBlockSynced.Height > wallet.LastBlockSyncedHeight)
-                            throw new InvalidProgramException("Can't rewind the wallet using the supplied tip.");
-
-                        if (lastBlockSynced.Height == wallet.LastBlockSyncedHeight)
-                        {
-                            if (lastBlockSynced.HashBlock == uint256.Parse(wallet.LastBlockSyncedHash))
-                                return;
-
-                            throw new InvalidProgramException("Can't rewind the wallet using the supplied tip.");
-                        }
-
-                        var blockLocator = new BlockLocator()
-                        {
-                            Blocks = wallet.BlockLocator.Split(',').Select(strHash => uint256.Parse(strHash)).ToList()
-                        };
-
-                        List<int> locatorHeights = ChainedHeaderExt.GetLocatorHeights(wallet.LastBlockSyncedHeight);
-
-                        for (int i = 0; i < locatorHeights.Count; i++)
-                        {
-                            if (lastBlockSynced.Height >= locatorHeights[i])
-                            {
-                                lastBlockSynced = lastBlockSynced.GetAncestor(locatorHeights[i]);
-
-                                if (lastBlockSynced.HashBlock != blockLocator.Blocks[i])
-                                    throw new InvalidProgramException("Can't rewind the wallet using the supplied tip.");
-
-                                break;
-                            }
-                        }
-                    }
+                    // Perform a sanity check that the location being set is conceivably "within" the wallet.
+                    if (!wallet.WalletContainsBlock(lastBlockSynced))
+                        throw new InvalidProgramException("Can't rewind the wallet using the supplied tip.");
 
                     // Ok seems safe. Adjust the tip and rewind relevant transactions.
                     conn.BeginTransaction();
@@ -152,10 +131,14 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                 wallet.SetLastBlockSynced(lastBlockSynced);
 
-                using (var conn = this.GetConnection())
+                using (var conn = this.GetConnection(walletName))
                 {
                     conn.BeginTransaction();
-                    conn.Insert(wallet);
+
+                    if (this.DatabasePerWallet)
+                        conn.CreateDBStructure();
+
+                    conn.InsertOrReplace(wallet);
                     conn.Commit();
                 }
             }
@@ -166,7 +149,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             lock (this.lockObject)
             {
-                using (var conn = this.GetConnection())
+                using (var conn = this.GetConnection(walletName))
                 {
                     var wallet = conn.GetWalletByName(walletName);
 
@@ -195,7 +178,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             lock (this.lockObject)
             {
-                using (var conn = this.GetConnection())
+                using (var conn = this.GetConnection(walletName))
                 {
                     HDWallet wallet = conn.GetWalletByName(walletName);
 
@@ -210,7 +193,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             lock (this.lockObject)
             {
-                using (var conn = this.GetConnection())
+                using (var conn = this.GetConnection(accountReference.WalletName))
                 {
                     var account = conn.GetAccountByName(accountReference.WalletName, accountReference.AccountName);
                     foreach (HDAddress address in conn.GetUnusedAddresses(account.WalletId, account.AccountIndex, isChange ? 1 : 0, count))
@@ -222,7 +205,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public void ProcessBlock(Block block, ChainedHeader header)
+        public void ProcessBlock(Block block, ChainedHeader header, string walletName = null)
         {
             Guard.NotNull(header, nameof(header));
 
@@ -238,7 +221,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 }
 
                 // Merge the temporary tables with the wallet tables.
-                using (DBConnection conn = this.GetConnection())
+                using (DBConnection conn = this.GetConnection(walletName))
                 {
                     // Execute the scripts.
                     foreach (IEnumerable<string> tableScript in blockToScript)
@@ -246,7 +229,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                             conn.Execute(command);
 
                     conn.BeginTransaction();
-                    conn.ProcessTransactions(header);
+                    conn.ProcessTransactions(header, walletName);
                     conn.Commit();
                 }
             }
@@ -257,7 +240,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             lock (this.lockObject)
             {
-                using (DBConnection conn = this.GetConnection())
+                using (DBConnection conn = this.GetConnection(walletName))
                 {
                     HDWallet wallet = conn.GetWalletByName(walletName);
 
@@ -281,7 +264,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                     txToScript = lists.Select(list => list.CreateScript());
                 }
 
-                using (DBConnection conn = this.GetConnection())
+                using (DBConnection conn = this.GetConnection(walletName))
                 {
                     // Execute the scripts.
                     foreach (IEnumerable<string> tableScript in txToScript)
@@ -300,7 +283,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             lock (this.lockObject)
             {
-                using (DBConnection conn = this.GetConnection())
+                using (DBConnection conn = this.GetConnection(walletAccountReference.WalletName))
                 {
                     HDAccount account = conn.GetAccountByName(walletAccountReference.WalletName, walletAccountReference.AccountName);
 
@@ -335,7 +318,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             lock (this.lockObject)
             {
-                using (DBConnection conn = this.GetConnection())
+                using (DBConnection conn = this.GetConnection(walletName))
                 {
                     var accounts = new List<HDAccount>();
 

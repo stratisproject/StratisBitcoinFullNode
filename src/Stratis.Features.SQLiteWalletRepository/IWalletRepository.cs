@@ -42,6 +42,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// </summary>
         /// <param name="block">The block to process.</param>
         /// <param name="header">The header of the block passed.</param>
+        /// <param name="walletName">Set this to limit processing to the named wallet.</param>
         /// <remarks>
         /// This method is intended to be idempotent - i.e. running it twice should not produce any adverse effects.
         /// Similar to the rest of the methods it should not contain any business logic other than what may be injected externally.
@@ -49,13 +50,13 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// have their addresses topped up to ensure there are always 20 unused addresses after the last
         /// address containing transactions.
         /// </remarks>
-        void ProcessBlock(Block block, ChainedHeader header);
+        void ProcessBlock(Block block, ChainedHeader header, string walletName = null);
 
         /// <summary>
         /// Initialize an existing or empty database.
         /// </summary>
-        /// <param name="dropDB">Specified that the repository should be re-created if it exists.</param>
-        void Initialize(bool dropDB = false);
+        /// <param name="seperateWallets">If set the repository will split the wallets into separate files.</param>
+        void Initialize(bool seperateWallets = true);
 
         /// <summary>
         /// Creates a wallet without any accounts.
@@ -117,6 +118,6 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <param name="walletName">The name of the wallet.</param>
         /// <param name="lastBlockSynced">The last block synced to set.</param>
         /// <remarks>The value of lastBlockSynced must match a block that was conceivably processed by the wallet (or be null).</remarks>
-        void SetLastBlockSynced(string walletName, ChainedHeader lastBlockSynced);
+        void RewindWallet(string walletName, ChainedHeader lastBlockSynced);
     }
 }
