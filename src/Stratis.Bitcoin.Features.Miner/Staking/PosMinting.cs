@@ -419,7 +419,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 this.rpcGetStakingInfoModel.NetStakeWeight = this.networkWeight;
 
                 // Trying to create coinstake that satisfies the difficulty target, put it into a block and sign the block.
-                if (await this.StakeAndSignBlockAsync(utxoStakeDescriptions, posBlock, chainTip, blockTemplate.TotalFee, coinstakeTimestamp).ConfigureAwait(false))
+                if (await this.StakeAndSignBlockAsync(utxoStakeDescriptions, blockTemplate, chainTip, blockTemplate.TotalFee, coinstakeTimestamp).ConfigureAwait(false))
                 {
                     this.logger.LogDebug("New POS block created and signed successfully.");
                     await this.CheckStakeAsync(posBlock, chainTip).ConfigureAwait(false);
@@ -528,13 +528,15 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// to be mined and signes it.
         /// </summary>
         /// <param name="utxoStakeDescriptions">List of UTXOs that are available in the wallet for staking.</param>
-        /// <param name="block">Template of the block that we are trying to mine.</param>
+        /// <param name="blockTemplate">Template of the block that we are trying to mine.</param>
         /// <param name="chainTip">Tip of the best chain.</param>
         /// <param name="fees">Transaction fees from the transactions included in the block if we mine it.</param>
         /// <param name="coinstakeTimestamp">Maximal timestamp of the coinstake transaction. The actual timestamp can be lower, but not higher.</param>
         /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
-        private async Task<bool> StakeAndSignBlockAsync(List<UtxoStakeDescription> utxoStakeDescriptions, PosBlock block, ChainedHeader chainTip, long fees, uint coinstakeTimestamp)
+        private async Task<bool> StakeAndSignBlockAsync(List<UtxoStakeDescription> utxoStakeDescriptions, BlockTemplate blockTemplate, ChainedHeader chainTip, long fees, uint coinstakeTimestamp)
         {
+            var block = blockTemplate.Block as PosBlock;
+
             // If we are trying to sign something except proof-of-stake block template.
             if (!block.Transactions[0].Outputs[0].IsEmpty)
             {
@@ -549,8 +551,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 return true;
             }
 
-            var coinstakeContext = new CoinstakeContext();
-            coinstakeContext.CoinstakeTx = this.network.CreateTransaction();
+            var coinstakeContext = new CoinstakeContext { CoinstakeTx = this.network.CreateTransaction() };
             coinstakeContext.CoinstakeTx.Time = coinstakeTimestamp;
 
             // Search to current coinstake time.
@@ -567,18 +568,53 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 uint minTimestamp = chainTip.Header.Time + 1;
                 if (coinstakeContext.CoinstakeTx.Time >= minTimestamp)
                 {
-                    // Make sure coinstake would meet timestamp protocol
-                    // as it would be the same as the block timestamp.
+                    // Make sure coinstake would meet timestamp protocol as it would be the same as the block timestamp.
                     block.Transactions[0].Time = block.Header.Time = coinstakeContext.CoinstakeTx.Time;
 
-                    // We have to make sure that we have no future timestamps in
-                    // our transactions set.
+                    // We have to make sure that we have no future timestamps in our transactions set.
+                    bool removed = false;
                     for (int i = block.Transactions.Count - 1; i >= 0; i--)
                     {
                         if (block.Transactions[i].Time > block.Header.Time)
                         {
+                            Money feeToRemove = blockTemplate.FeeDetails[block.Transactions[i].GetHash()];
+
+                            // Remove the fee from a suitable coinstake output.
+                            for (int j = 0; j < coinstakeContext.CoinstakeTx.Outputs.Count; j++)
+                            {
+                                if (coinstakeContext.CoinstakeTx.Outputs[j].Value >= feeToRemove)
+                                {
+                                    // TODO: This doesn't try to avoid creating dust, but ostensibly that should be rare, as the stake reward on its own is well above the dust threshold.
+                                    coinstakeContext.CoinstakeTx.Outputs[j].Value -= feeToRemove;
+                                    break;
+                                }
+                            }
+
                             this.logger.LogDebug("Removing transaction with timestamp {0} as it is greater than coinstake transaction timestamp {1}.", block.Transactions[i].Time, block.Header.Time);
                             block.Transactions.Remove(block.Transactions[i]);
+                            removed = true;
+                        }
+                    }
+
+                    // We removed at least one transaction, so now the coinstake output that contains the fees is most likely inaccurate. Sign the coinstake again.
+                    if (removed)
+                    {
+                        try
+                        {
+                            var transactionBuilder = new TransactionBuilder(this.network)
+                                .AddKeys(coinstakeContext.Key)
+                                .AddCoins(new Coin(coinstakeContext.CoinstakeTx.Inputs.First().PrevOut, coinstakeContext.KernelTxOut));
+
+                            foreach (BuilderExtension extension in this.walletManager.GetTransactionBuilderExtensionsForStaking())
+                                transactionBuilder.Extensions.Add(extension);
+
+                            transactionBuilder.SignTransactionInPlace(coinstakeContext.CoinstakeTx);
+                        }
+                        catch (Exception e)
+                        {
+                            this.logger.LogTrace("Exception re-signing coinstake: {0}", e);
+                            this.logger.LogTrace("(-)[SIGN_FAILED_AFTER_FEE_REMOVAL]:false");
+                            return false;
                         }
                     }
 
@@ -869,6 +905,9 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
                             context.CoinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(0, scriptPubKeyOut));
                             context.Result.KernelCoin = utxoStakeInfo;
+
+                            // We need this for possible re-signing of the coinstake if we have to modify it after the first time it is signed.
+                            context.CoinstakeContext.KernelTxOut = utxoStakeInfo.TxOut;
 
                             context.Logger.LogDebug("Kernel accepted, coinstake input is '{0}', stopping work.", prevoutStake);
                         }
