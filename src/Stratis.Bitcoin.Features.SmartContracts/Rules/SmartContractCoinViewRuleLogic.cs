@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Features.SmartContracts.PoW;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
@@ -34,6 +35,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         private Transaction generatedTransaction;
         private readonly IList<Receipt> receipts;
         private uint refundCounter;
+        private ulong blockGasConsumed;
         private IStateRepositoryRoot mutableStateRepository;
 
         public SmartContractCoinViewRuleLogic(IStateRepositoryRoot stateRepositoryRoot,
@@ -51,7 +53,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.coinView = coinView;
             this.refundCounter = 1;
             this.blockTxsProcessed = new List<Transaction>();
-            this.receipts = new List<Receipt>();            
+            this.receipts = new List<Receipt>();
+            this.blockGasConsumed = 0;
         }
 
         public async Task RunAsync(Func<RuleContext, Task> baseRunAsync, RuleContext context)
@@ -59,6 +62,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.blockTxsProcessed.Clear();
             this.receipts.Clear();
             this.refundCounter = 1;
+            this.blockGasConsumed = 0;
             Block block = context.ValidationContext.BlockToValidate;
 
             // Get a IStateRepositoryRoot we can alter without affecting the injected one which is used elsewhere.
@@ -111,6 +115,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             // Someone submitted a smart contract transaction.
             this.ExecuteContractTransaction(context, transaction);
 
+            if (this.blockGasConsumed > SmartContractBlockDefinition.GasPerBlockLimit)
+            {
+                SmartContractConsensusErrors.BlockGasLimitExceeded.Throw();
+            }
+
             baseUpdateUTXOSet(context, transaction);
             this.blockTxsProcessed.Add(transaction);
         }
@@ -125,8 +134,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
                 SmartContractConsensusErrors.UnequalCondensingTx.Throw();
 
             this.generatedTransaction = null;
-
-            return;
         }
 
         /// <summary>
@@ -191,6 +198,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             };
 
             this.receipts.Add(receipt);
+
+            this.blockGasConsumed += result.GasConsumed;
 
             if (result.Refund != null)
             {

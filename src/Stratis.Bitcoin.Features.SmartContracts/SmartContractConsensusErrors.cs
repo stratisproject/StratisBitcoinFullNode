@@ -13,5 +13,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public static ConsensusError UnequalRefundAmounts => new ConsensusError("invalid-refund-amount", "contract execution refunded a different amount or to a different address");
         public static ConsensusError MissingRefundOutput => new ConsensusError("missing-refund-output", "contract execution refunded some amount but refund output is missing.");
         public static ConsensusError FeeTooSmallForGas => new ConsensusError("total-gas-value-greater-than-total-fee", "total supplied gas value was greater than total supplied fee value");
+        public static ConsensusError BlockGasLimitExceeded => new ConsensusError("block-gas-limit-exceeded", "gas consumed by all transactions in the block exceeds the maximum allowed.");
     }
 }
