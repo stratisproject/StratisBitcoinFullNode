@@ -1202,11 +1202,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         key = Key.Parse(encryptedSeed, password, this.Wallet.Network);
 
                     bool isValidKey = key.PubKey.ToHex() == this.federatedPegSettings.PublicKey;
+
                     if (!isValidKey)
-                    {
-                        this.logger.LogInformation("The wallet public key {0} does not match the federation member's public key {1}", key.PubKey.ToHex(), this.federatedPegSettings.PublicKey);
-                        return;
-                    }
+                        throw new WalletException($"The wallet public key {key.PubKey.ToHex()} does not match the federation member's public key {this.federatedPegSettings.PublicKey}");
 
                     this.Secret = new WalletSecret() { WalletPassword = password };
                     this.Wallet.EncryptedSeed = encryptedSeed;
