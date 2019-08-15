@@ -184,9 +184,12 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             }
         }
 
-        [Fact(Skip = "Configure this test then run it manually.")]
+        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
         public void CanProcessBlocks()
         {
+            // Configure this to point to your "StratisTest" root folder.
+            string dataDir = @"E:\RunNodes\SideChains\Data\MainchainUser";
+
             using (var dataFolder = new TempDataFolder(this.GetType().Name))
             {
                 Network network = KnownNetworks.StratisTest;
@@ -209,7 +212,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 repo.CreateAccount(account.WalletName, 0, account.AccountName, walletPassword, "P2PKH");
 
                 // Set up block store.
-                string dataDir = @"E:\RunNodes\SideChains\Data\MainchainUser";
                 var nodeSettings = new NodeSettings(network, args: new[] { $"-datadir={dataDir}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
                 DBreezeSerializer serializer = new DBreezeSerializer(network.Consensus.ConsensusFactory);
                 IBlockRepository blockRepo = new BlockRepository(network, nodeSettings.DataFolder, nodeSettings.LoggerFactory, serializer);
@@ -249,12 +251,20 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 for (int height = firstHeight ; height <= blockRepo.TipHashAndHeight.Height; )
                 {
-                    var buffer = new List<(ChainedHeader, Block)>();
+                    var hashes = new List<uint256>();
+                    for (int i = 0; i < 1000 && (height + i) <= blockRepo.TipHashAndHeight.Height; i++)
+                    {
+                        ChainedHeader header = chainIndexer.GetHeader(height + i);
+                        hashes.Add(header.HashBlock);
+                    }
 
+                    List<Block> blocks = blockRepo.GetBlocks(hashes);
+
+                    var buffer = new List<(ChainedHeader, Block)>();
                     for (int i = 0; i < 1000 && height <= blockRepo.TipHashAndHeight.Height; height++, i++)
                     {
                         ChainedHeader header = chainIndexer.GetHeader(height);
-                        buffer.Add((header, blockRepo.GetBlock(header.HashBlock)));
+                        buffer.Add((header, blocks[i]));
                     }
 
                     repo.ProcessBlocks(buffer, "test2");
