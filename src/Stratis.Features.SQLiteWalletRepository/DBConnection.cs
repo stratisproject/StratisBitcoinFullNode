@@ -87,8 +87,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             ExtPubKey extPubKey = ExtPubKey.Parse(account.ExtPubKey, this.repo.Network).Derive(keyPath);
             PubKey pubKey = extPubKey.PubKey;
-            NBitcoin.Script pubKeyScript = pubKey.ScriptPubKey;
-            NBitcoin.Script scriptPubKey = this.repo.ScriptPubKeyProvider.FromPubKey(pubKey, account.ScriptPubKeyType);
+            Script pubKeyScript = pubKey.ScriptPubKey;
+            Script scriptPubKey = this.repo.ScriptPubKeyProvider.FromPubKey(pubKey, account.ScriptPubKeyType);
 
             // Add the new address details to the list of addresses.
             return this.CreateAddress(account, addressType, addressIndex, pubKeyScript.ToHex(), scriptPubKey.ToHex());

@@ -214,20 +214,26 @@ namespace Stratis.Features.SQLiteWalletRepository
         public void ProcessBlocks(IEnumerable<(ChainedHeader header, Block block)> blocks, string walletName = null)
         {
             ChainedHeader deferredTip = null;
-            ObjectsOfInterest objectsOfInterest;
+            ObjectsOfInterest objectsOfInterest = null;
+            HDWallet wallet = null;
 
-            HDWallet wallet;
-
-            using (DBConnection conn = GetConnection(walletName))
-            {
-                wallet = conn.GetWalletByName(walletName);
-                objectsOfInterest = conn.DetermineObjectsOfInterest(wallet.WalletId);
-            }
+            bool transactionsProcessed = true;
 
             foreach ((ChainedHeader header, Block block) in blocks)
             {
                 lock (this.lockObject)
                 {
+                    if (transactionsProcessed)
+                    {
+                        using (DBConnection conn = GetConnection(walletName))
+                        {
+                            wallet = conn.GetWalletByName(walletName);
+                            objectsOfInterest = conn.DetermineObjectsOfInterest(wallet.WalletId);
+                        }
+
+                        transactionsProcessed = false;
+                    }
+
                     // Determine the scripts for creating temporary tables and inserting the block's information into them.
                     IEnumerable<IEnumerable<string>> blockToScript;
                     {
@@ -261,6 +267,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                         conn.ProcessTransactions(header, walletName);
                         conn.Commit();
+
+                        transactionsProcessed = true;
                     }
                 }
             }
