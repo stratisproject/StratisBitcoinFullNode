@@ -96,7 +96,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 
         internal static int GetTransactionCount(SQLiteConnection conn, int walletId, int accountIndex, int addressType, int addressIndex)
         {
-            return 1 + (conn.ExecuteScalar<int?>($@"
+            return conn.ExecuteScalar<int?>($@"
                 SELECT  COUNT(*)
                 FROM    HDAddress A
                 JOIN    HDTransactionData D
@@ -107,7 +107,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 WHERE   A.WalletId = {walletId}
                 AND     A.AccountIndex = {accountIndex}
                 AND     A.AddressType = {addressType}
-                AND     A.AddressIndex = {addressIndex}") ?? -1);
+                AND     A.AddressIndex = {addressIndex}") ?? 0;
         }
 
         internal static int GetNextAddressIndex(SQLiteConnection conn, int walletId, int accountIndex, int addressType)
@@ -123,7 +123,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 WHERE   A.WalletId = {walletId}
                 AND     A.AccountIndex = {accountIndex}
                 AND     A.AddressType = {addressType}
-                GROUP   BY A.WalletId, A.AccountIndex, A.AddressType, A.AddressIndex
+                GROUP   BY A.WalletId, A.AccountIndex, A.AddressType
                 HAVING  MAX(D.WalletId) IS NOT NULL") ?? -1);
         }
 

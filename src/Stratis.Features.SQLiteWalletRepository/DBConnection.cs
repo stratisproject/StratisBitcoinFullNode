@@ -364,17 +364,16 @@ namespace Stratis.Features.SQLiteWalletRepository
                 {
                     current = (hdTransactionData.WalletId, hdTransactionData.AccountIndex, hdTransactionData.AddressType, hdTransactionData.AddressIndex);
 
-                    // If its a different address then update the count for the previous address.
-                    if (prev.walletId != current.walletId || prev.accountIndex != current.accountIndex || prev.addressType != current.addressType || prev.addressIndex != current.addressIndex)
-                    {
-                        if (prev.walletId != current.walletId || prev.accountIndex != current.accountIndex)
-                            hdAccount = HDAccount.GetAccount(this, current.walletId, current.accountIndex);
-                    }
+                    // If the account changed then invalidate the current object.
+                    if (prev.walletId != current.walletId || prev.accountIndex != current.accountIndex)
+                        hdAccount = null;
 
                     // About to use an address for the first time?
-                    int addressCount = HDAddress.GetTransactionCount(this, current.walletId, current.accountIndex, current.addressType, current.addressIndex);
-                    if (addressCount == 0)
+                    int transactionCount = HDAddress.GetTransactionCount(this, current.walletId, current.accountIndex, current.addressType, current.addressIndex);
+                    if (transactionCount == 0)
                     {
+                        if (hdAccount == null)
+                            hdAccount = HDAccount.GetAccount(this, current.walletId, current.accountIndex);
                         if (!string.IsNullOrEmpty(hdAccount.ScriptPubKeyType))
                             topUpRequired.Add((current.walletId, current.accountIndex, current.addressType));
                     }
