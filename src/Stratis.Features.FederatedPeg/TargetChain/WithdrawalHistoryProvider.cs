@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -62,19 +63,21 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         public List<WithdrawalModel> GetHistory(int maximumEntriesToReturn)
         {
             var result = new List<WithdrawalModel>();
+
             ICrossChainTransfer[] transfers = this.crossChainTransferStore.GetTransfersByStatus(new[] { CrossChainTransferStatus.SeenInBlock });
+            IEnumerable<ICrossChainTransfer> transfersOrdered = transfers.OrderByDescending(t => t.PartialTransaction.Time).Take(maximumEntriesToReturn);
 
-            foreach (ICrossChainTransfer transfer in transfers.OrderByDescending(t => t.PartialTransaction.Time))
+            foreach (ICrossChainTransfer transfer in transfersOrdered)
             {
-                if (maximumEntriesToReturn-- <= 0)
-                    break;
-
                 // Extract the withdrawal details from the recorded "PartialTransaction".
                 IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(transfer.PartialTransaction, transfer.BlockHash, (int)transfer.BlockHeight);
 
-                var model = new WithdrawalModel();
-                model.withdrawal = withdrawal;
-                model.TransferStatus = transfer?.Status.ToString();
+                var model = new WithdrawalModel
+                {
+                    Withdrawal = withdrawal,
+                    TimeUTC = new DateTime(transfer.PartialTransaction.Time),
+                    TransferStatus = transfer?.Status.ToString()
+                };
 
                 result.Add(model);
             }
@@ -100,21 +103,23 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
             foreach (ICrossChainTransfer transfer in inProgressTransfers)
             {
-                var model = new WithdrawalModel();
-                model.withdrawal = new Withdrawal(
+                var model = new WithdrawalModel
+                {
+                    Withdrawal = new Withdrawal(
                     transfer.DepositTransactionId,
                     transfer.PartialTransaction?.GetHash(),
                     transfer.DepositAmount,
                     transfer.DepositTargetAddress.GetDestinationAddress(this.network).ToString(),
                     transfer.BlockHeight ?? 0,
                     transfer.BlockHash
-                    );
+                    )
+                };
 
                 string status = transfer?.Status.ToString();
                 switch (transfer?.Status)
                 {
                     case CrossChainTransferStatus.FullySigned:
-                        if (this.mempoolManager.InfoAsync(model.withdrawal.Id).GetAwaiter().GetResult() != null)
+                        if (this.mempoolManager.InfoAsync(model.Withdrawal.Id).GetAwaiter().GetResult() != null)
                             status += "+InMempool";
 
                         model.SpendingOutputDetails = this.GetSpendingInfo(transfer.PartialTransaction);
