@@ -194,7 +194,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             }
         }
 
-        [Fact]//(Skip = "Configure this test then run it manually. Comment this Skip.")]
+        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
         public void CanProcessBlocks()
         {
             using (var dataFolder = new TempDataFolder(this.GetType().Name))
