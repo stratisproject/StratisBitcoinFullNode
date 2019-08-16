@@ -42,18 +42,21 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         private DBConnection GetConnection(string walletName = null)
         {
-            return new DBConnection(this, (this.DatabasePerWallet && walletName != null) ? $"{walletName}.db" : "Wallet.db");
+            if (this.DatabasePerWallet)
+                Guard.NotNull(walletName, nameof(walletName));
+
+            return new DBConnection(this, this.DatabasePerWallet  ? $"{walletName}.db" : "Wallet.db");
         }
 
         /// <inheritdoc />
-        public void Initialize(bool seperateWallets = true)
+        public void Initialize(bool dbPerWallet = true)
         {
             lock (this.lockObject)
             {
                 Directory.CreateDirectory(this.DBPath);
 
-                this.DatabasePerWallet = seperateWallets;
-                if (!seperateWallets)
+                this.DatabasePerWallet = dbPerWallet;
+                if (!dbPerWallet)
                 {
                     using (DBConnection conn = GetConnection())
                     {
@@ -227,8 +230,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                     {
                         using (DBConnection conn = GetConnection(walletName))
                         {
-                            wallet = conn.GetWalletByName(walletName);
-                            objectsOfInterest = conn.DetermineObjectsOfInterest(wallet.WalletId);
+                            wallet = (walletName == null) ?  null : conn.GetWalletByName(walletName);
+                            objectsOfInterest = conn.DetermineObjectsOfInterest(wallet?.WalletId);
                         }
 
                         transactionsProcessed = false;

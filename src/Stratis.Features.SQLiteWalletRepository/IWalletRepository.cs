@@ -72,8 +72,8 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <summary>
         /// Initialize an existing or empty database.
         /// </summary>
-        /// <param name="seperateWallets">If set the repository will split the wallets into separate files.</param>
-        void Initialize(bool seperateWallets = true);
+        /// <param name="dbPerWallet">If set to <c>false</c> then one database will be created for all wallets.</param>
+        void Initialize(bool dbPerWallet = true);
 
         /// <summary>
         /// Creates a wallet without any accounts.

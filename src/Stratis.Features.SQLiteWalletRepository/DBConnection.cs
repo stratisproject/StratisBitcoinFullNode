@@ -42,10 +42,10 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             List<HDTransactionData> spendableTransactions = this.Query<HDTransactionData>($@"
                 SELECT  *
-                FROM    HDTransactionData {((walletId != null) ? $@"
-                WHERE   WalletId = {walletId}" : "")}
-                AND     SpendBlockHash IS NULL
-                AND     SpendBlockHeight IS NULL");
+                FROM    HDTransactionData
+                WHERE   SpendBlockHash IS NULL
+                AND     SpendBlockHeight IS NULL{((walletId != null) ? $@"
+                AND      WalletId = {walletId}" : "")}");
 
             foreach (HDTransactionData transactonData in spendableTransactions)
             {

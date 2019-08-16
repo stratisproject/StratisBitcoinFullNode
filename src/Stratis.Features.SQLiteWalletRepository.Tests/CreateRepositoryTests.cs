@@ -43,18 +43,18 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
     public class MultiWalletRepositoryTests : RepositoryTests
     {
-        public MultiWalletRepositoryTests() : base(true)
+        public MultiWalletRepositoryTests() : base(false)
         {
         }
     }
 
     public class RepositoryTests
     {
-        private readonly bool multiWallet;
+        private readonly bool dbPerWallet;
 
-        public RepositoryTests(bool multiWallet = false)
+        public RepositoryTests(bool dbPerWallet = true)
         {
-            this.multiWallet = multiWallet;
+            this.dbPerWallet = dbPerWallet;
         }
 
         [Fact]
@@ -66,7 +66,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 var repo = new SQLiteWalletRepository(dataFolder, network, DateTimeProvider.Default, new ScriptPubKeyProvider());
 
-                repo.Initialize(this.multiWallet);
+                repo.Initialize(this.dbPerWallet);
 
                 var walletPassword = "test";
                 var account = new WalletAccountReference("test2", "account 0");
@@ -126,7 +126,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 // Process block 2.
                 var chainedHeader2 = new ChainedHeader(blockHeader2, blockHeader2.HashPrevBlock, chainedHeader1);
-                repo.ProcessBlock(block2, chainedHeader2);
+                repo.ProcessBlock(block2, chainedHeader2, account.WalletName);
 
                 // List the unspent outputs.
                 List<UnspentOutputReference> outputs2 = repo.GetSpendableTransactionsInAccount(account, chainedHeader2, 0).ToList();
@@ -196,7 +196,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 var repo = new SQLiteWalletRepository(dataFolder, network, DateTimeProvider.Default, new ScriptPubKeyProvider());
 
-                repo.Initialize(this.multiWallet);
+                repo.Initialize(this.dbPerWallet);
 
                 var walletPassword = "test";
                 var account = new WalletAccountReference("test2", "account 0");
