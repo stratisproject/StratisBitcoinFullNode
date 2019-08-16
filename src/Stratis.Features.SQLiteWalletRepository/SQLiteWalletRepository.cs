@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 using NBitcoin.DataEncoders;
+
+[assembly: InternalsVisibleTo("Stratis.Features.SQLiteWalletRepository.Tests")]
 
 namespace Stratis.Features.SQLiteWalletRepository
 {
@@ -17,6 +20,9 @@ namespace Stratis.Features.SQLiteWalletRepository
         internal DataFolder DataFolder { get; private set; }
         internal IDateTimeProvider DateTimeProvider { get; private set; }
         internal IScriptPubKeyProvider ScriptPubKeyProvider { get; private set; }
+
+        internal long ProcessTime;
+        internal int ProcessCount;
 
         public bool DatabasePerWallet { get; private set; }
 
@@ -269,6 +275,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                         blockToScript = lists.Select(list => list.CreateScript());
                     }
 
+                    long flagFall = DateTime.Now.Ticks;
+
                     // Merge the temporary tables with the wallet tables.
                     using (DBConnection conn = this.GetConnection(walletName))
                     {
@@ -291,6 +299,9 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                         transactionsProcessed = true;
                     }
+
+                    this.ProcessTime += (DateTime.Now.Ticks - flagFall);
+                    this.ProcessCount++;
                 }
             }
         }

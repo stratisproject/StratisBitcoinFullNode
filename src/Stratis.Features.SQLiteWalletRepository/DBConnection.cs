@@ -34,7 +34,9 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             List<HDAddress> addresses = this.Query<HDAddress>($@"
                 SELECT  *
-                FROM    HDAddress {((walletId != null) ? $@"
+                FROM    HDAddress {
+                // Restrict to wallet if provided.
+                ((walletId != null) ? $@"
                 WHERE   WalletId = {walletId}":"")}");
 
             foreach (HDAddress address in addresses)
@@ -44,7 +46,9 @@ namespace Stratis.Features.SQLiteWalletRepository
                 SELECT  *
                 FROM    HDTransactionData
                 WHERE   SpendBlockHash IS NULL
-                AND     SpendBlockHeight IS NULL{((walletId != null) ? $@"
+                AND     SpendBlockHeight IS NULL {
+                // Restrict to wallet if provided.
+                ((walletId != null) ? $@"
                 AND      WalletId = {walletId}" : "")}");
 
             foreach (HDTransactionData transactonData in spendableTransactions)
@@ -332,10 +336,12 @@ namespace Stratis.Features.SQLiteWalletRepository
                     JOIN   HDAddress A
                     ON     A.ScriptPubKey = T.ScriptPubKey
                     JOIN   HDWallet W
-                    ON     W.WalletId = A.WalletId
-                    {/* Respect the wallet name if provided */((walletName != null) ? $@"
-                    AND    W.Name = '{walletName}'" : "")}
-                    {/* Restrict non-transient transaction updates to aligned wallets */((header != null) ? $@"
+                    ON     W.WalletId = A.WalletId {
+                    // Respect the wallet name if provided.
+                    ((walletName != null) ? $@"
+                    AND    W.Name = '{walletName}'" : "")}{
+                    // Restrict non-transient transaction updates to aligned wallets.
+                    ((header != null) ? $@"
                     AND    W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'" : "")}
                     LEFT   JOIN HDTransactionData TD
                     ON     TD.WalletId = A.WalletId
@@ -403,10 +409,12 @@ namespace Stratis.Features.SQLiteWalletRepository
                         AND     TD.SpendBlockHeight IS NULL
                         AND     TD.SpendBlockHash IS NULL
                         JOIN    HDWallet W
-                        ON      W.WalletId = TD.WalletId
-                        {/* Respect the wallet name if provided */((walletName != null) ? $@"
-                        AND     W.Name = '{walletName}'" : "")}
-                        {/* Restrict non-transient transaction updates to aligned wallets */((header != null) ? $@"
+                        ON      W.WalletId = TD.WalletId {
+                        // Respect the wallet name if provided.
+                        ((walletName != null) ? $@"
+                        AND     W.Name = '{walletName}'" : "")}{
+                        // Restrict non-transient transaction updates to aligned wallets.
+                        ((header != null) ? $@"
                         AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'" : "")}
                         )");
 
@@ -427,10 +435,12 @@ namespace Stratis.Features.SQLiteWalletRepository
                 AND     TD.SpendBlockHeight IS NULL
                 AND     TD.SpendBlockHash IS NULL
                 JOIN   HDWallet W
-                ON     W.WalletId = TD.WalletId
-                {/* Respect the wallet name if provided */((walletName != null) ? $@"
-                AND     W.Name = '{walletName}'" : "")}
-                {/* Restrict non-transient transaction updates to aligned wallets */((header != null) ? $@"
+                ON     W.WalletId = TD.WalletId {
+                // Respect the wallet name if provided.
+                ((walletName != null) ? $@"
+                AND     W.Name = '{walletName}'" : "")}{
+                // Restrict non-transient transaction updates to aligned wallets.
+                ((header != null) ? $@"
                 AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'" : "")}
                 JOIN    temp.TempOutput O
                 ON      O.OutputTxID = T.SpendTxId");
@@ -465,10 +475,12 @@ namespace Stratis.Features.SQLiteWalletRepository
                 AND    TD.SpendBlockHeight IS NULL
                 AND    TD.SpendBlockHash IS NULL
                 JOIN   HDWallet W
-                ON     W.WalletId = TD.WalletId
-                {/* Respect the wallet name if provided */((walletName != null) ? $@"
-                AND     W.Name = '{walletName}'" : "")}
-                {/* Restrict non-transient transaction updates to aligned wallets */((header != null) ? $@"
+                ON     W.WalletId = TD.WalletId {
+                // Respect the wallet name if provided.
+                ((walletName != null) ? $@"
+                AND     W.Name = '{walletName}'" : "")}{
+                // Restrict non-transient transaction updates to aligned wallets.
+                ((header != null) ? $@"
                 AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'" : "")}
                 ORDER BY TD.WalletId
                 ,      TD.AccountIndex
@@ -485,8 +497,9 @@ namespace Stratis.Features.SQLiteWalletRepository
                     SET    LastBlockSyncedHash = '{header.HashBlock}',
                            LastBlockSyncedHeight = {header.Height},
                            BlockLocator = '{string.Join(",", header.GetLocator().Blocks)}'
-                    WHERE  LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'
-                    {/* Respect the wallet name if provided */((walletName != null) ? $@"
+                    WHERE  LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}' {
+                    // Respect the wallet name if provided.
+                    ((walletName != null) ? $@"
                     AND    Name = '{walletName}'" : "")}");
             }
         }
