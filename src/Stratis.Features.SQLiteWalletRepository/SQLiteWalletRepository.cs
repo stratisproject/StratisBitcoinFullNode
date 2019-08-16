@@ -207,11 +207,11 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <inheritdoc />
         public void ProcessBlock(Block block, ChainedHeader header, string walletName = null)
         {
-            ProcessBlocks(new[] { (header, block) }, walletName);
+            ProcessBlocks(new[] { (header, block) }, header.Height, walletName);
         }
 
         /// <inheritdoc />
-        public void ProcessBlocks(IEnumerable<(ChainedHeader header, Block block)> blocks, string walletName = null)
+        public void ProcessBlocks(IEnumerable<(ChainedHeader header, Block block)> blocks, int lastHeight, string walletName = null)
         {
             ChainedHeader deferredTip = null;
             ObjectsOfInterest objectsOfInterest = null;
@@ -270,19 +270,22 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                         transactionsProcessed = true;
                     }
-                }
-            }
 
-            if (deferredTip != null)
-            {
-                // No work to do.
-                using (DBConnection conn = this.GetConnection(walletName))
-                {
-                    conn.BeginTransaction();
-                    // TODO!!
-                    wallet.SetLastBlockSynced(deferredTip);
-                    conn.Update(wallet);
-                    conn.Commit();
+                    if (header.Height == lastHeight)
+                    {
+                        if (deferredTip != null)
+                        {
+                            // No work to do.
+                            using (DBConnection conn = this.GetConnection(walletName))
+                            {
+                                conn.BeginTransaction();
+                                // TODO: Needs work for multi-wallet updates.
+                                wallet.SetLastBlockSynced(deferredTip);
+                                conn.Update(wallet);
+                                conn.Commit();
+                            }
+                        }
+                    }
                 }
             }
         }

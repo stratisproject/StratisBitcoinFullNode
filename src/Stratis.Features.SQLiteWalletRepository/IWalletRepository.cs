@@ -56,6 +56,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// Updates all the wallets from the information contained in the blocks.
         /// </summary>
         /// <param name="blocks">The blocks to process.</param>
+        /// <param name="lastHeight">The final height in the enumeration.</param>
         /// <param name="walletName">Set this to limit processing to the named wallet.</param>
         /// <remarks>
         /// This method is intended to be idempotent - i.e. running it twice should not produce any adverse effects.
@@ -64,7 +65,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// have their addresses topped up to ensure there are always 20 unused addresses after the last
         /// address containing transactions.
         /// </remarks>
-        void ProcessBlocks(IEnumerable<(ChainedHeader header, Block block)> blocks, string walletName = null);
+        void ProcessBlocks(IEnumerable<(ChainedHeader header, Block block)> blocks, int lastHeight, string walletName = null);
 
         /// <summary>
         /// Initialize an existing or empty database.

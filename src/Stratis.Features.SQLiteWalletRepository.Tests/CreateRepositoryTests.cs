@@ -97,7 +97,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 // Process block 1.
                 var chainedHeader1 = new ChainedHeader(blockHeader1, blockHeader1.GetHash(), null);
-                repo.ProcessBlocks(new[] { (chainedHeader1, block1) }, account.WalletName);
+                repo.ProcessBlock(block1, chainedHeader1, account.WalletName);
 
                 // List the unspent outputs.
                 List<UnspentOutputReference> outputs1 = repo.GetSpendableTransactionsInAccount(account, chainedHeader1, 0).ToList();
@@ -126,7 +126,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 // Process block 2.
                 var chainedHeader2 = new ChainedHeader(blockHeader2, blockHeader2.HashPrevBlock, chainedHeader1);
-                repo.ProcessBlocks(new[] { (chainedHeader2, block2) }, account.WalletName);
+                repo.ProcessBlock(block2, chainedHeader2);
 
                 // List the unspent outputs.
                 List<UnspentOutputReference> outputs2 = repo.GetSpendableTransactionsInAccount(account, chainedHeader2, 0).ToList();
@@ -249,26 +249,29 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 var chainIndexer = new ChainIndexer(network, chainTip);
 
-                for (int height = firstHeight ; height <= blockRepo.TipHashAndHeight.Height; )
+                IEnumerable<(ChainedHeader, Block)> TheSource()
                 {
-                    var hashes = new List<uint256>();
-                    for (int i = 0; i < 1000 && (height + i) <= blockRepo.TipHashAndHeight.Height; i++)
+                    for (int height = firstHeight; height <= blockRepo.TipHashAndHeight.Height;)
                     {
-                        ChainedHeader header = chainIndexer.GetHeader(height + i);
-                        hashes.Add(header.HashBlock);
+                        var hashes = new List<uint256>();
+                        for (int i = 0; i < 100 && (height + i) <= blockRepo.TipHashAndHeight.Height; i++)
+                        {
+                            ChainedHeader header = chainIndexer.GetHeader(height + i);
+                            hashes.Add(header.HashBlock);
+                        }
+
+                        List<Block> blocks = blockRepo.GetBlocks(hashes);
+
+                        var buffer = new List<(ChainedHeader, Block)>();
+                        for (int i = 0; i < 100 && height <= blockRepo.TipHashAndHeight.Height; height++, i++)
+                        {
+                            ChainedHeader header = chainIndexer.GetHeader(height);
+                            yield return ((header, blocks[i]));
+                        }
                     }
-
-                    List<Block> blocks = blockRepo.GetBlocks(hashes);
-
-                    var buffer = new List<(ChainedHeader, Block)>();
-                    for (int i = 0; i < 1000 && height <= blockRepo.TipHashAndHeight.Height; height++, i++)
-                    {
-                        ChainedHeader header = chainIndexer.GetHeader(height);
-                        buffer.Add((header, blocks[i]));
-                    }
-
-                    repo.ProcessBlocks(buffer, "test2");
                 }
+
+                repo.ProcessBlocks(TheSource(), blockRepo.TipHashAndHeight.Height, "test2");
             }
         }
     }
