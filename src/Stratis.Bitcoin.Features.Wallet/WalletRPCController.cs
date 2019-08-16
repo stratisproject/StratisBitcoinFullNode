@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Wallet;
 using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Wallet

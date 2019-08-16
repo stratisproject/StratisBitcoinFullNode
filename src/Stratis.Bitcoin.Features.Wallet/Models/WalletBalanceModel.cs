@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Wallet;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models
 {

@@ -4,6 +4,7 @@ using NBitcoin;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Stratis.Bitcoin.Utilities.JsonConverters;
+using Stratis.Bitcoin.Wallet;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models
 {

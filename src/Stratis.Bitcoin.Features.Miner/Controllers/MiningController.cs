@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using Stratis.Bitcoin.Wallet;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Miner.Tests.Controllers")]
 namespace Stratis.Bitcoin.Features.Miner.Controllers

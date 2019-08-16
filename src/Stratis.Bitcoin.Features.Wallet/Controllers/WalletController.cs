@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
+using Stratis.Bitcoin.Wallet;
 
 namespace Stratis.Bitcoin.Features.Wallet.Controllers
 {

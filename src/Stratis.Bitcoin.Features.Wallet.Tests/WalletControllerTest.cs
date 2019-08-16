@@ -18,6 +18,7 @@ using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using Stratis.Bitcoin.Wallet;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests

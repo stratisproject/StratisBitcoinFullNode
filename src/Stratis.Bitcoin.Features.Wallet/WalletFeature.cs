@@ -19,6 +19,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Features.SQLiteWalletRepository;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Wallet;
 
 
 namespace Stratis.Bitcoin.Features.Wallet
