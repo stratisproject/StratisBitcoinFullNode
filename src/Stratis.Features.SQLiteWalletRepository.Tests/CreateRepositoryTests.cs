@@ -4,11 +4,15 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using DBreeze.DataTypes;
+using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -50,11 +54,22 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
     public class RepositoryTests
     {
+        private Network network;
         private readonly bool dbPerWallet;
+        private readonly string dataDir;
+        private NodeSettings nodeSettings;
+        private string walletName;
+        private string walletPassword;
 
         public RepositoryTests(bool dbPerWallet = true)
         {
             this.dbPerWallet = dbPerWallet;
+            this.network = KnownNetworks.StratisTest;
+            this.walletName = "test2";
+            this.walletPassword = "test";
+            // Configure this to point to your "StratisTest" root folder.
+            this.dataDir = @"E:\RunNodes\SideChains\Data\MainchainUser";
+            this.nodeSettings = new NodeSettings(this.network, args: new[] { $"-datadir={this.dataDir}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
         }
 
         [Fact]
@@ -62,31 +77,28 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         {
             using (var dataFolder = new TempDataFolder(this.GetType().Name))
             {
-                Network network = KnownNetworks.StratisRegTest;
-
-                var repo = new SQLiteWalletRepository(dataFolder, network, DateTimeProvider.Default, new ScriptPubKeyProvider());
+                var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ScriptPubKeyProvider());
 
                 repo.Initialize(this.dbPerWallet);
 
-                var walletPassword = "test";
-                var account = new WalletAccountReference("test2", "account 0");
+                var account = new WalletAccountReference(this.walletName, "account 0");
 
                 // Create an "test2" as an empty wallet.
                 byte[] chainCode = Convert.FromBase64String("RUKVp47yWou1VNVBM1U2XYMUSRfJqisI0xATo17VLNU=");
                 repo.CreateWallet(account.WalletName, "6PYQSX5vLVL2FtFWd5tDqk6KTCMEBubhdeFUL4xDRNhYueWR9iYNgiDDLV", chainCode);
 
                 // Verify the wallet exisits.
-                Assert.Equal("test2", repo.GetWalletNames().First());
+                Assert.Equal(this.walletName, repo.GetWalletNames().First());
 
                 // Create "account 0" as P2PKH.
-                repo.CreateAccount(account.WalletName, 0, account.AccountName, walletPassword, "P2PKH");
+                repo.CreateAccount(account.WalletName, 0, account.AccountName, this.walletPassword, "P2PKH");
 
                 // Create block 1.
-                Block block1 = network.Consensus.ConsensusFactory.CreateBlock();
+                Block block1 = this.network.Consensus.ConsensusFactory.CreateBlock();
                 BlockHeader blockHeader1 = block1.Header;
 
                 // Create transaction 1.
-                Transaction transaction1 = network.CreateTransaction();
+                Transaction transaction1 = this.network.CreateTransaction();
 
                 // Send 100 coins to the first unused address in the wallet.
                 HdAddress address = repo.GetUnusedAddresses(account, 1).FirstOrDefault();
@@ -105,12 +117,12 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 Assert.Equal(Money.COIN * 100, (long)outputs1[0].Transaction.Amount);
 
                 // Create block 2.
-                Block block2 = network.Consensus.ConsensusFactory.CreateBlock();
+                Block block2 = this.network.Consensus.ConsensusFactory.CreateBlock();
                 BlockHeader blockHeader2 = block2.Header;
                 blockHeader2.HashPrevBlock = blockHeader1.GetHash();
 
                 // Create transaction 2.
-                Transaction transaction2 = network.CreateTransaction();
+                Transaction transaction2 = this.network.CreateTransaction();
 
                 // Send the 90 coins to a fictituous external address.
                 Script dest = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new KeyId());
@@ -187,34 +199,28 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
         public void CanProcessBlocks()
         {
-            // Configure this to point to your "StratisTest" root folder.
-            string dataDir = @"E:\RunNodes\SideChains\Data\MainchainUser";
-
             using (var dataFolder = new TempDataFolder(this.GetType().Name))
             {
-                Network network = KnownNetworks.StratisTest;
-
-                var repo = new SQLiteWalletRepository(dataFolder, network, DateTimeProvider.Default, new ScriptPubKeyProvider());
+                var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ScriptPubKeyProvider());
 
                 repo.Initialize(this.dbPerWallet);
 
-                var walletPassword = "test";
-                var account = new WalletAccountReference("test2", "account 0");
+                var account = new WalletAccountReference(this.walletName, "account 0");
 
                 // Create an "test2" as an empty wallet.
                 byte[] chainCode = Convert.FromBase64String("RUKVp47yWou1VNVBM1U2XYMUSRfJqisI0xATo17VLNU=");
                 repo.CreateWallet(account.WalletName, "6PYQSX5vLVL2FtFWd5tDqk6KTCMEBubhdeFUL4xDRNhYueWR9iYNgiDDLV", chainCode);
 
                 // Verify the wallet exisits.
-                Assert.Equal("test2", repo.GetWalletNames().First());
+                Assert.Equal(this.walletName, repo.GetWalletNames().First());
 
                 // Create "account 0" as P2PKH.
-                repo.CreateAccount(account.WalletName, 0, account.AccountName, walletPassword, "P2PKH");
+                repo.CreateAccount(account.WalletName, 0, account.AccountName, this.walletPassword, "P2PKH");
 
                 // Set up block store.
-                var nodeSettings = new NodeSettings(network, args: new[] { $"-datadir={dataDir}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
-                DBreezeSerializer serializer = new DBreezeSerializer(network.Consensus.ConsensusFactory);
-                IBlockRepository blockRepo = new BlockRepository(network, nodeSettings.DataFolder, nodeSettings.LoggerFactory, serializer);
+                var nodeSettings = new NodeSettings(this.network, args: new[] { $"-datadir={this.dataDir}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
+                DBreezeSerializer serializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
+                IBlockRepository blockRepo = new BlockRepository(this.network, nodeSettings.DataFolder, nodeSettings.LoggerFactory, serializer);
                 blockRepo.Initialize();
 
                 var prevBlock = new Dictionary<uint256, uint256>();
@@ -236,9 +242,9 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 var nextBlock = prevBlock.ToDictionary(kv => kv.Value, kv => kv.Key);
                 int firstHeight = 1;
-                uint256 firstHash = nextBlock[network.GenesisHash];
+                uint256 firstHash = nextBlock[this.network.GenesisHash];
 
-                var chainTip = new ChainedHeader(new BlockHeader() { HashPrevBlock = network.GenesisHash }, firstHash, firstHeight);
+                var chainTip = new ChainedHeader(new BlockHeader() { HashPrevBlock = this.network.GenesisHash }, firstHash, firstHeight);
                 uint256 hash = firstHash;
 
                 for (int height = firstHeight + 1; height <= blockRepo.TipHashAndHeight.Height; height++)
@@ -247,7 +253,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     chainTip = new ChainedHeader(new BlockHeader() { HashPrevBlock = chainTip.HashBlock }, hash, chainTip);
                 }
 
-                var chainIndexer = new ChainIndexer(network, chainTip);
+                var chainIndexer = new ChainIndexer(this.network, chainTip);
 
                 IEnumerable<(ChainedHeader, Block)> TheSource()
                 {
@@ -271,8 +277,43 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     }
                 }
 
-                repo.ProcessBlocks(TheSource(), blockRepo.TipHashAndHeight.Height, "test2");
+                repo.ProcessBlocks(TheSource(), blockRepo.TipHashAndHeight.Height, this.walletName);
             }
+        }
+
+        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
+        public void DatabaseAndWalletFileBalancesMatch()
+        {
+            // Configure this to be the last folder generated by the "CanProcessBlocks" test case.
+            var dataFolder = new DataFolder(@"E:\Public\StratisBitcoinFullNode\src\TestCase\RepositoryTests\CanProcessBlocks-16082019T07.11.02.911");
+
+            ChainedHeader chainTip = new ChainedHeader(new BlockHeader(), 0, int.MaxValue);
+
+            var chainIndexer = new Mock<ChainIndexer>();
+            chainIndexer.Setup(f => f.Tip)
+                .Returns(chainTip);
+
+            IWalletManager walletManager = new WalletManager(this.nodeSettings.LoggerFactory, this.network,
+                chainIndexer.Object, new WalletSettings(this.nodeSettings), this.nodeSettings.DataFolder,
+                new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object,
+                new Mock<INodeLifetime>().Object, DateTimeProvider.Default,
+                new Mock<IScriptAddressReader>().Object, null);
+
+            Wallet wallet = walletManager.LoadWallet(this.walletPassword, this.walletName);
+
+            var accountBalance = walletManager.GetBalances(this.walletName, "account 0").FirstOrDefault();
+
+            var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ScriptPubKeyProvider());
+
+            repo.Initialize(this.dbPerWallet);
+
+            var account = new WalletAccountReference(this.walletName, "account 0");
+
+            var spendable = repo.GetSpendableTransactionsInAccount(account, chainTip, (int)this.network.Consensus.CoinbaseMaturity).ToList();
+
+            Money balance = spendable.Sum(s => s.Transaction.Amount);
+
+            Assert.Equal(accountBalance.AmountConfirmed, balance);
         }
     }
 }

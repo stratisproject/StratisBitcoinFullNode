@@ -347,7 +347,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     var hdAccount = this.ToHdAccount(account);
 
-                    foreach (HDTransactionData transactionData in conn.GetSpendableOutputs(account.WalletId, account.AccountIndex, chainTip.Height, this.Network.Consensus.CoinbaseMaturity))
+                    foreach (HDTransactionData transactionData in conn.GetSpendableOutputs(account.WalletId, account.AccountIndex, chainTip.Height, this.Network.Consensus.CoinbaseMaturity, confirmations))
                     {
                         var pubKeyScript = new Script(Encoders.Hex.DecodeData(transactionData.PubKey));
                         PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(pubKeyScript);
