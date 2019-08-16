@@ -210,11 +210,11 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <inheritdoc />
         public void ProcessBlock(Block block, ChainedHeader header, string walletName = null)
         {
-            ProcessBlocks(new[] { (header, block) }, header.Height, walletName);
+            ProcessBlocks(new[] { (header, block) }, walletName);
         }
 
         /// <inheritdoc />
-        public void ProcessBlocks(IEnumerable<(ChainedHeader header, Block block)> blocks, int lastHeight, string walletName = null)
+        public void ProcessBlocks(IEnumerable<(ChainedHeader header, Block block)> blocks, string walletName = null)
         {
             ChainedHeader deferredTip = null;
             ObjectsOfInterest objectsOfInterest = null;
@@ -222,10 +222,28 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             bool transactionsProcessed = true;
 
-            foreach ((ChainedHeader header, Block block) in blocks)
+            foreach ((ChainedHeader header, Block block) in blocks.Append((null, null)))
             {
                 lock (this.lockObject)
                 {
+                    if (block == null)
+                    {
+                        if (deferredTip != null)
+                        {
+                            // No work to do.
+                            using (DBConnection conn = this.GetConnection(walletName))
+                            {
+                                conn.BeginTransaction();
+                                // TODO: Needs work for multi-wallet updates.
+                                wallet.SetLastBlockSynced(deferredTip);
+                                conn.Update(wallet);
+                                conn.Commit();
+                            }
+                        }
+
+                        break;
+                    }
+
                     if (transactionsProcessed)
                     {
                         using (DBConnection conn = GetConnection(walletName))
@@ -272,22 +290,6 @@ namespace Stratis.Features.SQLiteWalletRepository
                         conn.Commit();
 
                         transactionsProcessed = true;
-                    }
-
-                    if (header.Height == lastHeight)
-                    {
-                        if (deferredTip != null)
-                        {
-                            // No work to do.
-                            using (DBConnection conn = this.GetConnection(walletName))
-                            {
-                                conn.BeginTransaction();
-                                // TODO: Needs work for multi-wallet updates.
-                                wallet.SetLastBlockSynced(deferredTip);
-                                conn.Update(wallet);
-                                conn.Commit();
-                            }
-                        }
                     }
                 }
             }

@@ -57,7 +57,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         private Network network;
         private readonly bool dbPerWallet;
         private readonly string dataDir;
-        private NodeSettings nodeSettings;
         private string walletName;
         private string walletPassword;
 
@@ -69,7 +68,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             this.walletPassword = "test";
             // Configure this to point to your "StratisTest" root folder.
             this.dataDir = @"E:\RunNodes\SideChains\Data\MainchainUser";
-            this.nodeSettings = new NodeSettings(this.network, args: new[] { $"-datadir={this.dataDir}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
         }
 
         [Fact]
@@ -196,7 +194,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             }
         }
 
-        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
+        [Fact]//(Skip = "Configure this test then run it manually. Comment this Skip.")]
         public void CanProcessBlocks()
         {
             using (var dataFolder = new TempDataFolder(this.GetType().Name))
@@ -277,7 +275,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     }
                 }
 
-                repo.ProcessBlocks(TheSource(), blockRepo.TipHashAndHeight.Height, this.walletName);
+                repo.ProcessBlocks(TheSource(), this.walletName);
             }
         }
 
@@ -293,8 +291,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             chainIndexer.Setup(f => f.Tip)
                 .Returns(chainTip);
 
-            IWalletManager walletManager = new WalletManager(this.nodeSettings.LoggerFactory, this.network,
-                chainIndexer.Object, new WalletSettings(this.nodeSettings), this.nodeSettings.DataFolder,
+            var nodeSettings = new NodeSettings(this.network, args: new[] { $"-datadir={this.dataDir}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
+
+            IWalletManager walletManager = new WalletManager(nodeSettings.LoggerFactory, this.network,
+                chainIndexer.Object, new WalletSettings(nodeSettings), nodeSettings.DataFolder,
                 new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object,
                 new Mock<INodeLifetime>().Object, DateTimeProvider.Default,
                 new Mock<IScriptAddressReader>().Object, null);
