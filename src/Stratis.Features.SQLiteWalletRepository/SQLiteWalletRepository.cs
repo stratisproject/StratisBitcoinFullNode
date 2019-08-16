@@ -35,12 +35,12 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
         }
 
-        public SQLiteWalletRepository(DataFolder dataFolder, Network network, IDateTimeProvider dateTimeProvider, IScriptPubKeyProvider scriptPubKeyProvider)
+        public SQLiteWalletRepository(DataFolder dataFolder, Network network, IDateTimeProvider dateTimeProvider)
         {
             this.Network = network;
             this.DataFolder = dataFolder;
             this.DateTimeProvider = dateTimeProvider;
-            this.ScriptPubKeyProvider = scriptPubKeyProvider;
+            this.ScriptPubKeyProvider = new ScriptPubKeyProvider();
         }
 
         public void Dispose()
