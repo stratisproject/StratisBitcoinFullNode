@@ -181,6 +181,7 @@
         /// <param name="network">The network.</param>
         public virtual int GetStakeMinConfirmations(int height, Network network)
         {
+            // TODO: Is there supposed to be a defined activation height for regtest?
             if (network.NetworkType == NetworkType.Testnet || network.NetworkType == NetworkType.Regtest)
                 return height < CoinstakeMinConfirmationActivationHeightTestnet ? 10 : 20;
 

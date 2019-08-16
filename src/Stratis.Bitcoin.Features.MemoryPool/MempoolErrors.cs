@@ -154,6 +154,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>'bad-txns-inputs-missing' error returns a <see cref="RejectInvalid"/> reject code.</summary>
         public static MempoolError MissingInputs = new MempoolError(RejectInvalid, "bad-txns-inputs-missing");
 
+        /// <summary>'bad-txns-premature-coinbase' error returns a <see cref="RejectInvalid"/> reject code.</summary>
+        public static MempoolError PrematureCoinbase = new MempoolError(RejectInvalid, "bad-txns-premature-coinbase");
+
+        /// <summary>'bad-txns-premature-coinstake' error returns a <see cref="RejectInvalid"/> reject code.</summary>
+        public static MempoolError PrematureCoinstake = new MempoolError(RejectInvalid, "bad-txns-premature-coinstake");
+
         /// <summary>'non-BIP68-final' error returns a <see cref="RejectNonstandard"/> reject code.</summary>
         public static MempoolError NonBIP68Final = new MempoolError(RejectNonstandard, "non-BIP68-final");
 
