@@ -253,6 +253,9 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 var chainIndexer = new ChainIndexer(this.network, chainTip);
 
+                long ticksTotal = DateTime.Now.Ticks;
+                long ticksReading = 0;
+
                 IEnumerable<(ChainedHeader, Block)> TheSource()
                 {
                     for (int height = firstHeight; height <= blockRepo.TipHashAndHeight.Height;)
@@ -264,7 +267,11 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                             hashes.Add(header.HashBlock);
                         }
 
+                        long ticksBefore = DateTime.Now.Ticks;
+
                         List<Block> blocks = blockRepo.GetBlocks(hashes);
+
+                        ticksReading += (DateTime.Now.Ticks - ticksBefore);
 
                         var buffer = new List<(ChainedHeader, Block)>();
                         for (int i = 0; i < 100 && height <= blockRepo.TipHashAndHeight.Height; height++, i++)
@@ -276,6 +283,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 }
 
                 repo.ProcessBlocks(TheSource(), this.walletName);
+
+                ticksTotal = DateTime.Now.Ticks - ticksTotal;
+
+                long secondsProcessing = (ticksTotal - ticksReading) / 10_000_000;
             }
         }
 
