@@ -222,22 +222,24 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <inheritdoc />
         public void ProcessBlocks(IEnumerable<(ChainedHeader header, Block block)> blocks, string walletName = null)
         {
-            ChainedHeader deferredTip = null;
-            ObjectsOfInterest objectsOfInterest = null;
-            HDWallet wallet = null;
-
-            bool transactionsProcessed = true;
-
-            foreach ((ChainedHeader header, Block block) in blocks.Append((null, null)))
+            using (DBConnection conn = this.GetConnection(walletName))
             {
-                lock (this.lockObject)
+                ChainedHeader deferredTip = null;
+                ObjectsOfInterest objectsOfInterest = null;
+                bool transactionsProcessed = true;
+
+                HDWallet wallet = (walletName == null) ? null : conn.GetWalletByName(walletName);
+
+                foreach ((ChainedHeader header, Block block) in blocks.Append((null, null)))
                 {
-                    if (block == null)
+                    // TODO: Lock wallets individually.
+                    // TODO: Can do some work in parallel.
+
+                    lock (this.lockObject)
                     {
-                        if (deferredTip != null)
+                        if (block == null)
                         {
-                            // No work to do.
-                            using (DBConnection conn = this.GetConnection(walletName))
+                            if (deferredTip != null)
                             {
                                 conn.BeginTransaction();
                                 // TODO: Needs work for multi-wallet updates.
@@ -245,48 +247,40 @@ namespace Stratis.Features.SQLiteWalletRepository
                                 conn.Update(wallet);
                                 conn.Commit();
                             }
+
+                            break;
                         }
 
-                        break;
-                    }
-
-                    if (transactionsProcessed)
-                    {
-                        using (DBConnection conn = GetConnection(walletName))
+                        if (transactionsProcessed)
                         {
-                            wallet = (walletName == null) ?  null : conn.GetWalletByName(walletName);
                             objectsOfInterest = conn.DetermineObjectsOfInterest(wallet?.WalletId);
+                            transactionsProcessed = false;
                         }
 
-                        transactionsProcessed = false;
-                    }
-
-                    // Determine the scripts for creating temporary tables and inserting the block's information into them.
-                    IEnumerable<IEnumerable<string>> blockToScript;
-                    {
-                        var lists = TransactionsToLists(block.Transactions, header, null, objectsOfInterest).ToList();
-                        if (!lists.Any(l => l.Count != 0))
+                        // Determine the scripts for creating temporary tables and inserting the block's information into them.
+                        IEnumerable<IEnumerable<string>> blockToScript;
                         {
-                            // No work to do.
-                            deferredTip = header;
-                            continue;
+                            var lists = TransactionsToLists(block.Transactions, header, null, objectsOfInterest).ToList();
+                            if (!lists.Any(l => l.Count != 0))
+                            {
+                                // No work to do.
+                                deferredTip = header;
+                                continue;
+                            }
+
+                            blockToScript = lists.Select(list => list.CreateScript());
                         }
 
-                        blockToScript = lists.Select(list => list.CreateScript());
-                    }
+                        long flagFall = DateTime.Now.Ticks;
 
-                    long flagFall = DateTime.Now.Ticks;
+                        conn.BeginTransaction();
 
-                    // Merge the temporary tables with the wallet tables.
-                    using (DBConnection conn = this.GetConnection(walletName))
-                    {
-                        // Execute the scripts.
+                        // Execute the scripts providing the temporary tables to merge with the wallet tables.
                         foreach (IEnumerable<string> tableScript in blockToScript)
                             foreach (string command in tableScript)
                                 conn.Execute(command);
 
-                        conn.BeginTransaction();
-
+                        // If we're going to process the block then do it with an up-to-date tip.
                         if (deferredTip != null)
                         {
                             wallet.SetLastBlockSynced(deferredTip);
@@ -298,10 +292,10 @@ namespace Stratis.Features.SQLiteWalletRepository
                         conn.Commit();
 
                         transactionsProcessed = true;
-                    }
 
-                    this.ProcessTime += (DateTime.Now.Ticks - flagFall);
-                    this.ProcessCount++;
+                        this.ProcessTime += (DateTime.Now.Ticks - flagFall);
+                        this.ProcessCount++;
+                    }
                 }
             }
         }
