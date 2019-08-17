@@ -206,6 +206,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 // Set up block store.
                 var nodeSettings = new NodeSettings(this.network, args: new[] { $"-datadir={this.dataDir}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
                 DBreezeSerializer serializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
+
+                // Build the chain from the block store.
                 IBlockRepository blockRepo = new BlockRepository(this.network, nodeSettings.DataFolder, nodeSettings.LoggerFactory, serializer);
                 blockRepo.Initialize();
 
@@ -239,29 +241,31 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     chainTip = new ChainedHeader(new BlockHeader() { HashPrevBlock = chainTip.HashBlock }, hash, chainTip);
                 }
 
+                // Build the chain indexer from the chain.
                 var chainIndexer = new ChainIndexer(this.network, chainTip);
 
-                // Bypass IsExtPubKey wallet check.
+                // Load the JSON wallet. Bypasses IsExtPubKey wallet check.
                 Wallet wallet = new FileStorage<Wallet>(nodeSettings.DataFolder.WalletPath).LoadByFileName($"{this.walletName}.wallet.json");
 
+                // Initialize the repo.
                 var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ScriptAddressReader(), new ScriptPubKeyProvider());
-
                 repo.Initialize(this.dbPerWallet);
 
-                // Create an "test2" as an empty wallet.
+                // Create a new empty wallet in the repository.
                 byte[] chainCode = wallet.ChainCode;
                 repo.CreateWallet(this.walletName, wallet.EncryptedSeed, chainCode);
 
                 // Verify the wallet exisits.
                 Assert.Equal(this.walletName, repo.GetWalletNames().First());
 
-                // Create accounts as P2PKH.
+                // Clone the JSON wallet accounts.
                 foreach (HdAccount hdAccount in wallet.GetAccounts())
                 {
                     var extPubKey = ExtPubKey.Parse(hdAccount.ExtendedPubKey);
                     repo.CreateAccount(this.walletName, hdAccount.Index, hdAccount.Name, extPubKey, "P2PKH");
                 }
 
+                // Process all the blocks in the repository.
                 long ticksTotal = DateTime.Now.Ticks;
                 long ticksReading = 0;
 
@@ -276,11 +280,11 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                             hashes.Add(header.HashBlock);
                         }
 
-                        long ticksBefore = DateTime.Now.Ticks;
+                        long flagFall = DateTime.Now.Ticks;
 
                         List<Block> blocks = blockRepo.GetBlocks(hashes);
 
-                        ticksReading += (DateTime.Now.Ticks - ticksBefore);
+                        ticksReading += (DateTime.Now.Ticks - flagFall);
 
                         var buffer = new List<(ChainedHeader, Block)>();
                         for (int i = 0; i < 100 && height <= blockRepo.TipHashAndHeight.Height; height++, i++)
@@ -293,6 +297,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 repo.ProcessBlocks(TheSource(), this.walletName);
 
+                // Calculate statistics. Set a breakpoint to inspect these values.
                 ticksTotal = DateTime.Now.Ticks - ticksTotal;
 
                 long secondsProcessing = (ticksTotal - ticksReading) / 10_000_000;
@@ -305,7 +310,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     // Get the total balances.
                     (Money amountConfirmed, Money amountUnconfirmed) = hdAccount.GetBalances();
 
-                    var spendable = repo.GetSpendableTransactionsInAccount(
+                    List<UnspentOutputReference> spendable = repo.GetSpendableTransactionsInAccount(
                         new WalletAccountReference(this.walletName, hdAccount.Name),
                         chainTip, (int)this.network.Consensus.CoinbaseMaturity).ToList();
 
