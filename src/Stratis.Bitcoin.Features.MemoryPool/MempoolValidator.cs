@@ -723,18 +723,22 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
 
                 UnspentOutputs coins = context.View.GetCoins(txin.PrevOut.Hash);
-                // Check if we are prematurely spending a coinbase transaction
-                // We use tip + 1 because the earliest the transaction can appear in a block would be tipHeight + 1.
+                // Check if we are prematurely spending a coinbase transaction.
+                // We use tip + 1 because the earliest the mempool transaction can appear in a block would be tipHeight + 1.
                 if (coins.IsCoinbase && ((this.chainIndexer.Height + 1 - coins.Height) < this.network.Consensus.CoinbaseMaturity))
                 {
                     context.State.Invalid(MempoolErrors.PrematureCoinbase).Throw();
                 }
 
-                // Check if we are prematurely spending a coinstake transaction
-                // TODO: Do a proper check for min coinstake age (i.e. maxReorg) taking proven header activation into account. Using coinbase maturity alone is not complete.
-                if (this.network.Consensus.IsProofOfStake && coins.IsCoinstake && ((this.chainIndexer.Height + 1 - coins.Height) < this.network.Consensus.CoinbaseMaturity))
+                // Check if we are prematurely spending a coinstake transaction.
+                // The minimum maturity for coinstakes was softforked to be higher than the corresponding coinbase maturity.
+                if (this.network.Consensus.IsProofOfStake && coins.IsCoinstake)
                 {
-                    context.State.Invalid(MempoolErrors.PrematureCoinstake).Throw();
+                    var options = (PosConsensusOptions)this.network.Consensus.Options;
+                    int minConf = options.GetStakeMinConfirmations(this.chainIndexer.Height, this.network);
+
+                    if ((this.chainIndexer.Height + 1 - coins.Height) < minConf)
+                        context.State.Invalid(MempoolErrors.PrematureCoinstake).Throw();
                 }
             }
 
