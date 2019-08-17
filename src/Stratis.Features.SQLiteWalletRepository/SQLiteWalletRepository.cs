@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Interfaces;
 
 [assembly: InternalsVisibleTo("Stratis.Features.SQLiteWalletRepository.Tests")]
 
@@ -19,6 +20,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         internal Network Network { get; private set; }
         internal DataFolder DataFolder { get; private set; }
         internal IDateTimeProvider DateTimeProvider { get; private set; }
+        internal IScriptAddressReader ScriptAddressReader { get; private set; }
         internal IScriptPubKeyProvider ScriptPubKeyProvider { get; private set; }
 
         internal long ProcessTime;
@@ -34,11 +36,13 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
         }
 
-        public SQLiteWalletRepository(DataFolder dataFolder, Network network, IDateTimeProvider dateTimeProvider, IScriptPubKeyProvider scriptPubKeyProvider)
+        public SQLiteWalletRepository(DataFolder dataFolder, Network network, IDateTimeProvider dateTimeProvider,
+            IScriptAddressReader scriptAddressReader, IScriptPubKeyProvider scriptPubKeyProvider)
         {
             this.Network = network;
             this.DataFolder = dataFolder;
             this.DateTimeProvider = dateTimeProvider;
+            this.ScriptAddressReader = scriptAddressReader;
             this.ScriptPubKeyProvider = scriptPubKeyProvider;
         }
 
@@ -154,20 +158,13 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public void CreateAccount(string walletName, int accountIndex, string accountName, string password, string scriptPubKeyType, DateTimeOffset? creationTime = null)
+        public void CreateAccount(string walletName, int accountIndex, string accountName, ExtPubKey extPubKey, string scriptPubKeyType, DateTimeOffset? creationTime = null)
         {
             lock (this.lockObject)
             {
                 using (var conn = this.GetConnection(walletName))
                 {
                     var wallet = conn.GetWalletByName(walletName);
-
-                    // Get the extended pub key used to generate addresses for this account.
-                    // Not passing extPubKey into the method to guarantee DB integrity.
-                    Key privateKey = Key.Parse(wallet.EncryptedSeed, password, this.Network);
-                    var seedExtKey = new ExtKey(privateKey, Convert.FromBase64String(wallet.ChainCode));
-                    ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(this.ToHdPath(accountIndex)));
-                    ExtPubKey extPubKey = addressExtKey.Neuter();
 
                     conn.BeginTransaction();
 
@@ -180,6 +177,29 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     conn.Commit();
                 }
+            }
+        }
+
+        /// <inheritdoc />
+        public void CreateAccount(string walletName, int accountIndex, string accountName, string password, string scriptPubKeyType, DateTimeOffset? creationTime = null)
+        {
+            lock (this.lockObject)
+            {
+                ExtPubKey extPubKey;
+
+                using (var conn = this.GetConnection(walletName))
+                {
+                    var wallet = conn.GetWalletByName(walletName);
+
+                    // Get the extended pub key used to generate addresses for this account.
+                    // Not passing extPubKey into the method to guarantee DB integrity.
+                    Key privateKey = Key.Parse(wallet.EncryptedSeed, password, this.Network);
+                    var seedExtKey = new ExtKey(privateKey, Convert.FromBase64String(wallet.ChainCode));
+                    ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(this.ToHdPath(accountIndex)));
+                    extPubKey = addressExtKey.Neuter();
+                }
+
+                this.CreateAccount(walletName, accountIndex, accountName, extPubKey, scriptPubKeyType, creationTime);
             }
         }
 

@@ -9,6 +9,7 @@ using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -75,7 +76,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         {
             using (var dataFolder = new TempDataFolder(this.GetType().Name))
             {
-                var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ScriptPubKeyProvider());
+                var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ScriptAddressReader(), new ScriptPubKeyProvider());
 
                 repo.Initialize(this.dbPerWallet);
 
@@ -199,22 +200,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         {
             using (var dataFolder = new TempDataFolder(this.GetType().Name))
             {
-                var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ScriptPubKeyProvider());
-
-                repo.Initialize(this.dbPerWallet);
-
-                var account = new WalletAccountReference(this.walletName, "account 0");
-
-                // Create an "test2" as an empty wallet.
-                byte[] chainCode = Convert.FromBase64String("RUKVp47yWou1VNVBM1U2XYMUSRfJqisI0xATo17VLNU=");
-                repo.CreateWallet(account.WalletName, "6PYQSX5vLVL2FtFWd5tDqk6KTCMEBubhdeFUL4xDRNhYueWR9iYNgiDDLV", chainCode);
-
-                // Verify the wallet exisits.
-                Assert.Equal(this.walletName, repo.GetWalletNames().First());
-
-                // Create "account 0" as P2PKH.
-                repo.CreateAccount(account.WalletName, 0, account.AccountName, this.walletPassword, "P2PKH");
-
                 // Set up block store.
                 var nodeSettings = new NodeSettings(this.network, args: new[] { $"-datadir={this.dataDir}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
                 DBreezeSerializer serializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
@@ -252,6 +237,32 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 }
 
                 var chainIndexer = new ChainIndexer(this.network, chainTip);
+
+                IWalletManager walletManager = new WalletManager(nodeSettings.LoggerFactory, this.network,
+                    chainIndexer, new WalletSettings(nodeSettings), nodeSettings.DataFolder,
+                    new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object,
+                    new Mock<INodeLifetime>().Object, DateTimeProvider.Default,
+                    new Mock<IScriptAddressReader>().Object, null);
+
+                Wallet wallet = walletManager.LoadWallet(this.walletPassword, this.walletName);
+
+                var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ScriptAddressReader(), new ScriptPubKeyProvider());
+
+                repo.Initialize(this.dbPerWallet);
+
+                // Create an "test2" as an empty wallet.
+                byte[] chainCode = wallet.ChainCode;
+                repo.CreateWallet(this.walletName, wallet.EncryptedSeed, chainCode);
+
+                // Verify the wallet exisits.
+                Assert.Equal(this.walletName, repo.GetWalletNames().First());
+
+                // Create accounts as P2PKH.
+                foreach (HdAccount hdAccount in wallet.GetAccounts())
+                {
+                    var extPubKey = ExtPubKey.Parse(hdAccount.ExtendedPubKey);
+                    repo.CreateAccount(this.walletName, hdAccount.Index, hdAccount.Name, extPubKey, "P2PKH");
+                }
 
                 long ticksTotal = DateTime.Now.Ticks;
                 long ticksReading = 0;
@@ -291,22 +302,18 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 double secondsPerBlock = (double)repo.ProcessTime / repo.ProcessCount / 10_000_000;
 
                 // Now verify the DB against the JSON wallet.
+                foreach (HdAccount hdAccount in wallet.GetAccounts())
+                {
+                    var accountBalance = walletManager.GetBalances(this.walletName, hdAccount.Name).FirstOrDefault();
 
-                IWalletManager walletManager = new WalletManager(nodeSettings.LoggerFactory, this.network,
-                    chainIndexer, new WalletSettings(nodeSettings), nodeSettings.DataFolder,
-                    new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object,
-                    new Mock<INodeLifetime>().Object, DateTimeProvider.Default,
-                    new Mock<IScriptAddressReader>().Object, null);
+                    var spendable = repo.GetSpendableTransactionsInAccount(
+                        new WalletAccountReference(this.walletName, hdAccount.Name),
+                        chainTip, (int)this.network.Consensus.CoinbaseMaturity).ToList();
 
-                Wallet wallet = walletManager.LoadWallet(this.walletPassword, this.walletName);
+                    Money balance = spendable.Sum(s => s.Transaction.Amount);
 
-                var accountBalance = walletManager.GetBalances(this.walletName, "account 0").FirstOrDefault();
-
-                var spendable = repo.GetSpendableTransactionsInAccount(account, chainTip, (int)this.network.Consensus.CoinbaseMaturity).ToList();
-
-                Money balance = spendable.Sum(s => s.Transaction.Amount);
-
-                Assert.Equal(accountBalance.AmountConfirmed, balance);
+                    Assert.Equal(accountBalance.AmountConfirmed, balance);
+                }
             }
         }
     }

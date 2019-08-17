@@ -95,6 +95,17 @@ namespace Stratis.Features.SQLiteWalletRepository
         void CreateAccount(string walletName, int accountIndex, string accountName, string password, string scriptPubKeyType, DateTimeOffset? creationTime = null);
 
         /// <summary>
+        /// Creates a wallet account.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet to create the account for.</param>
+        /// <param name="accountIndex">The account index to create an account for.</param>
+        /// <param name="accountName">The account name to use.</param>
+        /// <param name="extPubKey">The extended public key for the account.</param>
+        /// <param name="scriptPubKeyType">Used to generate 20 unused wallet addresses. If <c>null</c> then no addresses are generated.</param>
+        /// <param name="creationTime">Used to override the default creation time of the account.</param>
+        void CreateAccount(string walletName, int accountIndex, string accountName, ExtPubKey extPubKey, string scriptPubKeyType, DateTimeOffset? creationTime = null);
+
+        /// <summary>
         /// Gets up to the specified number of unused addresses.
         /// </summary>
         /// <param name="accountReference">The account to get unused addresses for.</param>
