@@ -4,16 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using DBreeze.DataTypes;
-using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -59,15 +55,14 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         private readonly bool dbPerWallet;
         private readonly string dataDir;
         private string walletName;
-        private string walletPassword;
 
         public RepositoryTests(bool dbPerWallet = true)
         {
             this.dbPerWallet = dbPerWallet;
             this.network = KnownNetworks.StratisTest;
+
+            // Configure this to point to your "StratisTest" root folder and wallet.
             this.walletName = "test2";
-            this.walletPassword = "test";
-            // Configure this to point to your "StratisTest" root folder.
             this.dataDir = @"E:\RunNodes\SideChains\Data\MainchainUser";
         }
 
@@ -82,15 +77,23 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 var account = new WalletAccountReference(this.walletName, "account 0");
 
+                // Bypass IsExtPubKey wallet check.
+                var nodeSettings = new NodeSettings(this.network, args: new[] { $"-datadir={this.dataDir}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
+                Wallet wallet = new FileStorage<Wallet>(nodeSettings.DataFolder.WalletPath).LoadByFileName($"{this.walletName}.wallet.json");
+
                 // Create an "test2" as an empty wallet.
-                byte[] chainCode = Convert.FromBase64String("RUKVp47yWou1VNVBM1U2XYMUSRfJqisI0xATo17VLNU=");
-                repo.CreateWallet(account.WalletName, "6PYQSX5vLVL2FtFWd5tDqk6KTCMEBubhdeFUL4xDRNhYueWR9iYNgiDDLV", chainCode);
+                byte[] chainCode = wallet.ChainCode;
+                repo.CreateWallet(account.WalletName, wallet.EncryptedSeed, chainCode);
 
                 // Verify the wallet exisits.
                 Assert.Equal(this.walletName, repo.GetWalletNames().First());
 
                 // Create "account 0" as P2PKH.
-                repo.CreateAccount(account.WalletName, 0, account.AccountName, this.walletPassword, "P2PKH");
+                foreach (HdAccount hdAccount in wallet.GetAccounts(a => a.Name == account.AccountName))
+                {
+                    var extPubKey = ExtPubKey.Parse(hdAccount.ExtendedPubKey);
+                    repo.CreateAccount(this.walletName, hdAccount.Index, hdAccount.Name, extPubKey, "P2PKH");
+                }
 
                 // Create block 1.
                 Block block1 = this.network.Consensus.ConsensusFactory.CreateBlock();
@@ -129,8 +132,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 transaction2.Outputs.Add(new TxOut(Money.COIN * 90, dest));
 
                 // Send 9 coins change to my first unused change address.
-                HdAddress address2 = repo.GetUnusedAddresses(account, 1, true).FirstOrDefault();
-                transaction2.Outputs.Add(new TxOut(Money.COIN * 9, address2.ScriptPubKey));
+                HdAddress changeAddress = repo.GetUnusedAddresses(account, 1, true).FirstOrDefault();
+                transaction2.Outputs.Add(new TxOut(Money.COIN * 9, changeAddress.ScriptPubKey));
 
                 // Add transaction 2 to block 2.
                 block2.Transactions.Add(transaction2);
@@ -151,8 +154,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 Assert.Equal(2, history.Count);
 
                 // Verify 100 coins sent to first unused external address in the wallet.
-                Assert.Equal("TTMM7qGGxD5c77pJ8puBg7sTLAm2zZNBwK", history[0].Address.Address);
-                Assert.Equal("m/44'/105'/0'/0/0", history[0].Address.HdPath);
+                Assert.Equal(address.Address, history[0].Address.Address);
+                Assert.Equal(address.HdPath, history[0].Address.HdPath);
                 Assert.Equal(0, history[0].Address.Index);
                 Assert.Equal(Money.COIN * 100, (long)history[0].Transaction.Amount);
 
@@ -162,11 +165,11 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 Assert.Equal(Money.COIN * 90, (long)payments[0].Amount);
                 Assert.Equal(dest, payments[0].DestinationScriptPubKey);
                 Assert.Equal(Money.COIN * 9, (long)payments[1].Amount);
-                Assert.Equal(address2.ScriptPubKey, payments[1].DestinationScriptPubKey);
+                Assert.Equal(changeAddress.ScriptPubKey, payments[1].DestinationScriptPubKey);
 
                 // Verify 9 coins sent to first unused change address in the wallet.
-                Assert.Equal("TDGFEq1RsFKNQcATtHAivwtt5xLqfqbohe", history[1].Address.Address);
-                Assert.Equal("m/44'/105'/0'/1/0", history[1].Address.HdPath);
+                Assert.Equal(changeAddress.Address, history[1].Address.Address);
+                Assert.Equal(changeAddress.HdPath, history[1].Address.HdPath);
                 Assert.Equal(0, history[1].Address.Index);
                 Assert.Equal(Money.COIN * 9, (long)history[1].Transaction.Amount);
 
@@ -185,8 +188,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 Assert.Single(history2);
 
                 // Verify 100 coins sent to first unused external address in the wallet.
-                Assert.Equal("TTMM7qGGxD5c77pJ8puBg7sTLAm2zZNBwK", history2[0].Address.Address);
-                Assert.Equal("m/44'/105'/0'/0/0", history2[0].Address.HdPath);
+                Assert.Equal(address.Address, history2[0].Address.Address);
+                Assert.Equal(address.HdPath, history2[0].Address.HdPath);
                 Assert.Equal(0, history2[0].Address.Index);
                 Assert.Equal(Money.COIN * 100, (long)history2[0].Transaction.Amount);
 
@@ -238,13 +241,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 var chainIndexer = new ChainIndexer(this.network, chainTip);
 
-                IWalletManager walletManager = new WalletManager(nodeSettings.LoggerFactory, this.network,
-                    chainIndexer, new WalletSettings(nodeSettings), nodeSettings.DataFolder,
-                    new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object,
-                    new Mock<INodeLifetime>().Object, DateTimeProvider.Default,
-                    new Mock<IScriptAddressReader>().Object, null);
-
-                Wallet wallet = walletManager.LoadWallet(this.walletPassword, this.walletName);
+                // Bypass IsExtPubKey wallet check.
+                Wallet wallet = new FileStorage<Wallet>(nodeSettings.DataFolder.WalletPath).LoadByFileName($"{this.walletName}.wallet.json");
 
                 var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ScriptAddressReader(), new ScriptPubKeyProvider());
 
@@ -304,7 +302,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 // Now verify the DB against the JSON wallet.
                 foreach (HdAccount hdAccount in wallet.GetAccounts())
                 {
-                    var accountBalance = walletManager.GetBalances(this.walletName, hdAccount.Name).FirstOrDefault();
+                    // Get the total balances.
+                    (Money amountConfirmed, Money amountUnconfirmed) = hdAccount.GetBalances();
 
                     var spendable = repo.GetSpendableTransactionsInAccount(
                         new WalletAccountReference(this.walletName, hdAccount.Name),
@@ -312,7 +311,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                     Money balance = spendable.Sum(s => s.Transaction.Amount);
 
-                    Assert.Equal(accountBalance.AmountConfirmed, balance);
+                    Assert.Equal(amountConfirmed, balance);
                 }
             }
         }
