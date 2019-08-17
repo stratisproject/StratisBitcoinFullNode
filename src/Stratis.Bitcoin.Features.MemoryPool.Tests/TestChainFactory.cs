@@ -46,6 +46,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         MempoolSettings MempoolSettings { get; }
 
         /// <summary>
+        /// The chain.
+        /// </summary>
+        ChainIndexer ChainIndexer { get; }
+
+        /// <summary>
         /// List of the source transactions in the test chain.
         /// </summary>
         List<Transaction> SrcTxs { get; }
@@ -61,6 +66,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
         /// <inheritdoc />
         public MempoolSettings MempoolSettings { get; set; }
+
+        /// <inheritdoc />
+        public ChainIndexer ChainIndexer { get; set; }
 
         /// <inheritdoc />
         public List<Transaction> SrcTxs { get; set; }
@@ -90,9 +98,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
                 consensusRulesContainer.HeaderValidationRules.Add(Activator.CreateInstance(ruleType) as HeaderValidationConsensusRule);
             }
-            foreach (var ruleType in network.Consensus.ConsensusRules.FullValidationRules)
+            foreach (Type ruleType in network.Consensus.ConsensusRules.FullValidationRules)
                 consensusRulesContainer.FullValidationRules.Add(Activator.CreateInstance(ruleType) as FullValidationConsensusRule);
-            foreach (var ruleType in network.Consensus.ConsensusRules.PartialValidationRules)
+            foreach (Type ruleType in network.Consensus.ConsensusRules.PartialValidationRules)
                 consensusRulesContainer.PartialValidationRules.Add(Activator.CreateInstance(ruleType) as PartialValidationConsensusRule);
 
             var consensusSettings = new ConsensusSettings(nodeSettings);
@@ -115,8 +123,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             chainState.BlockStoreTip = genesis;
             await consensus.InitializeAsync(genesis).ConfigureAwait(false);
 
-            var mempoolSettings = new MempoolSettings(nodeSettings);
-            mempoolSettings.RequireStandard = requireStandard;
+            var mempoolSettings = new MempoolSettings(nodeSettings) { RequireStandard = requireStandard };
 
             var blockPolicyEstimator = new BlockPolicyEstimator(mempoolSettings, loggerFactory, nodeSettings);
             var mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, nodeSettings);
@@ -173,7 +180,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 inMemoryCoinView.SaveChanges(new List<UnspentOutputs>() { new UnspentOutputs((uint)(i + 1), block.Transactions[0]) }, new List<TxOut[]>(), chain.Tip.Previous.HashBlock, chain.Tip.HashBlock, chain.Tip.Height);
             }
 
-            return new TestChainContext { MempoolValidator = mempoolValidator, MempoolSettings = mempoolSettings, SrcTxs = srcTxs};
+            return new TestChainContext { MempoolValidator = mempoolValidator, MempoolSettings = mempoolSettings, ChainIndexer = chain, SrcTxs = srcTxs};
         }
 
         /// <summary>
@@ -193,7 +200,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             network.Consensus.Options = new ConsensusOptions();
 
             var consensusRulesContainer = new ConsensusRulesContainer();
-            foreach (var ruleType in network.Consensus.ConsensusRules.HeaderValidationRules)
+            foreach (Type ruleType in network.Consensus.ConsensusRules.HeaderValidationRules)
             {
                 // Don't check PoW of a header in this test.
                 if (ruleType == typeof(CheckDifficultyPowRule))
@@ -201,9 +208,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
                 consensusRulesContainer.HeaderValidationRules.Add(Activator.CreateInstance(ruleType) as HeaderValidationConsensusRule);
             }
-            foreach (var ruleType in network.Consensus.ConsensusRules.FullValidationRules)
+            foreach (Type ruleType in network.Consensus.ConsensusRules.FullValidationRules)
                 consensusRulesContainer.FullValidationRules.Add(Activator.CreateInstance(ruleType) as FullValidationConsensusRule);
-            foreach (var ruleType in network.Consensus.ConsensusRules.PartialValidationRules)
+            foreach (Type ruleType in network.Consensus.ConsensusRules.PartialValidationRules)
                 consensusRulesContainer.PartialValidationRules.Add(Activator.CreateInstance(ruleType) as PartialValidationConsensusRule);
 
             var consensusSettings = new ConsensusSettings(nodeSettings);
@@ -256,22 +263,20 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 txCoinbase.AddOutput(new TxOut(Money.Zero, new Script()));
                 currentBlock.Transactions[0] = txCoinbase;
 
-                if (srcTxs.Count < 4)
-                    srcTxs.Add(currentBlock.Transactions[0]);
-
                 currentBlock.UpdateMerkleRoot();
-
                 currentBlock.Header.Nonce = blockinfo[i].nonce;
 
                 chain.SetTip(currentBlock.Header);
+                srcTxs.Add(currentBlock.Transactions[0]);
+
+                inMemoryCoinView.SaveChanges(new List<UnspentOutputs>() { new UnspentOutputs((uint)(i + 1), currentBlock.Transactions[0]) }, new List<TxOut[]>(), chain.Tip.Previous.HashBlock, chain.Tip.HashBlock, chain.Tip.Height);
             }
 
             // Just to make sure we can still make simple blocks
             blockDefinition = new PowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, consensusRules, new NodeDeployments(network, chain));
             blockDefinition.Build(chain.Tip, scriptPubKey);
 
-            var mempoolSettings = new MempoolSettings(nodeSettings);
-            mempoolSettings.RequireStandard = requireStandard;
+            var mempoolSettings = new MempoolSettings(nodeSettings) { RequireStandard = requireStandard };
 
             // The mempool rule constructors aren't parameterless, so we have to manually inject the dependencies for every rule
             var mempoolRules = new List<MempoolRule>
@@ -288,7 +293,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             };
 
             // We also have to check that the manually instantiated rules match the ones in the network, or the test isn't valid
-            for (int i=0; i < network.Consensus.MempoolRules.Count; i++)
+            for (int i = 0; i < network.Consensus.MempoolRules.Count; i++)
             {
                 if (network.Consensus.MempoolRules[i] != mempoolRules[i].GetType())
                 {
@@ -300,18 +305,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, mempoolSettings, chain, inMemoryCoinView, loggerFactory, nodeSettings, consensusRules, mempoolRules, deployments);
 
-            var outputs = new List<UnspentOutputs>();
-
-            foreach (Transaction tx in srcTxs)
-            {
-                var output = new UnspentOutputs(0, tx);
-
-                outputs.Add(output);
-            }
-
-            inMemoryCoinView.SaveChanges(outputs, new List<TxOut[]>(), chain.GetHeader(1).HashBlock, chain.GetHeader(2).HashBlock, chain.GetHeader(0).Height);
-
-            return new TestChainContext { MempoolValidator = mempoolValidator, MempoolSettings = mempoolSettings, SrcTxs = srcTxs };
+            return new TestChainContext { MempoolValidator = mempoolValidator, MempoolSettings = mempoolSettings, ChainIndexer = chain, SrcTxs = srcTxs };
         }
 
         /// <summary>
@@ -374,8 +368,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             var blockInfoList = new List<BlockInfo>();
             List<long> lst = blockinfoarr.Cast<long>().ToList();
+
             for (int i = 0; i < lst.Count; i += 2)
                 blockInfoList.Add(new BlockInfo { extraNonce = (int)lst[i], nonce = (uint)lst[i + 1] });
+
             return blockInfoList;
         }
     }

@@ -43,6 +43,25 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                     this.logger.LogTrace("(-)[FAIL_MISSING_INPUTS]");
                     context.State.Fail(MempoolErrors.MissingInputs).Throw(); // fMissingInputs and !state.IsInvalid() is used to detect this condition, don't set state.Invalid()
                 }
+
+                UnspentOutputs coins = context.View.GetCoins(txin.PrevOut.Hash);
+                // Check if we are prematurely spending a coinbase transaction.
+                // We use tip + 1 because the earliest the mempool transaction can appear in a block would be tipHeight + 1.
+                if (coins.IsCoinbase && ((this.chainIndexer.Height + 1 - coins.Height) < this.network.Consensus.CoinbaseMaturity))
+                {
+                    context.State.Invalid(MempoolErrors.PrematureCoinbase).Throw();
+                }
+
+                // Check if we are prematurely spending a coinstake transaction.
+                // The minimum maturity for coinstakes was softforked to be higher than the corresponding coinbase maturity.
+                if (this.network.Consensus.IsProofOfStake && coins.IsCoinstake)
+                {
+                    var options = (PosConsensusOptions)this.network.Consensus.Options;
+                    int minConf = options.GetStakeMinConfirmations(this.chainIndexer.Height, this.network);
+
+                    if ((this.chainIndexer.Height + 1 - coins.Height) < minConf)
+                        context.State.Invalid(MempoolErrors.PrematureCoinstake).Throw();
+                }
             }
 
             // Are the actual inputs available?
