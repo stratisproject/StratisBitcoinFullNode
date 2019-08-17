@@ -732,7 +732,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                 // Check if we are prematurely spending a coinstake transaction
                 // TODO: Do a proper check for min coinstake age (i.e. maxReorg) taking proven header activation into account. Using coinbase maturity alone is not complete.
-                if (coins.IsCoinstake && ((this.chainIndexer.Height + 1 - coins.Height) < this.network.Consensus.CoinbaseMaturity))
+                if (this.network.Consensus.IsProofOfStake && coins.IsCoinstake && ((this.chainIndexer.Height + 1 - coins.Height) < this.network.Consensus.CoinbaseMaturity))
                 {
                     context.State.Invalid(MempoolErrors.PrematureCoinstake).Throw();
                 }
