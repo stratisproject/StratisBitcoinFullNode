@@ -3,7 +3,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Features.FederatedPeg.CounterChain;
+using Stratis.Features.Collateral.CounterChain;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 
@@ -91,12 +91,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             var result = new List<WithdrawalModel>();
 
             // Get all Suspended, all Partial, and all FullySigned transfers.
-            ICrossChainTransfer[] inProgressTransfers = this.crossChainTransferStore.QueryTransfersByStatus(new CrossChainTransferStatus[]
+            ICrossChainTransfer[] inProgressTransfers = this.crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[]
             {
                 CrossChainTransferStatus.Suspended,
                 CrossChainTransferStatus.Partial,
                 CrossChainTransferStatus.FullySigned
-            });
+            }, true, false);
 
             foreach (ICrossChainTransfer transfer in inProgressTransfers)
             {

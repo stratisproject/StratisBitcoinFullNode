@@ -91,8 +91,8 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             this.CoreNode.SetMinerSecret(new BitcoinSecret(key, this.CoreNode.FullNode.Network));
 
             // Set up services for later
-            this.smartContractWalletController = this.CoreNode.FullNode.NodeService<SmartContractWalletController>();
-            this.smartContractsController = this.CoreNode.FullNode.NodeService<SmartContractsController>();
+            this.smartContractWalletController = this.CoreNode.FullNode.NodeController<SmartContractWalletController>();
+            this.smartContractsController = this.CoreNode.FullNode.NodeController<SmartContractsController>();
             this.stateRoot = this.CoreNode.FullNode.NodeService<IStateRepositoryRoot>();
             this.blockStore = this.CoreNode.FullNode.NodeService<IBlockStore>();
         }

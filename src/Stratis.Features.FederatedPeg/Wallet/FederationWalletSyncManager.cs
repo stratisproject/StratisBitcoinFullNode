@@ -74,7 +74,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             if (this.storeSettings.PruningEnabled)
                 throw new WalletException("Wallet can not yet run on a pruned node");
 
-            this.logger.LogInformation("WalletSyncManager initialized. Wallet at block {0}.", this.walletManager.LastBlockHeight());
+            this.logger.LogInformation("WalletSyncManager initialized. Wallet at block {0}.", this.walletManager.LastBlockSyncedHashHeight().Height);
 
             this.walletTip = this.chain.GetHeader(this.walletManager.WalletTipHash);
             if (this.walletTip == null)

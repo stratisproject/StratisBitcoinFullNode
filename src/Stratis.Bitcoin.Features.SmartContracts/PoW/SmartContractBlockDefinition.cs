@@ -183,6 +183,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
         /// <remarks>TODO: At some point we need to change height to a ulong.</remarks>
         private IContractExecutionResult ExecuteSmartContract(TxMempoolEntry mempoolEntry)
         {
+            // This coinview object can be altered by consensus whilst we're mining.
+            // If this occurred, we would be mining on top of the wrong tip anyway, so
+            // it's okay to throw a ConsensusError which is handled by the miner, and continue.
+
             GetSenderResult getSenderResult = this.senderRetriever.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-addcontracttoblock", getSenderResult.Error));

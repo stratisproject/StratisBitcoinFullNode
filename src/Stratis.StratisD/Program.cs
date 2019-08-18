@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.ColdStaking;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.Diagnostic;
 
 namespace Stratis.StratisD
 {
@@ -38,6 +39,7 @@ namespace Stratis.StratisD
                     .UseApi()
                     .UseApps()
                     .AddRPC()
+                    .UseDiagnosticFeature()
                     .Build();
 
                 if (node != null)

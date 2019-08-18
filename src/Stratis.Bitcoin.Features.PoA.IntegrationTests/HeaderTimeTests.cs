@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
     public class HeaderTimeTests
     {
         [Fact]
-        public async Task HeaderInFutureIsntAcceptedButNoBan()
+        public async Task HeaderInFutureIsntAcceptedButNoBanAsync()
         {
             // Create 2 nodes from 2 different builders, so they have different internal times.
             var network = new TestPoANetwork();

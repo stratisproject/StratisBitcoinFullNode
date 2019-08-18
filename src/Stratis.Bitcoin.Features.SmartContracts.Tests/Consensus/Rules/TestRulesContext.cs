@@ -93,7 +93,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             testRulesContext.LoggerFactory.AddConsoleWithFilters();
             testRulesContext.DateTimeProvider = DateTimeProvider.Default;
 
-            new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(network.Consensus);
+            network.Consensus.Options = new ConsensusOptions();
+            //new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(network.Consensus);
 
             ConsensusSettings consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
@@ -107,7 +108,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             testRulesContext.Consensus = new PowConsensusRuleEngine(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider,
                 testRulesContext.ChainIndexer, deployments, consensusSettings, testRulesContext.Checkpoints, null, testRulesContext.ChainState,
-                new InvalidBlockHashStore(new DateTimeProvider()), new NodeStats(new DateTimeProvider()), testRulesContext.AsyncProvider).Register();
+                new InvalidBlockHashStore(new DateTimeProvider()), new NodeStats(new DateTimeProvider(), testRulesContext.LoggerFactory), testRulesContext.AsyncProvider, new ConsensusRulesContainer()).SetupRulesEngineParent();
 
             testRulesContext.CallDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(network));
             return testRulesContext;

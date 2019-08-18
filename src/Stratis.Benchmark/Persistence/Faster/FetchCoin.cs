@@ -37,7 +37,7 @@
 
             Array.Sort(this.data, new UInt256Comparer());
 
-            var result = this.CreateFasterLog();
+            (IDevice log, FasterKV<CacheKey, CacheValue, CacheInput, CacheOutput, Empty, CacheFunctions> db) result = this.CreateFasterLog();
             this.db = result.db;
             this.log = result.log;
             this.PopulateDB();
@@ -74,7 +74,7 @@
                 var coinKey = new CacheKey("Coins", input.ToString());
                 var output = new CacheOutput();
                 var dbInput = default(CacheInput);
-                var status = this.db.Read(ref coinKey, ref dbInput, ref output, Empty.Default, 1);
+                Status status = this.db.Read(ref coinKey, ref dbInput, ref output, Empty.Default, 1);
                 if (status == Status.PENDING) this.db.CompletePending(true);
 
                 uint256 outputs = status == Status.OK ? this.dBreezeSerializer.Deserialize<uint256>(output.Value.Value) : null;
@@ -95,8 +95,7 @@
             foreach (uint256 input in this.data.OrderBy(d => Guid.NewGuid()).Take(this.N))
             {
                 var coinKey = new CacheKey("Coins", input.ToString());
-                var dbInput = default(CacheInput);
-                var status = this.db.DeleteFromMemory(ref coinKey, 1);
+                Status status = this.db.DeleteFromMemory(ref coinKey, 1);
                 if (status == Status.ERROR)
                     throw new ApplicationException("Failed to delete data");
             }

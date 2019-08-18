@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {
@@ -46,6 +47,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             stream.MaxArraySize = old;
         }
 
+        [NoTrace]
         public override string ToString()
         {
             return $"Count: {this.Inventory.Count}";

@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Base

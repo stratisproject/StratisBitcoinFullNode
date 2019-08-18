@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using NBitcoin;
 
@@ -34,5 +35,7 @@ namespace Stratis.Bitcoin.Interfaces
         /// </summary>
         /// <param name="blockHash">The block hash.</param>
         Block GetBlock(uint256 blockHash);
+
+        List<Block> GetBlocks(List<uint256> blockHashes);
     }
 }

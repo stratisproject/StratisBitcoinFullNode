@@ -253,7 +253,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
 
                 var transaction = stratisNode.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
 
-                stratisNode.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
+                stratisNode.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
                 TestBase.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
 

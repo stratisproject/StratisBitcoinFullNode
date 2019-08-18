@@ -26,6 +26,9 @@ namespace Stratis.Bitcoin.Controllers.Models
         /// <summary>The node's version.</summary>
         public string Version { get; set; }
 
+        /// <summary>The public IP address of the node, either specified in config or ascertained by the endpoint tracker.</summary>
+        public string ExternalAddress { get; set; }
+
         /// <summary>The network the current node is running on.</summary>
         public string Network { get; set; }
 

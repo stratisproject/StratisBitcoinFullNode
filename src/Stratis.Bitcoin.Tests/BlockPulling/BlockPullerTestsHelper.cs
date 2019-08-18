@@ -8,8 +8,8 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.AsyncWork;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -45,9 +45,9 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             this.loggerFactory.AddConsoleWithFilters();
 
             this.CallbacksCalled = new Dictionary<uint256, Block>();
-            this.ChainState = new ChainState() {ConsensusTip = ChainedHeadersHelper.CreateGenesisChainedHeader()};
+            this.ChainState = new ChainState() { ConsensusTip = ChainedHeadersHelper.CreateGenesisChainedHeader() };
 
-            this.Puller = new ExtendedBlockPuller(this.ChainState, new NodeSettings(new StratisMain()), new DateTimeProvider(), new NodeStats(new DateTimeProvider()), this.loggerFactory);
+            this.Puller = new ExtendedBlockPuller(this.ChainState, new NodeSettings(new StratisMain()), new DateTimeProvider(), new NodeStats(new DateTimeProvider(), this.loggerFactory), this.loggerFactory);
         }
 
         /// <summary>Creates a peer with extended puller behavior.</summary>

@@ -29,23 +29,18 @@ namespace Stratis.Bitcoin.Features.BlockStore.Pruning
         }
 
         /// <inheritdoc />
-        public Task InitializeAsync()
+        public void Initialize()
         {
-            Task task = Task.Run(() =>
+            using (DBreeze.Transactions.Transaction transaction = this.blockRepository.DBreeze.GetTransaction())
             {
-                using (DBreeze.Transactions.Transaction transaction = this.blockRepository.DBreeze.GetTransaction())
-                {
-                    this.LoadPrunedTip(transaction);
-                }
-            });
-
-            return task;
+                this.LoadPrunedTip(transaction);
+            }
         }
 
         /// <inheritdoc />
-        public async Task PruneAndCompactDatabase(ChainedHeader blockRepositoryTip, Network network, bool nodeInitializing)
+        public void PruneAndCompactDatabase(ChainedHeader blockRepositoryTip, Network network, bool nodeInitializing)
         {
-            this.logger.LogInformation($"Pruning started.");
+            this.logger.LogInformation($"Pruning started...");
 
             if (this.PrunedTip == null)
             {

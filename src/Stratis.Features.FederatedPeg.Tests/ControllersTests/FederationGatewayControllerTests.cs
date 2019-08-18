@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NSubstitute;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -17,7 +16,7 @@ using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
-using Stratis.Features.FederatedPeg.Collateral;
+using Stratis.Features.Collateral;
 using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
@@ -79,11 +78,11 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 
         private MaturedBlocksProvider GetMaturedBlocksProvider()
         {
-            var blockRepository = Substitute.For<IBlockRepository>();
+            IBlockRepository blockRepository = Substitute.For<IBlockRepository>();
 
             blockRepository.GetBlocks(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) =>
             {
-                var hashes = x.ArgAt<List<uint256>>(0);
+                List<uint256> hashes = x.ArgAt<List<uint256>>(0);
                 var blocks = new List<Block>();
 
                 foreach (uint256 hash in hashes)
@@ -94,45 +93,11 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
                 return blocks;
             });
 
-            return new MaturedBlocksProvider(
-                this.loggerFactory,
-                this.depositExtractor,
-                this.consensusManager);
+            return new MaturedBlocksProvider(this.consensusManager, this.depositExtractor, this.loggerFactory);
         }
 
         [Fact]
-        public async Task GetMaturedBlockDeposits_Fails_When_Block_Not_In_Chain_Async()
-        {
-            FederationGatewayController controller = this.CreateController();
-
-            ChainedHeader tip = ChainedHeadersHelper.CreateConsecutiveHeaders(3, null, true)[2];
-
-            this.consensusManager.Tip.Returns(tip);
-
-            this.consensusManager.GetBlockData(Arg.Any<uint256>()).ReturnsForAnyArgs((x) => {
-                return new ChainedHeaderBlock(new Block(), tip);
-            });
-
-            IActionResult result = await controller.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(1, 1000)).ConfigureAwait(false);
-
-            result.Should().BeOfType<ErrorResult>();
-
-            var error = result as ErrorResult;
-            error.Should().NotBeNull();
-
-            var errorResponse = error.Value as ErrorResponse;
-            errorResponse.Should().NotBeNull();
-            errorResponse.Errors.Should().HaveCount(1);
-
-            errorResponse.Errors.Should().Contain(
-                e => e.Status == (int)HttpStatusCode.BadRequest);
-
-            errorResponse.Errors.Should().Contain(
-                e => e.Message.Contains("Unable to get deposits for block at height"));
-        }
-
-        [Fact]
-        public async Task GetMaturedBlockDeposits_Fails_When_Block_Height_Greater_Than_Minimum_Deposit_Confirmations_Async()
+        public void GetMaturedBlockDeposits_Fails_When_Block_Height_Greater_Than_Minimum_Deposit_Confirmations_Async()
         {
             ChainedHeader tip = ChainedHeadersHelper.CreateConsecutiveHeaders(5, null, true).Last();
             this.consensusManager.Tip.Returns(tip);
@@ -149,27 +114,17 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             ChainedHeader earlierBlock = tip.GetAncestor(maturedHeight + 1);
 
             // Mature height = 2 (Chain header height (4) - Minimum deposit confirmations (2))
-            IActionResult result = await controller.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(earlierBlock.Height, 1000)).ConfigureAwait(false);
+            IActionResult result = controller.GetMaturedBlockDeposits(new MaturedBlockRequestModel(earlierBlock.Height, 1000));
 
             // Block height (3) > Mature height (2) - returns error message
-            result.Should().BeOfType<ErrorResult>();
-
-            var error = result as ErrorResult;
-            error.Should().NotBeNull();
-
-            var errorResponse = error.Value as ErrorResponse;
-            errorResponse.Should().NotBeNull();
-            errorResponse.Errors.Should().HaveCount(1);
-
-            errorResponse.Errors.Should().Contain(
-                e => e.Status == (int)HttpStatusCode.BadRequest);
-
-            errorResponse.Errors.Should().Contain(
-                e => e.Message.Contains($"Block height {earlierBlock.Height} submitted is not mature enough. Blocks less than a height of {maturedHeight} can be processed."));
+            var maturedBlockDepositsResult = (result as JsonResult).Value as SerializableResult<List<MaturedBlockDepositsModel>>;
+            maturedBlockDepositsResult.Should().NotBeNull();
+            maturedBlockDepositsResult.IsSuccess.Should().Be(false);
+            maturedBlockDepositsResult.Message.Should().Be(string.Format(MaturedBlocksProvider.RetrieveBlockHeightHigherThanMaturedTipMessage, earlierBlock.Height, maturedHeight));
         }
 
         [Fact]
-        public async Task GetMaturedBlockDeposits_Gets_All_Matured_Block_Deposits_Async()
+        public void GetMaturedBlockDeposits_Gets_All_Matured_Block_Deposits()
         {
             ChainedHeader tip = ChainedHeadersHelper.CreateConsecutiveHeaders(10, null, true).Last();
             this.consensusManager.Tip.Returns(tip);
@@ -188,13 +143,19 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
                 depositExtractorCallCount++;
             });
 
-            this.consensusManager.GetBlockData(Arg.Any<uint256>()).ReturnsForAnyArgs((x) => {
-                return new ChainedHeaderBlock(new Block(), earlierBlock);
+            this.consensusManager.GetBlockData(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) =>
+            {
+                List<uint256> hashes = x.ArgAt<List<uint256>>(0);
+                return hashes.Select((h) => new ChainedHeaderBlock(new Block(), earlierBlock)).ToArray();
             });
 
-            IActionResult result = await controller.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(earlierBlock.Height, 1000)).ConfigureAwait(false);
+            IActionResult result = controller.GetMaturedBlockDeposits(new MaturedBlockRequestModel(earlierBlock.Height, 1000));
 
             result.Should().BeOfType<JsonResult>();
+            var maturedBlockDepositsResult = (result as JsonResult).Value as SerializableResult<List<MaturedBlockDepositsModel>>;
+            maturedBlockDepositsResult.Should().NotBeNull();
+            maturedBlockDepositsResult.IsSuccess.Should().Be(true);
+            maturedBlockDepositsResult.Message.Should().Be(null);
 
             // If the minConfirmations == 0 and this.chain.Height == earlierBlock.Height then expectedCallCount must be 1.
             int expectedCallCount = (tip.Height - minConfirmations) - earlierBlock.Height + 1;
@@ -229,7 +190,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             result.Should().BeOfType<JsonResult>();
             ((JsonResult)result).Value.Should().BeOfType<FederationGatewayInfoModel>();
 
-            FederationGatewayInfoModel model = ((JsonResult)result).Value as FederationGatewayInfoModel;
+            var model = ((JsonResult)result).Value as FederationGatewayInfoModel;
             model.IsMainChain.Should().BeFalse();
             model.FederationMiningPubKeys.Should().Equal(((PoAConsensusOptions)CirrusNetwork.NetworksSelector.Regtest().Consensus.Options).GenesisFederationMembers.Select(keys => keys.ToString()));
             model.MultiSigRedeemScript.Should().Be(redeemScript);
@@ -264,7 +225,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             result.Should().BeOfType<JsonResult>();
             ((JsonResult)result).Value.Should().BeOfType<FederationGatewayInfoModel>();
 
-            FederationGatewayInfoModel model = ((JsonResult)result).Value as FederationGatewayInfoModel;
+            var model = ((JsonResult)result).Value as FederationGatewayInfoModel;
             model.IsMainChain.Should().BeTrue();
             model.FederationMiningPubKeys.Should().BeNull();
             model.MiningPublicKey.Should().BeNull();

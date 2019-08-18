@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
             this.transaction = this.node.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
 
-            this.node.FullNode.NodeService<WalletController>()
+            this.node.FullNode.NodeController<WalletController>()
                 .SendTransaction(new SendTransactionRequest(this.transaction.ToHex()));
         }
 
