@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base.Deployments;
@@ -15,6 +16,9 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Controllers;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
@@ -401,6 +405,105 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // We received a block without witness data in the first place.
                 Assert.True(parsedBlock.GetSerializedSize() == nonWitnessBlock.GetSerializedSize());
+            }
+        }
+
+        [Fact]
+        public void SegwitWalletTransactionBuildingAndPropagationTest()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode node = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).WithWallet().Start();
+                CoreNode listener = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).WithWallet().Start();
+
+                IConnectionManager listenerConnMan = listener.FullNode.NodeService<IConnectionManager>();
+                listenerConnMan.Parameters.TemplateBehaviors.Add(new TestBehavior());
+
+                // The listener node will have default settings, i.e. it should ask for witness data in P2P messages.
+                Assert.True(listenerConnMan.Parameters.Services.HasFlag(NetworkPeerServices.NODE_WITNESS));
+
+                TestHelper.Connect(listener, node);
+
+                var mineAddress = node.FullNode.WalletManager().GetUnusedAddress();
+
+                var miner = node.FullNode.NodeService<IPowMining>() as PowMining;
+                miner.GenerateBlocks(new ReserveScript(mineAddress.ScriptPubKey), (ulong)(node.FullNode.Network.Consensus.CoinbaseMaturity + 1), int.MaxValue);
+
+                // Send a transaction from first node to itself so that it has a proper segwit input to spend.
+                var destinationAddress = node.FullNode.WalletManager().GetUnusedAddress();
+                var witAddress = destinationAddress.Bech32Address;
+
+                IActionResult transactionResult = node.FullNode.NodeController<WalletController>()
+                    .BuildTransaction(new BuildTransactionRequest
+                    {
+                        AccountName = "account 0",
+                        AllowUnconfirmed = true,
+                        Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = witAddress, Amount = Money.Coins(1).ToString() } },
+                        Password = node.WalletPassword,
+                        WalletName = node.WalletName,
+                        FeeAmount = Money.Coins(0.001m).ToString()
+                    });
+
+                var walletBuildTransactionModel = (WalletBuildTransactionModel)(transactionResult as JsonResult)?.Value;
+
+                node.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(walletBuildTransactionModel.Hex));
+
+                Transaction witFunds = node.FullNode.Network.CreateTransaction(walletBuildTransactionModel.Hex);
+                uint witIndex = witFunds.Outputs.AsIndexedOutputs().First(o => o.TxOut.ScriptPubKey.IsScriptType(ScriptType.P2WPKH)).N;
+
+                TestBase.WaitLoop(() => listener.CreateRPCClient().GetBlockCount() >= 1, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetRawMempool().Length > 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+                TestBase.WaitLoop(() => listener.CreateRPCClient().GetRawMempool().Length > 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+
+                INetworkPeer connectedPeer = listenerConnMan.ConnectedPeers.FindByEndpoint(node.Endpoint);
+                TestBehavior testBehavior = connectedPeer.Behavior<TestBehavior>();
+
+                miner.GenerateBlocks(new ReserveScript(mineAddress.ScriptPubKey), 1, int.MaxValue);
+
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetRawMempool().Length == 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+                TestBase.WaitLoop(() => listener.CreateRPCClient().GetRawMempool().Length == 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+
+                // Make sure wallet is synced.
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetBlockCount() == node.FullNode.WalletManager().LastBlockHeight(), cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+
+                // We need to capture a message on the witness-enabled destination node and see that it contains a transaction serialised with witness data.
+                // However, the first transaction has no witness data since it was only being sent to a segwit scriptPubKey (i.e. no witness input data).
+                // So clear all messages for now.
+                testBehavior.receivedMessageTracker.Clear();
+
+                // Send a transaction that has a segwit input, to a segwit address.
+                transactionResult = node.FullNode.NodeController<WalletController>()
+                    .BuildTransaction(new BuildTransactionRequest
+                    {
+                        AccountName = "account 0",
+                        AllowUnconfirmed = true,
+                        Outpoints = new List<OutpointRequest>() { new OutpointRequest() { Index = (int)witIndex, TransactionId = witFunds.GetHash().ToString() } },
+                        Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = witAddress, Amount = Money.Coins(0.5m).ToString() } },
+                        Password = node.WalletPassword,
+                        WalletName = node.WalletName,
+                        FeeAmount = Money.Coins(0.001m).ToString()
+                    });
+
+                walletBuildTransactionModel = (WalletBuildTransactionModel)(transactionResult as JsonResult)?.Value;
+
+                node.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(walletBuildTransactionModel.Hex));
+
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetRawMempool().Length > 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+                TestBase.WaitLoop(() => listener.CreateRPCClient().GetRawMempool().Length > 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+
+                var txMessages = testBehavior.receivedMessageTracker["tx"];
+                var txMessage = txMessages.First();
+
+                var receivedTransaction = txMessage.Message.Payload as TxPayload;
+                var parsedTransaction = receivedTransaction.Obj;
+                var nonWitnessTransaction = parsedTransaction.WithOptions(TransactionOptions.None, listener.FullNode.Network.Consensus.ConsensusFactory);
+
+                Assert.True(parsedTransaction.GetSerializedSize() > nonWitnessTransaction.GetSerializedSize());
+
+                miner.GenerateBlocks(new ReserveScript(mineAddress.ScriptPubKey), 1, int.MaxValue);
+
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetRawMempool().Length == 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
+                TestBase.WaitLoop(() => listener.CreateRPCClient().GetRawMempool().Length == 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
             }
         }
     }
