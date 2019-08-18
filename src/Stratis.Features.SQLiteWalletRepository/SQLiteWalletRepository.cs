@@ -485,7 +485,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                 foreach (TxIn txIn in tx.Inputs)
                 {
-                    if (transactionsOfInterest.Contains(txIn.PrevOut.Hash))
+                    if (transactionsOfInterest?.Contains(txIn.PrevOut.Hash) ?? true)
                     {
                         if (prevOuts == null)
                             prevOuts = TempTable.Create<TempPrevOut>();
@@ -504,7 +504,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                             SpendTxTotalOut = tx.TotalOut.ToDecimal(MoneyUnit.BTC)
                         });
 
-                        transactionsOfInterest.AddTentative(txId);
+                        transactionsOfInterest?.AddTentative(txId);
                     }
                 }
 
@@ -519,7 +519,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                     if (txOut.ScriptPubKey.ToBytes(true)[0] == (byte)OpcodeType.OP_RETURN)
                         continue;
 
-                    bool unconditional = transactionsOfInterest.Contains(txId); // Related to spending details.
+                    bool unconditional = transactionsOfInterest?.Contains(txId) ?? true; // Related to spending details.
 
                     IEnumerable<Script> destinations;
                     if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(txOut.ScriptPubKey))
@@ -532,7 +532,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                     // We need a script suitable for matching to HDAddress.ScriptPubKey.
                     foreach (Script pubKeyScript in destinations)
                     {
-                        if (unconditional || addressesOfInterest.Contains(pubKeyScript)) // Paying to one of our addresses.
+                        if (unconditional || (addressesOfInterest?.Contains(pubKeyScript) ?? true)) // Paying to one of our addresses.
                         {
                             // We don't know which of these are actually received by our
                             // wallet addresses but we records them for batched resolution.
@@ -552,7 +552,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                                 Value = txOut.Value.ToDecimal(MoneyUnit.BTC)
                             });
 
-                            transactionsOfInterest.AddTentative(txId);
+                            transactionsOfInterest?.AddTentative(txId);
                         }
                     }
                 }
