@@ -101,7 +101,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             return false;
         }
 
-        public void Flush()
+        public void Confirm()
         {
             foreach (byte[] obj in this.tentative)
             {

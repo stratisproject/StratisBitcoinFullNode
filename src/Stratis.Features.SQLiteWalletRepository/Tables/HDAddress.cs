@@ -98,33 +98,23 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         {
             return conn.ExecuteScalar<int?>($@"
                 SELECT  COUNT(*)
-                FROM    HDAddress A
-                JOIN    HDTransactionData D
-                ON      D.WalletId = A.WalletId
-                AND     D.AccountIndex = A.AccountIndex
-                AND     D.AddressType = A.AddressType
-                AND     D.AddressIndex = A.AddressIndex
-                WHERE   A.WalletId = {walletId}
-                AND     A.AccountIndex = {accountIndex}
-                AND     A.AddressType = {addressType}
-                AND     A.AddressIndex = {addressIndex}") ?? 0;
+                FROM    HDTransactionData
+                WHERE   WalletId = ?
+                AND     AccountIndex = ?
+                AND     AddressType = ?
+                AND     AddressIndex = ?",
+                walletId, accountIndex, addressType, addressIndex) ?? 0;
         }
 
         internal static int GetNextAddressIndex(SQLiteConnection conn, int walletId, int accountIndex, int addressType)
         {
             return 1 + (conn.ExecuteScalar<int?>($@"
-                SELECT  MAX(A.AddressIndex)
-                FROM    HDAddress A
-                LEFT    JOIN HDTransactionData D
-                ON      D.WalletId = A.WalletId
-                AND     D.AccountIndex = A.AccountIndex
-                AND     D.AddressType = A.AddressType
-                AND     D.AddressIndex = A.AddressIndex
-                WHERE   A.WalletId = {walletId}
-                AND     A.AccountIndex = {accountIndex}
-                AND     A.AddressType = {addressType}
-                GROUP   BY A.WalletId, A.AccountIndex, A.AddressType
-                HAVING  MAX(D.WalletId) IS NOT NULL") ?? -1);
+                SELECT  MAX(AddressIndex)
+                FROM    HDTransactionData
+                WHERE   WalletId = ?
+                AND     AccountIndex = ?
+                AND     AddressType = ?",
+                walletId, accountIndex, addressType) ?? -1);
         }
 
         internal void Update(SQLiteConnection conn)

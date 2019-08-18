@@ -275,7 +275,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                         IEnumerable<IEnumerable<string>> blockToScript;
                         {
                             var lists = TransactionsToLists(block.Transactions, header, null, addressesOfInterest, transactionsOfInterest).ToList();
-                            if (!lists.Any(l => l.Count != 0))
+                            if (lists.Count == 0)
                             {
                                 // No work to do.
                                 deferredTip = header;
@@ -305,8 +305,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                         conn.ProcessTransactions(header, walletName, addressesOfInterest);
                         conn.Commit();
 
-                        addressesOfInterest.Flush();
-                        transactionsOfInterest.Flush();
+                        addressesOfInterest.Confirm();
+                        transactionsOfInterest.Confirm();
 
                         this.ProcessTime += (DateTime.Now.Ticks - flagFall);
                         this.ProcessCount++;
@@ -341,6 +341,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 IEnumerable<IEnumerable<string>> txToScript;
                 {
                     var lists = TransactionsToLists(new[] { transaction }, null, fixedTxId).ToList();
+                    if (lists.Count == 0)
+                        return;
                     txToScript = lists.Select(list => list.CreateScript());
                 }
 
@@ -473,20 +475,21 @@ namespace Stratis.Features.SQLiteWalletRepository
         private IEnumerable<TempTable> TransactionsToLists(IEnumerable<Transaction> transactions, ChainedHeader header, uint256 fixedTxId = null, AddressesOfInterest addressesOfInterest = null, TransactionsOfInterest transactionsOfInterest = null)
         {
             // Convert relevant information in the block to information that can be joined to the wallet tables.
-            var outputs = TempTable.Create<TempOutput>();
-            var prevOuts = TempTable.Create<TempPrevOut>();
-            var scripts = new Dictionary<Script, List<Script>>();
+            TempTable outputs = null;
+            TempTable prevOuts = null;
 
             foreach (Transaction tx in transactions)
             {
                 // Build temp.PrevOuts
                 uint256 txId = fixedTxId ?? tx.GetHash();
-                string txHash = txId.ToString();
 
                 foreach (TxIn txIn in tx.Inputs)
                 {
                     if (transactionsOfInterest.Contains(txIn.PrevOut.Hash))
                     {
+                        if (prevOuts == null)
+                            prevOuts = TempTable.Create<TempPrevOut>();
+
                         // We don't know which of these are actually spending from our
                         // wallet addresses but we record them for batched resolution.
                         prevOuts.Add(new TempPrevOut()
@@ -497,7 +500,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                             SpendBlockHash = header?.HashBlock.ToString(),
                             SpendTxIsCoinBase = (tx.IsCoinBase || tx.IsCoinStake) ? 1 : 0,
                             SpendTxTime = (int)tx.Time,
-                            SpendTxId = txHash,
+                            SpendTxId = txId.ToString(),
                             SpendTxTotalOut = tx.TotalOut.ToDecimal(MoneyUnit.BTC)
                         });
 
@@ -518,13 +521,24 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     bool unconditional = transactionsOfInterest.Contains(txId); // Related to spending details.
 
+                    IEnumerable<Script> destinations;
+                    if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(txOut.ScriptPubKey))
+                        destinations = new Script[] { txOut.ScriptPubKey };
+                    else if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(txOut.ScriptPubKey))
+                        destinations = new Script[] { PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(txOut.ScriptPubKey).Hash.ScriptPubKey };
+                    else
+                        destinations = this.GetDestinations(txOut.ScriptPubKey);
+
                     // We need a script suitable for matching to HDAddress.ScriptPubKey.
-                    foreach (Script pubKeyScript in this.GetDestinations(txOut.ScriptPubKey))
+                    foreach (Script pubKeyScript in destinations)
                     {
                         if (unconditional || addressesOfInterest.Contains(pubKeyScript)) // Paying to one of our addresses.
                         {
                             // We don't know which of these are actually received by our
                             // wallet addresses but we records them for batched resolution.
+                            if (outputs == null)
+                                outputs = TempTable.Create<TempOutput>();
+
                             outputs.Add(new TempOutput()
                             {
                                 PubKey = pubKeyScript.ToHex(),              // For matching HDAddress.ScriptPubKey.
@@ -533,7 +547,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                                 OutputBlockHash = header?.HashBlock.ToString(),
                                 OutputTxIsCoinBase = (tx.IsCoinBase || tx.IsCoinStake) ? 1 : 0,
                                 OutputTxTime = (int)tx.Time,
-                                OutputTxId = txHash,
+                                OutputTxId = txId.ToString(),
                                 OutputIndex = i,
                                 Value = txOut.Value.ToDecimal(MoneyUnit.BTC)
                             });
@@ -542,9 +556,12 @@ namespace Stratis.Features.SQLiteWalletRepository
                         }
                     }
                 }
+            }
 
-                yield return prevOuts;
-                yield return outputs;
+            if (prevOuts != null || outputs != null)
+            {
+                yield return prevOuts ?? TempTable.Create<TempPrevOut>();
+                yield return outputs ?? TempTable.Create<TempOutput>();
             }
         }
     }
