@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Interfaces;
+using Script = NBitcoin.Script;
 
 [assembly: InternalsVisibleTo("Stratis.Features.SQLiteWalletRepository.Tests")]
 
@@ -21,7 +22,6 @@ namespace Stratis.Features.SQLiteWalletRepository
         internal DataFolder DataFolder { get; private set; }
         internal IDateTimeProvider DateTimeProvider { get; private set; }
         internal IScriptAddressReader ScriptAddressReader { get; private set; }
-        internal IScriptPubKeyProvider ScriptPubKeyProvider { get; private set; }
 
         internal long ProcessTime;
         internal int ProcessCount;
@@ -36,14 +36,12 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
         }
 
-        public SQLiteWalletRepository(DataFolder dataFolder, Network network, IDateTimeProvider dateTimeProvider,
-            IScriptAddressReader scriptAddressReader, IScriptPubKeyProvider scriptPubKeyProvider)
+        public SQLiteWalletRepository(DataFolder dataFolder, Network network, IDateTimeProvider dateTimeProvider, IScriptAddressReader scriptAddressReader)
         {
             this.Network = network;
             this.DataFolder = dataFolder;
             this.DateTimeProvider = dateTimeProvider;
             this.ScriptAddressReader = scriptAddressReader;
-            this.ScriptPubKeyProvider = scriptPubKeyProvider;
         }
 
         public void Dispose()
@@ -245,10 +243,12 @@ namespace Stratis.Features.SQLiteWalletRepository
             using (DBConnection conn = this.GetConnection(walletName))
             {
                 ChainedHeader deferredTip = null;
-                ObjectsOfInterest objectsOfInterest = null;
-                bool transactionsProcessed = true;
-
                 HDWallet wallet = (walletName == null) ? null : conn.GetWalletByName(walletName);
+                var addressesOfInterest = new AddressesOfInterest(conn, wallet.WalletId);
+                var transactionsOfInterest = new TransactionsOfInterest(conn, wallet.WalletId);
+
+                addressesOfInterest.AddAll();
+                transactionsOfInterest.AddAll();
 
                 foreach ((ChainedHeader header, Block block) in blocks.Append((null, null)))
                 {
@@ -271,16 +271,10 @@ namespace Stratis.Features.SQLiteWalletRepository
                             break;
                         }
 
-                        if (transactionsProcessed)
-                        {
-                            objectsOfInterest = conn.DetermineObjectsOfInterest(wallet?.WalletId);
-                            transactionsProcessed = false;
-                        }
-
                         // Determine the scripts for creating temporary tables and inserting the block's information into them.
                         IEnumerable<IEnumerable<string>> blockToScript;
                         {
-                            var lists = TransactionsToLists(block.Transactions, header, null, objectsOfInterest).ToList();
+                            var lists = TransactionsToLists(block.Transactions, header, null, addressesOfInterest, transactionsOfInterest).ToList();
                             if (!lists.Any(l => l.Count != 0))
                             {
                                 // No work to do.
@@ -308,10 +302,11 @@ namespace Stratis.Features.SQLiteWalletRepository
                             deferredTip = null;
                         }
 
-                        conn.ProcessTransactions(header, walletName);
+                        conn.ProcessTransactions(header, walletName, addressesOfInterest);
                         conn.Commit();
 
-                        transactionsProcessed = true;
+                        addressesOfInterest.Flush();
+                        transactionsOfInterest.Flush();
 
                         this.ProcessTime += (DateTime.Now.Ticks - flagFall);
                         this.ProcessCount++;
@@ -390,7 +385,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                                  AddressIndex = transactionData.AddressIndex,
                                  AddressType = transactionData.AddressType,
                                  PubKey = transactionData.PubKey,
-                                 ScriptPubKey = transactionData.ScriptPubKey
+                                 ScriptPubKey = transactionData.RedeemScript
                             })
                         };
                     }
@@ -448,18 +443,49 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
         }
 
-        private IEnumerable<TempTable> TransactionsToLists(IEnumerable<Transaction> transactions, ChainedHeader header, uint256 fixedTxId = null, ObjectsOfInterest objectsOfInterest = null)
+        private IEnumerable<Script> GetDestinations(Script redeemScript)
+        {
+            // TODO: "GetAddressFromScriptPubKey" should support returning multiple addresses for cold staking.
+            string[] addresses = new[] { this.ScriptAddressReader.GetAddressFromScriptPubKey(this.Network, redeemScript) };
+
+            foreach (string base58 in addresses)
+            {
+                if (base58 != null)
+                {
+                    KeyId keyId = null;
+
+                    try
+                    {
+                        byte[] decoded = Encoders.Base58Check.DecodeData(base58);
+                        keyId = new KeyId(new uint160(decoded.Skip(this.Network.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, true).Length).ToArray()));
+                    }
+                    catch (Exception)
+                    {
+                        // TODO: Add logging.
+                    }
+
+                    if (keyId != null)
+                        yield return keyId.ScriptPubKey;
+                }
+            }
+        }
+
+        private IEnumerable<TempTable> TransactionsToLists(IEnumerable<Transaction> transactions, ChainedHeader header, uint256 fixedTxId = null, AddressesOfInterest addressesOfInterest = null, TransactionsOfInterest transactionsOfInterest = null)
         {
             // Convert relevant information in the block to information that can be joined to the wallet tables.
             var outputs = TempTable.Create<TempOutput>();
             var prevOuts = TempTable.Create<TempPrevOut>();
+            var scripts = new Dictionary<Script, List<Script>>();
 
             foreach (Transaction tx in transactions)
             {
                 // Build temp.PrevOuts
+                uint256 txId = fixedTxId ?? tx.GetHash();
+                string txHash = txId.ToString();
+
                 foreach (TxIn txIn in tx.Inputs)
                 {
-                    if (objectsOfInterest.MayContain(txIn.PrevOut.Hash.ToBytes()))
+                    if (transactionsOfInterest.Contains(txIn.PrevOut.Hash))
                     {
                         // We don't know which of these are actually spending from our
                         // wallet addresses but we record them for batched resolution.
@@ -471,18 +497,15 @@ namespace Stratis.Features.SQLiteWalletRepository
                             SpendBlockHash = header?.HashBlock.ToString(),
                             SpendTxIsCoinBase = (tx.IsCoinBase || tx.IsCoinStake) ? 1 : 0,
                             SpendTxTime = (int)tx.Time,
-                            SpendTxId = tx.GetHash().ToString(),
+                            SpendTxId = txHash,
                             SpendTxTotalOut = tx.TotalOut.ToDecimal(MoneyUnit.BTC)
                         });
 
-                        objectsOfInterest.Add(tx.GetHash().ToBytes());
+                        transactionsOfInterest.AddTentative(txId);
                     }
                 }
 
                 // Build temp.Outputs.
-                uint256 txId = fixedTxId ?? tx.GetHash();
-                string txHash = txId.ToString();
-
                 for (int i = 0; i < tx.Outputs.Count; i++)
                 {
                     TxOut txOut = tx.Outputs[i];
@@ -493,24 +516,30 @@ namespace Stratis.Features.SQLiteWalletRepository
                     if (txOut.ScriptPubKey.ToBytes(true)[0] == (byte)OpcodeType.OP_RETURN)
                         continue;
 
-                    if (objectsOfInterest.MayContain(txOut.ScriptPubKey.ToBytes()) ||
-                        objectsOfInterest.MayContain(txId.ToBytes()))
-                    {
-                        string scriptPubKey = txOut.ScriptPubKey.ToHex();
+                    bool unconditional = transactionsOfInterest.Contains(txId); // Related to spending details.
 
-                        // We don't know which of these are actually received by our
-                        // wallet addresses but we records them for batched resolution.
-                        outputs.Add(new TempOutput()
+                    // We need a script suitable for matching to HDAddress.ScriptPubKey.
+                    foreach (Script pubKeyScript in this.GetDestinations(txOut.ScriptPubKey))
+                    {
+                        if (unconditional || addressesOfInterest.Contains(pubKeyScript)) // Paying to one of our addresses.
                         {
-                            ScriptPubKey = scriptPubKey,
-                            OutputBlockHeight = header?.Height ?? 0,
-                            OutputBlockHash = header?.HashBlock.ToString(),
-                            OutputTxIsCoinBase = (tx.IsCoinBase || tx.IsCoinStake) ? 1 : 0,
-                            OutputTxTime = (int)tx.Time,
-                            OutputTxId = txHash,
-                            OutputIndex = i,
-                            Value = txOut.Value.ToDecimal(MoneyUnit.BTC)
-                        });
+                            // We don't know which of these are actually received by our
+                            // wallet addresses but we records them for batched resolution.
+                            outputs.Add(new TempOutput()
+                            {
+                                PubKey = pubKeyScript.ToHex(),              // For matching HDAddress.ScriptPubKey.
+                                ScriptPubKey = txOut.ScriptPubKey.ToHex(),  // The ScriptPubKey from the txOut.
+                                OutputBlockHeight = header?.Height ?? 0,
+                                OutputBlockHash = header?.HashBlock.ToString(),
+                                OutputTxIsCoinBase = (tx.IsCoinBase || tx.IsCoinStake) ? 1 : 0,
+                                OutputTxTime = (int)tx.Time,
+                                OutputTxId = txHash,
+                                OutputIndex = i,
+                                Value = txOut.Value.ToDecimal(MoneyUnit.BTC)
+                            });
+
+                            transactionsOfInterest.AddTentative(txId);
+                        }
                     }
                 }
 

@@ -71,7 +71,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         {
             using (var dataFolder = new TempDataFolder(this.GetType().Name))
             {
-                var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ScriptAddressReader(), new ScriptPubKeyProvider());
+                var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ScriptAddressReader());
 
                 repo.Initialize(this.dbPerWallet);
 
@@ -215,14 +215,13 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 using (DBreeze.Transactions.Transaction transaction = blockRepo.DBreeze.GetTransaction())
                 {
-                    transaction.ValuesLazyLoadingIsOn = false;
+                    transaction.ValuesLazyLoadingIsOn = true;
 
                     byte[] hashBytes = uint256.Zero.ToBytes();
 
                     foreach (Row<byte[], byte[]> blockRow in transaction.SelectForward<byte[], byte[]>("Block"))
                     {
-                        Array.Copy(blockRow.Value, sizeof(int), hashBytes, 0, hashBytes.Length);
-                        uint256 hashPrev = serializer.Deserialize<uint256>(hashBytes);
+                        uint256 hashPrev = serializer.Deserialize<uint256>(blockRow.GetValuePart(sizeof(int), (uint)hashBytes.Length));
                         var hashThis = new uint256(blockRow.Key);
                         prevBlock[hashThis] = hashPrev;
                     }
@@ -248,7 +247,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 Wallet wallet = new FileStorage<Wallet>(nodeSettings.DataFolder.WalletPath).LoadByFileName($"{this.walletName}.wallet.json");
 
                 // Initialize the repo.
-                var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ScriptAddressReader(), new ScriptPubKeyProvider());
+                var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ScriptAddressReader());
                 repo.Initialize(this.dbPerWallet);
 
                 // Create a new empty wallet in the repository.
@@ -266,7 +265,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 }
 
                 // Process all the blocks in the repository.
-                long ticksTotal = DateTime.Now.Ticks;
                 long ticksReading = 0;
 
                 IEnumerable<(ChainedHeader, Block)> TheSource()
@@ -294,6 +292,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                         }
                     }
                 }
+
+                long ticksTotal = DateTime.Now.Ticks;
 
                 repo.ProcessBlocks(TheSource(), this.walletName);
 

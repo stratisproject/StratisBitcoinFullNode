@@ -9,7 +9,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         public int AccountIndex { get; set; }
         public int AddressType { get; set; }
         public int AddressIndex { get; set; }
-        public string ScriptPubKey { get; set; }
+        public string RedeemScript { get; set; }
         public string PubKey { get; set; }
         public decimal Value { get; set; }
         public int OutputTxTime { get; set; }
@@ -33,7 +33,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AccountIndex        INTEGER NOT NULL,
                 AddressType         INTEGER NOT NULL,
                 AddressIndex        INTEGER NOT NULL,
-                ScriptPubKey        TEXT NOT NULL,
+                RedeemScript        TEXT NOT NULL,
                 PubKey              TEXT NOT NULL,
                 Value               DECIMAL NOT NULL,
                 OutputBlockHeight   INTEGER,
@@ -48,7 +48,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 SpendTxTime         INTEGER,
                 SpendTxId           TEXT,
                 SpendTxTotalOut     DECIMAL,
-                PRIMARY KEY(WalletId, AccountIndex, AddressType, AddressIndex, OutputTxId, OutputIndex)
+                PRIMARY KEY(WalletId, AccountIndex, AddressType, AddressIndex, RedeemScript, OutputTxId, OutputIndex)
             )";
 
             yield return "CREATE UNIQUE INDEX UX_HDTransactionData_Output ON HDTransactionData(OutputTxId, OutputIndex)";

@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using NBitcoin;
-using NBitcoin.DataEncoders;
 using SQLite;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 
@@ -28,38 +27,6 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.CreateTable<HDPayment>();
         }
 
-        internal ObjectsOfInterest DetermineObjectsOfInterest(int? walletId)
-        {
-            var res = new ObjectsOfInterest();
-
-            List<HDAddress> addresses = this.Query<HDAddress>($@"
-                SELECT  *
-                FROM    HDAddress {
-                // Restrict to wallet if provided.
-                ((walletId != null) ? $@"
-                WHERE   WalletId = {walletId}":"")}");
-
-            foreach (HDAddress address in addresses)
-                res.Add(Encoders.Hex.DecodeData(address.ScriptPubKey));
-
-            List<HDTransactionData> spendableTransactions = this.Query<HDTransactionData>($@"
-                SELECT  *
-                FROM    HDTransactionData
-                WHERE   SpendBlockHash IS NULL
-                AND     SpendBlockHeight IS NULL {
-                // Restrict to wallet if provided.
-                ((walletId != null) ? $@"
-                AND      WalletId = {walletId}" : "")}");
-
-            foreach (HDTransactionData transactonData in spendableTransactions)
-            {
-                uint256 hash = uint256.Parse(transactonData.OutputTxId);
-                res.Add(hash.ToBytes());
-            }
-
-            return res;
-        }
-
         internal List<HDAddress> CreateAddresses(HDAccount account, int addressType, int addressesQuantity)
         {
             var addresses = new List<HDAddress>();
@@ -72,7 +39,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             return addresses;
         }
 
-        internal void TopUpAddresses(int walletId, int accountIndex, int addressType)
+        internal IEnumerable<HDAddress> TopUpAddresses(int walletId, int accountIndex, int addressType)
         {
             int addressCount = HDAddress.GetAddressCount(this, walletId, accountIndex, addressType);
             int nextAddressIndex = HDAddress.GetNextAddressIndex(this, walletId, accountIndex, addressType);
@@ -81,7 +48,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             var account = HDAccount.GetAccount(this, walletId, accountIndex);
 
             for (int addressIndex = addressCount; buffer < 20; buffer++, addressIndex++)
-                CreateAddress(account, addressType, addressIndex);
+                yield return CreateAddress(account, addressType, addressIndex);
         }
 
         internal HDAddress CreateAddress(HDAccount account, int addressType, int addressIndex)
@@ -92,7 +59,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             ExtPubKey extPubKey = ExtPubKey.Parse(account.ExtPubKey, this.repo.Network).Derive(keyPath);
             PubKey pubKey = extPubKey.PubKey;
             Script pubKeyScript = pubKey.ScriptPubKey;
-            Script scriptPubKey = this.repo.ScriptPubKeyProvider.FromPubKey(pubKey, account.ScriptPubKeyType);
+            Script scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(pubKey);
 
             // Add the new address details to the list of addresses.
             return this.CreateAddress(account, addressType, addressIndex, pubKeyScript.ToHex(), scriptPubKey.ToHex());
@@ -218,7 +185,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             ,       AccountIndex INT
             ,       AddressType INT
             ,       AddressIndex INT
-            ,       ScriptPubKey TEXT)");
+            ,       RedeemScript TEXT)");
 
             this.Execute($@"
             INSERT  INTO temp.TxToDelete (
@@ -226,12 +193,12 @@ namespace Stratis.Features.SQLiteWalletRepository
             ,       AccountIndex
             ,       AddressType
             ,       AddressIndex
-            ,       ScriptPubKey)
+            ,       RedeemScript)
             SELECT  WalletId
             ,       AccountIndex
             ,       AddressType
             ,       AddressIndex
-            ,       ScriptPubKey
+            ,       RedeemScript
             FROM    HDTransactionData
             {outputFilter}");
 
@@ -246,8 +213,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             this.Execute($@"
             DELETE  FROM HDTransactionData
-            WHERE   (WalletId, AccountIndex, AddressType, AddressIndex, ScriptPubKey) IN (
-                    SELECT  WalletId, AccountIndex, AddressType, AddressIndex, ScriptPubKey
+            WHERE   (WalletId, AccountIndex, AddressType, AddressIndex, RedeemScript) IN (
+                    SELECT  WalletId, AccountIndex, AddressType, AddressIndex, RedeemScript
                     FROM    temp.TxToDelete)");
 
             this.Execute($@"
@@ -305,7 +272,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.Update(wallet);
         }
 
-        internal void ProcessTransactions(ChainedHeader header = null, string walletName = null)
+        internal void ProcessTransactions(ChainedHeader header = null, string walletName = null, AddressesOfInterest addressesOfInterest = null)
         {
             while (true)
             {
@@ -316,8 +283,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                     ,      A.AccountIndex
                     ,      A.AddressType
                     ,      A.AddressIndex
-                    ,      A.ScriptPubKey
-                    ,      A.PubKey
+                    ,      T.ScriptPubKey RedeemScript
+                    ,      T.PubKey
                     ,      T.Value
                     ,      T.OutputBlockHeight
                     ,      T.OutputBlockHash
@@ -325,16 +292,15 @@ namespace Stratis.Features.SQLiteWalletRepository
                     ,      T.OutputTxTime
                     ,      T.OutputTxId
                     ,      T.OutputIndex
-                    ,      NULL
-                    ,      NULL
-                    ,      NULL
-                    ,      NULL
-                    ,      NULL
-                    ,      NULL
-                    ,      NULL
+                    ,      NULL SpendTxTime
+                    ,      NULL SpendTxId
+                    ,      NULL SpendBlockHeight
+                    ,      NULL SpendBlockHash
+                    ,      NULL SpendTxIsCoinBase
+                    ,      NULL SpendTxTotalOut
                     FROM   temp.TempOutput T
                     JOIN   HDAddress A
-                    ON     A.ScriptPubKey = T.ScriptPubKey
+                    ON     A.ScriptPubKey = T.PubKey
                     JOIN   HDWallet W
                     ON     W.WalletId = A.WalletId {
                     // Respect the wallet name if provided.
@@ -350,9 +316,10 @@ namespace Stratis.Features.SQLiteWalletRepository
                     AND    TD.AddressIndex = A.AddressIndex
                     AND    TD.OutputTxId = T.OutputTxId
                     AND    TD.OutputIndex = T.OutputIndex
+                    AND    TD.RedeemScript = T.ScriptPubKey
                     WHERE  TD.OutputBlockHash IS NULL
                     AND    TD.OutputBlockHeight IS NULL
-                    ORDER  BY A.WalletId, A.AccountIndex, A.AddressType, A.AddressIndex, T.OutputTxId, T.OutputIndex");
+                    ORDER  BY A.WalletId, A.AccountIndex, A.AddressType, A.AddressIndex, T.ScriptPubKey, T.OutputTxId, T.OutputIndex");
 
                 if (hdTransactions.Count == 0)
                     break;
@@ -393,7 +360,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                     break;
 
                 foreach ((int walletId, int accountIndex, int addressType) in topUpRequired)
-                    this.TopUpAddresses(walletId, accountIndex, addressType);
+                    foreach (HDAddress address in this.TopUpAddresses(walletId, accountIndex, addressType))
+                        addressesOfInterest?.AddTentative(Script.FromHex(address.ScriptPubKey));
             }
 
             // Clear the payments since we are replacing them.
@@ -453,7 +421,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 ,      TD.AccountIndex
                 ,      TD.AddressType
                 ,      TD.AddressIndex
-                ,      TD.ScriptPubKey
+                ,      TD.RedeemScript
                 ,      TD.PubKey
                 ,      TD.Value
                 ,      TD.OutputBlockHeight
@@ -486,7 +454,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 ,      TD.AccountIndex
                 ,      TD.AddressType
                 ,      TD.AddressIndex
-                ,      TD.ScriptPubKey
+                ,      TD.RedeemScript
                 ");
 
             // Advance participating wallets.

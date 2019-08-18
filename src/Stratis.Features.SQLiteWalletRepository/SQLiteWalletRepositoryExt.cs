@@ -67,7 +67,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 IsCoinBase = transactionData.OutputTxIsCoinBase == 1,
                 IsCoinStake = transactionData.OutputTxIsCoinBase == 1,
                 // IsPropagated  // Not used currently.
-                ScriptPubKey = new Script(Encoders.Hex.DecodeData(transactionData.ScriptPubKey)),
+                ScriptPubKey = new Script(Encoders.Hex.DecodeData(transactionData.RedeemScript)),
                 SpendingDetails = (transactionData.SpendTxId == null) ? null : new SpendingDetails()
                 {
                     BlockHeight = transactionData.SpendBlockHeight,
