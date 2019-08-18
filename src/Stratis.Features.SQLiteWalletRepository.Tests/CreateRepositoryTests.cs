@@ -9,9 +9,12 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.ColdStaking;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.SQLiteWalletRepository.External;
 using Xunit;
 
 namespace Stratis.Features.SQLiteWalletRepository.Tests
@@ -49,6 +52,26 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         }
     }
 
+    public class ColdStakingDestinationReader : ScriptDestinationReader, IScriptDestinationReader
+    {
+        public ColdStakingDestinationReader(IScriptAddressReader scriptAddressReader) : base(scriptAddressReader)
+        {
+        }
+
+        public override IEnumerable<TxDestination> GetDestinationFromScriptPubKey(Network network, Script redeemScript)
+        {
+            if (ColdStakingScriptTemplate.Instance.ExtractScriptPubKeyParameters(redeemScript, out KeyId hotPubKeyHash, out KeyId coldPubKeyHash))
+            {
+                yield return hotPubKeyHash;
+                yield return coldPubKeyHash;
+            }
+            else
+            {
+                base.GetDestinationFromScriptPubKey(network, redeemScript);
+            }
+        }
+    }
+
     public class RepositoryTests
     {
         private Network network;
@@ -71,7 +94,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         {
             using (var dataFolder = new TempDataFolder(this.GetType().Name))
             {
-                var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ScriptAddressReader());
+                var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ColdStakingDestinationReader(new ScriptAddressReader()));
 
                 repo.Initialize(this.dbPerWallet);
 
@@ -92,7 +115,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 foreach (HdAccount hdAccount in wallet.GetAccounts(a => a.Name == account.AccountName))
                 {
                     var extPubKey = ExtPubKey.Parse(hdAccount.ExtendedPubKey);
-                    repo.CreateAccount(this.walletName, hdAccount.Index, hdAccount.Name, extPubKey, "P2PKH");
+                    repo.CreateAccount(this.walletName, hdAccount.Index, hdAccount.Name, extPubKey);
                 }
 
                 // Create block 1.
@@ -198,14 +221,14 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             }
         }
 
-        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
+        [Fact]//(Skip = "Configure this test then run it manually. Comment this Skip.")]
         public void CanProcessBlocks()
         {
             using (var dataFolder = new TempDataFolder(this.GetType().Name))
             {
                 // Set up block store.
                 var nodeSettings = new NodeSettings(this.network, args: new[] { $"-datadir={this.dataDir}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
-                DBreezeSerializer serializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
+                var serializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
 
                 // Build the chain from the block store.
                 IBlockRepository blockRepo = new BlockRepository(this.network, nodeSettings.DataFolder, nodeSettings.LoggerFactory, serializer);
@@ -247,7 +270,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 Wallet wallet = new FileStorage<Wallet>(nodeSettings.DataFolder.WalletPath).LoadByFileName($"{this.walletName}.wallet.json");
 
                 // Initialize the repo.
-                var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ScriptAddressReader());
+                this.network.StandardScriptsRegistry.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
+                var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ColdStakingDestinationReader(new ScriptAddressReader()));
                 repo.Initialize(this.dbPerWallet);
 
                 // Create a new empty wallet in the repository.
@@ -261,7 +285,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 foreach (HdAccount hdAccount in wallet.GetAccounts())
                 {
                     var extPubKey = ExtPubKey.Parse(hdAccount.ExtendedPubKey);
-                    repo.CreateAccount(this.walletName, hdAccount.Index, hdAccount.Name, extPubKey, "P2PKH");
+                    repo.CreateAccount(this.walletName, hdAccount.Index, hdAccount.Name, extPubKey);
                 }
 
                 // Process all the blocks in the repository.

@@ -26,6 +26,8 @@ namespace Stratis.Features.SQLiteWalletRepository
         internal long ProcessTime;
         internal int ProcessCount;
 
+        public Dictionary<string, long> Metrics = new Dictionary<string, long>();
+
         public bool DatabasePerWallet { get; private set; }
 
         internal string DBPath
@@ -156,7 +158,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public void CreateAccount(string walletName, int accountIndex, string accountName, ExtPubKey extPubKey, string scriptPubKeyType, DateTimeOffset? creationTime = null)
+        public void CreateAccount(string walletName, int accountIndex, string accountName, ExtPubKey extPubKey, DateTimeOffset? creationTime = null)
         {
             lock (this.lockObject)
             {
@@ -166,12 +168,10 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     conn.BeginTransaction();
 
-                    var account = conn.CreateAccount(wallet.WalletId, accountIndex, accountName, extPubKey.ToString(this.Network), scriptPubKeyType, (int)(creationTime ?? this.DateTimeProvider.GetTimeOffset()).ToUnixTimeSeconds());
-                    if (!string.IsNullOrEmpty(account.ScriptPubKeyType))
-                    {
-                        conn.CreateAddresses(account, 0, 20);
-                        conn.CreateAddresses(account, 1, 20);
-                    }
+                    var account = conn.CreateAccount(wallet.WalletId, accountIndex, accountName, extPubKey.ToString(this.Network), (int)(creationTime ?? this.DateTimeProvider.GetTimeOffset()).ToUnixTimeSeconds());
+                    conn.CreateAddresses(account, 0, 20);
+                    conn.CreateAddresses(account, 1, 20);
+
 
                     conn.Commit();
                 }
@@ -179,7 +179,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public void CreateAccount(string walletName, int accountIndex, string accountName, string password, string scriptPubKeyType, DateTimeOffset? creationTime = null)
+        public void CreateAccount(string walletName, int accountIndex, string accountName, string password, DateTimeOffset? creationTime = null)
         {
             lock (this.lockObject)
             {
@@ -197,7 +197,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                     extPubKey = addressExtKey.Neuter();
                 }
 
-                this.CreateAccount(walletName, accountIndex, accountName, extPubKey, scriptPubKeyType, creationTime);
+                this.CreateAccount(walletName, accountIndex, accountName, extPubKey, creationTime);
             }
         }
 
@@ -373,7 +373,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     foreach (HDTransactionData transactionData in conn.GetSpendableOutputs(account.WalletId, account.AccountIndex, chainTip.Height, this.Network.Consensus.CoinbaseMaturity, confirmations))
                     {
-                        var pubKeyScript = new Script(Encoders.Hex.DecodeData(transactionData.PubKey));
+                        var pubKeyScript = new Script(Encoders.Hex.DecodeData(transactionData.ScriptPubKey));
                         PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(pubKeyScript);
 
                         yield return new UnspentOutputReference()
@@ -386,7 +386,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                                  AccountIndex = transactionData.AccountIndex,
                                  AddressIndex = transactionData.AddressIndex,
                                  AddressType = transactionData.AddressType,
-                                 PubKey = transactionData.PubKey,
+                                 PubKey = transactionData.ScriptPubKey,
                                  ScriptPubKey = transactionData.RedeemScript
                             })
                         };
@@ -445,33 +445,6 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
         }
 
-        private IEnumerable<Script> GetDestinations(Script redeemScript)
-        {
-            // TODO: "GetAddressFromScriptPubKey" should support returning multiple addresses for cold staking.
-            string[] addresses = new[] { this.ScriptAddressReader.GetAddressFromScriptPubKey(this.Network, redeemScript) };
-
-            foreach (string base58 in addresses)
-            {
-                if (base58 != null)
-                {
-                    KeyId keyId = null;
-
-                    try
-                    {
-                        byte[] decoded = Encoders.Base58Check.DecodeData(base58);
-                        keyId = new KeyId(new uint160(decoded.Skip(this.Network.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, true).Length).ToArray()));
-                    }
-                    catch (Exception)
-                    {
-                        // TODO: Add logging.
-                    }
-
-                    if (keyId != null)
-                        yield return keyId.ScriptPubKey;
-                }
-            }
-        }
-
         private IEnumerable<TempTable> TransactionsToLists(IEnumerable<Transaction> transactions, ChainedHeader header, uint256 fixedTxId = null, AddressesOfInterest addressesOfInterest = null, TransactionsOfInterest transactionsOfInterest = null)
         {
             // Convert relevant information in the block to information that can be joined to the wallet tables.
@@ -521,16 +494,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     bool unconditional = transactionsOfInterest?.Contains(txId) ?? true; // Related to spending details.
 
-                    IEnumerable<Script> destinations;
-                    if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(txOut.ScriptPubKey))
-                        destinations = new Script[] { txOut.ScriptPubKey };
-                    else if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(txOut.ScriptPubKey))
-                        destinations = new Script[] { PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(txOut.ScriptPubKey).Hash.ScriptPubKey };
-                    else
-                        destinations = this.GetDestinations(txOut.ScriptPubKey);
-
-                    // We need a script suitable for matching to HDAddress.ScriptPubKey.
-                    foreach (Script pubKeyScript in destinations)
+                    foreach (Script pubKeyScript in this.GetDestinations(txOut.ScriptPubKey))
                     {
                         if (unconditional || (addressesOfInterest?.Contains(pubKeyScript) ?? true)) // Paying to one of our addresses.
                         {
@@ -541,8 +505,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                             outputs.Add(new TempOutput()
                             {
-                                PubKey = pubKeyScript.ToHex(),              // For matching HDAddress.ScriptPubKey.
-                                ScriptPubKey = txOut.ScriptPubKey.ToHex(),  // The ScriptPubKey from the txOut.
+                                ScriptPubKey = pubKeyScript.ToHex(),              // For matching HDAddress.ScriptPubKey.
+                                RedeemScript = txOut.ScriptPubKey.ToHex(),  // The ScriptPubKey from the txOut.
                                 OutputBlockHeight = header?.Height ?? 0,
                                 OutputBlockHash = header?.HashBlock.ToString(),
                                 OutputTxIsCoinBase = (tx.IsCoinBase || tx.IsCoinStake) ? 1 : 0,

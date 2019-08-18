@@ -18,8 +18,8 @@ namespace Stratis.Features.SQLiteWalletRepository
     ///   - the wallet folder.
     /// - IDateTimeProvider
     ///   - used for populating CreationTime fields.
-    ///   IScriptPubKeyProvider
-    ///   - used by CreateAccount to generate ScriptPubKeys for addresses.
+    ///   IScriptAddressReader
+    ///   - used to find the destinations of redeem scripts.
     /// </remarks>
     public interface IWalletRepository
     {
@@ -84,26 +84,24 @@ namespace Stratis.Features.SQLiteWalletRepository
         void CreateWallet(string walletName, string encryptedSeed, byte[] chainCode, ChainedHeader lastBlockSynced = null);
 
         /// <summary>
-        /// Creates a wallet account.
+        /// Creates a wallet account using a password.
         /// </summary>
         /// <param name="walletName">The name of the wallet to create the account for.</param>
         /// <param name="accountIndex">The account index to create an account for.</param>
         /// <param name="accountName">The account name to use.</param>
         /// <param name="password">The wallet password for use to decrypt information used to generate new address pubkeys.</param>
-        /// <param name="scriptPubKeyType">Used to generate 20 unused wallet addresses. If <c>null</c> then no addresses are generated.</param>
         /// <param name="creationTime">Used to override the default creation time of the account.</param>
-        void CreateAccount(string walletName, int accountIndex, string accountName, string password, string scriptPubKeyType, DateTimeOffset? creationTime = null);
+        void CreateAccount(string walletName, int accountIndex, string accountName, string password, DateTimeOffset? creationTime = null);
 
         /// <summary>
-        /// Creates a wallet account.
+        /// Creates a wallet account using an extended public key.
         /// </summary>
         /// <param name="walletName">The name of the wallet to create the account for.</param>
         /// <param name="accountIndex">The account index to create an account for.</param>
         /// <param name="accountName">The account name to use.</param>
         /// <param name="extPubKey">The extended public key for the account.</param>
-        /// <param name="scriptPubKeyType">Used to generate 20 unused wallet addresses. If <c>null</c> then no addresses are generated.</param>
         /// <param name="creationTime">Used to override the default creation time of the account.</param>
-        void CreateAccount(string walletName, int accountIndex, string accountName, ExtPubKey extPubKey, string scriptPubKeyType, DateTimeOffset? creationTime = null);
+        void CreateAccount(string walletName, int accountIndex, string accountName, ExtPubKey extPubKey, DateTimeOffset? creationTime = null);
 
         /// <summary>
         /// Gets up to the specified number of unused addresses.

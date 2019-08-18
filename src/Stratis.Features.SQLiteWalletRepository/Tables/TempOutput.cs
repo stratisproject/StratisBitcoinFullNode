@@ -2,8 +2,8 @@
 {
     internal class TempOutput : TempRow
     {
-        public string PubKey { get; set; }
         public string ScriptPubKey { get; set; }
+        public string RedeemScript { get; set; }
         public int OutputBlockHeight { get; set; }
         public string OutputBlockHash { get; set; }
         public int OutputTxIsCoinBase { get; set; }

@@ -88,7 +88,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             return HDAddress.GetUsedAddresses(this, walletId, accountIndex, addressType);
         }
 
-        internal HDAccount CreateAccount(int walletId, int accountIndex, string accountName, string extPubKey, string scriptPubKeyType, int creationTimeSeconds)
+        internal HDAccount CreateAccount(int walletId, int accountIndex, string accountName, string extPubKey, int creationTimeSeconds)
         {
             var account = new HDAccount()
             {
@@ -97,7 +97,6 @@ namespace Stratis.Features.SQLiteWalletRepository
                 AccountName = accountName,
                 ExtPubKey = extPubKey,
                 CreationTime = creationTimeSeconds,
-                ScriptPubKeyType = scriptPubKeyType
             };
 
             this.Insert(account);
@@ -283,8 +282,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                     ,      A.AccountIndex
                     ,      A.AddressType
                     ,      A.AddressIndex
-                    ,      T.ScriptPubKey RedeemScript
-                    ,      T.PubKey
+                    ,      T.RedeemScript
+                    ,      T.ScriptPubKey
                     ,      T.Value
                     ,      T.OutputBlockHeight
                     ,      T.OutputBlockHash
@@ -300,7 +299,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                     ,      NULL SpendTxTotalOut
                     FROM   temp.TempOutput T
                     JOIN   HDAddress A
-                    ON     A.ScriptPubKey = T.PubKey
+                    ON     A.ScriptPubKey = T.ScriptPubKey
                     JOIN   HDWallet W
                     ON     W.WalletId = A.WalletId {
                     // Respect the wallet name if provided.
@@ -316,10 +315,10 @@ namespace Stratis.Features.SQLiteWalletRepository
                     AND    TD.AddressIndex = A.AddressIndex
                     AND    TD.OutputTxId = T.OutputTxId
                     AND    TD.OutputIndex = T.OutputIndex
-                    AND    TD.RedeemScript = T.ScriptPubKey
+                    AND    TD.RedeemScript = T.RedeemScript
                     WHERE  TD.OutputBlockHash IS NULL
                     AND    TD.OutputBlockHeight IS NULL
-                    ORDER  BY A.WalletId, A.AccountIndex, A.AddressType, A.AddressIndex, T.ScriptPubKey, T.OutputTxId, T.OutputIndex");
+                    ORDER  BY A.WalletId, A.AccountIndex, A.AddressType, A.AddressIndex, T.RedeemScript, T.OutputTxId, T.OutputIndex");
 
                 if (hdTransactions.Count == 0)
                     break;
@@ -347,8 +346,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                     {
                         if (hdAccount == null)
                             hdAccount = HDAccount.GetAccount(this, current.walletId, current.accountIndex);
-                        if (!string.IsNullOrEmpty(hdAccount.ScriptPubKeyType))
-                            topUpRequired.Add((current.walletId, current.accountIndex, current.addressType));
+
+                        topUpRequired.Add((current.walletId, current.accountIndex, current.addressType));
                     }
 
                     this.InsertOrReplace(hdTransactionData);
@@ -394,7 +393,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 ,       TD.OutputTxId
                 ,       TD.OutputIndex
                 ,       O.OutputIndex
-                ,       O.ScriptPubKey
+                ,       O.RedeemScript
                 ,       O.Value
                 FROM    temp.TempPrevOut T
                 JOIN    HDTransactionData TD
@@ -402,8 +401,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 AND     TD.OutputIndex = T.OutputIndex
                 AND     TD.SpendBlockHeight IS NULL
                 AND     TD.SpendBlockHash IS NULL
-                JOIN   HDWallet W
-                ON     W.WalletId = TD.WalletId {
+                JOIN    HDWallet W
+                ON      W.WalletId = TD.WalletId {
                 // Respect the wallet name if provided.
                 ((walletName != null) ? $@"
                 AND     W.Name = '{walletName}'" : "")}{
@@ -422,7 +421,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 ,      TD.AddressType
                 ,      TD.AddressIndex
                 ,      TD.RedeemScript
-                ,      TD.PubKey
+                ,      TD.ScriptPubKey
                 ,      TD.Value
                 ,      TD.OutputBlockHeight
                 ,      TD.OutputBlockHash
