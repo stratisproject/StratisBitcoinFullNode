@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.coinView = coinView;
             this.refundCounter = 1;
             this.blockTxsProcessed = new List<Transaction>();
-            this.receipts = new List<Receipt>();            
+            this.receipts = new List<Receipt>();
         }
 
         public async Task RunAsync(Func<RuleContext, Task> baseRunAsync, RuleContext context)
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             await baseRunAsync(context);
 
-            var blockHeader = (ISmartContractBlockHeader) block.Header;
+            var blockHeader = (ISmartContractBlockHeader)block.Header;
 
             if (new uint256(this.mutableStateRepository.Root) != blockHeader.HashStateRoot)
                 SmartContractConsensusErrors.UnequalStateRoots.Throw();
@@ -85,7 +85,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         /// <summary>
         /// Executes contracts as necessary and updates the coinview / UTXOset after execution.
         /// </summary>
-        /// <inheritdoc/>
         public void UpdateCoinView(Action<RuleContext, Transaction> baseUpdateUTXOSet, RuleContext context, Transaction transaction)
         {
             if (this.generatedTransaction != null)
