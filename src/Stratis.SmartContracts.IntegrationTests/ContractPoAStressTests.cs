@@ -37,10 +37,11 @@ namespace Stratis.SmartContracts.IntegrationTests
             Result<WalletSendTransactionModel> fundingResult = node1.SendTransaction(node1.MinerAddress.ScriptPubKey, Money.Coins(100m), txsToSend);
             this.mockChain.MineBlocks(1);
 
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Auction.cs");
+            Assert.True(compilationResult.Success);
+
             for (int i = 0; i < txsToSend; i++)
             {
-                ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Auction.cs");
-                Assert.True(compilationResult.Success);
                 var response = node1.SendCreateContractTransaction(compilationResult.Compilation, 0, outpoints:new List<OutpointRequest>
                 {
                     new OutpointRequest

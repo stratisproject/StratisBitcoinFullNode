@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -129,6 +130,11 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
 
             if (utxos > 0)
             {
+                if (amount % utxos != 0)
+                {
+                    throw new ArgumentException("Amount should be divisible by utxos if utxos are specified!");
+                }
+
                 recipients = new Recipient[utxos];
                 for (int i = 0; i < recipients.Length; i++)
                 {
