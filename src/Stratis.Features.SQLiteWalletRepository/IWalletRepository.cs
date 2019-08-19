@@ -116,11 +116,11 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// Gets all spendable transactions in the wallet with the given number of confirmation.
         /// </summary>
         /// <param name="accountReference">The account to get unused addresses for.</param>
-        /// <param name="chainTip">The chain tip to use in the determination of the number of confirmations of a transaction. </param>
+        /// <param name="currentChainHeight">The chain height to use in the determination of the number of confirmations of a transaction. </param>
         /// <param name="confirmations">The minimum number of confirmations for a transactions to be regarded spendable.</param>
         /// <returns>The list of spendable transactions for the account.</returns>
         /// <remarks>For coinbase transactions <see cref="Network.Consensus.CoinbaseMaturity" /> will be used in addition to <paramref name="confirmations"/>.</remarks>
-        IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference accountReference, ChainedHeader chainTip, int confirmations = 0);
+        IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference accountReference, int currentChainHeight, int confirmations = 0);
 
         /// <summary>
         /// Returns a history of all transactions in the wallet.

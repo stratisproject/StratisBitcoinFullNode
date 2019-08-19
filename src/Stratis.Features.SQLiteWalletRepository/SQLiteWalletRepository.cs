@@ -183,7 +183,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 if (this.DatabasePerWallet)
                     conn.CreateDBStructure();
 
-                conn.InsertOrReplace(wallet);
+                wallet.CreateWallet(conn);
+
                 conn.Commit();
 
                 this.Wallets[wallet.Name] = new WalletContainer(wallet);
@@ -270,6 +271,8 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             WalletContainer walletContainer = (walletName == null) ? null : this.Wallets[walletName];
 
+            long nextScheduledCatchup = 0;
+
             lock (walletContainer?.lockProcess ?? this.lockProcess)
             {
                 HDWallet wallet = walletContainer?.Wallet;
@@ -287,15 +290,31 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     foreach ((ChainedHeader header, Block block) in blocks.Append((null, null)))
                     {
-                        if (block == null)
+                        void DeferredTipCatchup()
                         {
                             if (deferredTip != null)
                             {
-                                conn.BeginTransaction();
-                                HDWallet.AdvanceTip(conn, wallet, deferredTip, deferredSince);
-                                conn.Commit();
+                                try
+                                {
+                                    conn.BeginTransaction();
+                                    HDWallet.AdvanceTip(conn, wallet, deferredTip, deferredSince);
+                                    conn.Commit();
+
+                                    deferredTip = null;
+                                }
+                                catch (Exception)
+                                {
+                                    conn.Rollback();
+                                    throw;
+                                }
                             }
 
+                            nextScheduledCatchup = DateTime.Now.Ticks + 10 * 10_000_000;
+                        }
+
+                        if (block == null)
+                        {
+                            DeferredTipCatchup();
                             break;
                         }
 
@@ -309,36 +328,41 @@ namespace Stratis.Features.SQLiteWalletRepository
                                 if (deferredTip == null)
                                     deferredSince = header.Previous;
                                 deferredTip = header;
+
+                                if (DateTime.Now.Ticks >= nextScheduledCatchup)
+                                    DeferredTipCatchup();
+
                                 continue;
                             }
 
                             blockToScript = lists.Select(list => list.CreateScript());
                         }
 
+                        // If we're going to process the block then do it with an up-to-date tip.
+                        DeferredTipCatchup();
+
                         long flagFall = DateTime.Now.Ticks;
 
-                        // If we're going to process the block then do it with an up-to-date tip.
-                        if (deferredTip != null)
+                        try
                         {
                             conn.BeginTransaction();
-                            HDWallet.AdvanceTip(conn, wallet, deferredTip, deferredSince);
+
+                            // Execute the scripts providing the temporary tables to merge with the wallet tables.
+                            foreach (IEnumerable<string> tableScript in blockToScript)
+                                foreach (string command in tableScript)
+                                    conn.Execute(command);
+
+                            conn.ProcessTransactions(header, wallet, addressesOfInterest);
                             conn.Commit();
 
-                            deferredTip = null;
+                            addressesOfInterest.Confirm();
+                            transactionsOfInterest.Confirm();
                         }
-
-                        conn.BeginTransaction();
-
-                        // Execute the scripts providing the temporary tables to merge with the wallet tables.
-                        foreach (IEnumerable<string> tableScript in blockToScript)
-                            foreach (string command in tableScript)
-                                conn.Execute(command);
-
-                        conn.ProcessTransactions(header, wallet, addressesOfInterest);
-                        conn.Commit();
-
-                        addressesOfInterest.Confirm();
-                        transactionsOfInterest.Confirm();
+                        catch (Exception)
+                        {
+                            conn.Rollback();
+                            throw;
+                        }
 
                         this.ProcessTime += (DateTime.Now.Ticks - flagFall);
                         this.ProcessCount++;
@@ -394,7 +418,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, ChainedHeader chainTip, int confirmations = 0)
+        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, int currentChainHeight, int confirmations = 0)
         {
             using (DBConnection conn = this.GetConnection(walletAccountReference.WalletName))
             {
@@ -402,7 +426,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                 var hdAccount = this.ToHdAccount(account);
 
-                foreach (HDTransactionData transactionData in conn.GetSpendableOutputs(account.WalletId, account.AccountIndex, chainTip.Height, this.Network.Consensus.CoinbaseMaturity, confirmations))
+                foreach (HDTransactionData transactionData in conn.GetSpendableOutputs(account.WalletId, account.AccountIndex, currentChainHeight, this.Network.Consensus.CoinbaseMaturity, confirmations))
                 {
                     var pubKeyScript = new Script(Encoders.Hex.DecodeData(transactionData.ScriptPubKey));
                     PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(pubKeyScript);
@@ -411,7 +435,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                     {
                         Account = hdAccount,
                         Transaction = this.ToTransactionData(transactionData, HDPayment.GetAllPayments(conn, transactionData.OutputTxTime, transactionData.OutputTxId, transactionData.OutputIndex)),
-                        Confirmations = (chainTip.Height + 1) - transactionData.OutputBlockHeight,
+                        Confirmations = (currentChainHeight + 1) - transactionData.OutputBlockHeight,
                         Address = this.ToHdAddress(new HDAddress()
                         {
                                 AccountIndex = transactionData.AccountIndex,

@@ -24,15 +24,14 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             yield return $@"
             CREATE TABLE HDWallet (
                 Name                TEXT NOT NULL,
-                WalletId            INTEGER NOT NULL UNIQUE,
+                WalletId            INTEGER PRIMARY KEY AUTOINCREMENT,
                 LastBlockSyncedHeight INTEGER NOT NULL,
                 LastBlockSyncedHash TEXT NOT NULL,
                 IsExtPubKeyWallet   INTEGER NOT NULL,
                 EncryptedSeed       TEXT NOT NULL UNIQUE,
                 ChainCode           TEXT NOT NULL,
                 BlockLocator        TEXT NOT NULL,
-                CreationTime        INTEGER NOT NULL,
-                PRIMARY KEY(Name)
+                CreationTime        INTEGER NOT NULL
             );";
         }
 
@@ -40,6 +39,34 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         {
             foreach (string command in CreateScript())
                 conn.Execute(command);
+        }
+
+        internal void CreateWallet(SQLiteConnection conn)
+        {
+            conn.Execute($@"
+            REPLACE INTO HDWallet (
+                    Name
+            ,       LastBlockSyncedHeight
+            ,       LastBlockSyncedHash
+            ,       IsExtPubKeyWallet
+            ,       EncryptedSeed
+            ,       ChainCode
+            ,       BlockLocator
+            ,       CreationTime
+            )
+            VALUES ('{this.Name}'
+            ,       {this.LastBlockSyncedHeight}
+            ,       '{this.LastBlockSyncedHash}'
+            ,       {this.IsExtPubKeyWallet}
+            ,       '{this.EncryptedSeed}'
+            ,       '{this.ChainCode}'
+            ,       '{this.BlockLocator}'
+            ,       {this.CreationTime})");
+
+            this.WalletId = conn.ExecuteScalar<int>($@"
+            SELECT  WalletId
+            FROM    HDWallet
+            WHERE   Name = '{this.Name}'");
         }
 
         internal static HDWallet GetByName(SQLiteConnection conn, string walletName)

@@ -77,7 +77,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         private Network network;
         private readonly bool dbPerWallet;
         private readonly string dataDir;
-        private string walletName;
+        private string[] walletNames;
 
         public WalletRepositoryTests(bool dbPerWallet = true)
         {
@@ -85,37 +85,39 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             this.network = KnownNetworks.StratisTest;
 
             // Configure this to point to your "StratisTest" root folder and wallet.
-            this.walletName = "test2";
+            this.walletNames = new[] { "test2", "test" };
             this.dataDir = @"E:\RunNodes\SideChains\Data\MainchainUser";
         }
 
         [Fact]
         public void CanCreateWalletAndTransactionsAndAddressesAndCanRewind()
         {
+            string walletName = "test2";
+
             using (var dataFolder = new TempDataFolder(this.GetType().Name))
             {
                 var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ColdStakingDestinationReader(new ScriptAddressReader()));
 
                 repo.Initialize(this.dbPerWallet);
 
-                var account = new WalletAccountReference(this.walletName, "account 0");
+                var account = new WalletAccountReference(walletName, "account 0");
 
                 // Bypass IsExtPubKey wallet check.
                 var nodeSettings = new NodeSettings(this.network, args: new[] { $"-datadir={this.dataDir}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
-                Wallet wallet = new FileStorage<Wallet>(nodeSettings.DataFolder.WalletPath).LoadByFileName($"{this.walletName}.wallet.json");
+                Wallet wallet = new FileStorage<Wallet>(nodeSettings.DataFolder.WalletPath).LoadByFileName($"{walletName}.wallet.json");
 
                 // Create an "test2" as an empty wallet.
                 byte[] chainCode = wallet.ChainCode;
                 repo.CreateWallet(account.WalletName, wallet.EncryptedSeed, chainCode);
 
                 // Verify the wallet exisits.
-                Assert.Equal(this.walletName, repo.GetWalletNames().First());
+                Assert.Equal(walletName, repo.GetWalletNames().First());
 
                 // Create "account 0" as P2PKH.
                 foreach (HdAccount hdAccount in wallet.GetAccounts(a => a.Name == account.AccountName))
                 {
                     var extPubKey = ExtPubKey.Parse(hdAccount.ExtendedPubKey);
-                    repo.CreateAccount(this.walletName, hdAccount.Index, hdAccount.Name, extPubKey);
+                    repo.CreateAccount(walletName, hdAccount.Index, hdAccount.Name, extPubKey);
                 }
 
                 // Create block 1.
@@ -137,7 +139,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 repo.ProcessBlock(block1, chainedHeader1, account.WalletName);
 
                 // List the unspent outputs.
-                List<UnspentOutputReference> outputs1 = repo.GetSpendableTransactionsInAccount(account, chainedHeader1, 0).ToList();
+                List<UnspentOutputReference> outputs1 = repo.GetSpendableTransactionsInAccount(account, chainedHeader1.Height, 0).ToList();
                 Assert.Single(outputs1);
                 Assert.Equal(Money.COIN * 100, (long)outputs1[0].Transaction.Amount);
 
@@ -166,7 +168,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 repo.ProcessBlock(block2, chainedHeader2, account.WalletName);
 
                 // List the unspent outputs.
-                List<UnspentOutputReference> outputs2 = repo.GetSpendableTransactionsInAccount(account, chainedHeader2, 0).ToList();
+                List<UnspentOutputReference> outputs2 = repo.GetSpendableTransactionsInAccount(account, chainedHeader2.Height, 0).ToList();
                 Assert.Single(outputs2);
                 Assert.Equal(Money.COIN * 9, (long)outputs2[0].Transaction.Amount);
 
@@ -197,10 +199,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 Assert.Equal(Money.COIN * 9, (long)history[1].Transaction.Amount);
 
                 // REWIND: Remove block 1.
-                repo.RewindWallet("test2", chainedHeader1);
+                repo.RewindWallet(walletName, chainedHeader1);
 
                 // List the unspent outputs.
-                outputs1 = repo.GetSpendableTransactionsInAccount(account, chainedHeader1, 0).ToList();
+                outputs1 = repo.GetSpendableTransactionsInAccount(account, chainedHeader1.Height, 0).ToList();
                 Assert.Single(outputs1);
                 Assert.Equal(Money.COIN * 100, (long)outputs1[0].Transaction.Amount);
 
@@ -221,9 +223,15 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             }
         }
 
-        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
+        [Fact]//(Skip = "Configure this test then run it manually. Comment this Skip.")]
         public void CanProcessBlocks()
         {
+            string[] walletNames = this.walletNames.ToArray();
+
+            // This test only processes one wallet for database-per-wallet.
+            if (this.dbPerWallet)
+                walletNames = new[] { walletNames[0] };
+
             using (var dataFolder = new TempDataFolder(this.GetType().Name))
             {
                 // Set up block store.
@@ -266,26 +274,30 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 // Build the chain indexer from the chain.
                 var chainIndexer = new ChainIndexer(this.network, chainTip);
 
-                // Load the JSON wallet. Bypasses IsExtPubKey wallet check.
-                Wallet wallet = new FileStorage<Wallet>(nodeSettings.DataFolder.WalletPath).LoadByFileName($"{this.walletName}.wallet.json");
-
                 // Initialize the repo.
                 this.network.StandardScriptsRegistry.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
                 var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ColdStakingDestinationReader(new ScriptAddressReader()));
                 repo.Initialize(this.dbPerWallet);
 
-                // Create a new empty wallet in the repository.
-                byte[] chainCode = wallet.ChainCode;
-                repo.CreateWallet(this.walletName, wallet.EncryptedSeed, chainCode);
-
-                // Verify the wallet exisits.
-                Assert.Equal(this.walletName, repo.GetWalletNames().First());
-
-                // Clone the JSON wallet accounts.
-                foreach (HdAccount hdAccount in wallet.GetAccounts())
+                // Load the JSON wallet(s).
+                foreach (string walletName in walletNames)
                 {
-                    var extPubKey = ExtPubKey.Parse(hdAccount.ExtendedPubKey);
-                    repo.CreateAccount(this.walletName, hdAccount.Index, hdAccount.Name, extPubKey);
+                    // Bypasses IsExtPubKey wallet check.
+                    Wallet wallet = new FileStorage<Wallet>(nodeSettings.DataFolder.WalletPath).LoadByFileName($"{walletName}.wallet.json");
+
+                    // Create a new empty wallet in the repository.
+                    byte[] chainCode = wallet.ChainCode;
+                    repo.CreateWallet(walletName, wallet.EncryptedSeed, chainCode);
+
+                    // Verify the wallet exisits.
+                    Assert.Contains(repo.GetWalletNames(), w => w == walletName);
+
+                    // Clone the JSON wallet accounts.
+                    foreach (HdAccount hdAccount in wallet.GetAccounts())
+                    {
+                        var extPubKey = ExtPubKey.Parse(hdAccount.ExtendedPubKey);
+                        repo.CreateAccount(walletName, hdAccount.Index, hdAccount.Name, extPubKey);
+                    }
                 }
 
                 // Process all the blocks in the repository.
@@ -319,24 +331,31 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 long ticksTotal = DateTime.Now.Ticks;
 
-                repo.ProcessBlocks(TheSource(), !repo.DatabasePerWallet ? null : this.walletName);
+                repo.ProcessBlocks(TheSource(), !repo.DatabasePerWallet ? null : walletNames[0]);
 
                 // Calculate statistics. Set a breakpoint to inspect these values.
                 ticksTotal = DateTime.Now.Ticks - ticksTotal;
 
-                // Now verify the DB against the JSON wallet.
-                foreach (HdAccount hdAccount in wallet.GetAccounts())
+                // Now verify the DB against the JSON wallet(s).
+                foreach (string walletName in walletNames)
                 {
-                    // Get the total balances.
-                    (Money amountConfirmed, Money amountUnconfirmed) = hdAccount.GetBalances();
+                    Wallet wallet = new FileStorage<Wallet>(nodeSettings.DataFolder.WalletPath).LoadByFileName($"{walletName}.wallet.json");
 
-                    List<UnspentOutputReference> spendable = repo.GetSpendableTransactionsInAccount(
-                        new WalletAccountReference(this.walletName, hdAccount.Name),
-                        chainTip, (int)this.network.Consensus.CoinbaseMaturity).ToList();
+                    foreach (HdAccount hdAccount in wallet.GetAccounts())
+                    {
+                        // Get the total balances.
+                        (Money amountConfirmed, Money amountUnconfirmed) = hdAccount.GetBalances();
 
-                    Money balance = spendable.Sum(s => s.Transaction.Amount);
+                        int walletHeight = (int)wallet.AccountsRoot.First().LastBlockSyncedHeight;
 
-                    Assert.Equal(amountConfirmed, balance);
+                        List<UnspentOutputReference> spendable = repo.GetSpendableTransactionsInAccount(
+                            new WalletAccountReference(walletName, hdAccount.Name),
+                            walletHeight, (int)this.network.Consensus.CoinbaseMaturity).ToList();
+
+                        Money balance = spendable.Sum(s => s.Transaction.Amount);
+
+                        Assert.Equal(amountConfirmed, balance);
+                    }
                 }
 
                 // Calculate some stats.
