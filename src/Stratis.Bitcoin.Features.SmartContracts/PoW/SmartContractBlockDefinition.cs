@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
         private IStateRepositoryRoot stateSnapshot;
         private readonly ISenderRetriever senderRetriever;
         private ulong blockGasConsumed;
-        private const ulong GasPerBlockLimit = SmartContractFormatLogic.GasLimitMaximum * 10;
+        public const ulong GasPerBlockLimit = SmartContractFormatLogic.GasLimitMaximum * 10;
 
         public SmartContractBlockDefinition(
             IBlockBufferGenerator blockBufferGenerator,
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             {
                 this.logger.LogDebug("Transaction contains smart contract information.");
 
-                if (this.blockGasConsumed >= GasPerBlockLimit) 
+                if (this.blockGasConsumed >= GasPerBlockLimit)
                     return;
 
                 // We HAVE to firstly execute the smart contract contained in the transaction
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             base.OnBuild(chainTip, scriptPubKeyIn);
 
             this.coinbase.Outputs.AddRange(this.refundOutputs);
-            
+
             return this.BlockTemplate;
         }
 

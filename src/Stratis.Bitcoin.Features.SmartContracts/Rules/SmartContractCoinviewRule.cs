@@ -31,10 +31,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         private readonly ISenderRetriever senderRetriever;
         private readonly IReceiptRepository receiptRepository;
         private readonly ICoinView coinView;
-        private readonly IList<Receipt> receipts;
-        private IStateRepositoryRoot mutableStateRepository;
 
-        protected SmartContractCoinviewRule(Network network, 
+        protected SmartContractCoinviewRule(Network network,
             IStateRepositoryRoot stateRepositoryRoot,
             IContractExecutorFactory executorFactory,
             ICallDataSerializer callDataSerializer,
@@ -110,24 +108,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         /// <summary>
         /// Validates that any condensing transaction matches the transaction generated during execution
         /// </summary>
-        /// <param name="transaction"></param>
+        /// <param name="transaction">The generated transaction to validate.</param>
         protected void ValidateGeneratedTransaction(Transaction transaction)
         {
             this.logic.ValidateGeneratedTransaction(transaction);
         }
 
         /// <summary>
-        /// Validates that a submitted transacction doesn't contain illegal operations
+        /// Validates that a submitted transaction doesn't contain illegal operations.
         /// </summary>
-        /// <param name="transaction"></param>
+        /// <param name="transaction">The submitted transaction to validate.</param>
         protected void ValidateSubmittedTransaction(Transaction transaction)
         {
             this.logic.ValidateSubmittedTransaction(transaction);
         }
 
-        /// <summary>
-        /// Executes the smart contract part of a transaction
-        /// </summary>
+        /// <summary>Executes the smart contract part of a transaction.</summary>
         protected void ExecuteContractTransaction(RuleContext context, Transaction transaction)
         {
             this.logic.ExecuteContractTransaction(context, transaction);

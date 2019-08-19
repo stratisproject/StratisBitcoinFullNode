@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Features.SmartContracts.PoW;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
@@ -117,7 +118,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         /// <summary>
         /// Validates that any condensing transaction matches the transaction generated during execution
         /// </summary>
-        /// <param name="transaction"></param>
+        /// <param name="transaction">The generated transaction to validate.</param>
         public void ValidateGeneratedTransaction(Transaction transaction)
         {
             if (this.generatedTransaction.GetHash() != transaction.GetHash())
@@ -129,9 +130,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         }
 
         /// <summary>
-        /// Validates that a submitted transacction doesn't contain illegal operations
+        /// Validates that a submitted transaction doesn't contain illegal operations.
         /// </summary>
-        /// <param name="transaction"></param>
+        /// <param name="transaction">The submitted transaction to validate.</param>
         public void ValidateSubmittedTransaction(Transaction transaction)
         {
             if (transaction.Inputs.Any(x => x.ScriptSig.IsSmartContractSpend()))
@@ -170,6 +171,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             Result<ContractTxData> deserializedCallData = this.callDataSerializer.Deserialize(txContext.Data);
 
             IContractExecutionResult result = executor.Execute(txContext);
+
+            if (result.GasConsumed >= SmartContractBlockDefinition.GasPerBlockLimit)
+                SmartContractConsensusErrors.GasLimitPerBlockExceeded.Throw();
 
             var receipt = new Receipt(
                 new uint256(this.mutableStateRepository.Root),
