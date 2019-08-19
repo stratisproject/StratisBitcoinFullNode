@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Wallet;
+using Stratis.Features.SQLiteWalletRepository;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.ColdStaking.Tests")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.IntegrationTests")]
@@ -80,6 +81,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             IScriptAddressReader scriptAddressReader,
             ILoggerFactory loggerFactory,
             IDateTimeProvider dateTimeProvider,
+            IWalletRepository walletRepository,
             IBroadcasterManager broadcasterManager = null) : base(
                 loggerFactory,
                 network,
@@ -91,6 +93,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 nodeLifeTime,
                 dateTimeProvider,
                 scriptAddressReader,
+                walletRepository,
                 broadcasterManager
                 )
         {

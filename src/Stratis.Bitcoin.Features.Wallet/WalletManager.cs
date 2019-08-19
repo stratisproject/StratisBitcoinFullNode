@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 using Stratis.Bitcoin.Wallet;
+using Stratis.Features.SQLiteWalletRepository;
 using TracerAttributes;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
@@ -96,6 +97,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>The private key cache for unlocked wallets.</summary>
         private readonly MemoryCache privateKeyCache;
 
+        private readonly IWalletRepository walletRepository;
+
         public uint256 WalletTipHash { get; set; }
         public int WalletTipHeight { get; set; }
 
@@ -119,6 +122,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
             IScriptAddressReader scriptAddressReader,
+            IWalletRepository walletRepository,
             IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node will broadcast to.
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -146,6 +150,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.broadcasterManager = broadcasterManager;
             this.scriptAddressReader = scriptAddressReader;
             this.dateTimeProvider = dateTimeProvider;
+            this.walletRepository = walletRepository;
+            this.walletRepository.Initialize();
 
             // register events
             if (this.broadcasterManager != null)
@@ -277,6 +283,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // Create a wallet file.
             string encryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif();
+
+            this.walletRepository.CreateWallet(name, encryptedSeed, extendedKey.ChainCode);
+
             Wallet wallet = this.GenerateWalletFile(name, encryptedSeed, extendedKey.ChainCode);
 
             // Generate multiple accounts and addresses from the get-go.
