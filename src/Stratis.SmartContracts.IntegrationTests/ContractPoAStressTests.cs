@@ -46,10 +46,9 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.mockChain.WaitAllMempoolCount(txsToSend);
             this.mockChain.MineBlocks(1);
 
-            // Each tx spends ~12000 gas.
-            // 12000 * 83 = 996000. JUST under our limit.
-            // + 1tx for coinbase.
-            const int expectedTxsInBlock = 84;
+            // Just over block gas limit.
+            // TODO: Update with block gas limit changes
+            const int expectedTxsInBlock = 85;
             var lastBlock = node1.GetLastBlock();
             Assert.Equal(expectedTxsInBlock, lastBlock.Transactions.Count);
         }

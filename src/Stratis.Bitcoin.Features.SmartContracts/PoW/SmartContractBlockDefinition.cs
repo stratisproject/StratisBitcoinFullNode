@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
         private IStateRepositoryRoot stateSnapshot;
         private readonly ISenderRetriever senderRetriever;
         private ulong blockGasConsumed;
-        public const ulong GasPerBlockLimit = SmartContractFormatLogic.GasLimitMaximum * 10;
+        private const ulong GasPerBlockLimit = SmartContractFormatLogic.GasLimitMaximum * 10;
 
         public SmartContractBlockDefinition(
             IBlockBufferGenerator blockBufferGenerator,
@@ -86,25 +86,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             {
                 this.logger.LogDebug("Transaction contains smart contract information.");
 
-                IContractExecutionResult result = this.ExecuteSmartContract(mempoolEntry);
-
-                // If including this transaction would put us over the block gas limit, then don't include it
-                // and roll back all of the execution he did.
-                if (this.blockGasConsumed > GasPerBlockLimit)
-                {
-                    // Remove the last receipt.
-                    this.receipts.RemoveAt(this.receipts.Count -1);
-
-                    // Reduce the block gas consumed.
-                    this.blockGasConsumed -= result.GasConsumed;
-
-                    // Set our state to where it was before this execution.
-                    uint256 lastState = this.receipts.Last().PostState;
-                    this.stateSnapshot.SyncToRoot(lastState.ToBytes());
-
+                if (this.blockGasConsumed >= GasPerBlockLimit) 
                     return;
-                }
 
+                // We HAVE to firstly execute the smart contract contained in the transaction
+                // to ensure its validity before we can add it to the block.
+                IContractExecutionResult result = this.ExecuteSmartContract(mempoolEntry);
                 this.AddTransactionToBlock(mempoolEntry.Transaction);
                 this.UpdateBlockStatistics(mempoolEntry);
                 this.UpdateTotalFees(result.Fee);
