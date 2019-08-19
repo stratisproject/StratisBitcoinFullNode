@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
@@ -8,6 +9,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Features.SignalR.Broadcasters;
 
 namespace Stratis.Bitcoin.Features.SignalR
 {
@@ -17,6 +19,7 @@ namespace Stratis.Bitcoin.Features.SignalR
         private readonly FullNode fullNode;
         private readonly IFullNodeBuilder fullNodeBuilder;
         private readonly SignalRSettings settings;
+        private readonly IEnumerable<IClientEventBroadcaster> eventBroadcasters;
         private readonly IEventsSubscriptionService eventsSubscriptionService;
         private IWebHost webHost;
         private readonly ILogger<SignalRFeature> logger;
@@ -26,20 +29,27 @@ namespace Stratis.Bitcoin.Features.SignalR
             IFullNodeBuilder fullNodeBuilder,
             SignalRSettings settings,
             ILoggerFactory loggerFactory,
+            IEnumerable<IClientEventBroadcaster> eventBroadcasters,
             IEventsSubscriptionService eventsSubscriptionService)
         {
             this.fullNode = fullNode;
             this.fullNodeBuilder = fullNodeBuilder;
             this.settings = settings;
+            this.eventBroadcasters = eventBroadcasters;
             this.eventsSubscriptionService = eventsSubscriptionService;
             this.logger = loggerFactory.CreateLogger<SignalRFeature>();
         }
 
         public override Task InitializeAsync()
         {
-            this.webHost = Program.Initialize(this.fullNodeBuilder.Services, this.fullNode, this.settings, new WebHostBuilder());
+            this.webHost = Program.Initialize(this.fullNodeBuilder.Services, this.fullNode, this.settings,
+                new WebHostBuilder());
 
             this.eventsSubscriptionService.Init();
+            foreach (var clientEventBroadcaster in this.eventBroadcasters)
+            {
+                clientEventBroadcaster.Initialise();
+            }
 
             return Task.CompletedTask;
         }
@@ -50,7 +60,7 @@ namespace Stratis.Bitcoin.Features.SignalR
         /// <param name="network">The network to extract values from.</param>
         public static void PrintHelp(Network network)
         {
-           SignalRSettings.PrintHelp(network);
+            SignalRSettings.PrintHelp(network);
         }
 
         /// <summary>
@@ -81,7 +91,8 @@ namespace Stratis.Bitcoin.Features.SignalR
 
     public static partial class IFullNodeBuilderExtensions
     {
-         public static IFullNodeBuilder AddSignalR(this IFullNodeBuilder fullNodeBuilder, Action<SignalROptions> optionsAction = null)
+        public static IFullNodeBuilder AddSignalR(this IFullNodeBuilder fullNodeBuilder,
+            Action<SignalROptions> optionsAction = null)
         {
             LoggingConfiguration.RegisterFeatureNamespace<SignalRFeature>("signalr");
             var options = new SignalROptions();
@@ -95,6 +106,8 @@ namespace Stratis.Bitcoin.Features.SignalR
                     {
                         services.AddSingleton<IEventsSubscriptionService, EventSubscriptionService>();
                         services.AddSingleton<EventsHub>();
+                        services.AddSingleton<IClientEventBroadcaster, PeerStatisticsClientBroadcaster>();
+                        services.AddSingleton<IClientEventBroadcaster, StakingBroadcaster>();
                         services.AddSingleton(fullNodeBuilder);
                         services.AddSingleton(options);
                         services.AddSingleton<SignalRSettings>();

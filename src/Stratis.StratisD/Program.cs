@@ -46,8 +46,6 @@ namespace Stratis.StratisD
                         {
                             (IClientEvent) new BlockConnectedClientEvent(),
                             new TransactionReceivedClientEvent()
-                            //new PeerConnectedClientEvent()
-                            //new PeerDisconnectedClientEvent()
                         };
                     })
                     .UseApi()
