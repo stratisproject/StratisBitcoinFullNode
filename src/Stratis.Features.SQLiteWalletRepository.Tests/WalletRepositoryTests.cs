@@ -45,7 +45,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         }
     }
 
-    public class MultiWalletRepositoryTests : RepositoryTests
+    public class MultiWalletRepositoryTests : WalletRepositoryTests
     {
         public MultiWalletRepositoryTests() : base(false)
         {
@@ -72,14 +72,14 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         }
     }
 
-    public class RepositoryTests
+    public class WalletRepositoryTests
     {
         private Network network;
         private readonly bool dbPerWallet;
         private readonly string dataDir;
         private string walletName;
 
-        public RepositoryTests(bool dbPerWallet = true)
+        public WalletRepositoryTests(bool dbPerWallet = true)
         {
             this.dbPerWallet = dbPerWallet;
             this.network = KnownNetworks.StratisTest;
@@ -319,14 +319,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 long ticksTotal = DateTime.Now.Ticks;
 
-                repo.ProcessBlocks(TheSource(), this.walletName);
+                repo.ProcessBlocks(TheSource(), !repo.DatabasePerWallet ? null : this.walletName);
 
                 // Calculate statistics. Set a breakpoint to inspect these values.
                 ticksTotal = DateTime.Now.Ticks - ticksTotal;
-
-                long secondsProcessing = (ticksTotal - ticksReading) / 10_000_000;
-
-                double secondsPerBlock = (double)repo.ProcessTime / repo.ProcessCount / 10_000_000;
 
                 // Now verify the DB against the JSON wallet.
                 foreach (HdAccount hdAccount in wallet.GetAccounts())
@@ -342,6 +338,12 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                     Assert.Equal(amountConfirmed, balance);
                 }
+
+                // Calculate some stats.
+                long totalTime = ticksTotal / 10_000_000;
+                long totalExcludingBlockReads = (ticksTotal - ticksReading) / 10_000_000;
+                long blocksProcessed = repo.ProcessCount;
+                double secondsPerBlock = (double)repo.ProcessTime / repo.ProcessCount / 10_000_000;
             }
         }
     }

@@ -271,8 +271,10 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.Update(wallet);
         }
 
-        internal void ProcessTransactions(ChainedHeader header = null, string walletName = null, AddressesOfInterest addressesOfInterest = null)
+        internal void ProcessTransactions(ChainedHeader header = null, HDWallet wallet = null, AddressesOfInterest addressesOfInterest = null)
         {
+            string walletName = wallet?.Name;
+
             while (true)
             {
                 // Determines the HDTransactionData records that will be updated.
@@ -458,17 +460,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             // Advance participating wallets.
             if (header != null)
-            {
-                this.Execute($@"
-                    UPDATE HDWallet
-                    SET    LastBlockSyncedHash = '{header.HashBlock}',
-                           LastBlockSyncedHeight = {header.Height},
-                           BlockLocator = '{string.Join(",", header.GetLocator().Blocks)}'
-                    WHERE  LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}' {
-                    // Respect the wallet name if provided.
-                    ((walletName != null) ? $@"
-                    AND    Name = '{walletName}'" : "")}");
-            }
+                HDWallet.AdvanceTip(this, wallet, header, header.Previous);
         }
     }
 }

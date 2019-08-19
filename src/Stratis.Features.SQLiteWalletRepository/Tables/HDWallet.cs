@@ -65,6 +65,32 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 WHERE  EncryptedSeed = ?", encryptedSeed);
         }
 
+        internal static void AdvanceTip(SQLiteConnection conn, HDWallet wallet, ChainedHeader newTip, ChainedHeader prevTip)
+        {
+            uint256 lastBlockSyncedHash = newTip?.HashBlock ?? uint256.Zero;
+            int lastBlockSyncedHeight = newTip?.Height ?? -1;
+            string blockLocator = "";
+            if (newTip != null)
+                blockLocator = string.Join(",", newTip?.GetLocator().Blocks);
+
+            conn.Execute($@"
+                    UPDATE HDWallet
+                    SET    LastBlockSyncedHash = '{lastBlockSyncedHash}',
+                           LastBlockSyncedHeight = {lastBlockSyncedHeight},
+                           BlockLocator = '{blockLocator}'
+                    WHERE  LastBlockSyncedHash = '{(prevTip?.HashBlock ?? uint256.Zero)}' {
+                    // Respect the wallet name if provided.
+                    ((wallet?.Name != null) ? $@"
+                    AND    Name = '{wallet?.Name}'" : "")}");
+
+            if (wallet != null)
+            {
+                wallet.LastBlockSyncedHash = lastBlockSyncedHash.ToString();
+                wallet.LastBlockSyncedHeight = lastBlockSyncedHeight;
+                wallet.BlockLocator = blockLocator;
+            }
+        }
+
         internal void SetLastBlockSynced(ChainedHeader lastBlockSynced)
         {
             uint256 lastBlockSyncedHash = lastBlockSynced?.HashBlock ?? uint256.Zero;
