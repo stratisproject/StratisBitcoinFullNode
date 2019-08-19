@@ -9,7 +9,8 @@
     },
     "Stratis.StratisD Test with Default wallet": {
       "commandName": "Project",
-      "commandLineArgs": "-testnet -rpcallowip=127.0.0.1 -defaultwalletname=default -defaultwalletpassword=default -unlockdefaultwallet -server -rpcpassword=rpcpassword -rpcuser=rpcuser"
+      "commandLineArgs":
+        "-testnet -rpcallowip=127.0.0.1 -defaultwalletname=default -defaultwalletpassword=default -unlockdefaultwallet -server -rpcpassword=rpcpassword -rpcuser=rpcuser"
     },
     "Stratis.StratisD Test with RPC": {
       "commandName": "Project",
@@ -22,6 +23,10 @@
     "Stratis.StratisD Test No assumevalid": {
       "commandName": "Project",
       "commandLineArgs": "-testnet -assumevalid=0 -checkpoints=false"
+    },
+    "Stratis.StratisD Docker": {
+      "commandName": "Project",
+      "commandLineArgs": "-txindex -datadir=C:\\Dev\\InternalTestnet_Data\\Runtime\\NodeMDA -connect=100.64.1.1 -connect=100.64.1.2 -connect=100.64.1.3"
     }
   }
 }
