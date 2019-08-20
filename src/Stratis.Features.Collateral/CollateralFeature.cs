@@ -38,6 +38,7 @@ namespace Stratis.Features.Collateral
     /// </summary>
     public static class FullNodeBuilderCollateralFeatureExtension
     {
+        // Both Cirrus Peg and Cirrus Miner calls this.
         public static IFullNodeBuilder CheckForPoAMembersCollateral(this IFullNodeBuilder fullNodeBuilder)
         {
             fullNodeBuilder.ConfigureFeature(features =>
@@ -50,7 +51,7 @@ namespace Stratis.Features.Collateral
                         services.AddSingleton<IFederationManager, CollateralFederationManager>();
                         services.AddSingleton<ICollateralChecker, CollateralChecker>();
 
-                        new SmartContractCollateralPoARuleRegistration().RegisterRules(services);
+                        //new SmartContractCollateralPoARuleRegistration().RegisterRules(services);
                     });
             });
 
