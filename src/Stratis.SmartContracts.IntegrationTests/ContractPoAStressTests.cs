@@ -34,7 +34,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
             for (int i = 0; i < txsToSend; i++)
             {
-                var response = node1.SendCreateContractTransaction(compilationResult.Compilation, 0, outpoints:new List<OutpointRequest>
+                var response = node1.SendCreateContractTransaction(compilationResult.Compilation, 0, outpoints: new List<OutpointRequest>
                 {
                     new OutpointRequest
                     {
@@ -48,8 +48,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.mockChain.MineBlocks(1);
 
             // Just over block gas limit.
-            // TODO: Update with block gas limit changes
-            const int expectedTxsInBlock = 85;
+            const int expectedTxsInBlock = 84;
             var lastBlock = node1.GetLastBlock();
             Assert.Equal(expectedTxsInBlock, lastBlock.Transactions.Count);
         }

@@ -36,6 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         private readonly IList<Receipt> receipts;
         private uint refundCounter;
         private IStateRepositoryRoot mutableStateRepository;
+        private ulong blockGasConsumed;
 
         public SmartContractCoinViewRuleLogic(IStateRepositoryRoot stateRepositoryRoot,
             IContractExecutorFactory executorFactory,
@@ -59,7 +60,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         {
             this.blockTxsProcessed.Clear();
             this.receipts.Clear();
+            this.blockGasConsumed = 0;
             this.refundCounter = 1;
+
             Block block = context.ValidationContext.BlockToValidate;
 
             // Get a IStateRepositoryRoot we can alter without affecting the injected one which is used elsewhere.
@@ -172,9 +175,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             IContractExecutionResult result = executor.Execute(txContext);
 
-            if (result.GasConsumed >= SmartContractBlockDefinition.GasPerBlockLimit)
-                SmartContractConsensusErrors.GasLimitPerBlockExceeded.Throw();
-
             var receipt = new Receipt(
                 new uint256(this.mutableStateRepository.Root),
                 result.GasConsumed,
@@ -204,6 +204,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             {
                 this.generatedTransaction = result.InternalTransaction;
             }
+
+            this.CheckBlockGasLimit(result.GasConsumed);
+        }
+
+        /// <summary>
+        /// Update the total gas expenditure for this block and verify that it has not exceeded the limit.
+        /// </summary>
+        /// <param name="txGasConsumed">The amount of gas spent executing the smart contract transaction.</param>
+        private void CheckBlockGasLimit(ulong txGasConsumed)
+        {
+            this.blockGasConsumed += txGasConsumed;
+            if (this.blockGasConsumed > SmartContractBlockDefinition.GasPerBlockLimit)
+                SmartContractConsensusErrors.GasLimitPerBlockExceeded.Throw();
         }
 
         /// <summary>
@@ -280,22 +293,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             }
 
             return baseCheckInput(tx, inputIndexCopy, txout, txData, input, flags);
-        }
-
-        public void Reset()
-        {
-            this.ResetRefundCounter();
-            this.ClearGeneratedTransaction();
-        }
-
-        private void ResetRefundCounter()
-        {
-            this.refundCounter = 1;
-        }
-
-        private void ClearGeneratedTransaction()
-        {
-            this.generatedTransaction = null;
         }
     }
 }
