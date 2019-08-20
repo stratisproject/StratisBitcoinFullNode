@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.ColdStaking;
 using Stratis.Bitcoin.Features.SignalR;
+using Stratis.Bitcoin.Features.SignalR.Broadcasters;
 using Stratis.Bitcoin.Features.SignalR.Events;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Networks;
@@ -46,6 +47,12 @@ namespace Stratis.StratisD
                         {
                             (IClientEvent) new BlockConnectedClientEvent(),
                             new TransactionReceivedClientEvent()
+                        };
+
+                        options.ClientEventBroadcasters = new[]
+                        {
+                            typeof(StakingBroadcaster),
+                            typeof(PeerStatisticsClientBroadcaster)
                         };
                     })
                     .UseApi()

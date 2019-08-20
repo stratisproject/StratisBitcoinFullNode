@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -87,6 +88,7 @@ namespace Stratis.Bitcoin.Features.SignalR
     public class SignalROptions
     {
         public IClientEvent[] EventsToHandle { get; set; }
+        public Type[] ClientEventBroadcasters { get; set; }
     }
 
     public static partial class IFullNodeBuilderExtensions
@@ -106,11 +108,24 @@ namespace Stratis.Bitcoin.Features.SignalR
                     {
                         services.AddSingleton<IEventsSubscriptionService, EventSubscriptionService>();
                         services.AddSingleton<EventsHub>();
-                        services.AddSingleton<IClientEventBroadcaster, PeerStatisticsClientBroadcaster>();
-                        services.AddSingleton<IClientEventBroadcaster, StakingBroadcaster>();
                         services.AddSingleton(fullNodeBuilder);
                         services.AddSingleton(options);
                         services.AddSingleton<SignalRSettings>();
+
+                        if (null != options.ClientEventBroadcasters)
+                        {
+                            foreach (Type eventBroadcaster in options.ClientEventBroadcasters)
+                            {
+                                if (typeof(IClientEventBroadcaster).IsAssignableFrom(eventBroadcaster))
+                                {
+                                    services.AddSingleton(typeof(IClientEventBroadcaster), eventBroadcaster);
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Warning {eventBroadcaster.Name} is not of type {typeof(IClientEventBroadcaster).Name}");
+                                }
+                            }
+                        }
                     });
             });
 

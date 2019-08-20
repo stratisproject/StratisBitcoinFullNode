@@ -34,12 +34,10 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 
         protected override IEnumerable<IClientEvent> GetMessages()
         {
-            return new[]
+            if (null != this.posMinting)
             {
-                this.posMinting != null
-                    ? new StakingInfoClientEvent(this.posMinting.GetGetStakingInfoModel())
-                    : new StakingInfoClientEvent()
-            };
+                yield return new StakingInfoClientEvent(this.posMinting.GetGetStakingInfoModel());
+            }
         }
     }
 }
