@@ -9,9 +9,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         public int AccountIndex { get; set; }
         public int AddressType { get; set; }
         public int AddressIndex { get; set; }
-        public int? TransactionDataIndex { get; set; }
+        public string RedeemScript { get; set; }
         public string ScriptPubKey { get; set; }
-        public string PubKey { get; set; }
         public decimal Value { get; set; }
         public int OutputTxTime { get; set; }
         public string OutputTxId { get; set; }
@@ -34,15 +33,14 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AccountIndex        INTEGER NOT NULL,
                 AddressType         INTEGER NOT NULL,
                 AddressIndex        INTEGER NOT NULL,
-                TransactionDataIndex INTEGER NOT NULL,
-                ScriptPubKey        TEXT,
-                PubKey              TEXT,
+                RedeemScript        TEXT NOT NULL,
+                ScriptPubKey        TEXT NOT NULL,
                 Value               DECIMAL NOT NULL,
                 OutputBlockHeight   INTEGER,
                 OutputBlockHash     INTEGER,
                 OutputTxIsCoinBase  INTEGER NOT NULL,
                 OutputTxTime        INTEGER NOT NULL,
-                OutputTxId          TEXT NOT NULL,
+                OutputTxId          VARCHAR(50) NOT NULL,
                 OutputIndex         INTEGER NOT NULL,
                 SpendBlockHeight    INTEGER,
                 SpendBlockHash      TEXT,
@@ -50,7 +48,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 SpendTxTime         INTEGER,
                 SpendTxId           TEXT,
                 SpendTxTotalOut     DECIMAL,
-                PRIMARY KEY(WalletId, AccountIndex, AddressType, AddressIndex, TransactionDataIndex)
+                PRIMARY KEY(WalletId, AccountIndex, AddressType, AddressIndex, RedeemScript, OutputTxId, OutputIndex)
             )";
 
             yield return "CREATE UNIQUE INDEX UX_HDTransactionData_Output ON HDTransactionData(OutputTxId, OutputIndex)";
@@ -73,7 +71,25 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AND     AccountIndex = {accountIndex}
                 AND     AddressType = {addressType}
                 AND     AddressIndex = {addressIndex}
-                ORDER   BY TransactionDataIndex");
+                ORDER   BY OutputTxTime");
+        }
+
+        internal static IEnumerable<HDTransactionData> GetSpendTransaction(DBConnection conn, int walletId, string txId)
+        {
+            return conn.Query<HDTransactionData>($@"
+                SELECT  *
+                FROM    HDTransactionData
+                WHERE   SpendTxId = '{txId}'
+                AND     WalletId = {walletId}");
+        }
+
+        internal static IEnumerable<HDTransactionData> GetReceiveTransaction(DBConnection conn, int walletId, string txId)
+        {
+            return conn.Query<HDTransactionData>($@"
+                SELECT  *
+                FROM    HDTransactionData
+                WHERE   OutputTxId = '{txId}'
+                AND     WalletID = {walletId}");
         }
 
         internal static IEnumerable<HDTransactionData> GetSpendableTransactions(DBConnection conn, int walletId, int accountIndex, int currentChainHeight, long coinbaseMaturity, int confirmations = 0)

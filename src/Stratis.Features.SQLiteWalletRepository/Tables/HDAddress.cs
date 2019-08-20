@@ -11,7 +11,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         public int AddressIndex { get; set; }
         public string ScriptPubKey { get; set; }
         public string PubKey { get; set; }
-        public int TransactionCount { get; set; }
 
         internal static IEnumerable<string> CreateScript()
         {
@@ -23,7 +22,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AddressIndex        INTEGER NOT NULL,
                 ScriptPubKey        TEXT    NOT NULL,
                 PubKey              TEXT    NOT NULL,
-                TransactionCount    INTEGER NOT NULL,
                 PRIMARY KEY(WalletId, AccountIndex, AddressType, AddressIndex)
             )";
 
@@ -40,13 +38,19 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         internal static IEnumerable<HDAddress> GetUsedAddresses(SQLiteConnection conn, int walletId, int accountIndex, int addressType)
         {
             return conn.Query<HDAddress>($@"
-                SELECT  *
-                FROM    HDAddress
-                WHERE   WalletId = ?
-                AND     AccountIndex = ?
-                AND     AddressType = ?
-                AND     TransactionCount != 0
-                ORDER   BY AddressType, AddressIndex;",
+                SELECT  A.*
+                FROM    HDAddress A
+                LEFT    JOIN HDTransactionData D
+                ON      D.WalletId = A.WalletId
+                AND     D.AccountIndex = A.AccountIndex
+                AND     D.AddressType = A.AddressType
+                AND     D.AddressIndex = A.AddressIndex
+                WHERE   A.WalletId = ?
+                AND     A.AccountIndex = ?
+                AND     A.AddressType = ?
+                GROUP   BY A.WalletId, A.AccountIndex, A.AddressType, A.AddressIndex
+                HAVING  MAX(D.WalletId) IS NOT NULL
+                ORDER   BY AddressType, AccountIndex",
                 walletId,
                 accountIndex,
                 addressType);
@@ -55,12 +59,18 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         internal static IEnumerable<HDAddress> GetUnusedAddresses(SQLiteConnection conn, int walletId, int accountIndex, int addressType, int count)
         {
             return conn.Query<HDAddress>($@"
-                SELECT  *
-                FROM    HDAddress
-                WHERE   WalletId = ?
-                AND     AccountIndex = ?
-                AND     AddressType = ?
-                AND     TransactionCount = 0
+                SELECT  A.*
+                FROM    HDAddress A
+                LEFT    JOIN HDTransactionData D
+                ON      D.WalletId = A.WalletId
+                AND     D.AccountIndex = A.AccountIndex
+                AND     D.AddressType = A.AddressType
+                AND     D.AddressIndex = A.AddressIndex
+                WHERE   A.WalletId = ?
+                AND     A.AccountIndex = ?
+                AND     A.AddressType = ?
+                GROUP   BY A.WalletId, A.AccountIndex, A.AddressType, A.AddressIndex
+                HAVING  MAX(D.WalletId) IS NULL
                 ORDER   BY AddressType, AccountIndex
                 LIMIT   ?;",
                 walletId,
@@ -84,15 +94,27 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AND     AddressType = {addressType}") ?? -1);
         }
 
+        internal static int GetTransactionCount(SQLiteConnection conn, int walletId, int accountIndex, int addressType, int addressIndex)
+        {
+            return conn.ExecuteScalar<int?>($@"
+                SELECT  COUNT(*)
+                FROM    HDTransactionData
+                WHERE   WalletId = ?
+                AND     AccountIndex = ?
+                AND     AddressType = ?
+                AND     AddressIndex = ?",
+                walletId, accountIndex, addressType, addressIndex) ?? 0;
+        }
+
         internal static int GetNextAddressIndex(SQLiteConnection conn, int walletId, int accountIndex, int addressType)
         {
             return 1 + (conn.ExecuteScalar<int?>($@"
                 SELECT  MAX(AddressIndex)
-                FROM    HDAddress
-                WHERE   WalletId = {walletId}
-                AND     AccountIndex = {accountIndex}
-                AND     AddressType = {addressType}
-                AND     TransactionCount != 0") ?? -1);
+                FROM    HDTransactionData
+                WHERE   WalletId = ?
+                AND     AccountIndex = ?
+                AND     AddressType = ?",
+                walletId, accountIndex, addressType) ?? -1);
         }
 
         internal void Update(SQLiteConnection conn)
@@ -101,12 +123,11 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 UPDATE  HDAddress
                 SET     ScriptPubKey = ?
                 ,       PubKey = ?
-                ,       TransactionCount = ?
                 WHERE   WalletId = {this.WalletId}
                 AND     AccountIndex = {this.AccountIndex}
                 AND     AddressType = {this.AddressType}
                 AND     AddressIndex = {this.AddressIndex}",
-                this.ScriptPubKey, this.PubKey, this.TransactionCount
+                this.ScriptPubKey, this.PubKey
             );
         }
     }

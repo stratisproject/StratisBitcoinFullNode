@@ -10,7 +10,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         public string AccountName { get; set; }
         public string ExtPubKey { get; set; }
         public int CreationTime { get; set; }
-        public string ScriptPubKeyType { get; set; }
 
         internal static IEnumerable<string> CreateScript()
         {
@@ -21,7 +20,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AccountName         TEXT NOT NULL,
                 ExtPubKey           TEXT NOT NULL UNIQUE,
                 CreationTime        INTEGER NOT NULL,
-                ScriptPubKeyType    TEXT NOT NULL,
                 PRIMARY KEY(WalletId, AccountIndex)
             );";
 

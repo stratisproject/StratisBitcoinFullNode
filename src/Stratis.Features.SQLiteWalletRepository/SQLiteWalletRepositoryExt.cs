@@ -4,6 +4,7 @@ using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Wallet;
+using Stratis.Features.SQLiteWalletRepository.External;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 
 namespace Stratis.Features.SQLiteWalletRepository
@@ -37,16 +38,17 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal static HdAddress ToHdAddress(this SQLiteWalletRepository repo, HDAddress address)
         {
-            var pubKeyScript = new Script(Encoders.Hex.DecodeData(address.PubKey));
+            var pubKeyScript = new Script(Encoders.Hex.DecodeData(address.PubKey)); // P2PK
             PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(pubKeyScript);
+            var scriptPubKey = new Script(Encoders.Hex.DecodeData(address.ScriptPubKey));
 
             var res = new HdAddress()
             {
-                Address = pubKey.GetAddress(repo.Network).ToString(),
+                Address = repo.ScriptAddressReader.GetAddressFromScriptPubKey(repo.Network, scriptPubKey),
                 Index = address.AddressIndex,
                 HdPath = repo.ToHdPath(address.AccountIndex, address.AddressType, address.AddressIndex),
                 ScriptPubKey = new Script(Encoders.Hex.DecodeData(address.ScriptPubKey)),
-                Pubkey = pubKeyScript // P2PK
+                Pubkey = pubKeyScript
             };
 
             return res;
@@ -66,7 +68,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 IsCoinBase = transactionData.OutputTxIsCoinBase == 1,
                 IsCoinStake = transactionData.OutputTxIsCoinBase == 1,
                 // IsPropagated  // Not used currently.
-                ScriptPubKey = new Script(Encoders.Hex.DecodeData(transactionData.ScriptPubKey)),
+                ScriptPubKey = new Script(Encoders.Hex.DecodeData(transactionData.RedeemScript)),
                 SpendingDetails = (transactionData.SpendTxId == null) ? null : new SpendingDetails()
                 {
                     BlockHeight = transactionData.SpendBlockHeight,
@@ -82,6 +84,45 @@ namespace Stratis.Features.SQLiteWalletRepository
                     }).ToList()
                 }
             };
+        }
+
+        internal static IEnumerable<Script> GetDestinations(this SQLiteWalletRepository repo, Script redeemScript)
+        {
+            ScriptTemplate scriptTemplate = repo.Network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(redeemScript);
+
+            if (scriptTemplate != null)
+            {
+                // We need scripts suitable for matching to HDAddress.ScriptPubKey.
+                switch (scriptTemplate.Type)
+                {
+                    case TxOutType.TX_PUBKEYHASH:
+                        yield return redeemScript;
+                        break;
+                    case TxOutType.TX_PUBKEY:
+                        yield return PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(redeemScript).Hash.ScriptPubKey;
+                        break;
+                    case TxOutType.TX_SCRIPTHASH:
+                        yield return PayToScriptHashTemplate.Instance.ExtractScriptPubKeyParameters(redeemScript).ScriptPubKey;
+                        break;
+                    default:
+                        if (repo.ScriptAddressReader is IScriptDestinationReader scriptDestinationReader)
+                        {
+                            foreach (TxDestination destination in scriptDestinationReader.GetDestinationFromScriptPubKey(repo.Network, redeemScript))
+                            {
+                                yield return destination.ScriptPubKey;
+                            }
+                        }
+                        else
+                        {
+                            string address = repo.ScriptAddressReader.GetAddressFromScriptPubKey(repo.Network, redeemScript);
+                            TxDestination destination = ScriptDestinationReader.GetDestinationForAddress(address, repo.Network);
+                            if (destination != null)
+                                yield return destination.ScriptPubKey;
+                        }
+
+                        break;
+                }
+            }
         }
     }
 }

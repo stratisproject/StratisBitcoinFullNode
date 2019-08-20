@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using NBitcoin;
 using SQLite;
 using Stratis.Features.SQLiteWalletRepository.Tables;
@@ -12,9 +13,18 @@ namespace Stratis.Features.SQLiteWalletRepository
     {
         public SQLiteWalletRepository repo;
 
-        public DBConnection(SQLiteWalletRepository repo) : base(repo.DBFile)
+        public DBConnection(SQLiteWalletRepository repo, string dbFile) : base(Path.Combine(repo.DBPath, dbFile))
         {
             this.repo = repo;
+        }
+
+        internal void CreateDBStructure()
+        {
+            this.CreateTable<HDWallet>();
+            this.CreateTable<HDAccount>();
+            this.CreateTable<HDAddress>();
+            this.CreateTable<HDTransactionData>();
+            this.CreateTable<HDPayment>();
         }
 
         internal List<HDAddress> CreateAddresses(HDAccount account, int addressType, int addressesQuantity)
@@ -29,7 +39,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             return addresses;
         }
 
-        internal void TopUpAddresses(int walletId, int accountIndex, int addressType)
+        internal IEnumerable<HDAddress> TopUpAddresses(int walletId, int accountIndex, int addressType)
         {
             int addressCount = HDAddress.GetAddressCount(this, walletId, accountIndex, addressType);
             int nextAddressIndex = HDAddress.GetNextAddressIndex(this, walletId, accountIndex, addressType);
@@ -38,7 +48,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             var account = HDAccount.GetAccount(this, walletId, accountIndex);
 
             for (int addressIndex = addressCount; buffer < 20; buffer++, addressIndex++)
-                CreateAddress(account, addressType, addressIndex);
+                yield return CreateAddress(account, addressType, addressIndex);
         }
 
         internal HDAddress CreateAddress(HDAccount account, int addressType, int addressIndex)
@@ -49,7 +59,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             ExtPubKey extPubKey = ExtPubKey.Parse(account.ExtPubKey, this.repo.Network).Derive(keyPath);
             PubKey pubKey = extPubKey.PubKey;
             Script pubKeyScript = pubKey.ScriptPubKey;
-            Script scriptPubKey = this.repo.ScriptPubKeyProvider.FromPubKey(pubKey, account.ScriptPubKeyType);
+            Script scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(pubKey);
 
             // Add the new address details to the list of addresses.
             return this.CreateAddress(account, addressType, addressIndex, pubKeyScript.ToHex(), scriptPubKey.ToHex());
@@ -65,8 +75,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 AddressType = addressType,
                 AddressIndex = addressIndex,
                 PubKey = pubKey,
-                ScriptPubKey = scriptPubKey,
-                TransactionCount = 0
+                ScriptPubKey = scriptPubKey
             };
 
             this.Insert(newAddress);
@@ -79,7 +88,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             return HDAddress.GetUsedAddresses(this, walletId, accountIndex, addressType);
         }
 
-        internal HDAccount CreateAccount(int walletId, int accountIndex, string accountName, string extPubKey, string scriptPubKeyType, int creationTimeSeconds)
+        internal HDAccount CreateAccount(int walletId, int accountIndex, string accountName, string extPubKey, int creationTimeSeconds)
         {
             var account = new HDAccount()
             {
@@ -88,7 +97,6 @@ namespace Stratis.Features.SQLiteWalletRepository
                 AccountName = accountName,
                 ExtPubKey = extPubKey,
                 CreationTime = creationTimeSeconds,
-                ScriptPubKeyType = scriptPubKeyType
             };
 
             this.Insert(account);
@@ -96,18 +104,30 @@ namespace Stratis.Features.SQLiteWalletRepository
             return account;
         }
 
+        internal bool TableExists(string tableName)
+        {
+            return this.ExecuteScalar<int>($@"
+                SELECT  COUNT(*)
+                FROM    sqlite_master
+                WHERE   name = ? and type = 'table';",
+                tableName) != 0;
+        }
+
         internal void CreateTable<T>()
         {
-            if (typeof(T) == typeof(HDWallet))
-                HDWallet.CreateTable(this);
-            else if (typeof(T) == typeof(HDAccount))
-                HDAccount.CreateTable(this);
-            else if (typeof(T) == typeof(HDAddress))
-                HDAddress.CreateTable(this);
-            else if (typeof(T) == typeof(HDTransactionData))
-                HDTransactionData.CreateTable(this);
-            else if (typeof(T) == typeof(HDPayment))
-                HDPayment.CreateTable(this);
+            if (!this.TableExists(typeof(T).Name))
+            {
+                if (typeof(T) == typeof(HDWallet))
+                    HDWallet.CreateTable(this);
+                else if (typeof(T) == typeof(HDAccount))
+                    HDAccount.CreateTable(this);
+                else if (typeof(T) == typeof(HDAddress))
+                    HDAddress.CreateTable(this);
+                else if (typeof(T) == typeof(HDTransactionData))
+                    HDTransactionData.CreateTable(this);
+                else if (typeof(T) == typeof(HDPayment))
+                    HDPayment.CreateTable(this);
+            }
         }
 
         internal HDWallet GetWalletByName(string walletName)
@@ -159,12 +179,15 @@ namespace Stratis.Features.SQLiteWalletRepository
         private void RemoveTransactionsByTxToDelete(string outputFilter, string spendFilter)
         {
             this.Execute($@"
+            DROP    TABLE IF EXISTS temp.TxToDelete");
+
+            this.Execute($@"
             CREATE  TABLE temp.TxToDelete (
                     WalletId INT
             ,       AccountIndex INT
             ,       AddressType INT
             ,       AddressIndex INT
-            ,       TransactionDataIndex INT)");
+            ,       RedeemScript TEXT)");
 
             this.Execute($@"
             INSERT  INTO temp.TxToDelete (
@@ -172,32 +195,14 @@ namespace Stratis.Features.SQLiteWalletRepository
             ,       AccountIndex
             ,       AddressType
             ,       AddressIndex
-            ,       TransactionDataIndex)
+            ,       RedeemScript)
             SELECT  WalletId
             ,       AccountIndex
             ,       AddressType
             ,       AddressIndex
-            ,       TransactionDataIndex
+            ,       RedeemScript
             FROM    HDTransactionData
             {outputFilter}");
-
-            this.Execute($@"
-            CREATE  TABLE temp.TxCountsToAdjust (
-                    WalletId INT
-            ,       AccountIndex INT
-            ,       AddressType INT
-            ,       AddressIndex INT
-            ,       TransactionCount INT)");
-
-            this.Execute($@"
-            INSERT  INTO temp.TxCountsToAdjust
-            SELECT  T.WalletId
-            ,       T.AccountIndex
-            ,       T.AddressType
-            ,       T.AddressIndex
-            ,       COUNT(*)
-            FROM    temp.TxToDelete T
-            GROUP   BY WalletId, AccountIndex, AddressType, AddressIndex");
 
             this.Execute($@"
             DELETE FROM HDPayment
@@ -210,23 +215,9 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             this.Execute($@"
             DELETE  FROM HDTransactionData
-            WHERE   (WalletId, AccountIndex, AddressType, AddressIndex, TransactionDataIndex) IN (
-                    SELECT  WalletId, AccountIndex, AddressType, AddressIndex, TransactionDataIndex
+            WHERE   (WalletId, AccountIndex, AddressType, AddressIndex, RedeemScript) IN (
+                    SELECT  WalletId, AccountIndex, AddressType, AddressIndex, RedeemScript
                     FROM    temp.TxToDelete)");
-
-            this.Execute($@"
-            UPDATE  HDAddress
-            SET     TransactionCount = TransactionCount - (
-                    SELECT  T.TransactionCount
-                    FROM    temp.TxCountsToAdjust T
-                    JOIN    HDAddress A
-                    ON      A.WalletId = T.WalletId
-                    AND     A.AccountIndex = T.AccountIndex
-                    AND     A.AddressType = T.AddressType
-                    AND     A.AddressIndex = T.AddressIndex)
-            WHERE   (WalletId, AccountIndex, AddressType, AddressIndex) IN (
-                    SELECT  WalletId, AccountIndex, AddressType, AddressIndex
-                    FROM    temp.TxCountsToAdjust)");
 
             this.Execute($@"
             UPDATE  HDTransactionData
@@ -239,12 +230,13 @@ namespace Stratis.Features.SQLiteWalletRepository
             {spendFilter}");
         }
 
-        internal void RemoveTransientTransaction(uint256 txId)
+        internal void RemoveUnconfirmedTransaction(int walletId, uint256 txId)
         {
             string outputFilter = $@"
             WHERE   OutputTxId = '{txId}'
             AND     OutputBlockHeight IS NULL
-            AND     OutputBlockHash IS NULL";
+            AND     OutputBlockHash IS NULL
+            AND     WalletId = {walletId}";
 
             string spendFilter = $@"
             WHERE   SpendTxId = '{txId}'
@@ -276,25 +268,31 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <param name="lastBlockSynced">The last block synced to set.</param>
         internal void SetLastBlockSynced(string walletName, ChainedHeader lastBlockSynced)
         {
+            this.BeginTransaction();
             var wallet = this.GetWalletByName(walletName);
-            wallet.SetLastBlockSynced(lastBlockSynced);
-            this.RemoveTransactionsAfterLastBlockSynced(wallet.LastBlockSyncedHeight, wallet.WalletId);
+            this.RemoveTransactionsAfterLastBlockSynced(lastBlockSynced?.Height ?? -1, wallet.WalletId);
             this.Update(wallet);
+            this.Commit();
+
+            wallet.SetLastBlockSynced(lastBlockSynced);
+
         }
 
-        internal void ProcessTransactions(ChainedHeader header = null)
+        internal void ProcessTransactions(ChainedHeader header = null, HDWallet wallet = null, AddressesOfInterest addressesOfInterest = null)
         {
+            string walletName = wallet?.Name;
+
             while (true)
             {
-                // Determines the HDTransactionData records that are required.
+                // Determines the HDTransactionData records that will be updated.
+                // Only unconfirmed transactions are selected for update.
                 List<HDTransactionData> hdTransactions = this.Query<HDTransactionData>($@"
                     SELECT A.WalletID
                     ,      A.AccountIndex
                     ,      A.AddressType
                     ,      A.AddressIndex
-                    ,      TD.TransactionDataIndex
-                    ,      A.ScriptPubKey
-                    ,      A.PubKey
+                    ,      T.RedeemScript
+                    ,      T.ScriptPubKey
                     ,      T.Value
                     ,      T.OutputBlockHeight
                     ,      T.OutputBlockHash
@@ -302,21 +300,23 @@ namespace Stratis.Features.SQLiteWalletRepository
                     ,      T.OutputTxTime
                     ,      T.OutputTxId
                     ,      T.OutputIndex
-                    ,      NULL
-                    ,      NULL
-                    ,      NULL
-                    ,      NULL
-                    ,      NULL
-                    ,      NULL
-                    ,      NULL
+                    ,      NULL SpendTxTime
+                    ,      NULL SpendTxId
+                    ,      NULL SpendBlockHeight
+                    ,      NULL SpendBlockHash
+                    ,      NULL SpendTxIsCoinBase
+                    ,      NULL SpendTxTotalOut
                     FROM   temp.TempOutput T
                     JOIN   HDAddress A
                     ON     A.ScriptPubKey = T.ScriptPubKey
-                    {/* Restrict non-transient transaction updates to aligned wallets */((header == null) ? "" : $@"
                     JOIN   HDWallet W
-                    ON     W.WalletId = A.WalletId
-                    AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'
-                    ")}
+                    ON     W.WalletId = A.WalletId {
+                    // Respect the wallet name if provided.
+                    ((walletName != null) ? $@"
+                    AND    W.Name = '{walletName}'" : "")}{
+                    // Restrict non-transient transaction updates to aligned wallets.
+                    ((header != null) ? $@"
+                    AND    W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'" : "")}
                     LEFT   JOIN HDTransactionData TD
                     ON     TD.WalletId = A.WalletId
                     AND    TD.AccountIndex  = A.AccountIndex
@@ -324,9 +324,10 @@ namespace Stratis.Features.SQLiteWalletRepository
                     AND    TD.AddressIndex = A.AddressIndex
                     AND    TD.OutputTxId = T.OutputTxId
                     AND    TD.OutputIndex = T.OutputIndex
+                    AND    TD.RedeemScript = T.RedeemScript
                     WHERE  TD.OutputBlockHash IS NULL
                     AND    TD.OutputBlockHeight IS NULL
-                    ORDER  BY A.WalletId, A.AccountIndex, A.AddressType, A.AddressIndex, T.OutputTxTime");
+                    ORDER  BY A.WalletId, A.AccountIndex, A.AddressType, A.AddressIndex, T.RedeemScript, T.OutputTxId, T.OutputIndex");
 
                 if (hdTransactions.Count == 0)
                     break;
@@ -338,67 +339,98 @@ namespace Stratis.Features.SQLiteWalletRepository
                 (int walletId, int accountIndex, int addressType, int addressIndex) prev = (-1, -1, -1, -1);
 
                 // Now go through the HDTransaction data records.
-                HDAddress hdAddress = null;
                 HDAccount hdAccount = null;
-                bool hdAddressDirty = false;
 
                 foreach (HDTransactionData hdTransactionData in hdTransactions)
                 {
                     current = (hdTransactionData.WalletId, hdTransactionData.AccountIndex, hdTransactionData.AddressType, hdTransactionData.AddressIndex);
 
-                    // If its a different address then update the count for the previous address.
-                    if (prev.walletId != current.walletId || prev.accountIndex != current.accountIndex || prev.addressType != current.addressType || prev.addressIndex != current.addressIndex)
+                    // If the account changed then invalidate the current object.
+                    if (prev.walletId != current.walletId || prev.accountIndex != current.accountIndex)
+                        hdAccount = null;
+
+                    // About to use an address for the first time?
+                    int transactionCount = HDAddress.GetTransactionCount(this, current.walletId, current.accountIndex, current.addressType, current.addressIndex);
+                    if (transactionCount == 0)
                     {
-                        if (hdAddressDirty)
-                        {
-                            hdAddress.Update(this);
-                            hdAddressDirty = false;
-                        }
-
-                        hdAddress = HDAddress.GetAddress(this, current.walletId, current.accountIndex, current.addressType, current.addressIndex);
-
-                        if (prev.walletId != current.walletId || prev.accountIndex != current.accountIndex)
+                        if (hdAccount == null)
                             hdAccount = HDAccount.GetAccount(this, current.walletId, current.accountIndex);
+
+                        topUpRequired.Add((current.walletId, current.accountIndex, current.addressType));
                     }
 
-                    // If its a new record.
-                    if (hdTransactionData.TransactionDataIndex == null)
-                    {
-                        hdTransactionData.TransactionDataIndex = hdAddress.TransactionCount++;
-                        hdAddressDirty = true;
-
-                        if (!string.IsNullOrEmpty(hdAccount.ScriptPubKeyType))
-                            topUpRequired.Add((hdAddress.WalletId, hdAddress.AccountIndex, hdAddress.AddressType));
-
-                        // Insert the HDTransactionData record.
-                        this.Insert(hdTransactionData);
-                    }
-                    else
-                        this.Update(hdTransactionData);
+                    this.InsertOrReplace(hdTransactionData);
 
                     prev = current;
                 }
-
-                if (hdAddressDirty)
-                    hdAddress.Update(this);
 
                 if (topUpRequired.Count == 0)
                     break;
 
                 foreach ((int walletId, int accountIndex, int addressType) in topUpRequired)
-                    this.TopUpAddresses(walletId, accountIndex, addressType);
+                    foreach (HDAddress address in this.TopUpAddresses(walletId, accountIndex, addressType))
+                        addressesOfInterest?.AddTentative(Script.FromHex(address.ScriptPubKey));
             }
 
+            // Clear the payments since we are replacing them.
+            // Performs checks that we do not clear a confirmed transaction's payments.
+            this.Execute($@"
+                DELETE  FROM HDPayment
+                WHERE   (OutputTxTime, OutputTxId, OutputIndex) IN (
+                        SELECT  TD.OutputTxTime, T.OutputTxId, T.OutputIndex
+                        FROM    temp.TempPrevOut T
+                        JOIN    HDTransactionData TD
+                        ON      TD.OutputTxId = T.OutputTxId
+                        AND     TD.OutputIndex = T.OutputIndex
+                        AND     TD.SpendBlockHeight IS NULL
+                        AND     TD.SpendBlockHash IS NULL
+                        JOIN    HDWallet W
+                        ON      W.WalletId = TD.WalletId {
+                        // Respect the wallet name if provided.
+                        ((walletName != null) ? $@"
+                        AND     W.Name = '{walletName}'" : "")}{
+                        // Restrict non-transient transaction updates to aligned wallets.
+                        ((header != null) ? $@"
+                        AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'" : "")}
+                        )");
+
+            // Insert spending details into HDPayment records.
+            // Performs checks that we do not affect a confirmed transaction's payments.
+            this.Execute($@"
+                REPLACE INTO HDPayment
+                SELECT  TD.OutputTxTime
+                ,       TD.OutputTxId
+                ,       TD.OutputIndex
+                ,       O.OutputIndex
+                ,       O.RedeemScript
+                ,       O.Value
+                FROM    temp.TempPrevOut T
+                JOIN    HDTransactionData TD
+                ON      TD.OutputTxId = T.OutputTxId
+                AND     TD.OutputIndex = T.OutputIndex
+                AND     TD.SpendBlockHeight IS NULL
+                AND     TD.SpendBlockHash IS NULL
+                JOIN    HDWallet W
+                ON      W.WalletId = TD.WalletId {
+                // Respect the wallet name if provided.
+                ((walletName != null) ? $@"
+                AND     W.Name = '{walletName}'" : "")}{
+                // Restrict non-transient transaction updates to aligned wallets.
+                ((header != null) ? $@"
+                AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'" : "")}
+                JOIN    temp.TempOutput O
+                ON      O.OutputTxID = T.SpendTxId");
+
             // Update spending details on HDTransactionData records.
+            // Performs checks that we do not affect a confirmed transaction's spends.
             this.Execute($@"
                 REPLACE INTO HDTransactionData
                 SELECT TD.WalletId
                 ,      TD.AccountIndex
                 ,      TD.AddressType
                 ,      TD.AddressIndex
-                ,      TD.TransactionDataIndex
+                ,      TD.RedeemScript
                 ,      TD.ScriptPubKey
-                ,      TD.PubKey
                 ,      TD.Value
                 ,      TD.OutputBlockHeight
                 ,      TD.OutputBlockHash
@@ -416,49 +448,26 @@ namespace Stratis.Features.SQLiteWalletRepository
                 JOIN   HDTransactionData TD
                 ON     TD.OutputTxID = T.OutputTxId
                 AND    TD.OutputIndex = T.OutputIndex
-                {/* Restrict non-transient transaction updates to aligned wallets */ ((header == null) ? "" : $@"
+                AND    TD.SpendBlockHeight IS NULL
+                AND    TD.SpendBlockHash IS NULL
                 JOIN   HDWallet W
-                ON     W.WalletId = TD.WalletId
-                AND    W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'
-                ")}
+                ON     W.WalletId = TD.WalletId {
+                // Respect the wallet name if provided.
+                ((walletName != null) ? $@"
+                AND     W.Name = '{walletName}'" : "")}{
+                // Restrict non-transient transaction updates to aligned wallets.
+                ((header != null) ? $@"
+                AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'" : "")}
                 ORDER BY TD.WalletId
                 ,      TD.AccountIndex
                 ,      TD.AddressType
                 ,      TD.AddressIndex
-                ,      TD.TransactionDataIndex
+                ,      TD.RedeemScript
                 ");
-
-            // Insert spending details into HDPayment records.
-            this.Execute($@"
-                REPLACE INTO HDPayment
-                SELECT  TD.OutputTxTime
-                ,       TD.OutputTxId
-                ,       TD.OutputIndex
-                ,       O.OutputIndex
-                ,       O.ScriptPubKey
-                ,       O.Value
-                FROM    temp.TempPrevOut T
-                JOIN    HDTransactionData TD
-                ON      TD.OutputTxId = T.OutputTxId
-                AND     TD.OutputIndex = T.OutputIndex
-                {/* Restrict non-transient transaction updates to aligned wallets */ ((header == null) ? "" : $@"
-                JOIN    HDWallet W
-                ON      W.WalletId = TD.WalletId
-                AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'
-                ")}
-                JOIN    temp.TempOutput O
-                ON      O.OutputTxID = T.SpendTxId");
 
             // Advance participating wallets.
             if (header != null)
-            {
-                this.Execute($@"
-                    UPDATE HDWallet
-                    SET    LastBlockSyncedHash = '{header.HashBlock}',
-                            LastBlockSyncedHeight = {header.Height},
-                            BlockLocator = '{string.Join(",", header.GetLocator().Blocks)}'
-                    WHERE  LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'");
-            }
+                HDWallet.AdvanceTip(this, wallet, header, header.Previous);
         }
     }
 }
