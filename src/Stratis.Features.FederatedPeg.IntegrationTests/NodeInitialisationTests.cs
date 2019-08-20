@@ -7,6 +7,7 @@ using Flurl;
 using Flurl.Http;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.IntegrationTests;
@@ -14,7 +15,7 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
-using Stratis.Features.FederatedPeg.Collateral;
+using Stratis.Features.Collateral;
 using Stratis.Features.FederatedPeg.IntegrationTests.Utils;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
@@ -55,6 +56,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 user.Start();
 
                 Assert.Equal(CoreNodeState.Running, user.State);
+
+                VerifyNodeComposition(user);
             }
         }
 
@@ -70,6 +73,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 this.StartNodeWithMockCounterNodeAPI(miner);
 
                 Assert.Equal(CoreNodeState.Running, miner.State);
+
+                VerifyNodeComposition(miner);
             }
         }
 
@@ -102,6 +107,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 this.StartNodeWithMockCounterNodeAPI(gateway);
 
                 Assert.Equal(CoreNodeState.Running, gateway.State);
+
+                VerifyNodeComposition(gateway);
             }
         }
 
@@ -119,6 +126,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 gateway.Start();
 
                 Assert.Equal(CoreNodeState.Running, gateway.State);
+
+                VerifyNodeComposition(gateway);
             }
         }
 
@@ -203,6 +212,18 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 //await side.MineBlocksAsync(DepositConfirmations + 1);
                 //TestBase.WaitLoop(() => main.FullNode.NodeService<ICrossChainTransferStore>().NextMatureDepositHeight > 0);
             }
+        }
+
+        /// <summary>
+        /// Verifies that the created node has certain properties.
+        /// </summary>
+        private static void VerifyNodeComposition(CoreNode node)
+        {
+            // TODO: Add more checks about the sanctity of the node. And add specific checks per particular daemon.
+
+            // We only want one consensus rule engine. Others can sneak in and will break the periodic log.
+            IEnumerable<IConsensusRuleEngine> consensusRuleEngines = node.FullNode.NodeService<IEnumerable<IConsensusRuleEngine>>();
+            Assert.Single(consensusRuleEngines);
         }
     }
 

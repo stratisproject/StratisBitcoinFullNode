@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
     [Route("api/[controller]")]
     public class WalletController : Controller
     {
-        public const int MaxHistoryItemsPerAccount = 500;
+        public const int MaxHistoryItemsPerAccount = 1000;
 
         private readonly IWalletManager walletManager;
 
@@ -439,6 +439,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 foreach (AccountHistory accountHistory in accountsHistory)
                 {
                     var transactionItems = new List<TransactionItemModel>();
+                    var uniqueProcessedTxIds = new HashSet<uint256>();
 
                     IEnumerable<FlatHistory> query = accountHistory.History;
 
@@ -463,10 +464,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     // Represents a sublist of 'change' transactions.
                     List<FlatHistory> allchange = items.Where(t => t.Address.IsChangeAddress()).ToList();
 
-                    int itemsCount = 0;
                     foreach (FlatHistory item in history)
                     {
-                        if (itemsCount == MaxHistoryItemsPerAccount)
+                        // Count only unique transactions and limit it to MaxHistoryItemsPerAccount.
+                        int processedTransactions = uniqueProcessedTxIds.Count;
+                        if (processedTransactions >= MaxHistoryItemsPerAccount)
                         {
                             break;
                         }
@@ -496,7 +498,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                 };
 
                                 transactionItems.Add(stakingItem);
-                                itemsCount++;
+                                uniqueProcessedTxIds.Add(stakingItem.Id);
                             }
 
                             // No need for further processing if the transaction itself is the output of a staking transaction.
@@ -553,7 +555,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                 sentItem.Fee = 0;
 
                             transactionItems.Add(sentItem);
-                            itemsCount++;
+                            uniqueProcessedTxIds.Add(sentItem.Id);
                         }
 
                         // We don't show in history transactions that are outputs of staking transactions.
@@ -583,7 +585,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                 };
 
                                 transactionItems.Add(receivedItem);
-                                itemsCount++;
+                                uniqueProcessedTxIds.Add(receivedItem.Id);
                             }
                             else
                             {

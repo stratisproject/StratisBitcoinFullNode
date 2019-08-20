@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Features.Wallet.Validations;
 using Stratis.Bitcoin.Utilities.ValidationAttributes;
 
@@ -35,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         /// <summary>
         /// A list of outpoints to use as inputs for the transaction.
         /// </summary> 
-        public List<OutpointRequestModel> Outpoints { get; set; }
+        public List<OutpointRequest> Outpoints { get; set; }
 
         /// <summary>
         /// The address of the smart contract containing the method.

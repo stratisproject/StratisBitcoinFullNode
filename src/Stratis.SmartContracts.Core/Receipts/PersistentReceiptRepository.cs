@@ -38,13 +38,33 @@ namespace Stratis.SmartContracts.Core.Receipts
         {
             using (DBreeze.Transactions.Transaction t = this.engine.GetTransaction())
             {
-                byte[] result = t.Select<byte[], byte[]>(TableName, hash.ToBytes()).Value;
-
-                if (result == null)
-                    return null;
-
-                return Receipt.FromStorageBytesRlp(result);
+                return this.GetReceipt(t, hash);
             }
+        }
+
+        /// <inheritdoc />
+        public IList<Receipt> RetrieveMany(IList<uint256> hashes)
+        {
+            List<Receipt> ret = new List<Receipt>();
+            using (DBreeze.Transactions.Transaction t = this.engine.GetTransaction())
+            {
+                foreach(uint256 hash in hashes)
+                {
+                    ret.Add(this.GetReceipt(t, hash));
+                }
+
+                return ret;
+            }
+        }
+
+        private Receipt GetReceipt(DBreeze.Transactions.Transaction t, uint256 hash)
+        {
+            byte[] result = t.Select<byte[], byte[]>(TableName, hash.ToBytes()).Value;
+
+            if (result == null)
+                return null;
+
+            return Receipt.FromStorageBytesRlp(result);
         }
     }
 }
