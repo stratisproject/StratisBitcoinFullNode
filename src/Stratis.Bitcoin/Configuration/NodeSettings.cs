@@ -231,6 +231,8 @@ namespace Stratis.Bitcoin.Configuration
                     this.ReadConfigurationFile();
             }
 
+            this.EnableSignalR = this.ConfigReader.GetOrDefault<bool>("enableSignalR",  false, this.Logger);
+
             // Create the custom logger factory.
             this.Log = new LogSettings();
             this.Log.Load(this.ConfigReader);
