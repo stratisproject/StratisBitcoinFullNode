@@ -135,6 +135,11 @@ namespace City.Features.BlockExplorer.Controllers
                 chainHeader = this.chain.GetHeader(new uint256(id));
             }
 
+            if (chainHeader == null)
+            {
+                return new NotFoundObjectResult("Block not found");
+            }
+
             try
             {
                 BlockStake blockStake = this.stakeChain.Get(chainHeader.HashBlock);

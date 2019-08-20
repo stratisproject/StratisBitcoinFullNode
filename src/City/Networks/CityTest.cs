@@ -18,6 +18,7 @@ namespace City.Networks
             this.DefaultRPCPort = 24334;
 			this.DefaultAPIPort = 24335;
 			this.CoinTicker = "TCITY";
+            this.DefaultBanTimeSeconds = 16000; // 500 (MaxReorg) * 64 (TargetSpacing) / 2 = 4 hours, 26 minutes and 40 seconds
 
             var powLimit = new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000"));
 
@@ -57,7 +58,12 @@ namespace City.Networks
                 [BuriedDeployments.BIP66] = 0
             };
 
-            var bip9Deployments = new CityBIP9Deployments();
+            var bip9Deployments = new CityBIP9Deployments()
+            {
+                [CityBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(2,
+                    new DateTime(2018, 12, 1, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2019, 12, 1, 0, 0, 0, DateTimeKind.Utc))
+            };
 
             this.Consensus = new Consensus(
                 consensusFactory: consensusFactory,
@@ -119,8 +125,14 @@ namespace City.Networks
                 new NetworkAddress(IPAddress.Parse("52.175.194.227"), this.DefaultPort)
             };
 
+            this.StandardScriptsRegistry = new CityStandardScriptsRegistry();
+
+            // 64 below should be changed to TargetSpacingSeconds when we move that field.
+            Assert(this.DefaultBanTimeSeconds <= this.Consensus.MaxReorgLength * 64 / 2);
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x00077765f625cc2cb6266544ff7d5a462f25be14ea1116dc2bd2fec17e40a5e3"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x034aaae9ca8e297078a2fed80cdaaf72ffad8aa1b1988c7b6edd8f01d69312ca"));
+
+            this.RegisterRules(this.Consensus);
         }
     }
 }

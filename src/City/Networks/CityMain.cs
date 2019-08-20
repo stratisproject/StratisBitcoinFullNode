@@ -5,6 +5,8 @@ using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules;
 
 namespace City.Networks
 {
@@ -58,7 +60,7 @@ namespace City.Networks
 
             this.Genesis = genesisBlock;
 
-            var consensusOptions = new PosConsensusOptions(
+            var consensusOptions = new CityPosConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
@@ -141,6 +143,8 @@ namespace City.Networks
                 { 10000, new CheckpointInfo(new uint256("0x5fba1895ca1134f3c6fefdd45996039d45aab0177a10e86cac4990226f62ad95"), new uint256("0x47c6db50a945d8d4b17676e65a74ccd64e3b73f696082c3cdb7a9c0b9658e9cb")) },
                 { 20000, new CheckpointInfo(new uint256("0xa0f81a7734e621ae2e2cecea7a3b851dee3b5a85ba4732e0867cbf5c496f04ed"), new uint256("0xf044e402b75b4314231e1498fefc8b11da8cc9cb7797e2e59b2acdbcea1b02b3")) },
                 { 40000, new CheckpointInfo(new uint256("0xd3fc0976cb034b1e3eccdd6c4ebb76c0933ea37c47d43831371880346b9200b8"), new uint256("0x03a09ede5eadd8dbbc36806ef530c21c5548a7a823cf173c97439576dcb4d26d")) },
+                { 100000, new CheckpointInfo(new uint256("0x05ca140afb76f1f1f3ac7f2c85751d90ce85a9c415628e4508c02983682647d9"), new uint256("0xc38b427f8aeab86baaa784e5e0b34ea471d35ebcb43a7651eb2eddbec7f0e73b")) },
+                { 150000, new CheckpointInfo(new uint256("0x0be1d4fce6a93989025d405292d12aca12c7417494e50c2c633ad2f7bb7cbb53"), new uint256("0xcaafe0d5594c6b12bd0b819ccc22dba5ae7dcea32721cd97df369dbe868e13e9")) },
             };
 
             var encoder = new Bech32Encoder("bc");
@@ -166,8 +170,61 @@ namespace City.Networks
 
 			this.StandardScriptsRegistry = new CityStandardScriptsRegistry();
 
-			Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x00000b0517068e602ed5279c20168cfa1e69884ee4e784909652da34c361bff2"));
+            // 64 below should be changed to TargetSpacingSeconds when we move that field.
+            Assert(this.DefaultBanTimeSeconds <= this.Consensus.MaxReorgLength * 64 / 2);
+            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x00000b0517068e602ed5279c20168cfa1e69884ee4e784909652da34c361bff2"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0xb3425d46594a954b141898c7eebe369c6e6a35d2dab393c1f495504d2147883b"));
+
+            this.RegisterRules(this.Consensus);
+        }
+
+        protected void RegisterRules(IConsensus consensus)
+        {
+            consensus.ConsensusRules
+                .Register<HeaderTimeChecksRule>()
+                .Register<HeaderTimeChecksPosRule>()
+                //.Register<StratisBugFixPosFutureDriftRule>()
+                .Register<PosFutureDriftRule>()
+                .Register<CheckDifficultyPosRule>()
+                //.Register<StratisHeaderVersionRule>()
+                .Register<ProvenHeaderSizeRule>()
+                .Register<ProvenHeaderCoinstakeRule>();
+
+            consensus.ConsensusRules
+                .Register<BlockMerkleRootRule>()
+                .Register<PosBlockSignatureRepresentationRule>()
+                .Register<PosBlockSignatureRule>();
+
+            consensus.ConsensusRules
+                .Register<SetActivationDeploymentsPartialValidationRule>()
+                .Register<PosTimeMaskRule>()
+
+                // rules that are inside the method ContextualCheckBlock
+                .Register<TransactionLocktimeActivationRule>()
+                .Register<CoinbaseHeightActivationRule>()
+                .Register<WitnessCommitmentsRule>()
+                .Register<BlockSizeRule>()
+
+                // rules that are inside the method CheckBlock
+                .Register<EnsureCoinbaseRule>()
+                .Register<CheckPowTransactionRule>()
+                .Register<CheckPosTransactionRule>()
+                .Register<CheckSigOpsRule>()
+                .Register<PosCoinstakeRule>();
+
+            consensus.ConsensusRules
+                .Register<SetActivationDeploymentsFullValidationRule>()
+
+                .Register<CheckDifficultyHybridRule>()
+
+                // rules that require the store to be loaded (coinview)
+                .Register<LoadCoinviewRule>()
+                .Register<TransactionDuplicationActivationRule>()
+                .Register<PosCoinviewRule>() // implements BIP68, MaxSigOps and BlockReward calculation
+                                             // Place the PosColdStakingRule after the PosCoinviewRule to ensure that all input scripts have been evaluated
+                                             // and that the "IsColdCoinStake" flag would have been set by the OP_CHECKCOLDSTAKEVERIFY opcode if applicable.
+                .Register<PosColdStakingRule>()
+                .Register<SaveCoinviewRule>();
         }
 
         protected static Block CreateCityGenesisBlock(string pszTimestamp, ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
