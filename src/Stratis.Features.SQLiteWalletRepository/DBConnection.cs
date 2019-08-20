@@ -179,6 +179,9 @@ namespace Stratis.Features.SQLiteWalletRepository
         private void RemoveTransactionsByTxToDelete(string outputFilter, string spendFilter)
         {
             this.Execute($@"
+            DROP    TABLE IF EXISTS temp.TxToDelete");
+
+            this.Execute($@"
             CREATE  TABLE temp.TxToDelete (
                     WalletId INT
             ,       AccountIndex INT
@@ -265,10 +268,14 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <param name="lastBlockSynced">The last block synced to set.</param>
         internal void SetLastBlockSynced(string walletName, ChainedHeader lastBlockSynced)
         {
+            this.BeginTransaction();
             var wallet = this.GetWalletByName(walletName);
-            wallet.SetLastBlockSynced(lastBlockSynced);
-            this.RemoveTransactionsAfterLastBlockSynced(wallet.LastBlockSyncedHeight, wallet.WalletId);
+            this.RemoveTransactionsAfterLastBlockSynced(lastBlockSynced?.Height ?? -1, wallet.WalletId);
             this.Update(wallet);
+            this.Commit();
+
+            wallet.SetLastBlockSynced(lastBlockSynced);
+
         }
 
         internal void ProcessTransactions(ChainedHeader header = null, HDWallet wallet = null, AddressesOfInterest addressesOfInterest = null)

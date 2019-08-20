@@ -169,12 +169,11 @@ namespace Stratis.Features.SQLiteWalletRepository
                     throw new InvalidProgramException("Can't rewind the wallet using the supplied tip.");
 
                 // Ok seems safe. Adjust the tip and rewind relevant transactions.
-                conn.BeginTransaction();
                 conn.SetLastBlockSynced(walletName, lastBlockSynced);
-                conn.Commit();
             }
         }
 
+        /// <inheritdoc />
         public void CreateWallet(string walletName, string encryptedSeed, byte[] chainCode, ChainedHeader lastBlockSynced = null)
         {
             int creationTime;
@@ -205,6 +204,39 @@ namespace Stratis.Features.SQLiteWalletRepository
                 walletContainer = new WalletContainer(conn, wallet, this.processBlocksInfo);
 
             this.Wallets[wallet.Name] = walletContainer;
+        }
+
+        /// <inheritdoc />
+        public bool DeleteWallet(string walletName)
+        {
+            WalletContainer walletContainer = this.Wallets[walletName];
+            lock (walletContainer.LockProcessBlocks)
+            {
+                lock (walletContainer.LockUpdateAccounts)
+                {
+                    lock (walletContainer.LockUpdateAddresses)
+                    {
+                        this.RewindWallet(walletName, null);
+
+                        int walletId = walletContainer.Wallet.WalletId;
+
+                        DBConnection conn = GetConnection(walletName);
+                        conn.BeginTransaction();
+                        conn.Delete<HDWallet>(walletId);
+                        conn.Execute($@"
+                        DELETE  FROM HDAddress
+                        WHERE   WalletId = {walletId}
+                        ");
+                        conn.Execute($@"
+                        DELETE  FROM HDAccount
+                        WHERE   WalletId = {walletId}
+                        ");
+                        conn.Commit();
+
+                        return this.Wallets.TryRemove(walletName, out _);
+                    }
+                }
+            }
         }
 
         /// <inheritdoc />

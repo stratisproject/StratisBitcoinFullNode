@@ -84,6 +84,13 @@ namespace Stratis.Features.SQLiteWalletRepository
         void CreateWallet(string walletName, string encryptedSeed, byte[] chainCode, ChainedHeader lastBlockSynced = null);
 
         /// <summary>
+        /// Deletes a wallet.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet to delete.</param>
+        /// <returns>Returns <c>true</c> if the wallet was deleted and <c>false</c> otherwise.</returns>
+        bool DeleteWallet(string walletName);
+
+        /// <summary>
         /// Creates a wallet account using a password.
         /// </summary>
         /// <param name="walletName">The name of the wallet to create the account for.</param>
