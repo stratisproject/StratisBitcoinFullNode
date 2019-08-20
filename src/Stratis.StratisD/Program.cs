@@ -34,14 +34,21 @@ namespace Stratis.StratisD
                     MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
                 };
 
-                IFullNode node = new FullNodeBuilder()
+                IFullNodeBuilder nodeBuilder = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()
                     .UsePosConsensus()
                     .UseMempool()
                     .UseColdStakingWallet()
                     .AddPowPosMining()
-                    .AddSignalR(options =>
+                    .UseApi()
+                    .UseApps()
+                    .AddRPC()
+                    .UseDiagnosticFeature();
+
+                if (nodeSettings.EnableSignalR)
+                {
+                    nodeBuilder.AddSignalR(options =>
                     {
                         options.EventsToHandle = new[]
                         {
@@ -52,14 +59,12 @@ namespace Stratis.StratisD
                         options.ClientEventBroadcasters = new[]
                         {
                             typeof(StakingBroadcaster),
-                            typeof(PeerStatisticsClientBroadcaster)
+                            typeof(WalletInfoBroadcaster)
                         };
-                    })
-                    .UseApi()
-                    .UseApps()
-                    .AddRPC()
-                    .UseDiagnosticFeature()
-                    .Build();
+                    });
+                }
+
+                IFullNode node = nodeBuilder.Build();
 
                 if (node != null)
                     await node.RunAsync();

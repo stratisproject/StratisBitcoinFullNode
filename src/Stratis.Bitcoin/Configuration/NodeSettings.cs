@@ -108,6 +108,11 @@ namespace Stratis.Bitcoin.Configuration
         /// is met. For this reason, the minimum relay transaction fee is usually lower than the minimum fee.
         /// </summary>
         public FeeRate MinRelayTxFeeRate { get; private set; }
+        
+        /// <summary>
+        /// If true then the node will add and start the SignalR feature.
+        /// </summary>
+        public bool EnableSignalR { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the object.

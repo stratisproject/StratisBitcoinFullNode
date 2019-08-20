@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
             this.nodeLifetime = nodeLifetime;
             this.loggerFactory = loggerFactory;
             this.broadcastFrequencySeconds = broadcastFrequencySeconds;
-            this.asyncProvider = new AsyncProvider(this.loggerFactory, signals, new NodeLifetime());
+            this.asyncProvider = new AsyncProvider(this.loggerFactory, signals, nodeLifetime);
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 

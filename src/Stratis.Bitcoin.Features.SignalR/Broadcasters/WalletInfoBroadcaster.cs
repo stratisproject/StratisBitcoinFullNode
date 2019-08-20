@@ -13,7 +13,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
-    public class PeerStatisticsClientBroadcaster : ClientBroadcasterBase
+    public class WalletInfoBroadcaster : ClientBroadcasterBase
     {
         private readonly IWalletManager walletManager;
         private readonly IConnectionManager connectionManager;
@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
         private readonly ChainIndexer chainIndexer;
         private ILogger logger;
 
-        public PeerStatisticsClientBroadcaster(
+        public WalletInfoBroadcaster(
             ILoggerFactory loggerFactory,
             IWalletManager walletManager,
             IConnectionManager connectionManager,
