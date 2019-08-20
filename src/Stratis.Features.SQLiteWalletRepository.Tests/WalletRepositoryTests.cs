@@ -85,7 +85,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             this.network = KnownNetworks.StratisTest;
 
             // Configure this to point to your "StratisTest" root folder and wallet.
-            this.walletNames = new[] { "test2"/*, "test" */};
+            this.walletNames = new[] { "test2", "test" };
             this.dataDir = @"E:\RunNodes\SideChains\Data\MainchainUser";
         }
 
@@ -220,6 +220,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 // Verify that the spending details have been removed.
                 Assert.Null(history2[0].Transaction.SpendingDetails);
+
+                // Delete the wallet.
+                Assert.True(repo.DeleteWallet(walletName));
+                Assert.Equal(0, repo.GetWalletNames().Count);
             }
         }
 
