@@ -1671,24 +1671,19 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     foreach (HdAddress address in account.GetCombinedAddresses())
                     {
-                        for (int i = 0; i < address.Transactions.Count; i++)
+                        for (int i = address.Transactions.Count - 1; i >= 0; i--)
                         {
                             TransactionData transaction = address.Transactions.ElementAt(i);
 
-                            // Remove the transaction from the list of transactions affecting an address.
-                            // Only transactions that haven't been confirmed in a block can be removed.
-                            if (!transaction.IsConfirmed() && idsToRemove.Contains(transaction.Id))
+                            // If transaction or its spending details transaction matches the list of tx to remove
+                            // and is unconfirmed, remove it from the list.
+                            bool isMatch = idsToRemove.Contains(transaction.Id) || idsToRemove.Contains(transaction.SpendingDetails?.TransactionId);
+                            bool txFoundAndIsUnconfirmed = !transaction.IsConfirmed() && isMatch;
+                            bool txSpendingDetailFoundAndIsUnconfirmed = (transaction.SpendingDetails?.IsSpentConfirmed() ?? false) && isMatch;
+                            if (txFoundAndIsUnconfirmed || txSpendingDetailFoundAndIsUnconfirmed)
                             {
                                 result.Add((transaction.Id, transaction.CreationTime));
-                                address.Transactions = address.Transactions.Except(new[] { transaction }).ToList();
-                                i--;
-                            }
-
-                            // Remove the spending transaction object containing this transaction id.
-                            if (transaction.SpendingDetails != null && !transaction.SpendingDetails.IsSpentConfirmed() && idsToRemove.Contains(transaction.SpendingDetails.TransactionId))
-                            {
-                                result.Add((transaction.SpendingDetails.TransactionId, transaction.SpendingDetails.CreationTime));
-                                address.Transactions.ElementAt(i).SpendingDetails = null;
+                                address.Transactions.Remove(transaction);
                             }
                         }
                     }
