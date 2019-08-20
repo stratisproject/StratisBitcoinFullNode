@@ -216,6 +216,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 {
                     lock (walletContainer.LockUpdateAddresses)
                     {
+                        // TODO: Delete HDPayments no longer required.
                         if (!this.DatabasePerWallet)
                         {
                             this.RewindWallet(walletName, null);
@@ -244,7 +245,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                                 DBConnection conn = GetConnection(walletName);
                                 conn.Close();
                                 File.Delete(Path.Combine(this.DBPath, $"{walletName}.db"));
-                                return true;
+                                return this.Wallets.TryRemove(walletName, out _);
                             }
                             catch (Exception err)
                             {
@@ -274,7 +275,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 conn.CreateAddresses(account, 0, 20);
                 conn.CreateAddresses(account, 1, 20);
 
-                walletContainer.AddressesOfInterest.AddAll(conn, wallet.WalletId);
+                walletContainer.AddressesOfInterest.AddAll(conn, wallet.WalletId, accountIndex);
 
                 conn.Commit();
             }
