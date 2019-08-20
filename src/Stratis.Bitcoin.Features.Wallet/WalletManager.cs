@@ -1027,6 +1027,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                             }
 
                             // This is a double spend we remove the unconfirmed trx
+                            this.logger.LogDebug("Removing double spend for tx id {0} and input {1}.", indexData.Id, input.PrevOut);
                             this.RemoveTransactionsByIds(new[] { indexData.Id });
                             this.inputLookup.Remove(input.PrevOut);
                         }
@@ -1659,7 +1660,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(transactionsIds, nameof(transactionsIds));
             Guard.NotEmpty(walletName, nameof(walletName));
 
-            List<uint256> idsToRemove = transactionsIds.ToList();
+            var idsToRemove = new HashSet<uint256>(transactionsIds);
             Wallet wallet = this.GetWallet(walletName);
 
             var result = new HashSet<(uint256, DateTimeOffset)>();
@@ -1675,15 +1676,38 @@ namespace Stratis.Bitcoin.Features.Wallet
                         {
                             TransactionData transaction = address.Transactions.ElementAt(i);
 
-                            // If transaction or its spending details transaction matches the list of tx to remove
-                            // and is unconfirmed, remove it from the list.
-                            bool isMatch = idsToRemove.Contains(transaction.Id) || idsToRemove.Contains(transaction.SpendingDetails?.TransactionId);
-                            bool txFoundAndIsUnconfirmed = !transaction.IsConfirmed() && isMatch;
-                            bool txSpendingDetailFoundAndIsUnconfirmed = (transaction.SpendingDetails?.IsSpentConfirmed() ?? false) && isMatch;
-                            if (txFoundAndIsUnconfirmed || txSpendingDetailFoundAndIsUnconfirmed)
+                            bool txMatches = idsToRemove.Contains(transaction.Id);
+                            bool spendingDetailsMatch = idsToRemove.Contains(transaction.SpendingDetails.TransactionId);
+
+                            // If there is no match, continue.
+                            if (!txMatches && !spendingDetailsMatch)
+                                continue;
+
+                            bool txIsConfirmed = transaction.IsConfirmed();
+                            bool spendingDetailsConfirmed = transaction.SpendingDetails?.IsSpentConfirmed() ?? false;
+                            
+                            // If all details are confirmed we cannot remove tx or its spending details.
+                            if (txIsConfirmed && spendingDetailsConfirmed)
+                                continue;
+
+                            // We should never get a case when tx is unconfirmed but spending details confirmed.
+                            if (!txIsConfirmed && spendingDetailsConfirmed)
+                                throw new WalletException("Spending details cannot be confirmed when transaction is unconfirmed.");
+
+                            // If matched transaction is unconfirmed, remove it and continue.
+                            if (txMatches && !txIsConfirmed)
                             {
+                                this.logger.LogDebug("Removing unconfirmed transaction {0}.", transaction.Id);
                                 result.Add((transaction.Id, transaction.CreationTime));
                                 address.Transactions.Remove(transaction);
+                                continue;
+                            }
+
+                            if (spendingDetailsMatch)
+                            {
+                                this.logger.LogDebug("Removing spend details with tx id {0} for confirmed transaction {1}.", transaction.SpendingDetails.TransactionId, transaction.Id);
+                                result.Add((transaction.SpendingDetails.TransactionId, transaction.SpendingDetails.CreationTime));
+                                transaction.SpendingDetails = null;
                             }
                         }
                     }
