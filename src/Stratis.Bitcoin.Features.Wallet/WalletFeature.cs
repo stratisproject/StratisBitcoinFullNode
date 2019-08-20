@@ -143,6 +143,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletManager.Start();
             this.walletSyncManager.Start();
             this.addressBookManager.Initialize();
+            this.walletRepository.Initialize();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
 
