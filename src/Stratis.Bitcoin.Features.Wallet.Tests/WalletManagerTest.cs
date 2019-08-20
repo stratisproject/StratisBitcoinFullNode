@@ -3175,11 +3175,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             // Assert.
             List<TransactionData> remainingTrxs = firstAccount.GetCombinedAddresses().SelectMany(a => a.Transactions).ToList();
-            Assert.Equal(2, remainingTrxs.Count);
-            Assert.Single(result);
+            Assert.Equal(1, remainingTrxs.Count);
+            Assert.Equal(2, result.Count);
             Assert.Contains((unconfirmedTransactionId, trxUnconfirmed1.CreationTime), result);
+            Assert.Contains((trxConfirmed1.Id, trxConfirmed1.CreationTime), result);
             Assert.DoesNotContain(trxUnconfirmed1, remainingTrxs);
-            Assert.Null(trxConfirmed2.SpendingDetails);
+            Assert.DoesNotContain(trxConfirmed1, remainingTrxs);
         }
 
         [Fact]
