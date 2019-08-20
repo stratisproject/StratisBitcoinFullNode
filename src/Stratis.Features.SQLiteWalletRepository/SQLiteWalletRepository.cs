@@ -216,24 +216,42 @@ namespace Stratis.Features.SQLiteWalletRepository
                 {
                     lock (walletContainer.LockUpdateAddresses)
                     {
-                        this.RewindWallet(walletName, null);
+                        if (!this.DatabasePerWallet)
+                        {
+                            this.RewindWallet(walletName, null);
 
-                        int walletId = walletContainer.Wallet.WalletId;
+                            int walletId = walletContainer.Wallet.WalletId;
 
-                        DBConnection conn = GetConnection(walletName);
-                        conn.BeginTransaction();
-                        conn.Delete<HDWallet>(walletId);
-                        conn.Execute($@"
-                        DELETE  FROM HDAddress
-                        WHERE   WalletId = {walletId}
-                        ");
-                        conn.Execute($@"
-                        DELETE  FROM HDAccount
-                        WHERE   WalletId = {walletId}
-                        ");
-                        conn.Commit();
+                            DBConnection conn = GetConnection(walletName);
+                            conn.BeginTransaction();
+                            conn.Delete<HDWallet>(walletId);
+                            conn.Execute($@"
+                                DELETE  FROM HDAddress
+                                WHERE   WalletId = {walletId}
+                                ");
+                            conn.Execute($@"
+                                DELETE  FROM HDAccount
+                                WHERE   WalletId = {walletId}
+                                ");
+                            conn.Commit();
 
-                        return this.Wallets.TryRemove(walletName, out _);
+                            return this.Wallets.TryRemove(walletName, out _);
+                        }
+                        else
+                        {
+                            try
+                            {
+                                DBConnection conn = GetConnection(walletName);
+                                conn.Close();
+                                File.Delete(Path.Combine(this.DBPath, $"{walletName}.db"));
+                                return true;
+                            }
+                            catch (Exception err)
+                            {
+                                // TODO: Log the error.
+                                return false;
+                            }
+                        }
                     }
                 }
             }
