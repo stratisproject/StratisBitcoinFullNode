@@ -85,7 +85,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             this.network = KnownNetworks.StratisTest;
 
             // Configure this to point to your "StratisTest" root folder and wallet.
-            this.walletNames = new[] { "test2", "test" };
+            this.walletNames = new[] { "test2"/*, "test" */};
             this.dataDir = @"E:\RunNodes\SideChains\Data\MainchainUser";
         }
 
@@ -223,14 +223,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             }
         }
 
-        [Fact]//(Skip = "Configure this test then run it manually. Comment this Skip.")]
+        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
         public void CanProcessBlocks()
         {
             string[] walletNames = this.walletNames.ToArray();
-
-            // This test only processes one wallet for database-per-wallet.
-            if (this.dbPerWallet)
-                walletNames = new[] { walletNames[0] };
 
             using (var dataFolder = new TempDataFolder(this.GetType().Name))
             {
@@ -331,7 +327,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 long ticksTotal = DateTime.Now.Ticks;
 
-                repo.ProcessBlocks(TheSource(), !repo.DatabasePerWallet ? null : walletNames[0]);
+                repo.ProcessBlocks(TheSource());
 
                 // Calculate statistics. Set a breakpoint to inspect these values.
                 ticksTotal = DateTime.Now.Ticks - ticksTotal;
@@ -352,9 +348,9 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                             new WalletAccountReference(walletName, hdAccount.Name),
                             walletHeight, (int)this.network.Consensus.CoinbaseMaturity).ToList();
 
-                        Money balance = spendable.Sum(s => s.Transaction.Amount);
+                        Money amountRepo = spendable.Sum(s => s.Transaction.Amount);
 
-                        Assert.Equal(amountConfirmed, balance);
+                        Assert.Equal(amountConfirmed, amountRepo);
                     }
                 }
 

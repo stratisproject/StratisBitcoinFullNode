@@ -109,13 +109,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                     // Respect the wallet name if provided.
                     ((wallet?.Name != null) ? $@"
                     AND    Name = '{wallet?.Name}'" : "")}");
-
-            if (wallet != null)
-            {
-                wallet.LastBlockSyncedHash = lastBlockSyncedHash.ToString();
-                wallet.LastBlockSyncedHeight = lastBlockSyncedHeight;
-                wallet.BlockLocator = blockLocator;
-            }
         }
 
         internal void SetLastBlockSynced(ChainedHeader lastBlockSynced)

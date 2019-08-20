@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using NBitcoin;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 
@@ -36,7 +37,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         private byte[] hashArray;
         private int maxHashArrayLengthLog;
         private uint bitIndexLimiter;
-        private HashSet<byte[]> tentative;
+        protected HashSet<byte[]> tentative;
 
         public ObjectsOfInterest(int MaxHashArrayLengthLog = 26)
         {
@@ -72,7 +73,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             return (this.hashArray[hashArrayBitIndex >> 3] & (1 << (int)(hashArrayBitIndex & 7))) != 0;
         }
 
-        protected bool Contains(byte[] obj)
+        protected bool? Contains(byte[] obj)
         {
             if (this.tentative.Contains(obj))
                 return true;
@@ -80,7 +81,8 @@ namespace Stratis.Features.SQLiteWalletRepository
             if (!this.MayContain(obj))
                 return false;
 
-            return this.Exists(obj);
+            // May contain...
+            return null;
         }
 
         protected void Add(byte[] obj)
@@ -96,20 +98,11 @@ namespace Stratis.Features.SQLiteWalletRepository
                 this.tentative.Add(obj);
         }
 
-        protected virtual bool Exists(byte[] obj)
-        {
-            return false;
-        }
-
-        public void Confirm()
+        public void Confirm(Func<byte[], bool> exists)
         {
             foreach (byte[] obj in this.tentative)
-            {
-                if (this.Exists(obj))
+                if (exists(obj))
                     Add(obj);
-
-                this.Add(obj);
-            }
 
             this.tentative.Clear();
         }
@@ -117,18 +110,14 @@ namespace Stratis.Features.SQLiteWalletRepository
 
     internal class AddressesOfInterest : ObjectsOfInterest
     {
-        private readonly DBConnection conn;
-        private readonly int? walletId;
-
-        public AddressesOfInterest(DBConnection conn, int? walletId)
+        public bool Contains(Script scriptPubKey, DBConnection conn, int? walletId)
         {
-            this.conn = conn;
-            this.walletId = walletId;
+            return Contains(scriptPubKey.ToBytes()) ?? Exists(conn, scriptPubKey, walletId);
         }
 
-        public bool Contains(Script scriptPubKey)
+        public void Confirm(DBConnection conn, int? walletId)
         {
-            return Contains(scriptPubKey.ToBytes());
+            Confirm(o => this.Exists(conn, new Script(o), walletId));
         }
 
         protected void Add(Script scriptPubKey)
@@ -141,38 +130,35 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.AddTentative(scriptPubKey.ToBytes());
         }
 
-        public void AddAll()
+        public void AddAll(DBConnection conn, int? walletId)
         {
             Clear();
 
-            List<HDAddress> addresses = this.conn.Query<HDAddress>($@"
+            List<HDAddress> addresses = conn.Query<HDAddress>($@"
                 SELECT  *
                 FROM    HDAddress {
             // Restrict to wallet if provided.
-            ((this.walletId != null) ? $@"
-                WHERE   WalletId = {this.walletId}" : "")}");
+            ((walletId != null) ? $@"
+                WHERE   WalletId = {walletId}" : "")}");
 
             foreach (HDAddress address in addresses)
             {
                 this.Add(Script.FromHex(address.ScriptPubKey));
-                //this.Add(Script.FromHex(address.PubKey));
             }
         }
 
-        protected override bool Exists(byte[] obj)
+        internal bool Exists(DBConnection conn, Script scriptPubKey, int? walletId)
         {
-            var scriptPubKey = new Script(obj);
-
             string hex = scriptPubKey.ToHex();
 
-            bool res = this.conn.ExecuteScalar<int>($@"
+            bool res = conn.ExecuteScalar<int>($@"
                         SELECT EXISTS(
                             SELECT  1
                             FROM    HDAddress
                             WHERE   ScriptPubKey = ? {
                     // Restrict to wallet if provided.
-                    ((this.walletId != null) ? $@"
-                            AND     WalletId = {this.walletId}" : "")}
+                    ((walletId != null) ? $@"
+                            AND     WalletId = {walletId}" : "")}
                             LIMIT   1);", hex) == 1;
 
             return res;
@@ -181,18 +167,14 @@ namespace Stratis.Features.SQLiteWalletRepository
 
     internal class TransactionsOfInterest : ObjectsOfInterest
     {
-        private readonly DBConnection conn;
-        private readonly int? walletId;
-
-        public TransactionsOfInterest(DBConnection conn, int? walletId)
+        public bool Contains(uint256 txId, DBConnection conn, int? walletId)
         {
-            this.conn = conn;
-            this.walletId = walletId;
+            return Contains(txId.ToBytes()) ?? Exists(conn, txId, walletId);
         }
 
-        public bool Contains(uint256 txId)
+        public void Confirm(DBConnection conn, int? walletId)
         {
-            return Contains(txId.ToBytes());
+            Confirm(o => this.Exists(conn, new uint256(o), walletId));
         }
 
         protected void Add(uint256 txId)
@@ -205,35 +187,33 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.AddTentative(txId.ToBytes());
         }
 
-        public void AddAll()
+        public void AddAll(DBConnection conn, int? walletId)
         {
             Clear();
 
-            List<HDTransactionData> spendableTransactions = this.conn.Query<HDTransactionData>($@"
+            List<HDTransactionData> spendableTransactions = conn.Query<HDTransactionData>($@"
                 SELECT  *
                 FROM    HDTransactionData
                 WHERE   SpendBlockHash IS NULL
                 AND     SpendBlockHeight IS NULL {
                 // Restrict to wallet if provided.
-                ((this.walletId != null) ? $@"
-                AND      WalletId = {this.walletId}" : "")}");
+                ((walletId != null) ? $@"
+                AND      WalletId = {walletId}" : "")}");
 
             foreach (HDTransactionData transactionData in spendableTransactions)
                 this.Add(uint256.Parse(transactionData.OutputTxId).ToBytes());
         }
 
-        protected override bool Exists(byte[] obj)
+        internal bool Exists(DBConnection conn, uint256 txId, int? walletId)
         {
-            var txId = new uint256(obj);
-
-            bool res = this.conn.ExecuteScalar<int>($@"
+            bool res = conn.ExecuteScalar<int>($@"
                 SELECT EXISTS(
                     SELECT  1
                     FROM    HDTransactionData
                     WHERE   OutputTxId = ? {
                 // Restrict to wallet if provided.
-                ((this.walletId != null) ? $@"
-                    AND     WalletId = {this.walletId}" : "")}
+                ((walletId != null) ? $@"
+                    AND     WalletId = {walletId}" : "")}
                     LIMIT   1);", txId.ToString()) == 1;
 
             return res;
