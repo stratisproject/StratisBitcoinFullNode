@@ -1677,7 +1677,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                             TransactionData transaction = address.Transactions.ElementAt(i);
 
                             bool txMatches = idsToRemove.Contains(transaction.Id);
-                            bool spendingDetailsMatch = idsToRemove.Contains(transaction.SpendingDetails.TransactionId);
+                            bool spendingDetailsMatch = idsToRemove.Contains(transaction.SpendingDetails?.TransactionId);
 
                             // If there is no match, continue.
                             if (!txMatches && !spendingDetailsMatch)
