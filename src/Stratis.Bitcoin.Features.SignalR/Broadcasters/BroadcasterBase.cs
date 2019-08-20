@@ -1,13 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.AsyncWork;
+using Stratis.Bitcoin.Signals;
+using Stratis.Bitcoin.Utilities;
+
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.Logging;
-    using Stratis.Bitcoin.AsyncWork;
-    using Stratis.Bitcoin.Signals;
-    using Stratis.Bitcoin.Utilities;
-
     public abstract class ClientBroadcasterBase : IClientEventBroadcaster
     {
         private readonly EventsHub eventsHub;

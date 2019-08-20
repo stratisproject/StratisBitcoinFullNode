@@ -1,18 +1,18 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.SignalR.Events;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Signals;
+using Stratis.Bitcoin.Utilities;
+
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-    using Stratis.Bitcoin.Connection;
-    using Stratis.Bitcoin.Features.SignalR.Events;
-    using Stratis.Bitcoin.Features.Wallet;
-    using Stratis.Bitcoin.Features.Wallet.Interfaces;
-    using Stratis.Bitcoin.Signals;
-    using Stratis.Bitcoin.Utilities;
-
     public class PeerStatisticsClientBroadcaster : ClientBroadcasterBase
     {
         private readonly IWalletManager walletManager;
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
             {
                 foreach (string walletName in this.walletManager.GetWalletsNames())
                 {
-                    Wallet wallet = this.walletManager.GetWallet(walletName);
+                    Wallet.Wallet wallet = this.walletManager.GetWallet(walletName);
 
                     clientEvent = new WalletGeneralInfoClientEvent
                     {

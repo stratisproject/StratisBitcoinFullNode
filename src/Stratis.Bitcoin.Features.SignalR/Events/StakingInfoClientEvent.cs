@@ -1,9 +1,9 @@
+using System;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.Features.Miner.Models;
+
 namespace Stratis.Bitcoin.Features.SignalR.Events
 {
-    using System;
-    using Stratis.Bitcoin.EventBus;
-    using Stratis.Bitcoin.Features.Miner.Models;
-
     /// <summary>
     /// Marker type for Client
     /// </summary>

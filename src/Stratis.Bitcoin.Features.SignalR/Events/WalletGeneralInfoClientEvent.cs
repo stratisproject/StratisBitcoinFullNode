@@ -1,9 +1,9 @@
+using System;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.Features.Wallet.Models;
+
 namespace Stratis.Bitcoin.Features.SignalR.Events
 {
-    using System;
-    using Stratis.Bitcoin.EventBus;
-    using Stratis.Bitcoin.Features.Wallet.Models;
-
     /// <summary>
     /// Marker type for Client
     /// </summary>
