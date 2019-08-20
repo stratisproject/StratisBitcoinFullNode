@@ -295,6 +295,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
                 IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
                 this.UpdateKeysLookupLocked(newReceivingAddresses.Concat(newChangeAddresses));
+
+                this.walletRepository.CreateAccount(name, i, $"account {i}", password);
             }
 
             // If the chain is downloaded, we set the height of the newly created wallet to it.
