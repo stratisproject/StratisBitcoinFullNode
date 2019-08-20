@@ -1,40 +1,44 @@
 {
-	"profiles": {
-		"MAIN": {
-			"commandName": "Project",
-			"commandLineArgs": "-txindex=1"
-		},
-		"MAIN (LOCAL)": {
-			"commandName": "Project",
-			"commandLineArgs": "-datadir=citynode -txindex=1"
-		},
-		"MAIN (RPC)": {
-			"commandName": "Project",
-			"commandLineArgs": "-server -rpcallowip=127.0.0.1 -rpcpassword=rpcpassword -rpcuser=rpcuser -txindex=1"
-		},
-		"MAIN (LOCAL+RPC+DEFAULT)": {
-			"commandName": "Project",
-			"commandLineArgs": "-datadir=citynode -server -rpcallowip=127.0.0.1 -rpcpassword=rpcpassword -rpcuser=rpcuser -txindex=1 -defaultwalletname=default -defaultwalletpassword=default -unlockdefaultwallet"
-		},
-		"TEST": {
-			"commandName": "Project",
-			"commandLineArgs": "-testnet -txindex=1"
-		},
-		"TEST (RPC)": {
-			"commandName": "Project",
-			"commandLineArgs": "-testnet -server -rpcallowip=127.0.0.1 -rpcpassword=rpcpassword -rpcuser=rpcuser -txindex=1"
-		},
-		"TEST (LOCAL)": {
-			"commandName": "Project",
-			"commandLineArgs": "-testnet -datadir=citynode -txindex=1"
-		},
-		"TEST (LOCAL+RPC+DEFAULT)": {
-			"commandName": "Project",
-			"commandLineArgs": "-datadir=citynode -server -rpcallowip=127.0.0.1 -rpcpassword=rpcpassword -rpcuser=rpcuser -txindex=1 -defaultwalletname=default -defaultwalletpassword=default -unlockdefaultwallet -testnet"
-		},
-		"Stratis (Local Data)": {
-			"commandName": "Project",
-			"commandLineArgs": "-datadir=stratisnode -chain=stratis -txindex=1"
-		}
-	}
+  "profiles": {
+    "MAIN": {
+      "commandName": "Project",
+      "commandLineArgs": "-txindex=1"
+    },
+    "MAIN (LOCAL)": {
+      "commandName": "Project",
+      "commandLineArgs": "-datadir=citynode -txindex=1"
+    },
+    "MAIN (RPC)": {
+      "commandName": "Project",
+      "commandLineArgs": "-server -rpcallowip=127.0.0.1 -rpcpassword=rpcpassword -rpcuser=rpcuser -txindex=1"
+    },
+    "MAIN (LOCAL+RPC+DEFAULT)": {
+      "commandName": "Project",
+      "commandLineArgs": "-datadir=citynode -server -rpcallowip=127.0.0.1 -rpcpassword=rpcpassword -rpcuser=rpcuser -txindex=1 -defaultwalletname=default -defaultwalletpassword=default -unlockdefaultwallet"
+    },
+    "TEST": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet -txindex=1"
+    },
+    "TEST (RPC)": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet -server -rpcallowip=127.0.0.1 -rpcpassword=rpcpassword -rpcuser=rpcuser -txindex=1"
+    },
+    "TEST (LOCAL)": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet -datadir=citynode -txindex=1"
+    },
+    "TEST (LOCAL+RPC+DEFAULT)": {
+      "commandName": "Project",
+      "commandLineArgs": "-datadir=citynode -server -rpcallowip=127.0.0.1 -rpcpassword=rpcpassword -rpcuser=rpcuser -txindex=1 -defaultwalletname=default -defaultwalletpassword=default -unlockdefaultwallet -testnet"
+    },
+    "Stratis (Local Data)": {
+      "commandName": "Project",
+      "commandLineArgs": "-datadir=stratisnode -chain=stratis -txindex=1"
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "commandLineArgs": "-datadir=citynode -server -apiuri=http://0.0.0.0:34335 -rpcallowip=127.0.0.1 -rpcpassword=rpcpassword -rpcuser=rpcuser -txindex=1 -defaultwalletname=default -defaultwalletpassword=default -unlockdefaultwallet"
+    }
+  }
 }
