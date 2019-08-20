@@ -1,0 +1,3451 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ContentModelStore">
+    <e p="C:\Dev\fenix2222\StratisBitcoinFullNode\.travis.yml" t="Include" />
+    <e p="C:\Dev\fenix2222\StratisBitcoinFullNode\appveyor.yml" t="Include" />
+    <e p="C:\Dev\fenix2222\StratisBitcoinFullNode\build.sh" t="Include" />
+    <e p="C:\Dev\fenix2222\StratisBitcoinFullNode\PushNuget.ps1" t="Include" />
+    <e p="C:\Dev\fenix2222\StratisBitcoinFullNode\PushSCNuget.ps1" t="Include" />
+    <e p="C:\Dev\fenix2222\StratisBitcoinFullNode\src" t="IncludeFlat">
+      <e p=".editorconfig" t="Include" />
+      <e p="Apps" t="Include" />
+      <e p="assignments.mediawiki" t="Include" />
+      <e p="Benchmarks" t="Include" />
+      <e p="bips" t="Include">
+        <e p="bip-0009" t="Include" />
+      </e>
+      <e p="Directory.Build.props" t="Include" />
+      <e p="External" t="Include" />
+      <e p="Features" t="Include" />
+      <e p="FederationSetup" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="FederationSetup.cs" t="Include" />
+        <e p="FederationSetup.csproj" t="IncludeRecursive" />
+        <e p="GenesisMiner.cs" t="Include" />
+        <e p="MultisigAddressCreator.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="FederationSetup.AssemblyInfo.cs" t="Include" />
+              <e p="FederationSetup.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="Properties" t="Include">
+          <e p="launchSettings.json" t="Include" />
+        </e>
+      </e>
+      <e p="global" t="Include" />
+      <e p="NBitcoin" t="IncludeRecursive">
+        <e p="Base58Data.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="BIP32" t="Include">
+          <e p="BitcoinExtKey.cs" t="Include" />
+          <e p="ExtKey.cs" t="Include" />
+          <e p="ExtPubKey.cs" t="Include" />
+          <e p="KeyPath.cs" t="Include" />
+        </e>
+        <e p="BIP38" t="Include">
+          <e p="BitcoinConfirmationCode.cs" t="Include" />
+          <e p="BitcoinEncryptedSecret.cs" t="Include" />
+          <e p="BitcoinPassphraseCode.cs" t="Include" />
+        </e>
+        <e p="BIP39" t="Include">
+          <e p="IWordlistSource.cs" t="Include" />
+          <e p="KDTable.cs" t="Include" />
+          <e p="Language.cs" t="Include" />
+          <e p="Mnemonic.cs" t="Include" />
+          <e p="Wordlist.cs" t="Include" />
+        </e>
+        <e p="BIP9Deployments.cs" t="Include" />
+        <e p="BIP9DeploymentsArray.cs" t="Include" />
+        <e p="BitcoinAddress.cs" t="Include" />
+        <e p="BitcoinCore" t="Include">
+          <e p="Coins.cs" t="Include" />
+          <e p="CoinsView.cs" t="Include" />
+        </e>
+        <e p="BitcoinPubKeyAddress.cs" t="Include" />
+        <e p="BitcoinSecret.cs" t="Include" />
+        <e p="BitcoinSegwitAddress.cs" t="Include" />
+        <e p="BitcoinStream.cs" t="Include" />
+        <e p="BitcoinStream.Partial.cs" t="Include" />
+        <e p="BitWriter.cs" t="Include" />
+        <e p="Block.cs" t="Include" />
+        <e p="BlockHeader.cs" t="Include" />
+        <e p="BlockLocator.cs" t="Include" />
+        <e p="BlockSignature.cs" t="Include" />
+        <e p="BlockStake.cs" t="Include" />
+        <e p="BloomFilter.cs" t="Include" />
+        <e p="BouncyCastle" t="Include">
+          <e p="asn1" t="Include">
+            <e p="Asn1Encodable.cs" t="Include" />
+            <e p="Asn1EncodableVector.cs" t="Include" />
+            <e p="Asn1Exception.cs" t="Include" />
+            <e p="ASN1Generator.cs" t="Include" />
+            <e p="Asn1InputStream.cs" t="Include" />
+            <e p="Asn1Null.cs" t="Include" />
+            <e p="Asn1Object.cs" t="Include" />
+            <e p="Asn1OctetString.cs" t="Include" />
+            <e p="ASN1OctetStringParser.cs" t="Include" />
+            <e p="Asn1Sequence.cs" t="Include" />
+            <e p="ASN1SequenceParser.cs" t="Include" />
+            <e p="Asn1Tags.cs" t="Include" />
+            <e p="DefiniteLengthInputStream.cs" t="Include" />
+            <e p="DERGenerator.cs" t="Include" />
+            <e p="DerInteger.cs" t="Include" />
+            <e p="DerNull.cs" t="Include" />
+            <e p="DerObjectIdentifier.cs" t="Include" />
+            <e p="DerOctetString.cs" t="Include" />
+            <e p="DerOutputStream.cs" t="Include" />
+            <e p="DerSequence.cs" t="Include" />
+            <e p="DERSequenceGenerator.cs" t="Include" />
+            <e p="IAsn1Convertible.cs" t="Include" />
+            <e p="LimitedInputStream.cs" t="Include" />
+            <e p="sec" t="Include">
+              <e p="SECNamedCurves.cs" t="Include" />
+              <e p="SECObjectIdentifiers.cs" t="Include" />
+            </e>
+            <e p="x9" t="Include">
+              <e p="X9Curve.cs" t="Include" />
+              <e p="X9ECParameters.cs" t="Include" />
+              <e p="X9ECParametersHolder.cs" t="Include" />
+              <e p="X9ECPoint.cs" t="Include" />
+              <e p="X9FieldElement.cs" t="Include" />
+              <e p="X9FieldID.cs" t="Include" />
+              <e p="X9IntegerConverter.cs" t="Include" />
+              <e p="X9ObjectIdentifiers.cs" t="Include" />
+            </e>
+          </e>
+          <e p="crypto" t="Include">
+            <e p="AsymmetricKeyParameter.cs" t="Include" />
+            <e p="BufferedBlockCipher.cs" t="Include" />
+            <e p="BufferedCipherBase.cs" t="Include" />
+            <e p="Check.cs" t="Include" />
+            <e p="CryptoException.cs" t="Include" />
+            <e p="DataLengthException.cs" t="Include" />
+            <e p="digests" t="Include">
+              <e p="GeneralDigest.cs" t="Include" />
+              <e p="LongDigest.cs" t="Include" />
+              <e p="RipeMD160Digest.cs" t="Include" />
+              <e p="Sha1Digest.cs" t="Include" />
+              <e p="Sha224Digest.cs" t="Include" />
+              <e p="Sha256Digest.cs" t="Include" />
+              <e p="Sha384Digest.cs" t="Include" />
+              <e p="Sha512Digest.cs" t="Include" />
+            </e>
+            <e p="ec" t="Include">
+              <e p="CustomNamedCurves.cs" t="Include" />
+            </e>
+            <e p="engines" t="Include">
+              <e p="AesEngine.cs" t="Include" />
+              <e p="AesFastEngine.cs" t="Include" />
+            </e>
+            <e p="IAsymmetricBlockCipher.cs" t="Include" />
+            <e p="IBlockCipher.cs" t="Include" />
+            <e p="IBufferedCipher.cs" t="Include" />
+            <e p="ICipherParameters.cs" t="Include" />
+            <e p="IDigest.cs" t="Include" />
+            <e p="IDSA.cs" t="Include" />
+            <e p="IMac.cs" t="Include" />
+            <e p="InvalidCipherTextException.cs" t="Include" />
+            <e p="ISigner.cs" t="Include" />
+            <e p="macs" t="Include">
+              <e p="HMac.cs" t="Include" />
+            </e>
+            <e p="OutputLengthException.cs" t="Include" />
+            <e p="paddings" t="Include">
+              <e p="BlockCipherPadding.cs" t="Include" />
+              <e p="PaddedBufferedBlockCipher.cs" t="Include" />
+              <e p="Pkcs7Padding.cs" t="Include" />
+            </e>
+            <e p="parameters" t="Include">
+              <e p="ECDomainParameters.cs" t="Include" />
+              <e p="ECKeyParameters.cs" t="Include" />
+              <e p="ECPrivateKeyParameters.cs" t="Include" />
+              <e p="ECPublicKeyParameters.cs" t="Include" />
+              <e p="KeyParameter.cs" t="Include" />
+            </e>
+            <e p="signers" t="Include">
+              <e p="ECDsaSigner.cs" t="Include" />
+              <e p="HMacDsaKCalculator.cs" t="Include" />
+              <e p="IDsaKCalculator.cs" t="Include" />
+              <e p="RandomDsaKCalculator.cs" t="Include" />
+            </e>
+            <e p="util" t="Include">
+              <e p="Pack.cs" t="Include" />
+            </e>
+          </e>
+          <e p="math" t="Include">
+            <e p="BigInteger.cs" t="Include" />
+            <e p="ec" t="Include">
+              <e p="abc" t="Include">
+                <e p="SimpleBigDecimal.cs" t="Include" />
+                <e p="Tnaf.cs" t="Include" />
+                <e p="ZTauElement.cs" t="Include" />
+              </e>
+              <e p="custom" t="Include">
+                <e p="sec" t="Include">
+                  <e p="SecP256K1Curve.cs" t="Include" />
+                  <e p="SecP256K1Field.cs" t="Include" />
+                  <e p="SecP256K1FieldElement.cs" t="Include" />
+                  <e p="SecP256K1Point.cs" t="Include" />
+                </e>
+              </e>
+              <e p="ECAlgorithms.cs" t="Include" />
+              <e p="ECCurve.cs" t="Include" />
+              <e p="ECFieldElement.cs" t="Include" />
+              <e p="ECPoint.cs" t="Include" />
+              <e p="ECPointMap.cs" t="Include" />
+              <e p="endo" t="Include">
+                <e p="ECEndomorphism.cs" t="Include" />
+                <e p="GlvEndomorphism.cs" t="Include" />
+                <e p="GlvTypeBEndomorphism.cs" t="Include" />
+                <e p="GlvTypeBParameters.cs" t="Include" />
+              </e>
+              <e p="LongArray.cs" t="Include" />
+              <e p="multiplier" t="Include">
+                <e p="AbstractECMultiplier.cs" t="Include" />
+                <e p="DoubleAddMultiplier.cs" t="Include" />
+                <e p="ECMultiplier.cs" t="Include" />
+                <e p="FixedPointCombMultiplier.cs" t="Include" />
+                <e p="FixedPointPreCompInfo.cs" t="Include" />
+                <e p="FixedPointUtilities.cs" t="Include" />
+                <e p="GlvMultiplier.cs" t="Include" />
+                <e p="PreCompInfo.cs" t="Include" />
+                <e p="WNafL2RMultiplier.cs" t="Include" />
+                <e p="WNafPreCompInfo.cs" t="Include" />
+                <e p="WNafUtilities.cs" t="Include" />
+                <e p="WTauNafMultiplier.cs" t="Include" />
+                <e p="WTauNafPreCompInfo.cs" t="Include" />
+              </e>
+              <e p="ScaleXPointMap.cs" t="Include" />
+            </e>
+            <e p="field" t="Include">
+              <e p="FiniteFields.cs" t="Include" />
+              <e p="GenericPolynomialExtensionField.cs" t="Include" />
+              <e p="GF2Polynomial.cs" t="Include" />
+              <e p="IExtensionField.cs" t="Include" />
+              <e p="IFiniteField.cs" t="Include" />
+              <e p="IPolynomial.cs" t="Include" />
+              <e p="IPolynomialExtensionField.cs" t="Include" />
+              <e p="PrimeField.cs" t="Include" />
+            </e>
+            <e p="raw" t="Include">
+              <e p="Mod.cs" t="Include" />
+              <e p="Nat.cs" t="Include" />
+              <e p="Nat256.cs" t="Include" />
+            </e>
+          </e>
+          <e p="security" t="Include">
+            <e p="GeneralSecurityException.cs" t="Include" />
+            <e p="InvalidKeyException.cs" t="Include" />
+            <e p="KeyException.cs" t="Include" />
+            <e p="SecureRandom.cs" t="Include" />
+          </e>
+          <e p="util" t="Include">
+            <e p="Arrays.cs" t="Include" />
+            <e p="BigIntegers.cs" t="Include" />
+            <e p="encoders" t="Include">
+              <e p="Hex.cs" t="Include" />
+              <e p="HexEncoder.cs" t="Include" />
+              <e p="IEncoder.cs" t="Include" />
+            </e>
+            <e p="IMemoable.cs" t="Include" />
+            <e p="io" t="Include">
+              <e p="BaseInputStream.cs" t="Include" />
+              <e p="FilterStream.cs" t="Include" />
+              <e p="StreamOverflowException.cs" t="Include" />
+              <e p="Streams.cs" t="Include" />
+            </e>
+            <e p="Platform.cs" t="Include" />
+          </e>
+        </e>
+        <e p="BuilderExtensions" t="Include">
+          <e p="BuilderExtension.cs" t="Include" />
+          <e p="OPTrueExtension.cs" t="Include" />
+          <e p="P2MultiSigBuilderExtension.cs" t="Include" />
+          <e p="P2PKBuilderExtension.cs" t="Include" />
+          <e p="P2PKHBuilderExtension.cs" t="Include" />
+        </e>
+        <e p="BuriedDeploymentsArray.cs" t="Include" />
+        <e p="CachedNoSqlRepository.cs" t="Include" />
+        <e p="CachedTransactionRepository.cs" t="Include" />
+        <e p="ChainedHeader.cs" t="Include" />
+        <e p="ChainIndexer.cs" t="Include" />
+        <e p="CheckpointInfo.cs" t="Include" />
+        <e p="Coin.cs" t="Include" />
+        <e p="Consensus.cs" t="Include" />
+        <e p="ConsensusFactory.cs" t="Include" />
+        <e p="ConsensusOptions.cs" t="Include" />
+        <e p="ConsensusRules.cs" t="Include" />
+        <e p="crypto" t="Include">
+          <e p="Cryptsharp" t="Include">
+            <e p="BitMath.cs" t="Include" />
+            <e p="BitPacking.cs" t="Include" />
+            <e p="Check.cs" t="Include" />
+            <e p="Exceptions.cs" t="Include" />
+            <e p="Pbkdf2.cs" t="Include" />
+            <e p="Salsa20Core.cs" t="Include" />
+            <e p="SCrypt.cs" t="Include" />
+            <e p="Security.cs" t="Include" />
+          </e>
+          <e p="DeterministicECDSA.cs" t="Include" />
+          <e p="ECDSASignature.cs" t="Include" />
+          <e p="ECKey.cs" t="Include" />
+          <e p="Hashes.cs" t="Include" />
+          <e p="HashStream.cs" t="Include" />
+          <e p="HashX13.cs" t="Include" />
+        </e>
+        <e p="DataEncoders" t="Include">
+          <e p="ASCIIEncoder.cs" t="Include" />
+          <e p="Base58Encoder.cs" t="Include" />
+          <e p="Base64Encoder.cs" t="Include" />
+          <e p="Bech32Encoder.cs" t="Include" />
+          <e p="Encoders.cs" t="Include" />
+          <e p="HexEncoder.cs" t="Include" />
+        </e>
+        <e p="DefaultConsensusfactory.cs" t="Include" />
+        <e p="DNSSeedData.cs" t="Include" />
+        <e p="FeeRate.cs" t="Include" />
+        <e p="FileLock.cs" t="Include" />
+        <e p="Formatters" t="Include">
+          <e p="BlockExplorerFormatter.cs" t="Include" />
+          <e p="RawFormatter.cs" t="Include" />
+          <e p="SatoshiFormatter.cs" t="Include" />
+        </e>
+        <e p="IBech32Data.cs" t="Include" />
+        <e p="IBitcoinSerializable.cs" t="Include" />
+        <e p="IBitcoinString.cs" t="Include" />
+        <e p="IBlockRepository.cs" t="Include" />
+        <e p="IConsensus.cs" t="Include" />
+        <e p="IDestination.cs" t="Include" />
+        <e p="InMemoryNoSqlRepository.cs" t="Include" />
+        <e p="IPExtensions.cs" t="Include" />
+        <e p="ISecret.cs" t="Include" />
+        <e p="IStandardScriptsRegistry.cs" t="Include" />
+        <e p="ITransactionRepository.cs" t="Include" />
+        <e p="Key.cs" t="Include" />
+        <e p="KeyId.cs" t="Include" />
+        <e p="LockTime.cs" t="Include" />
+        <e p="MerkleBlock.cs" t="Include" />
+        <e p="MerkleNode.cs" t="Include" />
+        <e p="Money.cs" t="Include" />
+        <e p="NBitcoin.csproj" t="IncludeRecursive" />
+        <e p="Network.cs" t="Include" />
+        <e p="Networks" t="Include">
+          <e p="NetworkRegistration.cs" t="Include" />
+        </e>
+        <e p="NoSqlRepository.cs" t="Include" />
+        <e p="NoSqlTransactionRepository.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="NBitcoin.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="OpenAsset" t="Include">
+          <e p="AssetId.cs" t="Include" />
+          <e p="AssetMoney.cs" t="Include" />
+          <e p="BitcoinAssetId.cs" t="Include" />
+          <e p="BitcoinColoredAddress.cs" t="Include" />
+          <e p="CachedColoredTransactionRepository.cs" t="Include" />
+          <e p="CoinprismColoredTransactionRepository.cs" t="Include" />
+          <e p="ColoredTransaction.cs" t="Include" />
+          <e p="ColorMarker.cs" t="Include" />
+          <e p="Extensions.cs" t="Include" />
+          <e p="IColoredTransactionRepository.cs" t="Include" />
+          <e p="NoDuplicateColoredTransactionRepository.cs" t="Include" />
+          <e p="NoSqlColoredTransactionRepository.cs" t="Include" />
+          <e p="NullColoredTransactionRepository.cs" t="Include" />
+        </e>
+        <e p="PartialMerkleTree.cs" t="Include" />
+        <e p="Policy" t="Include">
+          <e p="ITransactionPolicy.cs" t="Include" />
+          <e p="MinerTransactionPolicy.cs" t="Include" />
+          <e p="StandardTransactionPolicy.cs" t="Include" />
+        </e>
+        <e p="PrecomputedTransactionData.cs" t="Include" />
+        <e p="Properties" t="Include">
+          <e p="AssemblyInfo.cs" t="Include" />
+        </e>
+        <e p="Protocol" t="Include">
+          <e p="NetworkAddress.cs" t="Include" />
+          <e p="NodeServerTrace.cs" t="Include" />
+          <e p="NodeSocketEventManager.cs" t="Include" />
+          <e p="PerformanceCounter.cs" t="Include" />
+          <e p="ProtocolException.cs" t="Include" />
+          <e p="UtxOutputs.cs" t="Include" />
+          <e p="VarInt.cs" t="Include" />
+          <e p="VarString.cs" t="Include" />
+          <e p="Versions.cs" t="Include" />
+        </e>
+        <e p="ProvenBlockHeader.cs" t="Include" />
+        <e p="PubKey.cs" t="Include" />
+        <e p="PushNuget.ps1" t="Include" />
+        <e p="QBitNinjaTransactionRepository.cs" t="Include" />
+        <e p="RandomUtils.cs" t="Include" />
+        <e p="RandomUtils.partial.cs" t="Include" />
+        <e p="Rules" t="Include">
+          <e p="IConsensusRule.cs" t="Include" />
+        </e>
+        <e p="Script.cs" t="Include" />
+        <e p="ScriptEvaluationContext.cs" t="Include" />
+        <e p="ScriptReader.cs" t="Include" />
+        <e p="Sequence.cs" t="Include" />
+        <e p="SequenceLock.cs" t="Include" />
+        <e p="StandardScripts.cs" t="Include" />
+        <e p="StandardScriptsRegistry.cs" t="Include" />
+        <e p="StandardScriptTemplate.cs" t="Include" />
+        <e p="Stealth" t="Include">
+          <e p="BitcoinStealthAddress.cs" t="Include" />
+          <e p="StealthMetadata.cs" t="Include" />
+          <e p="StealthPayment.cs" t="Include" />
+        </e>
+        <e p="Target.cs" t="Include" />
+        <e p="TraceCorrelationScope.cs" t="Include" />
+        <e p="Transaction.cs" t="Include" />
+        <e p="TransactionBuilder.cs" t="Include" />
+        <e p="TransactionNotFoundException.cs" t="Include" />
+        <e p="TransactionSignature.cs" t="Include" />
+        <e p="UInt256.cs" t="Include" />
+        <e p="UnsignedList.cs" t="Include" />
+        <e p="Utils" t="Include">
+          <e p="ActionDisposable.cs" t="Include" />
+          <e p="ReaderWriterLock.cs" t="Include" />
+        </e>
+        <e p="Utils.cs" t="Include" />
+        <e p="ValidatedAddress.cs" t="Include" />
+      </e>
+      <e p="NBitcoin.Tests" t="IncludeRecursive">
+        <e p="App.config" t="Include" />
+        <e p="AssertEx.cs" t="Include" />
+        <e p="AssetMoneyTests.cs" t="Include" />
+        <e p="base58_tests.cs" t="Include" />
+        <e p="Bech32Test.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="bip32_tests.cs" t="Include" />
+        <e p="BIP38Tests.cs" t="Include" />
+        <e p="bip39_tests.cs" t="Include" />
+        <e p="BitcoinAddressTest.cs" t="Include" />
+        <e p="bloom_tests.cs" t="Include" />
+        <e p="ChainTests.cs" t="Include" />
+        <e p="checkblock_tests.cs" t="Include" />
+        <e p="cmpctblock_tests.cs" t="Include" />
+        <e p="ColoredCoinsTests.cs" t="Include" />
+        <e p="ConstructorsForSerializableClassesTest.cs" t="Include" />
+        <e p="ConverterTests.cs" t="Include" />
+        <e p="data" t="Include">
+          <e p=".cookie" t="Include" />
+          <e p="alertTests.raw" t="Include" />
+          <e p="base58_keys_invalid.json" t="Include" />
+          <e p="base58_keys_valid.json" t="Include" />
+          <e p="base58_keys_valid2.json" t="Include" />
+          <e p="bip39_JP.json" t="Include" />
+          <e p="bip39_vectors.json" t="Include" />
+          <e p="block169482.txt" t="Include" />
+          <e p="blocks" t="Include">
+            <e p="blk00000.dat" t="Include" />
+            <e p="blk00001.dat" t="Include" />
+            <e p="Block1.json" t="Include" />
+            <e p="incompleteblk.dat" t="Include" />
+            <e p="incompleteblk.dat.bak" t="Include" />
+            <e p="rev00000.dat" t="Include" />
+          </e>
+          <e p="can_parse_transaction.json" t="Include" />
+          <e p="determiniticECDSA.txt" t="Include" />
+          <e p="openasset-known-tx.json" t="Include" />
+          <e p="payreq.dat" t="Include" />
+          <e p="peers.dat" t="Include" />
+          <e p="readme.md" t="Include" />
+          <e p="script_tests.json" t="Include" />
+          <e p="sig_canonical.json" t="Include" />
+          <e p="sig_noncanonical.json" t="Include" />
+          <e p="sighash.json" t="Include" />
+          <e p="targethistory.csv" t="Include" />
+          <e p="tx_invalid.json" t="Include" />
+          <e p="tx_raw.json" t="Include" />
+          <e p="tx_valid.json" t="Include" />
+        </e>
+        <e p="data_pos" t="Include">
+          <e p=".cookie" t="Include" />
+          <e p="alertTests.raw" t="Include" />
+          <e p="base58_keys_invalid.json" t="Include" />
+          <e p="base58_keys_valid.json" t="Include" />
+          <e p="base58_keys_valid2.json" t="Include" />
+          <e p="bip39_JP.json" t="Include" />
+          <e p="bip39_vectors.json" t="Include" />
+          <e p="block1125.txt" t="Include" />
+          <e p="blocks" t="Include">
+            <e p="blk0001.dat" t="Include" />
+            <e p="blk0002.dat" t="Include" />
+            <e p="Block1.json" t="Include" />
+            <e p="incompleteblk.dat" t="Include" />
+            <e p="rev00000.dat" t="Include" />
+          </e>
+          <e p="can_parse_transaction.json" t="Include" />
+          <e p="determiniticECDSA.txt" t="Include" />
+          <e p="openasset-known-tx.json" t="Include" />
+          <e p="paymentack.data" t="Include" />
+          <e p="payreq.dat" t="Include" />
+          <e p="payreq1_sha1.paymentrequest" t="Include" />
+          <e p="payreq1_sha1_omitteddefault.paymentrequest" t="Include" />
+          <e p="payreq1_sha256.paymentrequest" t="Include" />
+          <e p="payreq1_sha256_omitteddefault.paymentrequest" t="Include" />
+          <e p="payreq2_sha1.paymentrequest" t="Include" />
+          <e p="payreq2_sha1_omitteddefault.paymentrequest" t="Include" />
+          <e p="payreq2_sha256.paymentrequest" t="Include" />
+          <e p="payreq2_sha256_omitteddefault.paymentrequest" t="Include" />
+          <e p="payreq3_validchain.paymentrequest" t="Include" />
+          <e p="peers.dat" t="Include" />
+          <e p="readme.md" t="Include" />
+          <e p="script_tests.json" t="Include" />
+          <e p="sig_canonical.json" t="Include" />
+          <e p="sig_noncanonical.json" t="Include" />
+          <e p="sighash.json" t="Include" />
+          <e p="targethistory.csv" t="Include" />
+          <e p="tx_invalid.json" t="Include" />
+          <e p="tx_raw.json" t="Include" />
+          <e p="tx_valid.json" t="Include" />
+        </e>
+        <e p="DeterministicSignatureTests.cs" t="Include" />
+        <e p="hash_tests.cs" t="Include" />
+        <e p="key_tests.cs" t="Include" />
+        <e p="NBitcoin.Tests.csproj" t="IncludeRecursive" />
+        <e p="NetworkTests.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="NBitcoin.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="NBitcoin.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="pos_hash_tests.cs" t="Include" />
+        <e p="pos_ProtocolTests.cs" t="Include" />
+        <e p="pos_transaction_tests.cs" t="Include" />
+        <e p="pow_tests.cs" t="Include" />
+        <e p="Program.cs" t="Include" />
+        <e p="ProtocolTests.cs" t="Include" />
+        <e p="ProvenBlockHeaderTests.cs" t="Include" />
+        <e p="README.txt" t="Include" />
+        <e p="script_tests.cs" t="Include" />
+        <e p="sighash_tests.cs" t="Include" />
+        <e p="sigopcount_tests.cs" t="Include" />
+        <e p="StealthAddressTests.cs" t="Include" />
+        <e p="TestCase.cs" t="Include" />
+        <e p="TestDataLocations.cs" t="Include" />
+        <e p="TestUtils.cs" t="Include" />
+        <e p="transaction_tests.cs" t="Include" />
+        <e p="uint256_tests.cs" t="Include" />
+        <e p="util_tests.cs" t="Include" />
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="None.ruleset" t="Include" />
+      <e p="packages" t="ExcludeRecursive" />
+      <e p="Solution Items" t="Include" />
+      <e p="Stratis.Benchmark" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Infrastructure" t="Include">
+          <e p="Faster" t="Include">
+            <e p="FasterStorageTypes.cs" t="Include" />
+          </e>
+          <e p="LiteDb" t="Include">
+            <e p="LiteDbStorageTypes.cs" t="Include" />
+          </e>
+        </e>
+        <e p="NetworkBenchmarkBase.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.2" t="Include">
+              <e p="Stratis.Benchmark.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Persistence" t="Include">
+          <e p="DBreeze" t="Include">
+            <e p="FetchCoin.cs" t="Include" />
+          </e>
+          <e p="Faster" t="Include">
+            <e p="FetchCoin.cs" t="Include" />
+          </e>
+          <e p="LiteDb" t="Include">
+            <e p="FetchCoin.cs" t="Include" />
+          </e>
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="Stratis.Benchmark.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="Stratis.Bitcoin" t="IncludeRecursive">
+        <e p="AsyncWork" t="Include">
+          <e p="AsyncLoop.cs" t="Include" />
+          <e p="AsyncProvider.cs" t="Include" />
+          <e p="AsyncProvider.InnerClasses.cs" t="Include" />
+          <e p="AsyncQueue.cs" t="Include" />
+          <e p="IAsyncDelegateDequeuer.cs" t="Include" />
+          <e p="IAsyncLoop.cs" t="Include" />
+          <e p="IAsyncProvider.cs" t="Include" />
+          <e p="IAsyncQueue.cs" t="Include" />
+        </e>
+        <e p="Base" t="Include">
+          <e p="BaseFeature.cs" t="Include" />
+          <e p="ChainRepository.cs" t="Include" />
+          <e p="ChainState.cs" t="Include" />
+          <e p="Deployments" t="Include">
+            <e p="DeploymentFlags.cs" t="Include" />
+            <e p="Models" t="Include">
+              <e p="ThresholdStateModel.cs" t="Include" />
+            </e>
+            <e p="NodeDeployments.cs" t="Include" />
+            <e p="ThresholdConditionCache.cs" t="Include" />
+            <e p="ThresholdState.cs" t="Include" />
+          </e>
+          <e p="InitialBlockDownloadState.cs" t="Include" />
+          <e p="InvalidBlockHashStore.cs" t="Include" />
+          <e p="readme.md" t="Include" />
+          <e p="TimeSyncBehavior.cs" t="Include" />
+          <e p="TipsManager.cs" t="Include" />
+        </e>
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="BlockPulling" t="Include">
+          <e p="AssignedDownload.cs" t="Include" />
+          <e p="BlockPuller.cs" t="Include" />
+          <e p="BlockPullerBehavior.cs" t="Include" />
+          <e p="DownloadJob.cs" t="Include" />
+        </e>
+        <e p="Builder" t="Include">
+          <e p="Feature" t="Include">
+            <e p="FeatureCollection.cs" t="Include" />
+            <e p="FeatureRegistration.cs" t="Include" />
+            <e p="FeaturesExtensions.cs" t="Include" />
+            <e p="FullNodeFeature.cs" t="Include" />
+            <e p="MissingDependencyException.cs" t="Include" />
+            <e p="MissingServiceException.cs" t="Include" />
+          </e>
+          <e p="FullNodeBuilder.cs" t="Include" />
+          <e p="FullNodeBuilderNodeSettingsExtension.cs" t="Include" />
+          <e p="FullNodeFeatureExecutor.cs" t="Include" />
+          <e p="FullNodeServiceProvider.cs" t="Include" />
+          <e p="IFullNodeBuilder.cs" t="Include" />
+        </e>
+        <e p="Configuration" t="Include">
+          <e p="DataFolder.cs" t="Include" />
+          <e p="Logging" t="Include">
+            <e p="LoggingConfiguration.cs" t="Include" />
+          </e>
+          <e p="NodeServerEndpoint.cs" t="Include" />
+          <e p="NodeSettings.cs" t="Include" />
+          <e p="Settings" t="Include">
+            <e p="ConnectionManagerSettings.cs" t="Include" />
+            <e p="ConsensusSettings.cs" t="Include" />
+            <e p="LogSettings.cs" t="Include" />
+          </e>
+          <e p="TextFileConfiguration.cs" t="Include" />
+          <e p="VersionProvider.cs" t="Include" />
+        </e>
+        <e p="Connection" t="Include">
+          <e p="ConnectionManager.cs" t="Include" />
+          <e p="ConnectionManagerBehavior.cs" t="Include" />
+          <e p="ConnectionManagerController.cs" t="Include" />
+          <e p="DropNodesBehaviour.cs" t="Include" />
+          <e p="Extensions.cs" t="Include" />
+          <e p="IConnectionManager.cs" t="Include" />
+          <e p="PeerBanning.cs" t="Include" />
+          <e p="PeerBanningBehavior.cs" t="Include" />
+          <e p="PeerNodeModel.cs" t="Include" />
+        </e>
+        <e p="Consensus" t="Include">
+          <e p="BlockDownloadRequest.cs" t="Include" />
+          <e p="ChainedHeaderTree.cs" t="Include" />
+          <e p="Checkpoints.cs" t="Include" />
+          <e p="ConsensusErrorException.cs" t="Include" />
+          <e p="ConsensusErrors.cs" t="Include" />
+          <e p="ConsensusExceptions.cs" t="Include" />
+          <e p="ConsensusManager.cs" t="Include" />
+          <e p="ConsensusManagerBehavior.cs" t="Include" />
+          <e p="ConsensusRuleEngine.cs" t="Include" />
+          <e p="IConsensusManager.cs" t="Include" />
+          <e p="IConsensusRuleEngine.cs" t="Include" />
+          <e p="PeerGetHeaderRequestBehavior.cs" t="Include" />
+          <e p="PerformanceCounters" t="Include">
+            <e p="ConsensusManager" t="Include">
+              <e p="ConsensusManagerPerformanceCounter.cs" t="Include" />
+              <e p="ConsensusManagerPerformanceSnapshot.cs" t="Include" />
+            </e>
+            <e p="Rules" t="Include">
+              <e p="ConsensusRulesPerformanceCounter.cs" t="Include" />
+              <e p="ConsensusRulesPerformanceSnapshot.cs" t="Include" />
+            </e>
+          </e>
+          <e p="Rules" t="Include">
+            <e p="ConsensusRule.cs" t="Include" />
+            <e p="IRuleRegistration.cs" t="Include" />
+            <e p="RuleContext.cs" t="Include" />
+          </e>
+          <e p="ScriptAddressReader.cs" t="Include" />
+          <e p="ValidationContext.cs" t="Include" />
+          <e p="ValidationResults" t="Include">
+            <e p="ConnectBlocksResult.cs" t="Include" />
+            <e p="PartialValidationResult.cs" t="Include" />
+            <e p="ValidationResult.cs" t="Include" />
+          </e>
+          <e p="Validators" t="Include">
+            <e p="BlockValidator.cs" t="Include" />
+          </e>
+        </e>
+        <e p="Controllers" t="Include">
+          <e p="Converters" t="Include">
+            <e p="BtcDecimalJsonConverter.cs" t="Include" />
+            <e p="ToStringJsonConverter.cs" t="Include" />
+          </e>
+          <e p="DashboardController.cs" t="Include" />
+          <e p="FeatureController.cs" t="Include" />
+          <e p="Models" t="Include">
+            <e p="AddressBalancesResult.cs" t="Include" />
+            <e p="AsyncLoopModel.cs" t="Include" />
+            <e p="BannedPeerModel.cs" t="Include" />
+            <e p="BlockHeaderModel.cs" t="Include" />
+            <e p="BlockModel.cs" t="Include" />
+            <e p="ConnectedPeerModel.cs" t="Include" />
+            <e p="DecodeRawTransactionModel.cs" t="Include" />
+            <e p="DisconnectPeerViewModel.cs" t="Include" />
+            <e p="GetTxOutModel.cs" t="Include" />
+            <e p="LogRuleModel.cs" t="Include" />
+            <e p="LogRulesRequest.cs" t="Include" />
+            <e p="SetBanPeerViewModel.cs" t="Include" />
+            <e p="StatusModel.cs" t="Include" />
+            <e p="TransactionModel.cs" t="Include" />
+          </e>
+          <e p="NetworkController.cs" t="Include" />
+          <e p="NodeController.cs" t="Include" />
+          <e p="RestApiClientBase.cs" t="Include" />
+        </e>
+        <e p="EventBus" t="Include">
+          <e p="CoreEvents" t="Include">
+            <e p="BlockConnected.cs" t="Include" />
+            <e p="BlockDisconnected.cs" t="Include" />
+            <e p="Peer" t="Include">
+              <e p="PeerConnected.cs" t="Include" />
+              <e p="PeerConnectionAttempt.cs" t="Include" />
+              <e p="PeerConnectionAttemptFailed.cs" t="Include" />
+              <e p="PeerDisconnected.cs" t="Include" />
+              <e p="PeerEventBase.cs" t="Include" />
+              <e p="PeerMessageReceived.cs" t="Include" />
+              <e p="PeerMessageSendFailure.cs" t="Include" />
+              <e p="PeerMessageSent.cs" t="Include" />
+            </e>
+            <e p="TransactionReceived.cs" t="Include" />
+          </e>
+          <e p="DefaultSubscriptionErrorHandler.cs" t="Include" />
+          <e p="EventBase.cs" t="Include" />
+          <e p="GenericEventBase.cs" t="Include" />
+          <e p="IEventBus.cs" t="Include" />
+          <e p="InMemoryEventBus.cs" t="Include" />
+          <e p="ISubscription.cs" t="Include" />
+          <e p="ISubscriptionErrorHandler.cs" t="Include" />
+          <e p="Subscription.cs" t="Include" />
+          <e p="SubscriptionToken.cs" t="Include" />
+        </e>
+        <e p="FinalizedBlockInfoRepository.cs" t="Include" />
+        <e p="FullNode.cs" t="Include" />
+        <e p="IFullNode.cs" t="Include" />
+        <e p="Interfaces" t="Include">
+          <e p="IBlockStore.cs" t="Include" />
+          <e p="IBlockStoreQueue.cs" t="Include" />
+          <e p="IBlockStoreQueueFlushCondition.cs" t="Include" />
+          <e p="IGetUnspentTransaction.cs" t="Include" />
+          <e p="IInitialBlockDownloadState.cs" t="Include" />
+          <e p="INetworkDifficulty.cs" t="Include" />
+          <e p="IPooledGetUnspentTransaction.cs" t="Include" />
+          <e p="IPooledTransaction.cs" t="Include" />
+          <e p="IProvenBlockHeaderProvider.cs" t="Include" />
+          <e p="IProvenBlockHeaderRepository.cs" t="Include" />
+          <e p="IProvenBlockHeaderStore.cs" t="Include" />
+          <e p="IScriptAddressReader.cs" t="Include" />
+          <e p="IVersionProvider.cs" t="Include" />
+        </e>
+        <e p="Mining" t="Include">
+          <e p="BlockTemplate.cs" t="Include" />
+          <e p="IBlockProvider.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="Stratis.Bitcoin.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="P2P" t="Include">
+          <e p="IPeerAddressManager.cs" t="Include" />
+          <e p="ISelfEndpointTracker.cs" t="Include" />
+          <e p="Peer" t="Include">
+            <e p="INetworkPeer.cs" t="Include" />
+            <e p="NetworkPeer.cs" t="Include" />
+            <e p="NetworkPeerCollection.cs" t="Include" />
+            <e p="NetworkPeerConnection.cs" t="Include" />
+            <e p="NetworkPeerConnectionParameters.cs" t="Include" />
+            <e p="NetworkPeerDisposer.cs" t="Include" />
+            <e p="NetworkPeerFactory.cs" t="Include" />
+            <e p="NetworkPeerListener.cs" t="Include" />
+            <e p="NetworkPeerServer.cs" t="Include" />
+          </e>
+          <e p="PeerAddress.cs" t="Include" />
+          <e p="PeerAddressManager.cs" t="Include" />
+          <e p="PeerAddressManagerBehaviour.cs" t="Include" />
+          <e p="PeerConnector.cs" t="Include" />
+          <e p="PeerConnectorAddNode.cs" t="Include" />
+          <e p="PeerConnectorConnect.cs" t="Include" />
+          <e p="PeerConnectorDiscovery.cs" t="Include" />
+          <e p="PeerDiscoveryLoop.cs" t="Include" />
+          <e p="PeerSelector.cs" t="Include" />
+          <e p="Protocol" t="Include">
+            <e p="Behaviors" t="Include">
+              <e p="NetworkPeerBehavior.cs" t="Include" />
+              <e p="PingPongBehavior.cs" t="Include" />
+            </e>
+            <e p="CallbackMessageListener.cs" t="Include" />
+            <e p="Filters" t="Include">
+              <e p="ActionFilter.cs" t="Include" />
+              <e p="NetworkPeerFilter.cs" t="Include" />
+            </e>
+            <e p="IMessageListener.cs" t="Include" />
+            <e p="IncomingMessage.cs" t="Include" />
+            <e p="InventoryVector.cs" t="Include" />
+            <e p="Message.cs" t="Include" />
+            <e p="MessageProducer.cs" t="Include" />
+            <e p="Payloads" t="Include">
+              <e p="AddrPayload.cs" t="Include" />
+              <e p="BitcoinSerializablePayload.cs" t="Include" />
+              <e p="BlockPayload.cs" t="Include" />
+              <e p="GetAddrPayload.cs" t="Include" />
+              <e p="GetBlocksPayload.cs" t="Include" />
+              <e p="GetDataPayload.cs" t="Include" />
+              <e p="GetHeadersPayload.cs" t="Include" />
+              <e p="GetProvenHeadersPayload.cs" t="Include" />
+              <e p="HaveWitnessPayload.cs" t="Include" />
+              <e p="HeadersPayload.cs" t="Include" />
+              <e p="InvPayload.cs" t="Include" />
+              <e p="MempoolPayload.cs" t="Include" />
+              <e p="NotFoundPayload.cs" t="Include" />
+              <e p="Payload.cs" t="Include" />
+              <e p="PayloadAttribute.cs" t="Include" />
+              <e p="PingPayload.cs" t="Include" />
+              <e p="PongPayload.cs" t="Include" />
+              <e p="ProvenHeadersPayload.cs" t="Include" />
+              <e p="RejectPayload.cs" t="Include" />
+              <e p="SendHeadersPayload.cs" t="Include" />
+              <e p="TxPayload.cs" t="Include" />
+              <e p="UnknowPayload.cs" t="Include" />
+              <e p="VerAckPayload.cs" t="Include" />
+              <e p="VersionPayload.cs" t="Include" />
+            </e>
+          </e>
+          <e p="SelfEndpointTracker.cs" t="Include" />
+        </e>
+        <e p="Primitives" t="Include">
+          <e p="ChainedHeaderBlock.cs" t="Include" />
+        </e>
+        <e p="Properties" t="Include">
+          <e p="AssemblyInfo.cs" t="Include" />
+          <e p="Resources.Designer.cs" t="Include" />
+          <e p="Resources.resx" t="Include" />
+        </e>
+        <e p="Signals" t="Include">
+          <e p="Signals.cs" t="Include" />
+        </e>
+        <e p="Stratis.Bitcoin.csproj" t="IncludeRecursive" />
+        <e p="Utilities" t="Include">
+          <e p="ActionDisposable.cs" t="Include" />
+          <e p="AsyncExecutionEvent.cs" t="Include" />
+          <e p="AsyncLock.cs" t="Include" />
+          <e p="AsyncManualResetEvent.cs" t="Include" />
+          <e p="AverageCalculator.cs" t="Include" />
+          <e p="CircularArray.cs" t="Include" />
+          <e p="DateTimeProvider.cs" t="Include" />
+          <e p="DBreezeRetryOptions.cs" t="Include" />
+          <e p="DBreezeSerializer.cs" t="Include" />
+          <e p="Extensions" t="Include">
+            <e p="BlockExtensions.cs" t="Include" />
+            <e p="CollectionExtensions.cs" t="Include" />
+            <e p="CommandLineArgsExtensions.cs" t="Include" />
+            <e p="DateTimeExtensions.cs" t="Include" />
+            <e p="IPExtensions.cs" t="Include" />
+            <e p="NodeConnectionParameterExtensions.cs" t="Include" />
+            <e p="PeerExtensions.cs" t="Include" />
+            <e p="StringExtensions.cs" t="Include" />
+            <e p="TaskExtension.cs" t="Include" />
+            <e p="ThreadingExtensions.cs" t="Include" />
+            <e p="TypeExtensions.cs" t="Include" />
+            <e p="VersionExtensions.cs" t="Include" />
+          </e>
+          <e p="FileStorage.cs" t="Include" />
+          <e p="FullNodeExtensions.cs" t="Include" />
+          <e p="Guard.cs" t="Include" />
+          <e p="HashHeightPair.cs" t="Include" />
+          <e p="IPEndPointComparer.cs" t="Include" />
+          <e p="IpHelper.cs" t="Include" />
+          <e p="JsonConverters" t="Include">
+            <e p="AssetIdJsonConverter.cs" t="Include" />
+            <e p="BitcoinSerializableJsonConverter.cs" t="Include" />
+            <e p="BitcoinStringJsonConverter.cs" t="Include" />
+            <e p="ByteArrayConverter.cs" t="Include" />
+            <e p="CoinJsonConverter.cs" t="Include" />
+            <e p="DateTimeOffsetConverter.cs" t="Include" />
+            <e p="DateTimeToUnixTimeConverter.cs" t="Include" />
+            <e p="HexJsonConverter.cs" t="Include" />
+            <e p="IPEndPointConverter.cs" t="Include" />
+            <e p="JsonObjectException.cs" t="Include" />
+            <e p="KeyJsonConverter.cs" t="Include" />
+            <e p="KeyPathJsonConverter.cs" t="Include" />
+            <e p="LockTimeJsonConverter.cs" t="Include" />
+            <e p="MoneyJsonConverter.cs" t="Include" />
+            <e p="NetworkConverter.cs" t="Include" />
+            <e p="NetworkJsonConverter.cs" t="Include" />
+            <e p="ScriptJsonConverter.cs" t="Include" />
+            <e p="Serializer.cs" t="Include" />
+            <e p="SignatureJsonConverter.cs" t="Include" />
+            <e p="TxDestinationJsonConverter.cs" t="Include" />
+            <e p="UInt160JsonConverter.cs" t="Include" />
+            <e p="UInt256JsonConverter.cs" t="Include" />
+          </e>
+          <e p="JsonErrors" t="Include">
+            <e p="ErrorHelpers.cs" t="Include" />
+            <e p="ErrorResponse.cs" t="Include" />
+            <e p="ErrorResult.cs" t="Include" />
+          </e>
+          <e p="KeyValueRepository.cs" t="Include" />
+          <e p="LinqExtensions.cs" t="Include" />
+          <e p="LockProtected.cs" t="Include" />
+          <e p="LoggingExtensions.cs" t="Include" />
+          <e p="MemoryCache.cs" t="Include" />
+          <e p="MemoryCountCache.cs" t="Include" />
+          <e p="MemorySizeCache.cs" t="Include" />
+          <e p="ModelStateErrors" t="Include">
+            <e p="ModelStateErrors.cs" t="Include" />
+          </e>
+          <e p="NetworkExtensions.cs" t="Include" />
+          <e p="NetworkHelpers.cs" t="Include" />
+          <e p="NodeLifeTime.cs" t="Include" />
+          <e p="NodeRunningLock.cs" t="Include" />
+          <e p="NodeStats.cs" t="Include" />
+          <e p="ParallelAsync.cs" t="Include" />
+          <e p="PrefixLogger.cs" t="Include" />
+          <e p="ProtocolExtensions.cs" t="Include" />
+          <e p="RetryOptions.cs" t="Include" />
+          <e p="RetryStrategy.cs" t="Include" />
+          <e p="RewindData.cs" t="Include" />
+          <e p="SchedulerLock.cs" t="Include" />
+          <e p="Stopwatch.cs" t="Include" />
+          <e p="TimerExtensions.cs" t="Include" />
+          <e p="TimeSpans.cs" t="Include" />
+          <e p="UnspentOutputs.cs" t="Include" />
+          <e p="ValidationAttributes" t="Include">
+            <e p="MoneyFormatAttribute.cs" t="Include" />
+          </e>
+        </e>
+      </e>
+      <e p="Stratis.Bitcoin.Api.Tests" t="IncludeRecursive">
+        <e p="ApiSettingsTest.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Api.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Bitcoin.Api.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Postman requests" t="Include">
+          <e p="Mining.postman_collection.json" t="Include" />
+          <e p="Node.postman_collection.json" t="Include" />
+          <e p="Notifications.postman_collection.json" t="Include" />
+          <e p="RPC.postman_collection.json" t="Include" />
+          <e p="Wallet.postman_collection.json" t="Include" />
+          <e p="Watch-Only Wallet.postman_collection.json" t="Include" />
+        </e>
+        <e p="ProgramTests.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Api.Tests.csproj" t="IncludeRecursive" />
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Apps.Browser" t="IncludeRecursive">
+        <e p="_ViewImports.cshtml" t="Include" />
+        <e p="App.cshtml" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Dto" t="Include">
+          <e p="StratisApp.cs" t="Include" />
+        </e>
+        <e p="global.json" t="Include" />
+        <e p="Interfaces" t="Include">
+          <e p="IAppsService.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="_ViewImports.g.cs" t="Include" />
+              <e p="App.g.cs" t="Include" />
+              <e p="Pages" t="Include">
+                <e p="_ViewImports.g.cs" t="Include" />
+                <e p="Index.g.cs" t="Include" />
+              </e>
+              <e p="Shared" t="Include">
+                <e p="MainLayout.g.cs" t="Include" />
+                <e p="NavMenu.g.cs" t="Include" />
+              </e>
+              <e p="Stratis.Bitcoin.Apps.Browser.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Pages" t="Include">
+          <e p="_ViewImports.cshtml" t="Include" />
+          <e p="Index.cshtml" t="Include" />
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="Properties" t="Include">
+          <e p="launchSettings.json" t="Include" />
+        </e>
+        <e p="Services" t="Include">
+          <e p="AppsService.cs" t="Include" />
+        </e>
+        <e p="Shared" t="Include">
+          <e p="MainLayout.cshtml" t="Include" />
+          <e p="NavMenu.cshtml" t="Include" />
+        </e>
+        <e p="Stratis.Bitcoin.Apps.Browser.csproj" t="IncludeRecursive" />
+        <e p="wwwroot" t="Include">
+          <e p="css" t="Include">
+            <e p="bootstrap" t="Include">
+              <e p="bootstrap.min.css" t="Include" />
+              <e p="bootstrap.min.css.map" t="Include" />
+            </e>
+            <e p="open-iconic" t="Include">
+              <e p="font" t="Include">
+                <e p="css" t="Include">
+                  <e p="open-iconic-bootstrap.min.css" t="Include" />
+                </e>
+                <e p="fonts" t="Include">
+                  <e p="open-iconic.eot" t="Include" />
+                  <e p="open-iconic.otf" t="Include" />
+                  <e p="open-iconic.svg" t="Include" />
+                  <e p="open-iconic.ttf" t="Include" />
+                  <e p="open-iconic.woff" t="Include" />
+                </e>
+              </e>
+              <e p="FONT-LICENSE" t="Include" />
+              <e p="ICON-LICENSE" t="Include" />
+              <e p="readme.md" t="Include" />
+            </e>
+            <e p="site.css" t="Include" />
+          </e>
+          <e p="index.html" t="Include" />
+        </e>
+      </e>
+      <e p="Stratis.Bitcoin.Cli" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Cli.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="Properties" t="Include">
+          <e p="launchSettings.json" t="Include" />
+        </e>
+        <e p="Stratis.Bitcoin.Cli.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.Api" t="IncludeRecursive">
+        <e p="ApiFeature.cs" t="Include" />
+        <e p="ApiSettings.cs" t="Include" />
+        <e p="appsettings.json" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="CertificateStore.cs" t="Include" />
+        <e p="ICertificateStore.cs" t="Include" />
+        <e p="KeepAliveActionFilter.cs" t="Include" />
+        <e p="LoggingActionFilter.cs" t="Include" />
+        <e p="MvcBuilderExtensions.cs" t="Include" />
+        <e p="NoCacheMiddleware.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Features.Api.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="Properties" t="Include">
+          <e p="launchSettings.json" t="Include" />
+        </e>
+        <e p="Startup.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Features.Api.csproj" t="IncludeRecursive" />
+        <e p="web.config" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.Apps" t="IncludeRecursive">
+        <e p="AppsController.cs" t="Include" />
+        <e p="AppsFeature.cs" t="Include" />
+        <e p="AppsHost.cs" t="Include" />
+        <e p="AppsStore.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Interfaces" t="Include">
+          <e p="IAppsController.cs" t="Include" />
+          <e p="IAppsHost.cs" t="Include" />
+          <e p="IAppsStore.cs" t="Include" />
+          <e p="IStratisApp.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="Stratis.Bitcoin.Features.Apps.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="SinglePageStartup.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Features.Apps.csproj" t="IncludeRecursive" />
+        <e p="StratisApp.cs" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.Apps.Tests" t="IncludeRecursive">
+        <e p="AppsHostTests.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="FullNodeBuilderExtensionsTests.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Features.Apps.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Bitcoin.Features.Apps.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Stratis.Bitcoin.Features.Apps.Tests.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.BlockStore" t="IncludeRecursive">
+        <e p="AddressIndexing" t="Include">
+          <e p="AddressIndexer.cs" t="Include" />
+          <e p="AddressIndexerOutpointsRepository.cs" t="Include" />
+          <e p="AddressIndexerTypes.cs" t="Include" />
+          <e p="AddressIndexRepository.cs" t="Include" />
+        </e>
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="BlockRepository.cs" t="Include" />
+        <e p="BlockStoreBehavior.cs" t="Include" />
+        <e p="BlockStoreException.cs" t="Include" />
+        <e p="BlockStoreFeature.cs" t="Include" />
+        <e p="BlockStoreQueue.cs" t="Include" />
+        <e p="BlockStoreQueueFlushCondition.cs" t="Include" />
+        <e p="BlockStoreSignaled.cs" t="Include" />
+        <e p="Controllers" t="Include">
+          <e p="BlockStoreClient.cs" t="Include" />
+          <e p="BlockStoreController.cs" t="Include" />
+        </e>
+        <e p="Models" t="Include">
+          <e p="AddressIndexerTipModel.cs" t="Include" />
+          <e p="BlockTransactionDetailsModel.cs" t="Include" />
+          <e p="SearchByHashRequest.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="Stratis.Bitcoin.Features.BlockStore.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="ProvenHeadersBlockStoreBehavior.cs" t="Include" />
+        <e p="ProvenHeadersBlockStoreSignaled.cs" t="Include" />
+        <e p="Pruning" t="Include">
+          <e p="IPruneBlockStoreService.cs" t="Include" />
+          <e p="IPrunedBlockRepository.cs" t="Include" />
+          <e p="PruneBlockStoreService.cs" t="Include" />
+          <e p="PrunedBlockRepository.cs" t="Include" />
+        </e>
+        <e p="StoreSettings.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Features.BlockStore.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.BlockStore.Tests" t="IncludeRecursive">
+        <e p="AddressIndexerOutpointsRepositoryTests.cs" t="Include" />
+        <e p="AddressIndexerTests.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="BlockRepositoryTests.cs" t="Include" />
+        <e p="BlockStoreBehaviorTest.cs" t="Include" />
+        <e p="BlockStoreControllerTests.cs" t="Include" />
+        <e p="BlockStoreTests.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Features.BlockStore.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Bitcoin.Features.BlockStore.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="PruneBlockRepositoryTests.cs" t="Include" />
+        <e p="PruneBlockStoreServiceTests.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Features.BlockStore.Tests.csproj" t="IncludeRecursive" />
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.ColdStaking" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="ColdStakingAddressLookup.cs" t="Include" />
+        <e p="ColdStakingBuilderExtension.cs" t="Include" />
+        <e p="ColdStakingFeature.cs" t="Include" />
+        <e p="ColdStakingManager.cs" t="Include" />
+        <e p="ColdStakingScriptSigParameters.cs" t="Include" />
+        <e p="ColdStakingScriptTemplate.cs" t="Include" />
+        <e p="Controllers" t="Include">
+          <e p="ColdStakingController.cs" t="Include" />
+          <e p="ColdStakingWalletRPCController.cs" t="Include" />
+        </e>
+        <e p="Models" t="Include">
+          <e p="ColdStakingModels.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="Stratis.Bitcoin.Features.ColdStaking.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Stratis.Bitcoin.Features.ColdStaking.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.ColdStaking.Tests" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="ColdStakingControllerTest.cs" t="Include" />
+        <e p="ColdStakingManagerTest.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Features.ColdStaking.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Bitcoin.Features.ColdStaking.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Stratis.Bitcoin.Features.ColdStaking.Tests.csproj" t="IncludeRecursive" />
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.Consensus" t="IncludeRecursive">
+        <e p="Behaviors" t="Include">
+          <e p="ProvenHeadersConsensusManagerBehavior.cs" t="Include" />
+          <e p="ProvenHeadersReservedSlotsBehavior.cs" t="Include" />
+        </e>
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="CoinviewPrefetcher.cs" t="Include" />
+        <e p="CoinViews" t="Include">
+          <e p="BackendPerformanceCounter.cs" t="Include" />
+          <e p="CachedCoinView.cs" t="Include" />
+          <e p="CachePerformanceCounter.cs" t="Include" />
+          <e p="CoinView.cs" t="Include" />
+          <e p="CoinviewHelper.cs" t="Include" />
+          <e p="CoinViewStack.cs" t="Include" />
+          <e p="DBreezeCoinView.cs" t="Include" />
+          <e p="FetchCoinsResponse.cs" t="Include" />
+          <e p="IBackedCoinView.cs" t="Include" />
+          <e p="InMemoryCoinView.cs" t="Include" />
+        </e>
+        <e p="ConsensusController.cs" t="Include" />
+        <e p="ConsensusFeature.cs" t="Include" />
+        <e p="ConsensusQuery.cs" t="Include" />
+        <e p="FullNodeBuilderConsensusExtension.cs" t="Include" />
+        <e p="Interfaces" t="Include">
+          <e p="IStakeValidator.cs" t="Include" />
+        </e>
+        <e p="IStakeChain.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="Stratis.Bitcoin.Features.Consensus.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="PosBlockValidator.cs" t="Include" />
+        <e p="PosConsensusFeature.cs" t="Include" />
+        <e p="PowConsensusFeature.cs" t="Include" />
+        <e p="ProvenBlockHeaders" t="Include">
+          <e p="IRewindDataIndexCache.cs" t="Include" />
+          <e p="ProvenBlockHeaderException.cs" t="Include" />
+          <e p="ProvenBlockHeaderRepository.cs" t="Include" />
+          <e p="ProvenBlockHeaderStore.cs" t="Include" />
+          <e p="RewindDataIndexCache.cs" t="Include" />
+        </e>
+        <e p="RuleContextOverrides.cs" t="Include" />
+        <e p="Rules" t="Include">
+          <e p="CommonRules" t="Include">
+            <e p="BitcoinActivationRule.cs" t="Include" />
+            <e p="BitcoinHeaderVersionRule.cs" t="Include" />
+            <e p="BlockMerkleRootRule.cs" t="Include" />
+            <e p="BlockSizeRule.cs" t="Include" />
+            <e p="CheckDifficultyHybridRule.cs" t="Include" />
+            <e p="CheckDifficultyPosRule.cs" t="Include" />
+            <e p="CheckDifficultyPowRule.cs" t="Include" />
+            <e p="CheckPosTransactionRule.cs" t="Include" />
+            <e p="CheckPowTransactionRule.cs" t="Include" />
+            <e p="CheckSigOpsRule.cs" t="Include" />
+            <e p="CoinbaseHeightRule.cs" t="Include" />
+            <e p="CoinviewRule.cs" t="Include" />
+            <e p="EnsureCoinbaseRule.cs" t="Include" />
+            <e p="HeaderTimeChecksPosRule.cs" t="Include" />
+            <e p="HeaderTimeChecksRule.cs" t="Include" />
+            <e p="HeaderVersionRule.cs" t="Include" />
+            <e p="LoadCoinviewRule.cs" t="Include" />
+            <e p="PosBlockSignatureRepresentationRule.cs" t="Include" />
+            <e p="PosBlockSignatureRule.cs" t="Include" />
+            <e p="PosCoinstakeRule.cs" t="Include" />
+            <e p="PosCoinviewRule.cs" t="Include" />
+            <e p="PosColdstakingRule.cs" t="Include" />
+            <e p="PosFutureDriftRule.cs" t="Include" />
+            <e p="PosTimeMaskRule.cs" t="Include" />
+            <e p="PowCoinviewRule.cs" t="Include" />
+            <e p="SetActivationDeploymentsPartialValidationRule.cs" t="Include" />
+            <e p="StratisHeaderVersionRule.cs" t="Include" />
+            <e p="TransactionDuplicationActivationRule.cs" t="Include" />
+            <e p="TransactionLocktimeActivationRule.cs" t="Include" />
+            <e p="WitnessCommitmentsRule.cs" t="Include" />
+          </e>
+          <e p="PosConsensusRuleEngine.cs" t="Include" />
+          <e p="PowConsensusRuleEngine.cs" t="Include" />
+          <e p="ProvenHeaderRules" t="Include">
+            <e p="ProvenHeaderCoinstakeRule.cs" t="Include" />
+            <e p="ProvenHeaderRuleBase.cs" t="Include" />
+            <e p="ProvenHeaderSizeRule.cs" t="Include" />
+          </e>
+          <e p="UtxoStoreConsensusRule.cs" t="Include" />
+        </e>
+        <e p="StakeChainStore.cs" t="Include" />
+        <e p="StakeItem.cs" t="Include" />
+        <e p="StakeValidator.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Features.Consensus.csproj" t="IncludeRecursive" />
+        <e p="UInt256Comparer.cs" t="Include" />
+        <e p="UnspentOutputsComparer.cs" t="Include" />
+        <e p="UnspentOutputSet.cs" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.Consensus.Tests" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="CoinViews" t="Include">
+          <e p="BackendPerformanceCounterTest.cs" t="Include" />
+          <e p="CachePerformanceCounterTest.cs" t="Include" />
+          <e p="CoinViewStackTest.cs" t="Include" />
+          <e p="CoinViewTests.cs" t="Include" />
+          <e p="FetchCoinsResponseTest.cs" t="Include" />
+          <e p="RewindDataIndexCacheTest.cs" t="Include" />
+        </e>
+        <e p="InitialBlockDownloadTest.cs" t="Include" />
+        <e p="MerkleRootComputationTest.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Features.Consensus.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Bitcoin.Features.Consensus.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="PeerBanningTest.cs" t="Include" />
+        <e p="ProvenBlockHeaders" t="Include">
+          <e p="ProvenBlockHeaderRepositoryTests.cs" t="Include" />
+          <e p="ProvenBlockHeaderStoreTests.cs" t="Include" />
+          <e p="ProvenHeaderConsenusManagerBehaviorTests.cs" t="Include" />
+        </e>
+        <e p="Rules" t="Include">
+          <e p="CommonRules" t="Include">
+            <e p="BitcoinActivationRuleTest.cs" t="Include" />
+            <e p="BlockHeaderRuleTest.cs" t="Include" />
+            <e p="BlockMerkleRootRuleTests.cs" t="Include" />
+            <e p="BlockSizeRuleTest.cs" t="Include" />
+            <e p="CalculateStakeRuleTest.cs" t="Include" />
+            <e p="CalculateWorkRuleTest.cs" t="Include" />
+            <e p="CheckPosTransactionRuleTest.cs" t="Include" />
+            <e p="CheckPowTransactionRuleTest.cs" t="Include" />
+            <e p="CheckSigOpsRuleTest.cs" t="Include" />
+            <e p="CoinbaseHeightRuleTest.cs" t="Include" />
+            <e p="EnsureCoinbaseRuleTest.cs" t="Include" />
+            <e p="HeaderTimeChecksRuleTest.cs" t="Include" />
+            <e p="PosBlockSignatureRepresentationRuleTest.cs" t="Include" />
+            <e p="PosBlockSignatureRuleTest.cs" t="Include" />
+            <e p="PosCoinstakeRuleTest.cs" t="Include" />
+            <e p="PosCoinViewRuleTest.cs" t="Include" />
+            <e p="PosColdStakingRuleTest.cs" t="Include" />
+            <e p="PosFutureDriftRuleTest.cs" t="Include" />
+            <e p="PosTimeMaskRuleTest.cs" t="Include" />
+            <e p="PowCoinViewRuleTests.cs" t="Include" />
+            <e p="RulesRegistrationOrderTest.cs" t="Include" />
+            <e p="SetActivationDeploymentsRuleTest.cs" t="Include" />
+            <e p="TransactionLocktimeActivationRuleTest.cs" t="Include" />
+          </e>
+          <e p="ConsensusRuleUnitTestBase.cs" t="Include" />
+          <e p="ProvenHeaderRules" t="Include">
+            <e p="ProvenBlockHeaderCoinstakeRuleTest.cs" t="Include" />
+            <e p="ProvenBlockHeaderSizeRuleTest.cs" t="Include" />
+          </e>
+          <e p="TestRulesContext.cs" t="Include" />
+        </e>
+        <e p="StakeValidatorTests.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Features.Consensus.Tests.csproj" t="IncludeRecursive" />
+        <e p="TestChainFactory.cs" t="Include" />
+        <e p="TimeSyncBehaviorTest.cs" t="Include" />
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.Dns" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="DnsFeature.cs" t="Include" />
+        <e p="DnsMetric.cs" t="Include" />
+        <e p="DnsMetricSnapshot.cs" t="Include" />
+        <e p="DnsSeedMasterFile.cs" t="Include" />
+        <e p="DnsSeedServer.cs" t="Include" />
+        <e p="DnsSeedUdpClient.cs" t="Include" />
+        <e p="DnsSettings.cs" t="Include" />
+        <e p="IDnsServer.cs" t="Include" />
+        <e p="IFullNodeBuilderExtensions.cs" t="Include" />
+        <e p="IMasterFile.cs" t="Include" />
+        <e p="IUdpClient.cs" t="Include" />
+        <e p="IWhitelistManager.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="Stratis.Bitcoin.Features.Dns.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="readme.md" t="Include" />
+        <e p="ResourceRecordConverter.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Features.Dns.csproj" t="IncludeRecursive" />
+        <e p="UnreliablePeerBehavior.cs" t="Include" />
+        <e p="WhitelistManager.cs" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.Dns.Tests" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="GivenADnsFeature.cs" t="Include" />
+        <e p="GivenADnsSeedMasterFile.cs" t="Include" />
+        <e p="GivenADnsSeedServer.cs" t="Include" />
+        <e p="GivenAWhitelistManager.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Features.Dns.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Bitcoin.Features.Dns.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Stratis.Bitcoin.Features.Dns.Tests.csproj" t="IncludeRecursive" />
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.LightWallet" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Broadcasting" t="Include">
+          <e p="LightWalletBroadcasterManager.cs" t="Include" />
+        </e>
+        <e p="LightWalletBitcoinExternalFeePolicy.cs" t="Include" />
+        <e p="LightWalletFeature.cs" t="Include" />
+        <e p="LightWalletFixedFeePolicy.cs" t="Include" />
+        <e p="LightWalletInitialBlockDownloadState.cs" t="Include" />
+        <e p="LightWalletSyncManager.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="Stratis.Bitcoin.Features.LightWallet.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Properties" t="Include">
+          <e p="AssemblyInfo.cs" t="Include" />
+        </e>
+        <e p="Stratis.Bitcoin.Features.LightWallet.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.MemoryPool" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="BlocksDisconnectedSignaled.cs" t="Include" />
+        <e p="Fee" t="Include">
+          <e p="BlockPolicyEstimator.cs" t="Include" />
+          <e p="TxConfirmStats.cs" t="Include" />
+        </e>
+        <e p="Interfaces" t="Include">
+          <e p="ITxMempool.cs" t="Include" />
+        </e>
+        <e p="MempoolBehavior.cs" t="Include" />
+        <e p="MemPoolCoinView.cs" t="Include" />
+        <e p="MempoolController.cs" t="Include" />
+        <e p="MempoolErrors.cs" t="Include" />
+        <e p="MempoolFeature.cs" t="Include" />
+        <e p="MempoolManager.cs" t="Include" />
+        <e p="MempoolOrphans.cs" t="Include" />
+        <e p="MempoolPerformanceCounter.cs" t="Include" />
+        <e p="MempoolPersistence.cs" t="Include" />
+        <e p="MempoolSettings.cs" t="Include" />
+        <e p="MempoolSignaled.cs" t="Include" />
+        <e p="MempoolValidationContext.cs" t="Include" />
+        <e p="MempoolValidator.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="Stratis.Bitcoin.Features.MemoryPool.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Properties" t="Include">
+          <e p="AssemblyInfo.cs" t="Include" />
+        </e>
+        <e p="Stratis.Bitcoin.Features.MemoryPool.csproj" t="IncludeRecursive" />
+        <e p="TxMemPool.cs" t="Include" />
+        <e p="TxMemPoolEntry.cs" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.MemoryPool.Tests" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="BlocksDisconnectedSignaledTest.cs" t="Include" />
+        <e p="FeeTests.cs" t="Include" />
+        <e p="FullNodeBuilderTest.cs" t="Include" />
+        <e p="MemoryPoolTransactionTests.cs" t="Include" />
+        <e p="MempoolManagerTest.cs" t="Include" />
+        <e p="MempoolPersistenceTest.cs" t="Include" />
+        <e p="MempoolValidatorTest.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Features.MemoryPool.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Bitcoin.Features.MemoryPool.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Stratis.Bitcoin.Features.MemoryPool.Tests.csproj" t="IncludeRecursive" />
+        <e p="TestChainFactory.cs" t="Include" />
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.Miner" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="BlockDefinition.cs" t="Include" />
+        <e p="BlockDefinitionOptions.cs" t="Include" />
+        <e p="BlockProvider.cs" t="Include" />
+        <e p="Comparers" t="Include">
+          <e p="CompareModifiedEntry.cs" t="Include" />
+          <e p="CompareTxIterByAncestorCount.cs" t="Include" />
+        </e>
+        <e p="Controllers" t="Include">
+          <e p="MiningController.cs" t="Include" />
+          <e p="MiningRPCController.cs" t="Include" />
+          <e p="StakingController.cs" t="Include" />
+          <e p="StakingRPCController.cs" t="Include" />
+        </e>
+        <e p="Interfaces" t="Include">
+          <e p="IPosMinting.cs" t="Include" />
+          <e p="IPowMining.cs" t="Include" />
+        </e>
+        <e p="MinerException.cs" t="Include" />
+        <e p="MinerSettings.cs" t="Include" />
+        <e p="MiningFeature.cs" t="Include" />
+        <e p="Models" t="Include">
+          <e p="GenerateBlocksModel.cs" t="Include" />
+          <e p="GetStakingInfoModel.cs" t="Include" />
+          <e p="RequestModels.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="Stratis.Bitcoin.Features.Miner.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="PosBlockDefinition.cs" t="Include" />
+        <e p="PosPowBlockDefinition.cs" t="Include" />
+        <e p="PowBlockDefinition.cs" t="Include" />
+        <e p="PowMining.cs" t="Include" />
+        <e p="Staking" t="Include">
+          <e p="CoinstakeContext.cs" t="Include" />
+          <e p="CoinstakeWorkerContext.cs" t="Include" />
+          <e p="CoinstakeWorkerResult.cs" t="Include" />
+          <e p="PosMinting.cs" t="Include" />
+          <e p="UtxoStakeDescription.cs" t="Include" />
+          <e p="WalletSecret.cs" t="Include" />
+        </e>
+        <e p="Stratis.Bitcoin.Features.Miner.csproj" t="IncludeRecursive" />
+        <e p="TxMemPoolModifiedEntry.cs" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.Miner.Tests" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Controllers" t="Include">
+          <e p="MiningControllerTest.cs" t="Include" />
+          <e p="MiningRpcControllerTest.cs" t="Include" />
+          <e p="StakingControllerTest.cs" t="Include" />
+        </e>
+        <e p="MinerSettingsTest.cs" t="Include" />
+        <e p="Models" t="Include">
+          <e p="GetStakingInfoModelTest.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Features.Miner.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Bitcoin.Features.Miner.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="PosBlockAssemblerTest.cs" t="Include" />
+        <e p="PosMintingTest.cs" t="Include" />
+        <e p="PowBlockAssemblerTest.cs" t="Include" />
+        <e p="PowMiningTest.cs" t="Include" />
+        <e p="StakeSplittingTests.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Features.Miner.Tests.csproj" t="IncludeRecursive" />
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.Notifications" t="IncludeRecursive">
+        <e p="AssemblyInfo.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="BlockNotification.cs" t="Include" />
+        <e p="BlockNotificationFeature.cs" t="Include" />
+        <e p="Controllers" t="Include">
+          <e p="NotificationsController.cs" t="Include" />
+        </e>
+        <e p="Interfaces" t="Include">
+          <e p="IBlockNotification.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="Stratis.Bitcoin.Features.Notifications.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Stratis.Bitcoin.Features.Notifications.csproj" t="IncludeRecursive" />
+        <e p="TransactionNotificationFeature.cs" t="Include" />
+        <e p="TransactionNotificationProgress.cs" t="Include" />
+        <e p="TransactionReceiver.cs" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.Notifications.Tests" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="BlockNotificationTest.cs" t="Include" />
+        <e p="NotificationsControllerTest.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Features.Notifications.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Bitcoin.Features.Notifications.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Stratis.Bitcoin.Features.Notifications.Tests.csproj" t="IncludeRecursive" />
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.PoA" t="IncludeRecursive">
+        <e p="BasePoAFeatureConsensusRules" t="Include">
+          <e p="HeaderTimeChecksPoARule.cs" t="Include" />
+          <e p="PoACoinviewRule.cs" t="Include" />
+          <e p="PoAHeaderDifficultyRule.cs" t="Include" />
+          <e p="PoAHeaderSignatureRule.cs" t="Include" />
+          <e p="PoAIntegritySignatureRule.cs" t="Include" />
+        </e>
+        <e p="Behaviors" t="Include">
+          <e p="PoABlockStoreBehavior.cs" t="Include" />
+          <e p="PoAConsensusManagerBehavior.cs" t="Include" />
+        </e>
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="CollateralPoAConsensusFactory.cs" t="Include" />
+        <e p="Events" t="Include">
+          <e p="FedMemberAdded.cs" t="Include" />
+          <e p="FedMemberKicked.cs" t="Include" />
+        </e>
+        <e p="FederationManager.cs" t="Include" />
+        <e p="FederationMember.cs" t="Include" />
+        <e p="KeyTool.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="Stratis.Bitcoin.Features.PoA.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Payloads" t="Include">
+          <e p="PoAHeadersPayload.cs" t="Include" />
+        </e>
+        <e p="PoABlockDefinition.cs" t="Include" />
+        <e p="PoABlockHeader.cs" t="Include" />
+        <e p="PoABlockHeaderValidator.cs" t="Include" />
+        <e p="PoAConsensusErrors.cs" t="Include" />
+        <e p="PoAConsensusFactory.cs" t="Include" />
+        <e p="PoAConsensusOptions.cs" t="Include" />
+        <e p="PoAConsensusRuleEngine.cs" t="Include" />
+        <e p="PoAExceptions.cs" t="Include" />
+        <e p="PoAFeature.cs" t="Include" />
+        <e p="PoAMiner.cs" t="Include" />
+        <e p="PoAMinerSettings.cs" t="Include" />
+        <e p="PoANetwork.cs" t="Include" />
+        <e p="Policies" t="Include">
+          <e p="PoAStandardScriptsRegistry.cs" t="Include" />
+        </e>
+        <e p="SlotsManager.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Features.PoA.csproj" t="IncludeRecursive" />
+        <e p="Voting" t="Include">
+          <e p="ConsensusRules" t="Include">
+            <e p="PoAVotingCoinbaseOutputFormatRule.cs" t="Include" />
+          </e>
+          <e p="DefaultVotingController.cs" t="Include" />
+          <e p="FederationVotingController.cs" t="Include" />
+          <e p="IdleFederationMembersKicker.cs" t="Include" />
+          <e p="Poll.cs" t="Include" />
+          <e p="PollResultExecutor.cs" t="Include" />
+          <e p="PollsRepository.cs" t="Include" />
+          <e p="VotingControllerModels.cs" t="Include" />
+          <e p="VotingData.cs" t="Include" />
+          <e p="VotingDataEncoder.cs" t="Include" />
+          <e p="VotingDataModel.cs" t="Include" />
+          <e p="VotingManager.cs" t="Include" />
+          <e p="WhitelistedHashesRepository.cs" t="Include" />
+        </e>
+      </e>
+      <e p="Stratis.Bitcoin.Features.PoA.IntegrationTests" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="HeaderTimeTests.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Features.PoA.IntegrationTests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Bitcoin.Features.PoA.IntegrationTests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Stratis.Bitcoin.Features.PoA.IntegrationTests.csproj" t="IncludeRecursive" />
+        <e p="VotingAndMiningTests.cs" t="Include" />
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.PoA.IntegrationTests.Common" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="CoreNodePoAExtensions.cs" t="Include" />
+        <e p="EditableTimeProvider.cs" t="Include" />
+        <e p="FullNodePoATestBuilderExtension.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Features.PoA.IntegrationTests.Common.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="PoANodeBuilder.cs" t="Include" />
+        <e p="PoANodeRunner.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Features.PoA.IntegrationTests.Common.csproj" t="IncludeRecursive" />
+        <e p="TestPoAMiner.cs" t="Include" />
+        <e p="TestPoANetwork.cs" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.PoA.Tests" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="CollateralPoAConsensusFactoryTests.cs" t="Include" />
+        <e p="KeyToolTests.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Features.PoA.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Bitcoin.Features.PoA.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="PoAHeaderSignatureTests.cs" t="Include" />
+        <e p="PoAHeadersPayloadTests.cs" t="Include" />
+        <e p="PoATestsBase.cs" t="Include" />
+        <e p="PollsRepositoryTests.cs" t="Include" />
+        <e p="PollTests.cs" t="Include" />
+        <e p="Rules" t="Include">
+          <e p="HeaderTimeChecksPoARuleTests.cs" t="Include" />
+          <e p="PoAHeaderDifficultyRuleTests.cs" t="Include" />
+          <e p="PoAHeaderSignatureRuleTests.cs" t="Include" />
+          <e p="PoAIntegritySignatureRuleTests.cs" t="Include" />
+          <e p="PoAVotingCoinbaseOutputFormatRuleTests.cs" t="Include" />
+        </e>
+        <e p="SlotsManagerTests.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Features.PoA.Tests.csproj" t="IncludeRecursive" />
+        <e p="VotingDataEncoderTests.cs" t="Include" />
+        <e p="VotingManagerTests.cs" t="Include" />
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.RPC" t="IncludeRecursive">
+        <e p="AddedNodeInfo.cs" t="Include" />
+        <e p="AddressGrouping.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="ChangeAddress.cs" t="Include" />
+        <e p="Controllers" t="Include">
+          <e p="FullNodeController.cs" t="Include" />
+          <e p="RPCController.cs" t="Include" />
+        </e>
+        <e p="Exceptions" t="Include">
+          <e p="NoEstimationException.cs" t="Include" />
+          <e p="RPCServerException.cs" t="Include" />
+        </e>
+        <e p="Extensions.cs" t="Include" />
+        <e p="FundRawTransactionOptions.cs" t="Include" />
+        <e p="FundRawTransactionResponse.cs" t="Include" />
+        <e p="IPAddressBlock.cs" t="Include" />
+        <e p="IRPCClient.cs" t="Include" />
+        <e p="ModelBinders" t="Include">
+          <e p="DestinationModelBinder.cs" t="Include" />
+          <e p="MoneyModelBinder.cs" t="Include" />
+        </e>
+        <e p="Models" t="Include">
+          <e p="BlockchainInfoModel.cs" t="Include" />
+          <e p="GetInfoModel.cs" t="Include" />
+          <e p="NetworkInfoModel.cs" t="Include" />
+          <e p="RpcCommandModel.cs" t="Include" />
+        </e>
+        <e p="NodeAddressInfo.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="Stratis.Bitcoin.Features.RPC.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="PeerInfo.cs" t="Include" />
+        <e p="RestClient.cs" t="Include" />
+        <e p="RPCAccount.cs" t="Include" />
+        <e p="RPCAuthorization.cs" t="Include" />
+        <e p="RPCClient.cs" t="Include" />
+        <e p="RPCClient.Wallet.cs" t="Include" />
+        <e p="RPCClientFactory.cs" t="Include" />
+        <e p="RPCCredentialString.cs" t="Include" />
+        <e p="RPCException.cs" t="Include" />
+        <e p="RPCFeature.cs" t="Include" />
+        <e p="RPCJsonMvcOptionsSetup.cs" t="Include" />
+        <e p="RPCJsonOutputFormatter.cs" t="Include" />
+        <e p="RPCMiddleware.cs" t="Include" />
+        <e p="RPCOperations.cs" t="Include" />
+        <e p="RPCParametersValueProvider.cs" t="Include" />
+        <e p="RPCRequest.cs" t="Include" />
+        <e p="RPCResponse.cs" t="Include" />
+        <e p="RPCRouteHandler.cs" t="Include" />
+        <e p="RpcSettings.cs" t="Include" />
+        <e p="RPCTransactionRepository.cs" t="Include" />
+        <e p="SatoshiBlockFormatter.cs" t="Include" />
+        <e p="Startup.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Features.RPC.csproj" t="IncludeRecursive" />
+        <e p="UnspentCoin.cs" t="Include" />
+        <e p="UnspentTransaction.cs" t="Include" />
+        <e p="WebHostExtensions.cs" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.RPC.Tests" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Controller" t="Include">
+          <e p="FullNodeControllerTest.cs" t="Include" />
+          <e p="RPCControllerTest.cs" t="Include" />
+        </e>
+        <e p="Models" t="Include">
+          <e p="BaseRPCModelTest.cs" t="Include" />
+          <e p="GetInfoModelTest.cs" t="Include" />
+          <e p="GetStakingInfoTest.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Features.RPC.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Bitcoin.Features.RPC.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="RPCAuthorizationTest.cs" t="Include" />
+        <e p="RPCJsonMvcOptionsSetupTest.cs" t="Include" />
+        <e p="RPCJsonOutputFormatterTest.cs" t="Include" />
+        <e p="RPCMiddlewareTest.cs" t="Include" />
+        <e p="RPCParametersValueProviderTest.cs" t="Include" />
+        <e p="RPCRouteHandlerTest.cs" t="Include" />
+        <e p="RPCSettingsTest.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Features.RPC.Tests.csproj" t="IncludeRecursive" />
+        <e p="UnspentCoinTests.cs" t="Include" />
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.SmartContracts" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="BlockBufferGenerator.cs" t="Include" />
+        <e p="Extensions.cs" t="Include" />
+        <e p="IBlockBufferGenerator.cs" t="Include" />
+        <e p="ISignedCodePubKeyHolder.cs" t="Include" />
+        <e p="ISmartContractBlockHeader.cs" t="Include" />
+        <e p="ISmartContractMempoolRule.cs" t="Include" />
+        <e p="Models" t="Include">
+          <e p="BuildCallContractTransactionRequest.cs" t="Include" />
+          <e p="BuildContractTransactionResponse.cs" t="Include" />
+          <e p="BuildCreateContractTransactionRequest.cs" t="Include" />
+          <e p="GetCodeResponse.cs" t="Include" />
+          <e p="GetStorageRequest.cs" t="Include" />
+          <e p="LocalCallContractRequest.cs" t="Include" />
+          <e p="OutpointRequestModel.cs" t="Include" />
+          <e p="ReceiptResponse.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Features.SmartContracts.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="PoA" t="Include">
+          <e p="IContractCodeHashingStrategy.cs" t="Include" />
+          <e p="IFullNodeBuilderExtensions.cs" t="Include" />
+          <e p="Keccak256CodeHashingStrategy.cs" t="Include" />
+          <e p="Rules" t="Include">
+            <e p="AllowedCodeHashLogic.cs" t="Include" />
+            <e p="ContractSignedCodeLogic.cs" t="Include" />
+            <e p="SmartContractPoACoinviewRule.cs" t="Include" />
+          </e>
+          <e p="SignedContractExtensions.cs" t="Include" />
+          <e p="SmartContractPoABlockDefinition.cs" t="Include" />
+          <e p="SmartContractPoABlockHeader.cs" t="Include" />
+          <e p="SmartContractPoAConsensusFactory.cs" t="Include" />
+          <e p="SmartContractPoARuleRegistration.cs" t="Include" />
+          <e p="WhitelistedHashChecker.cs" t="Include" />
+        </e>
+        <e p="PoS" t="Include">
+          <e p="IFullNodeBuilderExtensions.cs" t="Include" />
+          <e p="Rules" t="Include">
+            <e p="SmartContractPosBlockSignatureRule.cs" t="Include" />
+            <e p="SmartContractPosCoinviewRule.cs" t="Include" />
+          </e>
+          <e p="SmartContractBlockProvider.cs" t="Include" />
+          <e p="SmartContractPosBlock.cs" t="Include" />
+          <e p="SmartContractPosBlockHeader.cs" t="Include" />
+          <e p="SmartContractPosConsensusFactory.cs" t="Include" />
+          <e p="SmartContractPosPowBlockDefinition.cs" t="Include" />
+          <e p="SmartContractPosRuleRegistration.cs" t="Include" />
+          <e p="SmartContractPosTransaction.cs" t="Include" />
+        </e>
+        <e p="PoW" t="Include">
+          <e p="IFullNodeBuilderExtensions.cs" t="Include" />
+          <e p="Rules" t="Include">
+            <e p="SmartContractPowCoinviewRule.cs" t="Include" />
+          </e>
+          <e p="SmartContractBlockDefinition.cs" t="Include" />
+          <e p="SmartContractPowBlockHeader.cs" t="Include" />
+          <e p="SmartContractPowConsensusFactory.cs" t="Include" />
+          <e p="SmartContractPowRuleRegistration.cs" t="Include" />
+        </e>
+        <e p="ReflectionExecutor" t="Include">
+          <e p="AddressJsonConverter.cs" t="Include" />
+          <e p="Consensus" t="Include">
+            <e p="Rules" t="Include">
+              <e p="SmartContractFormatLogic.cs" t="Include" />
+            </e>
+          </e>
+          <e p="ContractParametersContractResolver.cs" t="Include" />
+          <e p="Controllers" t="Include">
+            <e p="SmartContractsController.cs" t="Include" />
+          </e>
+        </e>
+        <e p="Rules" t="Include">
+          <e p="AllowedScriptTypeRule.cs" t="Include" />
+          <e p="CanGetSenderRule.cs" t="Include" />
+          <e p="ContractTransactionChecker.cs" t="Include" />
+          <e p="ContractTransactionFullValidationRule.cs" t="Include" />
+          <e p="ContractTransactionPartialValidationRule.cs" t="Include" />
+          <e p="IContractTransactionValidationRule.cs" t="Include" />
+          <e p="MempoolOpSpendRule.cs" t="Include" />
+          <e p="OpSpendRule.cs" t="Include" />
+          <e p="P2PKHNotContractRule.cs" t="Include" />
+          <e p="SmartContractCoinviewRule.cs" t="Include" />
+          <e p="SmartContractCoinViewRuleLogic.cs" t="Include" />
+          <e p="TxOutSmartContractExecRule.cs" t="Include" />
+        </e>
+        <e p="SmartContractBlockHeader.cs" t="Include" />
+        <e p="SmartContractConsensusErrors.cs" t="Include" />
+        <e p="SmartContractFeature.cs" t="Include" />
+        <e p="SmartContractMempoolValidator.cs" t="Include" />
+        <e p="SmartContractScriptAddressReader.cs" t="Include" />
+        <e p="SmartContractTransactionPolicy.cs" t="Include" />
+        <e p="SmartContractVersionProvider.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Features.SmartContracts.csproj" t="IncludeRecursive" />
+        <e p="Wallet" t="Include">
+          <e p="ContractTransactionItem.cs" t="Include" />
+          <e p="ContractTransactionItemType.cs" t="Include" />
+          <e p="ISmartContractTransactionService.cs" t="Include" />
+          <e p="SmartContractTransactionService.cs" t="Include" />
+          <e p="SmartContractWalletController.cs" t="Include" />
+          <e p="SmartContractWalletFeature.cs" t="Include" />
+          <e p="SmartContractWalletTransactionHandler.cs" t="Include" />
+        </e>
+        <e p="WalletExtensions.cs" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.SmartContracts.Tests" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="BlockBufferGeneratorTests.cs" t="Include" />
+        <e p="Consensus" t="Include">
+          <e p="Rules" t="Include">
+            <e p="AllowedCodeHashLogicTests.cs" t="Include" />
+            <e p="AllowedScriptTypeRuleTests.cs" t="Include" />
+            <e p="CanGetSenderRuleTest.cs" t="Include" />
+            <e p="ContractValidationRuleTest.cs" t="Include" />
+            <e p="OpSpendRuleTest.cs" t="Include" />
+            <e p="P2PKHNotContractRuleTests.cs" t="Include" />
+            <e p="TestRulesContext.cs" t="Include" />
+            <e p="TxOutSmartContractExecRuleTest.cs" t="Include" />
+          </e>
+        </e>
+        <e p="Controllers" t="Include">
+          <e p="SmartContractsControllerTest.cs" t="Include" />
+          <e p="SmartContractWalletControllerTest.cs" t="Include" />
+        </e>
+        <e p="GlobalSuppressions.cs" t="Include" />
+        <e p="Models" t="Include">
+          <e p="RequestValidationTests.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Features.SmartContracts.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Bitcoin.Features.SmartContracts.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="SigningContractTests.cs" t="Include" />
+        <e p="SmartContractTransactionServiceTests.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Features.SmartContracts.Tests.csproj" t="IncludeRecursive" />
+        <e p="WhitelistHashCheckerTests.cs" t="Include" />
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.Wallet" t="IncludeRecursive">
+        <e p="AccountBalance.cs" t="Include" />
+        <e p="AddressBalance.cs" t="Include" />
+        <e p="AddressBook.cs" t="Include" />
+        <e p="AddressBookException.cs" t="Include" />
+        <e p="AddressBookManager.cs" t="Include" />
+        <e p="AddressFromScriptLookup.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Broadcasting" t="Include">
+          <e p="BroadcasterBehavior.cs" t="Include" />
+          <e p="BroadcasterManagerBase.cs" t="Include" />
+          <e p="FullNodeBroadcasterManager.cs" t="Include" />
+          <e p="State.cs" t="Include" />
+          <e p="TransactionBroadcastEntry.cs" t="Include" />
+        </e>
+        <e p="CannotAddAccountToXpubKeyWalletException.cs" t="Include" />
+        <e p="CoinType.cs" t="Include" />
+        <e p="Controllers" t="Include">
+          <e p="AddressBookController.cs" t="Include" />
+          <e p="LegacyExtPubKeyConverter.cs" t="Include" />
+          <e p="WalletController.cs" t="Include" />
+        </e>
+        <e p="FeeType.cs" t="Include" />
+        <e p="FlatHistory.cs" t="Include" />
+        <e p="HdOperations.cs" t="Include" />
+        <e p="Helpers" t="Include">
+          <e p="SentTransactionItemModelComparer.cs" t="Include" />
+        </e>
+        <e p="Interfaces" t="Include">
+          <e p="IAddressBookManager.cs" t="Include" />
+          <e p="IBroadcasterManager.cs" t="Include" />
+          <e p="IWalletFeePolicy.cs" t="Include" />
+          <e p="IWalletManager.cs" t="Include" />
+          <e p="IWalletSyncManager.cs" t="Include" />
+          <e p="IWalletTransactionHandler.cs" t="Include" />
+        </e>
+        <e p="Models" t="Include">
+          <e p="AddressBalanceModel.cs" t="Include" />
+          <e p="AddressBookModel.cs" t="Include" />
+          <e p="AddressesModel.cs" t="Include" />
+          <e p="AddressGroupingModel.cs" t="Include" />
+          <e p="GetTransactionModel.cs" t="Include" />
+          <e p="MaxSpendableAmountModel.cs" t="Include" />
+          <e p="NewAddressModel.cs" t="Include" />
+          <e p="RemovedTransactionModel.cs" t="Include" />
+          <e p="RequestModels.cs" t="Include" />
+          <e p="SpendableTransactionsModel.cs" t="Include" />
+          <e p="UnspentCoinModel.cs" t="Include" />
+          <e p="WalletBalanceModel.cs" t="Include" />
+          <e p="WalletBuildTransactionModel.cs" t="Include" />
+          <e p="WalletFileModel.cs" t="Include" />
+          <e p="WalletGeneralInfoModel.cs" t="Include" />
+          <e p="WalletHistoryModel.cs" t="Include" />
+          <e p="WalletModel.cs" t="Include" />
+          <e p="WalletSendTransactionModel.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="Stratis.Bitcoin.Features.Wallet.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Recipient.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Features.Wallet.csproj" t="IncludeRecursive" />
+        <e p="Validations" t="Include">
+          <e p="IsBitcoinAddressAttribute.cs" t="Include" />
+        </e>
+        <e p="Wallet.cs" t="Include" />
+        <e p="WalletAccountReference.cs" t="Include" />
+        <e p="WalletException.cs" t="Include" />
+        <e p="WalletExtensions.cs" t="Include" />
+        <e p="WalletFeature.cs" t="Include" />
+        <e p="WalletFeePolicy.cs" t="Include" />
+        <e p="WalletManager.cs" t="Include" />
+        <e p="WalletRPCController.cs" t="Include" />
+        <e p="WalletSettings.cs" t="Include" />
+        <e p="WalletSyncManager.cs" t="Include" />
+        <e p="WalletTransactionHandler.cs" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.Wallet.Tests" t="IncludeRecursive">
+        <e p="AccountRootTest.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="HdAccountTest.cs" t="Include" />
+        <e p="HdAddressTest.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Features.Wallet.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Bitcoin.Features.Wallet.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="SpendingDetailsTest.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Features.Wallet.Tests.csproj" t="IncludeRecursive" />
+        <e p="TransactionDataTest.cs" t="Include" />
+        <e p="WalletControllerTest.cs" t="Include" />
+        <e p="WalletManagerTest.cs" t="Include" />
+        <e p="WalletSyncManagerTest.cs" t="Include" />
+        <e p="WalletTest.cs" t="Include" />
+        <e p="WalletTestBase.cs" t="Include" />
+        <e p="WalletTransactionHandlerTest.cs" t="Include" />
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.WatchOnlyWallet" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Controllers" t="Include">
+          <e p="WatchOnlyWalletController.cs" t="Include" />
+        </e>
+        <e p="IWatchOnlyWalletManager.cs" t="Include" />
+        <e p="Models" t="Include">
+          <e p="WatchOnlyWalletModel.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="Stratis.Bitcoin.Features.WatchOnlyWallet.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Stratis.Bitcoin.Features.WatchOnlyWallet.csproj" t="IncludeRecursive" />
+        <e p="WatchOnlyWallet.cs" t="Include" />
+        <e p="WatchOnlyWalletFeature.cs" t="Include" />
+        <e p="WatchOnlyWalletManager.cs" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Features.WatchOnlyWallet.Tests" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Features.WatchOnlyWallet.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Bitcoin.Features.WatchOnlyWallet.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Stratis.Bitcoin.Features.WatchOnlyWallet.Tests.csproj" t="IncludeRecursive" />
+        <e p="WatchOnlyWalletControllerTest.cs" t="Include" />
+        <e p="WatchOnlyWalletManagerTest.cs" t="Include" />
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.FullNode.sln" t="IncludeFlat" />
+      <e p="Stratis.Bitcoin.IntegrationTests" t="IncludeRecursive">
+        <e p="API" t="Include">
+          <e p="AllControllersTests.cs" t="Include" />
+          <e p="ApiSpecification.cs" t="Include" />
+          <e p="ApiSteps.cs" t="Include" />
+          <e p="MultiCallTest.cs" t="Include" />
+          <e p="NetworkControllerApiTests.cs" t="Include" />
+        </e>
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="BlockStore" t="Include">
+          <e p="AddressIndexerIntegrationTests.cs" t="Include" />
+          <e p="BlockStoreSignaledTests.cs" t="Include" />
+          <e p="BlockStoreTests.cs" t="Include" />
+          <e p="ProofOfWorkSpendingSpecification.cs" t="Include" />
+          <e p="ProofOfWorkSpendingSteps.cs" t="Include" />
+          <e p="ReorgToLongestChainSpecification.cs" t="Include" />
+          <e p="ReorgToLongestChainSteps.cs" t="Include" />
+          <e p="RetrieveFromBlockStoreSpecification.cs" t="Include" />
+          <e p="RetrieveFromBlockStoreSteps.cs" t="Include" />
+        </e>
+        <e p="ChainBuilder.cs" t="Include" />
+        <e p="CoinViewTester.cs" t="Include" />
+        <e p="CoinViewTests.cs" t="Include" />
+        <e p="ColdStakingTests.cs" t="Include" />
+        <e p="Compatibility" t="Include">
+          <e p="StratisXTests.cs" t="Include" />
+        </e>
+        <e p="Connectivity" t="Include">
+          <e p="ConnectivityTests.cs" t="Include" />
+        </e>
+        <e p="ConsensusManagerFailedReorgTests.cs" t="Include" />
+        <e p="ConsensusManagerInterceptorTests.cs" t="Include" />
+        <e p="ConsensusManagerTests.cs" t="Include" />
+        <e p="CustomNodeBuilderTests.cs" t="Include" />
+        <e p="data" t="Include">
+          <e p="invalid.cookie" t="Include" />
+          <e p="test.wallet.json" t="Include" />
+        </e>
+        <e p="GenerateChain.cs" t="Include" />
+        <e p="GlobalSuppressions.cs" t="Include" />
+        <e p="LogLevelsTests.cs" t="Include" />
+        <e p="Mempool" t="Include">
+          <e p="MemoryPoolTests.cs" t="Include" />
+          <e p="MempoolRelaySpecification.cs" t="Include" />
+          <e p="MempoolRelaySpecification_Steps.cs" t="Include" />
+        </e>
+        <e p="Miners" t="Include">
+          <e p="ProofOfStakeMiningTests.cs" t="Include" />
+          <e p="ProofOfStakeMintCoinsTest.cs" t="Include" />
+          <e p="ProofOfWorkMiningTests.cs" t="Include" />
+        </e>
+        <e p="MinerTests.cs" t="Include" />
+        <e p="nlog.config" t="Include" />
+        <e p="NodeContext.cs" t="Include" />
+        <e p="NodeSyncTests.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.IntegrationTests.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="ProofOfStakeSteps.cs" t="Include" />
+        <e p="Properties" t="Include">
+          <e p="AssemblyInfo.cs" t="Include" />
+        </e>
+        <e p="ProvenHeaderTests.cs" t="Include" />
+        <e p="RPC" t="Include">
+          <e p="AddNodeActionTest.cs" t="Include" />
+          <e p="BaseRPCControllerTest.cs" t="Include" />
+          <e p="ConsensusActionTests.cs" t="Include" />
+          <e p="GetInfoActionTests.cs" t="Include" />
+          <e p="GetRawTransactionTest.cs" t="Include" />
+          <e p="GetStakingInfoActionTests.cs" t="Include" />
+          <e p="ListAddressGroupingsTest.cs" t="Include" />
+          <e p="MempoolActionTests.cs" t="Include" />
+          <e p="RpcBitcoinImmutableTests.cs" t="Include" />
+          <e p="RpcBitcoinMutableTests.cs" t="Include" />
+          <e p="RPCSettingsTest.cs" t="Include" />
+          <e p="RpcTestFixtureBase.cs" t="Include" />
+          <e p="RPCTests.cs" t="Include" />
+          <e p="RPCTestsMutable.cs" t="Include" />
+        </e>
+        <e p="SegWitTests.cs" t="Include" />
+        <e p="Stratis.Bitcoin.IntegrationTests.csproj" t="IncludeRecursive" />
+        <e p="Stratis.Bitcoin.IntegrationTests.csproj.DotSettings" t="Include" />
+        <e p="Wallet" t="Include">
+          <e p="AddressBookTests.cs" t="Include" />
+          <e p="ColdWalletTests.cs" t="Include" />
+          <e p="data" t="Include">
+            <e p="test.wallet.json" t="Include" />
+            <e p="wallet-with-funds.wallet.json" t="Include" />
+          </e>
+          <e p="SendingStakedCoinsBeforeMaturity.cs" t="Include" />
+          <e p="SendingStakedCoinsBeforeMaturity_Steps.cs" t="Include" />
+          <e p="SendingTransactionOverPolicyByteLimitSpecification.cs" t="Include" />
+          <e p="SendingTransactionOverPolicyByteLimitSpecification_Steps.cs" t="Include" />
+          <e p="SendingTxWithDoubleSpendSpecification.cs" t="Include" />
+          <e p="SendingTxWithDoubleSpendSpecification_Steps.cs" t="Include" />
+          <e p="WalletAddressGenerationAndFundsVisibility.cs" t="Include" />
+          <e p="WalletAddressGenerationAndFundsVisibility_Steps.cs" t="Include" />
+          <e p="WalletOperationsTests.cs" t="Include" />
+          <e p="WalletPostOperationsTests.cs" t="Include" />
+          <e p="WalletRPCControllerTest.cs" t="Include" />
+          <e p="WalletTests.cs" t="Include" />
+        </e>
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.IntegrationTests.Common" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="EnvironmentMockUpHelpers" t="Include">
+          <e p="BlockBuilder.cs" t="Include" />
+          <e p="BlockStoreAlwaysFlushCondition.cs" t="Include" />
+          <e p="CoreNode.cs" t="Include" />
+          <e p="CoreNodeState.cs" t="Include" />
+          <e p="DateTimeProviderSet.cs" t="Include" />
+          <e p="GenerateCoinsFastDateTimeProvider.cs" t="Include" />
+          <e p="InitialBlockDownloadStateMock.cs" t="Include" />
+          <e p="NodeBuilder.cs" t="Include" />
+          <e p="NodeConfigParameters.cs" t="Include" />
+          <e p="PeerDiscoveryDisabled.cs" t="Include" />
+          <e p="TestChainedHeaderTree.cs" t="Include" />
+          <e p="TestMemPoolEntryHelper.cs" t="Include" />
+        </e>
+        <e p="Extensions" t="Include">
+          <e p="CoreNodeExtensions.cs" t="Include" />
+          <e p="FullNodeExtensions.cs" t="Include" />
+          <e p="FullNodeTestBuilderExtension.cs" t="Include" />
+          <e p="OverrideServiceFeatureExtension.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.IntegrationTests.Common.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="ReadyData" t="Include">
+          <e p="ReadyBlockchain.cs" t="Include" />
+          <e p="RegTest100Listener.zip" t="Include" />
+          <e p="RegTest100Miner.zip" t="Include" />
+          <e p="RegTest100NoWallet.zip" t="Include" />
+          <e p="RegTest10Listener.zip" t="Include" />
+          <e p="RegTest10Miner.zip" t="Include" />
+          <e p="RegTest10NoWallet.zip" t="Include" />
+          <e p="RegTest150Listener.zip" t="Include" />
+          <e p="RegTest150Miner.zip" t="Include" />
+          <e p="RegTest150NoWallet.zip" t="Include" />
+          <e p="StratisRegTest100Listener.zip" t="Include" />
+          <e p="StratisRegTest100Miner.zip" t="Include" />
+          <e p="StratisRegTest100NoWallet.zip" t="Include" />
+          <e p="StratisRegTest10Listener.zip" t="Include" />
+          <e p="StratisRegTest10Miner.zip" t="Include" />
+          <e p="StratisRegTest10NoWallet.zip" t="Include" />
+          <e p="StratisRegTest150Listener.zip" t="Include" />
+          <e p="StratisRegTest150Miner.zip" t="Include" />
+          <e p="StratisRegTest150NoWallet.zip" t="Include" />
+          <e p="StratisXOver15K.zip" t="Include" />
+        </e>
+        <e p="Runners" t="Include">
+          <e p="BitcoinCoreRunner.cs" t="Include" />
+          <e p="CustomRunner.cs" t="Include" />
+          <e p="NodeRunner.cs" t="Include" />
+          <e p="StratisBitcoinPosRunner.cs" t="Include" />
+          <e p="StratisBitcoinPowRunner.cs" t="Include" />
+          <e p="StratisXRunner.cs" t="Include" />
+        </e>
+        <e p="Stratis.Bitcoin.IntegrationTests.Common.csproj" t="IncludeRecursive" />
+        <e p="TestHelper.cs" t="Include" />
+        <e p="TestNetworks" t="Include">
+          <e p="BitcoinRegTestNoValidationRules.cs" t="Include" />
+          <e p="BitcoinRegTestOverrideCoinbaseMaturity.cs" t="Include" />
+          <e p="StratisMain10KCheckpoint.cs" t="Include" />
+        </e>
+      </e>
+      <e p="Stratis.Bitcoin.Networks" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="BitcoinMain.cs" t="Include" />
+        <e p="BitcoinRegTest.cs" t="Include" />
+        <e p="BitcoinTest.cs" t="Include" />
+        <e p="Deployments" t="Include">
+          <e p="BitcoinBIP9Deployments.cs" t="Include" />
+          <e p="StratisBIP9Deployments.cs" t="Include" />
+        </e>
+        <e p="Networks.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="Stratis.Bitcoin.Networks.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Policies" t="Include">
+          <e p="BitcoinStandardScriptsRegistry.cs" t="Include" />
+          <e p="StratisStandardScriptsRegistry.cs" t="Include" />
+        </e>
+        <e p="Stratis.Bitcoin.Networks.csproj" t="IncludeRecursive" />
+        <e p="StratisMain.cs" t="Include" />
+        <e p="StratisRegTest.cs" t="Include" />
+        <e p="StratisTest.cs" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Tests" t="IncludeRecursive">
+        <e p="Base" t="Include">
+          <e p="ChainRepositoryTest.cs" t="Include" />
+          <e p="ChainStateTest.cs" t="Include" />
+          <e p="ConsensusManagerBehaviorTests.cs" t="Include" />
+          <e p="ConsensusManagerBehaviorTestsHelper.cs" t="Include" />
+          <e p="InvalidBlockHashStoreTest.cs" t="Include" />
+          <e p="TipsManagerTests.cs" t="Include" />
+        </e>
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="BlockPulling" t="Include">
+          <e p="BlockPullerBehaviorTests.cs" t="Include" />
+          <e p="BlockPullerTests.cs" t="Include" />
+          <e p="BlockPullerTestsHelper.cs" t="Include" />
+        </e>
+        <e p="Builder" t="Include">
+          <e p="Feature" t="Include">
+            <e p="FeatureCollectionTest.cs" t="Include" />
+            <e p="FeatureRegistrationTest.cs" t="Include" />
+            <e p="FeaturesDependencyCheckingTest.cs" t="Include" />
+            <e p="FeaturesExtensionsTest.cs" t="Include" />
+          </e>
+          <e p="FullNodeBuilderExtensionsTest.cs" t="Include" />
+          <e p="FullNodeBuilderTest.cs" t="Include" />
+          <e p="FullNodeFeatureExecutorTest.cs" t="Include" />
+          <e p="FullNodeServiceProviderTest.cs" t="Include" />
+        </e>
+        <e p="Connection" t="Include">
+          <e p="ConnectionManagerControllerTest.cs" t="Include" />
+          <e p="ConnectionManagerTest.cs" t="Include" />
+        </e>
+        <e p="Consensus" t="Include">
+          <e p="ChainedHeaderTreeTest.cs" t="Include" />
+          <e p="CheckpointsTest.cs" t="Include" />
+          <e p="ConsensusManagerTests.cs" t="Include" />
+          <e p="ConsensusTestContext.cs" t="Include" />
+          <e p="ConsensusTestContextBuilder.cs" t="Include" />
+          <e p="ConsensusTestExtensions.cs" t="Include" />
+          <e p="TestConsensusManager.cs" t="Include" />
+          <e p="TestInMemoryCoinView.cs" t="Include" />
+        </e>
+        <e p="Controllers" t="Include">
+          <e p="NodeControllerTest.cs" t="Include" />
+        </e>
+        <e p="Converters" t="Include">
+          <e p="BtcDecimalJsonConverterTest.cs" t="Include" />
+        </e>
+        <e p="FinalizedBlockInfoRepositoryTest.cs" t="Include" />
+        <e p="Models" t="Include">
+          <e p="TransactionModelsTest.cs" t="Include" />
+        </e>
+        <e p="NodeConfiguration" t="Include">
+          <e p="ConsensusSettingsTest.cs" t="Include" />
+          <e p="NodeSettingsTest.cs" t="Include" />
+          <e p="TextFileConfigurationTests.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Bitcoin.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="P2P" t="Include">
+          <e p="NetworkPeerServerTests.cs" t="Include" />
+          <e p="NetworkPeerTests.cs" t="Include" />
+          <e p="PeerAddressManagerBehaviourTests.cs" t="Include" />
+          <e p="PeerAddressManagerTests.cs" t="Include" />
+          <e p="PeerConnectorTests.cs" t="Include" />
+          <e p="PeerSelectorTests.cs" t="Include" />
+          <e p="SelfEndpointTrackerTests.cs" t="Include" />
+        </e>
+        <e p="Properties" t="Include">
+          <e p="AssemblyInfo.cs" t="Include" />
+        </e>
+        <e p="Signals" t="Include">
+          <e p="SignalsTest.cs" t="Include" />
+        </e>
+        <e p="Stratis.Bitcoin.Tests.csproj" t="IncludeRecursive" />
+        <e p="Utilities" t="Include">
+          <e p="ActionDisposableTest.cs" t="Include" />
+          <e p="AsyncExecutionEventTest.cs" t="Include" />
+          <e p="AsyncLockTest.cs" t="Include" />
+          <e p="AsyncLoopTest.cs" t="Include" />
+          <e p="AsyncManualResetEventTest.cs" t="Include" />
+          <e p="AsyncProviderTest.cs" t="Include" />
+          <e p="AsyncQueueTest.cs" t="Include" />
+          <e p="AverageCalculatorTests.cs" t="Include" />
+          <e p="CircularArrayTest.cs" t="Include" />
+          <e p="DateTimeProviderTest.cs" t="Include" />
+          <e p="DBreezeTest.cs" t="Include" />
+          <e p="Extensions" t="Include">
+            <e p="IPExtensionsTest.cs" t="Include" />
+          </e>
+          <e p="FileStorageTest.cs" t="Include" />
+          <e p="GuardTest.cs" t="Include" />
+          <e p="IPEndPointComparerTests.cs" t="Include" />
+          <e p="JsonConverterTests.cs" t="Include" />
+          <e p="LinqExtensionsTest.cs" t="Include" />
+          <e p="MemoryCountCacheTest.cs" t="Include" />
+          <e p="MemorySizeCacheTest.cs" t="Include" />
+          <e p="NetworkHelpersTest.cs" t="Include" />
+          <e p="NodeTcpListenerStub.cs" t="Include" />
+          <e p="ParallelAsyncTest.cs" t="Include" />
+          <e p="SchedulerLockTest.cs" t="Include" />
+          <e p="StopwatchTest.cs" t="Include" />
+        </e>
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Tests.Common" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="ChainedHeadersHelper.cs" t="Include" />
+        <e p="ConsensusChainIndexerExtensions.cs" t="Include" />
+        <e p="ConsensusManagerHelper.cs" t="Include" />
+        <e p="KnownNetworks.cs" t="Include" />
+        <e p="Logging" t="Include">
+          <e p="LogsTestBase.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Tests.Common.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Bitcoin.Tests.Common.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="ReflectionExtensions.cs" t="Include" />
+        <e p="Stratis.Bitcoin.Tests.Common.csproj" t="IncludeRecursive" />
+        <e p="TestBase.cs" t="Include" />
+        <e p="TestFramework" t="Include">
+          <e p="BddSpecification.cs" t="Include" />
+          <e p="BddTemplate.DotSettings" t="Include" />
+          <e p="BddTemplateExtension.vsix" t="Include" />
+        </e>
+        <e p="TransactionsHelper.cs" t="Include" />
+      </e>
+      <e p="Stratis.Bitcoin.Tests.Wallet.Common" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Bitcoin.Tests.Wallet.Common.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Stratis.Bitcoin.Tests.Wallet.Common.csproj" t="IncludeRecursive" />
+        <e p="WalletTestsHelpers.cs" t="Include" />
+      </e>
+      <e p="Stratis.BitcoinD" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.BitcoinD.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="Properties" t="Include">
+          <e p="AssemblyInfo.cs" t="Include" />
+          <e p="launchSettings.json" t="Include" />
+        </e>
+        <e p="Stratis.BitcoinD.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="Stratis.BreezeD" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Launchers" t="Include">
+          <e p="launch main.bat" t="Include" />
+          <e p="launch test.bat" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.BreezeD.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="Properties" t="Include">
+          <e p="AssemblyInfo.cs" t="Include" />
+          <e p="launchSettings.json" t="Include" />
+        </e>
+        <e p="Stratis.BreezeD.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="Stratis.CirrusD" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.CirrusD.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="Stratis.CirrusD.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="Stratis.CirrusDnsD" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.CirrusDnsD.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="Stratis.CirrusDnsD.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="Stratis.CirrusMinerD" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.CirrusMinerD.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="Stratis.CirrusMinerD.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="Stratis.CirrusPegD" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.CirrusPegD.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="Properties" t="Include">
+          <e p="launchSettings.json" t="Include" />
+        </e>
+        <e p="Stratis.CirrusPegD.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="Stratis.Features.Diagnostic" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Controllers" t="Include">
+          <e p="DiagnosticController.cs" t="Include" />
+          <e p="Models" t="Include">
+            <e p="PeerStatisticsModel.cs" t="Include" />
+          </e>
+        </e>
+        <e p="DiagnosticFeature.cs" t="Include" />
+        <e p="DiagnosticSettings.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="Stratis.Features.Diagnostic.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="PeerDiagnostic" t="Include">
+          <e p="PeerStatistics.cs" t="Include" />
+          <e p="PeerStatisticsCollector.cs" t="Include" />
+        </e>
+        <e p="Stratis.Features.Diagnostic.csproj" t="IncludeRecursive" />
+        <e p="Utils" t="Include">
+          <e p="ConcurrentFixedSizeQueue.cs" t="Include" />
+          <e p="ReflectionExtensionsion.cs" t="Include" />
+        </e>
+      </e>
+      <e p="Stratis.Features.FederatedPeg" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Collateral" t="Include">
+          <e p="CheckCollateralFullValidationRule.cs" t="Include" />
+          <e p="CollateralChecker.cs" t="Include" />
+          <e p="CollateralFeature.cs" t="Include" />
+          <e p="CollateralFederationManager.cs" t="Include" />
+          <e p="CollateralPoAMiner.cs" t="Include" />
+          <e p="SmartContractCollateralPoARuleRegistration.cs" t="Include" />
+        </e>
+        <e p="Controllers" t="Include">
+          <e p="CollateralVotingController.cs" t="Include" />
+          <e p="FederationGatewayClient.cs" t="Include" />
+          <e p="FederationGatewayController.cs" t="Include" />
+          <e p="FederationWalletController.cs" t="Include" />
+          <e p="MultisigController.cs" t="Include" />
+        </e>
+        <e p="CounterChain" t="Include">
+          <e p="CounterChainFeature.cs" t="Include" />
+          <e p="CounterChainNetworkWrapper.cs" t="Include" />
+          <e p="CounterChainSettings.cs" t="Include" />
+        </e>
+        <e p="Events" t="Include">
+          <e p="CrossChainTransferTransactionFullySigned.cs" t="Include" />
+          <e p="WalletNeedsConsolidation.cs" t="Include" />
+        </e>
+        <e p="FederatedPegBlockDefinition.cs" t="Include" />
+        <e p="FederatedPegFeature.cs" t="Include" />
+        <e p="FederatedPegSettings.cs" t="Include" />
+        <e p="FedMultiSigManualWithdrawalTransactionBuilder.cs" t="Include" />
+        <e p="InputConsolidation" t="Include">
+          <e p="ConsolidationSignatureResult.cs" t="Include" />
+          <e p="ConsolidationTransaction.cs" t="Include" />
+          <e p="ConsolidationTransactionStatus.cs" t="Include" />
+          <e p="InputConsolidator.cs" t="Include" />
+        </e>
+        <e p="Interfaces" t="Include">
+          <e p="ICoinbaseSplitter.cs" t="Include" />
+          <e p="ICounterChainSettings.cs" t="Include" />
+          <e p="ICrossChainTransfer.cs" t="Include" />
+          <e p="ICrossChainTransferStore.cs" t="Include" />
+          <e p="IDeposit.cs" t="Include" />
+          <e p="IDepositExtractor.cs" t="Include" />
+          <e p="IFederatedPegBroadcaster.cs" t="Include" />
+          <e p="IFederatedPegSettings.cs" t="Include" />
+          <e p="IFederationWalletManager.cs" t="Include" />
+          <e p="IFederationWalletSyncManager.cs" t="Include" />
+          <e p="IInputConsolidator.cs" t="Include" />
+          <e p="IWithdrawal.cs" t="Include" />
+          <e p="IWithdrawalTransactionBuilder.cs" t="Include" />
+        </e>
+        <e p="IPAddressComparer.cs" t="Include" />
+        <e p="Models" t="Include">
+          <e p="BlockTipModel.cs" t="Include" />
+          <e p="BuildMultisigTransactionRequest.cs" t="Include" />
+          <e p="ConcreteTypeConverter.cs" t="Include" />
+          <e p="FederationGatewayInfoModel.cs" t="Include" />
+          <e p="MaturedBlockDepositsModel.cs" t="Include" />
+          <e p="MaturedBlockModel.cs" t="Include" />
+          <e p="MaturedBlockRequestModel.cs" t="Include" />
+          <e p="RequestModels.cs" t="Include" />
+          <e p="WithdrawalModel.cs" t="Include" />
+        </e>
+        <e p="MultisigCoinSelector.cs" t="Include" />
+        <e p="Notifications" t="Include">
+          <e p="BlockObserver.cs" t="Include" />
+          <e p="TransactionObserver.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Features.FederatedPeg.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="OpReturnDataReader.cs" t="Include" />
+        <e p="PartialTransactionsBehavior.cs" t="Include" />
+        <e p="Payloads" t="Include">
+          <e p="RequestPartialTransactionPayload.cs" t="Include" />
+        </e>
+        <e p="PremineCoinbaseSplitter.cs" t="Include" />
+        <e p="SourceChain" t="Include">
+          <e p="Deposit.cs" t="Include" />
+          <e p="DepositExtractor.cs" t="Include" />
+          <e p="MaturedBlocksProvider.cs" t="Include" />
+          <e p="Result.cs" t="Include" />
+        </e>
+        <e p="Stratis.Features.FederatedPeg.csproj" t="IncludeRecursive" />
+        <e p="TargetChain" t="Include">
+          <e p="CrossChainTransfer.cs" t="Include" />
+          <e p="CrossChainTransferStore.cs" t="Include" />
+          <e p="FederatedPegBroadcaster.cs" t="Include" />
+          <e p="MaturedBlocksSyncManager.cs" t="Include" />
+          <e p="MempoolCleaner.cs" t="Include" />
+          <e p="PartialTransactionRequester.cs" t="Include" />
+          <e p="RecordLatestMatureDepositsResult.cs" t="Include" />
+          <e p="SignedMultisigTransactionBroadcaster.cs" t="Include" />
+          <e p="SigningUtils.cs" t="Include" />
+          <e p="StatusChangeTracker.cs" t="Include" />
+          <e p="Withdrawal.cs" t="Include" />
+          <e p="WithdrawalExtractor.cs" t="Include" />
+          <e p="WithdrawalHistoryProvider.cs" t="Include" />
+          <e p="WithdrawalTransactionBuilder.cs" t="Include" />
+        </e>
+        <e p="Wallet" t="Include">
+          <e p="BlockQueueProcessor.cs" t="Include" />
+          <e p="ConsolidationCoinSelector.cs" t="Include" />
+          <e p="DeterministicCoinOrdering.cs" t="Include" />
+          <e p="DeterministicCoinSelector.cs" t="Include" />
+          <e p="FederationWallet.cs" t="Include" />
+          <e p="FederationWalletManager.cs" t="Include" />
+          <e p="FederationWalletSyncManager.cs" t="Include" />
+          <e p="FederationWalletTransactionHandler.cs" t="Include" />
+          <e p="MultiSigAddress.cs" t="Include" />
+          <e p="MultiSigTransactions.cs" t="Include" />
+          <e p="PaymentDetails.cs" t="Include" />
+          <e p="SpendingDetails.cs" t="Include" />
+          <e p="TransactionData.cs" t="Include" />
+          <e p="UnspentOutputReference.cs" t="Include" />
+          <e p="WithdrawalDetails.cs" t="Include" />
+        </e>
+      </e>
+      <e p="Stratis.Features.FederatedPeg.IntegrationTests" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="ContractExecutionTests.cs" t="Include" />
+        <e p="CrossChainTransferTests.cs" t="Include" />
+        <e p="MiningTests.cs" t="Include" />
+        <e p="NodeInitialisationTests.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Features.FederatedPeg.IntegrationTests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Features.FederatedPeg.IntegrationTests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="SmartContracts" t="Include">
+          <e p="BasicTransfer.cs" t="Include" />
+        </e>
+        <e p="Stratis.Features.FederatedPeg.IntegrationTests.csproj" t="IncludeRecursive" />
+        <e p="Utils" t="Include">
+          <e p="FederatedPegTestExtensions.cs" t="Include" />
+          <e p="FederatedPegTestHelper.cs" t="Include" />
+          <e p="MainChainFederationNodeRunner.cs" t="Include" />
+          <e p="SidechainFederationNodeRunner.cs" t="Include" />
+          <e p="SidechainMinerNodeRunner.cs" t="Include" />
+          <e p="SidechainNodeBuilder.cs" t="Include" />
+          <e p="SidechainTestContext.cs" t="Include" />
+          <e p="SidechainUserNodeRunner.cs" t="Include" />
+          <e p="TestFederatedPegBlockDefinition.cs" t="Include" />
+        </e>
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.Features.FederatedPeg.Tests" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="BlockQueueTests.cs" t="Include" />
+        <e p="BlockTipModelTests.cs" t="Include" />
+        <e p="CheckCollateralFullValidationRuleTests.cs" t="Include" />
+        <e p="CollateralCheckerTests.cs" t="Include" />
+        <e p="CollateralHeightCommitmentEncoderTests.cs" t="Include" />
+        <e p="ControllersTests" t="Include">
+          <e p="FederationGatewayControllerTests.cs" t="Include" />
+          <e p="FederationWalletControllerTests.cs" t="Include" />
+        </e>
+        <e p="CrossChainTestBase.cs" t="Include" />
+        <e p="CrossChainTransferStoreTests.cs" t="Include" />
+        <e p="DepositExtractorTests.cs" t="Include" />
+        <e p="InputConsolidatorTests.cs" t="Include" />
+        <e p="MaturedBlockDepositModelTests.cs" t="Include" />
+        <e p="MaturedBlockRequestModelTests.cs" t="Include" />
+        <e p="MaturedBlocksProviderTests.cs" t="Include" />
+        <e p="MaturedBlocksSyncManagerTests.cs" t="Include" />
+        <e p="MofNMultisigTests.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Features.FederatedPeg.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.Features.FederatedPeg.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="OpReturnDataReaderTests.cs" t="Include" />
+        <e p="PartialTransactionsRequesterTests.cs" t="Include" />
+        <e p="PremineCoinbaseSplitterTests.cs" t="Include" />
+        <e p="RestClientsTests" t="Include">
+          <e p="FederationGatewayClientTests.cs" t="Include" />
+          <e p="RestApiClientBaseTests.cs" t="Include" />
+        </e>
+        <e p="SignedMultisigTransactionBroadcasterTests.cs" t="Include" />
+        <e p="Stratis.Features.FederatedPeg.Tests.csproj" t="IncludeRecursive" />
+        <e p="SubstituteExtensions.cs" t="Include" />
+        <e p="Utils" t="Include">
+          <e p="AddressHelper.cs" t="Include" />
+          <e p="FedPegTestsHelper.cs" t="Include" />
+          <e p="TestingHttpClient.cs" t="Include" />
+          <e p="TestingValues.cs" t="Include" />
+          <e p="TestTransactionBuilder.cs" t="Include" />
+        </e>
+        <e p="Wallet" t="Include">
+          <e p="DeterministicCoinSelectorTests.cs" t="Include" />
+          <e p="ManualMultiSigTransactionBuilderTests.cs" t="Include" />
+          <e p="MultiSigTransactionsTests.cs" t="Include" />
+        </e>
+        <e p="WithdrawalExtractorTests.cs" t="Include" />
+        <e p="WithdrawalTests.cs" t="Include" />
+        <e p="WithdrawalTransactionBuilderTests.cs" t="Include" />
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.ruleset" t="Include" />
+      <e p="Stratis.Sidechains.Networks" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="CirrusMain.cs" t="Include" />
+        <e p="CirrusNetwork.cs" t="Include" />
+        <e p="CirrusRegTest.cs" t="Include" />
+        <e p="CirrusTest.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.Sidechains.Networks.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Stratis.Sidechains.Networks.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="Stratis.SmartContracts.CLR" t="IncludeRecursive">
+        <e p="AddressExtensions.cs" t="Include" />
+        <e p="AddressGenerator.cs" t="Include" />
+        <e p="ArrayExtensions.cs" t="Include" />
+        <e p="BalanceState.cs" t="Include" />
+        <e p="BaseMessage.cs" t="Include" />
+        <e p="BasicKeyEncodingStrategy.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="CallDataSerializer.cs" t="Include" />
+        <e p="CallMessage.cs" t="Include" />
+        <e p="Compilation" t="Include">
+          <e p="ContractCompilationResult.cs" t="Include" />
+          <e p="ContractCompiler.cs" t="Include" />
+          <e p="ContractDecompiler.cs" t="Include" />
+          <e p="ContractModuleDefinitionReader.cs" t="Include" />
+          <e p="DotNetCoreAssemblyDefinitionResolver.cs" t="Include" />
+          <e p="IContractModuleDefinitionReader.cs" t="Include" />
+          <e p="ReferencedAssemblyResolver.cs" t="Include" />
+        </e>
+        <e p="Contract.cs" t="Include" />
+        <e p="ContractExecutor.cs" t="Include" />
+        <e p="ContractInvocationErrors.cs" t="Include" />
+        <e p="ContractInvocationErrorType.cs" t="Include" />
+        <e p="ContractInvocationResult.cs" t="Include" />
+        <e p="ContractLogging" t="Include">
+          <e p="ContractLogHolder.cs" t="Include" />
+          <e p="IContractLogHolder.cs" t="Include" />
+          <e p="MeteredContractLogger.cs" t="Include" />
+          <e p="RawLog.cs" t="Include" />
+        </e>
+        <e p="ContractModuleDefinition.cs" t="Include" />
+        <e p="ContractSigning" t="Include">
+          <e p="CSharpContractSigner.cs" t="Include" />
+        </e>
+        <e p="ContractTransferMessage.cs" t="Include" />
+        <e p="ContractTxData.cs" t="Include" />
+        <e p="CreateResult.cs" t="Include" />
+        <e p="Decompilation" t="Include">
+          <e p="CSharpContractDecompiler.cs" t="Include" />
+        </e>
+        <e p="Exceptions" t="Include">
+          <e p="ContractPrimitiveSerializationException.cs" t="Include" />
+          <e p="OutOfGasException.cs" t="Include" />
+          <e p="SmartContractValidationException.cs" t="Include" />
+        </e>
+        <e p="ExternalCallMessage.cs" t="Include" />
+        <e p="ExternalCreateMessage.cs" t="Include" />
+        <e p="GasPriceList.cs" t="Include" />
+        <e p="HashHelper.cs" t="Include" />
+        <e p="IAddressGenerator.cs" t="Include" />
+        <e p="ICallDataSerializer.cs" t="Include" />
+        <e p="IContract.cs" t="Include" />
+        <e p="IContractInvocationResult.cs" t="Include" />
+        <e p="IContractModuleDefinition.cs" t="Include" />
+        <e p="IInternalExecutorFactory.cs" t="Include" />
+        <e p="IKeyEncodingStrategy.cs" t="Include" />
+        <e p="ILocalExecutor.cs" t="Include" />
+        <e p="ILRewrite" t="Include">
+          <e p="CecilExtensions.cs" t="Include" />
+          <e p="CodeSegment.cs" t="Include" />
+          <e p="GasInjectorRewriter.cs" t="Include" />
+          <e p="IILRewriter.cs" t="Include" />
+          <e p="IObserverMethodRewriter.cs" t="Include" />
+          <e p="MemoryLimitRewriter.cs" t="Include" />
+          <e p="ObserverReferences.cs" t="Include" />
+          <e p="ObserverRewriter.cs" t="Include" />
+          <e p="ObserverRewriterContext.cs" t="Include" />
+        </e>
+        <e p="InternalCallMessage.cs" t="Include" />
+        <e p="InternalCreateMessage.cs" t="Include" />
+        <e p="InternalExecutor.cs" t="Include" />
+        <e p="InternalExecutorFactory.cs" t="Include" />
+        <e p="IPersistenceStrategy.cs" t="Include" />
+        <e p="ISmartContractStateFactory.cs" t="Include" />
+        <e p="IState.cs" t="Include" />
+        <e p="IStateFactory.cs" t="Include" />
+        <e p="IStateProcessor.cs" t="Include" />
+        <e p="IVirtualMachine.cs" t="Include" />
+        <e p="KeyHashingStrategy.cs" t="Include" />
+        <e p="Loader" t="Include">
+          <e p="ContractAssembly.cs" t="Include" />
+          <e p="ContractAssemblyLoader.cs" t="Include" />
+          <e p="ContractByteCode.cs" t="Include" />
+          <e p="IContractAssembly.cs" t="Include" />
+          <e p="ILoader.cs" t="Include" />
+        </e>
+        <e p="Local" t="Include">
+          <e p="ILocalExecutionResult.cs" t="Include" />
+          <e p="LocalExecutionResult.cs" t="Include" />
+          <e p="LocalExecutor.cs" t="Include" />
+        </e>
+        <e p="MeteredPersistenceStrategy.cs" t="Include" />
+        <e p="Metering" t="Include">
+          <e p="GasMeter.cs" t="Include" />
+          <e p="MemoryMeter.cs" t="Include" />
+        </e>
+        <e p="MethodCall.cs" t="Include" />
+        <e p="NonceGenerator.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.SmartContracts.CLR.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="PersistentState.cs" t="Include" />
+        <e p="ReflectionExecutorFactory.cs" t="Include" />
+        <e p="ReflectionVirtualMachine.cs" t="Include" />
+        <e p="ResultProcessors" t="Include">
+          <e p="ContractRefundProcessor.cs" t="Include" />
+          <e p="ContractTransferProcessor.cs" t="Include" />
+          <e p="IContractRefundProcessor.cs" t="Include" />
+          <e p="IContractTransferProcessor.cs" t="Include" />
+        </e>
+        <e p="Serialization" t="Include">
+          <e p="ContractPrimitiveSerializer.cs" t="Include" />
+          <e p="IContractPrimitiveSerializer.cs" t="Include" />
+          <e p="IMethodParameterSerializer.cs" t="Include" />
+          <e p="IMethodParameterStringSerializer.cs" t="Include" />
+          <e p="MethodParameterByteSerializer.cs" t="Include" />
+          <e p="MethodParameterDataType.cs" t="Include" />
+          <e p="MethodParameterStringSerializer.cs" t="Include" />
+          <e p="Prefix.cs" t="Include" />
+          <e p="Serializer.cs" t="Include" />
+        </e>
+        <e p="SignedCodeCallDataSerializer.cs" t="Include" />
+        <e p="SignedCodeContractTxData.cs" t="Include" />
+        <e p="SmartContractExecutionResult.cs" t="Include" />
+        <e p="SmartContractState.cs" t="Include" />
+        <e p="SmartContractStateFactory.cs" t="Include" />
+        <e p="State.cs" t="Include" />
+        <e p="StateFactory.cs" t="Include" />
+        <e p="StateProcessor.cs" t="Include" />
+        <e p="StateTransitionErrors.cs" t="Include" />
+        <e p="StateTransitionResult.cs" t="Include" />
+        <e p="Stratis.SmartContracts.CLR.csproj" t="IncludeRecursive" />
+        <e p="TransferResult.cs" t="Include" />
+        <e p="VmExecutionResult.cs" t="Include" />
+      </e>
+      <e p="Stratis.SmartContracts.CLR.Tests" t="IncludeRecursive">
+        <e p="AddressTests.cs" t="Include" />
+        <e p="AuctionTests.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="ByteArrayConversionTests.cs" t="Include" />
+        <e p="CallDataSerializerTests.cs" t="Include" />
+        <e p="ContractCompilerTests.cs" t="Include" />
+        <e p="ContractDecompilerTests.cs" t="Include" />
+        <e p="ContractExecutorTestContext.cs" t="Include" />
+        <e p="ContractExecutorTests.cs" t="Include" />
+        <e p="ContractLogHolderTests.cs" t="Include" />
+        <e p="ContractModuleDefinitionTests.cs" t="Include" />
+        <e p="ContractParametersJsonResolverTests.cs" t="Include" />
+        <e p="ContractPrimitiveSerializerTests.cs" t="Include" />
+        <e p="ContractRefundProcessorTests.cs" t="Include" />
+        <e p="ContractSigning" t="Include">
+          <e p="CSharpContractSignerTests.cs" t="Include" />
+        </e>
+        <e p="ContractTests.cs" t="Include" />
+        <e p="ContractTransferProcessorTests.cs" t="Include" />
+        <e p="ContractUpgradeabilityTests.cs" t="Include" />
+        <e p="CSharpContractDecompilerTests.cs" t="Include" />
+        <e p="DeterminismErrorMessageTests.cs" t="Include" />
+        <e p="DeterminismValidationTests.cs" t="Include" />
+        <e p="ExecutorFixture.cs" t="Include" />
+        <e p="ExecutorSpecification.cs" t="Include" />
+        <e p="FormatValidationTests.cs" t="Include" />
+        <e p="GasMeterTests.cs" t="Include" />
+        <e p="GasPriceListTests.cs" t="Include" />
+        <e p="InternalExecutorSpecification.cs" t="Include" />
+        <e p="InternalExecutorTestFixture.cs" t="Include" />
+        <e p="Loader" t="Include">
+          <e p="ContractAssemblyLoaderTests.cs" t="Include" />
+          <e p="ContractAssemblyTests.cs" t="Include" />
+          <e p="Test.cs" t="Include" />
+        </e>
+        <e p="LocalExecutorSpecification.cs" t="Include" />
+        <e p="Logs" t="Include">
+          <e p="RawLogTests.cs" t="Include" />
+        </e>
+        <e p="MeteredPersistenceStrategyTests.cs" t="Include" />
+        <e p="MethodCallTests.cs" t="Include" />
+        <e p="MethodParameterByteSerializerTests.cs" t="Include" />
+        <e p="MethodParameterStringSerializerTests.cs" t="Include" />
+        <e p="Modules" t="Include">
+          <e p="ArgumentNullOrEmptyException" t="Include" />
+          <e p="ArgumentOutOfRangeException" t="Include" />
+          <e p="AssemblyResolutionException" t="Include" />
+          <e p="IndexOutOfRangeException" t="Include" />
+          <e p="NotImplementedException" t="Include" />
+          <e p="NotSupportedException" t="Include" />
+          <e p="NullReferenceException" t="Include" />
+          <e p="OverflowException" t="Include" />
+        </e>
+        <e p="NonceGeneratorTests.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.SmartContracts.CLR.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.SmartContracts.CLR.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="ObserverTests.cs" t="Include" />
+        <e p="packages" t="Include">
+          <e p="1.0.0-TEST" t="Include">
+            <e p="Stratis.SmartContracts.dll" t="Include" />
+          </e>
+          <e p="4.0.0-TEST" t="Include">
+            <e p="Stratis.SmartContracts.dll" t="Include" />
+          </e>
+          <e p="netcoreapp2.1" t="Include">
+            <e p="System.Runtime.dll" t="Include" />
+          </e>
+        </e>
+        <e p="ReflectionExtensions.cs" t="Include" />
+        <e p="ReflectionVirtualMachineTests.cs" t="Include" />
+        <e p="SerializerTests.cs" t="Include" />
+        <e p="SignedCodeCallDataSerializerTests.cs" t="Include" />
+        <e p="SmartContracts" t="Include">
+          <e p="ArrayInitialization.cs" t="Include" />
+          <e p="Auction.cs" t="Include" />
+          <e p="ByteArrayConversion.cs" t="Include" />
+          <e p="CallInfiniteLoopContract.cs" t="Include" />
+          <e p="ClearStorage.cs" t="Include" />
+          <e p="ContractConstructorInvalid.cs" t="Include" />
+          <e p="ContractCreation.cs" t="Include" />
+          <e p="ContractFailsValidation.cs" t="Include" />
+          <e p="ContractInvalidParameterCount.cs" t="Include" />
+          <e p="ContractMethodParameterTypeMismatch.cs" t="Include" />
+          <e p="Demo.cs" t="Include" />
+          <e p="InfiniteLoop.cs" t="Include" />
+          <e p="Inheritance.cs" t="Include" />
+          <e p="InvalidImplicitAssembly.cs" t="Include" />
+          <e p="InvalidParam.cs" t="Include" />
+          <e p="MemoryLimit.cs" t="Include" />
+          <e p="MultipleConstructor.cs" t="Include" />
+          <e p="MultipleFiles1.cs" t="Include" />
+          <e p="MultipleFiles2.cs" t="Include" />
+          <e p="MultipleIfElseBlocks.cs" t="Include" />
+          <e p="NestedLoop.cs" t="Include" />
+          <e p="OutOfGasTest.cs" t="Include" />
+          <e p="Recursion.cs" t="Include" />
+          <e p="SingleConstructor.cs" t="Include" />
+          <e p="StorageTest.cs" t="Include" />
+          <e p="ThrowExceptionContract.cs" t="Include" />
+          <e p="Token.cs" t="Include" />
+          <e p="TryCatch.cs" t="Include" />
+        </e>
+        <e p="StateTests.cs" t="Include" />
+        <e p="StateTransitionSpecification.cs" t="Include" />
+        <e p="Stratis.SmartContracts.CLR.Tests.csproj" t="IncludeRecursive" />
+        <e p="TimeoutHelper.cs" t="Include" />
+      </e>
+      <e p="Stratis.SmartContracts.CLR.Validation" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="DeterminismPolicy.cs" t="Include" />
+        <e p="FormatPolicy.cs" t="Include" />
+        <e p="IFieldDefinitionValidator.cs" t="Include" />
+        <e p="IInstructionValidator.cs" t="Include" />
+        <e p="IMemberReferenceValidator.cs" t="Include" />
+        <e p="IMethodDefinitionValidator.cs" t="Include" />
+        <e p="IModuleDefinitionValidator.cs" t="Include" />
+        <e p="IParameterDefinitionValidator.cs" t="Include" />
+        <e p="ISmartContractValidator.cs" t="Include" />
+        <e p="ITypeDefinitionValidator.cs" t="Include" />
+        <e p="ModuleDefinitionExtensions.cs" t="Include" />
+        <e p="ModulePolicyValidator.cs" t="Include" />
+        <e p="ModuleValidator.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.SmartContracts.CLR.Validation.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Policy" t="Include">
+          <e p="AccessPolicy.cs" t="Include" />
+          <e p="MemberPolicy.cs" t="Include" />
+          <e p="NamespacePolicy.cs" t="Include" />
+          <e p="TypePolicy.cs" t="Include" />
+          <e p="WhitelistPolicy.cs" t="Include" />
+        </e>
+        <e p="PolicyValidationResult.cs" t="Include" />
+        <e p="Primitives.cs" t="Include" />
+        <e p="SmartContractDeterminismValidator.cs" t="Include" />
+        <e p="SmartContractFormatValidator.cs" t="Include" />
+        <e p="SmartContractTypeDefinitionValidator.cs" t="Include" />
+        <e p="SmartContractValidationResult.cs" t="Include" />
+        <e p="SmartContractValidator.cs" t="Include" />
+        <e p="SmartContractWarningValidator.cs" t="Include" />
+        <e p="Stratis.SmartContracts.CLR.Validation.csproj" t="IncludeRecursive" />
+        <e p="TypePolicyValidator.cs" t="Include" />
+        <e p="ValidationPolicy.cs" t="Include" />
+        <e p="ValidationResult.cs" t="Include" />
+        <e p="Validators" t="Include">
+          <e p="Instruction" t="Include">
+            <e p="FloatValidator.cs" t="Include" />
+            <e p="MultiDimensionalArrayValidator.cs" t="Include" />
+            <e p="NewObjValidator.cs" t="Include" />
+          </e>
+          <e p="Method" t="Include">
+            <e p="GenericMethodValidator.cs" t="Include" />
+            <e p="MethodParamValidator.cs" t="Include" />
+            <e p="PInvokeValidator.cs" t="Include" />
+            <e p="TryCatchValidator.cs" t="Include" />
+          </e>
+          <e p="Module" t="Include">
+            <e p="AssemblyReferenceValidator.cs" t="Include" />
+            <e p="ContractToDeployValidator.cs" t="Include" />
+          </e>
+          <e p="Type" t="Include">
+            <e p="ConstructorParamValidator.cs" t="Include" />
+            <e p="FieldDefinitionValidator.cs" t="Include" />
+            <e p="FinalizerValidator.cs" t="Include" />
+            <e p="GenericTypeValidator.cs" t="Include" />
+            <e p="InheritsSmartContractValidator.cs" t="Include" />
+            <e p="NamespaceValidator.cs" t="Include" />
+            <e p="NestedTypeIsValueTypeValidator.cs" t="Include" />
+            <e p="NestedValidator.cs" t="Include" />
+            <e p="SingleConstructorValidator.cs" t="Include" />
+            <e p="StaticConstructorValidator.cs" t="Include" />
+            <e p="TypeHasMethodsValidator.cs" t="Include" />
+            <e p="TypeHasNestedTypesValidator.cs" t="Include" />
+          </e>
+          <e p="WhitelistValidator.cs" t="Include" />
+        </e>
+        <e p="WhitelistPolicyFilter.cs" t="Include" />
+      </e>
+      <e p="Stratis.SmartContracts.CLR.Validation.Tests" t="IncludeRecursive">
+        <e p="AssemblyReferenceValidatorTests.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Contracts" t="Include">
+          <e p="Auction.cs" t="Include" />
+          <e p="Token.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.SmartContracts.CLR.Validation.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.SmartContracts.CLR.Validation.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="PolicyTests.cs" t="Include" />
+        <e p="PolicyValidatorTests.cs" t="Include" />
+        <e p="SmartContractDeterminismValidatorTests.cs" t="Include" />
+        <e p="SmartContractValidationExceptionTests.cs" t="Include" />
+        <e p="Stratis.SmartContracts.CLR.Validation.Tests.csproj" t="IncludeRecursive" />
+        <e p="ValidationTests.cs" t="Include" />
+      </e>
+      <e p="Stratis.SmartContracts.Core" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Bloom.cs" t="Include" />
+        <e p="ContractErrorMessage.cs" t="Include" />
+        <e p="ContractSigning" t="Include">
+          <e p="ContractSigner.cs" t="Include" />
+          <e p="IContractSigner.cs" t="Include" />
+        </e>
+        <e p="ContractTransactionContext.cs" t="Include" />
+        <e p="Exceptions" t="Include">
+          <e p="InsufficientBalanceException.cs" t="Include" />
+          <e p="InsufficientGasException.cs" t="Include" />
+          <e p="SmartContractException.cs" t="Include" />
+        </e>
+        <e p="Extensions.cs" t="Include" />
+        <e p="Hashing" t="Include">
+          <e p="HashHelper.cs" t="Include" />
+        </e>
+        <e p="IContractExecutionResult.cs" t="Include" />
+        <e p="IContractExecutor.cs" t="Include" />
+        <e p="IContractExecutorFactory.cs" t="Include" />
+        <e p="IContractTransactionContext.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.SmartContracts.Core.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Receipts" t="Include">
+          <e p="IReceiptRepository.cs" t="Include" />
+          <e p="Log.cs" t="Include" />
+          <e p="PersistentReceiptRepository.cs" t="Include" />
+          <e p="Receipt.cs" t="Include" />
+        </e>
+        <e p="SmartContractScript.cs" t="Include" />
+        <e p="State" t="Include">
+          <e p="AbstractCachedSource.cs" t="Include" />
+          <e p="AbstractChainedSource.cs" t="Include" />
+          <e p="AccountAbstractionLayer" t="Include">
+            <e p="ContractUnspentOutput.cs" t="Include" />
+            <e p="TransactionCondenser.cs" t="Include" />
+            <e p="TransferInfo.cs" t="Include" />
+          </e>
+          <e p="AccountState.cs" t="Include" />
+          <e p="CachedStorageCaches.cs" t="Include" />
+          <e p="DBreezeByteStore.cs" t="Include" />
+          <e p="ICachedSource.cs" t="Include" />
+          <e p="ISerializer.cs" t="Include" />
+          <e p="IStateRepository.cs" t="Include" />
+          <e p="IStateRepositoryRoot.cs" t="Include" />
+          <e p="IStorageCaches.cs" t="Include" />
+          <e p="NoDeleteSource.cs" t="Include" />
+          <e p="RootStorageCaches.cs" t="Include" />
+          <e p="Serializers.cs" t="Include" />
+          <e p="SourceChainBox.cs" t="Include" />
+          <e p="SourceCodec.cs" t="Include" />
+          <e p="StateRepository.cs" t="Include" />
+          <e p="StateRepositoryRoot.cs" t="Include" />
+          <e p="StorageCache.cs" t="Include" />
+          <e p="WriteCache.cs" t="Include" />
+        </e>
+        <e p="Stratis.SmartContracts.Core.csproj" t="IncludeRecursive" />
+        <e p="util" t="Include">
+          <e p="GetSenderResult.cs" t="Include" />
+          <e p="ISenderRetriever.cs" t="Include" />
+          <e p="SenderRetriever.cs" t="Include" />
+        </e>
+      </e>
+      <e p="Stratis.SmartContracts.Core.Tests" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="BloomTests.cs" t="Include" />
+        <e p="ContractSigning" t="Include">
+          <e p="ContractSigningTests.cs" t="Include" />
+        </e>
+        <e p="ContractUnspentOutputSerializerTests.cs" t="Include" />
+        <e p="HexByteArrayTests.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.SmartContracts.Core.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.SmartContracts.Core.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Receipts" t="Include">
+          <e p="PersistentReceiptRepositoryTests.cs" t="Include" />
+          <e p="ReceiptSerializationTest.cs" t="Include" />
+        </e>
+        <e p="SenderRetrieverTests.cs" t="Include" />
+        <e p="SmartContractScriptTests.cs" t="Include" />
+        <e p="StateRepositoryTests.cs" t="Include" />
+        <e p="Stratis.SmartContracts.Core.Tests.csproj" t="IncludeRecursive" />
+        <e p="WriteCacheTests.cs" t="Include" />
+      </e>
+      <e p="Stratis.SmartContracts.IntegrationTests" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="ContractExecutionFailureTests.cs" t="Include" />
+        <e p="ContractInternalTransferTests.cs" t="Include" />
+        <e p="ContractParameterSerializationTests.cs" t="Include" />
+        <e p="Modules" t="Include">
+          <e p="Hang" t="Include" />
+        </e>
+        <e p="nlog.config" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.SmartContracts.IntegrationTests.AssemblyInfo.cs" t="Include" />
+              <e p="Stratis.SmartContracts.IntegrationTests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="PoW" t="Include">
+          <e p="ContractCreationTests.cs" t="Include" />
+          <e p="SmartContractMemoryPoolTests.cs" t="Include" />
+          <e p="SmartContractMinerTests.cs" t="Include" />
+          <e p="SmartContractNodeSyncTests.cs" t="Include" />
+          <e p="SmartContractWalletOnPosNetworkTests.cs" t="Include" />
+          <e p="SmartContractWalletTests.cs" t="Include" />
+          <e p="ValidationTests.cs" t="Include" />
+        </e>
+        <e p="SignedContractTests.cs" t="Include" />
+        <e p="SmartContractNodeSetupTests.cs" t="Include" />
+        <e p="SmartContracts" t="Include">
+          <e p="Auction.cs" t="Include" />
+          <e p="BalanceTest.cs" t="Include" />
+          <e p="BasicParameters.cs" t="Include" />
+          <e p="BasicReceive.cs" t="Include" />
+          <e p="BasicTransfer.cs" t="Include" />
+          <e p="CallContract.cs" t="Include" />
+          <e p="CallWithAllParameters.cs" t="Include" />
+          <e p="ConstructorLoop.cs" t="Include" />
+          <e p="ContractCreation.cs" t="Include" />
+          <e p="CountContract.cs" t="Include" />
+          <e p="CreateWithAllArrays.cs" t="Include" />
+          <e p="CreateWithAllParameters.cs" t="Include" />
+          <e p="CreationTransfer.cs" t="Include" />
+          <e p="EmptyContract.cs" t="Include" />
+          <e p="ExceptionInConstructor.cs" t="Include" />
+          <e p="ExceptionInMethod.cs" t="Include" />
+          <e p="ForwardParameters.cs" t="Include" />
+          <e p="InfiniteLoop.cs" t="Include" />
+          <e p="InterContract1.cs" t="Include" />
+          <e p="InterContract2.cs" t="Include" />
+          <e p="LargeStruct.cs" t="Include" />
+          <e p="Lottery.cs" t="Include" />
+          <e p="MemoryConsumingContract.cs" t="Include" />
+          <e p="MultipleNestedCalls.cs" t="Include" />
+          <e p="NestedCallsReceiver.cs" t="Include" />
+          <e p="NestedCallsStarter.cs" t="Include" />
+          <e p="NonceTest.cs" t="Include" />
+          <e p="NonDeterministicContract.cs" t="Include" />
+          <e p="NonFungibleToken.cs" t="Include" />
+          <e p="PrivateMethod.cs" t="Include" />
+          <e p="ReceiveFundsTest.cs" t="Include" />
+          <e p="ReceiveHandlerContract.cs" t="Include" />
+          <e p="RecursiveLoopCall.cs" t="Include" />
+          <e p="RecursiveLoopCreate.cs" t="Include" />
+          <e p="StandardToken.cs" t="Include" />
+          <e p="StorageDemo.cs" t="Include" />
+          <e p="Token.cs" t="Include" />
+          <e p="TransferFromConstructor.cs" t="Include" />
+          <e p="TransferTest.cs" t="Include" />
+          <e p="TransferTestPos.cs" t="Include" />
+        </e>
+        <e p="Stratis.SmartContracts.IntegrationTests.csproj" t="IncludeRecursive" />
+        <e p="WhitelistedContractTests.cs" t="Include" />
+        <e p="WhitelistNodeExtensions.cs" t="Include" />
+        <e p="xunit.runner.json" t="Include" />
+      </e>
+      <e p="Stratis.SmartContracts.Networks" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.SmartContracts.Networks.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Policies" t="Include">
+          <e p="SmartContractsStandardScriptsRegistry.cs" t="Include" />
+        </e>
+        <e p="SignedContractsPoARegTest.cs" t="Include" />
+        <e p="SmartContractNetworkUtils.cs" t="Include" />
+        <e p="SmartContractPosRegTest.cs" t="Include" />
+        <e p="SmartContractsPoARegTest.cs" t="Include" />
+        <e p="SmartContractsPoATest.cs" t="Include" />
+        <e p="SmartContractsRegTest.cs" t="Include" />
+        <e p="Stratis.SmartContracts.Networks.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="Stratis.SmartContracts.RuntimeObserver" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Gas.cs" t="Include" />
+        <e p="IGasMeter.cs" t="Include" />
+        <e p="IMemoryMeter.cs" t="Include" />
+        <e p="MemoryConsumptionException.cs" t="Include" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.SmartContracts.RuntimeObserver.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Observer.cs" t="Include" />
+        <e p="ObserverInstances.cs" t="Include" />
+        <e p="Stratis.SmartContracts.RuntimeObserver.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="Stratis.SmartContracts.Tests.Common" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="MockChain" t="Include">
+          <e p="IMockChain.cs" t="Include" />
+          <e p="IMockChainFixture.cs" t="Include" />
+          <e p="MockChainNode.cs" t="Include" />
+          <e p="PoAMockChain.cs" t="Include" />
+          <e p="PoAMockChainFixture.cs" t="Include" />
+          <e p="PoWMockChain.cs" t="Include" />
+          <e p="PoWMockChainFixture.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.SmartContracts.Tests.Common.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="SignedContractPoARunner.cs" t="Include" />
+        <e p="SmartContractNodeBuilder.cs" t="Include" />
+        <e p="SmartContractPoARunner.cs" t="Include" />
+        <e p="Stratis.SmartContracts.Tests.Common.csproj" t="IncludeRecursive" />
+        <e p="StratisSmartContractNode.cs" t="Include" />
+        <e p="StratisSmartContractPosNode.cs" t="Include" />
+        <e p="WhitelistedContractPoARunner.cs" t="Include" />
+      </e>
+      <e p="Stratis.StratisD" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.StratisD.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="Properties" t="Include">
+          <e p="AssemblyInfo.cs" t="Include" />
+          <e p="launchSettings.json" t="Include" />
+        </e>
+        <e p="Stratis.StratisD.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="Stratis.StratisDnsD" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="Stratis.StratisDnsD.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="Properties" t="Include">
+          <e p="AssemblyInfo.cs" t="Include" />
+          <e p="launchSettings.json" t="Include" />
+        </e>
+        <e p="Stratis.StratisDnsD.csproj" t="IncludeRecursive" />
+      </e>
+      <e p="stylecop.json" t="Include" />
+      <e p="Tests" t="Include" />
+    </e>
+    <e p="C:\Users\goldobini\.nuget\packages\xunit.runner.visualstudio\2.3.1\build\netcoreapp1.0\xunit.runner.reporters.netcoreapp10.dll" t="Include" />
+    <e p="C:\Users\goldobini\.nuget\packages\xunit.runner.visualstudio\2.3.1\build\netcoreapp1.0\xunit.runner.utility.netcoreapp10.dll" t="Include" />
+    <e p="C:\Users\goldobini\.nuget\packages\xunit.runner.visualstudio\2.3.1\build\netcoreapp1.0\xunit.runner.visualstudio.dotnetcore.testadapter.dll" t="Include" />
+    <e p="C:\Users\goldobini\.nuget\packages\xunit.runner.visualstudio\2.4.0\build\netcoreapp1.0\xunit.runner.reporters.netcoreapp10.dll" t="Include" />
+    <e p="C:\Users\goldobini\.nuget\packages\xunit.runner.visualstudio\2.4.0\build\netcoreapp1.0\xunit.runner.utility.netcoreapp10.dll" t="Include" />
+    <e p="C:\Users\goldobini\.nuget\packages\xunit.runner.visualstudio\2.4.0\build\netcoreapp1.0\xunit.runner.visualstudio.dotnetcore.testadapter.dll" t="Include" />
+    <e p="C:\Users\goldobini\.nuget\packages\xunit.runner.visualstudio\2.4.1\build\netcoreapp1.0\xunit.runner.reporters.netcoreapp10.dll" t="Include" />
+    <e p="C:\Users\goldobini\.nuget\packages\xunit.runner.visualstudio\2.4.1\build\netcoreapp1.0\xunit.runner.utility.netcoreapp10.dll" t="Include" />
+    <e p="C:\Users\goldobini\.nuget\packages\xunit.runner.visualstudio\2.4.1\build\netcoreapp1.0\xunit.runner.visualstudio.dotnetcore.testadapter.dll" t="Include" />
+    <e p="C:\Users\goldobini\.Rider2019.1\config\scratches" t="IncludeRecursive" />
+    <e p="C:\Users\goldobini\.Rider2019.1\system\extResources" t="IncludeRecursive" />
+    <e p="C:\Users\goldobini\.Rider2019.1\system\resharper-host\Local\Transient\ReSharperHost\v191\SolutionCaches\_Stratis.Bitcoin.FullNode.-544837532.00" t="ExcludeRecursive" />
+  </component>
+</project>
