@@ -56,7 +56,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         }
 
         [Fact]
-        public void MaximumCallTransactionsInABlock()
+        public void MaximumCallTransactionsInABlockSpendingAllGas()
         {
             const int txsToSend = 100;
 
@@ -99,5 +99,9 @@ namespace Stratis.SmartContracts.IntegrationTests
             const int expectedInMempool = txsToSend - expectedInBlock;
             Assert.Equal(expectedInMempool, node1.CoreNode.FullNode.MempoolManager().InfoAll().Count);
         }
+
+        // TODO: Spending all gas in a CALL that uses minimal gas so we can fit many into a block
+
+        // TODO: Transactions that generate internal transactions.
     }
 }
