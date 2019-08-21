@@ -33,14 +33,12 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
             this.logger.LogDebug($"Initialising SignalR Broadcaster {this.GetType().Name}");
             this.asyncLoop = asyncProvider.CreateAndRunAsyncLoop(
                 $"Broadcast {this.GetType().Name}",
-                token =>
+                async token =>
                 {
                     foreach (IClientEvent clientEvent in this.GetMessages())
                     {
-                        this.eventsHub.SendToClients(clientEvent).GetAwaiter().GetResult();
+                        await this.eventsHub.SendToClients(clientEvent).ConfigureAwait(false);
                     }
-
-                    return Task.CompletedTask;
                 },
                 this.asyncProvider.NodeLifetime.ApplicationStopping,
                 repeatEvery: TimeSpan.FromSeconds(Math.Max(this.broadcastFrequencySeconds, 5)));
