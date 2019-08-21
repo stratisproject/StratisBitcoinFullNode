@@ -13,10 +13,6 @@ namespace Stratis.Bitcoin.Features.SignalR.Events
 
     public class StakingInfoClientEvent : GetStakingInfoModel, IClientEvent
     {
-        public StakingInfoClientEvent()
-        {
-        }
-
         public StakingInfoClientEvent(GetStakingInfoModel stakingInfoModel)
         {
             if (null != stakingInfoModel)

@@ -48,8 +48,6 @@ namespace Stratis.Bitcoin.AsyncWork
         /// <inheritdoc />
         public ISignals Signals => this.signals;
 
-        public INodeLifetime NodeLifetime => this.nodeLifetime;
-
         public AsyncProvider(ILoggerFactory loggerFactory, ISignals signals, INodeLifetime nodeLifetime)
         {
             this.lockAsyncDelegates = new object();
