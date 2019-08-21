@@ -3,17 +3,16 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.AsyncWork;
-using Stratis.Bitcoin.Signals;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
+    /// <summary>
+    /// Base class for all SignalR Broadcasters
+    /// </summary>
     public abstract class ClientBroadcasterBase : IClientEventBroadcaster
     {
         private readonly EventsHub eventsHub;
-        private readonly INodeLifetime nodeLifetime;
-        private readonly ILoggerFactory loggerFactory;
-        private readonly AsyncProvider asyncProvider;
+        private readonly IAsyncProvider asyncProvider;
         private readonly int broadcastFrequencySeconds;
         protected readonly ILogger logger;
         private IAsyncLoop asyncLoop;
@@ -21,16 +20,13 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 
         protected ClientBroadcasterBase(
             EventsHub eventsHub,
-            ISignals signals,
-            INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
+            IAsyncProvider asyncProvider,
             int broadcastFrequencySeconds = 5)
         {
             this.eventsHub = eventsHub;
-            this.nodeLifetime = nodeLifetime;
-            this.loggerFactory = loggerFactory;
             this.broadcastFrequencySeconds = broadcastFrequencySeconds;
-            this.asyncProvider = new AsyncProvider(this.loggerFactory, signals, nodeLifetime);
+            this.asyncProvider = asyncProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -48,7 +44,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 
                     return Task.CompletedTask;
                 },
-                this.nodeLifetime.ApplicationStopping,
+                this.asyncProvider.NodeLifetime.ApplicationStopping,
                 repeatEvery: TimeSpan.FromSeconds(this.broadcastFrequencySeconds));
         }
 

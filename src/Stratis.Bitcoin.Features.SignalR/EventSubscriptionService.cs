@@ -8,6 +8,10 @@ using Stratis.Bitcoin.Signals;
 
 namespace Stratis.Bitcoin.Features.SignalR
 {
+    /// <summary>
+    /// This class subscribes to Stratis.Bitcoin.EventBus messages and proxy's them
+    /// to SignalR messages.
+    /// </summary>
     public class EventSubscriptionService : IEventsSubscriptionService, IDisposable
     {
         private readonly SignalROptions options;
@@ -34,7 +38,7 @@ namespace Stratis.Bitcoin.Features.SignalR
             MethodInfo onEventCallbackMethod = typeof(EventSubscriptionService).GetMethod("OnEvent");
             foreach (IClientEvent eventToHandle in this.options.EventsToHandle)
             {
-                this.logger.LogDebug("Create subscription for {eventType}", eventToHandle.NodeEventType);
+                this.logger.LogDebug("Create subscription for {0}", eventToHandle.NodeEventType);
                 MethodInfo subscribeMethodInfo = subscribeMethod.MakeGenericMethod(eventToHandle.NodeEventType);
                 Type callbackType = typeof(Action<>).MakeGenericType(eventToHandle.NodeEventType);
                 Delegate onEventDelegate = Delegate.CreateDelegate(callbackType, this, onEventCallbackMethod);
@@ -44,6 +48,8 @@ namespace Stratis.Bitcoin.Features.SignalR
             }
         }
 
+        // ReSharper disable once UnusedMember.Global
+        // This is invoked through reflection
         public void OnEvent(EventBase @event)
         {
             Type childType = @event.GetType();

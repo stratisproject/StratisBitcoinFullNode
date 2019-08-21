@@ -400,14 +400,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 (string folder, IEnumerable<string> fileNameCollection) = this.walletManager.GetWalletsFiles();
                 string searchFile = Path.ChangeExtension(request.Name, this.walletManager.GetWalletFileExtension());
                 string fileName = fileNameCollection.FirstOrDefault(i => i.Equals(searchFile));
-                if (folder != null && fileName != null)
+                if (!string.IsNullOrEmpty(folder) && !string.IsNullOrEmpty(fileName))
+                {
                     model.WalletFilePath = Path.Combine(folder, fileName);
+                }
 
                 return this.Json(model);
             }
             catch (Exception e)
             {
-                this.logger.LogError(e, "Exception occurred: {0}", e.StackTrace);
+                this.logger.LogError(e, "Exception occurred: {0}");
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }

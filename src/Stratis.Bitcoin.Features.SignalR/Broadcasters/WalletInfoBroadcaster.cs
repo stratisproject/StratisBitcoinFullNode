@@ -8,11 +8,13 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.SignalR.Events;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Signals;
-using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.AsyncWork;
 
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
+    /// <summary>
+    /// Broadcasts current staking information to SignalR clients
+    /// </summary>
     public class WalletInfoBroadcaster : ClientBroadcasterBase
     {
         private readonly IWalletManager walletManager;
@@ -25,11 +27,10 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
             ILoggerFactory loggerFactory,
             IWalletManager walletManager,
             IConnectionManager connectionManager,
-            ISignals signals,
+            IAsyncProvider asyncProvider,
             ChainIndexer chainIndexer,
-            INodeLifetime nodeLifetime,
             EventsHub eventsHub)
-            : base(eventsHub, signals, nodeLifetime, loggerFactory)
+            : base(eventsHub, loggerFactory, asyncProvider)
         {
             this.walletManager = walletManager;
             this.connectionManager = connectionManager;
@@ -39,9 +40,10 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
         protected override IEnumerable<IClientEvent> GetMessages()
         {
             WalletGeneralInfoClientEvent clientEvent = null;
-            try
+
+            foreach (string walletName in this.walletManager.GetWalletsNames())
             {
-                foreach (string walletName in this.walletManager.GetWalletsNames())
+                try
                 {
                     Wallet.Wallet wallet = this.walletManager.GetWallet(walletName);
 
@@ -61,16 +63,21 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                     (string folder, IEnumerable<string> fileNameCollection) = this.walletManager.GetWalletsFiles();
                     string searchFile = Path.ChangeExtension(walletName, this.walletManager.GetWalletFileExtension());
                     string fileName = fileNameCollection.FirstOrDefault(i => i.Equals(searchFile));
-                    if (folder != null && fileName != null)
+                    if (!string.IsNullOrEmpty(folder) && !string.IsNullOrEmpty(fileName))
+                    {
                         clientEvent.WalletFilePath = Path.Combine(folder, fileName);
+                    }
+                }
+                catch (Exception e)
+                {
+                    this.logger.LogError(e, "Exception occurred: {0}");
                 }
             }
-            catch (Exception e)
-            {
-                this.logger.LogError(e, "Exception occurred: {0}", e.StackTrace);
-            }
 
-            yield return clientEvent;
+            if (null != clientEvent)
+            {
+                yield return clientEvent;
+            }
         }
     }
 }

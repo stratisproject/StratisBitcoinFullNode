@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Controllers
     public class SignalRController : Controller
     {
         private readonly SignalRSettings signalRSettings;
-        private ILogger logger;
+        private readonly ILogger logger;
 
         public SignalRController(SignalRSettings signalRSettings, ILoggerFactory loggerFactory)
         {
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Controllers
             Guard.NotNull(signalRSettings, nameof(signalRSettings));
 
             this.signalRSettings = signalRSettings;
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.logger = loggerFactory.CreateLogger<SignalRController>();
         }
 
 
