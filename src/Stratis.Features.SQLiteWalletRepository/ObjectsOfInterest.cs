@@ -130,16 +130,17 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.AddTentative(scriptPubKey.ToBytes());
         }
 
-        public void AddAll(DBConnection conn, int? walletId)
+        public void AddAll(DBConnection conn, int? walletId, int? accountIndex = null)
         {
-            Clear();
-
             List<HDAddress> addresses = conn.Query<HDAddress>($@"
                 SELECT  *
                 FROM    HDAddress {
-            // Restrict to wallet if provided.
-            ((walletId != null) ? $@"
-                WHERE   WalletId = {walletId}" : "")}");
+                // Restrict to wallet if provided.
+                ((walletId != null) ? $@"
+                WHERE   WalletId = {walletId}" : "")} {
+                // Restrict to account if provided.
+                ((accountIndex != null) ? $@"
+                AND     AccountIndex = {accountIndex}" : "")}");
 
             foreach (HDAddress address in addresses)
             {
@@ -189,8 +190,6 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         public void AddAll(DBConnection conn, int? walletId)
         {
-            Clear();
-
             List<HDTransactionData> spendableTransactions = conn.Query<HDTransactionData>($@"
                 SELECT  *
                 FROM    HDTransactionData

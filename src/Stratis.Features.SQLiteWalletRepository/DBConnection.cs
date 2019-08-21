@@ -11,11 +11,15 @@ namespace Stratis.Features.SQLiteWalletRepository
     /// </summary>
     public class DBConnection : SQLiteConnection
     {
-        public SQLiteWalletRepository repo;
+        public SQLiteWalletRepository Repository;
+
+        // A given connection can't have two transactions running in parallel.
+        internal readonly object TransactionLock;
 
         public DBConnection(SQLiteWalletRepository repo, string dbFile) : base(Path.Combine(repo.DBPath, dbFile))
         {
-            this.repo = repo;
+            this.Repository = repo;
+            this.TransactionLock = new object();
         }
 
         internal void CreateDBStructure()
@@ -56,7 +60,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             // Retrieve the pubkey associated with the private key of this address index.
             var keyPath = new KeyPath($"{addressType}/{addressIndex}");
 
-            ExtPubKey extPubKey = ExtPubKey.Parse(account.ExtPubKey, this.repo.Network).Derive(keyPath);
+            ExtPubKey extPubKey = ExtPubKey.Parse(account.ExtPubKey, this.Repository.Network).Derive(keyPath);
             PubKey pubKey = extPubKey.PubKey;
             Script pubKeyScript = pubKey.ScriptPubKey;
             Script scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(pubKey);
@@ -268,14 +272,16 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <param name="lastBlockSynced">The last block synced to set.</param>
         internal void SetLastBlockSynced(string walletName, ChainedHeader lastBlockSynced)
         {
-            this.BeginTransaction();
-            var wallet = this.GetWalletByName(walletName);
-            this.RemoveTransactionsAfterLastBlockSynced(lastBlockSynced?.Height ?? -1, wallet.WalletId);
-            this.Update(wallet);
-            this.Commit();
+            lock (this.TransactionLock)
+            {
+                this.BeginTransaction();
+                var wallet = this.GetWalletByName(walletName);
+                this.RemoveTransactionsAfterLastBlockSynced(lastBlockSynced?.Height ?? -1, wallet.WalletId);
+                this.Update(wallet);
+                this.Commit();
 
-            wallet.SetLastBlockSynced(lastBlockSynced);
-
+                wallet.SetLastBlockSynced(lastBlockSynced);
+            }
         }
 
         internal void ProcessTransactions(ChainedHeader header = null, HDWallet wallet = null, AddressesOfInterest addressesOfInterest = null)
