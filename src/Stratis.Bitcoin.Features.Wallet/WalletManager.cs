@@ -134,6 +134,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(asyncProvider, nameof(asyncProvider));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(scriptAddressReader, nameof(scriptAddressReader));
+            Guard.NotNull(walletRepository, nameof(walletRepository));
 
             this.walletSettings = walletSettings;
             this.lockObject = new object();
@@ -151,7 +152,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.scriptAddressReader = scriptAddressReader;
             this.dateTimeProvider = dateTimeProvider;
             this.walletRepository = walletRepository;
-            this.walletRepository.Initialize();
 
             // register events
             if (this.broadcasterManager != null)
@@ -291,11 +291,16 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Generate multiple accounts and addresses from the get-go.
             for (int i = 0; i < WalletCreationAccountsCount; i++)
             {
+                // Lukasz: legacy code below doesnt need to be replicated for the database
                 HdAccount account = wallet.AddNewAccount(password, this.dateTimeProvider.GetTimeOffset());
                 IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
                 IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
+
+                // Lukasz atm decide not to create same data structure for database
                 this.UpdateKeysLookupLocked(newReceivingAddresses.Concat(newChangeAddresses));
 
+                // Lukasz: Create account this will populate the table HDAccount and HDAddress. HDAddress data structure will have 
+                // references between ScriptPub Key and Pub Key
                 this.walletRepository.CreateAccount(name, i, $"account {i}", password);
             }
 
@@ -304,6 +309,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             // we wait until it is downloaded in order to set it. Otherwise, the height of the wallet will be the height of the chain at that moment.
             if (this.ChainIndexer.IsDownloaded())
             {
+                // Lukasz: this is responsible for getting the number of the top of the current best chain and 
+                // setting up the best block hash and setting up block locator to see current best merkle root
                 this.UpdateLastBlockSyncedHeight(wallet, this.ChainIndexer.Tip);
             }
             else
