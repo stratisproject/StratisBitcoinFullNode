@@ -198,6 +198,5 @@ namespace Stratis.SmartContracts.Networks
                 .Register<SaveCoinviewRule>();
             // ------------------------------------------------------
         }
-
     }
 }

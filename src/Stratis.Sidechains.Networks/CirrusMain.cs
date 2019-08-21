@@ -208,7 +208,7 @@ namespace Stratis.Sidechains.Networks
         }
 
         // This should be abstract or virtual
-        protected void RegisterRules(IConsensus consensus)
+        protected override void RegisterRules(IConsensus consensus)
         {
             // IHeaderValidationConsensusRule -----------------------
             consensus.ConsensusRules
