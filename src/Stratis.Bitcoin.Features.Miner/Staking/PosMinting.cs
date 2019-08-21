@@ -563,60 +563,13 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             this.lastCoinStakeSearchTime = searchTime;
             this.logger.LogDebug("Search interval set to {0}, last coinstake search timestamp set to {1}.", searchInterval, this.lastCoinStakeSearchTime);
 
-            if (await this.CreateCoinstakeAsync(utxoStakeDescriptions, block, chainTip, searchInterval, fees, coinstakeContext).ConfigureAwait(false))
+            if (await this.CreateCoinstakeAsync(utxoStakeDescriptions, blockTemplate, chainTip, searchInterval, fees, coinstakeContext).ConfigureAwait(false))
             {
                 uint minTimestamp = chainTip.Header.Time + 1;
                 if (coinstakeContext.CoinstakeTx.Time >= minTimestamp)
                 {
                     // Make sure coinstake would meet timestamp protocol as it would be the same as the block timestamp.
                     block.Transactions[0].Time = block.Header.Time = coinstakeContext.CoinstakeTx.Time;
-
-                    // We have to make sure that we have no future timestamps in our transactions set.
-                    bool removed = false;
-                    for (int i = block.Transactions.Count - 1; i >= 0; i--)
-                    {
-                        if (block.Transactions[i].Time > block.Header.Time)
-                        {
-                            Money feeToRemove = blockTemplate.FeeDetails[block.Transactions[i].GetHash()];
-
-                            // Remove the fee from a suitable coinstake output.
-                            for (int j = 0; j < coinstakeContext.CoinstakeTx.Outputs.Count; j++)
-                            {
-                                if (coinstakeContext.CoinstakeTx.Outputs[j].Value >= feeToRemove)
-                                {
-                                    // TODO: This doesn't try to avoid creating dust, but ostensibly that should be rare, as the stake reward on its own is well above the dust threshold.
-                                    coinstakeContext.CoinstakeTx.Outputs[j].Value -= feeToRemove;
-                                    break;
-                                }
-                            }
-
-                            this.logger.LogDebug("Removing transaction with timestamp {0} as it is greater than coinstake transaction timestamp {1}.", block.Transactions[i].Time, block.Header.Time);
-                            block.Transactions.Remove(block.Transactions[i]);
-                            removed = true;
-                        }
-                    }
-
-                    // We removed at least one transaction, so now the coinstake output that contains the fees is most likely inaccurate. Sign the coinstake again.
-                    if (removed)
-                    {
-                        try
-                        {
-                            var transactionBuilder = new TransactionBuilder(this.network)
-                                .AddKeys(coinstakeContext.Key)
-                                .AddCoins(new Coin(coinstakeContext.CoinstakeTx.Inputs.First().PrevOut, coinstakeContext.KernelTxOut));
-
-                            foreach (BuilderExtension extension in this.walletManager.GetTransactionBuilderExtensionsForStaking())
-                                transactionBuilder.Extensions.Add(extension);
-
-                            transactionBuilder.SignTransactionInPlace(coinstakeContext.CoinstakeTx);
-                        }
-                        catch (Exception e)
-                        {
-                            this.logger.LogTrace("Exception re-signing coinstake: {0}", e);
-                            this.logger.LogTrace("(-)[SIGN_FAILED_AFTER_FEE_REMOVAL]:false");
-                            return false;
-                        }
-                    }
 
                     block.Transactions.Insert(1, coinstakeContext.CoinstakeTx);
                     block.UpdateMerkleRoot();
@@ -635,7 +588,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         }
 
         /// <inheritdoc/>
-        public async Task<bool> CreateCoinstakeAsync(List<UtxoStakeDescription> utxoStakeDescriptions, Block block, ChainedHeader chainTip, long searchInterval, long fees, CoinstakeContext coinstakeContext)
+        public async Task<bool> CreateCoinstakeAsync(List<UtxoStakeDescription> utxoStakeDescriptions, BlockTemplate blockTemplate, ChainedHeader chainTip, long searchInterval, long fees, CoinstakeContext coinstakeContext)
         {
             coinstakeContext.CoinstakeTx.Inputs.Clear();
             coinstakeContext.CoinstakeTx.Outputs.Clear();
@@ -712,7 +665,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
             await Task.Run(() => Parallel.ForEach(workerContexts, cwc =>
             {
-                this.CoinstakeWorker(cwc, chainTip, block, minimalAllowedTime, searchInterval);
+                this.CoinstakeWorker(cwc, chainTip, blockTemplate.Block, minimalAllowedTime, searchInterval);
             }));
 
             if (workersResult.KernelFoundIndex == CoinstakeWorkerResult.KernelNotFound)
@@ -722,6 +675,19 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             }
 
             this.logger.LogDebug("Worker #{0} found the kernel.", workersResult.KernelFoundIndex);
+
+            // We have to make sure that we have no future timestamps in our transactions set.
+            for (int i = blockTemplate.Block.Transactions.Count - 1; i >= 0; i--)
+            {
+                if (blockTemplate.Block.Transactions[i].Time <= blockTemplate.Block.Header.Time)
+                    continue;
+
+                // Update the total fees, with the to-be-removed transaction taken into account.
+                fees -= blockTemplate.FeeDetails[blockTemplate.Block.Transactions[i].GetHash()].Satoshi;
+
+                this.logger.LogDebug("Removing transaction with timestamp {0} as it is greater than coinstake transaction timestamp {1}. New fee amount {2}.", blockTemplate.Block.Transactions[i].Time, blockTemplate.Block.Header.Time, fees);
+                blockTemplate.Block.Transactions.Remove(blockTemplate.Block.Transactions[i]);
+            }
 
             // Get reward for newly created block.
             long reward = fees + this.consensusManager.ConsensusRules.GetRule<PosCoinviewRule>().GetProofOfStakeReward(chainTip.Height + 1);
