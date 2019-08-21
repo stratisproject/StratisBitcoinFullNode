@@ -50,7 +50,10 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Just over block gas limit.
             const int expectedTxsInBlock = 84;
             var lastBlock = node1.GetLastBlock();
-            Assert.Equal(expectedTxsInBlock, lastBlock.Transactions.Count);
+             Assert.Equal(expectedTxsInBlock, lastBlock.Transactions.Count);
+            
+             const int expectedInMempool = txsToSend - expectedTxsInBlock + 1; // Left in mempool. Total - all in block, except for coinbase.
+            Assert.Equal(expectedInMempool, node1.CoreNode.FullNode.MempoolManager().InfoAll().Count);
         }
     }
 }
