@@ -2,6 +2,6 @@ namespace Stratis.Bitcoin.Features.SignalR
 {
     public interface IClientEventBroadcaster
     {
-        void Initialise(ClientEventBroadcasterSettings broadcasterSettings);
+        void Init(ClientEventBroadcasterSettings broadcasterSettings);
     }
 }

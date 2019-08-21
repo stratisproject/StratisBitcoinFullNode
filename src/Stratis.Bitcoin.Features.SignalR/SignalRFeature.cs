@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.SignalR
             foreach (IClientEventBroadcaster clientEventBroadcaster in this.eventBroadcasters)
             {
                 // Intialise with specified settings
-                clientEventBroadcaster.Initialise(eventBroadcasterSettings[clientEventBroadcaster.GetType()]);
+                clientEventBroadcaster.Init(eventBroadcasterSettings[clientEventBroadcaster.GetType()]);
             }
 
             return Task.CompletedTask;

@@ -6,31 +6,32 @@ using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.SignalR.Events;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.AsyncWork;
+
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
+    using Utilities;
+
     /// <summary>
     /// Broadcasts current staking information to SignalR clients
     /// </summary>
     public class StakingBroadcaster : ClientBroadcasterBase
     {
         private readonly IPosMinting posMinting;
-
         private readonly IWalletManager walletManager;
         private readonly IConnectionManager connectionManager;
         private readonly Network network;
         private readonly ChainIndexer chainIndexer;
-        private ILogger logger;
 
         public StakingBroadcaster(
             ILoggerFactory loggerFactory,
             IPosMinting posMinting,
+            INodeLifetime nodeLifetime,
             IAsyncProvider asyncProvider,
             EventsHub eventsHub)
-            : base(eventsHub, loggerFactory, asyncProvider)
+            : base(eventsHub, loggerFactory, nodeLifetime, asyncProvider)
         {
             this.posMinting = posMinting;
         }
-
 
         protected override IEnumerable<IClientEvent> GetMessages()
         {

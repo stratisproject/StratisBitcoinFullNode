@@ -23,8 +23,7 @@ namespace Stratis.Bitcoin.AsyncWork
         /// <param name="name">Name of the delegate.</param>
         /// <param name="delegate">The delegate.</param>
         /// <returns></returns>
-        IAsyncDelegateDequeuer<T> CreateAndRunAsyncDelegateDequeuer<T>(string name,
-            Func<T, CancellationToken, Task> @delegate);
+        IAsyncDelegateDequeuer<T> CreateAndRunAsyncDelegateDequeuer<T>(string name, Func<T, CancellationToken, Task> @delegate);
 
         /// <summary>
         /// Creates an starts an application defined task inside a newly created async loop.
@@ -37,8 +36,7 @@ namespace Stratis.Bitcoin.AsyncWork
         /// If this is null, the task is repeated every 1 second by default.</param>
         /// <param name="startAfter">Delay before the first run of the task, or null if no startup delay is required.</param>
         /// <returns></returns>
-        IAsyncLoop CreateAndRunAsyncLoop(string name, Func<CancellationToken, Task> loop,
-            CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
+        IAsyncLoop CreateAndRunAsyncLoop(string name, Func<CancellationToken, Task> loop, CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
 
         /// <summary>
         /// Creates an starts an application defined task inside a newly created async loop and stop it.
@@ -53,8 +51,7 @@ namespace Stratis.Bitcoin.AsyncWork
         /// If this is null, the task is repeated every 1 second by default.</param>
         /// <param name="startAfter">Delay before the first run of the task, or null if no startup delay is required.</param>
         /// <returns></returns>
-        IAsyncLoop CreateAndRunAsyncLoopUntil(string name, CancellationToken cancellation, Func<bool> condition,
-            Action action, Action<Exception> onException, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
+        IAsyncLoop CreateAndRunAsyncLoopUntil(string name, CancellationToken cancellation, Func<bool> condition, Action action, Action<Exception> onException, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
 
         /// <summary>
         /// Registers the passed task to be able to monitor it's health status.
@@ -129,12 +126,7 @@ namespace Stratis.Bitcoin.AsyncWork
         /// Having a single entry point for COMMON SERVICES allows us to speed up changes.
         /// </summary>
         ISignals Signals { get; }
-
-        /// <summary>
-        /// Expose NodeLifetime as we generally need this with the AsyncProvider and saves injecting this as well.
-        /// </summary>
-        INodeLifetime NodeLifetime { get; }
-
+     
         /// <summary>
         /// Returns a list of friendly names of all loops, as well as their current status.
         /// </summary>

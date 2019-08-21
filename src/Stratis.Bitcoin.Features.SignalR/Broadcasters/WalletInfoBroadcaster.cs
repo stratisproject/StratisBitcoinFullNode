@@ -12,6 +12,8 @@ using Stratis.Bitcoin.AsyncWork;
 
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
+    using Utilities;
+
     /// <summary>
     /// Broadcasts current staking information to SignalR clients
     /// </summary>
@@ -28,9 +30,10 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
             IWalletManager walletManager,
             IConnectionManager connectionManager,
             IAsyncProvider asyncProvider,
+            INodeLifetime nodeLifetime,
             ChainIndexer chainIndexer,
             EventsHub eventsHub)
-            : base(eventsHub, loggerFactory, asyncProvider)
+            : base(eventsHub, loggerFactory, nodeLifetime, asyncProvider)
         {
             this.walletManager = walletManager;
             this.connectionManager = connectionManager;
