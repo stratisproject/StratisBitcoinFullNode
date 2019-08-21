@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
 
                 // If including this transaction would put us over the block gas limit, then don't include it
                 // and roll back all of the execution we did.
-                if (this.blockGasConsumed >= GasPerBlockLimit)
+                if (this.blockGasConsumed > GasPerBlockLimit)
                 {
                     // Remove the last receipt.
                     this.receipts.RemoveAt(this.receipts.Count - 1);
