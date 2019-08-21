@@ -80,6 +80,19 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         private async Task RemoveInvalidTransactionsAsync(Block block)
         {
+            // TODO: This was initially implemented only to fix a known issue on Cirrus.
+            // There may be other things to validate mempool txs for when reorging:
+            // - Do we need to check if coinstakes are being spent too?
+            // - Are maturity requirements of transactions still met, in case the forked chain is shorter?
+            // - Locktime requirements still met?
+            // - Other unidentified cases where transactions may be rendered invalid by a reorg.
+
+            if (!block.Transactions[0].IsCoinBase)
+            {
+                this.logger.LogWarning("Block '{0}' was disconnected and had no coinbase.", block.GetHash());
+                return;
+            }
+
             // Invalid transactions would have spent the coinbase. The other transactions can be put back into the mempool and be fine.
             uint256 coinbaseId = block.Transactions[0].GetHash();
 
