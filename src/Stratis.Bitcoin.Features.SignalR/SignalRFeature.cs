@@ -1,21 +1,18 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Features.SignalR.Broadcasters;
 
 namespace Stratis.Bitcoin.Features.SignalR
 {
-    using System.Linq;
-
     public class SignalRFeature : FullNodeFeature
     {
         internal static Dictionary<Type, ClientEventBroadcasterSettings> eventBroadcasterSettings;
