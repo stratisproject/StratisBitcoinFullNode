@@ -871,10 +871,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
                             context.CoinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(0, scriptPubKeyOut));
                             context.Result.KernelCoin = utxoStakeInfo;
-
-                            // We need this for possible re-signing of the coinstake if we have to modify it after the first time it is signed.
-                            context.CoinstakeContext.KernelTxOut = utxoStakeInfo.TxOut;
-
+                            
                             context.Logger.LogDebug("Kernel accepted, coinstake input is '{0}', stopping work.", prevoutStake);
                         }
                         else context.Logger.LogDebug("Kernel found, but worker #{0} announced its kernel earlier, stopping work.", context.Result.KernelFoundIndex);
