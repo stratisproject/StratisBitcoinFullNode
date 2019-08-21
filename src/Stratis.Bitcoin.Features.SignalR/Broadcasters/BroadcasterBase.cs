@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.AsyncWork;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
-    using Utilities;
-
     /// <summary>
     /// Base class for all SignalR Broadcasters
     /// </summary>
@@ -19,7 +17,6 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
         private readonly int broadcastFrequencySeconds;
         protected readonly ILogger logger;
         private IAsyncLoop asyncLoop;
-
 
         protected ClientBroadcasterBase(
             EventsHub eventsHub,

@@ -6,11 +6,10 @@ using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.SignalR.Events;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.AsyncWork;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
-    using Utilities;
-
     /// <summary>
     /// Broadcasts current staking information to SignalR clients
     /// </summary>
