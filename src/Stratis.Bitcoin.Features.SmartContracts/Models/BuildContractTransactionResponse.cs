@@ -25,18 +25,27 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
     {
         private BuildCallContractTransactionResponse() { }
 
+        /// <summary>
+        /// A response that gets constructed when building the call contract transaction failed.
+        /// </summary>
+        /// <param name="message">The error message indicating what went wrong.</param>
         public static BuildCallContractTransactionResponse Failed(string message)
         {
             return new BuildCallContractTransactionResponse() { Message = message, Success = false };
         }
 
+        /// <summary>
+        /// Constructs a response if the call contract transaction was successfully built.
+        /// </summary>
+        /// <param name="methodName">The method name that will be called on the contract.</param>
+        /// <param name="transaction">The created call contract transaction.</param>
+        /// <param name="transactionFee">The fee associated with the transaction.</param>
         public static BuildCallContractTransactionResponse Succeeded(string methodName, Transaction transaction, Money transactionFee)
         {
             return new BuildCallContractTransactionResponse()
             {
-                Message = string.Format("Your CALL method {0} transaction was sent. Check the receipt using the transaction ID once it has been included in a new block.", methodName),
                 Success = true,
-
+                Message = string.Format("Your CALL method {0} transaction was successfully built.", methodName),
                 Hex = transaction.ToHex(),
                 Fee = transactionFee,
                 TransactionId = transaction.GetHash(),
@@ -51,16 +60,26 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
 
         private BuildCreateContractTransactionResponse() { }
 
+        /// <summary>
+        /// A response that gets constructed when building the create contract transaction failed.
+        /// </summary>
+        /// <param name="message">The error message indicating what went wrong.</param>
         public static BuildCreateContractTransactionResponse Failed(string message)
         {
             return new BuildCreateContractTransactionResponse() { Message = message };
         }
 
+        /// <summary>
+        /// Constructs a response if the create contract transaction was successfully built.
+        /// </summary>
+        /// <param name="transaction">The created create contract transaction.</param>
+        /// <param name="transactionFee">The fee associated with the transaction.</param>
+        /// <param name="address">The address associated to the new contract.</param>
         public static BuildCreateContractTransactionResponse Succeeded(Transaction transaction, Money transactionFee, string address)
         {
             return new BuildCreateContractTransactionResponse()
             {
-                Message = "Your CREATE transaction was sent. Check the receipt using the transaction ID once it has been included in a new block..",
+                Message = "Your CREATE contract transaction was successfully built.",
                 Success = true,
                 Hex = transaction.ToHex(),
                 Fee = transactionFee,
