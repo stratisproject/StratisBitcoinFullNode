@@ -13,6 +13,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// </summary>
     public class TxOutSmartContractExecRule : FullValidationConsensusRule, ISmartContractMempoolRule
     {
+        /// <inheritdoc/>
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;
@@ -25,6 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public void CheckTransaction(MempoolValidationContext context)
         {
             this.CheckTransaction(context.Transaction);
@@ -34,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         {
             int smartContractExecCount = transaction.Outputs.Count(o => o.ScriptPubKey.IsSmartContractExec());
 
-            if ((transaction.IsCoinBase)  && smartContractExecCount > 0)
+            if ((transaction.IsCoinBase) && smartContractExecCount > 0)
                 new ConsensusError("smartcontractexec-in-coinbase", "coinbase contains smartcontractexec output").Throw();
 
             if (smartContractExecCount > 1)

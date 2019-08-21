@@ -138,12 +138,12 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 recipients = new Recipient[utxos];
                 for (int i = 0; i < recipients.Length; i++)
                 {
-                    recipients[i] = new Recipient {Amount = amount / utxos, ScriptPubKey = scriptPubKey};
+                    recipients[i] = new Recipient { Amount = amount / utxos, ScriptPubKey = scriptPubKey };
                 }
             }
             else
             {
-                recipients = new[] {new Recipient {Amount = amount, ScriptPubKey = scriptPubKey}};
+                recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = scriptPubKey } };
             }
 
             var txBuildContext = new TransactionBuildContext(this.CoreNode.FullNode.Network)
