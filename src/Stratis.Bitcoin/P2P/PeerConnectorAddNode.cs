@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -43,13 +44,13 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         protected override void OnInitialize()
         {
-            this.MaxOutboundConnections = this.ConnectionSettings.AddNode.Count;
+            List<IPEndPoint> addNodes = this.ConnectionSettings.RetrieveAddNodes();
+
+            this.MaxOutboundConnections = addNodes.Count;
 
             // Add the endpoints from the -addnode arg to the address manager.
-            foreach (IPEndPoint ipEndpoint in this.ConnectionSettings.AddNode)
-            {
+            foreach (IPEndPoint ipEndpoint in addNodes)
                 this.PeerAddressManager.AddPeer(ipEndpoint.MapToIpv6(), IPAddress.Loopback);
-            }
         }
 
         /// <summary>This connector is always started.</summary>
@@ -77,8 +78,9 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         public override async Task OnConnectAsync()
         {
-            // We have to create a new copy of the list while we are enumerating it here, as items can be getting added/removed from the AddNode list while we are trying to connect to nodes in the list.
-            await this.ConnectionSettings.AddNode.ToList().ForEachAsync(this.ConnectionSettings.MaxOutboundConnections, this.NodeLifetime.ApplicationStopping,
+            List<IPEndPoint> addNodes = this.ConnectionSettings.RetrieveAddNodes();
+
+            await addNodes.ForEachAsync(this.ConnectionSettings.MaxOutboundConnections, this.NodeLifetime.ApplicationStopping,
                 async (ipEndpoint, cancellation) =>
                 {
                     if (this.NodeLifetime.ApplicationStopping.IsCancellationRequested)
