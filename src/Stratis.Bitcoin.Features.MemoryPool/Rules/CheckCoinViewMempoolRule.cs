@@ -45,21 +45,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
                 }
 
                 UnspentOutputs coins = context.View.GetCoins(txin.PrevOut.Hash);
-                // Check if we are prematurely spending a coinbase transaction.
+                // Check if we are prematurely spending a coinbase or coinstake transaction.
                 // We use tip + 1 because the earliest the mempool transaction can appear in a block would be tipHeight + 1.
-                if (coins.IsCoinbase && ((this.chainIndexer.Height + 1 - coins.Height) < this.network.Consensus.CoinbaseMaturity))
+                // The maturity requirement for spending of a coinstake is the same as a coinbase. It is the coinstake kernel minimum depth that was softforked higher.
+                if ((this.chainIndexer.Height + 1 - coins.Height) < this.network.Consensus.CoinbaseMaturity)
                 {
-                    context.State.Invalid(MempoolErrors.PrematureCoinbase).Throw();
-                }
+                    if (coins.IsCoinbase)
+                        context.State.Invalid(MempoolErrors.PrematureCoinbase).Throw();
 
-                // Check if we are prematurely spending a coinstake transaction.
-                // The minimum maturity for coinstakes was softforked to be higher than the corresponding coinbase maturity.
-                if (this.network.Consensus.IsProofOfStake && coins.IsCoinstake)
-                {
-                    var options = (PosConsensusOptions)this.network.Consensus.Options;
-                    int minConf = options.GetStakeMinConfirmations(this.chainIndexer.Height, this.network);
-
-                    if ((this.chainIndexer.Height + 1 - coins.Height) < minConf)
+                    if (this.network.Consensus.IsProofOfStake && coins.IsCoinstake)
                         context.State.Invalid(MempoolErrors.PrematureCoinstake).Throw();
                 }
             }
