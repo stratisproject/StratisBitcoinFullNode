@@ -58,8 +58,14 @@ namespace Stratis.StratisD
 
                         options.ClientEventBroadcasters = new[]
                         {
-                            typeof(StakingBroadcaster),
-                            typeof(WalletInfoBroadcaster)
+                            (Broadcaster: typeof(StakingBroadcaster), ClientEventBroadcasterSettings: new ClientEventBroadcasterSettings
+                                {
+                                    BroadcastFrequencySeconds = 5
+                                }),
+                            (Broadcaster: typeof(WalletInfoBroadcaster), ClientEventBroadcasterSettings: new ClientEventBroadcasterSettings
+                                {
+                                    BroadcastFrequencySeconds = 5
+                                })
                         };
                     });
                 }

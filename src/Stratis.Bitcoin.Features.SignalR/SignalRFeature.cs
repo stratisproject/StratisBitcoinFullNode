@@ -14,8 +14,11 @@ using Stratis.Bitcoin.Features.SignalR.Broadcasters;
 
 namespace Stratis.Bitcoin.Features.SignalR
 {
+    using System.Linq;
+
     public class SignalRFeature : FullNodeFeature
     {
+        internal static Dictionary<Type, ClientEventBroadcasterSettings> eventBroadcasterSettings;
         private const int SignalRStopTimeoutSeconds = 10;
         private readonly FullNode fullNode;
         private readonly IFullNodeBuilder fullNodeBuilder;
@@ -47,9 +50,10 @@ namespace Stratis.Bitcoin.Features.SignalR
                 new WebHostBuilder());
 
             this.eventsSubscriptionService.Init();
-            foreach (var clientEventBroadcaster in this.eventBroadcasters)
+            foreach (IClientEventBroadcaster clientEventBroadcaster in this.eventBroadcasters)
             {
-                clientEventBroadcaster.Initialise();
+                // Intialise with specified settings
+                clientEventBroadcaster.Initialise(eventBroadcasterSettings[clientEventBroadcaster.GetType()]);
             }
 
             return Task.CompletedTask;
@@ -88,7 +92,14 @@ namespace Stratis.Bitcoin.Features.SignalR
     public class SignalROptions
     {
         public IClientEvent[] EventsToHandle { get; set; }
-        public Type[] ClientEventBroadcasters { get; set; }
+
+        public (Type Broadcaster, ClientEventBroadcasterSettings clientEventBroadcasterSettings)[]
+            ClientEventBroadcasters { get; set; }
+    }
+
+    public class ClientEventBroadcasterSettings
+    {
+        public int BroadcastFrequencySeconds { get; set; }
     }
 
     public static partial class IFullNodeBuilderExtensions
@@ -99,6 +110,9 @@ namespace Stratis.Bitcoin.Features.SignalR
             LoggingConfiguration.RegisterFeatureNamespace<SignalRFeature>("signalr");
             var options = new SignalROptions();
             optionsAction?.Invoke(options);
+            SignalRFeature.eventBroadcasterSettings =
+                options.ClientEventBroadcasters.ToDictionary(
+                    pair => pair.Broadcaster, pair => pair.clientEventBroadcasterSettings);
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
@@ -114,15 +128,17 @@ namespace Stratis.Bitcoin.Features.SignalR
 
                         if (null != options.ClientEventBroadcasters)
                         {
-                            foreach (Type eventBroadcaster in options.ClientEventBroadcasters)
+                            foreach (var eventBroadcaster in options.ClientEventBroadcasters)
                             {
-                                if (typeof(IClientEventBroadcaster).IsAssignableFrom(eventBroadcaster))
+                                if (typeof(IClientEventBroadcaster).IsAssignableFrom(eventBroadcaster.Broadcaster))
                                 {
-                                    services.AddSingleton(typeof(IClientEventBroadcaster), eventBroadcaster);
+                                    services.AddSingleton(typeof(IClientEventBroadcaster),
+                                        eventBroadcaster.Broadcaster);
                                 }
                                 else
                                 {
-                                    Console.WriteLine($"Warning {eventBroadcaster.Name} is not of type {typeof(IClientEventBroadcaster).Name}");
+                                    Console.WriteLine(
+                                        $"Warning {eventBroadcaster.Broadcaster.Name} is not of type {typeof(IClientEventBroadcaster).Name}");
                                 }
                             }
                         }
