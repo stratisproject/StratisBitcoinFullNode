@@ -109,8 +109,8 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
 
         public ulong GetWalletAddressBalance(string walletAddress)
         {
-            var jsonResult = (JsonResult) this.smartContractWalletController.GetAddressBalance(walletAddress);
-            return (ulong) (decimal) jsonResult.Value;
+            var jsonResult = (JsonResult)this.smartContractWalletController.GetAddressBalance(walletAddress);
+            return (ulong)(decimal)jsonResult.Value;
         }
 
         /// <summary>
@@ -201,10 +201,10 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 Outpoints = outpoints
             };
 
-            IActionResult result = this.smartContractsController.BuildAndSendCreateSmartContractTransaction(request);
+            IActionResult result = this.smartContractsController.BuildAndSendCreateSmartContractTransactionAsync(request).GetAwaiter().GetResult();
             if (result is JsonResult response)
             {
-                return (BuildCreateContractTransactionResponse)response.Value; 
+                return (BuildCreateContractTransactionResponse)response.Value;
             }
 
             return null;
@@ -266,7 +266,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
-            decimal feeAmount = 0.01M, 
+            decimal feeAmount = 0.01M,
             string sender = null)
         {
             var request = new BuildCallContractTransactionRequest
@@ -284,7 +284,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 WalletName = this.WalletName
             };
 
-            JsonResult response = (JsonResult)this.smartContractsController.BuildAndSendCallSmartContractTransaction(request);
+            var response = (JsonResult)this.smartContractsController.BuildAndSendCallSmartContractTransactionAsync(request).GetAwaiter().GetResult();
 
             return (BuildCallContractTransactionResponse)response.Value;
         }
@@ -309,7 +309,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 Sender = sender ?? this.MinerAddress.Address
             };
             JsonResult response = (JsonResult)this.smartContractsController.LocalCallSmartContractTransaction(request);
-            return (ILocalExecutionResult) response.Value;
+            return (ILocalExecutionResult)response.Value;
         }
 
         /// <summary>
