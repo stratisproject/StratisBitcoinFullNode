@@ -775,8 +775,8 @@ namespace Stratis.SmartContracts.IntegrationTests
 
             // There should be 20 transactions in the last block as that is when the block gas expenditure limit was reached.
             // 19 included transactions plus 1 coinbase.
-            int expectedTxCount_20 = Convert.ToInt32(txGasPerBlockLimit_1_000_000 / gasLimit_50_000);
-            Assert.Equal(expectedTxCount_20, lastBlock.Transactions.Count);
+            int expectedTxCount_21 = Convert.ToInt32(txGasPerBlockLimit_1_000_000 / gasLimit_50_000) + 1; // +1 for coinbase
+            Assert.Equal(expectedTxCount_21, lastBlock.Transactions.Count);
 
             // Ensure that all the transactions that were added is in the last block created.
             foreach (Transaction transaction in lastBlock.Transactions.Where(tx => !tx.IsCoinBase))
@@ -784,10 +784,10 @@ namespace Stratis.SmartContracts.IntegrationTests
                 Assert.Contains(transaction.GetHash(), contractTransactionIds);
             }
 
-            // Mine the remaining 6 transactions (tx #20 to #25)
+            // Mine the remaining 5 transactions (tx #21 to #25)
             this.mockChain.MineBlocks(1);
 
-            int restOfTx = txCount_25 - Convert.ToInt32(txGasPerBlockLimit_1_000_000 / gasLimit_50_000) + 2; // Include 2 coin base txs;
+            int restOfTx = txCount_25 - Convert.ToInt32(txGasPerBlockLimit_1_000_000 / gasLimit_50_000) + 1; // +1 for coinbase
             lastBlock = this.node1.GetLastBlock();
             Assert.Equal(restOfTx, lastBlock.Transactions.Count);
         }
