@@ -235,7 +235,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Find the last chain block received by the wallet manager.
             HashHeightPair hashHeightPair = this.LastReceivedBlockInfo();
             this.WalletTipHash = hashHeightPair.Hash;
-            this.WalletTipHeight= hashHeightPair.Height;
+            this.WalletTipHeight = hashHeightPair.Height;
 
             // Save the wallets file every 5 minutes to help against crashes.
             this.asyncLoop = this.asyncProvider.CreateAndRunAsyncLoop("Wallet persist job", token =>
@@ -1007,30 +1007,27 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                if (block != null)
+                // Do a pre-scan of the incoming transaction's inputs to see if they're used in other wallet transactions already.
+                foreach (TxIn input in transaction.Inputs)
                 {
-                    // Do a pre-scan of the incoming transaction's inputs to see if they're used in other wallet transactions already.
-                    foreach (TxIn input in transaction.Inputs)
+                    // See if this input is being used by another wallet transaction present in the index.
+                    // The inputs themselves may not belong to the wallet, but the transaction data in the index has to be for a wallet transaction.
+                    if (this.inputLookup.TryGetValue(input.PrevOut, out TransactionData indexData))
                     {
-                        // See if this input is being used by another wallet transaction present in the index.
-                        // The inputs themselves may not belong to the wallet, but the transaction data in the index has to be for a wallet transaction.
-                        if (this.inputLookup.TryGetValue(input.PrevOut, out TransactionData indexData))
+                        // It's the same transaction, which can occur if the transaction had been added to the wallet previously. Ignore.
+                        if (indexData.Id == hash)
+                            continue;
+
+                        if (indexData.BlockHash != null)
                         {
-                            // It's the same transaction, which can occur if the transaction had been added to the wallet previously. Ignore.
-                            if (indexData.Id == hash)
-                                continue;
-
-                            if (indexData.BlockHash != null)
-                            {
-                                // This should not happen as pre checks are done in mempool and consensus.
-                                throw new WalletException("The same inputs were found in two different confirmed transactions");
-                            }
-
-                            // This is a double spend we remove the unconfirmed trx
-                            this.logger.LogDebug("Removing double spend for tx id {0} and input {1}.", indexData.Id, input.PrevOut);
-                            this.RemoveTransactionsByIds(new[] { indexData.Id });
-                            this.inputLookup.Remove(input.PrevOut);
+                            // This should not happen as pre checks are done in mempool and consensus.
+                            throw new WalletException("The same inputs were found in two different confirmed transactions");
                         }
+
+                        // This is a double spend we remove the unconfirmed trx
+                        this.logger.LogDebug("Removing double spend for tx id {0} and input {1}.", indexData.Id, input.PrevOut);
+                        this.RemoveTransactionsByIds(new[] { indexData.Id });
+                        this.inputLookup.Remove(input.PrevOut);
                     }
                 }
 
@@ -1685,7 +1682,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                             bool txIsConfirmed = transaction.IsConfirmed();
                             bool spendingDetailsConfirmed = transaction.SpendingDetails?.IsSpentConfirmed() ?? false;
-                            
+
                             // If all details are confirmed we cannot remove tx or its spending details.
                             if (txIsConfirmed && spendingDetailsConfirmed)
                                 continue;
