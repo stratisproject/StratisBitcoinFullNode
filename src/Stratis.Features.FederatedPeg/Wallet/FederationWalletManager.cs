@@ -457,16 +457,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         if (indexData.Id == hash)
                             continue;
 
-                        if (indexData.BlockHash != null)
-                        {
-                            // This should not happen as pre checks are done in mempool and consensus.
-                            throw new WalletException("The same inputs were found in two different confirmed transactions");
-                        }
-
                         // This is a double spend we remove the unconfirmed trx
                         this.logger.LogDebug("Removing double spend for tx id {0} and input {1}.", indexData.Id, input.PrevOut);
-                        this.RemoveTransactionById(indexData.Id);
-                        this.outpointLookup.Remove(input.PrevOut);
+                        if (this.RemoveTransactionById(indexData.Id))
+                            this.outpointLookup.Remove(input.PrevOut);
                     }
                 }
 
@@ -552,11 +546,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
-        private void RemoveTransactionById(uint256 id)
+        private bool RemoveTransactionById(uint256 id)
         {
             var result = new HashSet<(uint256, DateTimeOffset)>();
             MultiSigAddress address = this.Wallet.MultiSigAddress;
-
+            bool removed = false;
             for (int i = address.Transactions.Count - 1; i >= 0; i--)
             {
                 TransactionData transaction = address.Transactions.ElementAt(i);
@@ -585,6 +579,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     this.logger.LogDebug("Removing unconfirmed transaction {0}.", transaction.Id);
                     result.Add((transaction.Id, transaction.CreationTime));
                     address.Transactions.Remove(transaction);
+                    removed = true;
                     continue;
                 }
 
@@ -601,6 +596,8 @@ namespace Stratis.Features.FederatedPeg.Wallet
             {
                 this.SaveWallet();
             }
+
+            return removed;
         }
 
         private bool CleanTransactionsPastMaxReorg(int height)
