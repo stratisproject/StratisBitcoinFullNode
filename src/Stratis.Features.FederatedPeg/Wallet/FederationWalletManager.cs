@@ -560,29 +560,28 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 // If there is no match, continue.
                 if (!txMatches && !spendingDetailsMatch)
-                {
-                    this.logger.LogDebug("Transaction does not match federation wallet transaction: {0}='{1}'", nameof(federationWalletTransaction.Id), federationWalletTransaction.Id);
                     continue;
-                }
 
-                bool federationWalletTxIsConfirmed = federationWalletTransaction.IsConfirmed();
-                bool spendingDetailsConfirmed = federationWalletTransaction.SpendingDetails?.IsSpentConfirmed() ?? false;
+                bool federationWalletTxConfirmed = federationWalletTransaction.IsConfirmed();
+                bool federationWalletSpendingDetailsConfirmed = federationWalletTransaction.SpendingDetails?.IsSpentConfirmed() ?? false;
+
+                this.logger.LogDebug("Federation wallet transaction spending details confirmed: {0}:{1}", federationWalletSpendingDetailsConfirmed, federationWalletTransaction.SpendingDetails == null ? "SpendingDetails is Null" : "HasSpending");
 
                 // If all details are confirmed we cannot remove tx or its spending details.
-                if (federationWalletTxIsConfirmed && spendingDetailsConfirmed)
+                if (federationWalletTxConfirmed && federationWalletSpendingDetailsConfirmed)
                 {
                     this.logger.LogDebug("Federation wallet tx and spending details is confirmed.");
                     continue;
                 }
 
                 // We should never get a case when tx is unconfirmed but spending details confirmed.
-                if (!federationWalletTxIsConfirmed && spendingDetailsConfirmed)
+                if (!federationWalletTxConfirmed && federationWalletSpendingDetailsConfirmed)
                     throw new WalletException("Spending details cannot be confirmed when transaction is unconfirmed.");
 
-                this.logger.LogDebug("{0}:{1} / {2}:{3}", nameof(txMatches), txMatches, nameof(federationWalletTxIsConfirmed), federationWalletTxIsConfirmed);
+                this.logger.LogDebug("{0}:{1} / {2}:{3}", nameof(txMatches), txMatches, nameof(federationWalletTxConfirmed), federationWalletTxConfirmed);
 
                 // If matched transaction is unconfirmed, remove it and continue.
-                if (txMatches && !federationWalletTxIsConfirmed)
+                if (txMatches && !federationWalletTxConfirmed)
                 {
                     this.logger.LogDebug("Removing unconfirmed transaction {0}.", federationWalletTransaction.Id);
                     result.Add((federationWalletTransaction.Id, federationWalletTransaction.CreationTime));
