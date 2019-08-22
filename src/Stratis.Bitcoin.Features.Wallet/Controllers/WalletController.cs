@@ -1365,6 +1365,68 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             return this.Ok();
         }
 
+        [Route("wallet-stats")]
+        [HttpGet]
+        public IActionResult WalletStats([FromQuery] WalletStatsRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+            WalletStatsModel model = new WalletStatsModel();
+            model.WalletName = request.WalletName;
+
+            // Checks the request is valid.
+            if (!this.ModelState.IsValid)
+            {
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                IEnumerable<UnspentOutputReference> spendableTransactions = this.walletManager.GetSpendableTransactionsInAccount(new WalletAccountReference(request.WalletName, request.AccountName), request.MinConfirmations);
+                
+                model.TotalUtxoCount = spendableTransactions.Count();
+                model.UniqueTransactionCount = (from s in spendableTransactions
+                                             group s by s.Transaction.Id into t
+                                             select t.Key).Count();
+
+                model.UniqueBlockCount = (from s in spendableTransactions
+                                          group s by s.Transaction.BlockIndex into t
+                                          select t.Key).Count();
+
+                model.FinalizedTransactions = (from s in spendableTransactions
+                                               where s.Confirmations >= this.network.Consensus.MaxReorgLength
+                                               select s).Count();
+
+                if (request.Verbose)
+                {
+                    model.UtxoAmounts = (from s in spendableTransactions
+                                         group s by s.Transaction.Amount into a
+                                         orderby a.Count() descending
+                                         select new UtxoAmountModel { Amount = a.Key.ToDecimal(MoneyUnit.BTC), Count = a.Count() }).ToList();
+
+                    //This is number of UTXO originating from the same transaction
+                    //WalletInputsPerTransaction = 2000 and Count = 1; would be the result of one split coin operation into 2000 UTXOs
+                    model.UtxoPerTransaction = (from s in spendableTransactions
+                                                group s by s.Transaction.Id into i
+                                                group i by i.Count() into g
+                                                orderby g.Count() descending
+                                                select new UtxoPerTransactionModel { WalletInputsPerTransaction = g.Key, Count = g.Count() }).ToList();
+
+                    model.UtxoPerBlock = (from s in spendableTransactions
+                                          group s by s.Transaction.BlockHeight into h
+                                          group h by h.Count() into g
+                                          orderby g.Count() descending
+                                          select new UtxoPerBlockModel { WalletInputsPerBlock = g.Key, Count = g.Count() }).ToList();
+                }
+
+                return this.Json(model);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
         /// <summary>Creates requested amount of UTXOs each of equal value.</summary>
         [HttpPost]
         [Route("splitcoins")]
