@@ -58,7 +58,21 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
     }
 
-    public class SQLiteWalletRepository : LockProtected, IWalletRepository, IDisposable
+    /// <summary>
+    /// Implements an SQLite wallet repository.
+    /// </summary>
+    /// <remarks>
+    /// <para>This repository is basically implemented as a collection of public keys plus the transactions corresponding to those
+    /// public keys. The only significant business logic being used is injected from external via the <see cref="IScriptAddressReader"/>
+    /// or <see cref="IScriptDestinationReader" /> interfaces. Those interfaces bring <see cref="TxOut.ScriptPubKey" /> scripts into
+    /// the world of raw public key hash (script) matching. The intention is that this will provide persistence for smart contract
+    /// wallets, cold staking wallets, federation wallets and legacy wallets without any modifications to this code base.</para>
+    /// <para>Federation wallets are further supported by the ability to provide a custom tx id to <see cref="ProcessTransaction" />
+    /// (used only for unconfirmed transactions). In this case the custom tx id would be set to the deposit id when creating
+    /// transient transactions via the <see cref="ProcessTransaction" /> call. It is expected that everything should then work
+    /// as intended with confirmed transactions (via see <cref="ProcessBlock" />) taking precedence over non-confirmed transactions.</para>
+    ///</remarks>
+    public class SQLiteWalletRepository : IWalletRepository, IDisposable
     {
         internal Network Network { get; private set; }
         internal DataFolder DataFolder { get; private set; }

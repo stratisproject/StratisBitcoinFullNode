@@ -19,7 +19,7 @@ namespace Stratis.Features.SQLiteWalletRepository
     /// - IDateTimeProvider
     ///   - used for populating CreationTime fields.
     ///   IScriptAddressReader
-    ///   - used to find the destinations of redeem scripts.
+    ///   - used to find the destinations of <see cref="TxOut.ScriptPubKey" /> scripts.
     /// </remarks>
     public interface IWalletRepository
     {
