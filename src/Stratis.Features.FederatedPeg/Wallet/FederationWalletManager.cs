@@ -434,6 +434,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(transaction, nameof(transaction));
             Guard.Assert(blockHash == (blockHash ?? block?.GetHash()));
 
+            uint256 hash = transaction.GetHash();
 
             lock (this.lockObject)
             {
@@ -445,20 +446,27 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 bool foundReceivingTrx = false, foundSendingTrx = false;
 
-                // Check if we're trying to spend a utxo twice
+                // Do a pre-scan of the incoming transaction's inputs to see if they're used in other wallet transactions already.
                 foreach (TxIn input in transaction.Inputs)
                 {
-                    if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData tTx))
+                    // See if this input is being used by another wallet transaction present in the index.
+                    // The inputs themselves may not belong to the wallet, but the transaction data in the index has to be for a wallet transaction.
+                    if (this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData indexData))
                     {
-                        continue;
-                    }
+                        // It's the same transaction, which can occur if the transaction had been added to the wallet previously. Ignore.
+                        if (indexData.Id == hash)
+                            continue;
 
-                    // If we're trying to spend an input that is already spent, and it's not coming in a new block, don't reserve the transaction.
-                    // This would be the case when blocks are synced in between CrossChainTransferStore calling
-                    // FederationWalletTransactionHandler.BuildTransaction and FederationWalletManager.ProcessTransaction.
-                    if (blockHeight == null && tTx.SpendingDetails?.BlockHeight != null)
-                    {
-                        return false;
+                        if (indexData.BlockHash != null)
+                        {
+                            // This should not happen as pre checks are done in mempool and consensus.
+                            throw new WalletException("The same inputs were found in two different confirmed transactions");
+                        }
+
+                        // This is a double spend we remove the unconfirmed trx
+                        this.logger.LogDebug("Removing double spend for tx id {0} and input {1}.", indexData.Id, input.PrevOut);
+                        this.RemoveTransactionById(indexData.Id);
+                        this.outpointLookup.Remove(input.PrevOut);
                     }
                 }
 
@@ -491,6 +499,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     {
                         this.AddTransactionToWallet(transaction, utxo, blockHeight, blockHash, block);
                         foundReceivingTrx = true;
+                        this.logger.LogDebug("Transaction '{0}' contained funds received by the user's wallet(s).", transaction.GetHash());
                     }
                 }
 
@@ -526,6 +535,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                     this.AddSpendingTransactionToWallet(transaction, paidOutTo, tTx.Id, tTx.Index, blockHeight, blockHash, block, withdrawal);
                     foundSendingTrx = true;
+                    this.logger.LogDebug("Transaction '{0}' contained funds sent by the user's wallet(s).", hash);
                 }
 
                 // Figure out what to do when this transaction is found to affect the wallet.
@@ -539,6 +549,57 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 }
 
                 return foundSendingTrx || foundReceivingTrx;
+            }
+        }
+
+        private void RemoveTransactionById(uint256 id)
+        {
+            var result = new HashSet<(uint256, DateTimeOffset)>();
+            MultiSigAddress address = this.Wallet.MultiSigAddress;
+
+            for (int i = address.Transactions.Count - 1; i >= 0; i--)
+            {
+                TransactionData transaction = address.Transactions.ElementAt(i);
+
+                bool txMatches = transaction.Id == id;
+                bool spendingDetailsMatch = transaction.SpendingDetails?.TransactionId == id;
+
+                // If there is no match, continue.
+                if (!txMatches && !spendingDetailsMatch)
+                    continue;
+
+                bool txIsConfirmed = transaction.IsConfirmed();
+                bool spendingDetailsConfirmed = transaction.SpendingDetails?.IsSpentConfirmed() ?? false;
+
+                // If all details are confirmed we cannot remove tx or its spending details.
+                if (txIsConfirmed && spendingDetailsConfirmed)
+                    continue;
+
+                // We should never get a case when tx is unconfirmed but spending details confirmed.
+                if (!txIsConfirmed && spendingDetailsConfirmed)
+                    throw new WalletException("Spending details cannot be confirmed when transaction is unconfirmed.");
+
+                // If matched transaction is unconfirmed, remove it and continue.
+                if (txMatches && !txIsConfirmed)
+                {
+                    this.logger.LogDebug("Removing unconfirmed transaction {0}.", transaction.Id);
+                    result.Add((transaction.Id, transaction.CreationTime));
+                    address.Transactions.Remove(transaction);
+                    continue;
+                }
+
+                // If spending details match and unconfirmed.
+                if (spendingDetailsMatch)
+                {
+                    this.logger.LogDebug("Removing spend details with tx id {0} for confirmed transaction {1}.", transaction.SpendingDetails.TransactionId, transaction.Id);
+                    result.Add((transaction.SpendingDetails.TransactionId, transaction.SpendingDetails.CreationTime));
+                    transaction.SpendingDetails = null;
+                }
+            }
+
+            if (result.Any())
+            {
+                this.SaveWallet();
             }
         }
 
