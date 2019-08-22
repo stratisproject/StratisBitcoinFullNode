@@ -769,6 +769,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [DefaultValue(1)]
         public int MinConfirmations { get; set; }
 
+        /// <summary>
+        /// A list of outpoints to use as inputs for the transaction.
+        /// </summary> 
+        public List<OutpointRequest> Outpoints { get; set; }
+
+        [Required]
+        public bool DryRun { get; set; }
+
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             if (this.UtxoPerTransaction > this.UtxosCount)

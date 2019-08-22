@@ -1425,13 +1425,36 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
-            DistributeUtxoModel model = new DistributeUtxoModel();
+            DistributeUtxoModel model = new DistributeUtxoModel()
+            {
+                WalletName = request.WalletName,
+                UseUniqueAddressPerUtxo = request.UseUniqueAddressPerUtxo,
+                UtxosCount = request.UtxosCount,
+                UtxoPerTransaction = request.UtxoPerTransaction,
+                TimestampDifferenceBetweenTransactions = request.TimestampDifferenceBetweenTransactions,
+                MinConfirmations = request.MinConfirmations,
+                DryRun = request.DryRun
+            };
+
             try
             {
                 var walletReference = new WalletAccountReference(request.WalletName, request.AccountName);
                 List<HdAddress> addresses = this.walletManager.GetUnusedAddresses(walletReference, request.UseUniqueAddressPerUtxo ? request.UtxosCount : 1).ToList();
                 IEnumerable<UnspentOutputReference> spendableTransactions = this.walletManager.GetSpendableTransactionsInAccount(new WalletAccountReference(request.WalletName, request.AccountName), request.MinConfirmations);
 
+                if (request.Outpoints != null && request.Outpoints.Any())
+                {
+                    List<UnspentOutputReference> selectedunspentOutputReferenceList = new List<UnspentOutputReference>();
+                    foreach (UnspentOutputReference unspentOutputReference in spendableTransactions)
+                    {
+                        if (request.Outpoints.Any(o => o.TransactionId == unspentOutputReference.Transaction.Id.ToString() && o.Index == unspentOutputReference.Transaction.Index))
+                        {
+                            selectedunspentOutputReferenceList.Add(unspentOutputReference);
+                        }
+                    }
+                    spendableTransactions = selectedunspentOutputReferenceList;
+                }
+                
                 int totalOutpointCount = spendableTransactions.Count();
                 Money totalAmount = spendableTransactions.Sum(s => s.Transaction.Amount);
                 int calculatedTransactionCount = request.UtxosCount / request.UtxoPerTransaction;
@@ -1473,8 +1496,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             }
                         }
 
-                        //For the purpose of fee estimation use the transfer amount as if the fee was zero
-                        Money transferAmount = transactionTransferAmount / recipients.Count;
+                        //For the purpose of fee estimation use the transfer amount as if the fee were network.MinTxFee
+                        FeeRate feeRate = new FeeRate(network.MinTxFee);
+                        Money transferAmount = (transactionTransferAmount) / recipients.Count;
                         recipients.ForEach(r => r.Amount = transferAmount);
 
                         var context = new TransactionBuildContext(this.network)
@@ -1488,16 +1512,26 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             SelectedInputs = inputs,
                             FeeType = FeeType.Low
                         };
-                        Money feeAmount = this.walletTransactionHandler.EstimateFee(context);
-
 
                         //Set the amount once we know how much the transfer will cost
-                        Money transactionFee = this.walletTransactionHandler.EstimateFee(context);
+                        Money transactionFee;
+                        try
+                        {
+                            Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
+                            //Due to how the code works the line below is probably never used
+                            transactionFee = feeRate.GetFee(transaction);
+                        } catch (NotEnoughFundsException ex)
+                        {
+                            //This remains the best apprach for estimating transaction fees
+                            transactionFee = (Money)ex.Missing;
+                        }
+
+                        if (transactionFee < this.network.MinTxFee)
+                            transactionFee = new Money(this.network.MinTxFee);
+
                         transferAmount = (transactionTransferAmount - transactionFee) / recipients.Count;
                         recipients.ForEach(r => r.Amount = transferAmount);
-
                         
-
                         context = new TransactionBuildContext(this.network)
                         {
                             AccountReference = walletReference,
@@ -1510,15 +1544,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             TransactionFee = transactionFee
                         };
 
-                        try
-                        {
-                            Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);
-                            transactionList.Add(transactionResult);
-                            recipients = new List<Recipient>();
-                        } catch (Exception ex)
-                        {
-                            int rr = 5;
-                        }
+                        Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);
+                        transactionList.Add(transactionResult);
+                        recipients = new List<Recipient>();
                     }
                 }
 
@@ -1542,14 +1570,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     }
                     model.WalletSendTransaction.Add(modelItem);
 
-                    this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
-
-                    TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
-
-                    if (transactionBroadCastEntry.State == State.CantBroadcast)
+                    if (!request.DryRun)
                     {
-                        this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
-                        return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
+                        this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+
+                        TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
+
+                        if (transactionBroadCastEntry.State == State.CantBroadcast)
+                        {
+                            this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
+                            return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
+                        }
                     }
                 }
 
@@ -1561,7 +1592,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-
 
         private void SyncFromBestHeightForRecoveredWallets(DateTime walletCreationDate)
         {
