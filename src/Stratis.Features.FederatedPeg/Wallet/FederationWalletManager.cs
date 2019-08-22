@@ -545,49 +545,60 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
         }
 
-        private bool RemoveTransactionById(uint256 id)
+        private bool RemoveTransactionById(uint256 transactionId)
         {
             var result = new HashSet<(uint256, DateTimeOffset)>();
             MultiSigAddress address = this.Wallet.MultiSigAddress;
             bool removed = false;
+
             for (int i = address.Transactions.Count - 1; i >= 0; i--)
             {
-                TransactionData transaction = address.Transactions.ElementAt(i);
+                TransactionData federationWalletTransaction = address.Transactions.ElementAt(i);
 
-                bool txMatches = transaction.Id == id;
-                bool spendingDetailsMatch = transaction.SpendingDetails?.TransactionId == id;
+                bool txMatches = federationWalletTransaction.Id == transactionId;
+                bool spendingDetailsMatch = federationWalletTransaction.SpendingDetails?.TransactionId == transactionId;
 
                 // If there is no match, continue.
                 if (!txMatches && !spendingDetailsMatch)
+                {
+                    this.logger.LogDebug("Transaction does not match federation wallet transaction: {0}='{1}'", nameof(federationWalletTransaction.Id), federationWalletTransaction.Id);
                     continue;
+                }
 
-                bool txIsConfirmed = transaction.IsConfirmed();
-                bool spendingDetailsConfirmed = transaction.SpendingDetails?.IsSpentConfirmed() ?? false;
+                bool federationWalletTxIsConfirmed = federationWalletTransaction.IsConfirmed();
+                bool spendingDetailsConfirmed = federationWalletTransaction.SpendingDetails?.IsSpentConfirmed() ?? false;
 
                 // If all details are confirmed we cannot remove tx or its spending details.
-                if (txIsConfirmed && spendingDetailsConfirmed)
+                if (federationWalletTxIsConfirmed && spendingDetailsConfirmed)
+                {
+                    this.logger.LogDebug("Federation wallet tx and spending details is confirmed.");
                     continue;
+                }
 
                 // We should never get a case when tx is unconfirmed but spending details confirmed.
-                if (!txIsConfirmed && spendingDetailsConfirmed)
+                if (!federationWalletTxIsConfirmed && spendingDetailsConfirmed)
                     throw new WalletException("Spending details cannot be confirmed when transaction is unconfirmed.");
 
+                this.logger.LogDebug("{0}:{1} / {2}:{3}", nameof(txMatches), txMatches, nameof(federationWalletTxIsConfirmed), federationWalletTxIsConfirmed);
+
                 // If matched transaction is unconfirmed, remove it and continue.
-                if (txMatches && !txIsConfirmed)
+                if (txMatches && !federationWalletTxIsConfirmed)
                 {
-                    this.logger.LogDebug("Removing unconfirmed transaction {0}.", transaction.Id);
-                    result.Add((transaction.Id, transaction.CreationTime));
-                    address.Transactions.Remove(transaction);
+                    this.logger.LogDebug("Removing unconfirmed transaction {0}.", federationWalletTransaction.Id);
+                    result.Add((federationWalletTransaction.Id, federationWalletTransaction.CreationTime));
+                    address.Transactions.Remove(federationWalletTransaction);
                     removed = true;
                     continue;
                 }
 
+                this.logger.LogDebug("{0}:{1} / {2}:{3}", nameof(spendingDetailsMatch), spendingDetailsMatch);
+
                 // If spending details match and unconfirmed.
                 if (spendingDetailsMatch)
                 {
-                    this.logger.LogDebug("Removing spend details with tx id {0} for confirmed transaction {1}.", transaction.SpendingDetails.TransactionId, transaction.Id);
-                    result.Add((transaction.SpendingDetails.TransactionId, transaction.SpendingDetails.CreationTime));
-                    transaction.SpendingDetails = null;
+                    this.logger.LogDebug("Removing spend details with tx id {0} for confirmed transaction {1}.", federationWalletTransaction.SpendingDetails.TransactionId, federationWalletTransaction.Id);
+                    result.Add((federationWalletTransaction.SpendingDetails.TransactionId, federationWalletTransaction.SpendingDetails.CreationTime));
+                    federationWalletTransaction.SpendingDetails = null;
                 }
             }
 
