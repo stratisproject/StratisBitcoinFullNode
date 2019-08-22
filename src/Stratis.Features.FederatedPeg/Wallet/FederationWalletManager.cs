@@ -435,6 +435,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.Assert(blockHash == (blockHash ?? block?.GetHash()));
 
             uint256 hash = transaction.GetHash();
+            this.logger.LogDebug("Processing transaction {0}.", hash);
 
             lock (this.lockObject)
             {
@@ -458,8 +459,15 @@ namespace Stratis.Features.FederatedPeg.Wallet
                             continue;
 
                         // This is a double spend we remove the unconfirmed trx
-                        this.logger.LogDebug("Removing double spend for tx id {0} and input {1}.", indexData.Id, input.PrevOut);
-                        this.RemoveTransactionById(indexData.Id);
+                        this.logger.LogDebug("Removing double spend for tx id {0} and input {1}.", hash, input.PrevOut);
+                        bool removed = this.RemoveTransactionById(indexData.Id);
+
+                        // If we failed to remove it, the currently processed transaction is invalid
+                        if (!removed)
+                        {
+                            this.logger.LogDebug("Removal of double spend for tx id {0} and input {1} failed. Do not process this transaction.", hash, input.PrevOut);
+                            return false;
+                        }
                     }
                 }
 
@@ -472,7 +480,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     List<(Transaction transaction, IWithdrawal withdrawal)> walletData = this.FindWithdrawalTransactions(withdrawal.DepositId);
                     if ((walletData.Count == 1) && (walletData[0].withdrawal.BlockNumber != 0))
                     {
-                        this.logger.LogDebug("Deposit {0} Already included in block.", withdrawal.DepositId);
+                        this.logger.LogDebug("Deposit {0} already included in block.", withdrawal.DepositId);
                         return false;
                     }
 
@@ -492,7 +500,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     {
                         this.AddTransactionToWallet(transaction, utxo, blockHeight, blockHash, block);
                         foundReceivingTrx = true;
-                        this.logger.LogDebug("Transaction '{0}' contained funds received by the user's wallet(s).", transaction.GetHash());
                     }
                 }
 
