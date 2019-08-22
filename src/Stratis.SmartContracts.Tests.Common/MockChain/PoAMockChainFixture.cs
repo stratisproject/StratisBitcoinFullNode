@@ -10,7 +10,9 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
         private readonly SmartContractNodeBuilder builder;
         public IMockChain Chain { get; }
 
-        public PoAMockChainFixture()
+        public PoAMockChainFixture() : this(2) { }
+
+        protected PoAMockChainFixture(int nodeNum)
         {
             var network = new SmartContractsPoARegTest();
             this.builder = SmartContractNodeBuilder.Create(this);
@@ -47,5 +49,10 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             this.builder.Dispose();
             this.Chain.Dispose();
         }
+    }
+
+    public class PoAMockChainFixture3Nodes : PoAMockChainFixture
+    {
+        public PoAMockChainFixture3Nodes() : base(3) { }
     }
 }

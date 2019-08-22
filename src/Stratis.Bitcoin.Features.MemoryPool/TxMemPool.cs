@@ -1082,6 +1082,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 get { return this.Values.OrderBy(o => o, new CompareTxMemPoolEntryByAncestorFee()); }
             }
 
+            /// <summary>Gets the memory pool entries that spend a coinbase transaction.</summary>
+            public IEnumerable<TxMempoolEntry> SpendsCoinbase
+            {
+                get { return this.Values.Where(x => x.SpendsCoinbase); }
+            }
+
             /// <summary>
             /// Adds an entry to the transaction set.
             /// </summary>
