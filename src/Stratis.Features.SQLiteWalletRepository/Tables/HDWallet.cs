@@ -33,6 +33,9 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 BlockLocator        TEXT NOT NULL,
                 CreationTime        INTEGER NOT NULL
             );";
+
+            yield return "CREATE UNIQUE INDEX UX_HDWallet_Name ON HDWallet(Name)";
+            yield return "CREATE UNIQUE INDEX UX_HDWallet_EncryptedSeed ON HDWallet(EncryptedSeed)";
         }
 
         internal static void CreateTable(DBConnection conn)
