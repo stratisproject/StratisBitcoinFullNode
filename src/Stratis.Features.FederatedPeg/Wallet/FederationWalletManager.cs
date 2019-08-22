@@ -459,8 +459,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                         // This is a double spend we remove the unconfirmed trx
                         this.logger.LogDebug("Removing double spend for tx id {0} and input {1}.", indexData.Id, input.PrevOut);
-                        if (this.RemoveTransactionById(indexData.Id))
-                            this.outpointLookup.Remove(input.PrevOut);
+                        this.RemoveTransactionById(indexData.Id);
                     }
                 }
 
