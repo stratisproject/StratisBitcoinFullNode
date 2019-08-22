@@ -9,10 +9,7 @@ using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
-<<<<<<< HEAD
 using Stratis.Bitcoin.Tests.Common;
-=======
->>>>>>> master
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
