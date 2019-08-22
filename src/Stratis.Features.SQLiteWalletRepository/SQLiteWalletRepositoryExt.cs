@@ -39,7 +39,6 @@ namespace Stratis.Features.SQLiteWalletRepository
         internal static HdAddress ToHdAddress(this SQLiteWalletRepository repo, HDAddress address)
         {
             var pubKeyScript = new Script(Encoders.Hex.DecodeData(address.PubKey)); // P2PK
-            PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(pubKeyScript);
             var scriptPubKey = new Script(Encoders.Hex.DecodeData(address.ScriptPubKey));
 
             var res = new HdAddress()

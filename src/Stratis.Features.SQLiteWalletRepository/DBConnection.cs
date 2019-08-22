@@ -51,7 +51,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             var account = HDAccount.GetAccount(this, walletId, accountIndex);
 
-            for (int addressIndex = addressCount; buffer < 20; buffer++, addressIndex++)
+            for (int addressIndex = addressCount; buffer < HDAddress.StandardAddressCount; buffer++, addressIndex++)
                 yield return CreateAddress(account, addressType, addressIndex);
         }
 

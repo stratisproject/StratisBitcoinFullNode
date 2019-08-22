@@ -277,8 +277,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                     conn.BeginTransaction();
 
                     var account = conn.CreateAccount(wallet.WalletId, accountIndex, accountName, extPubKey.ToString(this.Network), (int)(creationTime ?? this.DateTimeProvider.GetTimeOffset()).ToUnixTimeSeconds());
-                    conn.CreateAddresses(account, 0, 20);
-                    conn.CreateAddresses(account, 1, 20);
+                    conn.CreateAddresses(account, HDAddress.Internal, HDAddress.StandardAddressCount);
+                    conn.CreateAddresses(account, HDAddress.External, HDAddress.StandardAddressCount);
 
                     walletContainer.AddressesOfInterest.AddAll(conn, wallet.WalletId, accountIndex);
 
@@ -551,7 +551,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                     {
                             AccountIndex = transactionData.AccountIndex,
                             AddressIndex = transactionData.AddressIndex,
-                            AddressType = transactionData.AddressType,
+                            AddressType = (int)transactionData.AddressType,
                             PubKey = transactionData.ScriptPubKey,
                             ScriptPubKey = transactionData.RedeemScript
                     })
@@ -581,8 +581,8 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 var history = new List<FlatHistory>();
 
-                foreach (HDAddress address in conn.GetUsedAddresses(wallet.WalletId, account.AccountIndex, 0)
-                    .Concat(conn.GetUsedAddresses(wallet.WalletId, account.AccountIndex, 1)))
+                foreach (HDAddress address in conn.GetUsedAddresses(wallet.WalletId, account.AccountIndex, HDAddress.External)
+                    .Concat(conn.GetUsedAddresses(wallet.WalletId, account.AccountIndex, HDAddress.Internal)))
                 {
                     HdAddress hdAddress = this.ToHdAddress(address);
 
