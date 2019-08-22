@@ -591,7 +591,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     continue;
                 }
 
-                this.logger.LogDebug("{0}:{1} / {2}:{3}", nameof(spendingDetailsMatch), spendingDetailsMatch);
+                this.logger.LogDebug("{0}:{1}", nameof(spendingDetailsMatch), spendingDetailsMatch);
 
                 // If spending details match and unconfirmed.
                 if (spendingDetailsMatch)
