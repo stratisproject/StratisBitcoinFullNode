@@ -40,7 +40,5 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 }
             }
         }
-
-
     }
 }

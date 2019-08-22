@@ -9,7 +9,10 @@ using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
+<<<<<<< HEAD
 using Stratis.Bitcoin.Tests.Common;
+=======
+>>>>>>> master
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
@@ -42,7 +45,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
             for (int i = 0; i < txsToSend; i++)
             {
-                var response = node1.SendCreateContractTransaction(compilationResult.Compilation, 0, outpoints:new List<OutpointRequest>
+                var response = node1.SendCreateContractTransaction(compilationResult.Compilation, 0, outpoints: new List<OutpointRequest>
                 {
                     new OutpointRequest
                     {
@@ -56,10 +59,12 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.mockChain.MineBlocks(1);
 
             // Just over block gas limit.
-            // TODO: Update with block gas limit changes
-            const int expectedTxsInBlock = 85;
+            const int expectedTxsInBlock = 84;
             var lastBlock = node1.GetLastBlock();
             Assert.Equal(expectedTxsInBlock, lastBlock.Transactions.Count);
+
+            const int expectedInMempool = txsToSend - expectedTxsInBlock + 1; // Left in mempool. Total - all in block, except for coinbase.
+            Assert.Equal(expectedInMempool, node1.CoreNode.FullNode.MempoolManager().InfoAll().Count);
         }
 
         [Fact]
