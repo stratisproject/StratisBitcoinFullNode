@@ -266,9 +266,10 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
-            decimal feeAmount = 0.01M,
-            string sender = null)
-        {
+            decimal feeAmount = 0.01M, 
+            string sender = null,
+            List<OutpointRequest> outpoints = null)
+            {
             var request = new BuildCallContractTransactionRequest
             {
                 AccountName = this.AccountName,
@@ -281,7 +282,8 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 Parameters = parameters,
                 Password = this.Password,
                 Sender = sender ?? this.MinerAddress.Address,
-                WalletName = this.WalletName
+                WalletName = this.WalletName,
+                Outpoints = outpoints
             };
 
             var response = (JsonResult)this.smartContractsController.BuildAndSendCallSmartContractTransactionAsync(request).GetAwaiter().GetResult();
