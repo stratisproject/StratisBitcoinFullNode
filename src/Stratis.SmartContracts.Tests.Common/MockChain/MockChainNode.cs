@@ -124,7 +124,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
         /// <summary>
         /// Send a normal transaction.
         /// </summary>
-        public Result<WalletSendTransactionModel> SendTransaction(Script scriptPubKey, Money amount, int utxos = 0)
+        public Result<WalletSendTransactionModel> SendTransaction(Script scriptPubKey, Money amount, int utxos = 0, List<OutPoint> selectedInputs = null)
         {
             Recipient[] recipients;
 
@@ -146,6 +146,11 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = scriptPubKey } };
             }
 
+            if (selectedInputs == null)
+            {
+                selectedInputs = this.CoreNode.FullNode.WalletManager().GetSpendableInputsForAddress(this.WalletName, this.MinerAddress.Address, 1); // Always send from the MinerAddress. Simplifies things.
+            }
+
             var txBuildContext = new TransactionBuildContext(this.CoreNode.FullNode.Network)
             {
                 AccountReference = new WalletAccountReference(this.WalletName, this.AccountName),
@@ -153,7 +158,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 FeeType = FeeType.Medium,
                 WalletPassword = this.Password,
                 Recipients = recipients.ToList(),
-                SelectedInputs = this.CoreNode.FullNode.WalletManager().GetSpendableInputsForAddress(this.WalletName, this.MinerAddress.Address), // Always send from the MinerAddress. Simplifies things.
+                SelectedInputs = selectedInputs,
                 ChangeAddress = this.MinerAddress // yes this is unconventional, but helps us to keep the balance on the same addresses
             };
 
