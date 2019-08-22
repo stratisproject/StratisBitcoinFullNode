@@ -536,7 +536,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         WalletName = minerA.WalletName,
                         AccountName = "account 0",
                         WalletPassword = minerA.WalletPassword,
-                        TotalAmountToSplit = network.Consensus.PremineReward.ToString(),
+                        TotalAmountToSplit = (minerA.MinerHDAddress.Transactions.Sum(t => t.Amount) / 100000000).ToString(),
                         UtxosCount = 2
                     })
                     .ReceiveJson<WalletSendTransactionModel>().Result;
