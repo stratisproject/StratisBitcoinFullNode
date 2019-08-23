@@ -452,7 +452,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(transaction, nameof(transaction));
             Guard.Assert(blockHash == (blockHash ?? block?.GetHash()));
 
-
             lock (this.lockObject)
             {
                 if (!this.IsWalletActive())
@@ -489,14 +488,14 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     List<(Transaction transaction, IWithdrawal withdrawal)> walletData = this.FindWithdrawalTransactions(withdrawal.DepositId);
                     if ((walletData.Count == 1) && (walletData[0].withdrawal.BlockNumber != 0))
                     {
-                        this.logger.LogDebug("Deposit {0} Already included in block.", withdrawal.DepositId);
+                        this.logger.LogDebug("Deposit '{0}' already included in block.", withdrawal.DepositId);
                         return false;
                     }
 
                     // Remove this to prevent duplicates if the transaction hash has changed.
                     if (walletData.Count != 0)
                     {
-                        this.logger.LogDebug("Removing duplicates for {0}", withdrawal.DepositId);
+                        this.logger.LogDebug("Removing duplicates for '{0}'.", withdrawal.DepositId);
                         this.RemoveWithdrawalTransactions(withdrawal.DepositId);
                     }
                 }
@@ -909,7 +908,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <inheritdoc />
         public bool RemoveWithdrawalTransactions(uint256 depositId)
         {
-            this.logger.LogDebug("Removing transient transactions. DepositId={0}", depositId);
+            this.logger.LogDebug("Removing transient transactions for depositId='{0}'.", depositId);
 
             lock (this.lockObject)
             {
