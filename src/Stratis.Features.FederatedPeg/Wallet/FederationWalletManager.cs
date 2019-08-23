@@ -434,21 +434,18 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.NotNull(transaction, nameof(transaction));
             Guard.Assert(blockHash == (blockHash ?? block?.GetHash()));
 
-
             lock (this.lockObject)
             {
                 if (!this.IsWalletActive())
                 {
-                    this.logger.LogTrace("(-)");
+                    this.logger.LogTrace("(-):false");
                     return false;
                 }
-
-                bool foundReceivingTrx = false, foundSendingTrx = false;
 
                 // Check if we're trying to spend a utxo twice
                 foreach (TxIn input in transaction.Inputs)
                 {
-                    if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData tTx))
+                    if (!this.outpointLookup.TryGetValue(input.PrevOut, out TransactionData transactionData))
                     {
                         continue;
                     }
@@ -456,7 +453,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     // If we're trying to spend an input that is already spent, and it's not coming in a new block, don't reserve the transaction.
                     // This would be the case when blocks are synced in between CrossChainTransferStore calling
                     // FederationWalletTransactionHandler.BuildTransaction and FederationWalletManager.ProcessTransaction.
-                    if (blockHeight == null && tTx.SpendingDetails?.BlockHeight != null)
+                    if (blockHeight == null && transactionData.SpendingDetails?.BlockHeight != null)
                     {
                         return false;
                     }
@@ -465,34 +462,43 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 // Extract the withdrawal from the transaction (if any).
                 IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(transaction, blockHash, blockHeight ?? 0);
 
+                (bool walletUpdated, List<uint256> removedTxs) = (false, new List<uint256>());
+
                 if (withdrawal != null)
                 {
                     // Exit if already present and included in a block.
-                    List<(Transaction transaction, IWithdrawal withdrawal)> walletData = this.FindWithdrawalTransactions(withdrawal.DepositId);
-                    if ((walletData.Count == 1) && (walletData[0].withdrawal.BlockNumber != 0))
+                    List<(Transaction transaction, IWithdrawal withdrawal)> withdrawalTransactions = this.FindWithdrawalTransactions(withdrawal.DepositId);
+                    if ((withdrawalTransactions.Count == 1) && (withdrawalTransactions[0].withdrawal.BlockNumber != 0))
                     {
                         this.logger.LogDebug("Deposit {0} Already included in block.", withdrawal.DepositId);
                         return false;
                     }
 
                     // Remove this to prevent duplicates if the transaction hash has changed.
-                    if (walletData.Count != 0)
+                    if (withdrawalTransactions.Count != 0)
                     {
                         this.logger.LogDebug("Removing duplicates for {0}", withdrawal.DepositId);
-                        this.RemoveWithdrawalTransactions(withdrawal.DepositId);
+                        (walletUpdated, removedTxs) = this.RemoveWithdrawalTransactions(withdrawal.DepositId);
                     }
                 }
 
-                // Check the outputs.
-                foreach (TxOut utxo in transaction.Outputs)
+                bool foundReceivingTrx = false;
+
+                if (!removedTxs.Contains(transaction.GetHash()))
                 {
-                    // Check if the outputs contain one of our addresses.
-                    if (this.Wallet.MultiSigAddress.ScriptPubKey == utxo.ScriptPubKey)
+                    // Check the outputs.
+                    foreach (TxOut utxo in transaction.Outputs)
                     {
-                        this.AddTransactionToWallet(transaction, utxo, blockHeight, blockHash, block);
-                        foundReceivingTrx = true;
+                        // Check if the outputs contain one of our addresses.
+                        if (this.Wallet.MultiSigAddress.ScriptPubKey == utxo.ScriptPubKey)
+                        {
+                            this.AddTransactionToWallet(transaction, utxo, blockHeight, blockHash, block);
+                            foundReceivingTrx = true;
+                        }
                     }
                 }
+
+                bool foundSendingTrx = false;
 
                 // Check the inputs - include those that have a reference to a transaction containing one of our scripts and the same index.
                 foreach (TxIn input in transaction.Inputs)
@@ -573,12 +579,13 @@ namespace Stratis.Features.FederatedPeg.Wallet
             return walletUpdated;
         }
 
-        private bool RemoveTransaction(Transaction transaction)
+        private (bool updatedWallet, bool txRemoved) RemoveTransaction(Transaction transaction)
         {
             Guard.NotNull(transaction, nameof(transaction));
             uint256 hash = transaction.GetHash();
 
             bool updatedWallet = false;
+            bool txRemoved = false;
 
             // Check the inputs - include those that have a reference to a transaction containing one of our scripts and the same index.
             foreach (TxIn input in transaction.Inputs)
@@ -609,11 +616,12 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                         this.Wallet.MultiSigAddress.Transactions.Remove(foundTransaction);
                         updatedWallet = true;
+                        txRemoved = true;
                     }
                 }
             }
 
-            return updatedWallet;
+            return (updatedWallet, txRemoved);
         }
 
         /// <inheritdoc />
@@ -737,7 +745,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             {
                 // 1) If no existing spending details, always set new spending details.
 
-                this.logger.LogDebug("Spending UTXO '{0}-{1}' is new. BlockHeight={2}", spendingTransactionId, spendingTransactionIndex, blockHeight);
+                this.logger.LogDebug("Spending UTXO {0}='{1}' is new; {2}={3}; Spending with {4}='{5}'", nameof(spendingTransactionId), spendingTransactionId, nameof(blockHeight), blockHeight, nameof(transaction), transaction.GetHash());
 
                 spentTransaction.SpendingDetails = this.BuildSpendingDetails(transaction, paidToOutputs, blockHeight, blockHash, block, withdrawal);
             }
@@ -889,21 +897,26 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <inheritdoc />
-        public bool RemoveWithdrawalTransactions(uint256 depositId)
+        public (bool updatedWallet, List<uint256> removedTxs) RemoveWithdrawalTransactions(uint256 depositId)
         {
-            this.logger.LogDebug("Removing transient transactions. DepositId={0}", depositId);
+            this.logger.LogDebug("Removing transient transactions for depositId='{0}'.", depositId);
 
             lock (this.lockObject)
             {
                 // Remove transient transactions not seen in a block yet.
                 bool walletUpdated = false;
 
+                var removedTxs = new List<uint256>();
+
                 foreach ((Transaction transaction, IWithdrawal withdrawal) in this.FindWithdrawalTransactions(depositId))
                 {
-                    walletUpdated |= this.RemoveTransaction(transaction);
+                    (bool updatedWallet, bool txRemoved) = this.RemoveTransaction(transaction);
+                    walletUpdated |= updatedWallet;
+                    if (txRemoved)
+                        removedTxs.Add(transaction.GetHash());
                 }
 
-                return walletUpdated;
+                return (walletUpdated, removedTxs);
             }
         }
 

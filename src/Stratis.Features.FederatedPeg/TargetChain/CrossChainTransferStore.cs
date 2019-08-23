@@ -859,7 +859,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                         bool walletUpdated = false;
                         foreach (KeyValuePair<ICrossChainTransfer, CrossChainTransferStatus?> kv in tracker)
                             if (kv.Key.Status == CrossChainTransferStatus.Suspended)
-                                walletUpdated |= this.federationWalletManager.RemoveWithdrawalTransactions(kv.Key.DepositTransactionId);
+                                walletUpdated |= this.federationWalletManager.RemoveWithdrawalTransactions(kv.Key.DepositTransactionId).updatedWallet;
 
                         if (walletUpdated)
                             this.federationWalletManager.SaveWallet();

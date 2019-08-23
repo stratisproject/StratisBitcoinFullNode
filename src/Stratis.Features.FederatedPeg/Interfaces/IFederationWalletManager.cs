@@ -116,7 +116,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// Removes the withdrawal transaction(s) associated with the corresponding deposit id.
         /// </summary>
         /// <param name="depositId">The deposit id identifying the withdrawal transaction(s) to remove.</param>
-        bool RemoveWithdrawalTransactions(uint256 depositId);
+        (bool updatedWallet, List<uint256> removedTxs) RemoveWithdrawalTransactions(uint256 depositId);
 
         /// <summary>
         /// Removes transaction data that is still to be confirmed in a block.
