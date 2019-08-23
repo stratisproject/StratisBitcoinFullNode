@@ -479,7 +479,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 // Extract the withdrawal from the transaction (if any).
                 IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(transaction, blockHash, blockHeight ?? 0);
 
-                (bool walletUpdated, List<uint256> removedTxs) = (false, new List<uint256>());
+                (bool walletUpdated, HashSet<uint256> removedTxs) = (false, new HashSet<uint256>());
 
                 if (withdrawal != null)
                 {
@@ -501,9 +501,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                 bool foundReceivingTrx = false;
 
+                // Check the outputs.
                 if (!removedTxs.Contains(transaction.GetHash()))
                 {
-                    // Check the outputs.
                     foreach (TxOut utxo in transaction.Outputs)
                     {
                         // Check if the outputs contain one of our addresses.
@@ -596,13 +596,13 @@ namespace Stratis.Features.FederatedPeg.Wallet
             return walletUpdated;
         }
 
-        private (bool updatedWallet, bool txRemoved) RemoveTransaction(Transaction transaction)
+        private (bool updatedWallet, HashSet<uint256> txRemoved) RemoveTransaction(Transaction transaction)
         {
             Guard.NotNull(transaction, nameof(transaction));
             uint256 hash = transaction.GetHash();
 
-            bool updatedWallet = false;
-            bool txRemoved = false;
+            var updatedWallet = false;
+            var txsToRemove = new HashSet<uint256>();
 
             // Check the inputs - include those that have a reference to a transaction containing one of our scripts and the same index.
             foreach (TxIn input in transaction.Inputs)
@@ -633,12 +633,12 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
                         this.Wallet.MultiSigAddress.Transactions.Remove(foundTransaction);
                         updatedWallet = true;
-                        txRemoved = true;
+                        txsToRemove.Add(foundTransaction.Id);
                     }
                 }
             }
 
-            return (updatedWallet, txRemoved);
+            return (updatedWallet, txsToRemove);
         }
 
         /// <inheritdoc />
@@ -914,7 +914,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <inheritdoc />
-        public (bool updatedWallet, List<uint256> removedTxs) RemoveWithdrawalTransactions(uint256 depositId)
+        public (bool updatedWallet, HashSet<uint256> txToRemove) RemoveWithdrawalTransactions(uint256 depositId)
         {
             this.logger.LogDebug("Removing transient transactions for depositId='{0}'.", depositId);
 
@@ -923,14 +923,14 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 // Remove transient transactions not seen in a block yet.
                 bool walletUpdated = false;
 
-                var removedTxs = new List<uint256>();
+                var removedTxs = new HashSet<uint256>();
 
                 foreach ((Transaction transaction, IWithdrawal withdrawal) in this.FindWithdrawalTransactions(depositId))
                 {
-                    (bool updatedWallet, bool txRemoved) = this.RemoveTransaction(transaction);
+                    (bool updatedWallet, HashSet<uint256> txRemoved) = this.RemoveTransaction(transaction);
                     walletUpdated |= updatedWallet;
-                    if (txRemoved)
-                        removedTxs.Add(transaction.GetHash());
+                    if (txRemoved.Any())
+                        txRemoved.Select(t => removedTxs.Add(t));
                 }
 
                 return (walletUpdated, removedTxs);
