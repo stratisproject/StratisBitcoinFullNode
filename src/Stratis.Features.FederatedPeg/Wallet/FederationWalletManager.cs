@@ -345,6 +345,20 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 {
                     this.logger.LogDebug("Removing reorged tx {0}.", transactionData.Id);
                     this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
+
+                    // Delete the unconfirmed spendable transaction associated to this transaction.
+                    if (transactionData.SpendingDetails != null)
+                    {
+                        this.logger.LogDebug("Try and remove the reorged tx's associated unconfirmed spending transaction '{0}'.", transactionData.SpendingDetails.TransactionId);
+                        if (this.Wallet.MultiSigAddress.Transactions.TryGetTransaction(transactionData.SpendingDetails.TransactionId, 0, out TransactionData associatedUnconfirmedSpendingTx))
+                        {
+                            if (!associatedUnconfirmedSpendingTx.IsConfirmed())
+                            {
+                                this.Wallet.MultiSigAddress.Transactions.Remove(associatedUnconfirmedSpendingTx);
+                                this.logger.LogDebug("The reorged tx's associated unconfirmed spending transaction '{0}' was removed.", associatedUnconfirmedSpendingTx.Id);
+                            }
+                        }
+                    }
                 }
 
                 // Bring back all the UTXO that are now spendable after the reorg.
