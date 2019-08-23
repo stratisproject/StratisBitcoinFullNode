@@ -342,12 +342,30 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 // Remove all the UTXO that have been reorged.
                 IEnumerable<TransactionData> makeUnspendable = this.Wallet.MultiSigAddress.Transactions.Where(w => w.BlockHeight > fork.Height).ToList();
                 foreach (TransactionData transactionData in makeUnspendable)
+                {
+                    this.logger.LogDebug("Removing reorged tx {0}.", transactionData.Id);
                     this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
+                }
 
                 // Bring back all the UTXO that are now spendable after the reorg.
                 IEnumerable<TransactionData> makeSpendable = this.Wallet.MultiSigAddress.Transactions.Where(w => (w.SpendingDetails != null) && (w.SpendingDetails.BlockHeight > fork.Height));
                 foreach (TransactionData transactionData in makeSpendable)
+                {
+                    this.logger.LogDebug("Unspend tx {0}.", transactionData.Id);
+                    uint256 spendDetailsTxId = transactionData.SpendingDetails?.TransactionId;
+                    if (spendDetailsTxId != null && transactionData.SpendingDetails.BlockHash == null)
+                    {
+                        this.logger.LogDebug("Attempting to remove related spender tx {0}.", spendDetailsTxId);
+                        TransactionData spender = this.Wallet.MultiSigAddress.Transactions.FirstOrDefault(t => t.Id == spendDetailsTxId);
+                        if (spender != null)
+                        {
+                            this.logger.LogDebug("Removing spender tx {0}.", spender.Id);
+                            this.Wallet.MultiSigAddress.Transactions.Remove(spender);
+                        }
+                    }
+
                     transactionData.SpendingDetails = null;
+                }
 
                 this.UpdateLastBlockSyncedHeight(fork);
             }
@@ -358,7 +376,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// The wallet will only become active after <see cref="FederationWallet.LastBlockSyncedHeight"/>.
         /// </summary>
         /// <param name="height">The height at which to test if the wallet should be active. Defaults to the chain indexer height.</param>
-        /// <returns></returns>
         private bool IsWalletActive(int? height = null)
         {
             if (this.Wallet == null)
