@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Features.SQLiteWalletRepository.External;
 
 namespace Stratis.Features.SQLiteWalletRepository
 {
@@ -151,5 +152,12 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <param name="lastBlockSynced">The last block synced to set.</param>
         /// <remarks>The value of lastBlockSynced must match a block that was conceivably processed by the wallet (or be null).</remarks>
         void RewindWallet(string walletName, ChainedHeader lastBlockSynced);
+
+        /// <summary>
+        /// Allows multiple interface calls to be grouped into a transaction.
+        /// </summary>
+        /// <param name="walletName">The wallet the transaction is for.</param>
+        /// <returns>A transaction context providing <see cref="ITransactionContext.Commit"/> and <see cref="ITransactionContext.Rollback"/> methods.</returns>
+        ITransactionContext BeginTransaction(string walletName);
     }
 }

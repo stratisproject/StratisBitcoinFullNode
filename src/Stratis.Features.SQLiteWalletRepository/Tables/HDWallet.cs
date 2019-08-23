@@ -127,16 +127,21 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             this.BlockLocator = blockLocator;
         }
 
-        internal bool WalletContainsBlock(ChainedHeader lastBlockSynced)
+        internal ChainedHeader GetFork(ChainedHeader chainTip)
         {
-            if (lastBlockSynced == null)
-                return true;
+            if (chainTip == null)
+                return null;
 
-            if (lastBlockSynced.Height > this.LastBlockSyncedHeight)
-                return false;
+            if (chainTip.Height > this.LastBlockSyncedHeight)
+                chainTip = chainTip.GetAncestor(this.LastBlockSyncedHeight);
 
-            if (lastBlockSynced.Height == this.LastBlockSyncedHeight)
-                return lastBlockSynced.HashBlock == uint256.Parse(this.LastBlockSyncedHash);
+            if (chainTip.Height == this.LastBlockSyncedHeight)
+            {
+                if (chainTip.HashBlock == uint.Parse(this.LastBlockSyncedHash))
+                    return chainTip;
+                else
+                    return null;
+            }
 
             var blockLocator = new BlockLocator()
             {
@@ -147,18 +152,28 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 
             for (int i = 0; i < locatorHeights.Count; i++)
             {
-                if (lastBlockSynced.Height >= locatorHeights[i])
-                {
-                    lastBlockSynced = lastBlockSynced.GetAncestor(locatorHeights[i]);
+                if (chainTip.Height > locatorHeights[i])
+                    chainTip = chainTip.GetAncestor(locatorHeights[i]);
 
-                    if (lastBlockSynced.HashBlock != blockLocator.Blocks[i])
-                        return false;
-
-                    break;
-                }
+                if (chainTip.HashBlock == blockLocator.Blocks[i])
+                    return chainTip;
             }
 
-            return true;
+            return null;
+        }
+
+        internal bool WalletContainsBlock(ChainedHeader lastBlockSynced)
+        {
+            if (lastBlockSynced == null)
+                return true;
+
+            if (this.LastBlockSyncedHeight == lastBlockSynced.Height)
+                return uint256.Parse(this.LastBlockSyncedHash) == lastBlockSynced.HashBlock;
+
+            uint256[] hashes = this.BlockLocator.Split(',').Select(strHash => uint256.Parse(strHash)).ToArray();
+            int[] heights = ChainedHeaderExt.GetLocatorHeights(this.LastBlockSyncedHeight).ToArray();
+
+            return hashes.Select((h, n) => lastBlockSynced.HashBlock == h && lastBlockSynced.Height == heights[n]).Any(e => true);
         }
     }
 }

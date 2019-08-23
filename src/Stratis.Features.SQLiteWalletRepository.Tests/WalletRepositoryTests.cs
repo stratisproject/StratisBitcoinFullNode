@@ -96,14 +96,15 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
             using (var dataFolder = new TempDataFolder(this.GetType().Name))
             {
-                var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ColdStakingDestinationReader(new ScriptAddressReader()));
+                var nodeSettings = new NodeSettings(this.network, args: new[] { $"-datadir={this.dataDir}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
+
+                var repo = new SQLiteWalletRepository(nodeSettings.LoggerFactory, dataFolder, this.network, DateTimeProvider.Default, new ColdStakingDestinationReader(new ScriptAddressReader()));
 
                 repo.Initialize(this.dbPerWallet);
 
                 var account = new WalletAccountReference(walletName, "account 0");
 
                 // Bypass IsExtPubKey wallet check.
-                var nodeSettings = new NodeSettings(this.network, args: new[] { $"-datadir={this.dataDir}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
                 Wallet wallet = new FileStorage<Wallet>(nodeSettings.DataFolder.WalletPath).LoadByFileName($"{walletName}.wallet.json");
 
                 // Create an "test2" as an empty wallet.
@@ -223,23 +224,24 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 // Delete the wallet.
                 Assert.True(repo.DeleteWallet(walletName));
-                Assert.Equal(0, repo.GetWalletNames().Count);
+                Assert.Empty(repo.GetWalletNames());
             }
         }
 
-        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
-        public void CanProcessBlocks()
+        private void CanProcessBlocks(bool mainChain)
         {
             string[] walletNames = this.walletNames.ToArray();
 
             using (var dataFolder = new TempDataFolder(this.GetType().Name))
             {
+                var network = mainChain ? KnownNetworks.StratisMain : KnownNetworks.StratisTest;
+
                 // Set up block store.
-                var nodeSettings = new NodeSettings(this.network, args: new[] { $"-datadir={this.dataDir}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
-                var serializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
+                var nodeSettings = new NodeSettings(network, args: new[] { $"-datadir={this.dataDir}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
+                var serializer = new DBreezeSerializer(network.Consensus.ConsensusFactory);
 
                 // Build the chain from the block store.
-                IBlockRepository blockRepo = new BlockRepository(this.network, nodeSettings.DataFolder, nodeSettings.LoggerFactory, serializer);
+                IBlockRepository blockRepo = new BlockRepository(network, nodeSettings.DataFolder, nodeSettings.LoggerFactory, serializer);
                 blockRepo.Initialize();
 
                 var prevBlock = new Dictionary<uint256, uint256>();
@@ -260,9 +262,9 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 var nextBlock = prevBlock.ToDictionary(kv => kv.Value, kv => kv.Key);
                 int firstHeight = 1;
-                uint256 firstHash = nextBlock[this.network.GenesisHash];
+                uint256 firstHash = nextBlock[network.GenesisHash];
 
-                var chainTip = new ChainedHeader(new BlockHeader() { HashPrevBlock = this.network.GenesisHash }, firstHash, firstHeight);
+                var chainTip = new ChainedHeader(new BlockHeader() { HashPrevBlock = network.GenesisHash }, firstHash, firstHeight);
                 uint256 hash = firstHash;
 
                 for (int height = firstHeight + 1; height <= blockRepo.TipHashAndHeight.Height; height++)
@@ -272,11 +274,11 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 }
 
                 // Build the chain indexer from the chain.
-                var chainIndexer = new ChainIndexer(this.network, chainTip);
+                var chainIndexer = new ChainIndexer(network, chainTip);
 
                 // Initialize the repo.
-                this.network.StandardScriptsRegistry.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
-                var repo = new SQLiteWalletRepository(dataFolder, this.network, DateTimeProvider.Default, new ColdStakingDestinationReader(new ScriptAddressReader()));
+                network.StandardScriptsRegistry.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
+                var repo = new SQLiteWalletRepository(nodeSettings.LoggerFactory, dataFolder, network, DateTimeProvider.Default, new ColdStakingDestinationReader(new ScriptAddressReader()));
                 repo.Initialize(this.dbPerWallet);
 
                 // Load the JSON wallet(s).
@@ -350,7 +352,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                         List<UnspentOutputReference> spendable = repo.GetSpendableTransactionsInAccount(
                             new WalletAccountReference(walletName, hdAccount.Name),
-                            walletHeight, (int)this.network.Consensus.CoinbaseMaturity).ToList();
+                            walletHeight, (int)network.Consensus.CoinbaseMaturity).ToList();
 
                         Money amountRepo = spendable.Sum(s => s.Transaction.Amount);
 
@@ -364,6 +366,12 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 long blocksProcessed = repo.ProcessCount;
                 double secondsPerBlock = (double)repo.ProcessTime / repo.ProcessCount / 10_000_000;
             }
+        }
+
+        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
+        public void CanProcessTestnetBlocks()
+        {
+            CanProcessBlocks(false);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using NBitcoin;
 using SQLite;
@@ -9,17 +10,121 @@ namespace Stratis.Features.SQLiteWalletRepository
     /// <summary>
     /// This class represents a connection to the repository. Its a central point for all functionality that can be performed via a connection.
     /// </summary>
-    public class DBConnection : SQLiteConnection
+    public class DBConnection
     {
+        private SQLiteConnection sqLiteConnection;
         public SQLiteWalletRepository Repository;
+        public Stack<(dynamic, Action<dynamic>)> RollBackActions;
 
         // A given connection can't have two transactions running in parallel.
         internal readonly object TransactionLock;
+        internal int TransactionDepth;
+        internal bool IsInTransaction => this.sqLiteConnection.IsInTransaction;
 
-        public DBConnection(SQLiteWalletRepository repo, string dbFile) : base(Path.Combine(repo.DBPath, dbFile))
+        public DBConnection(SQLiteWalletRepository repo, string dbFile)
         {
+            this.sqLiteConnection = new SQLiteConnection(Path.Combine(repo.DBPath, dbFile));
             this.Repository = repo;
             this.TransactionLock = new object();
+            this.TransactionDepth = 0;
+            this.RollBackActions = new Stack<(object, Action<object>)>();
+        }
+
+        internal void AddRollbackAction(object rollBackData, Action<object> rollBackAction)
+        {
+            this.RollBackActions.Push((rollBackData, rollBackAction));
+        }
+
+        public static implicit operator SQLiteConnection(DBConnection d) => d.sqLiteConnection;
+
+        internal void BeginTransaction()
+        {
+            lock (this.TransactionLock)
+            {
+                if (this.TransactionDepth == 0)
+                    this.sqLiteConnection.BeginTransaction();
+
+                this.TransactionDepth++;
+            }
+        }
+
+        internal void Rollback()
+        {
+            lock (this.TransactionLock)
+            {
+                this.TransactionDepth--;
+
+                if (this.TransactionDepth == 0)
+                {
+                    this.sqLiteConnection.Rollback();
+
+                    while (this.RollBackActions.Count > 0)
+                    {
+                        (dynamic rollBackData, Action<dynamic> rollBackAction) = this.RollBackActions.Pop();
+
+                        rollBackAction(rollBackData);
+                    }
+                }
+            }
+        }
+
+        internal void Commit()
+        {
+            lock (this.TransactionLock)
+            {
+                this.TransactionDepth--;
+
+                if (this.TransactionDepth == 0)
+                {
+                    this.sqLiteConnection.Commit();
+                    this.RollBackActions.Clear();
+                }
+            }
+        }
+
+        internal List<T> Query<T>(string query, params object[] args) where T:new()
+        {
+            return this.sqLiteConnection.Query<T>(query, args);
+        }
+
+        internal void Insert(object obj)
+        {
+            this.sqLiteConnection.Insert(obj);
+        }
+
+        internal void Delete<T>(object obj)
+        {
+            this.sqLiteConnection.Delete<T>(obj);
+        }
+
+        internal void InsertOrReplace(object obj)
+        {
+            this.sqLiteConnection.InsertOrReplace(obj);
+        }
+
+        internal T Find<T>(object pk) where T : new()
+        {
+            return this.sqLiteConnection.Find<T>(pk);
+        }
+
+        internal T FindWithQuery<T>(string query, params object[] args) where T : new()
+        {
+            return this.sqLiteConnection.FindWithQuery<T>(query, args);
+        }
+
+        internal void Execute(string query, params object[] args)
+        {
+            this.sqLiteConnection.Execute(query, args);
+        }
+
+        internal T ExecuteScalar<T>(string query, params object[] args) where T : new()
+        {
+            return this.sqLiteConnection.ExecuteScalar<T>(query, args);
+        }
+
+        internal void Close()
+        {
+            this.sqLiteConnection.Close();
         }
 
         internal void CreateDBStructure()
@@ -35,7 +140,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             var addresses = new List<HDAddress>();
 
-            int addressCount = HDAddress.GetAddressCount(this, account.WalletId, account.AccountIndex, addressType);
+            int addressCount = HDAddress.GetAddressCount(this.sqLiteConnection, account.WalletId, account.AccountIndex, addressType);
 
             for (int addressIndex = addressCount; addressIndex < (addressCount + addressesQuantity); addressIndex++)
                 addresses.Add(CreateAddress(account, addressType, addressIndex));
@@ -45,7 +150,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal IEnumerable<HDAddress> TopUpAddresses(int walletId, int accountIndex, int addressType)
         {
-            int addressCount = HDAddress.GetAddressCount(this, walletId, accountIndex, addressType);
+            int addressCount = HDAddress.GetAddressCount(this.sqLiteConnection, walletId, accountIndex, addressType);
             int nextAddressIndex = HDAddress.GetNextAddressIndex(this, walletId, accountIndex, addressType);
             int buffer = addressCount - nextAddressIndex;
 
@@ -272,16 +377,26 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <param name="lastBlockSynced">The last block synced to set.</param>
         internal void SetLastBlockSynced(string walletName, ChainedHeader lastBlockSynced)
         {
-            lock (this.TransactionLock)
-            {
-                this.BeginTransaction();
-                var wallet = this.GetWalletByName(walletName);
-                this.RemoveTransactionsAfterLastBlockSynced(lastBlockSynced?.Height ?? -1, wallet.WalletId);
-                this.Update(wallet);
-                this.Commit();
+            var wallet = this.GetWalletByName(walletName);
 
-                wallet.SetLastBlockSynced(lastBlockSynced);
+            if (this.IsInTransaction)
+            {
+                this.RollBackActions.Push((new {
+                    wallet.Name,
+                    wallet.LastBlockSyncedHeight,
+                    wallet.LastBlockSyncedHash,
+                    wallet.BlockLocator }, (rollBackData) =>
+                {
+                    HDWallet wallet2 = this.GetWalletByName(rollBackData.Name);
+                    wallet2.LastBlockSyncedHash = rollBackData.LastBlockSyncedHash;
+                    wallet2.LastBlockSyncedHeight = rollBackData.LastBlockSyncedHeight;
+                    wallet2.BlockLocator = rollBackData.BlockLocator;
+                }));
             }
+
+            this.RemoveTransactionsAfterLastBlockSynced(lastBlockSynced?.Height ?? -1, wallet.WalletId);
+            wallet.SetLastBlockSynced(lastBlockSynced);
+            this.sqLiteConnection.Update(wallet);
         }
 
         internal void ProcessTransactions(ChainedHeader header = null, HDWallet wallet = null, AddressesOfInterest addressesOfInterest = null)
@@ -290,9 +405,9 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             while (true)
             {
-                // Determines the HDTransactionData records that will be updated.
+                // Determines the HDTransactionData records that will be inserted or updated.
                 // Only unconfirmed transactions are selected for update.
-                List<HDTransactionData> hdTransactions = this.Query<HDTransactionData>($@"
+                List<HDTransactionData> hdTransactions = this.sqLiteConnection.Query<HDTransactionData>($@"
                     SELECT A.WalletID
                     ,      A.AccountIndex
                     ,      A.AddressType
@@ -320,7 +435,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                     // Respect the wallet name if provided.
                     ((walletName != null) ? $@"
                     AND    W.Name = '{walletName}'" : "")}{
-                    // Restrict non-transient transaction updates to aligned wallets.
+                    // Restrict confirmed transaction updates to aligned wallets.
                     ((header != null) ? $@"
                     AND    W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'" : "")}
                     LEFT   JOIN HDTransactionData TD

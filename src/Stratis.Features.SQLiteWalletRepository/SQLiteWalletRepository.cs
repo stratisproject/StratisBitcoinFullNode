@@ -5,10 +5,12 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Features.SQLiteWalletRepository.External;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Interfaces;
@@ -18,6 +20,51 @@ using Script = NBitcoin.Script;
 
 namespace Stratis.Features.SQLiteWalletRepository
 {
+    public class TransactionContext : ITransactionContext
+    {
+        private int transactionDepth;
+        private readonly DBConnection conn;
+
+        public TransactionContext(DBConnection conn)
+        {
+            this.conn = conn;
+            this.transactionDepth = conn.TransactionDepth;
+        }
+
+        public void Rollback()
+        {
+            lock (this.conn.TransactionLock)
+            {
+                while (this.transactionDepth > this.conn.TransactionDepth)
+                {
+                    this.conn.Rollback();
+                }
+            }
+        }
+
+        public void Commit()
+        {
+            lock (this.conn.TransactionLock)
+            {
+                while (this.transactionDepth > this.conn.TransactionDepth)
+                {
+                    this.conn.Commit();
+                }
+            }
+        }
+
+        public void Dispose()
+        {
+            lock (this.conn.TransactionLock)
+            {
+                while (this.transactionDepth > this.conn.TransactionDepth)
+                {
+                    this.conn.Rollback();
+                }
+            }
+        }
+    }
+
     internal class ProcessBlocksInfo
     {
         internal AddressesOfInterest AddressesOfInterest;
@@ -71,25 +118,15 @@ namespace Stratis.Features.SQLiteWalletRepository
     /// (used only for unconfirmed transactions). In this case the custom tx id would be set to the deposit id when creating
     /// transient transactions via the <see cref="ProcessTransaction" /> call. It is expected that everything should then work
     /// as intended with confirmed transactions (via see <cref="ProcessBlock" />) taking precedence over non-confirmed transactions.</para>
-    ///</remarks>
+    /// </remarks>
     public class SQLiteWalletRepository : IWalletRepository, IDisposable
     {
-        internal Network Network { get; private set; }
-        internal DataFolder DataFolder { get; private set; }
-        internal IDateTimeProvider DateTimeProvider { get; private set; }
-        internal IScriptAddressReader ScriptAddressReader { get; private set; }
-
-        internal long ProcessTime;
-        internal int ProcessCount;
-
-        public Dictionary<string, long> Metrics = new Dictionary<string, long>();
-
         public bool DatabasePerWallet { get; private set; }
 
-        private ProcessBlocksInfo processBlocksInfo;
-
+        internal Network Network { get; private set; }
+        internal DataFolder DataFolder { get; private set; }
+        internal IScriptAddressReader ScriptAddressReader { get; private set; }
         internal ConcurrentDictionary<string, WalletContainer> Wallets;
-
         internal string DBPath
         {
             get
@@ -98,12 +135,23 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
         }
 
-        public SQLiteWalletRepository(DataFolder dataFolder, Network network, IDateTimeProvider dateTimeProvider, IScriptAddressReader scriptAddressReader)
+        private readonly ILogger logger;
+        private readonly IDateTimeProvider dateTimeProvider;
+        private ProcessBlocksInfo processBlocksInfo;
+
+        // Metrics.
+        internal long ProcessTime;
+        internal int ProcessCount;
+        public Dictionary<string, long> Metrics = new Dictionary<string, long>();
+
+        public SQLiteWalletRepository(ILoggerFactory loggerFactory, DataFolder dataFolder, Network network, IDateTimeProvider dateTimeProvider, IScriptAddressReader scriptAddressReader)
         {
             this.Network = network;
             this.DataFolder = dataFolder;
-            this.DateTimeProvider = dateTimeProvider;
+            this.dateTimeProvider = dateTimeProvider;
             this.ScriptAddressReader = scriptAddressReader;
+
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.Wallets = new ConcurrentDictionary<string, WalletContainer>();
 
@@ -119,14 +167,27 @@ namespace Stratis.Features.SQLiteWalletRepository
             if (this.DatabasePerWallet)
                 Guard.NotNull(walletName, nameof(walletName));
             else if (this.Wallets.Count > 0)
+            {
+                this.logger.LogDebug("Re-using shared database connection");
                 return this.Wallets.First().Value.Conn;
+            }
 
             if (walletName != null && this.Wallets.ContainsKey(walletName))
+            {
+                this.logger.LogDebug("Re-using existing database connection to wallet '{0}'", walletName);
                 return this.Wallets[walletName].Conn;
+            }
+
+            if (this.DatabasePerWallet)
+                this.logger.LogDebug("Creating database connection to wallet database '{0}.db'", walletName);
+            else
+                this.logger.LogDebug("Creating database connection to shared database `Wallet.db`");
 
             var conn = new DBConnection(this, this.DatabasePerWallet ? $"{walletName}.db" : "Wallet.db");
             lock (conn.TransactionLock)
             {
+                this.logger.LogDebug("Creating database structure.");
+
                 conn.BeginTransaction();
                 conn.CreateDBStructure();
                 conn.Commit();
@@ -142,6 +203,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             this.DatabasePerWallet = dbPerWallet;
 
+            this.logger.LogDebug("Adding wallets found at '{0}' to wallet collection.", this.DBPath);
+
             if (this.DatabasePerWallet)
             {
                 foreach (string walletName in Directory.EnumerateFiles(this.DBPath, "*.db")
@@ -152,6 +215,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                     HDWallet wallet = conn.GetWalletByName(walletName);
                     var walletContainer = new WalletContainer(conn, conn.GetWalletByName(walletName));
                     this.Wallets[walletName] = walletContainer;
+
+                    this.logger.LogDebug("Added '{0}` to wallet collection.", wallet.Name);
                 }
             }
             else
@@ -164,6 +229,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 {
                     var walletContainer = new WalletContainer(conn, wallet, this.processBlocksInfo);
                     this.Wallets[wallet.Name] = walletContainer;
+
+                    this.logger.LogDebug("Added '{0}` to wallet collection.", wallet.Name);
                 }
             }
         }
@@ -182,14 +249,26 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 HDWallet wallet = walletContainer.Wallet;
 
-                DBConnection conn = this.GetConnection(walletName);
-
                 // Perform a sanity check that the location being set is conceivably "within" the wallet.
                 if (!wallet.WalletContainsBlock(lastBlockSynced))
+                {
+                    this.logger.LogError("Can't rewind the wallet using the supplied tip.");
                     throw new InvalidProgramException("Can't rewind the wallet using the supplied tip.");
+                }
 
                 // Ok seems safe. Adjust the tip and rewind relevant transactions.
-                conn.SetLastBlockSynced(walletName, lastBlockSynced);
+                DBConnection conn = this.GetConnection(walletName);
+                lock (conn.TransactionLock)
+                {
+                    conn.BeginTransaction();
+                    conn.SetLastBlockSynced(walletName, lastBlockSynced);
+                    conn.Commit();
+                }
+
+                if (lastBlockSynced == null)
+                    this.logger.LogDebug("Wallet {0} rewound to start.", walletName);
+                else
+                    this.logger.LogDebug("Wallet {0} rewound to height {1} (hash='{2}').", walletName, lastBlockSynced.Height, lastBlockSynced.HashBlock);
             }
         }
 
@@ -215,9 +294,13 @@ namespace Stratis.Features.SQLiteWalletRepository
             DBConnection conn = GetConnection(walletName);
             lock (conn.TransactionLock)
             {
+                this.logger.LogDebug("Creating wallet '{0}'.", walletName);
+
                 conn.BeginTransaction();
                 wallet.CreateWallet(conn);
                 conn.Commit();
+
+                this.logger.LogDebug("Adding wallet '{0}' to wallet collection.", walletName);
 
                 WalletContainer walletContainer;
                 if (this.DatabasePerWallet)
@@ -239,6 +322,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 {
                     lock (walletContainer.LockUpdateAddresses)
                     {
+                        this.logger.LogDebug("Deleting wallet '{0}'.", walletName);
+
                         // TODO: Delete HDPayments no longer required.
                         if (!this.DatabasePerWallet)
                         {
@@ -290,7 +375,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 {
                     conn.BeginTransaction();
 
-                    var account = conn.CreateAccount(wallet.WalletId, accountIndex, accountName, extPubKey.ToString(this.Network), (int)(creationTime ?? this.DateTimeProvider.GetTimeOffset()).ToUnixTimeSeconds());
+                    var account = conn.CreateAccount(wallet.WalletId, accountIndex, accountName, extPubKey.ToString(this.Network), (int)(creationTime ?? this.dateTimeProvider.GetTimeOffset()).ToUnixTimeSeconds());
                     conn.CreateAddresses(account, HDAddress.Internal, HDAddress.StandardAddressCount);
                     conn.CreateAddresses(account, HDAddress.External, HDAddress.StandardAddressCount);
 
@@ -377,6 +462,18 @@ namespace Stratis.Features.SQLiteWalletRepository
                 {
                     ParallelProcessBlock(round, block, header);
                 }
+            }
+        }
+
+        /// <inheritdoc />
+        public ITransactionContext BeginTransaction(string walletName)
+        {
+            DBConnection conn = this.GetConnection(walletName);
+            lock (conn.TransactionLock)
+            {
+                var res = new TransactionContext(conn);
+                conn.BeginTransaction();
+                return res;
             }
         }
 
