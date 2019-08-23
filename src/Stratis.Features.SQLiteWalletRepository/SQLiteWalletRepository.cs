@@ -245,6 +245,19 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
+        public ChainedHeader FindFork(string walletName, ChainedHeader chainTip)
+        {
+            WalletContainer walletContainer = this.Wallets[walletName];
+
+            lock (walletContainer.LockProcessBlocks)
+            {
+                HDWallet wallet = walletContainer.Wallet;
+
+                return wallet.GetFork(chainTip);
+            }
+        }
+
+        /// <inheritdoc />
         public void RewindWallet(string walletName, ChainedHeader lastBlockSynced)
         {
             WalletContainer walletContainer = this.Wallets[walletName];

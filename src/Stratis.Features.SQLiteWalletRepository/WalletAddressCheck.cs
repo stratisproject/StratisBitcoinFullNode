@@ -46,7 +46,10 @@ namespace Stratis.Features.SQLiteWalletRepository
         private readonly DBConnection conn;
         private int? walletId;
 
-        internal AddressesOfInterest(DBConnection conn, int? walletId)
+        internal AddressesOfInterest(DBConnection conn, int? walletId) :
+            // Create a bigger hash table if its shared.
+            // TODO: Make this configurable.
+            base(conn.Repository.DatabasePerWallet? 20 : 26)
         {
             this.conn = conn;
             this.walletId = walletId;

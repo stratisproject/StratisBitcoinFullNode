@@ -146,6 +146,14 @@ namespace Stratis.Features.SQLiteWalletRepository
         void RemoveUnconfirmedTransaction(string walletName, uint256 txId);
 
         /// <summary>
+        /// Determines a block in common between the supplied chain tip and the wallet block locator.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet to determine the fork for.</param>
+        /// <param name="chainTip">The chain tip to use in determining the fork.</param>
+        /// <returns>The fork or <c>null</c> if there are no blocks in common.</returns>
+        ChainedHeader FindFork(string walletName, ChainedHeader chainTip);
+
+        /// <summary>
         /// Only keep wallet transactions up to and including the specified block.
         /// </summary>
         /// <param name="walletName">The name of the wallet.</param>
