@@ -1701,7 +1701,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                             }
 
                             // If spending details match and unconfirmed.
-                            if (spendingDetailsMatch)
+                            if (spendingDetailsMatch || (transaction.SpendingDetails != null))
                             {
                                 this.logger.LogDebug("Removing spend details with tx id {0} for confirmed transaction {1}.", transaction.SpendingDetails.TransactionId, transaction.Id);
                                 result.Add((transaction.SpendingDetails.TransactionId, transaction.SpendingDetails.CreationTime));
