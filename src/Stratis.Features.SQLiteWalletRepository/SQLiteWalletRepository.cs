@@ -85,10 +85,8 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.Wallet = wallet;
             this.LockProcessBlocks = processBlocksInfo?.LockProcessBlocks ?? new object();
 
-            this.AddressesOfInterest = processBlocksInfo?.AddressesOfInterest ?? new AddressesOfInterest();
-            this.TransactionsOfInterest = processBlocksInfo?.TransactionsOfInterest ?? new TransactionsOfInterest();
-            this.AddressesOfInterest.AddAll(conn, wallet?.WalletId);
-            this.TransactionsOfInterest.AddAll(conn, wallet?.WalletId);
+            this.AddressesOfInterest = processBlocksInfo?.AddressesOfInterest ?? new AddressesOfInterest(conn, wallet?.WalletId);
+            this.TransactionsOfInterest = processBlocksInfo?.TransactionsOfInterest ?? new TransactionsOfInterest(conn, wallet?.WalletId);
         }
     }
 
@@ -213,8 +211,11 @@ namespace Stratis.Features.SQLiteWalletRepository
                     var conn = GetConnection(walletName);
 
                     HDWallet wallet = conn.GetWalletByName(walletName);
-                    var walletContainer = new WalletContainer(conn, conn.GetWalletByName(walletName));
+                    var walletContainer = new WalletContainer(conn, wallet, new ProcessBlocksInfo(conn, null, wallet));
                     this.Wallets[walletName] = walletContainer;
+
+                    walletContainer.AddressesOfInterest.AddAll(wallet.WalletId);
+                    walletContainer.TransactionsOfInterest.AddAll(wallet.WalletId);
 
                     this.logger.LogDebug("Added '{0}` to wallet collection.", wallet.Name);
                 }
@@ -229,6 +230,9 @@ namespace Stratis.Features.SQLiteWalletRepository
                 {
                     var walletContainer = new WalletContainer(conn, wallet, this.processBlocksInfo);
                     this.Wallets[wallet.Name] = walletContainer;
+
+                    walletContainer.AddressesOfInterest.AddAll(wallet.WalletId);
+                    walletContainer.TransactionsOfInterest.AddAll(wallet.WalletId);
 
                     this.logger.LogDebug("Added '{0}` to wallet collection.", wallet.Name);
                 }
@@ -378,10 +382,9 @@ namespace Stratis.Features.SQLiteWalletRepository
                     var account = conn.CreateAccount(wallet.WalletId, accountIndex, accountName, extPubKey.ToString(this.Network), (int)(creationTime ?? this.dateTimeProvider.GetTimeOffset()).ToUnixTimeSeconds());
                     conn.CreateAddresses(account, HDAddress.Internal, HDAddress.StandardAddressCount);
                     conn.CreateAddresses(account, HDAddress.External, HDAddress.StandardAddressCount);
-
-                    walletContainer.AddressesOfInterest.AddAll(conn, wallet.WalletId, accountIndex);
-
                     conn.Commit();
+
+                    walletContainer.AddressesOfInterest.AddAll(wallet.WalletId, accountIndex);
                 }
             }
         }
@@ -565,8 +568,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                         conn.ProcessTransactions(header, wallet, round.AddressesOfInterest);
                         conn.Commit();
 
-                        round.AddressesOfInterest.Confirm(conn, wallet?.WalletId);
-                        round.TransactionsOfInterest.Confirm(conn, wallet?.WalletId);
+                        round.AddressesOfInterest.Confirm();
+                        round.TransactionsOfInterest.Confirm();
 
                         string blockLocator = string.Join(",", header?.GetLocator().Blocks);
 
@@ -732,7 +735,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                 foreach (TxIn txIn in tx.Inputs)
                 {
-                    if (transactionsOfInterest?.Contains(txIn.PrevOut.Hash, conn, walletId) ?? true)
+                    if (transactionsOfInterest?.Contains(txIn.PrevOut.Hash) ?? true)
                     {
                         if (prevOuts == null)
                             prevOuts = TempTable.Create<TempPrevOut>();
@@ -766,11 +769,12 @@ namespace Stratis.Features.SQLiteWalletRepository
                     if (txOut.ScriptPubKey.ToBytes(true)[0] == (byte)OpcodeType.OP_RETURN)
                         continue;
 
-                    bool unconditional = transactionsOfInterest?.Contains(txId, conn, walletId) ?? true; // Related to spending details.
+                    bool unconditional = transactionsOfInterest?.Contains(txId) ?? true; // Related to spending details.
 
                     foreach (Script pubKeyScript in this.GetDestinations(txOut.ScriptPubKey))
                     {
-                        if (unconditional || (addressesOfInterest?.Contains(pubKeyScript, conn, walletId) ?? true)) // Paying to one of our addresses.
+                        // Paying to one of our addresses?
+                        if (unconditional || (addressesOfInterest?.Contains(pubKeyScript) ?? true))
                         {
                             // We don't know which of these are actually received by our
                             // wallet addresses but we records them for batched resolution.
@@ -779,8 +783,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                             outputs.Add(new TempOutput()
                             {
-                                ScriptPubKey = pubKeyScript.ToHex(),              // For matching HDAddress.ScriptPubKey.
-                                RedeemScript = txOut.ScriptPubKey.ToHex(),  // The ScriptPubKey from the txOut.
+                                ScriptPubKey = pubKeyScript.ToHex(),                // For matching HDAddress.ScriptPubKey.
+                                RedeemScript = txOut.ScriptPubKey.ToHex(),          // The ScriptPubKey from the txOut.
                                 OutputBlockHeight = header?.Height ?? 0,
                                 OutputBlockHash = header?.HashBlock.ToString(),
                                 OutputTxIsCoinBase = (tx.IsCoinBase || tx.IsCoinStake) ? 1 : 0,
