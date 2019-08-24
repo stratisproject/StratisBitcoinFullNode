@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <c>null</c> if no SegWit flags were found.
         /// If SegWit flag is found the commitment of the last transaction's output that has SegWit flag is returned.
         /// </returns>
-        private static Script GetWitnessCommitment(Network network, Block block)
+        public static Script GetWitnessCommitment(Network network, Block block)
         {
             Script commitScriptPubKey = null;
 

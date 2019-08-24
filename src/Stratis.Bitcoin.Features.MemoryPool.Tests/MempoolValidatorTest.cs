@@ -577,6 +577,33 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
+        public async Task AcceptToMemoryPool_TxIsImmatureCoinbase_ReturnsFalseAsync()
+        {
+            string dataDir = GetTestDirectoryPath(this);
+
+            var minerSecret = new BitcoinSecret(new Key(), this.Network);
+            ITestChainContext context = await TestChainFactory.CreateAsync(this.Network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            IMempoolValidator validator = context.MempoolValidator;
+            Assert.NotNull(validator);
+
+            var destSecret = new BitcoinSecret(new Key(), this.Network);
+            Transaction tx = this.Network.CreateTransaction();
+
+            // Use a recent coinbase. Too recent to pass the maturity checks.
+            var outPoint = new OutPoint(context.SrcTxs.Last().GetHash(), 0);
+
+            tx.AddInput(new TxIn(outPoint, PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
+            tx.AddOutput(new TxOut(new Money(Money.Coins(1)), destSecret.PubKeyHash));
+            tx.Sign(this.Network, minerSecret, false);
+
+            var state = new MempoolValidationState(false);
+
+            bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
+            Assert.False(isSuccess, "Transaction spending coinbase prematurely should not have been accepted.");
+            Assert.Equal(MempoolErrors.PrematureCoinbase, state.Error);
+        }
+
+        [Fact]
         public async Task AcceptToMemoryPool_TxIsCoinbaseWithInvalidSize_ReturnsFalseAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
