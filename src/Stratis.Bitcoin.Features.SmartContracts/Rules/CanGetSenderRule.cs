@@ -20,6 +20,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.senderRetriever = senderRetriever;
         }
 
+        /// <inheritdoc />
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;

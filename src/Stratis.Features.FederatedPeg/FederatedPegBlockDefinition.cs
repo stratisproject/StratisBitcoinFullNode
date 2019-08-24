@@ -25,8 +25,6 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly Script payToMultisigScript;
 
-        private readonly Script payToMemberScript;
-
         private readonly ICoinbaseSplitter premineSplitter;
 
         /// <inheritdoc />
@@ -54,6 +52,12 @@ namespace Stratis.Features.FederatedPeg
 
         public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
+            // Note: When creating a new chain, ensure that the first nodes mining are the federated peg nodes, 
+            // so that the premine goes to the federated peg wallet.
+
+            // The other nodes don't know about the federated wallet in the current design.
+            // If this changes, a consensus rule should be built that enforces that the premine goes to that address.
+
             bool miningPremine = (chainTip.Height + 1) == this.Network.Consensus.PremineHeight;
 
             // If we are not mining the premine, then the reward should fall back to what was selected by the caller.

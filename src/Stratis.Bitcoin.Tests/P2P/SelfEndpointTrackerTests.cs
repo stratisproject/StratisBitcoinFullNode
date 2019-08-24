@@ -3,6 +3,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.P2P
@@ -73,7 +74,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(oldIpEndpoint, false);
             this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(oldIpEndpoint, false);
 
-            Assert.True(this.selfEndpointTracker.MyExternalAddress.Equals(oldIpEndpoint));
+            Assert.True(this.selfEndpointTracker.MyExternalAddress.Address.Equals(oldIpEndpoint.MapToIpv6().Address));
             Assert.Equal(initialPeerScore + 1, this.selfEndpointTracker.MyExternalAddressPeerScore);
         }
 
@@ -89,7 +90,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             Assert.Equal(initialPeerScore, this.selfEndpointTracker.MyExternalAddressPeerScore);
 
             this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(newIpEndpoint, false);
-            Assert.True(this.selfEndpointTracker.MyExternalAddress.Equals(oldIpEndpoint));
+            Assert.True(this.selfEndpointTracker.MyExternalAddress.Address.Equals(oldIpEndpoint.MapToIpv6().Address));
             Assert.Equal(initialPeerScore - 1, this.selfEndpointTracker.MyExternalAddressPeerScore);
         }
 
@@ -108,7 +109,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(newIpEndpoint2, false);
             this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(newIpEndpoint3, false);
 
-            Assert.True(this.selfEndpointTracker.MyExternalAddress.Equals(newIpEndpoint3));
+            Assert.True(this.selfEndpointTracker.MyExternalAddress.Address.Equals(newIpEndpoint3.MapToIpv6().Address));
             Assert.Equal(1, this.selfEndpointTracker.MyExternalAddressPeerScore);
         }
 

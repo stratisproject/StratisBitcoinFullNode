@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using NBitcoin;
 using NBitcoin.Rules;
@@ -15,97 +16,97 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public void BitcoinConsensusRulesRegistrationTest()
         {
             Network network = new BitcoinTest();
-            new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(network.Consensus);
+            //new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(network.Consensus);
 
-            List<IHeaderValidationConsensusRule> headerValidationRules = network.Consensus.HeaderValidationRules;
+            List<Type> headerValidationRules = network.Consensus.ConsensusRules.HeaderValidationRules;
 
             headerValidationRules.Count.Should().Be(4);
 
-            headerValidationRules[0].Should().BeOfType<HeaderTimeChecksRule>();
-            headerValidationRules[1].Should().BeOfType<CheckDifficultyPowRule>();
-            headerValidationRules[2].Should().BeOfType<BitcoinActivationRule>();
-            headerValidationRules[3].Should().BeOfType<BitcoinHeaderVersionRule>();
+            headerValidationRules[0].FullName.Should().Be(typeof(HeaderTimeChecksRule).FullName);
+            headerValidationRules[1].FullName.Should().Be(typeof(CheckDifficultyPowRule).FullName);
+            headerValidationRules[2].FullName.Should().Be(typeof(BitcoinActivationRule).FullName);
+            headerValidationRules[3].FullName.Should().Be(typeof(BitcoinHeaderVersionRule).FullName);
 
-            List<IIntegrityValidationConsensusRule> integrityValidationRules = network.Consensus.IntegrityValidationRules;
+            List<Type> integrityValidationRules = network.Consensus.ConsensusRules.IntegrityValidationRules;
 
             integrityValidationRules.Count.Should().Be(1);
-            integrityValidationRules[0].Should().BeOfType<BlockMerkleRootRule>();
+            integrityValidationRules[0].FullName.Should().Be(typeof(BlockMerkleRootRule).FullName);
 
-            List<IPartialValidationConsensusRule> partialValidationRules = network.Consensus.PartialValidationRules;
+            List<Type> partialValidationRules = network.Consensus.ConsensusRules.PartialValidationRules;
 
             partialValidationRules.Count.Should().Be(8);
 
-            partialValidationRules[0].Should().BeOfType<SetActivationDeploymentsPartialValidationRule>();
-            partialValidationRules[1].Should().BeOfType<TransactionLocktimeActivationRule>();
-            partialValidationRules[2].Should().BeOfType<CoinbaseHeightActivationRule>();
-            partialValidationRules[3].Should().BeOfType<WitnessCommitmentsRule>();
-            partialValidationRules[4].Should().BeOfType<BlockSizeRule>();
-            partialValidationRules[5].Should().BeOfType<EnsureCoinbaseRule>();
-            partialValidationRules[6].Should().BeOfType<CheckPowTransactionRule>();
-            partialValidationRules[7].Should().BeOfType<CheckSigOpsRule>();
+            partialValidationRules[0].FullName.Should().Be(typeof(SetActivationDeploymentsPartialValidationRule).FullName);
+            partialValidationRules[1].FullName.Should().Be(typeof(TransactionLocktimeActivationRule).FullName);
+            partialValidationRules[2].FullName.Should().Be(typeof(CoinbaseHeightActivationRule).FullName);
+            partialValidationRules[3].FullName.Should().Be(typeof(WitnessCommitmentsRule).FullName);
+            partialValidationRules[4].FullName.Should().Be(typeof(BlockSizeRule).FullName);
+            partialValidationRules[5].FullName.Should().Be(typeof(EnsureCoinbaseRule).FullName);
+            partialValidationRules[6].FullName.Should().Be(typeof(CheckPowTransactionRule).FullName);
+            partialValidationRules[7].FullName.Should().Be(typeof(CheckSigOpsRule).FullName);
 
-            List<IFullValidationConsensusRule> fullValidationRules = network.Consensus.FullValidationRules;
+            List<Type> fullValidationRules = network.Consensus.ConsensusRules.FullValidationRules;
 
             fullValidationRules.Count.Should().Be(5);
 
-            fullValidationRules[0].Should().BeOfType<SetActivationDeploymentsFullValidationRule>();
-            fullValidationRules[1].Should().BeOfType<LoadCoinviewRule>();
-            fullValidationRules[2].Should().BeOfType<TransactionDuplicationActivationRule>();
-            fullValidationRules[3].Should().BeOfType<PowCoinviewRule>();
-            fullValidationRules[4].Should().BeOfType<SaveCoinviewRule>();
+            fullValidationRules[0].FullName.Should().Be(typeof(SetActivationDeploymentsFullValidationRule).FullName);
+            fullValidationRules[1].FullName.Should().Be(typeof(LoadCoinviewRule).FullName);
+            fullValidationRules[2].FullName.Should().Be(typeof(TransactionDuplicationActivationRule).FullName);
+            fullValidationRules[3].FullName.Should().Be(typeof(PowCoinviewRule).FullName);
+            fullValidationRules[4].FullName.Should().Be(typeof(SaveCoinviewRule).FullName);
         }
 
         [Fact]
         public void StratisConsensusRulesRegistrationTest()
         {
             Network network = new StratisTest();
-            new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(network.Consensus);
+            //new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(network.Consensus);
 
-            List<IHeaderValidationConsensusRule> headerValidationRules = network.Consensus.HeaderValidationRules;
+            List<Type> headerValidationRules = network.Consensus.ConsensusRules.HeaderValidationRules;
 
             headerValidationRules.Count.Should().Be(7);
-            headerValidationRules[0].Should().BeOfType<HeaderTimeChecksRule>();
-            headerValidationRules[1].Should().BeOfType<HeaderTimeChecksPosRule>();
-            headerValidationRules[2].Should().BeOfType<StratisBugFixPosFutureDriftRule>();
-            headerValidationRules[3].Should().BeOfType<CheckDifficultyPosRule>();
-            headerValidationRules[4].Should().BeOfType<StratisHeaderVersionRule>();
-            headerValidationRules[5].Should().BeOfType<ProvenHeaderSizeRule>();
-            headerValidationRules[6].Should().BeOfType<ProvenHeaderCoinstakeRule>();
+            headerValidationRules[0].FullName.Should().Be(typeof(HeaderTimeChecksRule).FullName);
+            headerValidationRules[1].FullName.Should().Be(typeof(HeaderTimeChecksPosRule).FullName);
+            headerValidationRules[2].FullName.Should().Be(typeof(StratisBugFixPosFutureDriftRule).FullName);
+            headerValidationRules[3].FullName.Should().Be(typeof(CheckDifficultyPosRule).FullName);
+            headerValidationRules[4].FullName.Should().Be(typeof(StratisHeaderVersionRule).FullName);
+            headerValidationRules[5].FullName.Should().Be(typeof(ProvenHeaderSizeRule).FullName);
+            headerValidationRules[6].FullName.Should().Be(typeof(ProvenHeaderCoinstakeRule).FullName);
 
-            List<IIntegrityValidationConsensusRule> integrityValidationRules = network.Consensus.IntegrityValidationRules;
+            List<Type> integrityValidationRules = network.Consensus.ConsensusRules.IntegrityValidationRules;
 
             integrityValidationRules.Count.Should().Be(3);
-            integrityValidationRules[0].Should().BeOfType<BlockMerkleRootRule>();
-            integrityValidationRules[1].Should().BeOfType<PosBlockSignatureRepresentationRule>();
-            integrityValidationRules[2].Should().BeOfType<PosBlockSignatureRule>();
+            integrityValidationRules[0].FullName.Should().Be(typeof(BlockMerkleRootRule).FullName);
+            integrityValidationRules[1].FullName.Should().Be(typeof(PosBlockSignatureRepresentationRule).FullName);
+            integrityValidationRules[2].FullName.Should().Be(typeof(PosBlockSignatureRule).FullName);
 
-            List<IPartialValidationConsensusRule> partialValidationRules = network.Consensus.PartialValidationRules;
+            List<Type> partialValidationRules = network.Consensus.ConsensusRules.PartialValidationRules;
 
             partialValidationRules.Count.Should().Be(11);
 
-            partialValidationRules[0].Should().BeOfType<SetActivationDeploymentsPartialValidationRule>();
-            partialValidationRules[1].Should().BeOfType<PosTimeMaskRule>();
-            partialValidationRules[2].Should().BeOfType<TransactionLocktimeActivationRule>();
-            partialValidationRules[3].Should().BeOfType<CoinbaseHeightActivationRule>();
-            partialValidationRules[4].Should().BeOfType<WitnessCommitmentsRule>();
-            partialValidationRules[5].Should().BeOfType<BlockSizeRule>();
-            partialValidationRules[6].Should().BeOfType<EnsureCoinbaseRule>();
-            partialValidationRules[7].Should().BeOfType<CheckPowTransactionRule>();
-            partialValidationRules[8].Should().BeOfType<CheckPosTransactionRule>();
-            partialValidationRules[9].Should().BeOfType<CheckSigOpsRule>();
-            partialValidationRules[10].Should().BeOfType<PosCoinstakeRule>();
+            partialValidationRules[0].FullName.Should().Be(typeof(SetActivationDeploymentsPartialValidationRule).FullName);
+            partialValidationRules[1].FullName.Should().Be(typeof(PosTimeMaskRule).FullName);
+            partialValidationRules[2].FullName.Should().Be(typeof(TransactionLocktimeActivationRule).FullName);
+            partialValidationRules[3].FullName.Should().Be(typeof(CoinbaseHeightActivationRule).FullName);
+            partialValidationRules[4].FullName.Should().Be(typeof(WitnessCommitmentsRule).FullName);
+            partialValidationRules[5].FullName.Should().Be(typeof(BlockSizeRule).FullName);
+            partialValidationRules[6].FullName.Should().Be(typeof(EnsureCoinbaseRule).FullName);
+            partialValidationRules[7].FullName.Should().Be(typeof(CheckPowTransactionRule).FullName);
+            partialValidationRules[8].FullName.Should().Be(typeof(CheckPosTransactionRule).FullName);
+            partialValidationRules[9].FullName.Should().Be(typeof(CheckSigOpsRule).FullName);
+            partialValidationRules[10].FullName.Should().Be(typeof(PosCoinstakeRule).FullName);
 
-            List<IFullValidationConsensusRule> fullValidationRules = network.Consensus.FullValidationRules;
+            List<Type> fullValidationRules = network.Consensus.ConsensusRules.FullValidationRules;
 
             fullValidationRules.Count.Should().Be(7);
 
-            fullValidationRules[0].Should().BeOfType<SetActivationDeploymentsFullValidationRule>();
-            fullValidationRules[1].Should().BeOfType<CheckDifficultyHybridRule>();
-            fullValidationRules[2].Should().BeOfType<LoadCoinviewRule>();
-            fullValidationRules[3].Should().BeOfType<TransactionDuplicationActivationRule>();
-            fullValidationRules[4].Should().BeOfType<PosCoinviewRule>();
-            fullValidationRules[5].Should().BeOfType<PosColdStakingRule>();
-            fullValidationRules[6].Should().BeOfType<SaveCoinviewRule>();
+            fullValidationRules[0].FullName.Should().Be(typeof(SetActivationDeploymentsFullValidationRule).FullName);
+            fullValidationRules[1].FullName.Should().Be(typeof(CheckDifficultyHybridRule).FullName);
+            fullValidationRules[2].FullName.Should().Be(typeof(LoadCoinviewRule).FullName);
+            fullValidationRules[3].FullName.Should().Be(typeof(TransactionDuplicationActivationRule).FullName);
+            fullValidationRules[4].FullName.Should().Be(typeof(PosCoinviewRule).FullName);
+            fullValidationRules[5].FullName.Should().Be(typeof(PosColdStakingRule).FullName);
+            fullValidationRules[6].FullName.Should().Be(typeof(SaveCoinviewRule).FullName);
         }
     }
 }

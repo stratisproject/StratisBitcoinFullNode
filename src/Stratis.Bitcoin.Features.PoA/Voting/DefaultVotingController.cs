@@ -45,9 +45,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             try
             {
-                List<string> hexList = this.fedManager.GetFederationMembers().Select(x => x.ToString()).ToList();
+                List<IFederationMember> federationMembers = this.fedManager.GetFederationMembers();
 
-                return this.Json(hexList);
+                return this.Json(federationMembers);
             }
             catch (Exception e)
             {
@@ -100,9 +100,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             try
             {
-                string hashes = string.Join(Environment.NewLine, this.whitelistedHashesRepository.GetHashes().Select(x => x.ToString()).ToList());
+                IEnumerable<HashModel> hashes = this.whitelistedHashesRepository.GetHashes().Select(x => new HashModel() { Hash = x.ToString() });
 
-                return this.Ok(hashes);
+                return this.Json(hashes);
             }
             catch (Exception e)
             {
@@ -160,9 +160,11 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             try
             {
-                List<string> votes = this.votingManager.GetScheduledVotes().Select(x => x.Key.ToString()).ToList();
+                List<VotingData> votes = this.votingManager.GetScheduledVotes();
 
-                return this.Json(votes);
+                IEnumerable<VotingDataModel> models = votes.Select(x => new VotingDataModel(x));
+
+                return this.Json(models);
             }
             catch (Exception e)
             {

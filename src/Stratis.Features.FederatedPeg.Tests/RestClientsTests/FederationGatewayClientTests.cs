@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Networks;
+using Stratis.Features.Collateral.CounterChain;
 using Stratis.Features.FederatedPeg.Controllers;
-using Stratis.Features.FederatedPeg.CounterChain;
 using Stratis.Features.FederatedPeg.Models;
 using Xunit;
 
@@ -23,13 +24,13 @@ namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
 
             var nodeSettings = new NodeSettings(Sidechains.Networks.CirrusNetwork.NetworksSelector.Regtest(), NBitcoin.Protocol.ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
-            this.client = new FederationGatewayClient(new ExtendedLoggerFactory(), new CounterChainSettings(nodeSettings, new CounterChainNetworkWrapper(Networks.Stratis.Regtest())), new HttpClientFactory());
+            this.client = new FederationGatewayClient(new ExtendedLoggerFactory(), new CounterChainSettings(nodeSettings, Networks.Stratis.Regtest()), new HttpClientFactory());
         }
 
         [Fact]
         public async Task ReturnsNullIfCounterChainNodeIsOfflineAsync()
         {
-            List<MaturedBlockDepositsModel> result = await this.client.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(100, 10));
+            SerializableResult<List<MaturedBlockDepositsModel>> result = await this.client.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(100, 10));
 
             Assert.Null(result);
         }

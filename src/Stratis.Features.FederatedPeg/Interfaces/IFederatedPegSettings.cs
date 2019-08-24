@@ -15,9 +15,16 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         bool IsMainChain { get; }
 
         /// <summary>
-        /// Ip Endpoints for the other nodes in the federation.
+        /// Ip Endpoints for the other nodes in the federation. Useful for connecting to nodes but
+        /// not accurate for checking whether a node is a federation member.
         /// </summary>
-        IEnumerable<IPEndPoint> FederationNodeIpEndPoints { get; }
+        HashSet<IPEndPoint> FederationNodeIpEndPoints { get; }
+
+        /// <summary>
+        /// Ip addresses for the other nodes in the federation. Useful for checking whether a node is
+        /// a federation member.
+        /// </summary>
+        HashSet<IPAddress> FederationNodeIpAddresses { get; }
 
         /// <summary>
         /// Public keys of other federation members.
@@ -28,6 +35,11 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// Public key of this federation member.
         /// </summary>
         string PublicKey { get; }
+
+        /// <summary>
+        /// The block number to start syncing the federation wallet from.
+        /// </summary>
+        int WalletSyncFromHeight { get; }
 
         /// <summary>
         /// For the M of N multisig, this is the number of signers required to reach a quorum.

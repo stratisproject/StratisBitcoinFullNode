@@ -7,6 +7,7 @@ using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -36,6 +37,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
         public CanGetSenderRuleTest()
         {
+            var loggerFactory = new ExtendedLoggerFactory();
+            loggerFactory.AddConsoleWithFilters();
+
             this.network = new SmartContractsRegTest();
             this.senderRetriever = new Mock<ISenderRetriever>();
             this.rule = new CanGetSenderRule(this.senderRetriever.Object);
@@ -48,8 +52,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 new NodeDeployments(KnownNetworks.RegTest, new ChainIndexer(this.network)),
                 new ConsensusSettings(NodeSettings.Default(this.network)), new Mock<ICheckpoints>().Object, new Mock<ICoinView>().Object, new Mock<IChainState>().Object,
                 new InvalidBlockHashStore(null),
-                new NodeStats(null),
-                new AsyncProvider(new Mock<ILoggerFactory>().Object, new Mock<ISignals>().Object, new NodeLifetime()));
+                new NodeStats(null, loggerFactory),
+                new AsyncProvider(new Mock<ILoggerFactory>().Object, new Mock<ISignals>().Object, new NodeLifetime()),
+                new ConsensusRulesContainer())
+            };
 
             this.rule.Initialize();
         }
@@ -60,11 +66,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             var successResult = GetSenderResult.CreateSuccess(new uint160(0));
             this.senderRetriever.Setup(x => x.GetSender(It.IsAny<Transaction>(), It.IsAny<MempoolCoinView>()))
                 .Returns(successResult);
-            this.senderRetriever.Setup(x=> x.GetSender(It.IsAny<Transaction>(), It.IsAny<ICoinView>(), It.IsAny<IList<Transaction>>()))
+            this.senderRetriever.Setup(x => x.GetSender(It.IsAny<Transaction>(), It.IsAny<ICoinView>(), It.IsAny<IList<Transaction>>()))
                 .Returns(successResult);
 
             Transaction transaction = this.network.CreateTransaction();
-            transaction.Outputs.Add(new TxOut(100, new Script(new byte[]{ (byte) ScOpcodeType.OP_CREATECONTRACT})));
+            transaction.Outputs.Add(new TxOut(100, new Script(new byte[] { (byte)ScOpcodeType.OP_CREATECONTRACT })));
 
             // Mempool check works
             this.mempoolRule.CheckTransaction(new MempoolValidationContext(transaction, new MempoolValidationState(false)));
@@ -72,7 +78,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             // Block validation check works
             Block block = this.network.CreateBlock();
             block.AddTransaction(transaction);
-            this.rule.RunAsync(new RuleContext(new ValidationContext {BlockToValidate = block}, DateTimeOffset.Now));
+            this.rule.RunAsync(new RuleContext(new ValidationContext { BlockToValidate = block }, DateTimeOffset.Now));
         }
 
         [Fact]

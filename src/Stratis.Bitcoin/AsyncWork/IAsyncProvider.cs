@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.AsyncWork
@@ -117,6 +118,15 @@ namespace Stratis.Bitcoin.AsyncWork
         /// <param name="faultyOnly">if set to <c>true</c> dump information only for loops in faulty state.</param>
         string GetStatistics(bool faultyOnly);
 
+        /// <summary>
+        /// temporary hack to expose signals to most of the components (every component currently using asyncprovider), while we decide if we should introduce a component
+        /// that references common services/components used almost in every other features.
+        /// This has to be removed once the "ICoreComponents" has been created and injected everywhere or when we decide that we still have to inject single services where needed.
+        /// In favor of ICoreComponents, everytime we need a new core service around, we spend lot of time refactoring every test and many legacy component.
+        /// Having a single entry point for COMMON SERVICES allows us to speed up changes.
+        /// </summary>
+        ISignals Signals { get; }
+     
         /// <summary>
         /// Returns a list of friendly names of all loops, as well as their current status.
         /// </summary>

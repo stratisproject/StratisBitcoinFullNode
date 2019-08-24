@@ -33,13 +33,14 @@ namespace Stratis.Sidechains.Networks
             this.DefaultMaxInboundConnections = 109;
             this.DefaultRPCPort = 16175;
             this.DefaultAPIPort = 37223;
-            this.MaxTipAge = 30 * 60; // Node will be considered in IBD when blocks are more than 30 minutes away.
+            this.MaxTipAge = 768; // 20% of the fastest time it takes for one MaxReorgLength of blocks to be mined.
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
             this.MinRelayTxFee = 10000;
             this.RootFolderName = NetworkRootFolderName;
             this.DefaultConfigFilename = NetworkDefaultConfigFilename;
             this.MaxTimeOffsetSeconds = 25 * 60;
+            this.DefaultBanTimeSeconds = 1920; // 240 (MaxReorg) * 16 (TargetSpacing) / 2 = 32 Minutes
 
             var consensusFactory = new SmartContractCollateralPoAConsensusFactory();
 
@@ -59,9 +60,9 @@ namespace Stratis.Sidechains.Networks
             // Keep in mind that order in which keys are added to this list is important
             // and should be the same for all nodes operating on this network.
             var genesisFederationMembers = new List<IFederationMember>()
-			{
-	    
-				new CollateralFederationMember(new PubKey("03f5de5176e29e1e7d518ae76c1e020b1da18b57a3713ac81b16015026e232748e"), new Money(50000_00000000),"SNuLYcPoSmY1tmp9X9TRwXoF861sVMe9dP"),
+            {
+
+                new CollateralFederationMember(new PubKey("03f5de5176e29e1e7d518ae76c1e020b1da18b57a3713ac81b16015026e232748e"), new Money(50000_00000000),"SNuLYcPoSmY1tmp9X9TRwXoF861sVMe9dP"),
                 new CollateralFederationMember(new PubKey("021043aacac5c8805e3bc62eb40e8d3c04070c56b21032d4bb14200ed6e4facf93"), new Money(50000_00000000),"ScrS22tPNxL2q1Q8u9bFPX29WwWfnmTZJ6"),
                 new CollateralFederationMember(new PubKey("0323033679aa439a0388f09f2883bf1ca6f50283b41bfeb6be6ddcc4e420144c16"), new Money(50000_00000000),"SVAKFx4yndzKEh2Q6o5fz5ZGADBXzFayQ4"),
                 new CollateralFederationMember(new PubKey("037b5f0a88a477d9fba812826a3bf43104ca078fc51b62c0eaad15d0f9a724a4b2"), new Money(50000_00000000),"SeHbzFEC1CXco4TKTKkBbsfFMBhDyDm8Qa"),
@@ -107,8 +108,8 @@ namespace Stratis.Sidechains.Networks
                 new CollateralFederationMember(new PubKey("0371c8558c846172eaf694a4e3af4d6cfdbfdd0d8480666c206ea43522c65a926a"), new Money(10000_00000000),"SREEeESBB1fiSCEfZ7qDBuQeZtM7byCyoG"),
                 new CollateralFederationMember(new PubKey("03adce7b60c2a3b03f9567d44bcf4e1d98200a736914a4385a4ef8c248d50b71ba"), new Money(10000_00000000),"ScY7ZaL5KN4PpHMaoAr3yK1qbRpEuq4rYv"),
                 new CollateralFederationMember(new PubKey("028bbb6d3eca487640fab54c5800beb9e9d0f20c072805f08f0a4ae2af8bec596d"), new Money(10000_00000000),"SUGnHfLwuCidT3mRR6i8ZrNgYHPjBbdUzJ")
-	    
-			};
+
+            };
 
             var consensusOptions = new PoAConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
@@ -189,14 +190,16 @@ namespace Stratis.Sidechains.Networks
             this.Checkpoints = new Dictionary<int, CheckpointInfo>();
 
             this.DNSSeeds = new List<DNSSeedData>
-			{
-		
-				new DNSSeedData("cirrusmain1.stratisplatform.com", "cirrusmain1.stratisplatform.com")
-            
-			};
-	    
+            {
+
+                new DNSSeedData("cirrusmain1.stratisplatform.com", "cirrusmain1.stratisplatform.com")
+
+            };
+
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
 
+            // 16 below should be changed to TargetSpacingSeconds when we move that field.
+            Assert(this.DefaultBanTimeSeconds <= this.Consensus.MaxReorgLength * 16 / 2);
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("000005769503496300ec879afd7543dc9f86d3b3d679950b2b83e2f49f525856"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("1669a55d45b642af0ce82c5884cf5b8d8efd5bdcb9a450c95f442b9bd1ff65ea"));
 

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.P2P.Peer;
@@ -9,9 +7,8 @@ using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.InputConsolidation;
 using Stratis.Features.FederatedPeg.Interfaces;
-using Stratis.Features.FederatedPeg.NetworkHelpers;
 using Stratis.Features.FederatedPeg.Payloads;
-using Stratis.Features.FederatedPeg.TargetChain;
+using TracerAttributes;
 
 namespace Stratis.Features.FederatedPeg
 {
@@ -26,8 +23,6 @@ namespace Stratis.Features.FederatedPeg
         private readonly Network network;
 
         private readonly IFederatedPegSettings federatedPegSettings;
-
-        private readonly IPAddressComparer ipAddressComparer;
 
         private readonly ICrossChainTransferStore crossChainTransferStore;
 
@@ -53,10 +48,10 @@ namespace Stratis.Features.FederatedPeg
             this.network = network;
             this.federatedPegSettings = federatedPegSettings;
             this.crossChainTransferStore = crossChainTransferStore;
-            this.ipAddressComparer = new IPAddressComparer();
             this.inputConsolidator = inputConsolidator;
         }
 
+        [NoTrace]
         public override object Clone()
         {
             return new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager, this.network,
@@ -65,13 +60,13 @@ namespace Stratis.Features.FederatedPeg
 
         protected override void AttachCore()
         {
-            if (this.federatedPegSettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
+            if (this.federatedPegSettings.FederationNodeIpAddresses.Contains(this.AttachedPeer.PeerEndPoint.Address))
                 this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
         }
 
         protected override void DetachCore()
         {
-            if (this.federatedPegSettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
+            if (this.federatedPegSettings.FederationNodeIpAddresses.Contains(this.AttachedPeer.PeerEndPoint.Address))
                 this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
         }
 
@@ -81,15 +76,13 @@ namespace Stratis.Features.FederatedPeg
         /// <param name="payload">The payload to broadcast.</param>
         private async Task BroadcastAsync(RequestPartialTransactionPayload payload)
         {
-            if (this.federatedPegSettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
+            if (this.AttachedPeer.IsConnected && this.federatedPegSettings.FederationNodeIpAddresses.Contains(this.AttachedPeer.PeerEndPoint.Address))
                 await this.AttachedPeer.SendMessageAsync(payload).ConfigureAwait(false);
         }
 
         private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
-            var payload = message.Message.Payload as RequestPartialTransactionPayload;
-
-            if (payload == null)
+            if (!(message.Message.Payload is RequestPartialTransactionPayload payload))
                 return;
 
             // Is a consolidation request.
@@ -101,6 +94,15 @@ namespace Stratis.Features.FederatedPeg
             }
 
             ICrossChainTransfer[] transfer = await this.crossChainTransferStore.GetAsync(new[] { payload.DepositId });
+
+            // This could be null if the store was unable to sync with the federation 
+            // wallet manager. It is possible that the federation wallet's tip is not 
+            // on chain and as such the store was not able to sync.
+            if (transfer == null)
+            {
+                this.logger.LogDebug("{0}: Unable to retrieve transfers for deposit {1} at this time, the store is not synced.", nameof(this.OnMessageReceivedAsync), payload.DepositId);
+                return;
+            }
 
             if (transfer[0] == null)
             {

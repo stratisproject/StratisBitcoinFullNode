@@ -13,9 +13,8 @@ using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Networks;
-using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common;
-using Stratis.Features.FederatedPeg.CounterChain;
+using Stratis.Features.Collateral.CounterChain;
 using Stratis.Features.FederatedPeg.Events;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
@@ -148,7 +147,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(3, transactions[0].Outputs.Count);
 
                 // Transaction[0] output value - change.
-                Assert.Equal(new Money(10.00059999m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
+                Assert.Equal(new Money(10.00055999m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[0].Outputs[0].ScriptPubKey);
 
                 // Transaction[0] output value - recipient 1, but minus 0.001 for the tx fee and 0.01 for sender fee.
@@ -169,7 +168,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(3, transactions[1].Outputs.Count);
 
                 // Transaction[1] output value - change. Includes an extra 0.01 taken from sender deposit.
-                Assert.Equal(new Money(10.00069999m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
+                Assert.Equal(new Money(10.00067999m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[1].Outputs[0].ScriptPubKey);
 
                 // Transaction[1] output value - recipient 2, but minus 0.001 for the tx fee and 0.01 for sender fee.
@@ -301,7 +300,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(3, transactions[0].Outputs.Count);
 
                 // Transaction[0] output value - Change + small profit. 2 UTXOS used as inputs. 1 satoshi for opreturn.
-                Assert.Equal(new Money(10.00059999m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
+                Assert.Equal(new Money(10.00055999m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[0].Outputs[0].ScriptPubKey);
 
                 // Transaction[0] output value - recipient 1, but minus 0.001 for the constant tx fee.
@@ -339,7 +338,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Assert.Equal(3, transactions[1].Outputs.Count);
 
                 // Transaction[1] output value - change.
-                Assert.Equal(new Money(970.00059999m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
+                Assert.Equal(new Money(970.00055999m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
                 Assert.Equal(multiSigAddress.ScriptPubKey, transactions[1].Outputs[0].ScriptPubKey);
 
                 // Transaction[1] output value - recipient 2, but minus 0.001 for the tx fee and 0.01 for sender fee.
@@ -359,7 +358,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 (Money confirmed, Money unconfirmed) spendable = this.federationWalletManager.GetSpendableAmount();
 
                 // Includes ~0.0012 taken from deposit amounts - our profit.
-                Assert.Equal(new Money(980.00119998m, MoneyUnit.BTC), spendable.unconfirmed);
+                Assert.Equal(new Money(980.00111998m, MoneyUnit.BTC), spendable.unconfirmed);
             }
         }
 
@@ -1005,7 +1004,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 };
 
                 RecordLatestMatureDepositsResult recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[crossChainTransferStore.NextMatureDepositHeight]);
-                
+
                 // The CCTS won't create any transactions until the InputConsolidator consolidates some inputs
                 Assert.Empty(recordMatureDepositResult.WithDrawalTransactions);
 
@@ -1013,7 +1012,34 @@ namespace Stratis.Features.FederatedPeg.Tests
             }
         }
 
-        private Q Post<T, Q>(string url, T body)
+        [Fact]
+        public async Task WalletSyncFromHeightOverridesWalletLastBlockSyncedHeight()
+        {
+            // Only sync the wallet from the second funding block.
+            this.federatedPegSettings.WalletSyncFromHeight.Returns(2);
+
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+
+            this.Init(dataFolder);
+
+            FederationWallet wallet = this.federationWalletManager.GetWallet();
+
+            // LastBlockSyncedHeight = WalletSyncFromHeight - 1.
+            Assert.Equal(1, wallet.LastBlockSyncedHeight);
+
+            // Add 2 blocks with 2 and 1 transactions respectively.
+            this.AddFunding();
+
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
+            {
+                crossChainTransferStore.Initialize();
+
+                // Only the second block containing 1 transaction should be processed.
+                Assert.Equal(1, wallet.MultiSigAddress.Transactions.Count);
+            }
+        }
+
+        private Q Post<T,Q>(string url, T body)
         {
             // Request is sent to mainchain user.
             var request = (HttpWebRequest)WebRequest.Create(url);

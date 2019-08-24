@@ -9,15 +9,17 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
 {
     /// <summary>Repository for <see cref="OutPointData"/> items with cache layer built in.</summary>
-    public class AddressIndexerOutpointsRepository : MemoryCache<string, OutPointData>
+    public sealed class AddressIndexerOutpointsRepository : MemoryCache<string, OutPointData>
     {
         private const string DbOutputsDataKey = "OutputsData";
 
         private const string DbOutputsRewindDataKey = "OutputsRewindData";
 
+        /// <summary>Represents the output collection.</summary>
         /// <remarks>Should be protected by <see cref="LockObject"/></remarks>
         private readonly LiteCollection<OutPointData> addressIndexerOutPointData;
 
+        /// <summary>Represents the rewind data collection.</summary>
         /// <remarks>Should be protected by <see cref="LockObject"/></remarks>
         private readonly LiteCollection<AddressIndexerRewindData> addressIndexerRewindData;
 
@@ -116,12 +118,20 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
         {
             lock (this.LockObject)
             {
-                foreach (AddressIndexerRewindData rewindData in this.addressIndexerRewindData.Find(x => x.BlockHeight < height))
-                    this.addressIndexerRewindData.Delete(rewindData.BlockHash);
+                var itemsToPurge = this.addressIndexerRewindData.Find(x => x.BlockHeight < height).ToArray();
+
+                for (int i = 0; i < itemsToPurge.Count(); i++)
+                {
+                    this.addressIndexerRewindData.Delete(itemsToPurge[i].BlockHash);
+
+                    if (i % 100 == 0)
+                        this.logger.LogInformation("Purging {0}/{1} rewind data items.", i, itemsToPurge.Count());
+                }
             }
         }
 
         /// <summary>Reverts changes made by processing blocks with height higher than <param name="height">.</param></summary>
+        /// <param name="height">The height above which to restore outpoints.</param>
         public void RewindDataAboveHeight(int height)
         {
             lock (this.LockObject)
@@ -135,6 +145,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                     // Put the spent outputs back into the cache.
                     foreach (OutPointData outPointData in rewindData.SpentOutputs)
                         this.AddOutPointData(outPointData);
+
+                    // This rewind data item should now be removed from the collection.
+                    this.addressIndexerRewindData.Delete(rewindData.BlockHash);
                 }
             }
         }

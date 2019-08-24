@@ -32,6 +32,7 @@ namespace Stratis.Bitcoin.Networks
             this.DefaultRPCPort = 26174;
             this.DefaultAPIPort = 38221;
             this.CoinTicker = "TSTRAT";
+            this.DefaultBanTimeSeconds = 16000; // 500 (MaxReorg) * 64 (TargetSpacing) / 2 = 4 hours, 26 minutes and 40 seconds
 
             var powLimit = new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000"));
 
@@ -148,8 +149,11 @@ namespace Stratis.Bitcoin.Networks
 
             this.StandardScriptsRegistry = new StratisStandardScriptsRegistry();
 
+            // 64 below should be changed to TargetSpacingSeconds when we move that field.
+            Assert(this.DefaultBanTimeSeconds <= this.Consensus.MaxReorgLength * 64 / 2);
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"));
 
+            this.RegisterRules(this.Consensus);
             this.RegisterMempoolRules(this.Consensus);
         }
     }

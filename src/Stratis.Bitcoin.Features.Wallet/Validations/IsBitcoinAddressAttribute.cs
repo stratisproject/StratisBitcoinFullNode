@@ -7,6 +7,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Validations
     {
         protected override ValidationResult IsValid(object value, ValidationContext validationContext)
         {
+            if (!this.Required && value == null)
+            {
+                return ValidationResult.Success;
+            }
+
             var network = (Network)validationContext.GetService(typeof(Network));
             try
             {
@@ -15,5 +20,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Validations
             }
             catch { return new ValidationResult("Invalid address"); }
         }
+
+        /// <summary>
+        /// Determines whether this field is optionally validated. If set to false, the address will be only be validated if it is not null.
+        /// Defaults to true.
+        /// </summary>
+        public bool Required { get; set; } = true;
     }
 }

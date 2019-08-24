@@ -57,9 +57,14 @@ namespace Stratis.Bitcoin.Controllers.Models
     /// </summary>
     public sealed class VerboseAddressBalancesResult
     {
-        public VerboseAddressBalancesResult()
+        private VerboseAddressBalancesResult()
         {
             this.BalancesData = new List<AddressIndexerData>();
+        }
+
+        public VerboseAddressBalancesResult(int consensusTipHeight) : this()
+        {
+            this.ConsensusTipHeight = consensusTipHeight;
         }
 
         public List<AddressIndexerData> BalancesData { get; set; }
