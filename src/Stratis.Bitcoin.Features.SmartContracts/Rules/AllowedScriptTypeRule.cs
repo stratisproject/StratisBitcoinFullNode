@@ -18,6 +18,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.network = network;
         }
 
+        /// <inheritdoc/>
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;

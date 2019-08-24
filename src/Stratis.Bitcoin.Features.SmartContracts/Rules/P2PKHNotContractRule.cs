@@ -19,6 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.stateRepositoryRoot = stateRepositoryRoot;
         }
 
+        /// <inheritdoc/>
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;

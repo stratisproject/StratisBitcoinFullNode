@@ -4,6 +4,8 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <DebugType>Full</DebugType>
     <CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
+    <Version>1.0.2.0-beta</Version>
+    <Authors>Stratis Group Ltd.</Authors>
   </PropertyGroup>
 
   <ItemGroup>
