@@ -10,9 +10,29 @@ using Stratis.Features.FederatedPeg.Interfaces;
 
 namespace Stratis.Features.FederatedPeg
 {
+    public interface IFederatedPegOptions
+    {
+        int WalletSyncFromHeight { get; }
+    }
+
+    public sealed class FederatedPegOptions : IFederatedPegOptions
+    {
+        /// <summary>
+        /// The height to start syncing the wallet from.
+        /// </summary>
+        public int WalletSyncFromHeight { get; }
+
+        public FederatedPegOptions(int walletSyncFromHeight = 1)
+        {
+            this.WalletSyncFromHeight = walletSyncFromHeight;
+        }
+    }
+
     /// <inheritdoc />
     public sealed class FederatedPegSettings : IFederatedPegSettings
     {
+        public const string WalletSyncFromHeightParam = "walletsyncfromheight";
+
         public const string RedeemScriptParam = "redeemscript";
 
         public const string PublicKeyParam = "publickey";
@@ -48,12 +68,12 @@ namespace Stratis.Features.FederatedPeg
         /// <summary>
         /// The extra fee given to a withdrawal transaction per input it spends. This number should be high enough such that the built transactions are always valid, yet low enough such that the federation can turn a profit.
         /// </summary>
-        public static readonly Money InputTransactionFee = Money.Coins(0.0001m);
+        public static readonly Money InputTransactionFee = Money.Coins(0.00012m);
 
         /// <summary>
-        /// Fee applied to consolidating transactions. Roughly the same as the fee for withdrawals.
+        /// Fee applied to consolidating transactions.
         /// </summary>
-        public static readonly Money ConsolidationFee = Money.Coins(0.005m);
+        public static readonly Money ConsolidationFee = Money.Coins(0.01m);
 
         /// <summary>
         /// The maximum number of inputs we want our built withdrawal transactions to have. We don't want them to get too big for Standardness reasons.
@@ -67,7 +87,7 @@ namespace Stratis.Features.FederatedPeg
         /// </summary>
         public const int StratisMainDepositStartBlock = 1_100_000;
 
-        public FederatedPegSettings(NodeSettings nodeSettings)
+        public FederatedPegSettings(NodeSettings nodeSettings, IFederatedPegOptions federatedPegOptions = null)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
@@ -105,10 +125,12 @@ namespace Stratis.Features.FederatedPeg
             IEnumerable<IPEndPoint> endPoints = federationIpsRaw.Split(',').Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort));
 
             this.FederationNodeIpEndPoints = new HashSet<IPEndPoint>(endPoints, new IPEndPointComparer());
+            this.FederationNodeIpAddresses = new HashSet<IPAddress>(endPoints.Select(x=>x.Address), new IPAddressComparer());
 
             // These values are only configurable for tests at the moment. Fed members on live networks shouldn't play with them.
             this.CounterChainDepositStartBlock = configReader.GetOrDefault<int>(CounterChainDepositBlock, this.IsMainChain ? 1 : StratisMainDepositStartBlock);
             this.MinimumDepositConfirmations = (uint)configReader.GetOrDefault<int>(MinimumDepositConfirmationsParam, (int)nodeSettings.Network.Consensus.MaxReorgLength + 1);
+            this.WalletSyncFromHeight = configReader.GetOrDefault(WalletSyncFromHeightParam, federatedPegOptions?.WalletSyncFromHeight ?? 0);
         }
 
         /// <inheritdoc/>
@@ -118,10 +140,16 @@ namespace Stratis.Features.FederatedPeg
         public HashSet<IPEndPoint> FederationNodeIpEndPoints { get; }
 
         /// <inheritdoc/>
+        public HashSet<IPAddress> FederationNodeIpAddresses { get; }
+
+        /// <inheritdoc/>
         public string PublicKey { get; }
 
         /// <inheritdoc/>
         public PubKey[] FederationPublicKeys { get; }
+
+        /// <inheritdoc/>
+        public int WalletSyncFromHeight { get; }
 
         /// <inheritdoc/>
         public int MultiSigM { get; }

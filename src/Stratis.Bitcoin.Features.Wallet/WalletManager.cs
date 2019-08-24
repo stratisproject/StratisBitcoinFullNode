@@ -27,6 +27,9 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class WalletManager : IWalletManager
     {
+        /// <summary>Used to get the first account.</summary>
+        public const string DefaultAccount = "account 0";
+
         // <summary>As per RPC method definition this should be the max allowable expiry duration.</summary>
         private const int MaxWalletUnlockDurationInSeconds = 1073741824;
 

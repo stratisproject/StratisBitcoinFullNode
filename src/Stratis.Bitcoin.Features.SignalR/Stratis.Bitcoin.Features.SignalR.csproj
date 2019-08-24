@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>netcoreapp2.1</TargetFramework>
+        <Version>3.0.6.0-beta</Version>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="CSharpFunctionalExtensions" Version="1.10.0" />
+        <PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.12" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\Stratis.Bitcoin.Features.Miner\Stratis.Bitcoin.Features.Miner.csproj" />
+      <ProjectReference Include="..\Stratis.Bitcoin.Features.Wallet\Stratis.Bitcoin.Features.Wallet.csproj" />
+      <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 uint256 hash = transaction.GetHash();
                 return hash;
             }
-            catch (SecurityException exception)
+            catch (SecurityException)
             {
                 throw new RPCServerException(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED, "Wallet unlock needed");
             }
@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>Transaction information.</returns>
         [ActionName("gettransaction")]
         [ActionDescription("Get detailed information about an in-wallet transaction.")]
-        public async Task<GetTransactionModel> GetTransactionAsync(string txid)
+        public GetTransactionModel GetTransaction(string txid)
         {
             if (!uint256.TryParse(txid, out uint256 trxid))
                 throw new ArgumentException(nameof(txid));
@@ -673,7 +673,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 return transaction.GetHash();
             }
-            catch (SecurityException exception)
+            catch (SecurityException)
             {
                 throw new RPCServerException(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED, "Wallet unlock needed");
             }

@@ -328,6 +328,17 @@ namespace NBitcoin
         Witness = 1
     }
 
+    public enum ScriptType
+    {
+        Witness,
+        P2PKH,
+        P2SH,
+        P2PK,
+        P2WPKH,
+        P2WSH,
+        MultiSig
+    }
+
     public class ScriptSigs
     {
         public ScriptSigs()
@@ -404,6 +415,11 @@ namespace NBitcoin
         public static Script FromBytesUnsafe(byte[] data)
         {
             return new Script(data, true, true);
+        }
+
+        public static Script FromHex(string hex)
+        {
+            return FromBytesUnsafe(Encoders.Hex.DecodeData(hex));
         }
 
         public Script(byte[] data)
@@ -536,6 +552,7 @@ namespace NBitcoin
         /// <summary>
         /// True if the scriptPubKey is witness
         /// </summary>
+        [Obsolete("Use IsScriptType instead")]
         public bool IsWitness(Network network)
         {
             return PayToWitTemplate.Instance.CheckScriptPubKey(this);
@@ -871,8 +888,10 @@ namespace NBitcoin
             return (BitcoinScriptAddress) this.Hash.GetAddress(network);
         }
 
+        [Obsolete("Use IsScriptType instead")]
         public bool IsPayToScriptHash(Network network)
         {
+            // TODO: Is the network needed?
             return PayToScriptHashTemplate.Instance.CheckScriptPubKey(this);
         }
 
@@ -883,6 +902,7 @@ namespace NBitcoin
 
         public uint GetSigOpCount(Network network, Script scriptSig)
         {
+            // TODO: Is the network needed?
             if(!IsPayToScriptHash(network))
                 return GetSigOpCount(true);
             // This is a pay-to-script-hash scriptPubKey;
@@ -896,6 +916,31 @@ namespace NBitcoin
         public ScriptTemplate FindTemplate(Network network)
         {
             return StandardScripts.GetTemplateFromScriptPubKey(this);
+        }
+
+        public bool IsScriptType(ScriptType type)
+        {
+            switch (type)
+            {
+                // TODO: The known types can be added to, e.g. cold staking. Need dynamic set.
+
+                case ScriptType.Witness:
+                    return PayToWitTemplate.Instance.CheckScriptPubKey(this);
+                case ScriptType.P2PKH:
+                    return PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(this);
+                case ScriptType.P2SH:
+                    return PayToScriptHashTemplate.Instance.CheckScriptPubKey(this);
+                case ScriptType.P2PK:
+                    return PayToPubkeyTemplate.Instance.CheckScriptPubKey(this);
+                case ScriptType.P2WPKH:
+                    return PayToWitPubKeyHashTemplate.Instance.CheckScriptPubKey(this);
+                case ScriptType.P2WSH:
+                    return PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(this);
+                case ScriptType.MultiSig:
+                    return PayToMultiSigTemplate.Instance.CheckScriptPubKey(this);
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type), type, "The value is not a valid script type");
+            }
         }
 
         /// <summary>

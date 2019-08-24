@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
 using NSubstitute.Core;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
@@ -35,24 +35,28 @@ namespace Stratis.Features.FederatedPeg.Tests
         }
 
         [Fact]
-        public async Task GetMaturedBlocksAsyncReturnsDeposits()
+        public void GetMaturedBlocksReturnsDeposits()
         {
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(10, null, true);
 
             foreach (ChainedHeader chainedHeader in headers)
+            {
                 chainedHeader.Block = new Block(chainedHeader.Header);
+            }
 
             var blocks = new List<ChainedHeaderBlock>(headers.Count);
+
             foreach (ChainedHeader chainedHeader in headers)
+            {
                 blocks.Add(new ChainedHeaderBlock(chainedHeader.Block, chainedHeader));
+            }
 
             ChainedHeader tip = headers.Last();
 
-            this.consensusManager.GetBlockData(Arg.Any<uint256>()).Returns(delegate(CallInfo info)
+            this.consensusManager.GetBlockData(Arg.Any<List<uint256>>()).Returns(delegate (CallInfo info)
             {
-                uint256 hash = (uint256) info[0];
-                ChainedHeaderBlock block = blocks.Single(x => x.ChainedHeader.HashBlock == hash);
-                return block;
+                List<uint256> hashes = (List<uint256>)info[0];
+                return hashes.Select((hash) => blocks.Single(x => x.ChainedHeader.HashBlock == hash)).ToArray();
             });
 
             uint zero = 0;
@@ -61,9 +65,9 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.consensusManager.Tip.Returns(tip);
 
             // Makes every block a matured block.
-            var maturedBlocksProvider = new MaturedBlocksProvider(this.loggerFactory, this.depositExtractor, this.consensusManager);
+            var maturedBlocksProvider = new MaturedBlocksProvider(this.consensusManager, this.depositExtractor, this.loggerFactory);
 
-            Result<List<MaturedBlockDepositsModel>> depositsResult = await maturedBlocksProvider.GetMaturedDepositsAsync(0, 10);
+            SerializableResult<List<MaturedBlockDepositsModel>> depositsResult = maturedBlocksProvider.GetMaturedDeposits(0, 10);
 
             // Expect the number of matured deposits to equal the number of blocks.
             Assert.Equal(10, depositsResult.Value.Count);

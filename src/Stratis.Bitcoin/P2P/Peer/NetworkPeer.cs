@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.AsyncWork;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -142,10 +143,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         public IPEndPoint RemoteSocketEndpoint { get; private set; }
 
         /// <inheritdoc/>
-        public IPAddress RemoteSocketAddress { get; private set; }
+        public IPAddress RemoteSocketAddress => this.RemoteSocketEndpoint.Address;
 
         /// <inheritdoc/>
-        public int RemoteSocketPort { get; private set; }
+        public int RemoteSocketPort => this.RemoteSocketEndpoint.Port;
 
         /// <inheritdoc/>
         public bool Inbound { get; private set; }
@@ -211,12 +212,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                                                 && (!port.HasValue || port == this.PeerVersion.AddressFrom.Port);
 
             return (isConnectedOrHandShaked && isAddressMatching) || isPeerVersionAddressMatching;
-        }
-
-        /// <inheritdoc />
-        public bool MatchRemoteEndPoint(IPEndPoint ep, bool matchPort = true)
-        {
-            return this.MatchRemoteIPAddress(ep.Address, matchPort ? ep.Port : (int?)null);
         }
 
         /// <summary><c>true</c> to advertise "addr" message with our external endpoint to the peer when passing to <see cref="NetworkPeerState.HandShaked"/> state.</summary>
@@ -307,8 +302,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Inbound = inbound;
             this.PeerEndPoint = peerEndPoint;
             this.RemoteSocketEndpoint = this.PeerEndPoint;
-            this.RemoteSocketAddress = this.RemoteSocketEndpoint.Address;
-            this.RemoteSocketPort = this.RemoteSocketEndpoint.Port;
 
             this.Network = network;
             this.Behaviors = new List<INetworkPeerBehavior>();
@@ -414,8 +407,8 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 if ((newState == NetworkPeerState.Failed) || (newState == NetworkPeerState.Offline))
                 {
-                    this.logger.LogDebug("Communication with the peer has been closed.");
-
+                    this.logger.LogDebug("Communication with the peer has been closed. newState={0}", newState);
+                    this.asyncProvider.Signals.Publish(new PeerDisconnected(this.Inbound, this.PeerEndPoint, this.DisconnectReason?.Reason, this.DisconnectReason?.Exception));
                     this.ExecuteDisconnectedCallbackWhenSafe();
                 }
             }
@@ -435,8 +428,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                 await this.Connection.ConnectAsync(this.PeerEndPoint, cancellation).ConfigureAwait(false);
 
                 this.RemoteSocketEndpoint = this.Connection.RemoteEndPoint;
-                this.RemoteSocketAddress = this.RemoteSocketEndpoint.Address;
-                this.RemoteSocketPort = this.RemoteSocketEndpoint.Port;
 
                 this.State = NetworkPeerState.Connected;
 
@@ -477,8 +468,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="previous">Previous network state of the peer.</param>
         private async Task OnStateChangedAsync(NetworkPeerState previous)
         {
-            bool insideCallback = this.onDisconnectedAsyncContext.Value == null;
-            if (!insideCallback)
+            // Creates a context that can be used to postpone / flag disconnect.
+            bool iCreatedContext = this.onDisconnectedAsyncContext.Value == null;
+            if (iCreatedContext)
                 this.onDisconnectedAsyncContext.Value = new DisconnectedExecutionAsyncContext();
 
             try
@@ -492,7 +484,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             finally
             {
-                if (!insideCallback)
+                // Only the caller that created the context should process and remove it.
+                if (iCreatedContext)
                 {
                     if (this.onDisconnectedAsyncContext.Value.DisconnectCallbackRequested)
                         this.onDisconnected(this);
@@ -529,10 +522,13 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return;
             }
 
-            try
-            {
+            // Creates a context that can be used to postpone / flag disconnect.
+            bool iCreatedContext = this.onDisconnectedAsyncContext.Value == null;
+            if (iCreatedContext)
                 this.onDisconnectedAsyncContext.Value = new DisconnectedExecutionAsyncContext();
 
+            try
+            {
                 await this.MessageReceived.ExecuteCallbacksAsync(this, message).ConfigureAwait(false);
             }
             catch (Exception e)
@@ -543,10 +539,14 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             finally
             {
-                if (this.onDisconnectedAsyncContext.Value.DisconnectCallbackRequested)
-                    this.onDisconnected(this);
+                // Only the caller that created the context should process and remove it.
+                if (iCreatedContext)
+                {
+                    if (this.onDisconnectedAsyncContext.Value.DisconnectCallbackRequested)
+                        this.onDisconnected(this);
 
-                this.onDisconnectedAsyncContext.Value = null;
+                    this.onDisconnectedAsyncContext.Value = null;
+                }
             }
         }
 
@@ -729,11 +729,15 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc/>
         public async Task VersionHandshakeAsync(NetworkPeerRequirement requirements, CancellationToken cancellationToken)
         {
+            // Note that this method gets called for outbound peers. When our peer is inbound we receive the initial version handshake from the initiating peer, and it is handled via this.ProcessMessageAsync() only.
+
             // In stratisX, the equivalent functionality is contained in main.cpp, method ProcessMessage()
 
             requirements = requirements ?? new NetworkPeerRequirement();
-            using (var listener = new NetworkPeerListener(this, this.asyncProvider))
+            NetworkPeerListener listener = null;
+            try
             {
+                listener = new NetworkPeerListener(this, this.asyncProvider);
                 this.logger.LogDebug("Sending my version.");
                 await this.SendMessageAsync(this.MyVersion, cancellationToken).ConfigureAwait(false);
 
@@ -753,7 +757,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                             versionReceived = true;
 
                             this.PeerVersion = versionPayload;
-                            if (!versionPayload.AddressReceiver.Address.Equals(this.MyVersion.AddressFrom.Address))
+                            if (!versionPayload.AddressReceiver.Address.MapToIPv6().Equals(this.MyVersion.AddressFrom.Address.MapToIPv6()))
                             {
                                 this.logger.LogDebug("Different external address detected by the node '{0}' instead of '{1}'.", versionPayload.AddressReceiver.Address, this.MyVersion.AddressFrom.Address);
                             }
@@ -776,7 +780,12 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                             this.logger.LogDebug("Sending version acknowledgement.");
                             await this.SendMessageAsync(new VerAckPayload(), cancellationToken).ConfigureAwait(false);
-                            this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(versionPayload.AddressFrom, false);
+
+                            // Note that we only update our external address data from information returned by outbound peers.
+                            // TODO: Is this due to a security assumption or is it an oversight? There is a higher risk the inbounds could be spoofing what they claim our external IP is. We would then use it in future version payloads, so that could be considered an attack.
+                            // For outbounds: AddressFrom is our current external endpoint from our perspective, and could easily be incorrect if it has been automatically detected from local NICs.
+                            // Whereas AddressReceiver is the endpoint from the peer's perspective, so we update our view using that.
+                            this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(versionPayload.AddressReceiver, false);
                             break;
 
                         case VerAckPayload verAckPayload:
@@ -802,6 +811,14 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 // Ask the just-handshaked peer for the peers they know about to aid in our own peer discovery.
                 await this.SendMessageAsync(new GetAddrPayload(), cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                throw;
+            }
+            finally
+            {
+                listener?.Dispose();
             }
         }
 
@@ -838,6 +855,8 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc/>
         public void Disconnect(string reason, Exception exception = null)
         {
+            this.logger.LogDebug("Disconnect called with reason={0} and exception={1}", reason, exception?.ToString() ?? "null");
+
             if (Interlocked.CompareExchange(ref this.disconnected, 1, 0) == 1)
             {
                 this.logger.LogTrace("(-)[DISCONNECTED]");

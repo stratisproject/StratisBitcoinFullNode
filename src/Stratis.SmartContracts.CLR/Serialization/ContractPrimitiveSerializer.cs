@@ -5,6 +5,7 @@ using System.Text;
 using NBitcoin;
 using Nethereum.RLP;
 using Stratis.SmartContracts.CLR.Exceptions;
+using TracerAttributes;
 
 namespace Stratis.SmartContracts.CLR.Serialization
 {
@@ -12,6 +13,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
     /// This class serializes and deserializes specific data types
     /// when persisting items inside a smart contract.
     /// </summary>
+    [NoTrace]
     public class ContractPrimitiveSerializer : IContractPrimitiveSerializer
     {
         private readonly Network network;

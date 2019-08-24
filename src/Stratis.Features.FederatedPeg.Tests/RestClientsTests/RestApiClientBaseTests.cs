@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Stratis.Bitcoin.Controllers;
-using Stratis.Features.FederatedPeg.Interfaces;
+using Stratis.Features.Collateral.CounterChain;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests

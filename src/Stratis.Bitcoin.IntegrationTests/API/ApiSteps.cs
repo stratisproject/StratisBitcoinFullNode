@@ -505,7 +505,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void staking_is_enabled_but_nothing_is_staked()
         {
-            var miningRpcController = this.stratisPosApiNode.FullNode.NodeService<StakingRpcController>();
+            var miningRpcController = this.stratisPosApiNode.FullNode.NodeController<StakingRpcController>();
             GetStakingInfoModel stakingInfo = miningRpcController.GetStakingInfo();
             stakingInfo.Should().NotBeNull();
             stakingInfo.Enabled.Should().BeTrue();
@@ -563,12 +563,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             var walletTransactionModel = (WalletBuildTransactionModel)(transactionResult as JsonResult)?.Value;
             this.transaction = this.firstStratisPowApiNode.FullNode.Network.CreateTransaction(walletTransactionModel.Hex);
-            this.firstStratisPowApiNode.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex));
+            this.firstStratisPowApiNode.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex));
         }
 
         private IActionResult BuildTransaction()
         {
-            IActionResult transactionResult = this.firstStratisPowApiNode.FullNode.NodeService<WalletController>()
+            IActionResult transactionResult = this.firstStratisPowApiNode.FullNode.NodeController<WalletController>()
                 .BuildTransaction(new BuildTransactionRequest
                 {
                     AccountName = WalletAccountName,

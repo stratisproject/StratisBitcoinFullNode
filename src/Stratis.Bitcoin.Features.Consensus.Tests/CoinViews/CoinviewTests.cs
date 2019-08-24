@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             this.dataFolder = TestBase.CreateDataFolder(this);
             this.dateTimeProvider = new DateTimeProvider();
             this.loggerFactory = new ExtendedLoggerFactory();
-            this.nodeStats = new NodeStats(this.dateTimeProvider);
+            this.nodeStats = new NodeStats(this.dateTimeProvider, this.loggerFactory);
 
             this.dbreezeCoinview = new DBreezeCoinView(this.network, this.dataFolder, this.dateTimeProvider, this.loggerFactory, this.nodeStats, new DBreezeSerializer(this.network.Consensus.ConsensusFactory));
             this.dbreezeCoinview.Initialize();
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 List<OutPoint> txPointsToSpend = txPoints.Take(txPoints.Count / 2).ToList();
 
                 // First spend in cached coinview
-                FetchCoinsResponse response = this.cachedCoinView.FetchCoins(new[] {txId});
+                FetchCoinsResponse response = this.cachedCoinView.FetchCoins(new[] { txId });
                 Assert.Single(response.UnspentOutputs);
 
                 UnspentOutputs coins = response.UnspentOutputs[0];
@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 uint256 txId = outPointsGroup.Key;
                 List<uint> availableIndexes = outPointsGroup.Select(x => x.N).ToList();
 
-                FetchCoinsResponse result = this.cachedCoinView.FetchCoins(new[] {txId});
+                FetchCoinsResponse result = this.cachedCoinView.FetchCoins(new[] { txId });
                 TxOut[] outputsArray = result.UnspentOutputs[0].Outputs;
 
                 // Check expected coins are present.

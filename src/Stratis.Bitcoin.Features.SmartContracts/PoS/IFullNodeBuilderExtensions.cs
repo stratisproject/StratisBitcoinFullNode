@@ -38,16 +38,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
                         services.AddSingleton<ICoinView, CachedCoinView>();
                         services.AddSingleton<StakeChainStore>().AddSingleton<IStakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<IStakeValidator, StakeValidator>();
-                        services.AddSingleton<ConsensusController>();
 
-                        services.AddSingleton<PosConsensusRuleEngine>();
-                        services.AddSingleton<IConsensusRuleEngine>(f =>
-                        {
-                            var concreteRuleEngine = f.GetService<PosConsensusRuleEngine>();
-                            var ruleRegistration = f.GetService<IRuleRegistration>();
-
-                            return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
-                        });
+                        services.AddSingleton<IConsensusRuleEngine, PosConsensusRuleEngine>();
+                        new SmartContractPosRuleRegistration().RegisterRules(services);
                     });
             });
 
@@ -76,10 +69,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
                         services.AddSingleton<BlockDefinition, SmartContractBlockDefinition>();
                         services.AddSingleton<BlockDefinition, SmartContractPosPowBlockDefinition>();
                         services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();
-                        services.AddSingleton<MiningRpcController>();
-                        services.AddSingleton<MiningController>();
-                        services.AddSingleton<StakingController>();
-                        services.AddSingleton<StakingRpcController>();
                         services.AddSingleton<MinerSettings>();
                     });
             });

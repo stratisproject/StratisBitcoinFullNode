@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Reflection;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
@@ -53,6 +55,42 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             var walletAccount = wallet.AccountsRoot.First().Accounts.First();
             var walletAccountReference = new WalletAccountReference(wallet.Name, walletAccount.Name);
             return walletManager.GetUnusedAddress(walletAccountReference);
+        }
+
+        /// <summary>
+        /// Create an instance of the controller type using DI.
+        /// </summary>
+        /// <typeparam name="T">Class of type.</typeparam>
+        /// <param name="fullNode">The fullnode instance.</param>
+        /// <param name="failWithDefault">Set to true to return null instead of throwing an error.</param>
+        /// <returns>A controller instance.</returns>
+        public static T NodeController<T>(this IFullNode fullNode, bool failWithDefault = false)
+        {
+            foreach (ConstructorInfo ci in typeof(T).GetConstructors())
+            {
+                ParameterInfo[] paramInfo = ci.GetParameters();
+
+                var parameters = new object[paramInfo.Length];
+
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    parameters[i] = fullNode.Services.ServiceProvider.GetService(paramInfo[i].ParameterType) ?? paramInfo[i].DefaultValue;
+                    if (parameters[i] == null && !paramInfo[i].HasDefaultValue)
+                    {
+                        if (failWithDefault)
+                            return default(T);
+
+                        throw new InvalidOperationException($"The {typeof(T).ToString()} controller constructor can't resolve {paramInfo[i].ParameterType.ToString()}");
+                    }
+                }
+
+                return (T)ci.Invoke(parameters);
+            }
+
+            if (failWithDefault)
+                return default(T);
+
+            throw new InvalidOperationException($"The {typeof(T).ToString()} controller has no constructor");
         }
     }
 }

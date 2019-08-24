@@ -16,11 +16,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public void OnNextCore_WhenTransactionsMissingInLongestChain_ReturnsThemToTheMempool()
         {
             var mempoolValidatorMock = new Mock<IMempoolValidator>();
+            var mempoolMock = new Mock<ITxMempool>();
             var loggerFactoryMock = new Mock<ILoggerFactory>();
             loggerFactoryMock.Setup(i => i.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
 
             Signals.Signals signals = new Signals.Signals(loggerFactoryMock.Object, null);
-            var subject = new BlocksDisconnectedSignaled(mempoolValidatorMock.Object, new MempoolSchedulerLock(), loggerFactoryMock.Object, signals);
+            var subject = new BlocksDisconnectedSignaled(mempoolMock.Object, mempoolValidatorMock.Object, new MempoolSchedulerLock(), loggerFactoryMock.Object, signals);
             subject.Initialize();
 
             var block = new Block();
