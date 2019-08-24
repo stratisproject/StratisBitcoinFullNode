@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Base.Deployments
 
                 DateTime? timeStart = this.consensus.BIP9Deployments[deploymentIndex]?.StartTime.Date;
                 DateTime? timeTimeout = this.consensus.BIP9Deployments[deploymentIndex]?.Timeout.Date;
-                int threshold = this.consensus.RuleChangeActivationThreshold;
+                long threshold = this.consensus.BIP9Deployments[deploymentIndex].Threshold;
 
                 int votes = 0;
                 int currentHeight = indexPrev.Height + 1;
@@ -140,8 +140,11 @@ namespace Stratis.Bitcoin.Base.Deployments
         /// <returns>The current state of the deployment.</returns>
         public ThresholdState GetState(ChainedHeader indexPrev, int deployment)
         {
+            if (this.consensus.BIP9Deployments[deployment] == null)
+                return ThresholdState.Failed;
+
             int period = this.consensus.MinerConfirmationWindow;
-            int threshold = this.consensus.RuleChangeActivationThreshold;
+            long threshold = this.consensus.BIP9Deployments[deployment].Threshold;
             DateTimeOffset? timeStart = this.consensus.BIP9Deployments[deployment]?.StartTime;
             DateTimeOffset? timeTimeout = this.consensus.BIP9Deployments[deployment]?.Timeout;
 
