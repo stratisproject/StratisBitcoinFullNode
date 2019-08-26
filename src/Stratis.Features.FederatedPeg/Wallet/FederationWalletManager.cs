@@ -366,18 +366,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 foreach (TransactionData transactionData in makeSpendable)
                 {
                     this.logger.LogDebug("Unspend transaction '{0}'.", transactionData.Id);
-                    uint256 spendDetailsTxId = transactionData.SpendingDetails?.TransactionId;
-                    if (spendDetailsTxId != null && transactionData.SpendingDetails.BlockHash == null)
-                    {
-                        this.logger.LogDebug("Attempting to remove related spender tx '{0}'.", spendDetailsTxId);
-                        TransactionData spender = this.Wallet.MultiSigAddress.Transactions.FirstOrDefault(t => t.Id == spendDetailsTxId);
-                        if (spender != null)
-                        {
-                            this.logger.LogDebug("Removing spender transaction '{0}'.", spender.Id);
-                            this.Wallet.MultiSigAddress.Transactions.Remove(spender);
-                        }
-                    }
-
                     transactionData.SpendingDetails = null;
                 }
 
