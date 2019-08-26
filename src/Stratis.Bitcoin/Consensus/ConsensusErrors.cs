@@ -145,5 +145,7 @@
         public static ConsensusError BadColdstakeInputs => new ConsensusError("bad-coldstake-inputs", "coldstake inputs contain mismatching scriptpubkeys");
 
         public static ConsensusError BadColdstakeOutputs => new ConsensusError("bad-coldstake-outputs", "coldstake outputs contain unexpected scriptpubkeys");
+
+        public static ConsensusError ClientVersionTooOld => new ConsensusError("client-version-too-old", "client version is too old; please upgrade");
     }
 }

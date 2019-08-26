@@ -159,6 +159,7 @@ namespace Stratis.Bitcoin.Features.PoA
         {
             foreach (Type ruleType in new List<Type>()
             {
+                typeof(ClientVersionLimitRule),
                 typeof(HeaderTimeChecksPoARule),
                 typeof(StratisHeaderVersionRule),
                 typeof(PoAHeaderDifficultyRule),
