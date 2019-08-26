@@ -52,7 +52,7 @@ namespace Stratis.SmartContracts.Networks
             };
 
             var consensusOptions = new PoAConsensusOptions(
-                maxBlockBaseSize: 1_000_000,
+                maxBlockBaseSize: 500_000, // Half the standard block size / weight. Easier to stress test.
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,

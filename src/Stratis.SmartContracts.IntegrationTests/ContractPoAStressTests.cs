@@ -178,8 +178,61 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Equal(expectedInMempool, node1.CoreNode.FullNode.MempoolManager().InfoAll().Count);
         }
 
-        // TODO: Spending all gas in a CALL that uses minimal gas so we can fit many into a block
+        [Fact]
+        public void BlockFullWithRefundTransactionsAndNormalTransactions()
+        {
+            // Demonstrates that even with the maximum amount of internal transactions and refunds, and normal transactions, the block can't get too big
+            // to be declined by consensus.
 
-        // TODO: Transactions that generate internal transactions.
+            const int contractTxsToSend = 100;
+            const int normalTxsToSend = 500;
+
+            var node1 = this.mockChain.Nodes[0];
+            var node2 = this.mockChain.Nodes[1];
+
+            // Load us up with 100 utxos we can create contracts with
+            Result<WalletSendTransactionModel> fundingResult = node1.SendTransaction(node1.MinerAddress.ScriptPubKey, Money.Coins(1000m), 1000);
+            Assert.True(fundingResult.IsSuccess);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
+
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Auction.cs");
+            Assert.True(compilationResult.Success);
+
+            // Send 100 contract transactions. Each will fail because the parameters aren't quite correct and generate an internal transaction.
+            for (int i = 0; i < contractTxsToSend; i++)
+            {
+                var response = node1.SendCreateContractTransaction(compilationResult.Compilation, 0.1m, outpoints: new List<OutpointRequest>
+                {
+                    new OutpointRequest
+                    {
+                        TransactionId = fundingResult.Value.TransactionId.ToString(),
+                        Index = i
+                    }
+                });
+                Assert.True(response.Success);
+            }
+
+            for (int i = 0; i < normalTxsToSend; i++)
+            {
+                var response = node1.SendTransaction(node2.MinerAddress.ScriptPubKey, Money.Coins(0.1m), selectedInputs: new List<OutPoint>
+                {
+                    new OutPoint
+                    {
+                        Hash = fundingResult.Value.TransactionId,
+                        N =  (uint) (contractTxsToSend + i)
+                    }
+                });
+                Assert.True(response.IsSuccess);
+            }
+
+            this.mockChain.WaitAllMempoolCount(contractTxsToSend);
+            this.mockChain.MineBlocks(1);
+
+            // Check that there's still something in the mempool, aka that the block is as big as can be.
+            Assert.True(node1.CoreNode.FullNode.MempoolManager().InfoAll().Count > 0);
+        }
+
+        // TODO: Spending all gas in a CALL that uses minimal gas so we can fit many into a block
     }
 }
