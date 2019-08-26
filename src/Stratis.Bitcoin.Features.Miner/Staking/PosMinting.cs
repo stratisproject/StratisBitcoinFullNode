@@ -687,7 +687,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 // Update the total fees, with the to-be-removed transaction taken into account.
                 fees -= blockTemplate.FeeDetails[blockTemplate.Block.Transactions[i].GetHash()].Satoshi;
 
-                this.logger.LogDebug("Removing transaction with timestamp {0} as it is greater than coinstake transaction timestamp {1}. New fee amount {2}.", blockTemplate.Block.Transactions[i].Time, blockTemplate.Block.Header.Time, fees);
+                this.logger.LogDebug("Removing transaction with timestamp {0} as it is greater than coinstake transaction timestamp {1}. New fee amount {2}.", blockTemplate.Block.Transactions[i].Time, coinstakeContext.CoinstakeTx.Time, fees);
                 blockTemplate.Block.Transactions.Remove(blockTemplate.Block.Transactions[i]);
             }
 
