@@ -677,9 +677,11 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             this.logger.LogDebug("Worker #{0} found the kernel.", workersResult.KernelFoundIndex);
 
             // We have to make sure that we have no future timestamps in our transactions set.
-            for (int i = blockTemplate.Block.Transactions.Count - 1; i >= 0; i--)
+            // We ignore the coinbase (it gets its timestamp reset after the coinstake is created).
+            for (int i = blockTemplate.Block.Transactions.Count - 1; i >= 1; i--)
             {
-                if (blockTemplate.Block.Transactions[i].Time <= blockTemplate.Block.Header.Time)
+                // We have not yet updated the header timestamp, so we use the coinstake timestamp directly here.
+                if (blockTemplate.Block.Transactions[i].Time <= coinstakeContext.CoinstakeTx.Time)
                     continue;
 
                 // Update the total fees, with the to-be-removed transaction taken into account.
