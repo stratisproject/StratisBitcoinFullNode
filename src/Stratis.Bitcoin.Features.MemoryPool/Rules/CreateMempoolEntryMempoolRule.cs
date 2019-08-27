@@ -24,10 +24,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
         public const int MaxStandardP2wshStackItems = 100;
         public const int MaxStandardP2wshStackItemSize = 80;
 
-        private ILogger logger;
-        private Network network;
-        private ChainIndexer chainIndexer;
-        private IConsensusRuleEngine consensusRules;
+        private readonly IConsensusRuleEngine consensusRules;
 
         public CreateMempoolEntryMempoolRule(Network network,
             ITxMempool mempool,
