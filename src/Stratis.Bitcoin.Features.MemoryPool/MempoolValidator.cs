@@ -495,7 +495,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             foreach (TxOut txout in tx.Outputs)
             {
                 ScriptTemplate script = this.network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(txout.ScriptPubKey);
-                if (script == null) //!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled))  https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp#L57-L80
+                if (script == null) //!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled)) https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp#L57-L80
                 {
                     this.logger.LogTrace("(-)[FAIL_SCRIPT_PUBKEY]");
                     context.State.Fail(MempoolErrors.Scriptpubkey).Throw();
