@@ -73,33 +73,5 @@ namespace Stratis.Bitcoin.IntegrationTests
                 }
             }
         }
-
-        [Fact]
-        public void TestSegwit_AlwaysActivatedOn_StratisNode()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
-            {
-                CoreNode coreNode = builder.CreateBitcoinCoreNode(version: "0.18.0", useNewConfigStyle: true);
-                coreNode.Start();
-
-                CoreNode stratisNode = builder.CreateStratisPowNode(KnownNetworks.RegTest).Start();
-
-                RPCClient stratisNodeRpc = stratisNode.CreateRPCClient();
-                RPCClient coreRpc = coreNode.CreateRPCClient();
-
-                coreRpc.AddNode(stratisNode.Endpoint, false);
-                stratisNodeRpc.AddNode(coreNode.Endpoint, false);
-
-                coreRpc.Generate(1);
-                var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
-                TestBase.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash(), cancellationToken: cancellationToken);
-
-                var consensusLoop = stratisNode.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
-                ThresholdState[] segwitActiveState = consensusLoop.NodeDeployments.BIP9.GetStates(stratisNode.FullNode.ChainIndexer.GetHeader(1));
-
-                // Check that segwit got activated at genesis.
-                Assert.Equal(ThresholdState.Active, segwitActiveState.GetValue((int)BitcoinBIP9Deployments.Segwit));
-            }
-        }
     }
 }
