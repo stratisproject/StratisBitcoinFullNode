@@ -118,7 +118,12 @@ namespace Stratis.Sidechains.Networks
                 targetSpacingSeconds: 16,
                 votingEnabled: true,
                 autoKickIdleMembers: false
-            );
+            )
+            {
+                MaxSupportedMineBlockHeight = 0, // Value zero will be ignored as if there were no limit.
+                MaxSupportedSyncBlockHeight = 0, // Value zero will be ignored as if there were no limit.
+                MaxSupportedBlockHeightGracePeriod = 0  // Value zero will be ignored as if there were no grace period.
+            };
 
             var buriedDeployments = new BuriedDeploymentsArray
             {
