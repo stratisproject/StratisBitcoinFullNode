@@ -148,6 +148,18 @@ namespace Stratis.Bitcoin.Features.PoA
                         continue;
                     }
 
+                    // Don't mine blocks if our client version is too old.
+                    ChainedHeader tip = this.consensusManager.Tip;
+                    int maxSupportedMineBlockHeight = this.network.ConsensusOptions.MaxSupportedMineBlockHeight;
+                    if (maxSupportedMineBlockHeight > tip.Height)
+                    {
+                        this.logger.LogError("The current version of the node is too old and cannot be used to mine PoA blocks. Please upgrade to the latest version.");
+
+                        // We want to continiously print the message to the console in order to notify the user that he needs to upgrade the node to the latest version.
+                        // Do not break out of the loop as this would cause the error message to be reported only once in the logs.
+                        continue;
+                    }
+
                     uint miningTimestamp = await this.WaitUntilMiningSlotAsync().ConfigureAwait(false);
 
                     ChainedHeader chainedHeader = await this.MineBlockAtTimestampAsync(miningTimestamp).ConfigureAwait(false);
