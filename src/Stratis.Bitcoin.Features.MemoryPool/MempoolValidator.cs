@@ -68,12 +68,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <seealso cref = "MempoolSettings" />
         public const bool DefaultEnableReplacement = true;
 
-        /// <summary>
-        /// Default for -permitbaremultisig, whether or not to regard bare (non-P2SH) multisig transactions as standard.
-        /// </summary>
-        /// <seealso cref = "MempoolSettings" />
-        public const bool DefaultPermitBareMultisig = true;
-
         /// <summary>Maximum age of our tip in seconds for us to be considered current for fee estimation.</summary>
         private const int MaxFeeEstimationTipAge = 3 * 60 * 60;
 
@@ -398,24 +392,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 context.State.Fail(MempoolErrors.Coinstake).Throw();
             }
 
-            // Reject transactions with witness data before segregated witness activates.
-            // https://github.com/bitcoin/bitcoin/blob/ea729d55b4dbd17a53ced474a8457d4759cfb5a5/src/validation.cpp#L463-L467
-
-            // TODO: The Bitcoin Core approach to segwit has changed since the MempoolValidator was first written; it is now regarded as always active
-            // and the following check has been removed. However, as we have not deployed segwit yet we should retain this check for now. It can
-            // be removed at a later stage & the witnessEnabled flags no longer used.
-            // https://github.com/bitcoin/bitcoin/commit/fa7a6cf1b36284db70e941bd2915fd6edbb0f9d6?diff=split#diff-24efdb00bfbe56b140fb006b562cc70bL581
-
-            // Validation of the actual witness data, if applicable, is done later when signature verification is performed.
-
-            DeploymentFlags flags = this.nodeDeployments.GetFlags(this.chainIndexer.Tip);
-            bool witnessEnabled = flags.ScriptFlags.HasFlag(ScriptVerify.Witness);
-
-            if (context.Transaction.HasWitness && !witnessEnabled)
-            {
-                this.logger.LogTrace("(-)[FAIL_NO_WITNESS_YET]");
-                context.State.Fail(MempoolErrors.NoWitnessYet).Throw();
-            }
+            bool witnessEnabled = false;
 
             // Rather not work on nonstandard transactions (unless -testnet/-regtest)
             if (this.mempoolSettings.RequireStandard)
@@ -508,10 +485,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 {
                     dataOut++;
                 }
-                else if ((script == PayToMultiSigTemplate.Instance) && !this.mempoolSettings.PermitBareMultisig)
-                {
-                    context.State.Fail(new MempoolError(MempoolErrors.RejectNonstandard, "bare-multisig")).Throw();
-                }
+                //else if ((script == PayToMultiSigTemplate.Instance) && !this.mempoolSettings.PermitBareMultisig)
+                //{
+                //    context.State.Fail(new MempoolError(MempoolErrors.RejectNonstandard, "bare-multisig")).Throw();
+                //}
                 else if (txout.IsDust(this.minRelayTxFee))
                 {
                     this.logger.LogTrace("(-)[FAIL_DUST]");
