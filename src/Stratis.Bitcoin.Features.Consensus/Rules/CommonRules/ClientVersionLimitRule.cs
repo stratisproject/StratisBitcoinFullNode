@@ -14,11 +14,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public override void Run(RuleContext context)
         {
             ChainedHeader chainedHeader = context.ValidationContext.ChainedHeaderToValidate;
+            int maxSupportedSyncBlockHeight = this.Parent.Network.Consensus.Options.MaxSupportedSyncBlockHeight;
 
             // Check if the client version is supported by the network
-            if (this.Parent.Network.Consensus.Options.MaxSupportedBlockHeight > 0 && chainedHeader.Height > this.Parent.Network.Consensus.Options.MaxSupportedBlockHeight)
+            if ((maxSupportedSyncBlockHeight > 0) && (chainedHeader.Height > maxSupportedSyncBlockHeight))
             {
-                this.Logger.LogTrace("(-)[CLIENT_TOO_OLD]");
+                this.Logger.LogError("(-)[CLIENT_TOO_OLD]");
                 ConsensusErrors.ClientVersionTooOld.Throw();
             }
         }

@@ -42,8 +42,11 @@
         /// <summary>The maximum number of sigops we're willing to relay/mine in a single tx.</summary>
         public int MaxStandardTxSigopsCost { get; set; }
 
-        /// <summary>The maximum block height which the client can support or zero to inidicate no restriction.</summary>
-        public int MaxSupportedBlockHeight { get; set; }
+        /// <summary>The maximum block height which the client sync upto; zero to inidicate no restriction.</summary>
+        public int MaxSupportedSyncBlockHeight { get; set; }
+
+        /// <summary>The maximum block height which the client can mine new blocks; zero to indicate no restriction.</summary>
+        public int MaxSupportedMineBlockHeight { get; set; }
 
         /// <summary>
         /// Initializes the default values. Currently only used for initialising Bitcoin networks and testing.
@@ -59,7 +62,7 @@
             this.MaxBlockBaseSize = 1000000;
             this.MaxBlockSigopsCost = 80000;
             this.MaxStandardTxSigopsCost = this.MaxBlockSigopsCost / 5;
-            this.MaxSupportedBlockHeight = 0;
+            this.MaxSupportedSyncBlockHeight = 0;
         }
 
         /// <summary>

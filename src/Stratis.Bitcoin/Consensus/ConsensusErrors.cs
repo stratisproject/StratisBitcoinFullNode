@@ -146,6 +146,6 @@
 
         public static ConsensusError BadColdstakeOutputs => new ConsensusError("bad-coldstake-outputs", "coldstake outputs contain unexpected scriptpubkeys");
 
-        public static ConsensusError ClientVersionTooOld => new ConsensusError("client-version-too-old", "client version is too old; please upgrade");
+        public static ConsensusError ClientVersionTooOld => new ConsensusError("client-version-too-old", "you are using client version which is too old; please upgrade");
     }
 }
