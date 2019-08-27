@@ -80,7 +80,7 @@
         /// <summary>
         /// Oldest supported version of the CirrusNode which this node can connect to.
         /// </summary>
-        CIRRUS_MIN_SUPPORTED_VERSION = 80000,
+        CIRRUS_MIN_SUPPORTED_VERSION = 70000,
 
         /// <summary>
         /// Current version of the CirrusNode.
