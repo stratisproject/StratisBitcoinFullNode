@@ -5,7 +5,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 {
     internal class HDAddress
     {
-        public const int StandardAddressCount = 20;
+        public const int StandardAddressBuffer = 20;
 
         // AddressType constants.
         public const int External = 0;

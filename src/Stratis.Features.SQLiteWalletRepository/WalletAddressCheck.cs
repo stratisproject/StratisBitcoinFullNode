@@ -13,7 +13,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// </summary>
         /// <param name="scriptPubKey">The public key hash script of the address.</param>
         /// <returns><c>True</c> if the address exists or has been added tentatively.</returns>
-        bool Contains(Script scriptPubKey);
+        bool Contains(Script scriptPubKey, out HDAddress address);
 
         /// <summary>
         /// Addresses from the "tentative" collection are moved to the "may exist" collection
@@ -32,7 +32,8 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// </summary>
         /// <param name="walletId">The wallet to look in.</param>
         /// <param name="accountIndex">The account to look in.</param>
-        void AddAll(int? walletId = null, int? accountIndex = null);
+        /// <param name="addressType">The address type to look at.</param>
+        void AddAll(int? walletId = null, int? accountIndex = null, int? addressType = null);
     }
 
     /// <summary>
@@ -56,15 +57,17 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public bool Contains(Script scriptPubKey)
+        public bool Contains(Script scriptPubKey, out HDAddress address)
         {
-            return Contains(scriptPubKey.ToBytes()) ?? Exists(scriptPubKey);
+            address = null;
+
+            return Contains(scriptPubKey.ToBytes()) ?? Exists(scriptPubKey, out address);
         }
 
         /// <inheritdoc />
         public void Confirm()
         {
-            Confirm(o => this.Exists(new Script(o)));
+            Confirm(o => this.Exists(new Script(o), out _));
         }
 
         /// <inheritdoc />
@@ -74,7 +77,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public void AddAll(int? walletId = null, int? accountIndex = null)
+        public void AddAll(int? walletId = null, int? accountIndex = null, int? addressType = null)
         {
             Guard.Assert((walletId ?? this.walletId) == (this.walletId ?? walletId));
 
@@ -88,7 +91,10 @@ namespace Stratis.Features.SQLiteWalletRepository
                 WHERE   WalletId = {walletId}" : "")} {
                 // Restrict to account if provided.
                 ((accountIndex != null) ? $@"
-                AND     AccountIndex = {accountIndex}" : "")}");
+                AND     AccountIndex = {accountIndex}" : "")} {
+                // Restrict to account if provided.
+                ((addressType != null) ? $@"
+                AND     AddressType = {addressType}" : "")}");
 
             foreach (HDAddress address in addresses)
             {
@@ -101,21 +107,19 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.Add(scriptPubKey.ToBytes());
         }
 
-        private bool Exists(Script scriptPubKey)
+        private bool Exists(Script scriptPubKey, out HDAddress address)
         {
             string hex = scriptPubKey.ToHex();
 
-            bool res = this.conn.ExecuteScalar<int>($@"
-                        SELECT EXISTS(
-                            SELECT  1
-                            FROM    HDAddress
-                            WHERE   ScriptPubKey = ? {
+            address = this.conn.FindWithQuery<HDAddress>($@"
+                        SELECT *
+                        FROM    HDAddress
+                        WHERE   ScriptPubKey = '{hex}' {
                     // Restrict to wallet if provided.
                     ((this.walletId != null) ? $@"
-                            AND     WalletId = {this.walletId}" : "")}
-                            LIMIT   1);", hex) == 1;
+                        AND     WalletId = {this.walletId}" : "")};");
 
-            return res;
+            return address != null;
         }
     }
 }

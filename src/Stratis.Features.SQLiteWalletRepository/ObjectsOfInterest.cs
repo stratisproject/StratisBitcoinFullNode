@@ -37,19 +37,12 @@ namespace Stratis.Features.SQLiteWalletRepository
         private uint bitIndexLimiter;
         protected HashSet<byte[]> tentative;
 
-        public ObjectsOfInterest(int MaxHashArrayLengthLog = 26)
+        public ObjectsOfInterest(int MaxHashArrayLengthLog)
         {
             this.maxHashArrayLengthLog = MaxHashArrayLengthLog;
+            this.hashArray = new byte[1 << this.maxHashArrayLengthLog];
             this.bitIndexLimiter = ((uint)1 << (this.maxHashArrayLengthLog + 3)) - 1;
             this.tentative = new HashSet<byte[]>(new ByteArrayEqualityComparer());
-
-            this.Clear();
-        }
-
-        public void Clear()
-        {
-            this.hashArray = new byte[1 << this.maxHashArrayLengthLog];
-            this.tentative.Clear();
         }
 
         private uint GetHashCode(byte[] obj)
