@@ -15,6 +15,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             ChainedHeader chainedHeader = context.ValidationContext.ChainedHeaderToValidate;
             int maxSupportedSyncBlockHeight = this.Parent.Network.Consensus.Options.MaxSupportedSyncBlockHeight;
+            int maxSupportedBlockHeightGracePeriod = this.Parent.Network.Consensus.Options.MaxSupportedBlockHeightGracePeriod;
+
+            // Check if the client version is approaching end of life
+            if ((maxSupportedBlockHeightGracePeriod > 0) && (chainedHeader.Height > (maxSupportedSyncBlockHeight - maxSupportedBlockHeightGracePeriod)))
+            {
+                this.Logger.LogWarning("Our client version is reaching its end of life. Please upgrade the node to the latest version.");
+            }
 
             // Check if the client version is supported by the network
             if ((maxSupportedSyncBlockHeight > 0) && (chainedHeader.Height > maxSupportedSyncBlockHeight))

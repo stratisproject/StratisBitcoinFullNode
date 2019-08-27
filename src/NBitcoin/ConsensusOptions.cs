@@ -48,6 +48,10 @@
         /// <summary>The maximum block height which the client can mine new blocks; zero to indicate no restriction.</summary>
         public int MaxSupportedMineBlockHeight { get; set; }
 
+        /// <summary>Number of blocks before <see cref="MaxSupportedSyncBlockHeight"> and <see cref="MaxSupportedMineBlockHeight"> from which the node
+        /// should start warning user of the impending end of support for the currently used node version; zero to indicate no grace period.</summary>
+        public int MaxSupportedBlockHeightGracePeriod { get; set; }
+
         /// <summary>
         /// Initializes the default values. Currently only used for initialising Bitcoin networks and testing.
         /// </summary>
@@ -63,6 +67,8 @@
             this.MaxBlockSigopsCost = 80000;
             this.MaxStandardTxSigopsCost = this.MaxBlockSigopsCost / 5;
             this.MaxSupportedSyncBlockHeight = 0;
+            this.MaxSupportedMineBlockHeight = 0;
+            this.MaxSupportedBlockHeightGracePeriod = 0;
         }
 
         /// <summary>
