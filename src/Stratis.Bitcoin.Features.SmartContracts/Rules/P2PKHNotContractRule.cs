@@ -19,6 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.stateRepositoryRoot = stateRepositoryRoot;
         }
 
+        /// <inheritdoc/>
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;
@@ -31,6 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public void CheckTransaction(MempoolValidationContext context)
         {
             this.CheckTransaction(context.Transaction);
@@ -38,7 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
         private void CheckTransaction(Transaction transaction)
         {
-            foreach(TxOut output in transaction.Outputs)
+            foreach (TxOut output in transaction.Outputs)
             {
                 if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
                 {

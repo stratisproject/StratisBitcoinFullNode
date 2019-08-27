@@ -10,6 +10,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// </summary>
     public class MempoolOpSpendRule : ISmartContractMempoolRule
     {
+        /// <inheritdoc/>
         public void CheckTransaction(MempoolValidationContext context)
         {
             if (context.Transaction.Inputs.Any(x => x.ScriptSig.IsSmartContractSpend()) || context.Transaction.Outputs.Any(x => x.ScriptPubKey.IsSmartContractSpend()))

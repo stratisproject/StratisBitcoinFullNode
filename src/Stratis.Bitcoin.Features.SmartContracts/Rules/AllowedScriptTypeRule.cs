@@ -19,6 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.network = network;
         }
 
+        /// <inheritdoc/>
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;
@@ -31,6 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public void CheckTransaction(MempoolValidationContext context)
         {
             this.CheckTransaction(context.Transaction);

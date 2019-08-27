@@ -952,6 +952,149 @@ namespace Stratis.Features.FederatedPeg.Tests
         }
 
         [Fact]
+        public async Task ReorgDoesntLeaveBehindUnconfirmedTransactions()
+        {
+            const int numDeposits = 10;
+            const int numDeposits2 = 5;
+            const decimal fundingAmount = 100;
+            const decimal depositAmount = 1;
+
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+
+            this.Init(dataFolder);
+            this.AddFunding();
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
+
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
+            {
+                crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
+
+                TestBase.WaitLoopMessage(() => (
+                    this.ChainIndexer.Tip.Height == crossChainTransferStore.TipHashAndHeight.Height,
+                    $"ChainIndexer.Height:{this.ChainIndexer.Tip.Height} Store.TipHashHeight:{crossChainTransferStore.TipHashAndHeight.Height}"));
+                Assert.Equal(this.ChainIndexer.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
+
+                // Get rid of the pre-existing transactions. It's easier to track with 10 of our own utxos.
+                this.fundingTransactions.Clear();
+
+                foreach (TransactionData tx in this.wallet.MultiSigAddress.Transactions.ToList())
+                {
+                    this.wallet.MultiSigAddress.Transactions.Remove(tx);
+                }
+
+                // Make our own 10 utxos.
+                Money[] funding = new Money[numDeposits];
+
+                for (int i = 0; i < funding.Length; i++)
+                {
+                    funding[i] = new Money(fundingAmount, MoneyUnit.BTC);
+                }
+
+                // Make 10 deposits
+                Deposit[] deposits = new Deposit[numDeposits];
+                BitcoinAddress address = new Script("").Hash.GetAddress(this.network);
+
+                for (int i = 0; i < numDeposits; i++)
+                {
+                    deposits[i] = new Deposit((ulong)i, new Money(depositAmount, MoneyUnit.BTC), address.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                }
+
+                (Transaction, ChainedHeader header) added = this.AddFundingTransaction(funding);
+
+                var blockDeposits = new Dictionary<int, MaturedBlockDepositsModel[]>();
+
+                blockDeposits[crossChainTransferStore.NextMatureDepositHeight] = new[]
+                {
+                    new MaturedBlockDepositsModel(
+                        new MaturedBlockInfoModel
+                        {
+                            BlockHash = 1,
+                            BlockHeight = crossChainTransferStore.NextMatureDepositHeight
+                        },
+                        deposits)
+                };
+
+                RecordLatestMatureDepositsResult recordMatureDepositResult =
+                    await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[crossChainTransferStore.NextMatureDepositHeight]);
+
+                Assert.Equal(numDeposits, recordMatureDepositResult.WithDrawalTransactions.Count);
+
+                // Create 1 block with all 10 withdrawals inside.
+                ChainedHeader header = this.AppendBlock(recordMatureDepositResult.WithDrawalTransactions.ToArray());
+
+                // Check that CCTS now has 10 withdrawals that are SeenInBlock.
+                ICrossChainTransfer[] seenInBlock = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.SeenInBlock });
+                Assert.Equal(numDeposits, seenInBlock.Length);
+
+                // Sync our CCTS
+                recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[1]);
+
+                // Lets make 10 more deposits using the change UTXOS in the block just gone.
+                Deposit[] moreDeposits = new Deposit[numDeposits2];
+                for (int i = 0; i < numDeposits2; i++)
+                {
+                    ulong newId = (ulong)numDeposits + (ulong)i; // to get a unique ID.
+                    moreDeposits[i] = new Deposit(newId, new Money(depositAmount, MoneyUnit.BTC), address.ToString(), crossChainTransferStore.NextMatureDepositHeight, 2);
+                }
+
+                blockDeposits[crossChainTransferStore.NextMatureDepositHeight] = new[]
+                {
+                    new MaturedBlockDepositsModel(
+                        new MaturedBlockInfoModel
+                        {
+                            BlockHash = 2,
+                            BlockHeight = crossChainTransferStore.NextMatureDepositHeight
+                        },
+                        moreDeposits)
+                };
+
+                recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[crossChainTransferStore.NextMatureDepositHeight]);
+
+                // We built more transctions with the UTXOs included in a block...
+                Assert.Equal(numDeposits2, recordMatureDepositResult.WithDrawalTransactions.Count);
+
+                // Now lets rewind.
+                this.ChainIndexer.SetTip(added.header);
+                this.federationWalletSyncManager.ProcessBlock(added.header.Block);
+                TestBase.WaitLoop(() => this.federationWalletManager.WalletTipHash == this.ChainIndexer.Tip.HashBlock);
+
+                // Instead of a block full of 10 each this time though, lets do 5 of 2 each, and with the transactions being picked in reverse order.
+                // This mimics possible real-world scenarios where all txs are signed, but not necessarily picked in the same order by the miner,
+                // and will mean that the order of the UTXOS picked for withdrawals will be different on this new chain.
+
+                // We do this to get the CCTS to reorg also
+                crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.SeenInBlock });
+                //recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[crossChainTransferStore.NextMatureDepositHeight]);
+
+                // And then again to actually create the transactions again.
+                recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[crossChainTransferStore.NextMatureDepositHeight]);
+                Assert.Equal(numDeposits, recordMatureDepositResult.WithDrawalTransactions.Count);
+
+                recordMatureDepositResult.WithDrawalTransactions.Reverse();
+
+                for (int i = 0; i < numDeposits / 2; i++)
+                {
+                    header = this.AppendBlock(recordMatureDepositResult.WithDrawalTransactions.Skip(i * 2).Take(2).ToArray());
+                }
+
+                // Now lets put the second group of 5 transactions into a single block on our new chain.
+                recordMatureDepositResult = await crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits[crossChainTransferStore.NextMatureDepositHeight]);
+                Assert.Equal(numDeposits2, recordMatureDepositResult.WithDrawalTransactions.Count);
+
+                header = this.AppendBlock(recordMatureDepositResult.WithDrawalTransactions.ToArray());
+
+                // Everything should be confirmed and in a block.
+                seenInBlock = crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[] { CrossChainTransferStatus.SeenInBlock });
+                Assert.Equal(numDeposits + numDeposits2, seenInBlock.Length);
+
+                // Everything is in a block - we shouldn't have any lingering unconfirmed transactions.
+                var unconfirmedTransactions = this.wallet.MultiSigAddress.Transactions.Where(x => x.SpendingDetails == null && x.BlockHeight == null).ToList();
+                Assert.Empty(unconfirmedTransactions);
+            }
+        }
+
+        [Fact]
         public async Task CrossChainTransferStoreDoesntCreateMassiveTransactions()
         {
             var dataFolder = new DataFolder(TestBase.CreateTestDir(this));

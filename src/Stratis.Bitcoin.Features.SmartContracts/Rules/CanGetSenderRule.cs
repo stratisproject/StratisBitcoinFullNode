@@ -21,6 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.senderRetriever = senderRetriever;
         }
 
+        /// <inheritdoc />
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;
@@ -46,6 +47,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             }
         }
 
+        /// <inheritdoc/>
         public void CheckTransaction(MempoolValidationContext context)
         {
             // If wanting to execute a contract, we must be able to get the sender.
@@ -56,8 +58,5 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
                     new ConsensusError("cant-get-sender", "smart contract output without a P2PKH as the first input to the tx.").Throw();
             }
         }
-
     }
 }
-
-

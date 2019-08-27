@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
     {
         private readonly EditableTimeProvider timeProvider;
 
-        private CancellationTokenSource cancellation;
+        private readonly CancellationTokenSource cancellation;
 
         private readonly ISlotsManager slotsManager;
 
@@ -84,7 +84,6 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
                 builder.AppendLine($"Block was mined {chainedHeader}.");
                 builder.AppendLine("<<==============================================================>>");
                 this.logger.LogInformation(builder.ToString());
-
             }
         }
 
