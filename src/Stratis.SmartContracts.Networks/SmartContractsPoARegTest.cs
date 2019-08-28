@@ -203,7 +203,8 @@ namespace Stratis.SmartContracts.Networks
             // ------------------------------------------------------
         }
 
-        private void RegisterMempoolRules(IConsensus consensus)
+        // This should be abstract or virtual
+        protected override void RegisterMempoolRules(IConsensus consensus)
         {
             consensus.MempoolRules = new List<Type>()
             {

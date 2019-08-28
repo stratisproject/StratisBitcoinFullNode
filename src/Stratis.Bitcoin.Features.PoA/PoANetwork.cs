@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Features.PoA
             // ------------------------------------------------------
         }
 
-        private void RegisterMempoolRules(IConsensus consensus)
+        protected virtual void RegisterMempoolRules(IConsensus consensus)
         {
             // TODO: These are currently the PoW/PoS rules as PoA does not have smart contracts by itself. Are other specialised rules needed?
             consensus.MempoolRules = new List<Type>()
