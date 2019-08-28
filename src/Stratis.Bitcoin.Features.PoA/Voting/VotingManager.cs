@@ -10,6 +10,7 @@ using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.PoA.Voting
 {
@@ -78,7 +79,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
             this.blockDisconnectedSubscription = this.signals.Subscribe<BlockDisconnected>(this.OnBlockDisconnected);
 
-            this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1200);
+            this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name, 1200);
 
             this.isInitialized = true;
             this.logger.LogDebug("VotingManager initialized.");
@@ -334,6 +335,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        [NoTrace]
         private void AddComponentStats(StringBuilder log)
         {
             log.AppendLine();
@@ -346,6 +348,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        [NoTrace]
         private void EnsureInitialized()
         {
             if (!this.isInitialized)

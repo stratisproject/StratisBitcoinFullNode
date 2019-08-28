@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -14,6 +15,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.ColdStaking.Controllers;
 using Stratis.Bitcoin.Features.ColdStaking.Models;
 using Stratis.Bitcoin.Features.Consensus;
@@ -23,6 +25,7 @@ using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Signals;
@@ -147,16 +150,48 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             // Create POS consensus rules engine.
             var checkpoints = new Mock<ICheckpoints>();
             var chainState = new ChainState();
-            new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(this.Network.Consensus);
+
+            var consensusRulesContainer = new ConsensusRulesContainer();
+            foreach (var ruleType in this.Network.Consensus.ConsensusRules.HeaderValidationRules)
+                consensusRulesContainer.HeaderValidationRules.Add(Activator.CreateInstance(ruleType) as HeaderValidationConsensusRule);
+            foreach (var ruleType in this.Network.Consensus.ConsensusRules.FullValidationRules)
+                consensusRulesContainer.FullValidationRules.Add(Activator.CreateInstance(ruleType) as FullValidationConsensusRule);
+
             ConsensusRuleEngine consensusRuleEngine = new PosConsensusRuleEngine(this.Network, this.loggerFactory, this.dateTimeProvider,
                 this.chainIndexer, this.nodeDeployments, this.consensusSettings, checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
-                this.stakeValidator.Object, chainState, new InvalidBlockHashStore(this.dateTimeProvider), new Mock<INodeStats>().Object, new Mock<IRewindDataIndexCache>().Object, this.asyncProvider)
-                .Register();
+                this.stakeValidator.Object, chainState, new InvalidBlockHashStore(this.dateTimeProvider), new Mock<INodeStats>().Object, new Mock<IRewindDataIndexCache>().Object, this.asyncProvider, consensusRulesContainer)
+                .SetupRulesEngineParent();
 
             // Create mempool validator.
             var mempoolLock = new MempoolSchedulerLock();
+
+            // The mempool rule constructors aren't parameterless, so we have to manually inject the dependencies for every rule
+            var mempoolRules = new List<MempoolRule>
+            {
+                new CheckConflictsMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
+                new CheckCoinViewMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
+                new CreateMempoolEntryMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, consensusRuleEngine, this.loggerFactory),
+                new CheckSigOpsMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
+                new CheckFeeMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
+                new CheckRateLimitMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
+                new CheckAncestorsMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
+                new CheckReplacementMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, this.loggerFactory),
+                new CheckAllInputsMempoolRule(this.Network, this.txMemPool, this.mempoolSettings, this.chainIndexer, consensusRuleEngine, this.loggerFactory)
+            };
+
+            // We also have to check that the manually instantiated rules match the ones in the network, or the test isn't valid
+            for (int i = 0; i < this.Network.Consensus.MempoolRules.Count; i++)
+            {
+                if (this.Network.Consensus.MempoolRules[i] != mempoolRules[i].GetType())
+                {
+                    throw new Exception("Mempool rule type mismatch");
+                }
+            }
+
+            Assert.Equal(this.Network.Consensus.MempoolRules.Count, mempoolRules.Count);
+
             var mempoolValidator = new MempoolValidator(this.txMemPool, mempoolLock, this.dateTimeProvider, this.mempoolSettings, this.chainIndexer,
-                this.coinView.Object, this.loggerFactory, this.nodeSettings, consensusRuleEngine);
+                this.coinView.Object, this.loggerFactory, this.nodeSettings, consensusRuleEngine, mempoolRules, new NodeDeployments(this.Network, this.chainIndexer));
 
             // Create mempool manager.
             var mempoolPersistence = new Mock<IMempoolPersistence>();

@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Controllers.Models;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
@@ -45,6 +46,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>A interface implementation for the initial block download state.</summary>
         private readonly IInitialBlockDownloadState ibdState;
 
+        private readonly IStakeChain stakeChain;
+
         public FullNodeController(
             ILoggerFactory loggerFactory,
             IPooledTransaction pooledTransaction = null,
@@ -59,7 +62,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             Connection.IConnectionManager connectionManager = null,
             IConsensusManager consensusManager = null,
             IBlockStore blockStore = null,
-            IInitialBlockDownloadState ibdState = null)
+            IInitialBlockDownloadState ibdState = null,
+            IStakeChain stakeChain = null)
             : base(
                   fullNode: fullNode,
                   network: network,
@@ -76,6 +80,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             this.networkDifficulty = networkDifficulty;
             this.blockStore = blockStore;
             this.ibdState = ibdState;
+            this.stakeChain = stakeChain;
         }
 
         /// <summary>
@@ -360,12 +365,45 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionDescription("Returns the block in hex, given a block hash.")]
         public object GetBlock(string blockHash, int verbosity = 1)
         {
-            Block block = this.blockStore?.GetBlock(uint256.Parse(blockHash));
+            uint256 blockId = uint256.Parse(blockHash);
+
+            // Does the block exist.
+            ChainedHeader chainedHeader = this.ChainIndexer.GetHeader(blockId);
+
+            if (chainedHeader == null)
+                return null;
+
+            Block block = chainedHeader.Block ?? this.blockStore?.GetBlock(blockId);
+
+            // In rare occasions a block that is found in the
+            // indexer may not have been pushed to the store yet. 
+            if (block == null)
+                return null;
 
             if (verbosity == 0)
-                return new HexModel(block?.ToHex(this.Network));
+                return new HexModel(block.ToHex(this.Network));
 
-            return new BlockModel(block, this.ChainIndexer.GetHeader(block.GetHash()), this.ChainIndexer.Tip, this.Network, verbosity);
+            var blockModel = new BlockModel(block, chainedHeader, this.ChainIndexer.Tip, this.Network, verbosity);
+
+            if (this.Network.Consensus.IsProofOfStake)
+            {
+                var posBlock = block as PosBlock;
+
+                blockModel.PosBlockSignature = posBlock.BlockSignature.ToHex(this.Network);
+                blockModel.PosBlockTrust = new Target(chainedHeader.GetBlockProof()).ToUInt256().ToString();
+                blockModel.PosChainTrust = chainedHeader.ChainWork.ToString(); // this should be similar to ChainWork
+
+                if (this.stakeChain != null)
+                {
+                    BlockStake blockStake = this.stakeChain.Get(blockId);
+
+                    blockModel.PosModifierv2 = blockStake?.StakeModifierV2.ToString();
+                    blockModel.PosFlags = blockStake?.Flags == BlockFlag.BLOCK_PROOF_OF_STAKE ? "proof-of-stake" : "proof-of-work";
+                    blockModel.PosHashProof = blockStake?.HashProof.ToString();
+                }
+            }
+
+            return blockModel;
         }
 
         [ActionName("getnetworkinfo")]

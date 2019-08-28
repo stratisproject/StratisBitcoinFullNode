@@ -12,7 +12,6 @@ using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
@@ -136,17 +135,17 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 while (!this.CancellationSource.Token.IsCancellationRequested)
                 {
-                    Message message = await this.ReadAndParseMessageAsync(this.peer.Version, this.CancellationSource.Token).ConfigureAwait(false);
+                    (Message message, int rawMessageSize) = await this.ReadAndParseMessageAsync(this.peer.Version, this.CancellationSource.Token).ConfigureAwait(false);
 
-                    this.asyncProvider.Signals.Publish(new PeerMessageReceived(this.peer.PeerEndPoint, message));
+                    this.asyncProvider.Signals.Publish(new PeerMessageReceived(this.peer.PeerEndPoint, message, rawMessageSize));
                     this.logger.LogDebug("Received message: '{0}'", message);
 
-                    this.peer.Counter.AddRead(message.MessageSize);
+                    this.peer.Counter.AddRead(rawMessageSize);
 
                     var incomingMessage = new IncomingMessage()
                     {
                         Message = message,
-                        Length = message.MessageSize,
+                        Length = rawMessageSize,
                     };
 
                     this.MessageProducer.PushMessage(incomingMessage);
@@ -154,13 +153,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception ex) when (ex is IOException || ex is OperationCanceledException || ex is ObjectDisposedException)
             {
-                this.logger.LogDebug("Receiving cancelled. Exception: {0}", ex.ToString());
-                this.peer.Disconnect("Receiving cancelled.");
+                this.logger.LogDebug("The node stopped receiving messages, exception: {1}", ex.ToString());
+                this.peer.Disconnect("The node stopped receiving messages.", ex);
             }
             catch (Exception ex)
             {
-                this.logger.LogDebug("Exception occurred: '{0}'", ex.ToString());
-                this.peer.Disconnect("Unexpected failure while waiting for a message", ex);
+                this.logger.LogDebug("Unexpected failure whilst receiving messages, exception: {0}", ex.ToString());
+                this.peer.Disconnect($"Unexpected failure whilst receiving messages.", ex);
             }
         }
 
@@ -445,7 +444,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <param name="protocolVersion">Version of the protocol that defines the message format.</param>
         /// <param name="cancellation">Cancellation token that allows aborting the read operation.</param>
-        /// <returns>Binary message received from the connected counterparty.</returns>
+        /// <returns>Binary message received from the connected counterparty and the size of the raw message in bytes.</returns>
         /// <exception cref="OperationCanceledException">Thrown if the operation was cancelled or the end of the stream was reached.</exception>
         /// <exception cref="FormatException">Thrown if the incoming message is too big.</exception>
         /// <exception cref="ObjectDisposedException">Thrown if the connection has been disposed.</exception>
@@ -455,7 +454,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// for parsing the message from binary data. That method need stream to read from, so to achieve that we create a memory stream from our data,
         /// which is not efficient. This should be improved.
         /// </remarks>
-        private async Task<Message> ReadAndParseMessageAsync(ProtocolVersion protocolVersion, CancellationToken cancellation)
+        private async Task<(Message message, int rawMessageSize)> ReadAndParseMessageAsync(ProtocolVersion protocolVersion, CancellationToken cancellation)
         {
             Message message = null;
 
@@ -463,10 +462,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             using (var memoryStream = new MemoryStream(rawMessage))
             {
                 message = Message.ReadNext(memoryStream, this.network, protocolVersion, cancellation, this.payloadProvider, out PerformanceCounter counter);
-                message.MessageSize = (uint)rawMessage.Length;
             }
 
-            return message;
+            return(message, rawMessage.Length);
         }
 
         /// <inheritdoc />

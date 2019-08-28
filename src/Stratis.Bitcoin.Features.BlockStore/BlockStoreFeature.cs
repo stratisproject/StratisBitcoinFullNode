@@ -11,11 +11,11 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
-using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.BlockStore.Pruning;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.BlockStore.Tests")]
 
@@ -79,9 +79,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.prunedBlockRepository = prunedBlockRepository;
             this.addressIndexer = addressIndexer;
 
-            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 900);
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name, 900);
         }
 
+        [NoTrace]
         private void AddInlineStats(StringBuilder log)
         {
             ChainedHeader highestBlock = this.chainState.BlockStoreTip;
@@ -199,7 +200,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                             services.AddSingleton<BlockStoreSignaled>();
 
                         services.AddSingleton<StoreSettings>();
-                        services.AddSingleton<BlockStoreController>();
                         services.AddSingleton<IBlockStoreQueueFlushCondition, BlockStoreQueueFlushCondition>();
                         services.AddSingleton<IAddressIndexer, AddressIndexer>();
                     });

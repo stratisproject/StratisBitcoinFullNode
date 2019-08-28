@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using NBitcoin.Rules;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Networks.Deployments;
 using Stratis.Bitcoin.Networks.Policies;
 
@@ -154,6 +158,59 @@ namespace Stratis.Bitcoin.Networks
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+
+            this.RegisterRules(this.Consensus);
+            this.RegisterMempoolRules(this.Consensus);
+        }
+
+        protected void RegisterRules(IConsensus consensus)
+        {
+            consensus.ConsensusRules
+                .Register<HeaderTimeChecksRule>()
+                .Register<CheckDifficultyPowRule>()
+                .Register<BitcoinActivationRule>()
+                .Register<BitcoinHeaderVersionRule>();
+
+            consensus.ConsensusRules
+                .Register<BlockMerkleRootRule>();
+
+            consensus.ConsensusRules
+                .Register<SetActivationDeploymentsPartialValidationRule>()
+
+                .Register<TransactionLocktimeActivationRule>() // implements BIP113
+                .Register<CoinbaseHeightActivationRule>() // implements BIP34
+                .Register<WitnessCommitmentsRule>() // BIP141, BIP144
+                .Register<BlockSizeRule>()
+                
+                // rules that are inside the method CheckBlock
+                .Register<EnsureCoinbaseRule>()
+                .Register<CheckPowTransactionRule>()
+                .Register<CheckSigOpsRule>();
+
+            consensus.ConsensusRules
+                .Register<SetActivationDeploymentsFullValidationRule>()
+
+                // rules that require the store to be loaded (coinview)
+                .Register<LoadCoinviewRule>()
+                .Register<TransactionDuplicationActivationRule>() // implements BIP30
+                .Register<PowCoinviewRule>()// implements BIP68, MaxSigOps and BlockReward calculation
+                .Register<SaveCoinviewRule>();
+        }
+
+        protected void RegisterMempoolRules(IConsensus consensus)
+        {
+            consensus.MempoolRules = new List<Type>()
+            {
+                typeof(CheckConflictsMempoolRule),
+                typeof(CheckCoinViewMempoolRule),
+                typeof(CreateMempoolEntryMempoolRule),
+                typeof(CheckSigOpsMempoolRule),
+                typeof(CheckFeeMempoolRule),
+                typeof(CheckRateLimitMempoolRule),
+                typeof(CheckAncestorsMempoolRule),
+                typeof(CheckReplacementMempoolRule),
+                typeof(CheckAllInputsMempoolRule)
+            };
         }
 
         /// <summary> Bitcoin maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>

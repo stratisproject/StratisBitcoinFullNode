@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 
             this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, provider.Object, this.ChainIndexer, new NodeDeployments(this.network, this.ChainIndexer),
                 this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object, new ChainState(), new InvalidBlockHashStore(provider.Object),
-                new NodeStats(provider.Object), this.slotsManager, this.poaHeaderValidator, this.votingManager, this.federationManager, this.asyncProvider);
+                new NodeStats(provider.Object, this.loggerFactory), this.slotsManager, this.poaHeaderValidator, this.votingManager, this.federationManager, this.asyncProvider, new ConsensusRulesContainer());
 
             this.timeChecksRule.Parent = this.rulesEngine;
             this.timeChecksRule.Initialize();
@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 
             this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, timeProvider.Object, this.ChainIndexer, new NodeDeployments(this.network, this.ChainIndexer),
                 this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object, this.chainState, new InvalidBlockHashStore(timeProvider.Object),
-                new NodeStats(timeProvider.Object), this.slotsManager, this.poaHeaderValidator, this.votingManager, this.federationManager, this.asyncProvider);
+                new NodeStats(timeProvider.Object, this.loggerFactory), this.slotsManager, this.poaHeaderValidator, this.votingManager, this.federationManager, this.asyncProvider, new ConsensusRulesContainer());
 
             var timeRule = new HeaderTimeChecksPoARule();
             this.InitRule(timeRule);

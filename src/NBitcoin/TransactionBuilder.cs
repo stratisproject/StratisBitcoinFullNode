@@ -106,12 +106,14 @@ namespace NBitcoin
                     }
                     else
                     {
-                        //						Else Bitcoin Core does 1000 rounds of randomly combining unspent transaction outputs until their sum is greater than or equal to the Target. If it happens to find an exact match, it stops early and uses that.
-                        //Otherwise it finally settles for the minimum of
-                        //the smallest UTXO greater than the Target
-                        //the smallest combination of UTXO it discovered in Step 4.
+                        // Else Bitcoin Core does 1000 rounds of randomly combining unspent transaction outputs until their sum is greater than or equal to the Target. If it happens to find an exact match, it stops early and uses that.
+                        // Otherwise it finally settles for the minimum of
+                        // the smallest UTXO greater than the Target
+                        // the smallest combination of UTXO it discovered in Step 4.
                         var allCoins = orderedCoinGroups.ToArray();
                         IMoney minTotal = null;
+
+
                         for (int _ = 0; _ < 1000; _++)
                         {
                             var selection = new List<ICoin>();
@@ -133,8 +135,11 @@ namespace NBitcoin
                             if (minTotal == null || total.CompareTo(minTotal) == -1)
                             {
                                 minTotal = total;
+                                result = selection;
                             }
                         }
+
+                        return result;
                     }
                 }
             }

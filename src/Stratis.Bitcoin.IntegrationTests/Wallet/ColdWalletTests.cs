@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Transaction transaction1 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(stratisSender.FullNode.Network, new WalletAccountReference(WalletName, Account), Password, sendto.ScriptPubKey, amountToSend, FeeType.Medium, confirmations));
 
                 // Broadcast to the other node
-                stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction1.ToHex()));
+                stratisSender.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(transaction1.ToHex()));
 
                 // Wait for the transaction to arrive
                 TestBase.WaitLoop(() => stratisHotStake.CreateRPCClient().GetRawMempool().Length > 0);
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     coldWalletAddress.Address, hotWalletAddress.Address, WalletName, Account, Password, amountToSend2, new Money(0.02m, MoneyUnit.BTC));
 
                 // Broadcast to the other node
-                stratisHotStake.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction2.ToHex()));
+                stratisHotStake.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(transaction2.ToHex()));
 
                 // Wait for the transaction to arrive
                 TestBase.WaitLoop(() => coldWalletManager.GetSpendableTransactionsInColdWallet(WalletName, true).Any());

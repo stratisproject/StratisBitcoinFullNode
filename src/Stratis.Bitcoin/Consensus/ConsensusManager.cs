@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -122,7 +123,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ConsensusManagerPerformanceCounter performanceCounter;
 
         private readonly ConsensusSettings consensusSettings;
-        
+
         private readonly IDateTimeProvider dateTimeProvider;
 
         private bool isIbd;
@@ -168,6 +169,7 @@ namespace Stratis.Bitcoin.Consensus
             Guard.NotNull(nodeStats, nameof(nodeStats));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(consensusSettings, nameof(consensusSettings));
+            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
 
             this.network = network;
             this.chainState = chainState;
@@ -183,6 +185,7 @@ namespace Stratis.Bitcoin.Consensus
             this.connectionManager = connectionManager;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.dateTimeProvider = dateTimeProvider;
 
             this.chainedHeaderTree = chainedHeaderTree;
 
@@ -204,9 +207,9 @@ namespace Stratis.Bitcoin.Consensus
             this.consensusSettings = consensusSettings;
             this.maxUnconsumedBlocksDataBytes = consensusSettings.MaxBlockMemoryInMB * 1024 * 1024;
 
-            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1000);
-            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 1000);
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name, 1000);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name, 1000);
+            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, this.GetType().Name, 1000);
         }
 
         /// <inheritdoc />
@@ -1008,10 +1011,10 @@ namespace Stratis.Bitcoin.Consensus
                     }
                     else
                     {
-                       if (downloadedCallbacks.Callbacks == null)
-                           downloadedCallbacks.Callbacks = new List<OnBlockDownloadedCallback>();
+                        if (downloadedCallbacks.Callbacks == null)
+                            downloadedCallbacks.Callbacks = new List<OnBlockDownloadedCallback>();
 
-                       downloadedCallbacks.Callbacks.Add(onBlockDownloadedCallback);
+                        downloadedCallbacks.Callbacks.Add(onBlockDownloadedCallback);
                     }
 
                     bool blockIsNotConsecutive = (previousHeader != null) && (chainedHeader.Previous.HashBlock != previousHeader.HashBlock);
@@ -1250,6 +1253,34 @@ namespace Stratis.Bitcoin.Consensus
             return chainedHeaderBlock;
         }
 
+        /// <inheritdoc />
+        public ChainedHeaderBlock[] GetBlockData(List<uint256> blockHashes)
+        {
+            var chainedHeaderBlocks = new Dictionary<uint256, ChainedHeaderBlock>();
+
+            // First look in the chained header tree if we can find the headers and blocks.
+            lock (this.peerLock)
+            {
+                ChainedHeaderBlock[] blocks = this.chainedHeaderTree.GetChainedHeaderBlocks(blockHashes);
+
+                for (int i = 0; i < blocks.Length; i++)
+                {
+                    ChainedHeaderBlock chainedHeaderBlock = blocks[i];
+                    chainedHeaderBlocks[blockHashes[i]] = chainedHeaderBlock;
+                }
+            }
+
+            // We are only interested in chained headers that were found but have no blocks, similar to the single block method.
+            List<uint256> getFromStore = chainedHeaderBlocks.Where(kv => kv.Value != null && kv.Value.Block == null).Select(kv => kv.Key).ToList();
+
+            // Read those blocks from store and create new chained header block entries for them.
+            foreach ((Block block, int index) in this.blockStore.GetBlocks(getFromStore).Select((b, n) => (b, n)))
+                chainedHeaderBlocks[getFromStore[index]] = new ChainedHeaderBlock(block, chainedHeaderBlocks[getFromStore[index]].ChainedHeader);
+
+            // Return the blocks in the requested order.
+            return blockHashes.Select(h => chainedHeaderBlocks[h]).ToArray();
+        }
+
         /// <summary>
         /// Processes items in the <see cref="toDownloadQueue"/> and ask the block puller for blocks to download.
         /// If the tree has too many unconsumed blocks we will not ask block puller for more until some blocks are consumed.
@@ -1369,6 +1400,7 @@ namespace Stratis.Bitcoin.Consensus
             log.AppendLine(consensusLog);
         }
 
+        [NoTrace]
         private void AddBenchStats(StringBuilder benchLog)
         {
             benchLog.AppendLine(this.performanceCounter.TakeSnapshot().ToString());
@@ -1389,7 +1421,7 @@ namespace Stratis.Bitcoin.Consensus
                 // gives us easier access to these values if issues are reported in the field.
 
                 // Use the default time provider - same as in InitialBlockDownloadState.IsInitialBlockDownload.
-                long currentTime = DateTimeProvider.Default.GetTime();
+                long currentTime = this.dateTimeProvider.GetTime();
                 long tipAge = currentTime - this.chainState.ConsensusTip.Header.BlockTime.ToUnixTimeSeconds();
                 long maxTipAge = this.consensusSettings.MaxTipAge;
 

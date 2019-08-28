@@ -37,6 +37,11 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         string PublicKey { get; }
 
         /// <summary>
+        /// The block number to start syncing the federation wallet from.
+        /// </summary>
+        int WalletSyncFromHeight { get; }
+
+        /// <summary>
         /// For the M of N multisig, this is the number of signers required to reach a quorum.
         /// </summary>
         int MultiSigM { get; }

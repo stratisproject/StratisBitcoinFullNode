@@ -138,28 +138,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 while (!this.serverCancel.IsCancellationRequested)
                 {
-                    // Used to record any errors occurring in the thread pool task.
-                    Exception error = null;
-
-                    TcpClient tcpClient = await Task.Run(() =>
-                    {
-                        try
-                        {
-                            Task<TcpClient> acceptClientTask = this.tcpListener.AcceptTcpClientAsync();
-                            acceptClientTask.Wait(this.serverCancel.Token);
-                            return acceptClientTask.Result;
-                        }
-                        catch (Exception exception)
-                        {
-                            // Record the error.
-                            error = exception;
-                            return null;
-                        }
-                    }).ConfigureAwait(false);
-
-                    // Raise the error.
-                    if (error != null)
-                        throw error;
+                    TcpClient tcpClient = await this.tcpListener.AcceptTcpClientAsync()
+                        .WithCancellationAsync(this.serverCancel.Token);
 
                     (bool successful, string reason) connectionAttempt = this.AllowClientConnection(tcpClient);
                     if (!connectionAttempt.successful)
@@ -235,6 +215,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             var clientLocalEndPoint = tcpClient.Client.LocalEndPoint as IPEndPoint;
+            var clientRemoteEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
 
             bool endpointCanBeWhiteListed = this.connectionManagerSettings.Bind.Where(x => x.Whitelisted).Any(x => x.Endpoint.Contains(clientLocalEndPoint));
 
@@ -244,7 +225,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return (true, "Inbound Accepted: Whitelisted endpoint connected during IBD.");
             }
 
-            this.logger.LogDebug("Node '{0}' is not white listed during initial block download.", clientLocalEndPoint);
+            this.logger.LogDebug("Node '{0}' is not whitelisted via endpoint '{1}' during initial block download.", clientRemoteEndPoint, clientLocalEndPoint);
 
             return (false, "Inbound Refused: Non Whitelisted endpoint connected during IBD.");
         }

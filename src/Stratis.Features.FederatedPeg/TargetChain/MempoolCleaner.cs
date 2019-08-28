@@ -108,21 +108,28 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
         private async Task CleanMempoolAsync()
         {
+            List<Transaction> transactionsToCheck = this.mempoolOrphans.OrphansList().Select(i => i.Tx).ToList();
+
+            if (transactionsToCheck.Count == 0)
+                return;
+
+            List<Transaction> completedTransactions = null;
+
             this.federationWalletManager.Synchronous(() =>
             {
-                IEnumerable<Transaction> transactionsToCheck = this.mempoolOrphans.OrphansList().Select(i => i.Tx);
-
-                List<Transaction> transactionsToRemove = this.store.CompletedWithdrawals(transactionsToCheck)
-                    .Union(CompletedTransactions(transactionsToCheck))
-                    .ToList();
-
-                if (transactionsToRemove.Count > 0)
-                {
-                    this.mempoolOrphans.RemoveForBlock(transactionsToRemove);
-
-                    this.logger.LogDebug("Removed {0} transactions from mempool", transactionsToRemove.Count);
-                }
+                completedTransactions = this.CompletedTransactions(transactionsToCheck).ToList();
             });
+
+            List<Transaction> transactionsToRemove = this.store.CompletedWithdrawals(transactionsToCheck)
+                .Union(completedTransactions)
+                .ToList();
+
+            if (transactionsToRemove.Count > 0)
+            {
+                this.mempoolOrphans.RemoveForBlock(transactionsToRemove);
+
+                this.logger.LogDebug("Removed {0} transactions from mempool", transactionsToRemove.Count);
+            }
         }
 
         /// <inheritdoc />

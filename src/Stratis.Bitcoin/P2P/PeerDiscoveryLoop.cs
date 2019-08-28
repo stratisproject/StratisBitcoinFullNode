@@ -10,7 +10,6 @@ using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 
@@ -174,6 +173,8 @@ namespace Stratis.Bitcoin.P2P
                     connectTokenSource.CancelAfter(TimeSpan.FromSeconds(5));
 
                     INetworkPeer networkPeer = null;
+
+                    // Try to connect to a peer with only the address-sharing behaviour, to learn about their peers and disconnect within 5 seconds.
 
                     try
                     {

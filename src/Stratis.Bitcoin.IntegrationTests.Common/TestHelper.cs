@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <returns>Returns <c>true</c> if the node is synced at a given height.</returns>
         public static bool IsNodeSyncedAtHeight(CoreNode node, int height)
         {
-            TestBase.WaitLoop(() => node.FullNode.ConsensusManager().Tip.Height == height);
+            TestBase.WaitLoopMessage(() => { return (node.FullNode.ConsensusManager().Tip.Height == height, $"Node height: {node.FullNode.ConsensusManager().Tip.Height}; Expected height: {height}"); });
             return true;
         }
 
@@ -512,7 +512,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
             var transaction = sender.FullNode.WalletTransactionHandler().BuildTransaction(context);
 
-            sender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
+            sender.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
             TestBase.WaitLoop(() => receiver.CreateRPCClient().GetRawMempool().Length > 0);
             TestBase.WaitLoop(() => receiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Any());

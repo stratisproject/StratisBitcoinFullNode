@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -154,49 +155,54 @@ namespace Stratis.Bitcoin.Features.PoA
 
     public class PoAConsensusRulesRegistration : IRuleRegistration
     {
-        public void RegisterRules(IConsensus consensus)
+        public void RegisterRules(IServiceCollection services)
         {
-            consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
+            foreach (Type ruleType in new List<Type>()
             {
-                new HeaderTimeChecksPoARule(),
-                new StratisHeaderVersionRule(),
-                new PoAHeaderDifficultyRule(),
-                new PoAHeaderSignatureRule()
-            };
+                typeof(HeaderTimeChecksPoARule),
+                typeof(StratisHeaderVersionRule),
+                typeof(PoAHeaderDifficultyRule),
+                typeof(PoAHeaderSignatureRule)
+            })
+                    services.AddSingleton(typeof(IHeaderValidationConsensusRule), ruleType);
 
-            consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+            foreach (Type ruleType in new List<Type>()
             {
-                new BlockMerkleRootRule(),
-                new PoAIntegritySignatureRule()
-            };
+                typeof(BlockMerkleRootRule),
+                typeof(PoAIntegritySignatureRule)
+            })
+                services.AddSingleton(typeof(IIntegrityValidationConsensusRule), ruleType);
 
-            consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
+
+            foreach (Type ruleType in new List<Type>()
             {
-                new SetActivationDeploymentsPartialValidationRule(),
+                typeof(SetActivationDeploymentsPartialValidationRule),
 
                 // rules that are inside the method ContextualCheckBlock
-                new TransactionLocktimeActivationRule(), // implements BIP113
-                new CoinbaseHeightActivationRule(), // implements BIP34
-                new BlockSizeRule(),
+                typeof(TransactionLocktimeActivationRule), // implements BIP113
+                typeof(CoinbaseHeightActivationRule), // implements BIP34
+                typeof(BlockSizeRule),
 
                 // rules that are inside the method CheckBlock
-                new EnsureCoinbaseRule(),
-                new CheckPowTransactionRule(),
-                new CheckSigOpsRule(),
+                typeof(EnsureCoinbaseRule),
+                typeof(CheckPowTransactionRule),
+                typeof(CheckSigOpsRule),
 
-                new PoAVotingCoinbaseOutputFormatRule(),
-            };
+                typeof(PoAVotingCoinbaseOutputFormatRule),
+            })
+                services.AddSingleton(typeof(IPartialValidationConsensusRule), ruleType);
 
-            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+            foreach (Type ruleType in new List<Type>()
             {
-                new SetActivationDeploymentsFullValidationRule(),
+                typeof(SetActivationDeploymentsFullValidationRule),
 
                 // rules that require the store to be loaded (coinview)
-                new LoadCoinviewRule(),
-                new TransactionDuplicationActivationRule(), // implements BIP30
-                new PoACoinviewRule(),
-                new SaveCoinviewRule()
-            };
+                typeof(LoadCoinviewRule),
+                typeof(TransactionDuplicationActivationRule), // implements BIP30
+                typeof(PoACoinviewRule),
+                typeof(SaveCoinviewRule)
+            })
+                services.AddSingleton(typeof(IFullValidationConsensusRule), ruleType);
         }
     }
 
@@ -234,19 +240,16 @@ namespace Stratis.Bitcoin.Features.PoA
                     {
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<ICoinView, CachedCoinView>();
-                        services.AddSingleton<ConsensusController>();
                         services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
                         services.AddSingleton<IChainState, ChainState>();
                         services.AddSingleton<ConsensusQuery>()
                             .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())
                             .AddSingleton<IGetUnspentTransaction, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>());
 
-                        new PoAConsensusRulesRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
+                        new PoAConsensusRulesRegistration().RegisterRules(services);
 
                         // Voting.
                         services.AddSingleton<VotingManager>();
-                        services.AddSingleton<DefaultVotingController>();
-                        services.AddSingleton<FederationVotingController>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
                         services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
                         services.AddSingleton<IdleFederationMembersKicker>();
