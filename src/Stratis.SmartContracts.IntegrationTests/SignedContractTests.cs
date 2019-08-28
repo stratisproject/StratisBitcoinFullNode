@@ -120,7 +120,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 TxOut txOut = tx.TryGetSmartContractTxOut();
                 byte[] contractBytes = ContractCompiler.CompileFile("SmartContracts/Auction.cs").Compilation;
                 var serializer = new CallDataSerializer(new ContractPrimitiveSerializer(this.network));
-                byte[] newScript = serializer.Serialize(new ContractTxData(1, SmartContractFormatLogic.GasLimitMaximum, (RuntimeObserver.Gas) SmartContractMempoolValidator.MinGasPrice, contractBytes));
+                byte[] newScript = serializer.Serialize(new ContractTxData(1, SmartContractFormatLogic.GasPriceMaximum, (RuntimeObserver.Gas) SmartContractFormatLogic.GasLimitMaximum, contractBytes));
                 txOut.ScriptPubKey = new Script(newScript);
 
                 var broadcasterManager = node1.CoreNode.FullNode.NodeService<IBroadcasterManager>();
@@ -182,6 +182,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         private void SetupNodes(IMockChain chain, MockChainNode node1, MockChainNode node2)
         {
+            // TODO: Leverage ready chain data to speed this up
             // Get premine
             chain.MineBlocks(10);
 
