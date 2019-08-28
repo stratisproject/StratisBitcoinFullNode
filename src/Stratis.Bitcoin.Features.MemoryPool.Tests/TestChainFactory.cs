@@ -19,11 +19,14 @@ using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
+using Xunit;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 {
@@ -105,11 +108,36 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             chainState.BlockStoreTip = genesis;
             await consensus.InitializeAsync(genesis).ConfigureAwait(false);
 
-            var blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);
+            var mempoolSettings = new MempoolSettings(nodeSettings);
+            var blockPolicyEstimator = new BlockPolicyEstimator(mempoolSettings, loggerFactory, nodeSettings);
             var mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, nodeSettings);
             var mempoolLock = new MempoolSchedulerLock();
 
-            var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, new MempoolSettings(nodeSettings), chain, inMemoryCoinView, loggerFactory, nodeSettings, consensusRules);
+            // The mempool rule constructors aren't parameterless, so we have to manually inject the dependencies for every rule
+            var mempoolRules = new List<MempoolRule>
+            {
+                new CheckConflictsMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
+                new CheckCoinViewMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
+                new CreateMempoolEntryMempoolRule(network, mempool, mempoolSettings, chain, consensusRules, loggerFactory),
+                new CheckSigOpsMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
+                new CheckFeeMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
+                new CheckRateLimitMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
+                new CheckAncestorsMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
+                new CheckReplacementMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
+                new CheckAllInputsMempoolRule(network, mempool, mempoolSettings, chain, consensusRules, loggerFactory)
+            };
+
+            // We also have to check that the manually instantiated rules match the ones in the network, or the test isn't valid
+            for (int i = 0; i < network.Consensus.MempoolRules.Count; i++)
+            {
+                if (network.Consensus.MempoolRules[i] != mempoolRules[i].GetType())
+                {
+                    throw new Exception("Mempool rule type mismatch");
+                }
+            }
+
+            var nodeDeployments = new NodeDeployments(network, chain);
+            var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, new MempoolSettings(nodeSettings), chain, inMemoryCoinView, loggerFactory, nodeSettings, consensusRules, mempoolRules, nodeDeployments);
             return new TestChainContext { MempoolValidator = mempoolValidator };
         }
 
@@ -206,7 +234,34 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             blockDefinition = new PowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, consensusRules, new NodeDeployments(network, chain));
             blockDefinition.Build(chain.Tip, scriptPubKey);
 
-            var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, new MempoolSettings(nodeSettings), chain, inMemoryCoinView, loggerFactory, nodeSettings, consensusRules);
+            var mempoolSettings = new MempoolSettings(nodeSettings);
+
+            // The mempool rule constructors aren't parameterless, so we have to manually inject the dependencies for every rule
+            var mempoolRules = new List<MempoolRule>
+            {
+                new CheckConflictsMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
+                new CheckCoinViewMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
+                new CreateMempoolEntryMempoolRule(network, mempool, mempoolSettings, chain, consensusRules, loggerFactory),
+                new CheckSigOpsMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
+                new CheckFeeMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
+                new CheckRateLimitMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
+                new CheckAncestorsMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
+                new CheckReplacementMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
+                new CheckAllInputsMempoolRule(network, mempool, mempoolSettings, chain, consensusRules, loggerFactory)
+            };
+
+            // We also have to check that the manually instantiated rules match the ones in the network, or the test isn't valid
+            for (int i=0; i < network.Consensus.MempoolRules.Count; i++)
+            {
+                if (network.Consensus.MempoolRules[i] != mempoolRules[i].GetType())
+                {
+                    throw new Exception("Mempool rule type mismatch");
+                }
+            }
+
+            Assert.Equal(network.Consensus.MempoolRules.Count, mempoolRules.Count);
+
+            var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, mempoolSettings, chain, inMemoryCoinView, loggerFactory, nodeSettings, consensusRules, mempoolRules, new NodeDeployments(network, chain));
 
             var outputs = new List<UnspentOutputs>();
 

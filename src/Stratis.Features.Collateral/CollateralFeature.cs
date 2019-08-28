@@ -2,13 +2,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA;
-using Stratis.Features.FederatedPeg.Controllers;
-using Stratis.Features.FederatedPeg.CounterChain;
+using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.PoA;
+using Stratis.Features.Collateral.CounterChain;
 
-namespace Stratis.Features.FederatedPeg.Collateral
+namespace Stratis.Features.Collateral
 {
     /// <summary>
     /// Sets up the necessary components to check the collateral requirement is met on the counter chain.
@@ -51,7 +51,31 @@ namespace Stratis.Features.FederatedPeg.Collateral
                         services.AddSingleton<ICollateralChecker, CollateralChecker>();
 
                         new SmartContractCollateralPoARuleRegistration().RegisterRules(services);
-                        services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
+                    });
+            });
+
+            return fullNodeBuilder;
+        }
+
+        /// <summary>
+        /// Adds mining to the smart contract node when on a proof-of-authority network with collateral enabled.
+        /// </summary>
+        public static IFullNodeBuilder UseSmartContractCollateralPoAMining(this IFullNodeBuilder fullNodeBuilder)
+        {
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                    .AddFeature<PoAFeature>()
+                    .FeatureServices(services =>
+                    {
+                        services.AddSingleton<IFederationManager, FederationManager>();
+                        services.AddSingleton<PoABlockHeaderValidator>();
+                        services.AddSingleton<IPoAMiner, CollateralPoAMiner>();
+                        services.AddSingleton<PoAMinerSettings>();
+                        services.AddSingleton<MinerSettings>();
+                        services.AddSingleton<ISlotsManager, SlotsManager>();
+                        services.AddSingleton<BlockDefinition, SmartContractPoABlockDefinition>();
+                        services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();
                     });
             });
 

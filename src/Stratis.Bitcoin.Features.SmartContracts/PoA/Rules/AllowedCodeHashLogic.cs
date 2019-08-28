@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
             }
         }
 
-        private static void ThrowInvalidCode()
+        public static void ThrowInvalidCode()
         {
             new ConsensusError("contract-code-invalid-hash", "Contract code does not have a valid hash").Throw();
         }

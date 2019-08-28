@@ -97,23 +97,20 @@ namespace Stratis.Features.FederatedPeg.SourceChain
             return new Deposit(transaction.GetHash(), depositsToMultisig.Sum(o => o.Value), targetAddress, blockHeight, blockHash);
         }
 
-        public MaturedBlockDepositsModel ExtractBlockDeposits(ChainedHeaderBlock newlyMaturedBlock)
+        public MaturedBlockDepositsModel ExtractBlockDeposits(ChainedHeaderBlock blockToExtractDepositsFrom)
         {
-            Guard.NotNull(newlyMaturedBlock, nameof(newlyMaturedBlock));
+            Guard.NotNull(blockToExtractDepositsFrom, nameof(blockToExtractDepositsFrom));
 
-            var maturedBlock = new MaturedBlockInfoModel()
+            var maturedBlockModel = new MaturedBlockInfoModel()
             {
-                BlockHash = newlyMaturedBlock.ChainedHeader.HashBlock,
-                BlockHeight = newlyMaturedBlock.ChainedHeader.Height,
-                BlockTime = newlyMaturedBlock.ChainedHeader.Header.Time
+                BlockHash = blockToExtractDepositsFrom.ChainedHeader.HashBlock,
+                BlockHeight = blockToExtractDepositsFrom.ChainedHeader.Height,
+                BlockTime = blockToExtractDepositsFrom.ChainedHeader.Header.Time
             };
 
-            IReadOnlyList<IDeposit> deposits =
-                this.ExtractDepositsFromBlock(newlyMaturedBlock.Block, newlyMaturedBlock.ChainedHeader.Height);
+            IReadOnlyList<IDeposit> deposits = this.ExtractDepositsFromBlock(blockToExtractDepositsFrom.Block, blockToExtractDepositsFrom.ChainedHeader.Height);
 
-            var maturedBlockDeposits = new MaturedBlockDepositsModel(maturedBlock, deposits);
-
-            return maturedBlockDeposits;
+            return new MaturedBlockDepositsModel(maturedBlockModel, deposits);
         }
     }
 }

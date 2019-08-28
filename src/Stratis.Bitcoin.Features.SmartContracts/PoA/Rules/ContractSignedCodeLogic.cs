@@ -25,6 +25,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
 
         public void CheckContractTransaction(ContractTxData txData, Money suppliedBudget)
         {
+            Check(txData, this.contractSigner, this.signingContractPubKey);
+        }
+
+        public static void Check(ContractTxData txData, IContractSigner contractSigner, PubKey signingContractPubKey)
+        {
             if (!txData.IsCreateContract)
             {
                 // We do not need to validate calls.
@@ -35,13 +40,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
             // If the below line is throwing, it must not be being used.
             var signedTxData = (SignedCodeContractTxData)txData;
 
-            if (!this.contractSigner.Verify(this.signingContractPubKey, signedTxData.ContractExecutionCode, signedTxData.CodeSignature))
+            if (!contractSigner.Verify(signingContractPubKey, signedTxData.ContractExecutionCode, signedTxData.CodeSignature))
             {
-                this.ThrowInvalidCode();
+                ThrowInvalidCode();
             }
         }
-        
-        private void ThrowInvalidCode()
+
+        private static void ThrowInvalidCode()
         {
             new ConsensusError("contract-code-invalid-signature", "Contract code does not have a valid signature").Throw();
         }
