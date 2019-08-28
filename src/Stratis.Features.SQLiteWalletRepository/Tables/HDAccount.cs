@@ -12,15 +12,14 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         public string ExtPubKey { get; set; }
         public int CreationTime { get; set; }
 
-        private static ExtPubKey extPubKey = null;
-        private static Network extPubKeyNetwork = null;
+        private static Dictionary<string, ExtPubKey> extPubKeys = new Dictionary<string, ExtPubKey>();
 
         internal ExtPubKey GetExtPubKey(Network network)
         {
-            if (extPubKey == null || extPubKeyNetwork != network)
+            if (!extPubKeys.TryGetValue(this.ExtPubKey, out ExtPubKey extPubKey))
             {
                 extPubKey = NBitcoin.ExtPubKey.Parse(this.ExtPubKey, network);
-                extPubKeyNetwork = network;
+                extPubKeys[this.ExtPubKey] = extPubKey;
             }
 
             return extPubKey;

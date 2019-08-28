@@ -48,12 +48,12 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 SpendTxTime         INTEGER,
                 SpendTxId           TEXT,
                 SpendTxTotalOut     DECIMAL,
-                PRIMARY KEY(WalletId, AccountIndex, AddressType, AddressIndex, RedeemScript, OutputTxId, OutputIndex)
+                PRIMARY KEY(WalletId, AccountIndex, AddressType, AddressIndex, OutputTxId, OutputIndex)
             )";
 
-            yield return "CREATE UNIQUE INDEX UX_HDTransactionData_Output ON HDTransactionData(OutputTxId, OutputIndex)";
-            yield return "CREATE INDEX IX_HDTransactionData_SpendTxTime ON HDTransactionData (WalletId,AccountIndex,SpendTxTime DESC)";
-            yield return "CREATE INDEX IX_HDTransactionData_OutputTxTime ON HDTransactionData (WalletId,AccountIndex,OutputTxTime DESC)";
+            yield return "CREATE UNIQUE INDEX UX_HDTransactionData_Output ON HDTransactionData(OutputTxId, OutputIndex, ScriptPubKey)";
+            yield return "CREATE INDEX IX_HDTransactionData_SpendTxTime ON HDTransactionData (WalletId, AccountIndex, SpendTxTime DESC)";
+            yield return "CREATE INDEX IX_HDTransactionData_OutputTxTime ON HDTransactionData (WalletId, AccountIndex, OutputTxTime DESC)";
         }
 
         internal static void CreateTable(SQLiteConnection conn)

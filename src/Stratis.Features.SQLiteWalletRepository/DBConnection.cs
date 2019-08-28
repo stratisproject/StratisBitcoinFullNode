@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using NBitcoin;
 using SQLite;
+using Stratis.Features.SQLiteWalletRepository.Commands;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 
 namespace Stratis.Features.SQLiteWalletRepository
@@ -15,11 +16,19 @@ namespace Stratis.Features.SQLiteWalletRepository
         private SQLiteConnection sqLiteConnection;
         public SQLiteWalletRepository Repository;
         public Stack<(dynamic, Action<dynamic>)> RollBackActions;
+        public Dictionary<string, SQLiteCommand> Commands;
 
         // A given connection can't have two transactions running in parallel.
         internal readonly object TransactionLock;
         internal int TransactionDepth;
         internal bool IsInTransaction => this.sqLiteConnection.IsInTransaction;
+
+        internal Dictionary<string, long> Metrics = new Dictionary<string, long>();
+
+        internal SQLiteCommand CmdUploadPrevOut;
+        internal SQLiteCommand CmdDeletePayments;
+        internal SQLiteCommand CmdReplacePayments;
+        internal SQLiteCommand CmdUpdateSpending;
 
         public DBConnection(SQLiteWalletRepository repo, string dbFile)
         {
@@ -28,6 +37,11 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.TransactionLock = new object();
             this.TransactionDepth = 0;
             this.RollBackActions = new Stack<(object, Action<object>)>();
+
+            this.CmdUploadPrevOut = this.CmdUploadPrevOut();
+            this.CmdDeletePayments = this.CmdDeletePayments();
+            this.CmdReplacePayments = this.CmdReplacePayments();
+            this.CmdUpdateSpending = this.CmdUpdateSpending();
         }
 
         internal void AddRollbackAction(object rollBackData, Action<object> rollBackAction)
@@ -80,6 +94,11 @@ namespace Stratis.Features.SQLiteWalletRepository
                     this.RollBackActions.Clear();
                 }
             }
+        }
+
+        internal SQLiteCommand CreateCommand(string cmdText, params object[] ps)
+        {
+            return this.sqLiteConnection.CreateCommand(cmdText, ps);
         }
 
         internal List<T> Query<T>(string query, params object[] args) where T:new()
@@ -424,135 +443,28 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             // Inserts or updates HDTransactionData records based on change or funds received.
             string walletName = wallet?.Name;
-            this.Execute($@"
-                REPLACE INTO HDTransactionData
-                SELECT A.WalletID
-                ,      A.AccountIndex
-                ,      A.AddressType
-                ,      A.AddressIndex
-                ,      T.RedeemScript
-                ,      T.ScriptPubKey
-                ,      T.Value
-                ,      T.OutputBlockHeight
-                ,      T.OutputBlockHash
-                ,      T.OutputTxIsCoinBase
-                ,      T.OutputTxTime
-                ,      T.OutputTxId
-                ,      T.OutputIndex
-                ,      NULL SpendTxTime
-                ,      NULL SpendTxId
-                ,      NULL SpendBlockHeight
-                ,      NULL SpendBlockHash
-                ,      NULL SpendTxIsCoinBase
-                ,      NULL SpendTxTotalOut
-                FROM   temp.TempOutput T
-                JOIN   HDAddress A
-                ON     A.ScriptPubKey = T.ScriptPubKey
-                JOIN   HDWallet W
-                ON     W.WalletId = A.WalletId {
-                // Respect the wallet name if provided.
-                ((walletName != null) ? $@"
-                AND    W.Name = '{walletName}'" : "")}{
-                // Restrict confirmed transaction updates to aligned wallets.
-                ((header != null) ? $@"
-                AND    W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'" : "")}
-                LEFT   JOIN HDTransactionData TD
-                ON     TD.WalletId = A.WalletId
-                AND    TD.AccountIndex  = A.AccountIndex
-                AND    TD.AddressType = A.AddressType
-                AND    TD.AddressIndex = A.AddressIndex
-                AND    TD.OutputTxId = T.OutputTxId
-                AND    TD.OutputIndex = T.OutputIndex
-                AND    TD.RedeemScript = T.RedeemScript
-                WHERE  TD.OutputBlockHash IS NULL
-                AND    TD.OutputBlockHeight IS NULL");
+            string prevHash = (header == null) ? null : (header.Previous?.HashBlock ?? uint256.Zero).ToString();
+            this.CmdUploadPrevOut.Bind("walletName", walletName);
+            this.CmdUploadPrevOut.Bind("prevHash", prevHash);
+            this.CmdUploadPrevOut.ExecuteNonQuery();
 
             // Clear the payments since we are replacing them.
             // Performs checks that we do not clear a confirmed transaction's payments.
-            this.Execute($@"
-                DELETE  FROM HDPayment
-                WHERE   (OutputTxTime, OutputTxId, OutputIndex) IN (
-                        SELECT  TD.OutputTxTime, T.OutputTxId, T.OutputIndex
-                        FROM    temp.TempPrevOut T
-                        JOIN    HDTransactionData TD
-                        ON      TD.OutputTxId = T.OutputTxId
-                        AND     TD.OutputIndex = T.OutputIndex
-                        AND     TD.SpendBlockHeight IS NULL
-                        AND     TD.SpendBlockHash IS NULL
-                        JOIN    HDWallet W
-                        ON      W.WalletId = TD.WalletId {
-                        // Respect the wallet name if provided.
-                        ((walletName != null) ? $@"
-                        AND     W.Name = '{walletName}'" : "")}{
-                        // Restrict non-transient transaction updates to aligned wallets.
-                        ((header != null) ? $@"
-                        AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'" : "")}
-                        )");
+            this.CmdDeletePayments.Bind("walletName", walletName);
+            this.CmdDeletePayments.Bind("prevHash", prevHash);
+            this.CmdDeletePayments.ExecuteNonQuery();
 
             // Insert spending details into HDPayment records.
             // Performs checks that we do not affect a confirmed transaction's payments.
-            this.Execute($@"
-                REPLACE INTO HDPayment
-                SELECT  TD.OutputTxTime
-                ,       TD.OutputTxId
-                ,       TD.OutputIndex
-                ,       O.OutputIndex
-                ,       O.RedeemScript
-                ,       O.Value
-                FROM    temp.TempPrevOut T
-                JOIN    HDTransactionData TD
-                ON      TD.OutputTxId = T.OutputTxId
-                AND     TD.OutputIndex = T.OutputIndex
-                AND     TD.SpendBlockHeight IS NULL
-                AND     TD.SpendBlockHash IS NULL
-                JOIN    HDWallet W
-                ON      W.WalletId = TD.WalletId {
-                // Respect the wallet name if provided.
-                ((walletName != null) ? $@"
-                AND     W.Name = '{walletName}'" : "")}{
-                // Restrict non-transient transaction updates to aligned wallets.
-                ((header != null) ? $@"
-                AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'" : "")}
-                JOIN    temp.TempOutput O
-                ON      O.OutputTxID = T.SpendTxId");
+            this.CmdReplacePayments.Bind("walletName", walletName);
+            this.CmdReplacePayments.Bind("prevHash", prevHash);
+            this.CmdReplacePayments.ExecuteNonQuery();
 
             // Update spending details on HDTransactionData records.
             // Performs checks that we do not affect a confirmed transaction's spends.
-            this.Execute($@"
-                REPLACE INTO HDTransactionData
-                SELECT TD.WalletId
-                ,      TD.AccountIndex
-                ,      TD.AddressType
-                ,      TD.AddressIndex
-                ,      TD.RedeemScript
-                ,      TD.ScriptPubKey
-                ,      TD.Value
-                ,      TD.OutputBlockHeight
-                ,      TD.OutputBlockHash
-                ,      TD.OutputTxIsCoinBase
-                ,      TD.OutputTxTime
-                ,      TD.OutputTxId
-                ,      TD.OutputIndex
-                ,      T.SpendBlockHeight
-                ,      T.SpendBlockHash
-                ,      T.SpendTxIsCoinBase
-                ,      T.SpendTxTime
-                ,      T.SpendTxId
-                ,      T.SpendTxTotalOut
-                FROM   temp.TempPrevOut T
-                JOIN   HDTransactionData TD
-                ON     TD.OutputTxID = T.OutputTxId
-                AND    TD.OutputIndex = T.OutputIndex
-                AND    TD.SpendBlockHeight IS NULL
-                AND    TD.SpendBlockHash IS NULL
-                JOIN   HDWallet W
-                ON     W.WalletId = TD.WalletId {
-                // Respect the wallet name if provided.
-                ((walletName != null) ? $@"
-                AND     W.Name = '{walletName}'" : "")}{
-                // Restrict non-transient transaction updates to aligned wallets.
-                ((header != null) ? $@"
-                AND     W.LastBlockSyncedHash = '{(header.Previous?.HashBlock ?? uint256.Zero)}'" : "")}");
+            this.CmdUpdateSpending.Bind("walletName", walletName);
+            this.CmdUpdateSpending.Bind("prevHash", prevHash);
+            this.CmdUpdateSpending.ExecuteNonQuery();
 
             // Advance participating wallets.
             if (header != null)
