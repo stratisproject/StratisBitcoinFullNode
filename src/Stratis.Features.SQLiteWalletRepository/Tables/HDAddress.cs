@@ -5,6 +5,12 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 {
     internal class HDAddress
     {
+        public const int StandardAddressBuffer = 20;
+
+        // AddressType constants.
+        public const int External = 0;
+        public const int Internal = 1;
+
         public int WalletId { get; set; }
         public int AccountIndex { get; set; }
         public int AddressType { get; set; }
@@ -25,7 +31,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 PRIMARY KEY(WalletId, AccountIndex, AddressType, AddressIndex)
             )";
 
-            yield return "CREATE UNIQUE INDEX UX_HDAddress_ScriptPubKey ON HDAddress(ScriptPubKey, WalletId, AccountIndex)";
+            yield return "CREATE UNIQUE INDEX UX_HDAddress_ScriptPubKey ON HDAddress(ScriptPubKey)";
             yield return "CREATE UNIQUE INDEX UX_HDAddress_PubKey ON HDAddress(PubKey)";
         }
 

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using NBitcoin;
 using SQLite;
 
 namespace Stratis.Features.SQLiteWalletRepository.Tables
@@ -10,6 +11,19 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         public string AccountName { get; set; }
         public string ExtPubKey { get; set; }
         public int CreationTime { get; set; }
+
+        private static Dictionary<string, ExtPubKey> extPubKeys = new Dictionary<string, ExtPubKey>();
+
+        internal ExtPubKey GetExtPubKey(Network network)
+        {
+            if (!extPubKeys.TryGetValue(this.ExtPubKey, out ExtPubKey extPubKey))
+            {
+                extPubKey = NBitcoin.ExtPubKey.Parse(this.ExtPubKey, network);
+                extPubKeys[this.ExtPubKey] = extPubKey;
+            }
+
+            return extPubKey;
+        }
 
         internal static IEnumerable<string> CreateScript()
         {

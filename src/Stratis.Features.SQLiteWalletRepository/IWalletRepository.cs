@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using NBitcoin;
 using Stratis.Bitcoin.Wallet;
+using Stratis.Features.SQLiteWalletRepository.External;
 
 namespace Stratis.Features.SQLiteWalletRepository
 {
@@ -18,8 +19,8 @@ namespace Stratis.Features.SQLiteWalletRepository
     ///   - the wallet folder.
     /// - IDateTimeProvider
     ///   - used for populating CreationTime fields.
-    ///   IScriptAddressReader
-    ///   - used to find the destinations of redeem scripts.
+    ///   IScriptAddressReader (or IScriptDestinationReader)
+    ///   - used to find the destinations of <see cref="TxOut.ScriptPubKey" /> scripts.
     /// </remarks>
     public interface IWalletRepository
     {
@@ -32,7 +33,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <remarks>
         /// This method is intended to be idempotent - i.e. running it twice should not produce any adverse effects.
         /// If any empty wallet addresses have transactions added to them then the affected accounts should
-        /// have their addresses topped up to ensure there are always 20 unused addresses after the last
+        /// have their addresses topped up to ensure there are always a buffer of unused addresses after the last
         /// address containing transactions.
         /// </remarks>
         void ProcessTransaction(string walletName, Transaction transaction, uint256 txId = null);
@@ -47,7 +48,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// This method is intended to be idempotent - i.e. running it twice consecutively should not produce any adverse effects.
         /// Similar to the rest of the methods it should not contain any business logic other than what may be injected externally.
         /// If any empty wallet addresses have transactions added to them then the affected accounts should
-        /// have their addresses topped up to ensure there are always 20 unused addresses after the last
+        /// have their addresses topped up to ensure there are always a buffer of unused addresses after the last
         /// address containing transactions.
         /// It's the caller's responsibility to ensure that this method is not called again when it's already executing.
         /// </remarks>
@@ -62,7 +63,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// This method is intended to be idempotent - i.e. running it twice consecutively should not produce any adverse effects.
         /// Similar to the rest of the methods it should not contain any business logic other than what may be injected externally.
         /// If any empty wallet addresses have transactions added to them then the affected accounts should
-        /// have their addresses topped up to ensure there are always 20 unused addresses after the last
+        /// have their addresses topped up to ensure there are always a buffer of unused addresses after the last
         /// address containing transactions.
         /// It's the caller's responsibility to ensure that this method is not called again when it's already executing.
         /// </remarks>
@@ -145,11 +146,26 @@ namespace Stratis.Features.SQLiteWalletRepository
         void RemoveUnconfirmedTransaction(string walletName, uint256 txId);
 
         /// <summary>
+        /// Determines a block in common between the supplied chain tip and the wallet block locator.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet to determine the fork for.</param>
+        /// <param name="chainTip">The chain tip to use in determining the fork.</param>
+        /// <returns>The fork or <c>null</c> if there are no blocks in common.</returns>
+        ChainedHeader FindFork(string walletName, ChainedHeader chainTip);
+
+        /// <summary>
         /// Only keep wallet transactions up to and including the specified block.
         /// </summary>
         /// <param name="walletName">The name of the wallet.</param>
         /// <param name="lastBlockSynced">The last block synced to set.</param>
         /// <remarks>The value of lastBlockSynced must match a block that was conceivably processed by the wallet (or be null).</remarks>
         void RewindWallet(string walletName, ChainedHeader lastBlockSynced);
+
+        /// <summary>
+        /// Allows multiple interface calls to be grouped into a transaction.
+        /// </summary>
+        /// <param name="walletName">The wallet the transaction is for.</param>
+        /// <returns>A transaction context providing <see cref="ITransactionContext.Commit"/> and <see cref="ITransactionContext.Rollback"/> methods.</returns>
+        ITransactionContext BeginTransaction(string walletName);
     }
 }
