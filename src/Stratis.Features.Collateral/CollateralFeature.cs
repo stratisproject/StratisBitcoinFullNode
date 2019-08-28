@@ -52,7 +52,6 @@ namespace Stratis.Features.Collateral
                     {
                         services.AddSingleton<IFederationManager, CollateralFederationManager>();
                         services.AddSingleton<ICollateralChecker, CollateralChecker>();
-
                         // TODO: Perhaps create a SC specific rule container for this?
                         services.AddSingleton(typeof(IContractTransactionPartialValidationRule), typeof(SmartContractFormatLogic));
                     });
