@@ -2,11 +2,14 @@ using System;
 using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.Features.SmartContracts.MempoolRules;
 using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
 using Stratis.Bitcoin.Features.PoA.Voting.ConsensusRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
+using Stratis.Bitcoin.Features.SmartContracts.PoA.MempoolRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Features.Collateral;
@@ -206,6 +209,7 @@ namespace Stratis.Sidechains.Networks
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("1669a55d45b642af0ce82c5884cf5b8d8efd5bdcb9a450c95f442b9bd1ff65ea"));
 
             this.RegisterRules(this.Consensus);
+            this.RegisterMempoolRules(this.Consensus);
         }
 
         // This should be abstract or virtual
@@ -262,6 +266,37 @@ namespace Stratis.Sidechains.Networks
                 .Register<CheckCollateralFullValidationRule>()
                 .Register<SaveCoinviewRule>();
             // ------------------------------------------------------
+        }
+
+        private void RegisterMempoolRules(IConsensus consensus)
+        {
+            consensus.MempoolRules = new List<Type>()
+            {
+                typeof(OpSpendMempoolRule),
+                typeof(TxOutSmartContractExecMempoolRule),
+                typeof(AllowedScriptTypeMempoolRule),
+                typeof(P2PKHNotContractMempoolRule),
+
+                // The non- smart contract mempool rules
+                typeof(CheckConflictsMempoolRule),
+                typeof(CheckCoinViewMempoolRule),
+                typeof(CreateMempoolEntryMempoolRule),
+                typeof(CheckSigOpsMempoolRule),
+                typeof(CheckFeeMempoolRule),
+
+                // The smart contract mempool needs to do more fee checks than its counterpart, so include extra rules.
+                // These rules occur directly after the fee check rule in the non- smart contract mempool.
+                typeof(SmartContractFormatLogicMempoolRule),
+                typeof(CanGetSenderMempoolRule),
+                typeof(AllowedCodeHashLogicMempoolRule), // PoA-specific
+                typeof(CheckMinGasLimitSmartContractMempoolRule),
+
+                // Remaining non-SC rules.
+                typeof(CheckRateLimitMempoolRule),
+                typeof(CheckAncestorsMempoolRule),
+                typeof(CheckReplacementMempoolRule),
+                typeof(CheckAllInputsMempoolRule)
+            };
         }
     }
 }

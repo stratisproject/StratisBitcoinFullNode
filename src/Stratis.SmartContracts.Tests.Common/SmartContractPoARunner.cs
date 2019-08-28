@@ -36,11 +36,15 @@ namespace Stratis.SmartContracts.Tests.Common
             IFullNodeBuilder builder = new FullNodeBuilder()
                             .UseNodeSettings(settings)
                             .UseBlockStore()
-                            .UseMempool()
+                            .UseMempool(injectRules: false)
                             .AddRPC()
                             .AddSmartContracts(options =>
                             {
                                 options.UseReflectionExecutor();
+                            },
+                            preOptions =>
+                            {
+                                preOptions.UsePoAMempoolRules();
                             })
                             .UseSmartContractPoAConsensus()
                             .UseSmartContractPoAMining()

@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.SmartContracts.Core;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
@@ -11,7 +10,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// <summary>
     /// Each transaction should have only 1 'SmartContractExec' output.
     /// </summary>
-    public class TxOutSmartContractExecRule : FullValidationConsensusRule, ISmartContractMempoolRule
+    public class TxOutSmartContractExecRule : FullValidationConsensusRule
     {
         /// <inheritdoc/>
         public override Task RunAsync(RuleContext context)
@@ -20,19 +19,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             foreach (Transaction transaction in block.Transactions)
             {
-                this.CheckTransaction(transaction);
+                CheckTransaction(transaction);
             }
 
             return Task.CompletedTask;
         }
 
-        /// <inheritdoc/>
-        public void CheckTransaction(MempoolValidationContext context)
-        {
-            this.CheckTransaction(context.Transaction);
-        }
-
-        private void CheckTransaction(Transaction transaction)
+        public static void CheckTransaction(Transaction transaction)
         {
             int smartContractExecCount = transaction.Outputs.Count(o => o.ScriptPubKey.IsSmartContractExec());
 
