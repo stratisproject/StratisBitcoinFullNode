@@ -156,7 +156,12 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         public List<string> GetWalletNames()
         {
-            return this.Wallets.Select(kv => kv.Value.Wallet.Name).ToList();
+            var wallets = new List<string>();
+            foreach (var wallet in this.Wallets)
+            {
+                wallets.Add(wallet.Key);
+            }
+            return wallets;
         }
 
         /// <inheritdoc />

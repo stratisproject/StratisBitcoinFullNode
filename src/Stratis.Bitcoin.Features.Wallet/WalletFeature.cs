@@ -140,10 +140,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
+            this.walletRepository.Initialize();
             this.walletManager.Start();
             this.walletSyncManager.Start();
             this.addressBookManager.Initialize();
-            this.walletRepository.Initialize();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
 

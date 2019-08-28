@@ -459,6 +459,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             string encryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif();
             Wallet wallet = this.GenerateWalletFile(name, encryptedSeed, extendedKey.ChainCode, creationTime);
 
+            this.walletRepository.CreateWallet(name, encryptedSeed, extendedKey.ChainCode);
+
             // Generate multiple accounts and addresses from the get-go.
             for (int i = 0; i < WalletRecoveryAccountsCount; i++)
             {
@@ -471,6 +473,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
                 IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
                 this.UpdateKeysLookupLocked(newReceivingAddresses.Concat(newChangeAddresses));
+
+                this.walletRepository.CreateAccount(name, i, $"account {i}", password);
             }
 
             // If the chain is downloaded, we set the height of the recovered wallet to that of the recovery date.
@@ -1013,6 +1017,23 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     this.logger.LogDebug("Block {0} contains at least one transaction affecting the user's wallet(s).", chainedHeader);
                 }
+            }
+
+            try
+            {
+                var databaseWalletList = ((SQLiteWalletRepository)this.walletRepository).GetWalletNames();
+
+                if (databaseWalletList.Any())
+                {
+                    foreach (var wallet in databaseWalletList)
+                    {
+                        this.walletRepository.ProcessBlock(block, chainedHeader, wallet);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                var message = ex;
             }
         }
 
