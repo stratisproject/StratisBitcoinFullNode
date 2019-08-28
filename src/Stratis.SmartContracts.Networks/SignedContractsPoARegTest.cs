@@ -10,9 +10,9 @@ namespace Stratis.SmartContracts.Networks
 {
     public class SignedContractsPoARegTest : SmartContractsPoARegTest, ISignedCodePubKeyHolder
     {
-        public Key SigningContractPrivKey { get;}
+        public Key SigningContractPrivKey { get; }
 
-        public PubKey SigningContractPubKey { get;}
+        public PubKey SigningContractPubKey { get; }
 
         public SignedContractsPoARegTest()
         {
