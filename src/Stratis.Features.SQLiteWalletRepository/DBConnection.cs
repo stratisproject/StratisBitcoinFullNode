@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using NBitcoin;
 using SQLite;
 using Stratis.Features.SQLiteWalletRepository.Commands;
@@ -19,7 +20,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         public Dictionary<string, SQLiteCommand> Commands;
 
         // A given connection can't have two transactions running in parallel.
-        internal readonly object TransactionLock;
+        internal SemaphoreSlim TransactionLock;
         internal int TransactionDepth;
         internal bool IsInTransaction => this.sqLiteConnection.IsInTransaction;
 
@@ -34,7 +35,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             this.sqLiteConnection = new SQLiteConnection(Path.Combine(repo.DBPath, dbFile));
             this.Repository = repo;
-            this.TransactionLock = new object();
+            this.TransactionLock = new SemaphoreSlim(1, 1);
             this.TransactionDepth = 0;
             this.RollBackActions = new Stack<(object, Action<object>)>();
 
@@ -53,46 +54,44 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal void BeginTransaction()
         {
-            lock (this.TransactionLock)
+            if (!this.IsInTransaction)
             {
-                if (this.TransactionDepth == 0)
-                    this.sqLiteConnection.BeginTransaction();
-
-                this.TransactionDepth++;
+                this.TransactionLock.Wait();
+                this.sqLiteConnection.BeginTransaction();
+                this.TransactionDepth = 0;
             }
+
+            this.TransactionDepth++;
         }
 
         internal void Rollback()
         {
-            lock (this.TransactionLock)
+            this.TransactionDepth--;
+
+            if (this.TransactionDepth == 0 && this.sqLiteConnection.IsInTransaction)
             {
-                this.TransactionDepth--;
+                this.sqLiteConnection.Rollback();
 
-                if (this.TransactionDepth == 0)
+                while (this.RollBackActions.Count > 0)
                 {
-                    this.sqLiteConnection.Rollback();
+                    (dynamic rollBackData, Action<dynamic> rollBackAction) = this.RollBackActions.Pop();
 
-                    while (this.RollBackActions.Count > 0)
-                    {
-                        (dynamic rollBackData, Action<dynamic> rollBackAction) = this.RollBackActions.Pop();
-
-                        rollBackAction(rollBackData);
-                    }
+                    rollBackAction(rollBackData);
                 }
+
+                this.TransactionLock.Release();
             }
         }
 
         internal void Commit()
         {
-            lock (this.TransactionLock)
-            {
-                this.TransactionDepth--;
+            this.TransactionDepth--;
 
-                if (this.TransactionDepth == 0)
-                {
-                    this.sqLiteConnection.Commit();
-                    this.RollBackActions.Clear();
-                }
+            if (this.TransactionDepth == 0 && this.sqLiteConnection.IsInTransaction)
+            {
+                this.sqLiteConnection.Commit();
+                this.RollBackActions.Clear();
+                this.TransactionLock.Release();
             }
         }
 
