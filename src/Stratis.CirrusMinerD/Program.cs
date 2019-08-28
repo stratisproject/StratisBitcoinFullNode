@@ -10,7 +10,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Notifications;
@@ -73,16 +72,6 @@ namespace Stratis.CirrusMinerD
             {
                 MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
             };
-
-            // Inject CheckCollateralFullValidationRule rule---------------------------
-            // TODO: This needs to be refactored
-            nodeSettings.Network.Consensus.ConsensusRules.Register<CheckCollateralFullValidationRule>();
-
-            foreach (Type rule in nodeSettings.Network.Consensus.ConsensusRules.FullValidationRules.Where(f => f == typeof(SaveCoinviewRule)).ToList())
-                nodeSettings.Network.Consensus.ConsensusRules.FullValidationRules.Remove(rule);
-
-            nodeSettings.Network.Consensus.ConsensusRules.Register<SaveCoinviewRule>();
-            // --------------------------------------------------------------------------
 
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)

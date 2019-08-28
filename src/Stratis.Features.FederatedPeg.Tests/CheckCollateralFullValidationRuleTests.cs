@@ -2,6 +2,8 @@
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -31,7 +33,6 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.collateralCheckerMock = new Mock<ICollateralChecker>();
             this.slotsManagerMock = new Mock<ISlotsManager>();
 
-
             this.ibdMock.Setup(x => x.IsInitialBlockDownload()).Returns(false);
             this.slotsManagerMock
                 .Setup(x => x.GetFederationMemberForTimestamp(It.IsAny<uint>(), null))
@@ -43,14 +44,27 @@ namespace Stratis.Features.FederatedPeg.Tests
             Block block = this.ruleContext.ValidationContext.BlockToValidate;
             block.AddTransaction(new Transaction());
 
-            CollateralHeightCommitmentEncoder encoder = new CollateralHeightCommitmentEncoder();
+            var encoder = new CollateralHeightCommitmentEncoder();
 
             byte[] encodedHeight = encoder.EncodeWithPrefix(1000);
 
             var votingOutputScript = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(encodedHeight));
             block.Transactions[0].AddOutput(Money.Zero, votingOutputScript);
 
-            this.rule = new CheckCollateralFullValidationRule(this.ibdMock.Object, this.collateralCheckerMock.Object, this.slotsManagerMock.Object, new Mock<IDateTimeProvider>().Object, new PoANetwork());
+            var fullNode = new Mock<IFullNode>();
+            var fullNodeServiceProvider = new Mock<IFullNodeServiceProvider>();
+
+            var poaMiner = new Mock<IPoAMiner>();
+            poaMiner.Setup(m => m.IsMining).Returns(true);
+
+            var serviceProvider = new Mock<IServiceProvider>();
+            serviceProvider.Setup(sp => sp.GetService(It.IsAny<Type>())).Returns(poaMiner.Object);
+
+            fullNodeServiceProvider.Setup(fsp => fsp.ServiceProvider).Returns(serviceProvider.Object);
+
+            fullNode.Setup(f => f.Services).Returns(fullNodeServiceProvider.Object);
+
+            this.rule = new CheckCollateralFullValidationRule(fullNode.Object, this.ibdMock.Object, this.collateralCheckerMock.Object, this.slotsManagerMock.Object, new Mock<IDateTimeProvider>().Object, new PoANetwork());
             this.rule.Logger = new ExtendedLoggerFactory().CreateLogger(this.rule.GetType().FullName);
             this.rule.Initialize();
         }

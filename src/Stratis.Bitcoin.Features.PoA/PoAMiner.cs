@@ -33,6 +33,8 @@ namespace Stratis.Bitcoin.Features.PoA
     /// </remarks>
     public interface IPoAMiner : IDisposable
     {
+        bool IsMining { get; }
+
         /// <summary>Starts mining loop.</summary>
         void InitializeMining();
     }
@@ -51,9 +53,14 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>
         /// A cancellation token source that can cancel the mining processes and is linked to the <see cref="INodeLifetime.ApplicationStopping"/>.
         /// </summary>
-        private CancellationTokenSource cancellation;
+        private readonly CancellationTokenSource cancellation;
 
         private readonly IInitialBlockDownloadState ibdState;
+
+        public bool IsMining
+        {
+            get { return this.miningTask?.Status == TaskStatus.Running; }
+        }
 
         private readonly BlockDefinition blockDefinition;
 
@@ -74,6 +81,7 @@ namespace Stratis.Bitcoin.Features.PoA
         private readonly VotingDataEncoder votingDataEncoder;
 
         private readonly PoAMinerSettings settings;
+
         private readonly IAsyncProvider asyncProvider;
 
         private Task miningTask;

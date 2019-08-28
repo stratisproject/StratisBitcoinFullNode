@@ -6,6 +6,8 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Features.Collateral.CounterChain;
 
 namespace Stratis.Features.Collateral
@@ -51,7 +53,8 @@ namespace Stratis.Features.Collateral
                         services.AddSingleton<IFederationManager, CollateralFederationManager>();
                         services.AddSingleton<ICollateralChecker, CollateralChecker>();
 
-                        //new SmartContractCollateralPoARuleRegistration().RegisterRules(services);
+                        // TODO: Perhaps create a SC specific rule container for this?
+                        services.AddSingleton(typeof(IContractTransactionPartialValidationRule), typeof(SmartContractFormatLogic));
                     });
             });
 

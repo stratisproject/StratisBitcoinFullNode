@@ -7,6 +7,8 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Voting;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {
@@ -31,10 +33,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         services.AddSingleton<VotingManager>();
                         services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
-
-                        // TODO: Refactor to use FN implementation
+                        // TODO: Perhaps create a SC specific rule container for this?
+                        services.AddSingleton(typeof(IContractTransactionPartialValidationRule), typeof(SmartContractFormatLogic));
                         services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
-                        new SmartContractPoARuleRegistration().RegisterRules(services);
 
                         // Voting.
                         services.AddSingleton<VotingManager>();
