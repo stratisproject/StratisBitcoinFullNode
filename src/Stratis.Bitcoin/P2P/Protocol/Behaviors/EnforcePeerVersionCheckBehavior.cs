@@ -16,16 +16,16 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
     public class EnforcePeerVersionCheckBehavior : NetworkPeerBehavior
     {
         /// <summary>An indexer that provides methods to query the best chain (the chain that is validated by the full consensus rules)</summary>
-        protected ChainIndexer ChainIndexer { get; private set; }
+        private readonly ChainIndexer chainIndexer;
 
         /// <summary>User defined node settings.</summary>
-        protected NodeSettings NodeSettings { get; private set; }
+        private readonly NodeSettings nodeSettings;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
-        protected Network Network { get; private set; }
+        private readonly Network network;
 
         /// <summary>Logger factory usded while cloning the object.</summary>
-        private ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -48,27 +48,33 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             Network network,
             ILoggerFactory loggerFactory)
         {
-            this.ChainIndexer = chainIndexer;
-            this.NodeSettings = nodeSettings;
-            this.Network = network;
+            this.chainIndexer = chainIndexer;
+            this.nodeSettings = nodeSettings;
+            this.network = network;
+            this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }
 
         private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
-            int enforceMinProtocolVersionAtBlockHeight = this.Network.Consensus.Options.EnforceMinProtocolVersionAtBlockHeight;
-
+            int enforceMinProtocolVersionAtBlockHeight = this.network.Consensus.Options.EnforceMinProtocolVersionAtBlockHeight;
             bool enforcementRequired = enforceMinProtocolVersionAtBlockHeight > 0;
-            bool enforcedAlready = this.NodeSettings.MinProtocolVersion >= this.Network.Consensus.Options.EnforcedMinProtocolVersion;
-            bool enforcementHeightReached = this.ChainIndexer.Height >= enforceMinProtocolVersionAtBlockHeight;
-            if (enforcementRequired && !enforcedAlready && enforcementHeightReached)
+            if (!enforcementRequired)
+                return Task.CompletedTask;
+
+            bool enforcedAlready = this.nodeSettings.MinProtocolVersion >= this.network.Consensus.Options.EnforcedMinProtocolVersion;
+            if (enforcedAlready)
+                return Task.CompletedTask;
+
+            bool enforcementHeightReached = this.chainIndexer.Height >= enforceMinProtocolVersionAtBlockHeight;
+            if (enforcementHeightReached)
             {
-                this.logger.LogDebug("Changing the minumum supported protocol version from {0} to {1}.", this.NodeSettings.MinProtocolVersion, this.Network.Consensus.Options.EnforcedMinProtocolVersion);
-                this.NodeSettings.MinProtocolVersion = this.Network.Consensus.Options.EnforcedMinProtocolVersion;
+                this.logger.LogDebug("Changing the minumum supported protocol version from {0} to {1}.", this.nodeSettings.MinProtocolVersion, this.network.Consensus.Options.EnforcedMinProtocolVersion);
+                this.nodeSettings.MinProtocolVersion = this.network.Consensus.Options.EnforcedMinProtocolVersion;
             }
 
             // The statement below will close connections in case the this.NodeSettings.MinProtocolVersion has changed during node execution.
-            if (peer.PeerVersion.Version < this.NodeSettings.MinProtocolVersion)
+            if (peer.PeerVersion.Version < this.nodeSettings.MinProtocolVersion)
             {
                 this.logger.LogError("Unsupported client version, dropping connection.");
                 this.AttachedPeer.Disconnect("Peer is using unsupported client version");
@@ -99,7 +105,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
         [NoTrace]
         public override object Clone()
         {
-            return new EnforcePeerVersionCheckBehavior(this.ChainIndexer, this.NodeSettings, this.Network, this.loggerFactory);
+            return new EnforcePeerVersionCheckBehavior(this.chainIndexer, this.nodeSettings, this.network, this.loggerFactory);
         }
     }
 }
