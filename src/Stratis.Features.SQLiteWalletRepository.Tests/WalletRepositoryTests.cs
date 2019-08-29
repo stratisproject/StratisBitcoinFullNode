@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Wallet;
 using Stratis.Features.SQLiteWalletRepository.External;
 using Xunit;
 
@@ -166,11 +167,15 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         public WalletRepositoryTests(bool dbPerWallet = true)
         {
             this.dbPerWallet = dbPerWallet;
-            this.network = KnownNetworks.StratisTest;
+            //this.network = KnownNetworks.StratisTest;
+            this.network = KnownNetworks.StratisMain;
+
 
             // Configure this to point to your "StratisTest" root folder and wallet.
-            this.walletNames = new[] { "test2", "test" };
-            this.dataDir = @"E:\RunNodes\SideChains\Data\MainchainUser";
+            //this.walletNames = new[] { "test2", "test" };
+            //this.dataDir = @"E:\RunNodes\SideChains\Data\MainchainUser";
+            this.walletNames = new[] { "wallettACA" };
+            this.dataDir = @"C:\Dev\InternalTestnet_Data\Runtime\NodeMDA";
         }
 
         static object lockObj = new object();
@@ -180,7 +185,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         {
             lock (lockTest)
             {
-                string walletName = "test2";
+                string walletName = "wallettACA";
 
                 using (var dataFolder = new TempDataFolder(this.GetType().Name))
                 {

@@ -982,6 +982,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return;
             }
 
+
+
             // Is this the next block.
             if (chainedHeader.Header.HashPrevBlock != this.WalletTipHash)
             {
@@ -998,6 +1000,25 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
+                try
+                {
+                    var databaseWalletList = ((SQLiteWalletRepository)this.walletRepository).GetWalletNames();
+
+                    if (databaseWalletList.Any())
+                    {
+                        foreach (var wallet in databaseWalletList)
+                        {
+                            ChainedHeader walletTip = this.walletRepository.FindFork(wallet, chainedHeader);
+                            this.walletRepository.RewindWallet(wallet, walletTip);
+                            this.walletRepository.ProcessBlock(block, chainedHeader, wallet);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    var message = ex;
+                }
+
                 bool trxFoundInBlock = false;
                 foreach (Transaction transaction in block.Transactions)
                 {
@@ -1015,25 +1036,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 if (trxFoundInBlock)
                 {
-                    this.logger.LogDebug("Block {0} contains at least one transaction affecting the user's wallet(s).", chainedHeader);
+                    this.logger.LogDebug("Block {0} contains at least one transaction affecting the user's wallet(s).",
+                        chainedHeader);
                 }
-            }
-
-            try
-            {
-                var databaseWalletList = ((SQLiteWalletRepository)this.walletRepository).GetWalletNames();
-
-                if (databaseWalletList.Any())
-                {
-                    foreach (var wallet in databaseWalletList)
-                    {
-                        this.walletRepository.ProcessBlock(block, chainedHeader, wallet);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                var message = ex;
             }
         }
 

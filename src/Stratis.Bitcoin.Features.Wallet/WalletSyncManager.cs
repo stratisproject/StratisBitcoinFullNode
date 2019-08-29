@@ -301,6 +301,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             int blockSyncStart = this.chainIndexer.GetHeightAtTime(date);
             this.SyncFromHeight(blockSyncStart);
+            //this.SyncFromHeight(0);
         }
 
         /// <inheritdoc />
