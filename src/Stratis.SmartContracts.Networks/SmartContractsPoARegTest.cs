@@ -55,7 +55,7 @@ namespace Stratis.SmartContracts.Networks
             };
 
             var consensusOptions = new PoAConsensusOptions(
-                maxBlockBaseSize: 1_000_000,
+                maxBlockBaseSize: 500_000, // Half the standard block size / weight. Easier to stress test.
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
@@ -162,7 +162,6 @@ namespace Stratis.SmartContracts.Networks
                 // These rules occur directly after the fee check rule in the non- smart contract mempool.
                 typeof(SmartContractFormatLogicMempoolRule),
                 typeof(CanGetSenderMempoolRule),
-                typeof(AllowedCodeHashLogicMempoolRule),
                 typeof(CheckMinGasLimitSmartContractMempoolRule),
 
                 // Remaining non-SC rules.

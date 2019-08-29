@@ -215,10 +215,8 @@ namespace Stratis.Bitcoin.Features.Miner
             // Decide whether to include witness transactions
             this.IncludeWitness = this.IsWitnessEnabled(chainTip);
 
-            // add transactions from the mempool
-            int nPackagesSelected;
-            int nDescendantsUpdated;
-            this.AddTransactions(out nPackagesSelected, out nDescendantsUpdated);
+            // Add transactions from the mempool
+            this.AddTransactions(out int nPackagesSelected, out int nDescendantsUpdated);
 
             this.LastBlockTx = this.BlockTx;
             this.LastBlockSize = this.BlockSize;
@@ -227,6 +225,9 @@ namespace Stratis.Bitcoin.Features.Miner
             var coinviewRule = this.ConsensusManager.ConsensusRules.GetRule<CoinViewRule>();
             this.coinbase.Outputs[0].Value = this.fees + coinviewRule.GetProofOfWorkReward(this.height);
             this.BlockTemplate.TotalFee = this.fees;
+
+            // We need the fee details per transaction to be readily available in case we have to remove transactions from the block later.
+            this.BlockTemplate.FeeDetails = this.inBlock.Select(i => new { i.TransactionHash, i.Fee }).ToDictionary(d => d.TransactionHash, d => d.Fee);
 
             if (this.IncludeWitness)
             {

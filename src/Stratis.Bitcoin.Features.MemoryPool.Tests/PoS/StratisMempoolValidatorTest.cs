@@ -553,7 +553,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.PoS
 
             bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
             Assert.False(isSuccess, "Transaction spending coinbase prematurely should not have been accepted.");
-            Assert.Equal(MempoolErrors.PrematureCoinbase, state.Error);
+            Assert.Equal("bad-txns-premature-spend-of-coinbase", state.Error.ConsensusError.Code);
         }
 
         [Fact]

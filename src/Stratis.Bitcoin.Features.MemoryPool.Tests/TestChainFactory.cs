@@ -124,7 +124,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             await consensus.InitializeAsync(genesis).ConfigureAwait(false);
 
             var mempoolSettings = new MempoolSettings(nodeSettings) { RequireStandard = requireStandard };
-
             var blockPolicyEstimator = new BlockPolicyEstimator(mempoolSettings, loggerFactory, nodeSettings);
             var mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, nodeSettings);
             var mempoolLock = new MempoolSchedulerLock();

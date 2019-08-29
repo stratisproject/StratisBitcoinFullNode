@@ -23,7 +23,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             this.builder = SmartContractNodeBuilder.Create(this);
 
             CoreNode factory(int nodeIndex) => this.builder.CreateSmartContractPoANode(network, nodeIndex).Start();
-            PoAMockChain mockChain = new PoAMockChain(2, factory).Build();
+            PoAMockChain mockChain = new PoAMockChain(nodeNum, factory).Build();
             this.Chain = mockChain;
             MockChainNode node1 = this.Chain.Nodes[0];
             MockChainNode node2 = this.Chain.Nodes[1];
