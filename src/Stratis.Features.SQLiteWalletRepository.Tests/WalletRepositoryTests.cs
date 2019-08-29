@@ -289,18 +289,27 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     Assert.Equal(Money.COIN * 9, (long)history[1].Transaction.Amount);
 
                     // FINDFORK
-                    // See if FindFork can be run from two threads
-                    var forks = new ChainedHeader[2];
-                    Parallel.ForEach(new[] { 0, 1 }, n =>
+                    // See if FindFork can be run from multiple threads
+                    var forks = new ChainedHeader[100];
+                    Parallel.ForEach(forks.Select((f,n) => n), n =>
                     {
                         forks[n] = repo.FindFork("test2", chainedHeader2);
                     });
 
-                    Assert.Equal(1, forks[0].Height);
-                    Assert.Equal(1, forks[1].Height);
+                    Assert.DoesNotContain(forks, f => f.Height != chainedHeader2.Height);
 
                     // REWIND: Remove block 1.
                     repo.RewindWallet(walletName, chainedHeader1);
+
+                    // FINDFORK
+                    // See if FindFork can be run from multiple threads
+                    forks = new ChainedHeader[100];
+                    Parallel.ForEach(forks.Select((f, n) => n), n =>
+                    {
+                        forks[n] = repo.FindFork("test2", chainedHeader2);
+                    });
+
+                    Assert.DoesNotContain(forks, f => f.Height != chainedHeader1.Height);
 
                     // List the unspent outputs.
                     outputs1 = repo.GetSpendableTransactionsInAccount(account, chainedHeader1.Height, 0).ToList();

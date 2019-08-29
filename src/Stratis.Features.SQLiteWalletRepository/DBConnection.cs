@@ -399,12 +399,10 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <summary>
         /// Only keep wallet transactions up to and including the specified block.
         /// </summary>
-        /// <param name="walletName">The name of the wallet.</param>
+        /// <param name="wallet">The wallet.</param>
         /// <param name="lastBlockSynced">The last block synced to set.</param>
-        internal void SetLastBlockSynced(string walletName, ChainedHeader lastBlockSynced)
+        internal void SetLastBlockSynced(HDWallet wallet, ChainedHeader lastBlockSynced)
         {
-            var wallet = this.GetWalletByName(walletName);
-
             if (this.IsInTransaction)
             {
                 this.RollBackActions.Push((new {
