@@ -213,10 +213,8 @@ namespace Stratis.Bitcoin.Features.Miner
             // transaction (which in most cases can be a no-op).
             this.IncludeWitness = false; //IsWitnessEnabled(pindexPrev, chainparams.GetConsensus()) && fMineWitnessTx;
 
-            // add transactions from the mempool
-            int nPackagesSelected;
-            int nDescendantsUpdated;
-            this.AddTransactions(out nPackagesSelected, out nDescendantsUpdated);
+            // Add transactions from the mempool
+            this.AddTransactions(out int nPackagesSelected, out int nDescendantsUpdated);
 
             this.LastBlockTx = this.BlockTx;
             this.LastBlockSize = this.BlockSize;
@@ -228,6 +226,9 @@ namespace Stratis.Bitcoin.Features.Miner
             var coinviewRule = this.ConsensusManager.ConsensusRules.GetRule<CoinViewRule>();
             this.coinbase.Outputs[0].Value = this.fees + coinviewRule.GetProofOfWorkReward(this.height);
             this.BlockTemplate.TotalFee = this.fees;
+
+            // We need the fee details per transaction to be readily available in case we have to remove transactions from the block later.
+            this.BlockTemplate.FeeDetails = this.inBlock.Select(i => new { i.TransactionHash, i.Fee }).ToDictionary(d => d.TransactionHash, d => d.Fee);
 
             int nSerializeSize = this.block.GetSerializedSize();
             this.logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, this.block.GetBlockWeight(this.Network.Consensus), this.BlockTx, this.fees, this.BlockSigOpsCost);

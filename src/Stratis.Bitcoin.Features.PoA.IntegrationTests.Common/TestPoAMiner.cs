@@ -20,13 +20,11 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
     {
         private readonly EditableTimeProvider timeProvider;
 
-        private CancellationTokenSource cancellation;
+        private readonly CancellationTokenSource cancellation;
 
         private readonly ISlotsManager slotsManager;
 
         private readonly IConsensusManager consensusManager;
-
-        private readonly IFederationManager federationManager;
 
         public TestPoAMiner(
             IConsensusManager consensusManager,
@@ -53,7 +51,6 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
             this.cancellation = new CancellationTokenSource();
             this.slotsManager = slotsManager;
             this.consensusManager = consensusManager;
-            this.federationManager = federationManager;
         }
 
         public override void InitializeMining()
@@ -87,7 +84,6 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
                 builder.AppendLine($"Block was mined {chainedHeader}.");
                 builder.AppendLine("<<==============================================================>>");
                 this.logger.LogInformation(builder.ToString());
-
             }
         }
 

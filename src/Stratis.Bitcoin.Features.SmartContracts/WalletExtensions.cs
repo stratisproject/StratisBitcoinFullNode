@@ -9,9 +9,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         private const int MinConfirmationsAllChecks = 0;
 
-        public static List<OutPoint> GetSpendableInputsForAddress(this IWalletManager walletManager, string walletName, string address)
+        public static List<OutPoint> GetSpendableInputsForAddress(this IWalletManager walletManager, string walletName, string address, int minConfirmations = MinConfirmationsAllChecks)
         {
-            return walletManager.GetSpendableTransactionsInWallet(walletName, MinConfirmationsAllChecks).Where(x => x.Address.Address == address).Select(x => x.ToOutPoint()).ToList();
+            return walletManager.GetSpendableTransactionsInWallet(walletName, minConfirmations).Where(x => x.Address.Address == address).Select(x => x.ToOutPoint()).ToList();
         }
     }
 }

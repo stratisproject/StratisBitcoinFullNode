@@ -82,9 +82,7 @@ namespace Stratis.Features.FederatedPeg
 
         private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
-            var payload = message.Message.Payload as RequestPartialTransactionPayload;
-
-            if (payload == null)
+            if (!(message.Message.Payload is RequestPartialTransactionPayload payload))
                 return;
 
             // Is a consolidation request.
@@ -96,6 +94,15 @@ namespace Stratis.Features.FederatedPeg
             }
 
             ICrossChainTransfer[] transfer = await this.crossChainTransferStore.GetAsync(new[] { payload.DepositId });
+
+            // This could be null if the store was unable to sync with the federation 
+            // wallet manager. It is possible that the federation wallet's tip is not 
+            // on chain and as such the store was not able to sync.
+            if (transfer == null)
+            {
+                this.logger.LogDebug("{0}: Unable to retrieve transfers for deposit {1} at this time, the store is not synced.", nameof(this.OnMessageReceivedAsync), payload.DepositId);
+                return;
+            }
 
             if (transfer[0] == null)
             {

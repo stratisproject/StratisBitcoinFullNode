@@ -10,7 +10,6 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.ContractSigning;
 using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
@@ -55,6 +54,71 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.stateRoot = stateRoot;
         }
 
+        public EstimateFeeResult EstimateFee(ScTxFeeEstimateRequest request)
+        {
+            Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+
+            HdAccount account = wallet.GetAccount(request.AccountName);
+
+            if (account == null)
+                return EstimateFeeResult.Failure(AccountNotInWalletError, $"No account with the name '{request.AccountName}' could be found.");
+
+            HdAddress senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
+
+            if (senderAddress == null)
+            {
+                return EstimateFeeResult.Failure(SenderNotInWalletError, $"The given address {request.Sender} was not found in the wallet.");
+            }
+
+            if (!this.CheckBalance(senderAddress.Address))
+                return EstimateFeeResult.Failure(InsufficientBalanceError, SenderNoBalanceError);
+
+            List<OutPoint> selectedInputs = this.SelectInputs(request.WalletName, request.Sender, request.Outpoints);
+
+            if (!selectedInputs.Any())
+                return EstimateFeeResult.Failure(InvalidOutpointsError, "Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address.");
+
+            var recipients = new List<Recipient>();
+            foreach (RecipientModel recipientModel in request.Recipients)
+            {
+                uint160 address = recipientModel.DestinationAddress.ToUint160(this.network);
+
+                if (this.stateRoot.IsExist(address))
+                {
+                    return EstimateFeeResult.Failure(TransferFundsToContractError, $"The recipient address {recipientModel.DestinationAddress} is a contract. Transferring funds directly to a contract is not supported.");
+                }
+
+                recipients.Add(new Recipient
+                {
+                    ScriptPubKey = BitcoinAddress.Create(recipientModel.DestinationAddress, this.network).ScriptPubKey,
+                    Amount = recipientModel.Amount
+                });
+            }
+
+            // Build context
+            var context = new TransactionBuildContext(this.network)
+            {
+                AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
+                MinConfirmations = MinConfirmationsAllChecks,
+                Shuffle = false,
+                OpReturnData = request.OpReturnData,
+                OpReturnAmount = string.IsNullOrEmpty(request.OpReturnAmount) ? null : Money.Parse(request.OpReturnAmount),
+                SelectedInputs = selectedInputs,
+                AllowOtherInputs = false,
+                Recipients = recipients,
+                ChangeAddress = senderAddress,
+
+                // Unique for fee estimation
+                TransactionFee = null,
+                FeeType = FeeParser.Parse(request.FeeType),
+                Sign = false,
+            };
+
+            Money fee = this.walletTransactionHandler.EstimateFee(context);
+
+            return EstimateFeeResult.Success(fee);
+        }
+
         public BuildContractTransactionResult BuildTx(BuildContractTransactionRequest request)
         {
             Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
@@ -78,7 +142,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
             if (!selectedInputs.Any())
                 return BuildContractTransactionResult.Failure(InvalidOutpointsError, "Invalid list of request outpoints have been passed to the method. Please ensure that the outpoints are spendable by the sender address.");
-            
+
             var recipients = new List<Recipient>();
             foreach (RecipientModel recipientModel in request.Recipients)
             {
@@ -125,7 +189,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
         public BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request)
         {
-            if(!this.CheckBalance(request.Sender))
+            if (!this.CheckBalance(request.Sender))
                 return BuildCallContractTransactionResponse.Failed(SenderNoBalanceError);
 
             List<OutPoint> selectedInputs = this.SelectInputs(request.WalletName, request.Sender, request.Outpoints);
@@ -188,7 +252,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
         public BuildCreateContractTransactionResponse BuildCreateTx(BuildCreateContractTransactionRequest request)
         {
-            if(!this.CheckBalance(request.Sender))
+            if (!this.CheckBalance(request.Sender))
                 return BuildCreateContractTransactionResponse.Failed(SenderNoBalanceError);
 
             List<OutPoint> selectedInputs = this.SelectInputs(request.WalletName, request.Sender, request.Outpoints);
@@ -235,19 +299,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             if (deserialized.IsFailure)
             {
                 return BuildCreateContractTransactionResponse.Failed("Invalid data. If network requires code signing, check the code contains a signature.");
-            }
-
-            // HACK
-            // If requiring a signature, also check the signature.
-            if (this.network is ISignedCodePubKeyHolder holder)
-            {
-                var signedTxData = (SignedCodeContractTxData) deserialized.Value;
-                bool validSig =new ContractSigner().Verify(holder.SigningContractPubKey, signedTxData.ContractExecutionCode, signedTxData.CodeSignature);
-
-                if (!validSig)
-                {
-                    return BuildCreateContractTransactionResponse.Failed("Signature in code does not come from required signing key.");
-                }
             }
 
             var recipient = new Recipient { Amount = request.Amount ?? "0", ScriptPubKey = new Script(serializedTxData) };

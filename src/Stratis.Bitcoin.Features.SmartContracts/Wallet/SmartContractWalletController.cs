@@ -183,8 +183,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 // In effect, we filter out 'change' transactions that are not spent, as we don't want to show these in the history.
                 List<FlatHistory> history = items.Where(t => !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && t.Transaction.IsSpent())).ToList();
 
-
-
                 // TransactionData in history is confusingly named. A "TransactionData" actually represents an input, and the outputs that spend it are "SpendingDetails".
                 // There can be multiple "TransactionData" which have the same "SpendingDetails".
                 // For SCs we need to group spending details by their transaction ID, to get all the inputs related to the same outputs.
@@ -207,12 +205,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     })
                     .ToList();
 
-                foreach (var scTransaction in scTransactions)
+                // Get all receipts in one transaction
+                IList<Receipt> receipts = this.receiptRepository.RetrieveMany(scTransactions.Select(x => x.TransactionId).ToList());
+
+                for (int i = 0; i < scTransactions.Count; i++)
                 {
+                    var scTransaction = scTransactions[i];
+                    Receipt receipt = receipts[i];
+
                     // Consensus rules state that each transaction can have only one smart contract exec output.
                     PaymentDetails scPayment = scTransaction.Outputs.First(x => x.DestinationScriptPubKey.IsSmartContractExec());
-
-                    Receipt receipt = this.receiptRepository.Retrieve(scTransaction.TransactionId);
 
                     // This will always give us a value - the transaction has to be serializable to get past consensus.
                     Result<ContractTxData> txDataResult = this.callDataSerializer.Deserialize(scPayment.DestinationScriptPubKey.ToBytes());

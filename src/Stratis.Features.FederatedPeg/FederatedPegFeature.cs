@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -22,14 +23,13 @@ using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.SmartContracts;
-using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Features.FederatedPeg.Collateral;
+using Stratis.Features.Collateral;
+using Stratis.Features.Collateral.CounterChain;
 using Stratis.Features.FederatedPeg.Controllers;
-using Stratis.Features.FederatedPeg.CounterChain;
 using Stratis.Features.FederatedPeg.InputConsolidation;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
@@ -208,7 +208,7 @@ namespace Stratis.Features.FederatedPeg
             if (this.federationWalletManager == null)
                 return;
 
-            int height = this.federationWalletManager.LastBlockHeight();
+            int height = this.federationWalletManager.LastBlockSyncedHashHeight().Height;
             ChainedHeader block = this.chainIndexer.GetHeader(height);
             uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
@@ -448,33 +448,8 @@ namespace Stratis.Features.FederatedPeg
                     services.AddSingleton<MinerSettings>();
 
                     // Consensus Rules
-                    services.AddSingleton<PoAConsensusRuleEngine>();
+                    services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
                 });
-            });
-
-            return fullNodeBuilder;
-        }
-
-        /// <summary>
-        /// Adds mining to the smart contract node when on a proof-of-authority network with collateral enabled.
-        /// </summary>
-        public static IFullNodeBuilder UseSmartContractCollateralPoAMining(this IFullNodeBuilder fullNodeBuilder)
-        {
-            fullNodeBuilder.ConfigureFeature(features =>
-            {
-                features
-                    .AddFeature<PoAFeature>()
-                    .FeatureServices(services =>
-                    {
-                        services.AddSingleton<IFederationManager, FederationManager>();
-                        services.AddSingleton<PoABlockHeaderValidator>();
-                        services.AddSingleton<IPoAMiner, CollateralPoAMiner>();
-                        services.AddSingleton<PoAMinerSettings>();
-                        services.AddSingleton<MinerSettings>();
-                        services.AddSingleton<ISlotsManager, SlotsManager>();
-                        services.AddSingleton<BlockDefinition, SmartContractPoABlockDefinition>();
-                        services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();
-                    });
             });
 
             return fullNodeBuilder;

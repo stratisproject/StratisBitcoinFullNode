@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.Features.SmartContracts.MempoolRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
+using Stratis.Bitcoin.Features.SmartContracts.PoA.MempoolRules;
 using Stratis.SmartContracts.Networks.Policies;
 
 namespace Stratis.Sidechains.Networks
@@ -199,6 +202,39 @@ namespace Stratis.Sidechains.Networks
             Assert(this.DefaultBanTimeSeconds <= this.Consensus.MaxReorgLength * 16 / 2);
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("000005769503496300ec879afd7543dc9f86d3b3d679950b2b83e2f49f525856"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("1669a55d45b642af0ce82c5884cf5b8d8efd5bdcb9a450c95f442b9bd1ff65ea"));
+
+            this.RegisterMempoolRules(this.Consensus);
+        }
+
+        private void RegisterMempoolRules(IConsensus consensus)
+        {
+            consensus.MempoolRules = new List<Type>()
+            {
+                typeof(OpSpendMempoolRule),
+                typeof(TxOutSmartContractExecMempoolRule),
+                typeof(AllowedScriptTypeMempoolRule),
+                typeof(P2PKHNotContractMempoolRule),
+
+                // The non- smart contract mempool rules
+                typeof(CheckConflictsMempoolRule),
+                typeof(CheckCoinViewMempoolRule),
+                typeof(CreateMempoolEntryMempoolRule),
+                typeof(CheckSigOpsMempoolRule),
+                typeof(CheckFeeMempoolRule),
+
+                // The smart contract mempool needs to do more fee checks than its counterpart, so include extra rules.
+                // These rules occur directly after the fee check rule in the non- smart contract mempool.
+                typeof(SmartContractFormatLogicMempoolRule),
+                typeof(CanGetSenderMempoolRule),
+                typeof(AllowedCodeHashLogicMempoolRule), // PoA-specific
+                typeof(CheckMinGasLimitSmartContractMempoolRule),
+
+                // Remaining non-SC rules.
+                typeof(CheckRateLimitMempoolRule),
+                typeof(CheckAncestorsMempoolRule),
+                typeof(CheckReplacementMempoolRule),
+                typeof(CheckAllInputsMempoolRule)
+            };
         }
     }
 }
