@@ -40,11 +40,6 @@ namespace Stratis.SmartContracts.Tests.Common
                 {
                     options.UseReflectionExecutor();
                     options.UsePoAWhitelistedContracts();
-                },
-                preOptions =>
-                {
-                    // Inject the mempool rules.
-                    preOptions.UsePoAMempoolRules();
                 })
                 .UseSmartContractPoAConsensus()
                 .UseSmartContractPoAMining()
