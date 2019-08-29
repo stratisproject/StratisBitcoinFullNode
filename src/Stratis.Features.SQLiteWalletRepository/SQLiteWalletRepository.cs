@@ -364,7 +364,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 // Ok seems safe. Adjust the tip and rewind relevant transactions.
                 DBConnection conn = this.GetConnection(walletName);
                 conn.BeginTransaction();
-                conn.SetLastBlockSynced(walletName, lastBlockSynced);
+                conn.SetLastBlockSynced(wallet, lastBlockSynced);
                 conn.Commit();
 
                 if (lastBlockSynced == null)
@@ -614,7 +614,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 HDWallet wallet = round.Wallet;
                 DBConnection conn = round.Conn;
 
-                void DeferredTipCatchup()
+                void DeferredTipCatchup(bool commitPoint)
                 {
                     if (round.DeferredTip != null)
                     {
@@ -629,10 +629,21 @@ namespace Stratis.Features.SQLiteWalletRepository
                         round.DeferredTip = null;
                     }
 
-                    if (round.MustCommit)
+                    if (commitPoint && round.MustCommit)
                     {
                         round.MustCommit = false;
                         conn.Commit();
+
+                        // Update all wallets found in the DB into the containers.
+                        foreach (HDWallet updatedWallet in HDWallet.GetAll(conn))
+                        {
+                            if (!this.Wallets.TryGetValue(updatedWallet.Name, out WalletContainer walletContainer))
+                                continue;
+
+                            walletContainer.Wallet.LastBlockSyncedHash = updatedWallet.LastBlockSyncedHash;
+                            walletContainer.Wallet.LastBlockSyncedHeight = updatedWallet.LastBlockSyncedHeight;
+                            walletContainer.Wallet.BlockLocator = updatedWallet.BlockLocator;
+                        }
                     }
 
                     round.NextScheduledCatchup = DateTime.Now.Ticks + 10 * 10_000_000;
@@ -640,7 +651,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                 if (block == null)
                 {
-                    DeferredTipCatchup();
+                    DeferredTipCatchup(true);
                     return;
                 }
 
@@ -661,7 +672,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                         round.DeferredTip = header;
 
                         if (DateTime.Now.Ticks >= round.NextScheduledCatchup)
-                            DeferredTipCatchup();
+                            DeferredTipCatchup(true);
 
                         return;
                     }
@@ -670,7 +681,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 }
 
                 // If we're going to process the block then do it with an up-to-date tip.
-                DeferredTipCatchup();
+                DeferredTipCatchup(false);
 
                 long flagFall = DateTime.Now.Ticks;
 
@@ -695,23 +706,6 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                 round.AddressesOfInterest.Confirm();
                 round.TransactionsOfInterest.Confirm();
-
-                string blockLocator = string.Join(",", header?.GetLocator().Blocks);
-
-                // TODO: Have a rollback action to align wallets with DB.
-                foreach (string walletName in updatingWallets.Select(w => w.Name))
-                {
-                    WalletContainer container = this.Wallets[walletName];
-                    container.LockUpdateWallet.Wait();
-
-                    HDWallet updatingWallet = container.Wallet;
-
-                    updatingWallet.LastBlockSyncedHash = header.HashBlock.ToString();
-                    updatingWallet.LastBlockSyncedHeight = header.Height;
-                    updatingWallet.BlockLocator = blockLocator;
-
-                    container.LockUpdateWallet.Release();
-                }
 
                 this.ProcessTime += (DateTime.Now.Ticks - flagFall);
                 this.ProcessCount++;
