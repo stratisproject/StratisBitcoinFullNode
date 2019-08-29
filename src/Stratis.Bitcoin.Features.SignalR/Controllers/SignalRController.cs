@@ -25,7 +25,6 @@ namespace Stratis.Bitcoin.Features.SignalR.Controllers
             this.logger = loggerFactory.CreateLogger<SignalRController>();
         }
 
-
         /// <summary>
         /// Returns SignalR Connection Info.
         /// </summary>
