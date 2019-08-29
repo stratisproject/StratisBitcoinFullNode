@@ -21,7 +21,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         public WhitelistedContractTests()
         {
-            this.network = new SmartContractsPoARegTest();
+            this.network = new SmartContractsPoAWhitelistRegTest();
 
             this.builder = SmartContractNodeBuilder.Create(this);
             this.nodeFactory = (nodeIndex) => this.builder.CreateWhitelistedContractPoANode(this.network, nodeIndex).Start();
