@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using DBreeze.DataTypes;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -286,6 +287,17 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     Assert.Equal(changeAddress.HdPath, history[1].Address.HdPath);
                     Assert.Equal(0, history[1].Address.Index);
                     Assert.Equal(Money.COIN * 9, (long)history[1].Transaction.Amount);
+
+                    // FINDFORK
+                    // See if FindFork can be run from two threads
+                    var forks = new ChainedHeader[2];
+                    Parallel.ForEach(new[] { 0, 1 }, n =>
+                    {
+                        forks[n] = repo.FindFork("test2", chainedHeader2);
+                    });
+
+                    Assert.Equal(1, forks[0].Height);
+                    Assert.Equal(1, forks[1].Height);
 
                     // REWIND: Remove block 1.
                     repo.RewindWallet(walletName, chainedHeader1);

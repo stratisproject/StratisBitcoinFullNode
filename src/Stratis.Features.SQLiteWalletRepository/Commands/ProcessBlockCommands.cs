@@ -1,10 +1,68 @@
-﻿using SQLite;
+﻿using System;
+using System.Collections.Generic;
+using SQLite;
 
 namespace Stratis.Features.SQLiteWalletRepository.Commands
 {
+    internal class DBCommand
+    {
+        private DBConnection conn;
+        private SQLiteCommand sqLiteCommand;
+
+        // Metrics.
+        internal int ProcessCount;
+        internal long ProcessTime;
+        double AverageTime => (double)this.ProcessTime / this.ProcessCount;
+
+        public DBCommand(DBConnection conn, string cmdText, params object[] ps)
+        {
+            this.conn = conn;
+            this.sqLiteCommand = conn.SQLiteConnection.CreateCommand(cmdText, ps);
+        }
+
+        public void Bind(string name, object val)
+        {
+            this.sqLiteCommand.Bind(name, val);
+        }
+
+        public void ExecuteNonQuery()
+        {
+            long flagFall = DateTime.Now.Ticks;
+            this.sqLiteCommand.ExecuteNonQuery();
+            this.ProcessTime += (DateTime.Now.Ticks - flagFall);
+            this.ProcessCount++;
+        }
+
+        public List<T> ExecuteQuery<T>()
+        {
+            long flagFall = DateTime.Now.Ticks;
+            List<T> res = this.sqLiteCommand.ExecuteQuery<T>();
+            this.ProcessTime += (DateTime.Now.Ticks - flagFall);
+            this.ProcessCount++;
+            return res;
+        }
+    }
+
+    internal class PaymentToDelete
+    {
+        public int OutputTxTime { get; set; }
+        public string OutputTxId { get; set; }
+        public int OutputIndex { get; set; }
+        public string ScriptPubKey { get; set; }
+    };
+
     internal static class ProcessBlockCommands
     {
-        public static SQLiteCommand CmdUploadPrevOut(this DBConnection conn)
+        public static void RegisterProcessBlockCommands(this DBConnection conn)
+        {
+            conn.Commands["CmdUploadPrevOut"] = CmdUploadPrevOut(conn);
+            conn.Commands["CmdPaymentsToDelete"] = CmdPaymentsToDelete(conn);
+            conn.Commands["CmdDeletePayment"] = CmdDeletePayment(conn);
+            conn.Commands["CmdReplacePayments"] = CmdReplacePayments(conn);
+            conn.Commands["CmdUpdateSpending"] = CmdUpdateSpending(conn);
+        }
+
+        public static DBCommand CmdUploadPrevOut(this DBConnection conn)
         {
             return conn.CreateCommand($@"
                 REPLACE INTO HDTransactionData
@@ -45,49 +103,61 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
                        AND    (TD.OutputBlockHash IS NOT NULL OR TD.OutputBlockHeight IS NOT NULL))");
         }
 
-        public static SQLiteCommand CmdDeletePayments(this DBConnection conn)
+        public static DBCommand CmdPaymentsToDelete(this DBConnection conn)
+        {
+            return conn.CreateCommand($@"
+                SELECT TD.OutputTxTime, TD.OutputTxId, TD.OutputIndex, TD.ScriptPubKey
+                FROM   temp.TempPrevOut T
+                JOIN   HDTransactionData TD
+                ON     TD.OutputTxId = T.OutputTxId
+                AND    TD.OutputIndex = T.OutputIndex
+                AND    TD.SpendBlockHeight IS NULL
+                AND    TD.SpendBlockHash IS NULL
+                AND    TD.WalletId IN (
+                        SELECT   WalletId
+                        FROM     HDWallet
+                        WHERE    Name = IFNULL(@walletName, Name)
+                        AND      LastBlockSyncedHash = IFNULL(@prevHash, LastBlockSyncedHash))");
+        }
+
+        public static DBCommand CmdDeletePayment(this DBConnection conn)
         {
             return conn.CreateCommand($@"
                 DELETE  FROM HDPayment
-                WHERE   (OutputTxTime, OutputTxId, OutputIndex) IN (
-                        SELECT TD.OutputTxTime, T.OutputTxId, T.OutputIndex
-                        FROM   temp.TempPrevOut T
-                        JOIN   HDTransactionData TD
-                        ON     TD.OutputTxId = T.OutputTxId
-                        AND    TD.OutputIndex = T.OutputIndex
-                        AND    TD.SpendBlockHeight IS NULL
-                        AND    TD.SpendBlockHash IS NULL
-                        JOIN   HDWallet W
-                        ON     W.WalletId = TD.WalletId
-                        AND    IFNULL(@walletName, W.Name) = W.Name
-                        AND    IFNULL(@prevHash, W.LastBlockSyncedHash) = W.LastBlockSyncedHash)");
+                WHERE   OutputTxTime = @outputTxTime
+                AND     OutputTxId = @outputTxId
+                AND     OutputIndex = @outputIndex
+                AND     ScriptPubKey = @scriptPubKey");
         }
 
-        public static SQLiteCommand CmdReplacePayments(this DBConnection conn)
+        public static DBCommand CmdReplacePayments(this DBConnection conn)
         {
             return conn.CreateCommand($@"
                 REPLACE INTO HDPayment
                 SELECT  TD.OutputTxTime
                 ,       TD.OutputTxId
                 ,       TD.OutputIndex
+                ,       TD.ScriptPubKey
                 ,       O.OutputIndex
                 ,       O.RedeemScript
                 ,       O.Value
                 FROM    temp.TempPrevOut T
                 JOIN    temp.TempOutput O
-                ON      O.OutputTxID = T.SpendTxId
+                ON      O.OutputTxTime = T.SpendTxTime
+                AND     O.OutputTxId = T.SpendTxId
                 JOIN    HDTransactionData TD
                 ON      TD.OutputTxId = T.OutputTxId
                 AND     TD.OutputIndex = T.OutputIndex
                 AND     TD.SpendBlockHeight IS NULL
                 AND     TD.SpendBlockHash IS NULL
-                JOIN    HDWallet W
-                ON      W.WalletId = TD.WalletId
-                AND     IFNULL(@walletName, W.Name) = W.Name
-                AND     IFNULL(@prevHash, W.LastBlockSyncedHash) = W.LastBlockSyncedHash");
+                AND     TD.WalletId IN (
+                        SELECT   WalletId
+                        FROM     HDWallet
+                        WHERE    Name = IFNULL(@walletName, Name)
+                        AND      LastBlockSyncedHash = IFNULL(@prevHash, LastBlockSyncedHash))");
         }
 
-        public static SQLiteCommand CmdUpdateSpending(this DBConnection conn)
+        public static DBCommand CmdUpdateSpending(this DBConnection conn)
         {
             return conn.CreateCommand($@"
                 REPLACE INTO HDTransactionData
@@ -116,10 +186,11 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
                 AND    TD.OutputIndex = T.OutputIndex
                 AND    TD.SpendBlockHeight IS NULL
                 AND    TD.SpendBlockHash IS NULL
-                JOIN    HDWallet W
-                ON      W.WalletId = TD.WalletId
-                AND     IFNULL(@walletName, W.Name) = W.Name
-                AND     IFNULL(@prevHash, W.LastBlockSyncedHash) = W.LastBlockSyncedHash");
+                AND    TD.WalletId IN (
+                       SELECT   WalletId
+                       FROM     HDWallet
+                       WHERE    Name = IFNULL(@walletName, Name)
+                       AND      LastBlockSyncedHash = IFNULL(@prevHash, LastBlockSyncedHash))");
         }
     }
 }

@@ -19,10 +19,11 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 OutputTxTime        INTEGER NOT NULL,
                 OutputTxId          TEXT NOT NULL,
                 OutputIndex         INTEGER NOT NULL,
+                ScriptPubKey        TEXT,
                 SpendIndex          INTEGER NOT NULL,
                 SpendScriptPubKey   TEXT,
                 SpendValue          DECIMAL NOT NULL,
-                PRIMARY KEY(OutputTxTime, OutputTxId, OutputIndex, SpendIndex)
+                PRIMARY KEY(OutputTxTime, OutputTxId, OutputIndex, ScriptPubKey, SpendIndex)
             )";
         }
 

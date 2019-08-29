@@ -859,8 +859,10 @@ namespace Stratis.Features.SQLiteWalletRepository
                 // Build temp.PrevOuts
                 uint256 txId = fixedTxId ?? tx.GetHash();
 
-                foreach (TxIn txIn in tx.Inputs)
+                for (int i = 0; i < tx.Inputs.Count; i++)
                 {
+                    TxIn txIn = tx.Inputs[i];
+
                     if (transactionsOfInterest?.Contains(txIn.PrevOut.Hash) ?? true)
                     {
                         if (prevOuts == null)
@@ -876,6 +878,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                             SpendTxIsCoinBase = (tx.IsCoinBase || tx.IsCoinStake) ? 1 : 0,
                             SpendTxTime = (int)tx.Time,
                             SpendTxId = txId.ToString(),
+                            SpendIndex = i,
                             SpendTxTotalOut = tx.TotalOut.ToDecimal(MoneyUnit.BTC)
                         });
 
