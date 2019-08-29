@@ -163,7 +163,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             decimal feeAmount = 0.01M,
             string sender = null,
-            List<OutpointRequestModel> outpoints = null)
+            List<OutpointRequest> outpoints = null)
         {
             var request = new BuildCreateContractTransactionRequest
             {
