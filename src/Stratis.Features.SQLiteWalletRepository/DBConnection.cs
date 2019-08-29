@@ -14,35 +14,27 @@ namespace Stratis.Features.SQLiteWalletRepository
     /// </summary>
     public class DBConnection
     {
-        private SQLiteConnection sqLiteConnection;
+        internal SQLiteConnection SQLiteConnection;
         public SQLiteWalletRepository Repository;
         public Stack<(dynamic, Action<dynamic>)> RollBackActions;
-        public Dictionary<string, SQLiteCommand> Commands;
+        internal Dictionary<string, DBCommand> Commands;
 
         // A given connection can't have two transactions running in parallel.
         internal SemaphoreSlim TransactionLock;
         internal int TransactionDepth;
-        internal bool IsInTransaction => this.sqLiteConnection.IsInTransaction;
+        internal bool IsInTransaction => this.SQLiteConnection.IsInTransaction;
 
         internal Dictionary<string, long> Metrics = new Dictionary<string, long>();
 
-        internal SQLiteCommand CmdUploadPrevOut;
-        internal SQLiteCommand CmdDeletePayments;
-        internal SQLiteCommand CmdReplacePayments;
-        internal SQLiteCommand CmdUpdateSpending;
-
         public DBConnection(SQLiteWalletRepository repo, string dbFile)
         {
-            this.sqLiteConnection = new SQLiteConnection(Path.Combine(repo.DBPath, dbFile));
+            this.SQLiteConnection = new SQLiteConnection(Path.Combine(repo.DBPath, dbFile));
             this.Repository = repo;
             this.TransactionLock = new SemaphoreSlim(1, 1);
             this.TransactionDepth = 0;
             this.RollBackActions = new Stack<(object, Action<object>)>();
-
-            this.CmdUploadPrevOut = this.CmdUploadPrevOut();
-            this.CmdDeletePayments = this.CmdDeletePayments();
-            this.CmdReplacePayments = this.CmdReplacePayments();
-            this.CmdUpdateSpending = this.CmdUpdateSpending();
+            this.Commands = new Dictionary<string, DBCommand>();
+            this.RegisterProcessBlockCommands();
         }
 
         internal void AddRollbackAction(object rollBackData, Action<object> rollBackAction)
@@ -50,14 +42,14 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.RollBackActions.Push((rollBackData, rollBackAction));
         }
 
-        public static implicit operator SQLiteConnection(DBConnection d) => d.sqLiteConnection;
+        public static implicit operator SQLiteConnection(DBConnection d) => d.SQLiteConnection;
 
         internal void BeginTransaction()
         {
             if (!this.IsInTransaction)
             {
                 this.TransactionLock.Wait();
-                this.sqLiteConnection.BeginTransaction();
+                this.SQLiteConnection.BeginTransaction();
                 this.TransactionDepth = 0;
             }
 
@@ -68,9 +60,9 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             this.TransactionDepth--;
 
-            if (this.TransactionDepth == 0 && this.sqLiteConnection.IsInTransaction)
+            if (this.TransactionDepth == 0 && this.SQLiteConnection.IsInTransaction)
             {
-                this.sqLiteConnection.Rollback();
+                this.SQLiteConnection.Rollback();
 
                 while (this.RollBackActions.Count > 0)
                 {
@@ -87,62 +79,62 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             this.TransactionDepth--;
 
-            if (this.TransactionDepth == 0 && this.sqLiteConnection.IsInTransaction)
+            if (this.TransactionDepth == 0 && this.SQLiteConnection.IsInTransaction)
             {
-                this.sqLiteConnection.Commit();
+                this.SQLiteConnection.Commit();
                 this.RollBackActions.Clear();
                 this.TransactionLock.Release();
             }
         }
 
-        internal SQLiteCommand CreateCommand(string cmdText, params object[] ps)
+        internal DBCommand CreateCommand(string cmdText, params object[] ps)
         {
-            return this.sqLiteConnection.CreateCommand(cmdText, ps);
+            return new DBCommand(this, cmdText, ps);
         }
 
         internal List<T> Query<T>(string query, params object[] args) where T:new()
         {
-            return this.sqLiteConnection.Query<T>(query, args);
+            return this.SQLiteConnection.Query<T>(query, args);
         }
 
         internal void Insert(object obj)
         {
-            this.sqLiteConnection.Insert(obj);
+            this.SQLiteConnection.Insert(obj);
         }
 
         internal void Delete<T>(object obj)
         {
-            this.sqLiteConnection.Delete<T>(obj);
+            this.SQLiteConnection.Delete<T>(obj);
         }
 
         internal void InsertOrReplace(object obj)
         {
-            this.sqLiteConnection.InsertOrReplace(obj);
+            this.SQLiteConnection.InsertOrReplace(obj);
         }
 
         internal T Find<T>(object pk) where T : new()
         {
-            return this.sqLiteConnection.Find<T>(pk);
+            return this.SQLiteConnection.Find<T>(pk);
         }
 
         internal T FindWithQuery<T>(string query, params object[] args) where T : new()
         {
-            return this.sqLiteConnection.FindWithQuery<T>(query, args);
+            return this.SQLiteConnection.FindWithQuery<T>(query, args);
         }
 
         internal void Execute(string query, params object[] args)
         {
-            this.sqLiteConnection.Execute(query, args);
+            this.SQLiteConnection.Execute(query, args);
         }
 
         internal T ExecuteScalar<T>(string query, params object[] args) where T : new()
         {
-            return this.sqLiteConnection.ExecuteScalar<T>(query, args);
+            return this.SQLiteConnection.ExecuteScalar<T>(query, args);
         }
 
         internal void Close()
         {
-            this.sqLiteConnection.Close();
+            this.SQLiteConnection.Close();
         }
 
         internal void CreateDBStructure()
@@ -158,7 +150,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             var addresses = new List<HDAddress>();
 
-            int addressCount = HDAddress.GetAddressCount(this.sqLiteConnection, account.WalletId, account.AccountIndex, addressType);
+            int addressCount = HDAddress.GetAddressCount(this.SQLiteConnection, account.WalletId, account.AccountIndex, addressType);
             int addressIndex = addressCount;
 
             for (int i= 0; i < scriptPubKeys.Count; addressIndex++, i++)
@@ -176,7 +168,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             var addresses = new List<HDAddress>();
 
-            int addressCount = HDAddress.GetAddressCount(this.sqLiteConnection, account.WalletId, account.AccountIndex, addressType);
+            int addressCount = HDAddress.GetAddressCount(this.SQLiteConnection, account.WalletId, account.AccountIndex, addressType);
 
             for (int addressIndex = addressCount; addressIndex < (addressCount + addressesQuantity); addressIndex++)
             {
@@ -190,7 +182,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal IEnumerable<HDAddress> TopUpAddresses(int walletId, int accountIndex, int addressType)
         {
-            int addressCount = HDAddress.GetAddressCount(this.sqLiteConnection, walletId, accountIndex, addressType);
+            int addressCount = HDAddress.GetAddressCount(this.SQLiteConnection, walletId, accountIndex, addressType);
             int nextAddressIndex = HDAddress.GetNextAddressIndex(this, walletId, accountIndex, addressType);
             int buffer = addressCount - nextAddressIndex;
 
@@ -430,7 +422,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             this.RemoveTransactionsAfterLastBlockSynced(lastBlockSynced?.Height ?? -1, wallet.WalletId);
             wallet.SetLastBlockSynced(lastBlockSynced);
-            this.sqLiteConnection.Update(wallet);
+            this.SQLiteConnection.Update(wallet);
         }
 
         internal void ProcessTransactions(IEnumerable<IEnumerable<string>> tableScripts, HDWallet wallet, ChainedHeader header = null, AddressesOfInterest addressesOfInterest = null)
@@ -443,27 +435,44 @@ namespace Stratis.Features.SQLiteWalletRepository
             // Inserts or updates HDTransactionData records based on change or funds received.
             string walletName = wallet?.Name;
             string prevHash = (header == null) ? null : (header.Previous?.HashBlock ?? uint256.Zero).ToString();
-            this.CmdUploadPrevOut.Bind("walletName", walletName);
-            this.CmdUploadPrevOut.Bind("prevHash", prevHash);
-            this.CmdUploadPrevOut.ExecuteNonQuery();
+
+            DBCommand cmdUploadPrevOut = this.Commands["CmdUploadPrevOut"];
+            cmdUploadPrevOut.Bind("walletName", walletName);
+            cmdUploadPrevOut.Bind("prevHash", prevHash);
+            cmdUploadPrevOut.ExecuteNonQuery();
 
             // Clear the payments since we are replacing them.
             // Performs checks that we do not clear a confirmed transaction's payments.
-            this.CmdDeletePayments.Bind("walletName", walletName);
-            this.CmdDeletePayments.Bind("prevHash", prevHash);
-            this.CmdDeletePayments.ExecuteNonQuery();
+            DBCommand cmdPaymentsToDelete = this.Commands["CmdPaymentsToDelete"];
+            cmdPaymentsToDelete.Bind("walletName", walletName);
+            cmdPaymentsToDelete.Bind("prevHash", prevHash);
+            List<PaymentToDelete> paymentsToDelete = cmdPaymentsToDelete.ExecuteQuery<PaymentToDelete>();
+            if (paymentsToDelete.Count > 0)
+            {
+                DBCommand cmdDeletePayment = this.Commands["CmdDeletePayment"];
+                foreach (PaymentToDelete paymentToDelete in paymentsToDelete)
+                {
+                    cmdDeletePayment.Bind("outputTxTime", paymentToDelete.OutputTxTime);
+                    cmdDeletePayment.Bind("outputTxId", paymentToDelete.OutputTxId);
+                    cmdDeletePayment.Bind("outputIndex", paymentToDelete.OutputIndex);
+                    cmdDeletePayment.Bind("scriptPubKey", paymentToDelete.ScriptPubKey);
+                    cmdDeletePayment.ExecuteNonQuery();
+                }
+            }
 
             // Insert spending details into HDPayment records.
             // Performs checks that we do not affect a confirmed transaction's payments.
-            this.CmdReplacePayments.Bind("walletName", walletName);
-            this.CmdReplacePayments.Bind("prevHash", prevHash);
-            this.CmdReplacePayments.ExecuteNonQuery();
+            DBCommand cmdReplacePayments = this.Commands["CmdReplacePayments"];
+            cmdReplacePayments.Bind("walletName", walletName);
+            cmdReplacePayments.Bind("prevHash", prevHash);
+            cmdReplacePayments.ExecuteNonQuery();
 
             // Update spending details on HDTransactionData records.
             // Performs checks that we do not affect a confirmed transaction's spends.
-            this.CmdUpdateSpending.Bind("walletName", walletName);
-            this.CmdUpdateSpending.Bind("prevHash", prevHash);
-            this.CmdUpdateSpending.ExecuteNonQuery();
+            var cmdUpdateSpending = this.Commands["CmdUpdateSpending"];
+            cmdUpdateSpending.Bind("walletName", walletName);
+            cmdUpdateSpending.Bind("prevHash", prevHash);
+            cmdUpdateSpending.ExecuteNonQuery();
 
             // Advance participating wallets.
             if (header != null)

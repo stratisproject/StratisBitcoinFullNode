@@ -137,7 +137,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 
             if (chainTip.Height == this.LastBlockSyncedHeight)
             {
-                if (chainTip.HashBlock == uint.Parse(this.LastBlockSyncedHash))
+                if (chainTip.HashBlock == uint256.Parse(this.LastBlockSyncedHash))
                     return chainTip;
                 else
                     return null;
