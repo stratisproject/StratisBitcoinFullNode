@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.Api
             });
 
             // Add the versioned API explorer, which adds the IApiVersionDescriptionProvider service and allows Swagger integration.
-            services.AddMvcCore().AddVersionedApiExplorer(
+            services.AddVersionedApiExplorer(
                 options =>
                 {
                     // Format the version as "'v'major[.minor][-status]"
