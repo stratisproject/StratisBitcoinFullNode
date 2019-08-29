@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.Features.MemoryPool;
+﻿using NBitcoin;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
@@ -10,7 +11,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 {
     public class SmartContractNodeSetupTests
     {
-        [Fact(Skip = "Investigate PeerConnector shutdown timeout issue")]
+        [Fact]
         public void Mainnet_RequireStandard_False()
         {
             var network = new FakeSmartContractMain();
@@ -29,7 +30,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         {
             public FakeSmartContractMain()
             {
-                this.Name = "MainnetName"; // Doesn't contain "test" so IsTest() returns false.
+                this.NetworkType = NetworkType.Mainnet;
             }
         }
     }
