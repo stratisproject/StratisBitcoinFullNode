@@ -30,7 +30,6 @@ namespace Stratis.Bitcoin.Tests.Common
             ChainState chainState = null,
             InMemoryCoinView inMemoryCoinView = null,
             ChainIndexer chainIndexer = null,
-            IRuleRegistration ruleRegistration = null,
             ConsensusRuleEngine consensusRules = null)
         {
             string[] param = dataDir == null ? new string[] { } : new string[] { $"-datadir={dataDir}" };
@@ -84,7 +83,6 @@ namespace Stratis.Bitcoin.Tests.Common
                 consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chainIndexer, deployments, consensusSettings,
                     new Checkpoints(), inMemoryCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider, loggerFactory), asyncProvider, new ConsensusRulesContainer()).SetupRulesEngineParent();
             }
-
 
             var tree = new ChainedHeaderTree(network, loggerFactory, new HeaderValidator(consensusRules, loggerFactory), new Checkpoints(),
                 new ChainState(), new Mock<IFinalizedBlockInfoRepository>().Object, consensusSettings, new InvalidBlockHashStore(new DateTimeProvider()));

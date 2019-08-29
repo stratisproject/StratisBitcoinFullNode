@@ -14,7 +14,6 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
         private readonly EventsHub eventsHub;
         private readonly INodeLifetime nodeLifetime;
         private readonly IAsyncProvider asyncProvider;
-        private readonly int broadcastFrequencySeconds;
         protected readonly ILogger logger;
         private IAsyncLoop asyncLoop;
 
@@ -43,7 +42,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                     }
                 },
                 this.nodeLifetime.ApplicationStopping,
-                repeatEvery: TimeSpan.FromSeconds(Math.Max(this.broadcastFrequencySeconds, 5)));
+                repeatEvery: TimeSpan.FromSeconds(5));
         }
 
         protected abstract IEnumerable<IClientEvent> GetMessages();

@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using NBitcoin.Crypto;
-using NBitcoin.Rules;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
@@ -32,9 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected NodeDeployments nodeDeployments;
         protected ConsensusSettings consensusSettings;
         protected Mock<ICheckpoints> checkpoints;
-        protected List<IConsensusRuleBase> rules;
         protected Mock<IChainState> chainState;
-        protected Mock<IRuleRegistration> ruleRegistration;
         protected RuleContext ruleContext;
         protected Transaction lastAddedTransaction;
         protected IAsyncProvider asyncProvider;
@@ -53,9 +50,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.ChainIndexer = new ChainIndexer(this.network);
             this.consensusSettings = new ConsensusSettings(NodeSettings.Default(this.network));
             this.nodeDeployments = new NodeDeployments(this.network, this.ChainIndexer);
-
-            this.rules = new List<IConsensusRuleBase>();
-            this.ruleRegistration = new Mock<IRuleRegistration>();
 
             if (network.Consensus.IsProofOfStake)
                 this.ruleContext = new PosRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset());
