@@ -172,10 +172,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             this.network = KnownNetworks.StratisMain;
 
 
-            // Configure this to point to your "StratisTest" root folder and wallet.
+            //Configure this to point to your "StratisTest" root folder and wallet.
             //this.walletNames = new[] { "test2", "test" };
             //this.dataDir = @"E:\RunNodes\SideChains\Data\MainchainUser";
-            this.walletNames = new[] { "wallettACA" };
+            this.walletNames = new[] { "wallettABA" };
             this.dataDir = @"C:\Dev\InternalTestnet_Data\Runtime\NodeMDA";
         }
 
@@ -186,7 +186,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         {
             lock (lockTest)
             {
-                string walletName = "wallettACA";
+                string walletName = "wallettABA";
 
                 using (var dataFolder = new TempDataFolder(this.GetType().Name))
                 {
@@ -298,7 +298,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     var forks = new ChainedHeader[100];
                     Parallel.ForEach(forks.Select((f,n) => n), n =>
                     {
-                        forks[n] = repo.FindFork("test2", chainedHeader2);
+                        forks[n] = repo.FindFork("wallettABA", chainedHeader2);
                     });
 
                     Assert.DoesNotContain(forks, f => f.Height != chainedHeader2.Height);
@@ -311,7 +311,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     forks = new ChainedHeader[100];
                     Parallel.ForEach(forks.Select((f, n) => n), n =>
                     {
-                        forks[n] = repo.FindFork("test2", chainedHeader2);
+                        forks[n] = repo.FindFork("wallettABA", chainedHeader2);
                     });
 
                     Assert.DoesNotContain(forks, f => f.Height != chainedHeader1.Height);

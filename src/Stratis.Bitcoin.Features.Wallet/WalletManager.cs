@@ -998,27 +998,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
             }
 
+            // This lock will become redundant as all the nonsense code below
             lock (this.lockObject)
             {
-                try
-                {
-                    var databaseWalletList = ((SQLiteWalletRepository)this.walletRepository).GetWalletNames();
-
-                    if (databaseWalletList.Any())
-                    {
-                        foreach (var wallet in databaseWalletList)
-                        {
-                            ChainedHeader walletTip = this.walletRepository.FindFork(wallet, chainedHeader);
-                            this.walletRepository.RewindWallet(wallet, walletTip);
-                            this.walletRepository.ProcessBlock(block, chainedHeader, wallet);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    var message = ex;
-                }
-
                 bool trxFoundInBlock = false;
                 foreach (Transaction transaction in block.Transactions)
                 {

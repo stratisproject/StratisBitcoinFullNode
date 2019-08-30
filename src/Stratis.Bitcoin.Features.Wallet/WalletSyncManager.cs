@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.SQLiteWalletRepository;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -50,8 +51,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Limit <see cref="blocksQueue"/> size to 100MB.</summary>
         private const int MaxQueueSize = 100 * 1024 * 1024;
 
+        private readonly IWalletRepository walletRepository;
+
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ChainIndexer chainIndexer,
-            Network network, IBlockStore blockStore, StoreSettings storeSettings, ISignals signals, IAsyncProvider asyncProvider)
+            Network network, IBlockStore blockStore, StoreSettings storeSettings, ISignals signals, IAsyncProvider asyncProvider, IWalletRepository walletRepository)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
@@ -61,6 +64,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(storeSettings, nameof(storeSettings));
             Guard.NotNull(signals, nameof(signals));
             Guard.NotNull(asyncProvider, nameof(asyncProvider));
+            Guard.NotNull(walletRepository, nameof(walletRepository));
 
             this.walletManager = walletManager;
             this.chainIndexer = chainIndexer;
@@ -70,6 +74,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.asyncProvider = asyncProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.blocksQueue = this.asyncProvider.CreateAndRunAsyncDelegateDequeuer<Block>($"{nameof(WalletSyncManager)}-{nameof(this.blocksQueue)}", this.OnProcessBlockAsync);
+            this.walletRepository = walletRepository;
 
             this.blocksQueueSize = 0;
         }
@@ -106,7 +111,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.walletTip = fork;
             }
 
+            // This is basically used to manipulate the block queue on every block connected
+            // note the wallet isnt going to "tick" if node is not receiving blocks
             this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
+
+            // This is to get transactions arriving in mempool and diplay to user as pending transactions
             this.transactionReceivedSubscription = this.signals.Subscribe<TransactionReceived>(this.OnTransactionAvailable);
         }
 
@@ -149,6 +158,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // If the new block's previous hash is not the same as the one we have, there might have been a reorg.
             // If the new block follows the previous one, just pass the block to the manager.
+
             if (block.Header.HashPrevBlock != this.walletTip.HashBlock)
             {
                 // If previous block does not match there might have
@@ -231,6 +241,21 @@ namespace Stratis.Bitcoin.Features.Wallet
                         }
 
                         this.walletTip = next;
+
+                        // Because SQL wallet repo wants it from block zero
+                        if (next.Height == 2)
+                        {
+                            // This is quick and dirty but works
+                            ChainedHeader header1 = next.Previous;
+                            ChainedHeader header0 = header1.Previous;
+                            Block block0 = this.blockStore.GetBlock(header0.HashBlock);
+                            Block block1 = this.blockStore.GetBlock(header1.HashBlock);
+
+                            this.walletRepository.ProcessBlock(block0, header0);
+                            this.walletRepository.ProcessBlock(block1, header1);
+                        }
+
+                        this.walletRepository.ProcessBlock(nextblock, next);
                         this.walletManager.ProcessBlock(nextblock, next);
                     }
                 }
@@ -249,6 +274,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             else this.logger.LogDebug("New block follows the previously known block '{0}'.", this.walletTip);
 
             this.walletTip = newTip;
+            this.walletRepository.ProcessBlock(block, newTip);
             this.walletManager.ProcessBlock(block, newTip);
         }
 
@@ -301,7 +327,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             int blockSyncStart = this.chainIndexer.GetHeightAtTime(date);
             this.SyncFromHeight(blockSyncStart);
-            //this.SyncFromHeight(0);
         }
 
         /// <inheritdoc />
