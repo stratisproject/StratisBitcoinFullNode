@@ -56,8 +56,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
         public static void RegisterProcessBlockCommands(this DBConnection conn)
         {
             conn.Commands["CmdUploadPrevOut"] = CmdUploadPrevOut(conn);
-            conn.Commands["CmdPaymentsToDelete"] = CmdPaymentsToDelete(conn);
-            conn.Commands["CmdDeletePayment"] = CmdDeletePayment(conn);
             conn.Commands["CmdReplacePayments"] = CmdReplacePayments(conn);
             conn.Commands["CmdUpdateSpending"] = CmdUpdateSpending(conn);
         }
@@ -103,44 +101,18 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
                        AND    (TD.OutputBlockHash IS NOT NULL OR TD.OutputBlockHeight IS NOT NULL))");
         }
 
-        public static DBCommand CmdPaymentsToDelete(this DBConnection conn)
-        {
-            return conn.CreateCommand($@"
-                SELECT TD.OutputTxTime, TD.OutputTxId, TD.OutputIndex, TD.ScriptPubKey
-                FROM   temp.TempPrevOut T
-                JOIN   HDTransactionData TD
-                ON     TD.OutputTxId = T.OutputTxId
-                AND    TD.OutputIndex = T.OutputIndex
-                AND    TD.SpendBlockHeight IS NULL
-                AND    TD.SpendBlockHash IS NULL
-                AND    TD.WalletId IN (
-                        SELECT   WalletId
-                        FROM     HDWallet
-                        WHERE    Name = IFNULL(@walletName, Name)
-                        AND      LastBlockSyncedHash = IFNULL(@prevHash, LastBlockSyncedHash))");
-        }
-
-        public static DBCommand CmdDeletePayment(this DBConnection conn)
-        {
-            return conn.CreateCommand($@"
-                DELETE  FROM HDPayment
-                WHERE   OutputTxTime = @outputTxTime
-                AND     OutputTxId = @outputTxId
-                AND     OutputIndex = @outputIndex
-                AND     ScriptPubKey = @scriptPubKey");
-        }
-
         public static DBCommand CmdReplacePayments(this DBConnection conn)
         {
             return conn.CreateCommand($@"
                 REPLACE INTO HDPayment
-                SELECT  TD.OutputTxTime
-                ,       TD.OutputTxId
-                ,       TD.OutputIndex
+                SELECT  T.SpendTxTime
+                ,       T.SpendTxId
+                ,       T.OutputTxId
+                ,       T.OutputIndex
                 ,       TD.ScriptPubKey
-                ,       O.OutputIndex
-                ,       O.RedeemScript
-                ,       O.Value
+                ,       O.OutputIndex SpendIndex
+                ,       O.RedeemScript SpendScriptPubKey
+                ,       O.Value SpendValue
                 FROM    temp.TempPrevOut T
                 JOIN    temp.TempOutput O
                 ON      O.OutputTxTime = T.SpendTxTime

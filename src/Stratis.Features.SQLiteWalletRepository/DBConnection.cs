@@ -341,10 +341,12 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             this.Execute($@"
             DELETE FROM HDPayment
-            WHERE  (OutputTxTime, OutputTxId, OutputIndex) IN (
-                    SELECT OutputTxTime
+            WHERE  (SpendTxTime, SpendTxId, OutputTxId, OutputIndex, ScriptPubKey) IN (
+                    SELECT SpendTxTime
+                    ,      SpendTxId
                     ,      OutputTxId
                     ,      OutputIndex
+                    ,      ScriptPubKey
                     FROM   HDTransactionData
                     {spendFilter})");
 
@@ -439,26 +441,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             cmdUploadPrevOut.Bind("prevHash", prevHash);
             cmdUploadPrevOut.ExecuteNonQuery();
 
-            // Clear the payments since we are replacing them.
-            // Performs checks that we do not clear a confirmed transaction's payments.
-            DBCommand cmdPaymentsToDelete = this.Commands["CmdPaymentsToDelete"];
-            cmdPaymentsToDelete.Bind("walletName", walletName);
-            cmdPaymentsToDelete.Bind("prevHash", prevHash);
-            List<PaymentToDelete> paymentsToDelete = cmdPaymentsToDelete.ExecuteQuery<PaymentToDelete>();
-            if (paymentsToDelete.Count > 0)
-            {
-                DBCommand cmdDeletePayment = this.Commands["CmdDeletePayment"];
-                foreach (PaymentToDelete paymentToDelete in paymentsToDelete)
-                {
-                    cmdDeletePayment.Bind("outputTxTime", paymentToDelete.OutputTxTime);
-                    cmdDeletePayment.Bind("outputTxId", paymentToDelete.OutputTxId);
-                    cmdDeletePayment.Bind("outputIndex", paymentToDelete.OutputIndex);
-                    cmdDeletePayment.Bind("scriptPubKey", paymentToDelete.ScriptPubKey);
-                    cmdDeletePayment.ExecuteNonQuery();
-                }
-            }
-
-            // Insert spending details into HDPayment records.
+            // Insert the HDPayment records.
             // Performs checks that we do not affect a confirmed transaction's payments.
             DBCommand cmdReplacePayments = this.Commands["CmdReplacePayments"];
             cmdReplacePayments.Bind("walletName", walletName);

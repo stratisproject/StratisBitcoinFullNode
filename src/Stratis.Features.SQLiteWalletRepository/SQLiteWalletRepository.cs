@@ -16,6 +16,7 @@ using Stratis.Features.SQLiteWalletRepository.Tables;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Interfaces;
 using Script = NBitcoin.Script;
+using Stratis.Features.SQLiteWalletRepository.Commands;
 
 [assembly: InternalsVisibleTo("Stratis.Features.SQLiteWalletRepository.Tests")]
 
@@ -198,6 +199,7 @@ namespace Stratis.Features.SQLiteWalletRepository
     public class SQLiteWalletRepository : IWalletRepository, IDisposable
     {
         public bool DatabasePerWallet { get; private set; }
+        public bool WriteMetricsToFile { get; set; }
 
         internal Network Network { get; private set; }
         internal DataFolder DataFolder { get; private set; }
@@ -225,6 +227,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.DataFolder = dataFolder;
             this.dateTimeProvider = dateTimeProvider;
             this.ScriptAddressReader = scriptAddressReader;
+            this.WriteMetricsToFile = false;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -261,6 +264,9 @@ namespace Stratis.Features.SQLiteWalletRepository
             var conn = new DBConnection(this, this.DatabasePerWallet ? $"{walletName}.db" : "Wallet.db");
 
             this.logger.LogDebug("Creating database structure.");
+
+            conn.Execute("PRAGMA temp_store = MEMORY");
+            conn.Execute("PRAGMA cache_size = 100000");
 
             conn.BeginTransaction();
             conn.CreateDBStructure();
@@ -639,9 +645,42 @@ namespace Stratis.Features.SQLiteWalletRepository
                             walletContainer.Wallet.LastBlockSyncedHeight = updatedWallet.LastBlockSyncedHeight;
                             walletContainer.Wallet.BlockLocator = updatedWallet.BlockLocator;
                         }
-                    }
 
-                    round.NextScheduledCatchup = DateTime.Now.Ticks + 10 * 10_000_000;
+                        // Write some metrics to file.
+                        if (this.WriteMetricsToFile)
+                        {
+                            string fixedWidth(object val, int width)
+                            {
+                                return string.Format($"{{0,{width}}}", val);
+                            }
+
+                            var lines = new List<string>();
+                            lines.Add($"--- Date/Time: {(DateTime.Now.ToString())}, Block Height: { (header?.Height) } ---");
+
+                            foreach ((string cmdName, DBCommand cmd) in conn.Commands.Select(kv => (kv.Key, kv.Value)))
+                            {
+                                var key = fixedWidth(cmdName, -20);
+                                var time = fixedWidth(((double)cmd.ProcessTime / 10_000_000).ToString("N06"), 8);
+                                var count = fixedWidth(cmd.ProcessCount, 5);
+                                var avgsec = (cmd.ProcessCount == 0) ? null : fixedWidth(((double)cmd.ProcessTime / cmd.ProcessCount / 10_000_000).ToString("N06"), 8);
+
+                                lines.Add($"{key}: Time={time}, Count={count}, AvgSec={avgsec}");
+                            }
+
+                            lines.Add("");
+
+                            foreach (var kv in conn.Commands)
+                            {
+                                kv.Value.ProcessCount = 0;
+                                kv.Value.ProcessTime = 0;
+                            }
+
+                            if (wallet != null)
+                                File.AppendAllLines(Path.Combine(this.DBPath, $"Metrics_{ wallet.Name }.txt"), lines);
+                            else
+                                File.AppendAllLines(Path.Combine(this.DBPath, "Metrics.txt"), lines);
+                        }
+                    }
                 }
 
                 if (block == null)
@@ -667,7 +706,10 @@ namespace Stratis.Features.SQLiteWalletRepository
                         round.DeferredTip = header;
 
                         if (DateTime.Now.Ticks >= round.NextScheduledCatchup)
+                        {
                             DeferredTipCatchup(true);
+                            round.NextScheduledCatchup = DateTime.Now.Ticks + 10 * 10_000_000;
+                        }
 
                         return;
                     }
@@ -777,7 +819,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 yield return new UnspentOutputReference()
                 {
                     Account = hdAccount,
-                    Transaction = this.ToTransactionData(transactionData, HDPayment.GetAllPayments(conn, transactionData.OutputTxTime, transactionData.OutputTxId, transactionData.OutputIndex)),
+                    Transaction = this.ToTransactionData(transactionData, HDPayment.GetAllPayments(conn, transactionData.SpendTxTime ?? 0, transactionData.SpendTxId, transactionData.OutputTxId, transactionData.OutputIndex, transactionData.ScriptPubKey)),
                     Confirmations = (currentChainHeight + 1) - transactionData.OutputBlockHeight,
                     Address = this.ToHdAddress(new HDAddress()
                     {
@@ -823,7 +865,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                         history.Add(new FlatHistory()
                         {
                             Address = hdAddress,
-                            Transaction = this.ToTransactionData(transaction, HDPayment.GetAllPayments(conn, transaction.OutputTxTime, transaction.OutputTxId, transaction.OutputIndex))
+                            Transaction = this.ToTransactionData(transaction, HDPayment.GetAllPayments(conn, transaction.SpendTxTime ?? 0, transaction.SpendTxId, transaction.OutputTxId, transaction.OutputIndex, transaction.ScriptPubKey))
                         });
                     }
                 }

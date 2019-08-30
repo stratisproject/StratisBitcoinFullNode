@@ -368,6 +368,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 // Initialize the repo.
                 network.StandardScriptsRegistry.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
                 var repo = new SQLiteWalletRepository(blockBase.NodeSettings.LoggerFactory, dataFolder, network, DateTimeProvider.Default, new ColdStakingDestinationReader(new ScriptAddressReader()));
+                repo.WriteMetricsToFile = true;
                 repo.Initialize(this.dbPerWallet);
 
                 // Load the JSON wallet(s).
@@ -614,6 +615,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 // Initialize the repo.
                 network.StandardScriptsRegistry.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
                 var repo = new SQLiteWalletRepository(blockBase.NodeSettings.LoggerFactory, dataFolder, network, DateTimeProvider.Default, new ColdStakingDestinationReader(new ScriptAddressReader()));
+                repo.WriteMetricsToFile = true;
                 repo.Initialize(this.dbPerWallet);
                 this.LoadWallet(blockBase, repo, "wallet1");
                 repo.AddAddresses("wallet1", "account 0", 0, binance
