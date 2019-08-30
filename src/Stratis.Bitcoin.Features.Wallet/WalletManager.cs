@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -767,6 +768,38 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return balances;
+        }
+
+        public IEnumerable<AccountBalance> GetBalancesSQL(string walletName, string accountName = null)
+        {
+            //var balances = new List<AccountBalance>();
+            var accountNames = ((SQLiteWalletRepository) this.walletRepository).GetAccounts(walletName);
+            Money spendableAmount = Money.Zero;
+
+            //Need to make this work for single account but initially just scroll through accounts
+            foreach (HdAccount hdAccount in accountNames)
+            {
+                // Decide here how many confirmations
+                IEnumerable<UnspentOutputReference> spendableTransactionsInAccount =
+                    this.walletRepository.GetSpendableTransactionsInAccount(
+                        new WalletAccountReference(walletName, hdAccount.Name), this.WalletTipHeight,
+                        (int) this.network.Consensus.CoinbaseMaturity);
+
+                object lockObject = new Object();
+
+                Parallel.ForEach(spendableTransactionsInAccount, unspentOutputReference =>
+                {
+                    lock (lockObject) spendableAmount += unspentOutputReference.Transaction.Amount;
+                });
+
+                yield return new AccountBalance()
+                {
+                    Account = hdAccount,
+                    AmountConfirmed = spendableAmount,
+                    AmountUnconfirmed = Money.Zero,
+                    SpendableAmount = spendableAmount
+                };
+            }
         }
 
         /// <inheritdoc />

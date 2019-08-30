@@ -135,6 +135,24 @@ namespace Stratis.Bitcoin.Features.Wallet
                     }
                 }
             }
+
+            List<string> walletNamesSQL = ((SQLiteWalletRepository) this.walletRepository).GetWalletNames();
+
+            if (walletNamesSQL.Any())
+            {
+                log.AppendLine();
+                log.AppendLine("======SQLWallets======");
+
+                foreach (string walletName in walletNamesSQL)
+                {
+                    foreach (AccountBalance accountBalance in ((WalletManager)this.walletManager).GetBalancesSQL(walletName))
+                    {
+                        log.AppendLine(($"{walletName}" + ",").PadRight(LoggingConfiguration.ColumnLength + 10)
+                                       + (" Confirmed balance: " + accountBalance.AmountConfirmed.ToString()).PadRight(LoggingConfiguration.ColumnLength + 20)
+                                       + " Unconfirmed balance: " + accountBalance.AmountUnconfirmed.ToString());
+                    }
+                }
+            }
         }
 
         /// <inheritdoc />

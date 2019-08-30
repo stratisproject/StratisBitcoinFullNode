@@ -112,11 +112,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             this.nodeSettings = nodeSettings;
             this.walletSettings = walletSettings;
 
-            nodeStats.RemoveStats(StatsType.Component, typeof(WalletFeature).Name);
-            nodeStats.RemoveStats(StatsType.Inline, typeof(WalletFeature).Name);
+            //nodeStats.RemoveStats(StatsType.Component, typeof(WalletFeature).Name);
+            //nodeStats.RemoveStats(StatsType.Inline, typeof(WalletFeature).Name);
 
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name);
-            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name, 800);
+            //nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name);
+            //nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name, 800);
         }
 
         /// <summary>
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             if (walletNames.Any())
             {
                 benchLog.AppendLine();
-                benchLog.AppendLine("======Wallets======");
+                benchLog.AppendLine("======Wallets123======");
 
                 foreach (string walletName in walletNames)
                 {
