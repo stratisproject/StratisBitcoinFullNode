@@ -341,7 +341,17 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public void Dispose()
         {
-            this.blocksQueue.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                this.blocksQueue.Dispose();
+                this.Stop();
+            }
         }
     }
 }

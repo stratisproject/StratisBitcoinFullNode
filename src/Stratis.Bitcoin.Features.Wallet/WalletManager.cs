@@ -772,32 +772,27 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public IEnumerable<AccountBalance> GetBalancesSQL(string walletName, string accountName = null)
         {
-            //var balances = new List<AccountBalance>();
             var accountNames = ((SQLiteWalletRepository) this.walletRepository).GetAccounts(walletName);
-            Money spendableAmount = Money.Zero;
+            Money confirmedAmount = Money.Zero;
+            Money unconfirmedAmount = Money.Zero;
 
             //Need to make this work for single account but initially just scroll through accounts
             foreach (HdAccount hdAccount in accountNames)
             {
-                // Decide here how many confirmations
-                IEnumerable<UnspentOutputReference> spendableTransactionsInAccount =
+                IEnumerable<UnspentOutputReference> spendableTransactionsInAccountMatured = 
                     this.walletRepository.GetSpendableTransactionsInAccount(
                         new WalletAccountReference(walletName, hdAccount.Name), this.WalletTipHeight,
                         (int) this.network.Consensus.CoinbaseMaturity);
 
-                object lockObject = new Object();
-
-                Parallel.ForEach(spendableTransactionsInAccount, unspentOutputReference =>
-                {
-                    lock (lockObject) spendableAmount += unspentOutputReference.Transaction.Amount;
-                });
+                confirmedAmount = spendableTransactionsInAccountMatured.AsParallel().Where(x => x.Transaction.IsConfirmed()).Sum(x => x.Transaction.Amount);
+                unconfirmedAmount = spendableTransactionsInAccountMatured.AsParallel().Where(x => !x.Transaction.IsConfirmed()).Sum(x => x.Transaction.Amount);
 
                 yield return new AccountBalance()
                 {
                     Account = hdAccount,
-                    AmountConfirmed = spendableAmount,
-                    AmountUnconfirmed = Money.Zero,
-                    SpendableAmount = spendableAmount
+                    AmountConfirmed = confirmedAmount,
+                    AmountUnconfirmed = unconfirmedAmount,
+                    SpendableAmount = confirmedAmount - unconfirmedAmount
                 };
             }
         }
@@ -1015,46 +1010,46 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return;
             }
 
-
-
             // Is this the next block.
-            if (chainedHeader.Header.HashPrevBlock != this.WalletTipHash)
-            {
-                this.logger.LogDebug("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
+            //if (chainedHeader.Header.HashPrevBlock != this.WalletTipHash)
+            //{
+            //    this.logger.LogDebug("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
 
-                // The block coming in to the wallet should never be ahead of the wallet.
-                // If the block is behind, let it pass.
-                if (chainedHeader.Height > this.WalletTipHeight)
-                {
-                    this.logger.LogTrace("(-)[BLOCK_TOO_FAR]");
-                    throw new WalletException("block too far in the future has arrived to the wallet");
-                }
-            }
+            //    // The block coming in to the wallet should never be ahead of the wallet.
+            //    // If the block is behind, let it pass.
+            //    if (chainedHeader.Height > this.WalletTipHeight)
+            //    {
+            //        this.logger.LogTrace("(-)[BLOCK_TOO_FAR]");
+            //        throw new WalletException("block too far in the future has arrived to the wallet");
+            //    }
+            //}
 
-            // This lock will become redundant as all the nonsense code below
-            lock (this.lockObject)
-            {
-                bool trxFoundInBlock = false;
-                foreach (Transaction transaction in block.Transactions)
-                {
-                    bool trxFound = this.ProcessTransaction(transaction, chainedHeader.Height, block, true);
-                    if (trxFound)
-                    {
-                        trxFoundInBlock = true;
-                    }
-                }
+            this.UpdateLastBlockSyncedHeight(chainedHeader);
 
-                // Update the wallets with the last processed block height.
-                // It's important that updating the height happens after the block processing is complete,
-                // as if the node is stopped, on re-opening it will start updating from the previous height.
-                this.UpdateLastBlockSyncedHeight(chainedHeader);
+            //// This lock will become redundant as all the nonsense code below
+            //lock (this.lockObject)
+            //{
+            //    bool trxFoundInBlock = false;
+            //    foreach (Transaction transaction in block.Transactions)
+            //    {
+            //        bool trxFound = this.ProcessTransaction(transaction, chainedHeader.Height, block, true);
+            //        if (trxFound)
+            //        {
+            //            trxFoundInBlock = true;
+            //        }
+            //    }
 
-                if (trxFoundInBlock)
-                {
-                    this.logger.LogDebug("Block {0} contains at least one transaction affecting the user's wallet(s).",
-                        chainedHeader);
-                }
-            }
+            //    // Update the wallets with the last processed block height.
+            //    // It's important that updating the height happens after the block processing is complete,
+            //    // as if the node is stopped, on re-opening it will start updating from the previous height.
+            //    this.UpdateLastBlockSyncedHeight(chainedHeader);
+
+            //    if (trxFoundInBlock)
+            //    {
+            //        this.logger.LogDebug("Block {0} contains at least one transaction affecting the user's wallet(s).",
+            //            chainedHeader);
+            //    }
+            //}
         }
 
         /// <inheritdoc />
