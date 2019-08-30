@@ -16,25 +16,25 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
     public class EnforcePeerVersionCheckBehavior : NetworkPeerBehavior
     {
         /// <summary>An indexer that provides methods to query the best chain (the chain that is validated by the full consensus rules)</summary>
-        private readonly ChainIndexer chainIndexer;
+        protected readonly ChainIndexer chainIndexer;
 
         /// <summary>User defined node settings.</summary>
-        private readonly NodeSettings nodeSettings;
+        protected readonly NodeSettings nodeSettings;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
-        private readonly Network network;
+        protected readonly Network network;
 
         /// <summary>Logger factory usded while cloning the object.</summary>
-        private readonly ILoggerFactory loggerFactory;
+        protected readonly ILoggerFactory loggerFactory;
 
         /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
+        protected readonly ILogger logger;
 
         /// <summary>
         /// Set to <c>true</c> if the attached peer callbacks have been registered and they should be unregistered,
         /// <c>false</c> if the callbacks are not registered.
         /// </summary>
-        private bool callbacksRegistered;
+        protected bool callbacksRegistered;
 
         /// <summary>
         /// Initializes an instance of the object for outbound network peers.
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }
 
-        private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
+        protected Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             int enforceMinProtocolVersionAtBlockHeight = this.network.Consensus.Options.EnforceMinProtocolVersionAtBlockHeight;
             bool enforcementRequired = enforceMinProtocolVersionAtBlockHeight > 0;
