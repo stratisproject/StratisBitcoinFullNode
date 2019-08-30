@@ -9,8 +9,8 @@ using TracerAttributes;
 namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 {
     /// <summary>
-    /// Sets the minimum supported client version <see cref="this.NodeSettings.MinProtocolVersion"> to <see cref="this.Network.Consensus.Options.EnforcedMinProtocolVersion">
-    /// based on the predefined block height <see cref="this.Network.Consensus.Options.EnforceMinProtocolVersionAtBlockHeight">.
+    /// Sets the minimum supported client version <see cref="this.NodeSettings.MinProtocolVersion"/> to <see cref="this.Network.Consensus.Options.EnforcedMinProtocolVersion"/>
+    /// based on the predefined block height <see cref="this.Network.Consensus.Options.EnforceMinProtocolVersionAtBlockHeight"/>.
     /// Once the new minimum supported client version is changed all existing peer connections will be dropped upon the first received message from outdated client.
     /// </summary>
     public class EnforcePeerVersionCheckBehavior : NetworkPeerBehavior
@@ -55,16 +55,23 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }
 
+        [NoTrace]
         protected Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             int enforceMinProtocolVersionAtBlockHeight = this.network.Consensus.Options.EnforceMinProtocolVersionAtBlockHeight;
             bool enforcementRequired = enforceMinProtocolVersionAtBlockHeight > 0;
             if (!enforcementRequired)
+            {
+                this.logger.LogTrace("(-)[ENFORCEMENT_HEIGHT_NOT_REACHED]");
                 return Task.CompletedTask;
+            }
 
             bool enforcedAlready = this.nodeSettings.MinProtocolVersion >= this.network.Consensus.Options.EnforcedMinProtocolVersion;
             if (enforcedAlready)
+            {
+                this.logger.LogTrace("(-)[ALREADY_ENFORCED]");
                 return Task.CompletedTask;
+            }
 
             bool enforcementHeightReached = this.chainIndexer.Height >= enforceMinProtocolVersionAtBlockHeight;
             if (enforcementHeightReached)
@@ -80,6 +87,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
                 this.AttachedPeer.Disconnect("Peer is using unsupported client version");
             }
 
+            this.logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
 
