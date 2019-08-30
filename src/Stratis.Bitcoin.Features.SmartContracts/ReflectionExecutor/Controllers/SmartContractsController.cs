@@ -208,23 +208,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             uint160 address = receipt.To;
 
+            if (!receipt.Logs.Any())
+            {
+                return this.Json(new ReceiptResponse(receipt, new List<LogResponse>(), this.network));
+            }
+
             byte[] contractCode = this.stateRoot.GetCode(address);
 
-            if (contractCode == null || !contractCode.Any())
-            {
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, "No code exists", $"No contract execution code exists at {address}");
-            }
-
-            Assembly assembly = null;
-
-            try
-            {
-                assembly = Assembly.Load(contractCode);
-            }
-            catch
-            {
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, "Error reading contract module", "The contract code was found but it was not a valid module.");
-            }
+            Assembly assembly = Assembly.Load(contractCode);
 
             var deserializer = new ApiLogDeserializer(this.primitiveSerializer, this.network);
 
@@ -267,16 +258,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, "No code exists", $"No contract execution code exists at {address}");
             }
 
-            Assembly assembly = null;
-
-            try
-            {
-                assembly = Assembly.Load(contractCode);
-            }
-            catch
-            {
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, "Error reading contract module", "The contract code was found but it was not a valid module.");
-            }
+            Assembly assembly = Assembly.Load(contractCode);
 
             var deserializer = new ApiLogDeserializer(this.primitiveSerializer, this.network);
 
