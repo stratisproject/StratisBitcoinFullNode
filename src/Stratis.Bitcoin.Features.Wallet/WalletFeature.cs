@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     foreach (AccountBalance accountBalance in ((WalletManager)this.walletManager).GetBalancesSQL(walletName))
                     {
-                        log.AppendLine(($"{walletName}" + ",").PadRight(LoggingConfiguration.ColumnLength + 10)
+                        log.AppendLine(($"{walletName}/{accountBalance.Account.Name}" + ",").PadRight(LoggingConfiguration.ColumnLength + 10)
                                        + (" Confirmed balance: " + accountBalance.AmountConfirmed.ToString()).PadRight(LoggingConfiguration.ColumnLength + 20)
                                        + " Unconfirmed balance: " + accountBalance.AmountUnconfirmed.ToString());
                     }
