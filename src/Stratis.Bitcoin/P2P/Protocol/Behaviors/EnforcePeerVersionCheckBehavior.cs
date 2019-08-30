@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         protected readonly Network network;
 
-        /// <summary>Logger factory usded while cloning the object.</summary>
+        /// <summary>Logger factory used while cloning the object.</summary>
         protected readonly ILoggerFactory loggerFactory;
 
         /// <summary>Instance logger.</summary>
