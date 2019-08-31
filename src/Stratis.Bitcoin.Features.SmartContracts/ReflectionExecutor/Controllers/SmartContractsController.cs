@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                     "No stored transaction could be found for the supplied hash.");
             }
 
-            uint160 address = receipt.To;
+            uint160 address = receipt.NewContractAddress ?? receipt.To;
 
             if (!receipt.Logs.Any())
             {
