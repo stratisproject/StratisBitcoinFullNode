@@ -11,12 +11,12 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Features.SQLiteWalletRepository.Commands;
 using Stratis.Features.SQLiteWalletRepository.External;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Interfaces;
 using Script = NBitcoin.Script;
-using Stratis.Features.SQLiteWalletRepository.Commands;
 
 [assembly: InternalsVisibleTo("Stratis.Features.SQLiteWalletRepository.Tests")]
 
@@ -142,10 +142,12 @@ namespace Stratis.Features.SQLiteWalletRepository
 
     internal class ProcessBlocksInfo
     {
+        internal TempTable Outputs;
+        internal TempTable PrevOuts;
         internal AddressesOfInterest AddressesOfInterest;
         internal TransactionsOfInterest TransactionsOfInterest;
-        internal ChainedHeader DeferredTip;
-        internal ChainedHeader DeferredSince;
+        internal ChainedHeader NewTip;
+        internal ChainedHeader PrevTip;
         internal bool MustCommit;
         internal DBConnection Conn;
         internal HDWallet Wallet;
@@ -155,12 +157,14 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal ProcessBlocksInfo(DBConnection conn, ProcessBlocksInfo processBlocksInfo, HDWallet wallet = null)
         {
-            this.DeferredTip = null;
-            this.DeferredSince = null;
+            this.NewTip = null;
+            this.PrevTip = null;
             this.MustCommit = false;
             this.Conn = conn;
             this.Wallet = wallet;
             this.LockProcessBlocks = processBlocksInfo?.LockProcessBlocks ?? new DBLock();
+            this.Outputs = TempTable.Create<TempOutput>();
+            this.PrevOuts = TempTable.Create<TempPrevOut>();
 
             this.AddressesOfInterest = processBlocksInfo?.AddressesOfInterest ?? new AddressesOfInterest(conn, wallet?.WalletId);
             this.TransactionsOfInterest = processBlocksInfo?.TransactionsOfInterest ?? new TransactionsOfInterest(conn, wallet?.WalletId);
@@ -615,25 +619,34 @@ namespace Stratis.Features.SQLiteWalletRepository
                 HDWallet wallet = round.Wallet;
                 DBConnection conn = round.Conn;
 
-                void DeferredTipCatchup(bool commitPoint)
+                // Flush when new wallets are joining. This ensure PrevTip will match all wallets requiring updating and advancing.
+                string lastBlockSyncedHash = (header?.Previous?.HashBlock ?? (uint256)0).ToString();
+                bool walletsJoining = this.Wallets.Any(c => c.Value.Wallet.LastBlockSyncedHash == lastBlockSyncedHash);
+                if (((round.Outputs.Count + round.PrevOuts.Count) >= 1000) || block == null || walletsJoining)
                 {
-                    if (round.DeferredTip != null)
+                    if (round.Outputs.Count != 0 || round.PrevOuts.Count != 0)
                     {
+                        IEnumerable<IEnumerable<string>> blockToScript = (new[] { round.Outputs, round.PrevOuts }).Select(list => list.CreateScript());
+
+                        long flagFall = DateTime.Now.Ticks;
+
                         if (!round.MustCommit && !conn.IsInTransaction)
                         {
                             conn.BeginTransaction();
                             round.MustCommit = true;
                         }
 
-                        HDWallet.AdvanceTip(conn, wallet, round.DeferredTip, round.DeferredSince);
+                        conn.ProcessTransactions(blockToScript, wallet, round.NewTip, round.PrevTip, round.AddressesOfInterest);
 
-                        round.DeferredTip = null;
-                    }
+                        round.Outputs.Clear();
+                        round.PrevOuts.Clear();
 
-                    if (commitPoint && round.MustCommit)
-                    {
-                        round.MustCommit = false;
+                        round.AddressesOfInterest.Confirm();
+                        round.TransactionsOfInterest.Confirm();
+
                         conn.Commit();
+                        round.MustCommit = false;
+                        round.PrevTip = null;
 
                         // Update all wallets found in the DB into the containers.
                         foreach (HDWallet updatedWallet in HDWallet.GetAll(conn))
@@ -646,106 +659,30 @@ namespace Stratis.Features.SQLiteWalletRepository
                             walletContainer.Wallet.BlockLocator = updatedWallet.BlockLocator;
                         }
 
-                        // Write some metrics to file.
-                        if (this.WriteMetricsToFile)
-                        {
-                            string fixedWidth(object val, int width)
-                            {
-                                return string.Format($"{{0,{width}}}", val);
-                            }
+                        LogMetrics(conn, header, wallet);
 
-                            var lines = new List<string>();
-                            lines.Add($"--- Date/Time: {(DateTime.Now.ToString())}, Block Height: { (header?.Height) } ---");
-
-                            foreach ((string cmdName, DBCommand cmd) in conn.Commands.Select(kv => (kv.Key, kv.Value)))
-                            {
-                                var key = fixedWidth(cmdName, -20);
-                                var time = fixedWidth(((double)cmd.ProcessTime / 10_000_000).ToString("N06"), 8);
-                                var count = fixedWidth(cmd.ProcessCount, 5);
-                                var avgsec = (cmd.ProcessCount == 0) ? null : fixedWidth(((double)cmd.ProcessTime / cmd.ProcessCount / 10_000_000).ToString("N06"), 8);
-
-                                lines.Add($"{key}: Time={time}, Count={count}, AvgSec={avgsec}");
-                            }
-
-                            lines.Add("");
-
-                            foreach (var kv in conn.Commands)
-                            {
-                                kv.Value.ProcessCount = 0;
-                                kv.Value.ProcessTime = 0;
-                            }
-
-                            if (wallet != null)
-                                File.AppendAllLines(Path.Combine(this.DBPath, $"Metrics_{ wallet.Name }.txt"), lines);
-                            else
-                                File.AppendAllLines(Path.Combine(this.DBPath, "Metrics.txt"), lines);
-                        }
+                        this.ProcessTime += (DateTime.Now.Ticks - flagFall);
+                    }
+                    else
+                    {
+                        if (round.NewTip != null)
+                            HDWallet.AdvanceTip(conn, wallet, round.NewTip, round.PrevTip);
                     }
                 }
 
                 if (block == null)
-                {
-                    DeferredTipCatchup(true);
                     return;
-                }
 
                 // Determine the scripts for creating temporary tables and inserting the block's information into them.
-                IEnumerable<IEnumerable<string>> blockToScript;
-                {
-                    bool wasInTransaction = conn.IsInTransaction;
-                    var lists = TransactionsToLists(conn, block.Transactions, header, null, round).ToList();
-                    if (conn.IsInTransaction && !wasInTransaction)
-                        round.MustCommit = true;
-
-                    if (lists.Count == 0)
-                    {
-                        // No work to do.
-                        if (round.DeferredTip == null)
-                            round.DeferredSince = header.Previous;
-
-                        round.DeferredTip = header;
-
-                        if (DateTime.Now.Ticks >= round.NextScheduledCatchup)
-                        {
-                            DeferredTipCatchup(true);
-                            round.NextScheduledCatchup = DateTime.Now.Ticks + 10 * 10_000_000;
-                        }
-
-                        return;
-                    }
-
-                    blockToScript = lists.Select(list => list.CreateScript());
-                }
-
-                // If we're going to process the block then do it with an up-to-date tip.
-                DeferredTipCatchup(false);
-
-                long flagFall = DateTime.Now.Ticks;
-
-                string lastBlockSyncedHash = (header.Previous?.HashBlock ?? uint256.Zero).ToString();
-
-                // Determine which wallets will be updated.
-                List<HDWallet> updatingWallets = conn.Query<HDWallet>($@"
-                    SELECT *
-                    FROM   HDWallet
-                    WHERE  LastBlockSyncedHash = '{lastBlockSyncedHash}' {
-                    // Respect the wallet name if provided.
-                    ((wallet?.Name != null) ? $@"
-                    AND    Name = '{wallet.Name}'" : "")}");
-
-                if (!round.MustCommit && !conn.IsInTransaction)
-                {
-                    conn.BeginTransaction();
+                bool wasInTransaction = conn.IsInTransaction;
+                if (TransactionsToLists(conn, block.Transactions, header, null, round))
+                    this.ProcessCount++;
+                if (conn.IsInTransaction && !wasInTransaction)
                     round.MustCommit = true;
-                }
 
-                conn.ProcessTransactions(blockToScript, wallet, header, round.AddressesOfInterest);
-
-                round.AddressesOfInterest.Confirm();
-                round.TransactionsOfInterest.Confirm();
-
-                this.ProcessTime += (DateTime.Now.Ticks - flagFall);
-                this.ProcessCount++;
+                round.NewTip = header;
+                if (round.PrevTip == null)
+                    round.PrevTip = header.Previous;
             }
             catch (Exception)
             {
@@ -760,6 +697,44 @@ namespace Stratis.Features.SQLiteWalletRepository
             finally
             {
                 round.LockProcessBlocks.Release();
+            }
+        }
+
+        private void LogMetrics(DBConnection conn, ChainedHeader header, HDWallet wallet)
+        {
+            // Write some metrics to file.
+            if (this.WriteMetricsToFile)
+            {
+                string fixedWidth(object val, int width)
+                {
+                    return string.Format($"{{0,{width}}}", val);
+                }
+
+                var lines = new List<string>();
+                lines.Add($"--- Date/Time: {(DateTime.Now.ToString())}, Block Height: { (header?.Height) } ---");
+
+                foreach ((string cmdName, DBCommand cmd) in conn.Commands.Select(kv => (kv.Key, kv.Value)))
+                {
+                    var key = fixedWidth(cmdName, -20);
+                    var time = fixedWidth(((double)cmd.ProcessTime / 10_000_000).ToString("N06"), 8);
+                    var count = fixedWidth(cmd.ProcessCount, 5);
+                    var avgsec = (cmd.ProcessCount == 0) ? null : fixedWidth(((double)cmd.ProcessTime / cmd.ProcessCount / 10_000_000).ToString("N06"), 8);
+
+                    lines.Add($"{key}: Time={time}, Count={count}, AvgSec={avgsec}");
+                }
+
+                lines.Add("");
+
+                foreach (var kv in conn.Commands)
+                {
+                    kv.Value.ProcessCount = 0;
+                    kv.Value.ProcessTime = 0;
+                }
+
+                if (wallet != null)
+                    File.AppendAllLines(Path.Combine(this.DBPath, $"Metrics_{ wallet.Name }.txt"), lines);
+                else
+                    File.AppendAllLines(Path.Combine(this.DBPath, "Metrics.txt"), lines);
             }
         }
 
@@ -786,11 +761,9 @@ namespace Stratis.Features.SQLiteWalletRepository
                 DBConnection conn = this.GetConnection(walletName);
                 IEnumerable<IEnumerable<string>> txToScript;
                 {
-                    var lists = TransactionsToLists(conn, new[] { transaction }, null, fixedTxId).ToList();
-                    if (lists.Count == 0)
-                        return;
-
-                    txToScript = lists.Select(list => list.CreateScript());
+                    var processBlocksInfo = new ProcessBlocksInfo(conn, walletContainer, wallet);
+                    TransactionsToLists(conn, new[] { transaction }, null, fixedTxId, processBlocksInfo: processBlocksInfo);
+                    txToScript = (new[] { processBlocksInfo.Outputs, processBlocksInfo.PrevOuts }).Select(list => list.CreateScript());
                 }
 
                 conn.BeginTransaction();
@@ -878,12 +851,11 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
         }
 
-        private IEnumerable<TempTable> TransactionsToLists(DBConnection conn, IEnumerable<Transaction> transactions, ChainedHeader header, uint256 fixedTxId = null, ProcessBlocksInfo processBlocksInfo = null)
+        private bool TransactionsToLists(DBConnection conn, IEnumerable<Transaction> transactions, ChainedHeader header, uint256 fixedTxId = null, ProcessBlocksInfo processBlocksInfo = null)
         {
-            // Convert relevant information in the block to information that can be joined to the wallet tables.
-            TempTable outputs = null;
-            TempTable prevOuts = null;
+            bool additions = false;
 
+            // Convert relevant information in the block to information that can be joined to the wallet tables.
             TransactionsOfInterest transactionsOfInterest = processBlocksInfo.TransactionsOfInterest;
             AddressesOfInterest addressesOfInterest = processBlocksInfo.AddressesOfInterest;
 
@@ -894,18 +866,16 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 // Build temp.PrevOuts
                 uint256 txId = fixedTxId ?? tx.GetHash();
+                bool addSpendTx = false;
 
                 for (int i = 0; i < tx.Inputs.Count; i++)
                 {
                     TxIn txIn = tx.Inputs[i];
 
-                    if (transactionsOfInterest?.Contains(txIn.PrevOut.Hash) ?? true)
+                    if (transactionsOfInterest?.Contains(txIn.PrevOut) ?? true)
                     {
-                        if (prevOuts == null)
-                            prevOuts = TempTable.Create<TempPrevOut>();
-
                         // Record our outputs that are being spent.
-                        prevOuts.Add(new TempPrevOut()
+                        processBlocksInfo.PrevOuts.Add(new TempPrevOut()
                         {
                             OutputTxId = txIn.PrevOut.Hash.ToString(),
                             OutputIndex = (int)txIn.PrevOut.N,
@@ -918,7 +888,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                             SpendTxTotalOut = tx.TotalOut.ToDecimal(MoneyUnit.BTC)
                         });
 
-                        transactionsOfInterest?.AddTentative(txId);
+                        additions = true;
+                        addSpendTx = true;
                     }
                 }
 
@@ -933,14 +904,12 @@ namespace Stratis.Features.SQLiteWalletRepository
                     if (txOut.ScriptPubKey.ToBytes(true)[0] == (byte)OpcodeType.OP_RETURN)
                         continue;
 
-                    bool unconditional = transactionsOfInterest?.Contains(txId) ?? true; // Related to spending details.
-
                     foreach (Script pubKeyScript in this.GetDestinations(txOut.ScriptPubKey))
                     {
                         bool containsAddress = addressesOfInterest.Contains(pubKeyScript, out HDAddress address);
 
                         // Paying to one of our addresses?
-                        if (unconditional || containsAddress)
+                        if (addSpendTx || containsAddress)
                         {
                             // Check if top-up is required.
                             if (containsAddress && address != null)
@@ -980,10 +949,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                             }
 
                             // Record outputs received by our wallets.
-                            if (outputs == null)
-                                outputs = TempTable.Create<TempOutput>();
-
-                            outputs.Add(new TempOutput()
+                            processBlocksInfo.Outputs.Add(new TempOutput()
                             {
                                 // For matching HDAddress.ScriptPubKey.
                                 ScriptPubKey = pubKeyScript.ToHex(),
@@ -1000,17 +966,16 @@ namespace Stratis.Features.SQLiteWalletRepository
                                 Value = txOut.Value.ToDecimal(MoneyUnit.BTC)
                             });
 
-                            transactionsOfInterest?.AddTentative(txId);
+                            additions = true;
+
+                            if (containsAddress)
+                                transactionsOfInterest?.AddTentative(new OutPoint(txId, i));
                         }
                     }
                 }
             }
 
-            if (prevOuts != null || outputs != null)
-            {
-                yield return prevOuts ?? TempTable.Create<TempPrevOut>();
-                yield return outputs ?? TempTable.Create<TempOutput>();
-            }
+            return additions;
         }
     }
 }

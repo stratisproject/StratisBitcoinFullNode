@@ -425,7 +425,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.SQLiteConnection.Update(wallet);
         }
 
-        internal void ProcessTransactions(IEnumerable<IEnumerable<string>> tableScripts, HDWallet wallet, ChainedHeader header = null, AddressesOfInterest addressesOfInterest = null)
+        internal void ProcessTransactions(IEnumerable<IEnumerable<string>> tableScripts, HDWallet wallet, ChainedHeader newLastSynced = null, ChainedHeader prevLastSynced = null, AddressesOfInterest addressesOfInterest = null)
         {
             // Execute the scripts providing the temporary tables to merge with the wallet tables.
             foreach (IEnumerable<string> tableScript in tableScripts)
@@ -434,7 +434,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             // Inserts or updates HDTransactionData records based on change or funds received.
             string walletName = wallet?.Name;
-            string prevHash = (header == null) ? null : (header.Previous?.HashBlock ?? uint256.Zero).ToString();
+            string prevHash = (prevLastSynced?.HashBlock ?? uint256.Zero).ToString();
 
             DBCommand cmdUploadPrevOut = this.Commands["CmdUploadPrevOut"];
             cmdUploadPrevOut.Bind("walletName", walletName);
@@ -456,8 +456,8 @@ namespace Stratis.Features.SQLiteWalletRepository
             cmdUpdateSpending.ExecuteNonQuery();
 
             // Advance participating wallets.
-            if (header != null)
-                HDWallet.AdvanceTip(this, wallet, header, header.Previous);
+            if (newLastSynced != null)
+                HDWallet.AdvanceTip(this, wallet, newLastSynced, prevLastSynced);
         }
     }
 }
