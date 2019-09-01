@@ -85,11 +85,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 count);
         }
 
-        internal static HDAddress GetAddress(SQLiteConnection conn, int walletId, int accountIndex, int addressType, int addressIndex)
-        {
-            return conn.Find<HDAddress>(a => a.WalletId == walletId && a.AccountIndex == accountIndex && a.AddressType == addressType && a.AddressIndex == addressIndex);
-        }
-
         internal static int GetAddressCount(SQLiteConnection conn, int walletId, int accountIndex, int addressType)
         {
             return 1 + (conn.ExecuteScalar<int?>($@"
@@ -98,18 +93,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 WHERE   WalletId = {walletId}
                 AND     AccountIndex = {accountIndex}
                 AND     AddressType = {addressType}") ?? -1);
-        }
-
-        internal static int GetTransactionCount(SQLiteConnection conn, int walletId, int accountIndex, int addressType, int addressIndex)
-        {
-            return conn.ExecuteScalar<int?>($@"
-                SELECT  COUNT(*)
-                FROM    HDTransactionData
-                WHERE   WalletId = ?
-                AND     AccountIndex = ?
-                AND     AddressType = ?
-                AND     AddressIndex = ?",
-                walletId, accountIndex, addressType, addressIndex) ?? 0;
         }
 
         internal static int GetNextAddressIndex(SQLiteConnection conn, int walletId, int accountIndex, int addressType)
@@ -121,20 +104,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AND     AccountIndex = ?
                 AND     AddressType = ?",
                 walletId, accountIndex, addressType) ?? -1);
-        }
-
-        internal void Update(SQLiteConnection conn)
-        {
-            conn.Execute($@"
-                UPDATE  HDAddress
-                SET     ScriptPubKey = ?
-                ,       PubKey = ?
-                WHERE   WalletId = {this.WalletId}
-                AND     AccountIndex = {this.AccountIndex}
-                AND     AddressType = {this.AddressType}
-                AND     AddressIndex = {this.AddressIndex}",
-                this.ScriptPubKey, this.PubKey
-            );
         }
     }
 }

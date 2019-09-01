@@ -619,9 +619,14 @@ namespace Stratis.Features.SQLiteWalletRepository
                 HDWallet wallet = round.Wallet;
                 DBConnection conn = round.Conn;
 
-                // Flush when new wallets are joining. This ensure PrevTip will match all wallets requiring updating and advancing.
+                // Flush when new wallets are joining. This ensures that PrevTip will match all wallets requiring updating and advancing.
                 string lastBlockSyncedHash = (header?.Previous?.HashBlock ?? (uint256)0).ToString();
-                bool walletsJoining = this.Wallets.Any(c => c.Value.Wallet.LastBlockSyncedHash == lastBlockSyncedHash);
+                bool walletsJoining;
+                if (round.Wallet == null && !this.DatabasePerWallet)
+                    walletsJoining = this.Wallets.Any(c => c.Value.Wallet.LastBlockSyncedHash == lastBlockSyncedHash);
+                else
+                    walletsJoining = round.Wallet.LastBlockSyncedHash == lastBlockSyncedHash;
+
                 if (((round.Outputs.Count + round.PrevOuts.Count) >= 1000) || block == null || walletsJoining)
                 {
                     if (round.Outputs.Count != 0 || round.PrevOuts.Count != 0)
