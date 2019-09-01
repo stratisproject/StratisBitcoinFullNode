@@ -627,7 +627,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 else
                     walletsJoining = round.Wallet.LastBlockSyncedHash == lastBlockSyncedHash;
 
-                if (((round.Outputs.Count + round.PrevOuts.Count) >= 1000) || block == null || walletsJoining)
+                if (((round.Outputs.Count + round.PrevOuts.Count) >= 10000) || block == null || walletsJoining)
                 {
                     if (round.Outputs.Count != 0 || round.PrevOuts.Count != 0)
                     {
@@ -649,23 +649,6 @@ namespace Stratis.Features.SQLiteWalletRepository
                         round.AddressesOfInterest.Confirm();
                         round.TransactionsOfInterest.Confirm();
 
-                        conn.Commit();
-                        round.MustCommit = false;
-                        round.PrevTip = null;
-
-                        // Update all wallets found in the DB into the containers.
-                        foreach (HDWallet updatedWallet in HDWallet.GetAll(conn))
-                        {
-                            if (!this.Wallets.TryGetValue(updatedWallet.Name, out WalletContainer walletContainer))
-                                continue;
-
-                            walletContainer.Wallet.LastBlockSyncedHash = updatedWallet.LastBlockSyncedHash;
-                            walletContainer.Wallet.LastBlockSyncedHeight = updatedWallet.LastBlockSyncedHeight;
-                            walletContainer.Wallet.BlockLocator = updatedWallet.BlockLocator;
-                        }
-
-                        LogMetrics(conn, header, wallet);
-
                         this.ProcessTime += (DateTime.Now.Ticks - flagFall);
                     }
                     else
@@ -673,6 +656,27 @@ namespace Stratis.Features.SQLiteWalletRepository
                         if (round.NewTip != null)
                             HDWallet.AdvanceTip(conn, wallet, round.NewTip, round.PrevTip);
                     }
+
+                    if (round.MustCommit)
+                    {
+                        conn.Commit();
+                        round.MustCommit = false;
+                    }
+
+                    round.PrevTip = null;
+
+                    // Update all wallets found in the DB into the containers.
+                    foreach (HDWallet updatedWallet in HDWallet.GetAll(conn))
+                    {
+                        if (!this.Wallets.TryGetValue(updatedWallet.Name, out WalletContainer walletContainer))
+                            continue;
+
+                        walletContainer.Wallet.LastBlockSyncedHash = updatedWallet.LastBlockSyncedHash;
+                        walletContainer.Wallet.LastBlockSyncedHeight = updatedWallet.LastBlockSyncedHeight;
+                        walletContainer.Wallet.BlockLocator = updatedWallet.BlockLocator;
+                    }
+
+                    LogMetrics(conn, header, wallet);
                 }
 
                 if (block == null)
