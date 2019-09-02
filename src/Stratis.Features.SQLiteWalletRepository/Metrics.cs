@@ -13,10 +13,13 @@ namespace Stratis.Features.SQLiteWalletRepository
     /// </summary>
     internal class Metrics
     {
+        public long ReadTime;
+        public int ReadCount;
         public long ProcessTime;
         public int ProcessCount;
         public long BlockTime;
         public int BlockCount;
+        public long CommitTime;
         public string Path;
 
         public Metrics(string path)
@@ -41,11 +44,20 @@ namespace Stratis.Features.SQLiteWalletRepository
                 var processCnt = fixedWidth(this.ProcessCount, 5);
                 var processTime = fixedWidth(((double)this.ProcessTime / 10_000_000).ToString("N06"), 8);
                 var processAvgSec = fixedWidth(((double)this.ProcessTime / this.ProcessCount / 10_000_000).ToString("N06"), 8);
+
                 var scanCnt = fixedWidth(this.BlockCount, 5);
                 var scanTime = fixedWidth(((double)this.BlockTime / 10_000_000).ToString("N06"), 8);
                 var scanAvgSec = fixedWidth(((double)this.BlockTime / this.BlockCount / 10_000_000).ToString("N06"), 8);
 
+                var readCnt = fixedWidth(this.ReadCount, 5);
+                var readTime = fixedWidth(((double)this.ReadTime / 10_000_000).ToString("N06"), 8);
+                var readAvgSec = fixedWidth(((double)this.ReadTime / this.ReadCount / 10_000_000).ToString("N06"), 8);
+
+                var commitTime = fixedWidth(((double)this.CommitTime / 10_000_000).ToString("N06"), 8);
+                var commitAvgSec = fixedWidth(((double)this.CommitTime / this.ProcessCount / 10_000_000).ToString("N06"), 8);
+
                 lines.Add($"{fixedWidth("Blocks Scanned", -20)  }: Time={scanTime   }, Count={scanCnt   }, AvgSec={scanAvgSec}");
+                lines.Add($"{fixedWidth("-Blocks Read", -20)     }: Time={readTime   }, Count={readCnt   }, AvgSec={readAvgSec}");
                 lines.Add($"{fixedWidth("Blocks Processed", -20)}: Time={processTime}, Count={processCnt}, AvgSec={processAvgSec}");
 
                 foreach ((string cmdName, DBCommand cmd) in conn.Commands.Select(kv => (kv.Key, kv.Value)))
@@ -58,12 +70,17 @@ namespace Stratis.Features.SQLiteWalletRepository
                     lines.Add($"{key}: Time={time}, Count={count}, AvgSec={avgsec}");
                 }
 
+                lines.Add($"{fixedWidth("-Commit", -20)}: Time={commitTime}, Count={processCnt}, AvgSec={commitAvgSec}");
+
                 lines.Add("");
 
                 this.BlockCount = 0;
                 this.BlockTime = 0;
                 this.ProcessCount = 0;
                 this.ProcessTime = 0;
+                this.ReadCount = 0;
+                this.ReadTime = 0;
+                this.CommitTime = 0;
 
                 foreach (var kv in conn.Commands)
                 {

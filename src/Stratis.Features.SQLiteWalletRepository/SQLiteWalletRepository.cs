@@ -463,8 +463,6 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                 if (((round.Outputs.Count + round.PrevOuts.Count) >= 10000) || block == null || walletsJoining || DateTime.Now.Ticks >= round.NextScheduledCatchup)
                 {
-                    round.NextScheduledCatchup = DateTime.Now.Ticks + 10 * 10_000_000;
-
                     long flagFall = DateTime.Now.Ticks;
 
                     if (round.Outputs.Count != 0 || round.PrevOuts.Count != 0)
@@ -494,7 +492,9 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     if (round.MustCommit)
                     {
+                        long flagFall3 = DateTime.Now.Ticks;
                         conn.Commit();
+                        this.Metrics.CommitTime += (DateTime.Now.Ticks - flagFall3);
                         round.MustCommit = false;
                     }
 
@@ -514,6 +514,9 @@ namespace Stratis.Features.SQLiteWalletRepository
                     }
 
                     this.Metrics.LogMetrics(this, conn, header, wallet);
+
+                    if (DateTime.Now.Ticks >= round.NextScheduledCatchup)
+                        round.NextScheduledCatchup = DateTime.Now.Ticks + 10 * 10_000_000;
                 }
 
                 if (block == null)

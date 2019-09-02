@@ -79,6 +79,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         public BlockRepository BlockRepo { get; private set; }
         public ChainIndexer ChainIndexer { get; private set; }
 
+        internal Metrics Metrics { get; set; }
+
         public long TicksReading;
 
         public BlockBase(Network network, string dataDir, int blockLimit = int.MaxValue)
@@ -129,8 +131,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
         public IEnumerable<(ChainedHeader, Block)> TheSource()
         {
-            this.TicksReading = 0;
-
             for (int height = 1; height <= this.BlockRepo.TipHashAndHeight.Height;)
             {
                 var hashes = new List<uint256>();
@@ -144,7 +144,11 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                 List<Block> blocks = this.BlockRepo.GetBlocks(hashes);
 
-                this.TicksReading += (DateTime.Now.Ticks - flagFall);
+                if (this.Metrics != null)
+                {
+                    this.Metrics.ReadTime += (DateTime.Now.Ticks - flagFall);
+                    this.Metrics.ReadCount += blocks.Count;
+                }
 
                 var buffer = new List<(ChainedHeader, Block)>();
                 for (int i = 0; i < 100 && height <= this.BlockRepo.TipHashAndHeight.Height; height++, i++)
@@ -369,6 +373,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 network.StandardScriptsRegistry.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
                 var repo = new SQLiteWalletRepository(blockBase.NodeSettings.LoggerFactory, dataFolder, network, DateTimeProvider.Default, new ColdStakingDestinationReader(new ScriptAddressReader()));
                 repo.WriteMetricsToFile = true;
+                blockBase.Metrics = repo.Metrics;
                 repo.Initialize(this.dbPerWallet);
 
                 // Load the JSON wallet(s).
@@ -406,7 +411,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             }
         }
 
-        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
+        [Fact]//(Skip = "Configure this test then run it manually. Comment this Skip.")]
         public void CanProcessTestnetBlocks()
         {
             string[] walletNames = this.walletNames.ToArray();
@@ -414,7 +419,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             CanProcessBlocks(false, walletNames);
         }
 
-        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
+        [Fact]//(Skip = "Configure this test then run it manually. Comment this Skip.")]
         public void CanProcessBinanceAddresses()
         {
             // 180 Binance addresses.
@@ -610,6 +615,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 network.StandardScriptsRegistry.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
                 var repo = new SQLiteWalletRepository(blockBase.NodeSettings.LoggerFactory, dataFolder, network, DateTimeProvider.Default, new ColdStakingDestinationReader(new ScriptAddressReader()));
                 repo.WriteMetricsToFile = true;
+                blockBase.Metrics = repo.Metrics;
                 repo.Initialize(this.dbPerWallet);
                 this.LoadWallet(blockBase, repo, "wallet1");
                 repo.AddAddresses("wallet1", "account 0", 0, binance
