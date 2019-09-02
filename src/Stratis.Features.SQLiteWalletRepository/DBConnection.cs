@@ -17,6 +17,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         internal SQLiteConnection SQLiteConnection;
         public SQLiteWalletRepository Repository;
         public Stack<(dynamic, Action<dynamic>)> RollBackActions;
+        public Stack<(dynamic, Action<dynamic>)> CommitActions;
         internal Dictionary<string, DBCommand> Commands;
 
         // A given connection can't have two transactions running in parallel.
@@ -32,9 +33,15 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.Repository = repo;
             this.TransactionLock = new SemaphoreSlim(1, 1);
             this.TransactionDepth = 0;
+            this.CommitActions = new Stack<(object, Action<object>)>();
             this.RollBackActions = new Stack<(object, Action<object>)>();
             this.Commands = new Dictionary<string, DBCommand>();
             this.RegisterProcessBlockCommands();
+        }
+
+        internal void AddCommitAction(object commitData, Action<object> commitAction)
+        {
+            this.CommitActions.Push((commitData, commitAction));
         }
 
         internal void AddRollbackAction(object rollBackData, Action<object> rollBackAction)
@@ -63,6 +70,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             if (this.TransactionDepth == 0 && this.SQLiteConnection.IsInTransaction)
             {
                 this.SQLiteConnection.Rollback();
+                this.CommitActions.Clear();
 
                 while (this.RollBackActions.Count > 0)
                 {
@@ -83,6 +91,14 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 this.SQLiteConnection.Commit();
                 this.RollBackActions.Clear();
+
+                while (this.CommitActions.Count > 0)
+                {
+                    (dynamic commitData, Action<dynamic> commitAction) = this.CommitActions.Pop();
+
+                    commitAction(commitData);
+                }
+
                 this.TransactionLock.Release();
             }
         }
@@ -407,17 +423,19 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             if (this.IsInTransaction)
             {
-                this.RollBackActions.Push((new {
+                this.AddRollbackAction(new
+                {
                     wallet.Name,
                     wallet.LastBlockSyncedHeight,
                     wallet.LastBlockSyncedHash,
-                    wallet.BlockLocator }, (rollBackData) =>
+                    wallet.BlockLocator
+                }, (dynamic rollBackData) =>
                 {
                     HDWallet wallet2 = this.GetWalletByName(rollBackData.Name);
                     wallet2.LastBlockSyncedHash = rollBackData.LastBlockSyncedHash;
                     wallet2.LastBlockSyncedHeight = rollBackData.LastBlockSyncedHeight;
                     wallet2.BlockLocator = rollBackData.BlockLocator;
-                }));
+                });
             }
 
             this.RemoveTransactionsAfterLastBlockSynced(lastBlockSynced?.Height ?? -1, wallet.WalletId);

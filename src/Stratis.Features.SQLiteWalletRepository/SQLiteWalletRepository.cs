@@ -253,6 +253,24 @@ namespace Stratis.Features.SQLiteWalletRepository
                 walletContainer = new WalletContainer(conn, wallet, this.processBlocksInfo);
 
             this.Wallets[wallet.Name] = walletContainer;
+
+            if (conn.IsInTransaction)
+            {
+                conn.AddRollbackAction(new
+                {
+                    wallet.Name,
+                }, (dynamic rollBackData) =>
+                {
+                    if (this.Wallets.TryRemove(rollBackData.Name, out WalletContainer walletContaner))
+                    {
+                        if (this.DatabasePerWallet)
+                        {
+                            walletContainer.Conn.Close();
+                            File.Delete(Path.Combine(this.DBPath, $"{walletContainer.Wallet.Name}.db"));
+                        }
+                    }
+                });
+            }
         }
 
         /// <inheritdoc />
@@ -260,23 +278,24 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             WalletContainer walletContainer = this.Wallets[walletName];
 
-            walletContainer.LockProcessBlocks.Wait();
-            walletContainer.LockUpdateAccounts.Wait();
-            walletContainer.LockUpdateAddresses.Wait();
+            walletContainer.LockUpdateWallet.Wait();
 
             try
             {
                 this.logger.LogDebug("Deleting wallet '{0}'.", walletName);
 
+                DBConnection conn = GetConnection(walletName);
+
+                bool isInTransaction = conn.IsInTransaction;
+
                 // TODO: Delete HDPayments no longer required.
                 if (!this.DatabasePerWallet)
                 {
+                    int walletId = walletContainer.Wallet.WalletId;
+                    conn.BeginTransaction();
+
                     this.RewindWallet(walletName, null);
 
-                    int walletId = walletContainer.Wallet.WalletId;
-
-                    DBConnection conn = GetConnection(walletName);
-                    conn.BeginTransaction();
                     conn.Delete<HDWallet>(walletId);
                     conn.Execute($@"
                 DELETE  FROM HDAddress
@@ -287,22 +306,53 @@ namespace Stratis.Features.SQLiteWalletRepository
                 WHERE   WalletId = {walletId}
                 ");
                     conn.Commit();
-
-                    return this.Wallets.TryRemove(walletName, out _);
                 }
                 else
                 {
-                    DBConnection conn = GetConnection(walletName);
                     conn.Close();
-                    File.Delete(Path.Combine(this.DBPath, $"{walletName}.db"));
-                    return this.Wallets.TryRemove(walletName, out _);
+
+                    if (isInTransaction)
+                        File.Move(Path.Combine(this.DBPath, $"{walletName}.db"), Path.Combine(this.DBPath, $"{walletName}.bak"));
+                    else
+                        File.Delete(Path.Combine(this.DBPath, $"{walletName}.db"));
                 }
+
+                if (isInTransaction)
+                {
+                    conn.AddRollbackAction(new
+                    {
+                        walletContainer = this.Wallets[walletName]
+                    }, (dynamic rollBackData) =>
+                    {
+                        string name = rollBackData.walletContainer.Wallet.Name;
+
+                        this.Wallets[name] = rollBackData.walletContainer;
+
+                        if (this.DatabasePerWallet)
+                        {
+                            File.Move(Path.Combine(this.DBPath, $"{name}.bak"), Path.Combine(this.DBPath, $"{name}.db"));
+                            walletContainer.Conn = this.GetConnection(name);
+                        }
+                    });
+
+                    conn.AddCommitAction(new
+                    {
+                        walletContainer = this.Wallets[walletName]
+                    }, (dynamic rollBackData) =>
+                    {
+                        if (this.DatabasePerWallet)
+                        {
+                            string name = rollBackData.walletContainer.Wallet.Name;
+                            File.Delete(Path.Combine(this.DBPath, $"{name}.bak"));
+                        }
+                    });
+                }
+
+                return this.Wallets.TryRemove(walletName, out _); ;
             }
             finally
             {
-                walletContainer.LockUpdateAddresses.Release();
-                walletContainer.LockUpdateAccounts.Release();
-                walletContainer.LockProcessBlocks.Release();
+                walletContainer.LockUpdateWallet.Release();
             }
         }
 
@@ -311,7 +361,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             WalletContainer walletContainer = this.Wallets[walletName];
 
-            walletContainer.LockUpdateAccounts.Wait();
+            walletContainer.LockUpdateWallet.Wait();
 
             try
             {
@@ -329,7 +379,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
             finally
             {
-                walletContainer.LockUpdateAccounts.Release();
+                walletContainer.LockUpdateWallet.Release();
             }
         }
 
@@ -337,7 +387,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             WalletContainer walletContainer = this.Wallets[walletName];
 
-            walletContainer.LockUpdateAccounts.Wait();
+            walletContainer.LockUpdateWallet.Wait();
 
             try
             {
@@ -351,7 +401,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
             finally
             {
-                walletContainer.LockUpdateAccounts.Release();
+                walletContainer.LockUpdateWallet.Release();
             }
         }
 
@@ -360,23 +410,24 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             WalletContainer walletContainer = this.Wallets[walletName];
 
-            lock (walletContainer.LockUpdateAccounts)
-            {
-                HDWallet wallet = walletContainer.Wallet;
+            walletContainer.LockUpdateWallet.Wait();
 
-                ExtPubKey extPubKey;
+            HDWallet wallet = walletContainer.Wallet;
 
-                var conn = this.GetConnection(walletName);
+            ExtPubKey extPubKey;
 
-                // Get the extended pub key used to generate addresses for this account.
-                // Not passing extPubKey into the method to guarantee DB integrity.
-                Key privateKey = Key.Parse(wallet.EncryptedSeed, password, this.Network);
-                var seedExtKey = new ExtKey(privateKey, Convert.FromBase64String(wallet.ChainCode));
-                ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(this.ToHdPath(accountIndex)));
-                extPubKey = addressExtKey.Neuter();
+            var conn = this.GetConnection(walletName);
 
-                this.CreateAccount(walletName, accountIndex, accountName, extPubKey, creationTime);
-            }
+            // Get the extended pub key used to generate addresses for this account.
+            // Not passing extPubKey into the method to guarantee DB integrity.
+            Key privateKey = Key.Parse(wallet.EncryptedSeed, password, this.Network);
+            var seedExtKey = new ExtKey(privateKey, Convert.FromBase64String(wallet.ChainCode));
+            ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(this.ToHdPath(accountIndex)));
+            extPubKey = addressExtKey.Neuter();
+
+            this.CreateAccount(walletName, accountIndex, accountName, extPubKey, creationTime);
+
+            walletContainer.LockUpdateWallet.Release();
         }
 
         public IEnumerable<HdAccount> GetAccounts(string walletName)
@@ -403,6 +454,12 @@ namespace Stratis.Features.SQLiteWalletRepository
         public ITransactionContext BeginTransaction(string walletName)
         {
             DBConnection conn = this.GetConnection(walletName);
+            if (!this.Wallets.TryGetValue(walletName, out WalletContainer walletContainer))
+            {
+                walletContainer = new WalletContainer(conn, null);
+                this.Wallets[walletName] = walletContainer;
+            }
+
             var res = new TransactionContext(conn);
             conn.BeginTransaction();
             return res;
@@ -445,9 +502,6 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         private void ParallelProcessBlock(ProcessBlocksInfo round, Block block, ChainedHeader header)
         {
-            if (!round.LockProcessBlocks.Wait(100))
-                return;
-
             try
             {
                 HDWallet wallet = round.Wallet;
@@ -461,7 +515,10 @@ namespace Stratis.Features.SQLiteWalletRepository
                 else
                     walletsJoining = round.Wallet.LastBlockSyncedHash == lastBlockSyncedHash;
 
-                if (((round.Outputs.Count + round.PrevOuts.Count) >= 10000) || block == null || walletsJoining || DateTime.Now.Ticks >= round.NextScheduledCatchup)
+                // See if other threads are waiting to update any of the wallets.
+                bool threadsWaiting = round.ParticipatingWallets.Any(name => this.Wallets[name].LockProcessBlocks.WaitingThreads >= 1);
+
+                if (threadsWaiting || ((round.Outputs.Count + round.PrevOuts.Count) >= 10000) || block == null || walletsJoining || DateTime.Now.Ticks >= round.NextScheduledCatchup)
                 {
                     long flagFall = DateTime.Now.Ticks;
 
@@ -515,6 +572,17 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     this.Metrics.LogMetrics(this, conn, header, wallet);
 
+                    // Release all locks.
+                    if (round.ParticipatingWallets.Count > 0)
+                    {
+                        foreach (string walletName in round.ParticipatingWallets)
+                            this.Wallets[walletName].LockUpdateWallet.Release();
+
+                        round.LockProcessBlocks.Release();
+                    }
+
+                    round.ParticipatingWallets.Clear();
+
                     if (DateTime.Now.Ticks >= round.NextScheduledCatchup)
                         round.NextScheduledCatchup = DateTime.Now.Ticks + 10 * 10_000_000;
                 }
@@ -533,8 +601,32 @@ namespace Stratis.Features.SQLiteWalletRepository
                 this.Metrics.BlockTime += (DateTime.Now.Ticks - flagFall2);
 
                 round.NewTip = header;
+
                 if (round.PrevTip == null)
+                {
+                    // Batch starting.
+                    // Determine all relevant wallets then grab:
+                    // a) ProcessBlock lock
+                    // b) Locks for all relevant wallets
+
+                    if (round.Wallet == null && !this.DatabasePerWallet)
+                    {
+                        round.ParticipatingWallets = this.Wallets.Values.Where(c => c.Wallet.LastBlockSyncedHash == lastBlockSyncedHash).Select(c => c.Wallet.Name).ToList();
+                        if (round.ParticipatingWallets.Count == 0)
+                            return;
+                    }
+                    else if (round.Wallet.LastBlockSyncedHash == lastBlockSyncedHash)
+                        round.ParticipatingWallets = new List<string> { round.Wallet.Name };
+                    else
+                        return;
+
+                    round.LockProcessBlocks.Wait();
+
+                    foreach (string walletName in round.ParticipatingWallets)
+                        this.Wallets[walletName].LockUpdateWallet.Wait();
+
                     round.PrevTip = header.Previous;
+                }
             }
             catch (Exception)
             {
@@ -545,10 +637,6 @@ namespace Stratis.Features.SQLiteWalletRepository
                 }
 
                 throw;
-            }
-            finally
-            {
-                round.LockProcessBlocks.Release();
             }
         }
 

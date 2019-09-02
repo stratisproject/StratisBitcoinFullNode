@@ -10,11 +10,15 @@ namespace Stratis.Features.SQLiteWalletRepository
     {
         private readonly SemaphoreSlim slimLock;
         private Dictionary<int, int> depths;
+        private int waitingThreads;
+
+        public int WaitingThreads => this.waitingThreads;
 
         public DBLock()
         {
             this.slimLock = new SemaphoreSlim(1, 1);
-            this.depths = new Dictionary<int, int>(); ;
+            this.depths = new Dictionary<int, int>();
+            this.waitingThreads = 0;
         }
 
         public void Release()
@@ -43,7 +47,11 @@ namespace Stratis.Features.SQLiteWalletRepository
                 return true;
             }
 
-            if (!this.slimLock.Wait(millisecondsTimeout))
+            Interlocked.Increment(ref this.waitingThreads);
+            bool res = this.slimLock.Wait(millisecondsTimeout);
+            Interlocked.Decrement(ref this.waitingThreads);
+
+            if (!res)
                 return false;
 
             this.depths[threadId] = 0;

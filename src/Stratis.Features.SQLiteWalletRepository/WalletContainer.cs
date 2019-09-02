@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System.Collections.Generic;
+using NBitcoin;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 
 namespace Stratis.Features.SQLiteWalletRepository
@@ -17,6 +18,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         internal bool MustCommit;
         internal DBConnection Conn;
         internal HDWallet Wallet;
+        internal List<string> ParticipatingWallets;
         internal long NextScheduledCatchup;
 
         internal DBLock LockProcessBlocks;
@@ -31,6 +33,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.LockProcessBlocks = processBlocksInfo?.LockProcessBlocks ?? new DBLock();
             this.Outputs = TempTable.Create<TempOutput>();
             this.PrevOuts = TempTable.Create<TempPrevOut>();
+            this.ParticipatingWallets = new List<string>();
 
             this.AddressesOfInterest = processBlocksInfo?.AddressesOfInterest ?? new AddressesOfInterest(conn, wallet?.WalletId);
             this.TransactionsOfInterest = processBlocksInfo?.TransactionsOfInterest ?? new TransactionsOfInterest(conn, wallet?.WalletId);
@@ -40,14 +43,12 @@ namespace Stratis.Features.SQLiteWalletRepository
     internal class WalletContainer : ProcessBlocksInfo
     {
         internal readonly DBLock LockUpdateWallet;
-        internal readonly DBLock LockUpdateAccounts;
-        internal readonly DBLock LockUpdateAddresses;
+
 
         internal WalletContainer(DBConnection conn, HDWallet wallet, ProcessBlocksInfo processBlocksInfo = null) : base(conn, processBlocksInfo, wallet)
         {
             this.LockUpdateWallet = new DBLock();
-            this.LockUpdateAccounts = new DBLock();
-            this.LockUpdateAddresses = new DBLock();
+
             this.Conn = conn;
         }
     }
