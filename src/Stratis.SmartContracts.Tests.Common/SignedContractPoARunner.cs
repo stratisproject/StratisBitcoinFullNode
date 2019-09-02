@@ -35,12 +35,16 @@ namespace Stratis.SmartContracts.Tests.Common
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)
                 .UseBlockStore()
-                .UseMempool()
+                .UseMempool(injectRules: false)
                 .AddRPC()
                 .AddSmartContracts(options =>
                 {
                     options.UseReflectionExecutor();
                     options.UseSignedContracts(networkWithPubKey.SigningContractPubKey);
+                },
+                preOptions =>
+                {
+                    preOptions.UsePoAMempoolRules();
                 })
                 .UseSmartContractPoAConsensus()
                 .UseSmartContractPoAMining()

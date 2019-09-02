@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.P2P
 
                 // If the peer exists in the -addnode collection don't
                 // try and connect to it.
-                bool peerExistsInAddNode = this.ConnectionSettings.AddNode.Any(p => p.MapToIpv6().Match(peer.Endpoint));
+                bool peerExistsInAddNode = this.ConnectionSettings.RetrieveAddNodes().Any(p => p.MapToIpv6().Match(peer.Endpoint));
                 if (peerExistsInAddNode)
                 {
                     this.logger.LogDebug("Selection failed, peer exists in -addnode args '{0}'.", peer.Endpoint);

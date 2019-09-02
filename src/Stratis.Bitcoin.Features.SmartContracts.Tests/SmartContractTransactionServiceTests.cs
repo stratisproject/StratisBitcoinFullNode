@@ -691,5 +691,122 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 context.ChangeAddress == senderHdAddress
             )));
         }
+
+        [Fact]
+        public void BuildFeeEstimationContextCorrectly()
+        {
+            const int utxoIndex = 0;
+            uint256 utxoId = uint256.Zero;
+            uint256 utxoIdUnused = uint256.One;
+            string senderAddress = uint160.Zero.ToBase58Address(this.network);
+            string recipientAddress = uint160.One.ToBase58Address(this.network);
+            string changeAddress = new uint160(2).ToBase58Address(this.network);
+
+            var amount = 1234.567M;
+
+            var request = new ScTxFeeEstimateRequest
+            {
+                AccountName = "account 0",
+                WalletName = "wallet",
+                Sender = senderAddress,
+                ShuffleOutputs = true,
+                AllowUnconfirmed = true,
+                ChangeAddress = changeAddress,
+                Recipients = new List<RecipientModel>
+                {
+                    new RecipientModel { Amount = amount.ToString(), DestinationAddress = recipientAddress}
+                },
+                FeeType = "medium"
+            };
+
+            SmartContractTransactionService service = new SmartContractTransactionService(
+                this.network,
+                this.walletManager.Object,
+                this.walletTransactionHandler.Object,
+                this.stringSerializer.Object,
+                this.callDataSerializer.Object,
+                this.addressGenerator.Object,
+                this.stateRepository.Object);
+
+            var senderHdAddress = new HdAddress { Address = senderAddress };
+
+            this.walletManager.Setup(x => x.GetWallet(request.WalletName))
+                .Returns(new Features.Wallet.Wallet
+                {
+                    AccountsRoot = new List<AccountRoot>
+                    {
+                        new AccountRoot
+                        {
+                            Accounts = new List<HdAccount>
+                            {
+                                new HdAccount
+                                {
+                                    ExternalAddresses = new List<HdAddress>
+                                    {
+                                        senderHdAddress
+                                    },
+                                    Name = request.AccountName,
+                                }
+                            }
+                        }
+                    }
+                });
+
+            this.walletManager.Setup(x => x.GetAddressBalance(request.Sender))
+                .Returns(new AddressBalance { Address = request.Sender, AmountConfirmed = Money.FromUnit(amount, MoneyUnit.BTC), AmountUnconfirmed = 0 });
+
+            var outputs = new List<UnspentOutputReference>
+                {
+                    new UnspentOutputReference
+                    {
+                        Address = new HdAddress
+                        {
+                            Address = senderAddress
+                        },
+                        Transaction = new TransactionData
+                        {
+                            Id = utxoId,
+                            Index = utxoIndex,
+                        }
+                    }, new UnspentOutputReference
+                    {
+                        Address = new HdAddress
+                        {
+                            Address = senderAddress
+                        },
+                        Transaction = new TransactionData
+                        {
+                            Id = utxoIdUnused,
+                            Index = utxoIndex,
+                        }
+                    }
+                };
+
+            this.walletManager.Setup(x => x.GetSpendableTransactionsInWallet(It.IsAny<string>(), 0)).Returns(outputs);
+
+            this.walletTransactionHandler.Setup(x => x.BuildTransaction(It.IsAny<TransactionBuildContext>()))
+                .Returns(new Transaction());
+
+            EstimateFeeResult result = service.EstimateFee(request);
+
+            // Check that the transaction builder is invoked, and that we:
+            // - Ignore shuffleOutputs,
+            // - Set inputs from sender
+            // - Set recipients,
+            // - Set change to sender
+            // - Set the fee type correctly
+            // - Set sign to false
+            // - Set transaction fee to null
+            this.walletTransactionHandler.Verify(w => w.EstimateFee(It.Is<TransactionBuildContext>(context =>
+                context.AllowOtherInputs == false &&
+                context.Shuffle == false &&
+                context.SelectedInputs.All(i => outputs.Select(o => o.Transaction.Id).Contains(i.Hash)) &&
+                context.Recipients.Single().Amount == Money.FromUnit(amount, MoneyUnit.BTC) &&
+                context.ChangeAddress == senderHdAddress &&
+                context.Sign == false &&
+                context.TransactionFee == null &&
+                context.FeeType == FeeType.Medium
+            )));
+        }
     }
 }

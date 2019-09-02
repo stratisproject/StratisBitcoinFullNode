@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using LiteDB;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -15,7 +14,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
     {
         private readonly AddressIndexerOutpointsRepository repository;
 
-        private Random random = new Random();
+        private readonly Random random = new Random();
 
         private readonly int maxItems = 10;
 
@@ -31,7 +30,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public void LoadPercentageCalculatedCorrectly()
         {
             for (int i = 0; i < this.maxItems / 2; i++)
-                this.repository.AddOutPointData(new OutPointData() {Outpoint = this.RandomString(20)});
+                this.repository.AddOutPointData(new OutPointData() { Outpoint = this.RandomString(20) });
 
             Assert.Equal(50, this.repository.GetLoadPercentage());
         }
@@ -41,7 +40,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             var outPoint = new OutPoint(new uint256(RandomUtils.GetUInt64()), 1);
 
-            var data = new OutPointData() {Outpoint = outPoint.ToString(), Money = 1, ScriptPubKeyBytes = RandomUtils.GetBytes(20)};
+            var data = new OutPointData() { Outpoint = outPoint.ToString(), Money = 1, ScriptPubKeyBytes = RandomUtils.GetBytes(20) };
             this.repository.AddOutPointData(data);
 
             // Add more to trigger eviction.
@@ -51,7 +50,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             Assert.True(this.repository.TryGetOutPointData(outPoint, out OutPointData dataOut));
             Assert.True(data.ScriptPubKeyBytes.SequenceEqual(dataOut.ScriptPubKeyBytes));
         }
-
 
         [Fact]
         public void CanRewind()
@@ -65,7 +63,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             {
                 BlockHash = rewindDataBlockHash.ToString(),
                 BlockHeight = 100,
-                SpentOutputs = new List<OutPointData>() {data}
+                SpentOutputs = new List<OutPointData>() { data }
             };
 
             this.repository.RecordRewindData(rewindData);

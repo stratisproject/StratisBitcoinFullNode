@@ -419,7 +419,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 this.rpcGetStakingInfoModel.NetStakeWeight = this.networkWeight;
 
                 // Trying to create coinstake that satisfies the difficulty target, put it into a block and sign the block.
-                if (await this.StakeAndSignBlockAsync(utxoStakeDescriptions, posBlock, chainTip, blockTemplate.TotalFee, coinstakeTimestamp).ConfigureAwait(false))
+                if (await this.StakeAndSignBlockAsync(utxoStakeDescriptions, blockTemplate, chainTip, blockTemplate.TotalFee, coinstakeTimestamp).ConfigureAwait(false))
                 {
                     this.logger.LogDebug("New POS block created and signed successfully.");
                     await this.CheckStakeAsync(posBlock, chainTip).ConfigureAwait(false);
@@ -528,13 +528,15 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// to be mined and signes it.
         /// </summary>
         /// <param name="utxoStakeDescriptions">List of UTXOs that are available in the wallet for staking.</param>
-        /// <param name="block">Template of the block that we are trying to mine.</param>
+        /// <param name="blockTemplate">Template of the block that we are trying to mine.</param>
         /// <param name="chainTip">Tip of the best chain.</param>
         /// <param name="fees">Transaction fees from the transactions included in the block if we mine it.</param>
         /// <param name="coinstakeTimestamp">Maximal timestamp of the coinstake transaction. The actual timestamp can be lower, but not higher.</param>
         /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
-        private async Task<bool> StakeAndSignBlockAsync(List<UtxoStakeDescription> utxoStakeDescriptions, PosBlock block, ChainedHeader chainTip, long fees, uint coinstakeTimestamp)
+        private async Task<bool> StakeAndSignBlockAsync(List<UtxoStakeDescription> utxoStakeDescriptions, BlockTemplate blockTemplate, ChainedHeader chainTip, long fees, uint coinstakeTimestamp)
         {
+            var block = blockTemplate.Block as PosBlock;
+
             // If we are trying to sign something except proof-of-stake block template.
             if (!block.Transactions[0].Outputs[0].IsEmpty)
             {
@@ -549,8 +551,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 return true;
             }
 
-            var coinstakeContext = new CoinstakeContext();
-            coinstakeContext.CoinstakeTx = this.network.CreateTransaction();
+            var coinstakeContext = new CoinstakeContext { CoinstakeTx = this.network.CreateTransaction() };
             coinstakeContext.CoinstakeTx.Time = coinstakeTimestamp;
 
             // Search to current coinstake time.
@@ -562,25 +563,13 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             this.lastCoinStakeSearchTime = searchTime;
             this.logger.LogDebug("Search interval set to {0}, last coinstake search timestamp set to {1}.", searchInterval, this.lastCoinStakeSearchTime);
 
-            if (await this.CreateCoinstakeAsync(utxoStakeDescriptions, block, chainTip, searchInterval, fees, coinstakeContext).ConfigureAwait(false))
+            if (await this.CreateCoinstakeAsync(utxoStakeDescriptions, blockTemplate, chainTip, searchInterval, fees, coinstakeContext).ConfigureAwait(false))
             {
                 uint minTimestamp = chainTip.Header.Time + 1;
                 if (coinstakeContext.CoinstakeTx.Time >= minTimestamp)
                 {
-                    // Make sure coinstake would meet timestamp protocol
-                    // as it would be the same as the block timestamp.
+                    // Make sure coinstake would meet timestamp protocol as it would be the same as the block timestamp.
                     block.Transactions[0].Time = block.Header.Time = coinstakeContext.CoinstakeTx.Time;
-
-                    // We have to make sure that we have no future timestamps in
-                    // our transactions set.
-                    for (int i = block.Transactions.Count - 1; i >= 0; i--)
-                    {
-                        if (block.Transactions[i].Time > block.Header.Time)
-                        {
-                            this.logger.LogDebug("Removing transaction with timestamp {0} as it is greater than coinstake transaction timestamp {1}.", block.Transactions[i].Time, block.Header.Time);
-                            block.Transactions.Remove(block.Transactions[i]);
-                        }
-                    }
 
                     block.Transactions.Insert(1, coinstakeContext.CoinstakeTx);
 
@@ -601,7 +590,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         }
 
         /// <inheritdoc/>
-        public async Task<bool> CreateCoinstakeAsync(List<UtxoStakeDescription> utxoStakeDescriptions, Block block, ChainedHeader chainTip, long searchInterval, long fees, CoinstakeContext coinstakeContext)
+        public async Task<bool> CreateCoinstakeAsync(List<UtxoStakeDescription> utxoStakeDescriptions, BlockTemplate blockTemplate, ChainedHeader chainTip, long searchInterval, long fees, CoinstakeContext coinstakeContext)
         {
             coinstakeContext.CoinstakeTx.Inputs.Clear();
             coinstakeContext.CoinstakeTx.Outputs.Clear();
@@ -678,7 +667,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
             await Task.Run(() => Parallel.ForEach(workerContexts, cwc =>
             {
-                this.CoinstakeWorker(cwc, chainTip, block, minimalAllowedTime, searchInterval);
+                this.CoinstakeWorker(cwc, chainTip, blockTemplate.Block, minimalAllowedTime, searchInterval);
             }));
 
             if (workersResult.KernelFoundIndex == CoinstakeWorkerResult.KernelNotFound)
@@ -688,6 +677,21 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             }
 
             this.logger.LogDebug("Worker #{0} found the kernel.", workersResult.KernelFoundIndex);
+
+            // We have to make sure that we have no future timestamps in our transactions set.
+            // We ignore the coinbase (it gets its timestamp reset after the coinstake is created).
+            for (int i = blockTemplate.Block.Transactions.Count - 1; i >= 1; i--)
+            {
+                // We have not yet updated the header timestamp, so we use the coinstake timestamp directly here.
+                if (blockTemplate.Block.Transactions[i].Time <= coinstakeContext.CoinstakeTx.Time)
+                    continue;
+
+                // Update the total fees, with the to-be-removed transaction taken into account.
+                fees -= blockTemplate.FeeDetails[blockTemplate.Block.Transactions[i].GetHash()].Satoshi;
+
+                this.logger.LogDebug("Removing transaction with timestamp {0} as it is greater than coinstake transaction timestamp {1}. New fee amount {2}.", blockTemplate.Block.Transactions[i].Time, coinstakeContext.CoinstakeTx.Time, fees);
+                blockTemplate.Block.Transactions.Remove(blockTemplate.Block.Transactions[i]);
+            }
 
             // Get reward for newly created block.
             long reward = fees + this.consensusManager.ConsensusRules.GetRule<PosCoinviewRule>().GetProofOfStakeReward(chainTip.Height + 1);
@@ -871,7 +875,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
                             context.CoinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(0, scriptPubKeyOut));
                             context.Result.KernelCoin = utxoStakeInfo;
-
+                            
                             context.Logger.LogDebug("Kernel accepted, coinstake input is '{0}', stopping work.", prevoutStake);
                         }
                         else context.Logger.LogDebug("Kernel found, but worker #{0} announced its kernel earlier, stopping work.", context.Result.KernelFoundIndex);
