@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -53,8 +54,15 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly IWalletRepository walletRepository;
 
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
+        private readonly INodeLifetime nodeLifetime;
+
+        private IAsyncLoop walletSynchronisationLoop;
+
+        private ConcurrentDictionary<string, WalletSyncState> walletStateMap = new ConcurrentDictionary<string, WalletSyncState>();
+
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ChainIndexer chainIndexer,
-            Network network, IBlockStore blockStore, StoreSettings storeSettings, ISignals signals, IAsyncProvider asyncProvider, IWalletRepository walletRepository)
+            Network network, IBlockStore blockStore, StoreSettings storeSettings, ISignals signals, IAsyncProvider asyncProvider, IWalletRepository walletRepository, INodeLifetime nodeLifetime)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
@@ -65,6 +73,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(signals, nameof(signals));
             Guard.NotNull(asyncProvider, nameof(asyncProvider));
             Guard.NotNull(walletRepository, nameof(walletRepository));
+            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 
             this.walletManager = walletManager;
             this.chainIndexer = chainIndexer;
@@ -75,6 +84,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.blocksQueue = this.asyncProvider.CreateAndRunAsyncDelegateDequeuer<Block>($"{nameof(WalletSyncManager)}-{nameof(this.blocksQueue)}", this.OnProcessBlockAsync);
             this.walletRepository = walletRepository;
+            this.nodeLifetime = nodeLifetime;
 
             this.blocksQueueSize = 0;
         }
@@ -91,20 +101,15 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.logger.LogInformation("WalletSyncManager initialized. Wallet at block {0}.", this.walletManager.LastBlockHeight());
 
-            List<ChainedHeader> listOfTipsSQL = new List<ChainedHeader>();
-
-            //foreach (string walletName in ((SQLiteWalletRepository)this.walletRepository).GetWalletNames())
-            //{
-            //    try
-            //    {
-            //        ChainedHeader ch = this.walletRepository.FindFork(walletName, newTip);
-            //        listOfTipsSQL.Add(ch);
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        this.logger.LogInformation("Error calling find fork");
-            //    }
-            //}
+            this.walletSynchronisationLoop = this.asyncProvider.CreateAndRunAsyncLoop("WalletSyncManager.OrchestrateWalletSync",
+                token =>
+                {
+                    this.OrchestrateWalletSync(); 
+                    return Task.CompletedTask;
+                }, 
+                this.nodeLifetime.ApplicationStopping, 
+                TimeSpan.FromSeconds(5),
+                TimeSpan.FromSeconds(5));
 
             this.walletTip = this.chainIndexer.GetHeader(this.walletManager.WalletTipHash);
             if (this.walletTip == null)
@@ -294,12 +299,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             #endregion
 
-            if (block.Header.HashPrevBlock != this.walletTip.HashBlock)
+            if (block.Header.HashPrevBlock == this.walletTip.HashBlock)
             {
                 this.logger.LogDebug("New block follows the previously known block '{0}'.", this.walletTip);
 
                 //this.walletTip = newTip;
-                this.walletRepository.ProcessBlock(block, newTip);
+                //this.walletRepository.ProcessBlock(block, newTip);
                 //this.walletManager.ProcessBlock(block, newTip);
             }
         }
@@ -371,6 +376,79 @@ namespace Stratis.Bitcoin.Features.Wallet
             GC.SuppressFinalize(this);
         }
 
+        private void OrchestrateWalletSync()
+        {
+            List<string> wallets = ((SQLiteWalletRepository)this.walletRepository).GetWalletNames();
+            List<ChainedHeader> listOfTipsSQL = new List<ChainedHeader>();
+
+            ChainedHeader ch1 = this.chainIndexer.Tip;
+
+            if (wallets.Any())
+            {
+                foreach (string wallet in wallets)
+                {
+                    try
+                    {
+                        bool walletIsNotSyncing = this.walletStateMap.TryAdd(wallet, WalletSyncState.Syncing);
+
+                        if (walletIsNotSyncing)
+                        {
+                            int magicBatchSize = 100;
+                            ChainedHeader chWalletTip = this.walletRepository.FindFork(wallet, this.chainIndexer.Tip);
+                            int chainedInexerTipHeight = this.chainIndexer.Tip.Height;
+                            int walletTipHeight = chWalletTip.Height;
+                            int delta = chainedInexerTipHeight - walletTipHeight;
+                            int quotient, reminder;
+                            quotient = Math.DivRem(delta, magicBatchSize, out reminder);
+
+                            // do the batch for the change, lazy
+                            ProccessRangeToRepo(walletTipHeight, walletTipHeight + reminder, wallet);
+
+                            // process chunk of magicBatchSize
+                            if (quotient > 0)
+                            {
+                                int left = walletTipHeight + reminder;
+                                int right = left + magicBatchSize;
+                                for (int x = 0; x < quotient; x++)
+                                {
+                                    ProccessRangeToRepo(left, right, wallet);
+                                    left += magicBatchSize;
+                                    right += magicBatchSize;
+                                }
+                            }
+
+                            this.walletStateMap.TryRemove(wallet, out _);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        this.walletStateMap.TryRemove(wallet, out _);
+                        this.logger.LogInformation("Error calling find fork");
+                    }
+                }
+            }
+        }
+
+        private void ProccessRangeToRepo(int leftBoundry, int rightBoundry, string wallet)
+        {
+            IEnumerable<(ChainedHeader, Block)> range =
+                this.BatchBlocksFromRange(leftBoundry, rightBoundry);
+
+            this.walletRepository.ProcessBlocks(range, wallet);
+        }
+
+        private IEnumerable<(ChainedHeader, Block)> BatchBlocksFromRange(int leftBoundry, int rightboundry)
+        {
+            // It is possible it will be more efficient to have this to add
+            // all hashes to a list and then call List<Block> blocks = this.BlockRepo.GetBlocks(hashes);
+            for (int x = leftBoundry; x < rightboundry; x++)
+            {
+                ChainedHeader chainedHeader = this.chainIndexer.GetHeader(x);
+                Block block = this.blockStore.GetBlock(chainedHeader.HashBlock);
+                yield return (chainedHeader, block);
+            }
+        }
+
         protected void Dispose(bool disposing)
         {
             if (disposing)
@@ -379,5 +457,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.Stop();
             }
         }
+    }
+
+    public enum WalletSyncState
+    {
+        Idle = 0,
+        Syncing = 1,
+        Finished = 2
     }
 }
