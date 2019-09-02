@@ -403,12 +403,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                         Assert.Equal(amountConfirmed, amountRepo);
                     }
                 }
-
-                // Calculate some stats.
-                long totalTime = ticksTotal / 10_000_000;
-                long totalExcludingBlockReads = (ticksTotal - blockBase.TicksReading) / 10_000_000;
-                long blocksProcessed = repo.ProcessCount;
-                double secondsPerBlock = (double)repo.ProcessTime / repo.ProcessCount / 10_000_000;
             }
         }
 

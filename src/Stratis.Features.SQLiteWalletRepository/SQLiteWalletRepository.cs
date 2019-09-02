@@ -4,14 +4,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Features.SQLiteWalletRepository.Commands;
 using Stratis.Features.SQLiteWalletRepository.External;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 using NBitcoin.DataEncoders;
@@ -22,170 +20,6 @@ using Script = NBitcoin.Script;
 
 namespace Stratis.Features.SQLiteWalletRepository
 {
-    public class TransactionContext : ITransactionContext
-    {
-        private int transactionDepth;
-        private readonly DBConnection conn;
-
-        public TransactionContext(DBConnection conn)
-        {
-            this.conn = conn;
-            this.transactionDepth = conn.TransactionDepth;
-        }
-
-        public void Rollback()
-        {
-            while (this.conn.IsInTransaction)
-            {
-                this.conn.Rollback();
-            }
-        }
-
-        public void Commit()
-        {
-            while (this.conn.IsInTransaction)
-            {
-                this.conn.Commit();
-            }
-        }
-
-        public void Dispose()
-        {
-            while (this.conn.IsInTransaction)
-            {
-                this.conn.Rollback();
-            }
-        }
-    }
-
-    internal class TopUpTracker
-    {
-        internal int WalletId;
-        internal int AccountIndex;
-        internal int AddressType;
-        internal HDAccount Account;
-        internal int AddressCount;
-        internal int NextAddressIndex;
-
-        internal TopUpTracker(int walletId, int accountIndex, int addressType)
-        {
-            this.WalletId = walletId;
-            this.AccountIndex = accountIndex;
-            this.AddressType = addressType;
-        }
-
-        internal void ReadAccount(DBConnection conn)
-        {
-            this.Account = HDAccount.GetAccount(conn, this.WalletId, this.AccountIndex);
-            this.AddressCount = HDAddress.GetAddressCount(conn, this.WalletId, this.AccountIndex, this.AddressType);
-            this.NextAddressIndex = HDAddress.GetNextAddressIndex(conn, this.WalletId, this.AccountIndex, this.AddressType);
-        }
-
-        public override int GetHashCode()
-        {
-            return (this.WalletId << 8) ^ (this.AccountIndex << 4) ^ this.AddressType;
-        }
-
-        public override bool Equals(object obj)
-        {
-            return (obj as TopUpTracker).WalletId == this.WalletId &&
-                   (obj as TopUpTracker).AccountIndex == this.AccountIndex &&
-                   (obj as TopUpTracker).AddressType == this.AddressType;
-        }
-    }
-
-    internal class DBLock
-    {
-        private readonly SemaphoreSlim slimLock;
-        private Dictionary<int, int> depths;
-
-        public DBLock()
-        {
-            this.slimLock = new SemaphoreSlim(1, 1);
-            this.depths = new Dictionary<int, int>(); ;
-        }
-
-        public void Release()
-        {
-            int threadId = Thread.CurrentThread.ManagedThreadId;
-            if (this.depths.TryGetValue(threadId, out int depth))
-            {
-                if (depth > 0)
-                {
-                    this.depths[threadId] = depth - 1;
-                    return;
-                }
-
-                this.depths.Remove(threadId);
-            }
-
-            this.slimLock.Release();
-        }
-
-        public bool Wait(int millisecondsTimeout = int.MaxValue)
-        {
-            int threadId = Thread.CurrentThread.ManagedThreadId;
-            if (this.depths.TryGetValue(threadId, out int depth))
-            {
-                this.depths[threadId] = depth + 1;
-                return true;
-            }
-
-            if (!this.slimLock.Wait(millisecondsTimeout))
-                return false;
-
-            this.depths[threadId] = 0;
-
-            return true;
-        }
-    }
-
-    internal class ProcessBlocksInfo
-    {
-        internal TempTable Outputs;
-        internal TempTable PrevOuts;
-        internal AddressesOfInterest AddressesOfInterest;
-        internal TransactionsOfInterest TransactionsOfInterest;
-        internal ChainedHeader NewTip;
-        internal ChainedHeader PrevTip;
-        internal bool MustCommit;
-        internal DBConnection Conn;
-        internal HDWallet Wallet;
-        internal long NextScheduledCatchup;
-
-        internal DBLock LockProcessBlocks;
-
-        internal ProcessBlocksInfo(DBConnection conn, ProcessBlocksInfo processBlocksInfo, HDWallet wallet = null)
-        {
-            this.NewTip = null;
-            this.PrevTip = null;
-            this.MustCommit = false;
-            this.Conn = conn;
-            this.Wallet = wallet;
-            this.LockProcessBlocks = processBlocksInfo?.LockProcessBlocks ?? new DBLock();
-            this.Outputs = TempTable.Create<TempOutput>();
-            this.PrevOuts = TempTable.Create<TempPrevOut>();
-
-            this.AddressesOfInterest = processBlocksInfo?.AddressesOfInterest ?? new AddressesOfInterest(conn, wallet?.WalletId);
-            this.TransactionsOfInterest = processBlocksInfo?.TransactionsOfInterest ?? new TransactionsOfInterest(conn, wallet?.WalletId);
-        }
-    }
-
-    internal class WalletContainer : ProcessBlocksInfo
-    {
-        internal readonly DBLock LockUpdateWallet;
-        internal readonly DBLock LockUpdateAccounts;
-        internal readonly DBLock LockUpdateAddresses;
-
-        internal WalletContainer(DBConnection conn, HDWallet wallet, ProcessBlocksInfo processBlocksInfo = null) : base(conn, processBlocksInfo, wallet)
-        {
-            this.LockUpdateWallet = new DBLock();
-            this.LockUpdateAccounts = new DBLock();
-            this.LockUpdateAddresses = new DBLock();
-            this.Conn = conn;
-        }
-    }
-
     /// <summary>
     /// Implements an SQLite wallet repository.
     /// </summary>
@@ -222,8 +56,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         private ProcessBlocksInfo processBlocksInfo;
 
         // Metrics.
-        internal long ProcessTime;
-        internal int ProcessCount;
+        internal Metrics Metrics;
 
         public SQLiteWalletRepository(ILoggerFactory loggerFactory, DataFolder dataFolder, Network network, IDateTimeProvider dateTimeProvider, IScriptAddressReader scriptAddressReader)
         {
@@ -232,6 +65,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.dateTimeProvider = dateTimeProvider;
             this.ScriptAddressReader = scriptAddressReader;
             this.WriteMetricsToFile = false;
+            this.Metrics = new Metrics(this.DBPath);
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -627,13 +461,15 @@ namespace Stratis.Features.SQLiteWalletRepository
                 else
                     walletsJoining = round.Wallet.LastBlockSyncedHash == lastBlockSyncedHash;
 
-                if (((round.Outputs.Count + round.PrevOuts.Count) >= 10000) || block == null || walletsJoining)
+                if (((round.Outputs.Count + round.PrevOuts.Count) >= 10000) || block == null || walletsJoining || DateTime.Now.Ticks >= round.NextScheduledCatchup)
                 {
+                    round.NextScheduledCatchup = DateTime.Now.Ticks + 10 * 10_000_000;
+
+                    long flagFall = DateTime.Now.Ticks;
+
                     if (round.Outputs.Count != 0 || round.PrevOuts.Count != 0)
                     {
                         IEnumerable<IEnumerable<string>> blockToScript = (new[] { round.Outputs, round.PrevOuts }).Select(list => list.CreateScript());
-
-                        long flagFall = DateTime.Now.Ticks;
 
                         if (!round.MustCommit && !conn.IsInTransaction)
                         {
@@ -649,7 +485,6 @@ namespace Stratis.Features.SQLiteWalletRepository
                         round.AddressesOfInterest.Confirm();
                         round.TransactionsOfInterest.Confirm();
 
-                        this.ProcessTime += (DateTime.Now.Ticks - flagFall);
                     }
                     else
                     {
@@ -662,6 +497,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                         conn.Commit();
                         round.MustCommit = false;
                     }
+
+                    this.Metrics.ProcessTime += (DateTime.Now.Ticks - flagFall);
 
                     round.PrevTip = null;
 
@@ -676,18 +513,21 @@ namespace Stratis.Features.SQLiteWalletRepository
                         walletContainer.Wallet.BlockLocator = updatedWallet.BlockLocator;
                     }
 
-                    LogMetrics(conn, header, wallet);
+                    this.Metrics.LogMetrics(this, conn, header, wallet);
                 }
 
                 if (block == null)
                     return;
 
                 // Determine the scripts for creating temporary tables and inserting the block's information into them.
+                long flagFall2 = DateTime.Now.Ticks;
+                this.Metrics.BlockCount++;
                 bool wasInTransaction = conn.IsInTransaction;
                 if (TransactionsToLists(conn, block.Transactions, header, null, round))
-                    this.ProcessCount++;
+                    this.Metrics.ProcessCount++;
                 if (conn.IsInTransaction && !wasInTransaction)
                     round.MustCommit = true;
+                this.Metrics.BlockTime += (DateTime.Now.Ticks - flagFall2);
 
                 round.NewTip = header;
                 if (round.PrevTip == null)
@@ -706,44 +546,6 @@ namespace Stratis.Features.SQLiteWalletRepository
             finally
             {
                 round.LockProcessBlocks.Release();
-            }
-        }
-
-        private void LogMetrics(DBConnection conn, ChainedHeader header, HDWallet wallet)
-        {
-            // Write some metrics to file.
-            if (this.WriteMetricsToFile)
-            {
-                string fixedWidth(object val, int width)
-                {
-                    return string.Format($"{{0,{width}}}", val);
-                }
-
-                var lines = new List<string>();
-                lines.Add($"--- Date/Time: {(DateTime.Now.ToString())}, Block Height: { (header?.Height) } ---");
-
-                foreach ((string cmdName, DBCommand cmd) in conn.Commands.Select(kv => (kv.Key, kv.Value)))
-                {
-                    var key = fixedWidth(cmdName, -20);
-                    var time = fixedWidth(((double)cmd.ProcessTime / 10_000_000).ToString("N06"), 8);
-                    var count = fixedWidth(cmd.ProcessCount, 5);
-                    var avgsec = (cmd.ProcessCount == 0) ? null : fixedWidth(((double)cmd.ProcessTime / cmd.ProcessCount / 10_000_000).ToString("N06"), 8);
-
-                    lines.Add($"{key}: Time={time}, Count={count}, AvgSec={avgsec}");
-                }
-
-                lines.Add("");
-
-                foreach (var kv in conn.Commands)
-                {
-                    kv.Value.ProcessCount = 0;
-                    kv.Value.ProcessTime = 0;
-                }
-
-                if (wallet != null)
-                    File.AppendAllLines(Path.Combine(this.DBPath, $"Metrics_{ wallet.Name }.txt"), lines);
-                else
-                    File.AppendAllLines(Path.Combine(this.DBPath, "Metrics.txt"), lines);
             }
         }
 
