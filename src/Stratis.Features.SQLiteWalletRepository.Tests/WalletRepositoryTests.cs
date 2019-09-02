@@ -192,7 +192,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     var nodeSettings = new NodeSettings(this.network, args: new[] { $"-datadir={dataFolder.RootPath}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
 
                     var repo = new SQLiteWalletRepository(nodeSettings.LoggerFactory, dataFolder, this.network, DateTimeProvider.Default, new ColdStakingDestinationReader(new ScriptAddressReader()));
-
+                    repo.WriteMetricsToFile = true;
                     repo.Initialize(this.dbPerWallet);
 
                     string password = "test";
@@ -205,8 +205,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                     // Create "test2" as an empty wallet.
                     byte[] chainCode = extendedKey.ChainCode;
+                    ITransactionContext dbTran = repo.BeginTransaction(account.WalletName);
                     repo.CreateWallet(account.WalletName, encryptedSeed, chainCode);
                     repo.CreateAccount(account.WalletName, 0, account.AccountName, password);
+                    dbTran.Commit();
 
                     // Verify the wallet exisits.
                     Assert.Equal(account.WalletName, repo.GetWalletNames().First());
