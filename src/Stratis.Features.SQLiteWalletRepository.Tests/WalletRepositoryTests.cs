@@ -115,7 +115,9 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             int firstHeight = 1;
             uint256 firstHash = nextBlock[network.GenesisHash];
 
-            var chainTip = new ChainedHeader(new BlockHeader() { HashPrevBlock = network.GenesisHash }, firstHash, firstHeight);
+            var genesis = new ChainedHeader(new BlockHeader(), network.GenesisHash, 0);
+            var chainTip = new ChainedHeader(new BlockHeader() { HashPrevBlock = genesis.HashBlock }, firstHash, genesis);
+            chainTip.Header.HashPrevBlock = network.GenesisHash;
             uint256 hash = firstHash;
 
             for (int height = firstHeight + 1; height <= this.BlockRepo.TipHashAndHeight.Height; height++)
@@ -419,7 +421,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             CanProcessBlocks(false, walletNames);
         }
 
-        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
+        [Fact]//(Skip = "Configure this test then run it manually. Comment this Skip.")]
         public void CanProcessBinanceAddresses()
         {
             // 180 Binance addresses.
