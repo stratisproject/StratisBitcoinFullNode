@@ -114,10 +114,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                     AND    Name = '{wallet?.Name}'" : "")}");
         }
 
-        internal void SetLastBlockSynced(ChainedHeader lastBlockSynced)
+        internal void SetLastBlockSynced(ChainedHeader lastBlockSynced, Network network)
         {
-            uint256 lastBlockSyncedHash = lastBlockSynced?.HashBlock ?? uint256.Zero;
-            int lastBlockSyncedHeight = lastBlockSynced?.Height ?? -1;
+            uint256 lastBlockSyncedHash = lastBlockSynced?.HashBlock ?? network.GenesisHash;
+            int lastBlockSyncedHeight = lastBlockSynced?.Height ?? 0;
             string blockLocator = "";
             if (lastBlockSynced != null)
                 blockLocator = string.Join(",", lastBlockSynced?.GetLocator().Blocks);
