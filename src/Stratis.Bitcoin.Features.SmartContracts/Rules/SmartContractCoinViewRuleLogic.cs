@@ -81,8 +81,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             var blockHeader = (ISmartContractBlockHeader)block.Header;
 
-            this.logger.LogDebug("Compare state roots '{0}' and '{1}'", new uint256(this.mutableStateRepository.Root), blockHeader.HashStateRoot);
-            if (new uint256(this.mutableStateRepository.Root) != blockHeader.HashStateRoot)
+            var mutableStateRepositoryRoot = new uint256(this.mutableStateRepository.Root);
+            uint256 blockHeaderHashStateRoot = blockHeader.HashStateRoot;
+            this.logger.LogDebug("Compare state roots '{0}' and '{1}'", mutableStateRepositoryRoot, blockHeaderHashStateRoot);
+            if (mutableStateRepositoryRoot != blockHeaderHashStateRoot)
                 SmartContractConsensusErrors.UnequalStateRoots.Throw();
 
             this.ValidateAndStoreReceipts(blockHeader.ReceiptRoot);
