@@ -185,34 +185,29 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
         {
             lock (lockTest)
             {
-                string walletName = "test2";
-
                 using (var dataFolder = new TempDataFolder(this.GetType().Name))
                 {
-                    var nodeSettings = new NodeSettings(this.network, args: new[] { $"-datadir={this.dataDir}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
+                    var nodeSettings = new NodeSettings(this.network, args: new[] { $"-datadir={dataFolder.RootPath}" }, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
 
                     var repo = new SQLiteWalletRepository(nodeSettings.LoggerFactory, dataFolder, this.network, DateTimeProvider.Default, new ColdStakingDestinationReader(new ScriptAddressReader()));
 
                     repo.Initialize(this.dbPerWallet);
 
-                    var account = new WalletAccountReference(walletName, "account 0");
+                    string password = "test";
+                    var account = new WalletAccountReference("test2", "account 0");
+                    var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
+                    ExtKey extendedKey = HdOperations.GetExtendedKey(mnemonic, password);
 
-                    // Bypass IsExtPubKey wallet check.
-                    Wallet wallet = new FileStorage<Wallet>(nodeSettings.DataFolder.WalletPath).LoadByFileName($"{walletName}.wallet.json");
+                    // Create a wallet file.
+                    string encryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif();
 
                     // Create "test2" as an empty wallet.
-                    byte[] chainCode = wallet.ChainCode;
-                    repo.CreateWallet(account.WalletName, wallet.EncryptedSeed, chainCode);
+                    byte[] chainCode = extendedKey.ChainCode;
+                    repo.CreateWallet(account.WalletName, encryptedSeed, chainCode);
+                    repo.CreateAccount(account.WalletName, 0, account.AccountName, password);
 
                     // Verify the wallet exisits.
-                    Assert.Equal(walletName, repo.GetWalletNames().First());
-
-                    // Create "account 0" as P2PKH.
-                    foreach (HdAccount hdAccount in wallet.GetAccounts(a => a.Name == account.AccountName))
-                    {
-                        var extPubKey = ExtPubKey.Parse(hdAccount.ExtendedPubKey);
-                        repo.CreateAccount(walletName, hdAccount.Index, hdAccount.Name, extPubKey);
-                    }
+                    Assert.Equal(account.WalletName, repo.GetWalletNames().First());
 
                     // Create block 1.
                     Block block1 = this.network.Consensus.ConsensusFactory.CreateBlock();
@@ -303,7 +298,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     Assert.DoesNotContain(forks, f => f.Height != chainedHeader2.Height);
 
                     // REWIND: Remove block 1.
-                    repo.RewindWallet(walletName, chainedHeader1);
+                    repo.RewindWallet(account.WalletName, chainedHeader1);
 
                     // FINDFORK
                     // See if FindFork can be run from multiple threads
@@ -336,7 +331,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     Assert.Null(history2[0].Transaction.SpendingDetails);
 
                     // Delete the wallet.
-                    Assert.True(repo.DeleteWallet(walletName));
+                    Assert.True(repo.DeleteWallet(account.WalletName));
                     Assert.Empty(repo.GetWalletNames());
                 }
             }
@@ -411,7 +406,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             }
         }
 
-        [Fact]//(Skip = "Configure this test then run it manually. Comment this Skip.")]
+        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
         public void CanProcessTestnetBlocks()
         {
             string[] walletNames = this.walletNames.ToArray();
@@ -419,7 +414,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             CanProcessBlocks(false, walletNames);
         }
 
-        [Fact]//(Skip = "Configure this test then run it manually. Comment this Skip.")]
+        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
         public void CanProcessBinanceAddresses()
         {
             // 180 Binance addresses.
