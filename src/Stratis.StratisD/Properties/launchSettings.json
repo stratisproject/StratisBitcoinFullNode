@@ -29,7 +29,7 @@
     },
     "Stratis.StratisD Testnet Performance": {
       "commandName": "Project",
-      "commandLineArgs": "-agentprefix=SQLWarrior -txindex -datadir=C:\\Dev\\InternalTestnet_Data\\Runtime\\SQLWarrior -addnode=169.1.13.216 -addnode=144.217.66.232 -addnode=40.68.165.12 -addnode=82.146.153.151 -addnode=82.146.153.170 -addnode=51.141.83.38"
+      "commandLineArgs": "-testnet -agentprefix=SQLWarrior -txindex -datadir=C:\\Dev\\InternalTestnet_Data\\Runtime\\SQLWarrior -addnode=169.1.13.216 -addnode=144.217.66.232 -addnode=40.68.165.12 -addnode=82.146.153.151 -addnode=82.146.153.170 -addnode=51.141.83.38"
     }
   }
 }

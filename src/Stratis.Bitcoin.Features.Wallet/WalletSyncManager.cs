@@ -150,6 +150,21 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             ChainedHeader newTip = this.chainIndexer.GetHeader(block.GetHash());
 
+            List<ChainedHeader> listOfTipsSQL = new List<ChainedHeader>();
+
+            foreach (string walletName in ((SQLiteWalletRepository)this.walletRepository).GetWalletNames())
+            {
+                try
+                {
+                    ChainedHeader ch = this.walletRepository.FindFork(walletName, newTip);
+                    listOfTipsSQL.Add(ch);
+                }
+                catch (Exception ex)
+                { 
+                    this.logger.LogInformation("Error calling find fork");
+                }
+            }
+
             if (newTip == null)
             {
                 this.logger.LogTrace("(-)[NEW_TIP_REORG]");
@@ -188,6 +203,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 if (newTip.Height > this.walletTip.Height)
                 {
                     ChainedHeader findTip = newTip.FindAncestorOrSelf(this.walletTip);
+
+
                     if (findTip == null)
                     {
                         this.logger.LogTrace("(-)[NEW_TIP_AHEAD_NOT_IN_WALLET]");
