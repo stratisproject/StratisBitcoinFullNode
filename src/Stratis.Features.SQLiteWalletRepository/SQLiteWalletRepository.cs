@@ -234,7 +234,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 CreationTime = creationTime
             };
 
-            wallet.SetLastBlockSynced(lastBlockSynced);
+            wallet.SetLastBlockSynced(lastBlockSynced, this.Network);
 
             DBConnection conn = GetConnection(walletName);
 

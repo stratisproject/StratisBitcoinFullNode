@@ -210,8 +210,13 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     Assert.Equal(account.WalletName, repo.GetWalletNames().First());
 
                     // Create block 1.
+                    Block block0 = this.network.Consensus.ConsensusFactory.CreateBlock();
+                    BlockHeader blockHeader0 = block0.Header;
+                    var chainedHeader0 = new ChainedHeader(blockHeader0, this.network.GenesisHash, null);
+
                     Block block1 = this.network.Consensus.ConsensusFactory.CreateBlock();
                     BlockHeader blockHeader1 = block1.Header;
+                    blockHeader1.HashPrevBlock = this.network.GenesisHash;
 
                     // Create transaction 1.
                     Transaction transaction1 = this.network.CreateTransaction();
@@ -224,7 +229,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     block1.Transactions.Add(transaction1);
 
                     // Process block 1.
-                    var chainedHeader1 = new ChainedHeader(blockHeader1, blockHeader1.GetHash(), null);
+                    var chainedHeader1 = new ChainedHeader(blockHeader1, blockHeader1.GetHash(), chainedHeader0);
                     repo.ProcessBlock(block1, chainedHeader1, account.WalletName);
 
                     // List the unspent outputs.

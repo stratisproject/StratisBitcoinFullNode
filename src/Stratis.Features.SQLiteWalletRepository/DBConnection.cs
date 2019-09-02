@@ -439,7 +439,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
 
             this.RemoveTransactionsAfterLastBlockSynced(lastBlockSynced?.Height ?? -1, wallet.WalletId);
-            wallet.SetLastBlockSynced(lastBlockSynced);
+            wallet.SetLastBlockSynced(lastBlockSynced, this.Repository.Network);
             this.SQLiteConnection.Update(wallet);
         }
 
