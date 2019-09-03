@@ -21,7 +21,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         internal Dictionary<string, DBCommand> Commands;
 
         // A given connection can't have two transactions running in parallel.
-        internal SemaphoreSlim TransactionLock;
+        internal DBLock TransactionLock;
         internal int TransactionDepth;
         internal bool IsInTransaction => this.SQLiteConnection.IsInTransaction;
 
@@ -31,7 +31,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             this.SQLiteConnection = new SQLiteConnection(Path.Combine(repo.DBPath, dbFile));
             this.Repository = repo;
-            this.TransactionLock = new SemaphoreSlim(1, 1);
+            this.TransactionLock = new DBLock();// new SemaphoreSlim(1, 1);
             this.TransactionDepth = 0;
             this.CommitActions = new Stack<(object, Action<object>)>();
             this.RollBackActions = new Stack<(object, Action<object>)>();

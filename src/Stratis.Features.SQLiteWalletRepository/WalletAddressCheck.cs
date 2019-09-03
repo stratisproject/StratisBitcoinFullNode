@@ -116,8 +116,9 @@ namespace Stratis.Features.SQLiteWalletRepository
                         FROM    HDAddress
                         WHERE   ScriptPubKey = '{hex}' {
                     // Restrict to wallet if provided.
+                    // "BETWEEN" boosts performance from half a seconds to 2ms.
                     ((this.walletId != null) ? $@"
-                        AND     WalletId = {this.walletId}" : "")};");
+                        AND     WalletId BETWEEN {this.walletId} AND {this.walletId}" : "")};");
 
             return address != null;
         }

@@ -12,8 +12,9 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// the given outpoint.
         /// </summary>
         /// <param name="outPoint">The transaction id.</param>
+        /// <param name="tranData">The transaction data found in the database (if any).</param>
         /// <returns><c>True</c> if the address exists or has been added tentatively.</returns>
-        bool Contains(OutPoint outPoint);
+        bool Contains(OutPoint outPoint, out HDTransactionData tranData);
 
         /// <summary>
         /// Transactions from the "tentative" collection are moved to the "(may) exist" collection
@@ -50,15 +51,17 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public bool Contains(OutPoint outPoint)
+        public bool Contains(OutPoint outPoint, out HDTransactionData tranData)
         {
-            return Contains(outPoint.ToBytes()) ?? Exists(outPoint);
+            tranData = null;
+
+            return Contains(outPoint.ToBytes()) ?? Exists(outPoint, out tranData);
         }
 
         /// <inheritdoc />
         public void Confirm()
         {
-            Confirm(o => { var x = new OutPoint(); x.FromBytes(o); return this.Exists(x); });
+            Confirm(o => { var x = new OutPoint(); x.FromBytes(o); return this.Exists(x, out _); });
         }
 
         /// <inheritdoc />
@@ -95,20 +98,21 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.Add(outPoint.ToBytes());
         }
 
-        private bool Exists(OutPoint outPoint)
+        private bool Exists(OutPoint outPoint, out HDTransactionData tranData)
         {
-            bool res = this.conn.ExecuteScalar<int>($@"
-                SELECT EXISTS(
-                    SELECT  1
-                    FROM    HDTransactionData
-                    WHERE   OutputTxId = ?
-                    AND     OutputIndex = ? {
+            tranData = this.conn.FindWithQuery<HDTransactionData>($@"
+                SELECT  *
+                FROM    HDTransactionData
+                WHERE   OutputTxId = ?
+                AND     OutputIndex = ? {
                 // Restrict to wallet if provided.
+                // "BETWEEN" boosts performance from half a seconds to 2ms.
                 ((this.walletId != null) ? $@"
-                    AND     WalletId = {this.walletId}" : "")}
-                    LIMIT   1);", outPoint.Hash.ToString(), outPoint.N) == 1;
+                AND     WalletId BETWEEN {this.walletId} AND {this.walletId}" : "")}",
+                outPoint.Hash.ToString(),
+                outPoint.N);
 
-            return res;
+            return tranData != null;
         }
     }
 }
