@@ -390,29 +390,10 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                         if (walletIsNotSyncing)
                         {
-                            int magicBatchSize = 100;
                             int chainedInexerTipHeight = this.chainIndexer.Tip.Height;
                             ChainedHeader chWalletTip = this.walletRepository.FindFork(wallet, this.chainIndexer.Tip);
-                            int walletTipHeight = chWalletTip.Height;
-                            int delta = chainedInexerTipHeight - walletTipHeight;
-                            int quotient, reminder;
-                            quotient = Math.DivRem(delta, magicBatchSize, out reminder);
 
-                            // do the batch for the change, lazy
-                            ProccessRangeToRepo(walletTipHeight, walletTipHeight + reminder, wallet);
-
-                            // process chunk of magicBatchSize
-                            if (quotient > 0)
-                            {
-                                int left = walletTipHeight + reminder;
-                                int right = left + magicBatchSize;
-                                for (int x = 0; x < quotient; x++)
-                                {
-                                    ProccessRangeToRepo(left, right, wallet);
-                                    left += magicBatchSize;
-                                    right += magicBatchSize;
-                                }
-                            }
+                            ProccessRangeToRepo(chWalletTip.Height + 1, this.chainIndexer.Tip.Height, wallet);
 
                             this.walletStateMap.TryRemove(wallet, out _);
                         }
