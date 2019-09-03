@@ -525,7 +525,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 HDWallet wallet = round.Wallet;
                 DBConnection conn = round.Conn;
-                string lastBlockSyncedHash = (header?.Previous?.HashBlock ?? this.Network.GenesisHash).ToString();
+                string lastBlockSyncedHash = (header == null) ? null : (header.Previous?.HashBlock ?? (uint256)0).ToString();
 
                 if (round.NewTip != null)
                 {
@@ -600,14 +600,13 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                         round.ParticipatingWallets.Clear();
 
-
-                        if (block == null)
-                            return;
-
                         if (DateTime.Now.Ticks >= round.NextScheduledCatchup)
                             round.NextScheduledCatchup = DateTime.Now.Ticks + 10 * 10_000_000;
                     }
                 }
+
+                if (block == null || header == null)
+                    return;
 
                 if (round.PrevTip == null)
                 {
