@@ -168,7 +168,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             WalletContainer walletContainer = this.Wallets[walletName];
 
-            walletContainer.LockProcessBlocks.Wait();
+            walletContainer.ReadLockWait();
 
             try
             {
@@ -178,7 +178,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
             finally
             {
-                walletContainer.LockProcessBlocks.Release();
+                walletContainer.ReadLockRelease();
             }
         }
 
@@ -187,7 +187,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             WalletContainer walletContainer = this.Wallets[walletName];
 
-            walletContainer.LockProcessBlocks.Wait();
+            walletContainer.WriteLockWait();
 
             try
             {
@@ -213,7 +213,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
             finally
             {
-                walletContainer.LockProcessBlocks.Release();
+                walletContainer.WriteLockRelease();
             }
         }
 
@@ -238,38 +238,47 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             DBConnection conn = GetConnection(walletName);
 
-            this.logger.LogDebug("Creating wallet '{0}'.", walletName);
-
-            conn.BeginTransaction();
-            wallet.CreateWallet(conn);
-            conn.Commit();
-
-            this.logger.LogDebug("Adding wallet '{0}' to wallet collection.", walletName);
-
             WalletContainer walletContainer;
             if (this.DatabasePerWallet)
                 walletContainer = new WalletContainer(conn, wallet);
             else
                 walletContainer = new WalletContainer(conn, wallet, this.processBlocksInfo);
 
-            this.Wallets[wallet.Name] = walletContainer;
+            walletContainer.WriteLockWait();
 
-            if (conn.IsInTransaction)
+            try
             {
-                conn.AddRollbackAction(new
+                this.logger.LogDebug("Creating wallet '{0}'.", walletName);
+
+                conn.BeginTransaction();
+                wallet.CreateWallet(conn);
+                conn.Commit();
+
+                this.logger.LogDebug("Adding wallet '{0}' to wallet collection.", walletName);
+
+                this.Wallets[wallet.Name] = walletContainer;
+
+                if (conn.IsInTransaction)
                 {
-                    wallet.Name,
-                }, (dynamic rollBackData) =>
-                {
-                    if (this.Wallets.TryRemove(rollBackData.Name, out WalletContainer walletContaner))
+                    conn.AddRollbackAction(new
                     {
-                        if (this.DatabasePerWallet)
+                        wallet.Name,
+                    }, (dynamic rollBackData) =>
+                    {
+                        if (this.Wallets.TryRemove(rollBackData.Name, out WalletContainer walletContaner))
                         {
-                            walletContainer.Conn.Close();
-                            File.Delete(Path.Combine(this.DBPath, $"{walletContainer.Wallet.Name}.db"));
+                            if (this.DatabasePerWallet)
+                            {
+                                walletContainer.Conn.Close();
+                                File.Delete(Path.Combine(this.DBPath, $"{walletContainer.Wallet.Name}.db"));
+                            }
                         }
-                    }
-                });
+                    });
+                }
+            }
+            finally
+            {
+                walletContainer.WriteLockRelease();
             }
         }
 
@@ -278,7 +287,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             WalletContainer walletContainer = this.Wallets[walletName];
 
-            walletContainer.LockUpdateWallet.Wait();
+            walletContainer.WriteLockWait();
 
             try
             {
@@ -352,7 +361,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
             finally
             {
-                walletContainer.LockUpdateWallet.Release();
+                walletContainer.WriteLockRelease();
             }
         }
 
@@ -361,7 +370,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             WalletContainer walletContainer = this.Wallets[walletName];
 
-            walletContainer.LockUpdateWallet.Wait();
+            walletContainer.WriteLockWait();
 
             try
             {
@@ -379,7 +388,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
             finally
             {
-                walletContainer.LockUpdateWallet.Release();
+                walletContainer.WriteLockRelease();
             }
         }
 
@@ -387,7 +396,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             WalletContainer walletContainer = this.Wallets[walletName];
 
-            walletContainer.LockUpdateWallet.Wait();
+            walletContainer.WriteLockWait();
 
             try
             {
@@ -401,7 +410,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
             finally
             {
-                walletContainer.LockUpdateWallet.Release();
+                walletContainer.WriteLockRelease();
             }
         }
 
@@ -410,24 +419,29 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             WalletContainer walletContainer = this.Wallets[walletName];
 
-            walletContainer.LockUpdateWallet.Wait();
+            walletContainer.WriteLockWait();
 
-            HDWallet wallet = walletContainer.Wallet;
+            try
+            {
+                HDWallet wallet = walletContainer.Wallet;
 
-            ExtPubKey extPubKey;
+                ExtPubKey extPubKey;
 
-            var conn = this.GetConnection(walletName);
+                var conn = this.GetConnection(walletName);
 
-            // Get the extended pub key used to generate addresses for this account.
-            // Not passing extPubKey into the method to guarantee DB integrity.
-            Key privateKey = Key.Parse(wallet.EncryptedSeed, password, this.Network);
-            var seedExtKey = new ExtKey(privateKey, Convert.FromBase64String(wallet.ChainCode));
-            ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(this.ToHdPath(accountIndex)));
-            extPubKey = addressExtKey.Neuter();
+                // Get the extended pub key used to generate addresses for this account.
+                // Not passing extPubKey into the method to guarantee DB integrity.
+                Key privateKey = Key.Parse(wallet.EncryptedSeed, password, this.Network);
+                var seedExtKey = new ExtKey(privateKey, Convert.FromBase64String(wallet.ChainCode));
+                ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(this.ToHdPath(accountIndex)));
+                extPubKey = addressExtKey.Neuter();
 
-            this.CreateAccount(walletName, accountIndex, accountName, extPubKey, creationTime);
-
-            walletContainer.LockUpdateWallet.Release();
+                this.CreateAccount(walletName, accountIndex, accountName, extPubKey, creationTime);
+            }
+            finally
+            {
+                walletContainer.WriteLockRelease();
+            }
         }
 
         public IEnumerable<HdAccount> GetAccounts(string walletName)
@@ -537,7 +551,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                         walletsJoining = round.Wallet.LastBlockSyncedHash == lastBlockSyncedHash;
 
                     // See if other threads are waiting to update any of the wallets.
-                    bool threadsWaiting = conn.TransactionLock.WaitingThreads >= 1 || round.ParticipatingWallets.Any(name => this.Wallets[name].LockUpdateWallet.WaitingThreads >= 1);
+                    bool threadsWaiting = conn.TransactionLock.WaitingThreads >= 1 || round.ParticipatingWallets.Any(name => this.Wallets[name].HaveWaitingThreads);
                     if (threadsWaiting || ((round.Outputs.Count + round.PrevOuts.Count) >= 10000) || block == null || walletsJoining || DateTime.Now.Ticks >= round.NextScheduledCatchup)
                     {
                         long flagFall = DateTime.Now.Ticks;
@@ -595,7 +609,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                         if (round.ParticipatingWallets.Count > 0)
                         {
                             foreach (string walletName in round.ParticipatingWallets)
-                                this.Wallets[walletName].LockUpdateWallet.Release();
+                                this.Wallets[walletName].WriteLockRelease();
                         }
 
                         round.ParticipatingWallets.Clear();
@@ -620,7 +634,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     // Now grab the wallet locks.
                     foreach (string walletName in round.ParticipatingWallets)
-                        this.Wallets[walletName].LockUpdateWallet.Wait();
+                        this.Wallets[walletName].WriteLockWait();
 
                     // Batch starting.
                     round.PrevTip = header.Previous;
@@ -653,11 +667,21 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <inheritdoc />
         public void RemoveUnconfirmedTransaction(string walletName, uint256 txId)
         {
-            DBConnection conn = this.GetConnection(walletName);
-            HDWallet wallet = conn.GetWalletByName(walletName);
-            conn.BeginTransaction();
-            conn.RemoveUnconfirmedTransaction(wallet.WalletId, txId);
-            conn.Commit();
+            WalletContainer walletContainer = this.Wallets[walletName];
+            walletContainer.WriteLockWait();
+
+            try
+            {
+                DBConnection conn = this.GetConnection(walletName);
+                HDWallet wallet = conn.GetWalletByName(walletName);
+                conn.BeginTransaction();
+                conn.RemoveUnconfirmedTransaction(wallet.WalletId, txId);
+                conn.Commit();
+            }
+            finally
+            {
+                walletContainer.WriteLockRelease();
+            }
         }
 
         /// <inheritdoc />

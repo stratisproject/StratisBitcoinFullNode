@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using NBitcoin;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 
@@ -42,14 +43,46 @@ namespace Stratis.Features.SQLiteWalletRepository
 
     internal class WalletContainer : ProcessBlocksInfo
     {
-        internal readonly DBLock LockUpdateWallet;
-
+        private readonly DBLock lockUpdateWallet;
+        private int readers;
+        public bool HaveWaitingThreads => this.lockUpdateWallet.WaitingThreads > 0;
 
         internal WalletContainer(DBConnection conn, HDWallet wallet, ProcessBlocksInfo processBlocksInfo = null) : base(conn, processBlocksInfo, wallet)
         {
-            this.LockUpdateWallet = new DBLock();
+            this.lockUpdateWallet = new DBLock();
+            this.readers = 0;
 
             this.Conn = conn;
+        }
+
+        internal void WriteLockWait()
+        {
+            // Only take the write lock if there are no readers.
+            this.lockUpdateWallet.Wait();
+            while (this.readers != 0)
+            {
+                this.lockUpdateWallet.Release();
+                Thread.Yield();
+                this.lockUpdateWallet.Wait();
+            }
+        }
+
+        internal void WriteLockRelease()
+        {
+            this.lockUpdateWallet.Release();
+        }
+
+        internal void ReadLockWait()
+        {
+            // Only take a read-lock if there is no writer.
+            this.lockUpdateWallet.Wait();
+            Interlocked.Increment(ref this.readers);
+            this.lockUpdateWallet.Release();
+        }
+
+        internal void ReadLockRelease()
+        {
+            Interlocked.Decrement(ref this.readers);
         }
     }
 }
