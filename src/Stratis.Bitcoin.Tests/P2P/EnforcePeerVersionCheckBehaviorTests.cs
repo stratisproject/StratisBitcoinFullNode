@@ -34,6 +34,10 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             {
                 return OnMessageReceivedAsync(peer, message);
             }
+
+            protected override void AttachCore()
+            {
+            }
         }
 
         private INetworkPeer CreateNetworkPeer(ProtocolVersion version)
@@ -142,7 +146,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             }
 
             // New connections established after the hard-fork should not be disconnected.
-            remotePeer = CreateNetworkPeer(ProtocolVersion.ALT_PROTOCOL_VERSION);
+            remotePeer = CreateNetworkPeer(ProtocolVersion.CIRRUS_VERSION);
             behavior.TestOnMessageReceivedAsync(remotePeer, null);
             Assert.Equal(NetworkPeerState.Connected, localPeer.State);
         }
