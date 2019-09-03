@@ -379,9 +379,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         private void OrchestrateWalletSync()
         {
             List<string> wallets = ((SQLiteWalletRepository)this.walletRepository).GetWalletNames();
-            List<ChainedHeader> listOfTipsSQL = new List<ChainedHeader>();
-
-            ChainedHeader ch1 = this.chainIndexer.Tip;
 
             if (wallets.Any())
             {
@@ -394,8 +391,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                         if (walletIsNotSyncing)
                         {
                             int magicBatchSize = 100;
-                            ChainedHeader chWalletTip = this.walletRepository.FindFork(wallet, this.chainIndexer.Tip);
                             int chainedInexerTipHeight = this.chainIndexer.Tip.Height;
+                            ChainedHeader chWalletTip = this.walletRepository.FindFork(wallet, this.chainIndexer.Tip);
                             int walletTipHeight = chWalletTip.Height;
                             int delta = chainedInexerTipHeight - walletTipHeight;
                             int quotient, reminder;
