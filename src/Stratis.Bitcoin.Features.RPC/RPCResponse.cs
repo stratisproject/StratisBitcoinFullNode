@@ -41,6 +41,8 @@ namespace Stratis.Bitcoin.Features.RPC
             this.Result = json.GetValue("result") as JToken;
         }
 
+        public string Id { get; set; }
+
         public RPCError Error { get; set; }
 
         public JToken Result { get; set; }

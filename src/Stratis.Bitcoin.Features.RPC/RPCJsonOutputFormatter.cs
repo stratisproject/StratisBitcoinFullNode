@@ -127,7 +127,6 @@ namespace Stratis.Bitcoin.Features.RPC
             //{"result":null,"error":{"code":-32601,"message":"Method not found"},"id":1}
             var response = new JObject();
             response["result"] = jsonResult;
-            response["id"] = 1;
             response["error"] = null;
             using (TextWriter writer = context.WriterFactory(context.HttpContext.Response.Body, selectedEncoding))
             {

@@ -65,10 +65,13 @@ namespace Stratis.Bitcoin.Features.RPC
                     // Batch request, invoke each request and accumulate responses.
                     await this.InvokeAsyncBatchAsync(httpContext, token as JArray);
                 }
+                else if (token is JObject)
+                {
+                    await this.InvokeAsyncSingleAsync(httpContext, token as JObject);
+                }
                 else
                 {
-                    // Single request, invoke the request.
-                    await this.next.Invoke(httpContext);
+                    throw new NotImplementedException("The request is not supported.");
                 }
             }
             catch (Exception exx)
@@ -151,56 +154,74 @@ namespace Stratis.Bitcoin.Features.RPC
         private async Task InvokeAsyncBatchAsync(HttpContext httpContext, JArray requests)
         {
             JArray responses = new JArray();
-            int i = 1;
             foreach (JObject requestObj in requests)
             {
-                var contextFeatures = new FeatureCollection(httpContext.Features);
-
-                StringBuilder requestStringBuilder = new StringBuilder();
-                await requestObj.WriteToAsync(new JsonTextWriter(new StringWriter(requestStringBuilder)));
-                var requestFeature = new HttpRequestFeature()
-                {
-                    Body = new MemoryStream(Encoding.UTF8.GetBytes(requestStringBuilder.ToString())),
-                    Headers = httpContext.Request.Headers,
-                    Method = httpContext.Request.Method,
-                    Protocol = httpContext.Request.Protocol,
-                    Scheme = httpContext.Request.Scheme,
-                    QueryString = httpContext.Request.QueryString.Value
-                };
-                contextFeatures.Set<IHttpRequestFeature>(requestFeature);
-
-                var responseMemoryStream = new MemoryStream();
-                var responseFeature = new HttpResponseFeature()
-                {
-                    Body = responseMemoryStream
-                };
-                contextFeatures.Set<IHttpResponseFeature>(responseFeature);
-
-                contextFeatures.Set<IHttpRequestLifetimeFeature>(new HttpRequestLifetimeFeature());
-
-                var context = this.httpContextFactory.Create(contextFeatures);
-
-                try
-                {
-                    await this.next.Invoke(context).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    await this.HandleRpcInvokeExceptionAsync(context, ex);
-                }
-
-                responseMemoryStream.Position = 0;
-
-                var response = (responseMemoryStream.Length == 0) ? CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, "Method not found") : await JObject.LoadAsync(new JsonTextReader(new StreamReader(responseMemoryStream)));
-
-                if (requestObj.ContainsKey("id"))
-                    response["id"] = requestObj["id"];
-                else
-                    response.Remove("id");
-
-                responses.Add(response);
-                i++;
+                await InvokeAsyncSingleAsync(httpContext, requestObj);
             }
+
+            httpContext.Response.ContentType = "application/json; charset=utf-8";
+
+            // Update the response with the array of responses.
+            using (StreamWriter streamWriter = new StreamWriter(httpContext.Response.Body))
+            using (JsonTextWriter textWriter = new JsonTextWriter(streamWriter))
+            {
+                await responses.WriteToAsync(textWriter);
+            }
+        }
+
+        /// <summary>
+        /// Invokes single request.
+        /// </summary>
+        /// <param name="httpContext">Source batch request context.</param>
+        /// <param name="requests">Array of requests.</param>
+        private async Task InvokeAsyncSingleAsync(HttpContext httpContext, JObject requestObj)
+        {
+            JArray responses = new JArray();
+            var contextFeatures = new FeatureCollection(httpContext.Features);
+
+            StringBuilder requestStringBuilder = new StringBuilder();
+            await requestObj.WriteToAsync(new JsonTextWriter(new StringWriter(requestStringBuilder)));
+            var requestFeature = new HttpRequestFeature()
+            {
+                Body = new MemoryStream(Encoding.UTF8.GetBytes(requestStringBuilder.ToString())),
+                Headers = httpContext.Request.Headers,
+                Method = httpContext.Request.Method,
+                Protocol = httpContext.Request.Protocol,
+                Scheme = httpContext.Request.Scheme,
+                QueryString = httpContext.Request.QueryString.Value
+            };
+            contextFeatures.Set<IHttpRequestFeature>(requestFeature);
+
+            var responseMemoryStream = new MemoryStream();
+            var responseFeature = new HttpResponseFeature()
+            {
+                Body = responseMemoryStream
+            };
+            contextFeatures.Set<IHttpResponseFeature>(responseFeature);
+
+            contextFeatures.Set<IHttpRequestLifetimeFeature>(new HttpRequestLifetimeFeature());
+
+            var context = this.httpContextFactory.Create(contextFeatures);
+
+            try
+            {
+                await this.next.Invoke(context).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                await this.HandleRpcInvokeExceptionAsync(context, ex);
+            }
+
+            responseMemoryStream.Position = 0;
+
+            var response = (responseMemoryStream.Length == 0) ? CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, "Method not found") : await JObject.LoadAsync(new JsonTextReader(new StreamReader(responseMemoryStream)));
+
+            if (requestObj.ContainsKey("id"))
+                response["id"] = requestObj["id"].ToString();
+            else
+                response.Remove("id");
+
+            responses.Add(response);
 
             httpContext.Response.ContentType = "application/json; charset=utf-8";
 
