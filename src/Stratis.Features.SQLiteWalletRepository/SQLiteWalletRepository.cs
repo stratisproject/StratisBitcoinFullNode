@@ -238,6 +238,14 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             DBConnection conn = GetConnection(walletName);
 
+            this.logger.LogDebug("Creating wallet '{0}'.", walletName);
+
+            conn.BeginTransaction();
+            wallet.CreateWallet(conn);
+            conn.Commit();
+
+            this.logger.LogDebug("Adding wallet '{0}' to wallet collection.", walletName);
+
             WalletContainer walletContainer;
             if (this.DatabasePerWallet)
                 walletContainer = new WalletContainer(conn, wallet);
@@ -248,14 +256,6 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             try
             {
-                this.logger.LogDebug("Creating wallet '{0}'.", walletName);
-
-                conn.BeginTransaction();
-                wallet.CreateWallet(conn);
-                conn.Commit();
-
-                this.logger.LogDebug("Adding wallet '{0}' to wallet collection.", walletName);
-
                 this.Wallets[wallet.Name] = walletContainer;
 
                 if (conn.IsInTransaction)
