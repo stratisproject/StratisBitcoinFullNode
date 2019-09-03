@@ -112,7 +112,8 @@ namespace Stratis.Bitcoin.Features.RPC
             Guard.NotNull(context, nameof(context));
             Guard.NotNull(selectedEncoding, nameof(selectedEncoding));
 
-            var result = new MemoryStream();
+            JToken jsonResult;
+            using (MemoryStream result = new MemoryStream())
             using (TextWriter writer = context.WriterFactory(result, selectedEncoding))
             {
                 this.WriteObject(writer, context.Object);
@@ -121,13 +122,23 @@ namespace Stratis.Bitcoin.Features.RPC
                 // buffers. This is better than just letting dispose handle it (which would result in a synchronous
                 // write).
                 await writer.FlushAsync();
+
+                result.Position = 0;
+
+                using (StreamReader streamReader = new StreamReader(result))
+                using (JsonTextReader textReader = new JsonTextReader(streamReader))
+                {
+                    jsonResult = await JToken.LoadAsync(textReader);
+                }
             }
-            result.Position = 0;
-            JToken jsonResult = JToken.Load(new JsonTextReader(new StreamReader(result)));
+
             //{"result":null,"error":{"code":-32601,"message":"Method not found"},"id":1}
-            var response = new JObject();
-            response["result"] = jsonResult;
-            response["error"] = null;
+            var response = new JObject
+            {
+                ["result"] = jsonResult,
+                ["error"] = null
+            };
+
             using (TextWriter writer = context.WriterFactory(context.HttpContext.Response.Body, selectedEncoding))
             {
                 this.WriteObject(writer, response);

@@ -59,19 +59,30 @@ namespace Stratis.Bitcoin.Features.RPC
                 this.logger.LogDebug("RPC request: {0}", string.IsNullOrEmpty(request) ? request : JToken.Parse(request).ToString(Formatting.Indented));
 
                 JToken token = string.IsNullOrEmpty(request) ? null : JToken.Parse(request);
+                JToken response;
 
                 if (token is JArray)
                 {
-                    // Batch request, invoke each request and accumulate responses.
-                    await this.InvokeAsyncBatchAsync(httpContext, token as JArray);
+                    // Batch request, invoke each request and accumulate responses into JArray.
+                    response = await this.InvokeBatchAsync(httpContext, token as JArray);
                 }
                 else if (token is JObject)
                 {
-                    await this.InvokeAsyncSingleAsync(httpContext, token as JObject);
+                    // Single request, invoke single request and return single response object.
+                    response = await this.InvokeSingleAsync(httpContext, token as JObject);
                 }
                 else
                 {
                     throw new NotImplementedException("The request is not supported.");
+                }
+
+                httpContext.Response.ContentType = "application/json; charset=utf-8";
+
+                // Write the response body.
+                using (StreamWriter streamWriter = new StreamWriter(httpContext.Response.Body))
+                using (JsonTextWriter textWriter = new JsonTextWriter(streamWriter))
+                {
+                    await response.WriteToAsync(textWriter);
                 }
             }
             catch (Exception exx)
@@ -151,32 +162,27 @@ namespace Stratis.Bitcoin.Features.RPC
         /// </summary>
         /// <param name="httpContext">Source batch request context.</param>
         /// <param name="requests">Array of requests.</param>
-        private async Task InvokeAsyncBatchAsync(HttpContext httpContext, JArray requests)
+        /// <returns>Array of response objects.</returns>
+        private async Task<JArray> InvokeBatchAsync(HttpContext httpContext, JArray requests)
         {
-            JArray responses = new JArray();
+            JArray responseArray = new JArray();
             foreach (JObject requestObj in requests)
             {
-                await InvokeAsyncSingleAsync(httpContext, requestObj);
+                JObject response = await InvokeSingleAsync(httpContext, requestObj);
+                responseArray.Add(response);
             }
 
-            httpContext.Response.ContentType = "application/json; charset=utf-8";
-
-            // Update the response with the array of responses.
-            using (StreamWriter streamWriter = new StreamWriter(httpContext.Response.Body))
-            using (JsonTextWriter textWriter = new JsonTextWriter(streamWriter))
-            {
-                await responses.WriteToAsync(textWriter);
-            }
+            return responseArray;
         }
 
         /// <summary>
         /// Invokes single request.
         /// </summary>
         /// <param name="httpContext">Source batch request context.</param>
-        /// <param name="requests">Array of requests.</param>
-        private async Task InvokeAsyncSingleAsync(HttpContext httpContext, JObject requestObj)
+        /// <param name="requestObj">Single request object.</param>
+        /// <returns>Single response objects.</returns>
+        private async Task<JObject> InvokeSingleAsync(HttpContext httpContext, JObject requestObj)
         {
-            JArray responses = new JArray();
             var contextFeatures = new FeatureCollection(httpContext.Features);
 
             StringBuilder requestStringBuilder = new StringBuilder();
@@ -214,23 +220,26 @@ namespace Stratis.Bitcoin.Features.RPC
 
             responseMemoryStream.Position = 0;
 
-            var response = (responseMemoryStream.Length == 0) ? CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, "Method not found") : await JObject.LoadAsync(new JsonTextReader(new StreamReader(responseMemoryStream)));
+            JObject response;
+            if (responseMemoryStream.Length == 0)
+            {
+                response = CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, "Method not found");
+            }
+            else
+            {
+                using (StreamReader streamReader = new StreamReader(responseMemoryStream))
+                using (JsonTextReader textReader = new JsonTextReader(streamReader))
+                {
+                    response = await JObject.LoadAsync(textReader);
+                }
+            }
 
             if (requestObj.ContainsKey("id"))
-                response["id"] = requestObj["id"].ToString();
+                response["id"] = requestObj["id"];
             else
                 response.Remove("id");
 
-            responses.Add(response);
-
-            httpContext.Response.ContentType = "application/json; charset=utf-8";
-
-            // Update the response with the array of responses.
-            using (StreamWriter streamWriter = new StreamWriter(httpContext.Response.Body))
-            using (JsonTextWriter textWriter = new JsonTextWriter(streamWriter))
-            {
-                await responses.WriteToAsync(textWriter);
-            }
+            return response;
         }
 
         private bool IsDependencyFailure(Exception ex)
