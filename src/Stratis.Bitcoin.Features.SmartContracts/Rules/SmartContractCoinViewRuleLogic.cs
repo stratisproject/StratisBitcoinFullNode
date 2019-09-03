@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             // Get a IStateRepositoryRoot we can alter without affecting the injected one which is used elsewhere.
             uint256 blockRoot = ((ISmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot;
 
-            this.logger.LogDebug("Block hash state root '{0}'", blockRoot);
+            this.logger.LogDebug("Block hash state root '{0}'.", blockRoot);
             byte[] blockRootBytes = blockRoot.ToBytes();
             this.mutableStateRepository = this.stateRepositoryRoot.GetSnapshotTo(blockRootBytes);
 
