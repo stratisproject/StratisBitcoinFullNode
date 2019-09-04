@@ -2,12 +2,15 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.Mvc.Formatters.Json.Internal;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
@@ -127,7 +130,11 @@ namespace Stratis.Bitcoin.Features.RPC
             //{"result":null,"error":{"code":-32601,"message":"Method not found"},"id":1}
             var response = new JObject();
             response["result"] = jsonResult;
-            response["id"] = 1;
+
+            string request = this.ReadRequestAsync(context.HttpContext.Request).GetAwaiter().GetResult();
+            JToken token = string.IsNullOrEmpty(request) ? null : JToken.Parse(request);
+
+            response["id"] = token?["id"] ?? 1;
             response["error"] = null;
             using (TextWriter writer = context.WriterFactory(context.HttpContext.Response.Body, selectedEncoding))
             {
@@ -137,6 +144,34 @@ namespace Stratis.Bitcoin.Features.RPC
                 // buffers. This is better than just letting dispose handle it (which would result in a synchronous
                 // write).
                 await writer.FlushAsync();
+            }
+        }
+
+        [NoTrace]
+        private async Task<string> ReadRequestAsync(HttpRequest request)
+        {
+            try
+            {
+                if (request?.ContentLength == null || request.ContentLength == 0)
+                    return null;
+
+                // Allows streams to be read multiple times.
+                request.EnableRewind();
+
+                // Read the request.
+                byte[] requestBuffer = new byte[request.ContentLength.Value];
+                await request.Body.ReadAsync(requestBuffer, 0, requestBuffer.Length).ConfigureAwait(false);
+
+                string requestBody = Encoding.UTF8.GetString(requestBuffer);
+
+                request.Body.Position = 0;
+
+                return requestBody;
+            }
+            catch
+            {
+                // Failed to read request
+                return null;
             }
         }
     }
