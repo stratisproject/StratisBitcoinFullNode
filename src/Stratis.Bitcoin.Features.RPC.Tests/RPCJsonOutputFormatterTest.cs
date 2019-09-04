@@ -40,37 +40,18 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             Stream bodyStream = new MemoryStream();
             DefaultHttpContext defaultContext = SetupDefaultContextWithResponseBodyStream(bodyStream);
 
-            Stream stream = null;
             var context = new OutputFormatterWriteContext(defaultContext,
-                (s, e) =>
-                {
-                    // Only capture first stream. bodyStream is already under the test's control.
-                    if (stream == null)
-                    {
-                        stream = s;
-                    }
-
-                    return new StreamWriter(s, e, 256, true);
-                }, typeof(RPCAuthorization),
+                (s, e) => new StreamWriter(s, e, 256, true), typeof(RPCAuthorization),
                 new RPCAuthorization());
 
             var formatter = new RPCJsonOutputFormatter(this.settings);
             Task task = formatter.WriteResponseBodyAsync(context, Encoding.UTF8);
             task.Wait();
-
-            using (var reader = new StreamReader(stream))
-            {
-                stream.Position = 0;
-                JToken expected = JToken.Parse(@"{""Authorized"":[],""AllowIp"":[]}");
-                JToken actual = JToken.Parse(reader.ReadToEnd());
-                actual.Should().BeEquivalentTo(expected);
-            }
-            stream.Dispose();
-
+            
             using (var reader = new StreamReader(bodyStream))
             {
                 bodyStream.Position = 0;
-                JToken expected = JToken.Parse(@"{""result"":{""Authorized"":[],""AllowIp"":[]},""id"":1,""error"":null}");
+                JToken expected = JToken.Parse(@"{""result"":{""Authorized"":[],""AllowIp"":[]},""error"":null}");
                 JToken actual = JToken.Parse(reader.ReadToEnd());
                 actual.Should().BeEquivalentTo(expected);
             }

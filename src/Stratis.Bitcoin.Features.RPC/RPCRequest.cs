@@ -35,6 +35,7 @@ namespace Stratis.Bitcoin.Features.RPC
         {
             using (JsonTextWriter jsonWriter = new JsonTextWriter(writer))
             {
+                jsonWriter.CloseOutput = false;
                 WriteJSON(jsonWriter);
                 jsonWriter.Flush();
             }
