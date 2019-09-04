@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
@@ -37,13 +38,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         private uint refundCounter;
         private IStateRepositoryRoot mutableStateRepository;
         private ulong blockGasConsumed;
+        private readonly ILogger logger;
 
         public SmartContractCoinViewRuleLogic(IStateRepositoryRoot stateRepositoryRoot,
             IContractExecutorFactory executorFactory,
             ICallDataSerializer callDataSerializer,
             ISenderRetriever senderRetriever,
             IReceiptRepository receiptRepository,
-            ICoinView coinView)
+            ICoinView coinView,
+            ILoggerFactory loggerFactory)
         {
             this.stateRepositoryRoot = stateRepositoryRoot;
             this.executorFactory = executorFactory;
@@ -54,6 +57,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.refundCounter = 1;
             this.blockTxsProcessed = new List<Transaction>();
             this.receipts = new List<Receipt>();
+            this.logger = loggerFactory.CreateLogger<SmartContractCoinViewRuleLogic>();
         }
 
         public async Task RunAsync(Func<RuleContext, Task> baseRunAsync, RuleContext context)
@@ -64,16 +68,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.refundCounter = 1;
 
             Block block = context.ValidationContext.BlockToValidate;
+            this.logger.LogDebug("Block to validate '{0}'", block.GetHash());
 
             // Get a IStateRepositoryRoot we can alter without affecting the injected one which is used elsewhere.
-            byte[] blockRoot = ((ISmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes();
-            this.mutableStateRepository = this.stateRepositoryRoot.GetSnapshotTo(blockRoot);
+            uint256 blockRoot = ((ISmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot;
+
+            this.logger.LogDebug("Block hash state root '{0}'.", blockRoot);
+            byte[] blockRootBytes = blockRoot.ToBytes();
+            this.mutableStateRepository = this.stateRepositoryRoot.GetSnapshotTo(blockRootBytes);
 
             await baseRunAsync(context);
 
             var blockHeader = (ISmartContractBlockHeader)block.Header;
 
-            if (new uint256(this.mutableStateRepository.Root) != blockHeader.HashStateRoot)
+            var mutableStateRepositoryRoot = new uint256(this.mutableStateRepository.Root);
+            uint256 blockHeaderHashStateRoot = blockHeader.HashStateRoot;
+            this.logger.LogDebug("Compare state roots '{0}' and '{1}'", mutableStateRepositoryRoot, blockHeaderHashStateRoot);
+            if (mutableStateRepositoryRoot != blockHeaderHashStateRoot)
                 SmartContractConsensusErrors.UnequalStateRoots.Throw();
 
             this.ValidateAndStoreReceipts(blockHeader.ReceiptRoot);
