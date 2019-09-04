@@ -51,20 +51,10 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc cref="IInvalidBlockHashStore"/>
         private readonly IInvalidBlockHashStore invalidBlockHashStore;
 
+        private readonly ConsensusRulesContainer consensusRules;
+
         /// <inheritdoc cref="ConsensusRulesPerformanceCounter"/>
         private ConsensusRulesPerformanceCounter performanceCounter;
-
-        /// <summary>Group of rules that are used during block header validation.</summary>
-        private List<HeaderValidationConsensusRule> headerValidationRules;
-
-        /// <summary>Group of rules that are used during block integrity validation.</summary>
-        private List<IntegrityValidationConsensusRule> integrityValidationRules;
-
-        /// <summary>Group of rules that are used during partial block validation.</summary>
-        private List<PartialValidationConsensusRule> partialValidationRules;
-
-        /// <summary>Group of rules that are used during full validation (connection of a new block).</summary>
-        private List<FullValidationConsensusRule> fullValidationRules;
 
         protected ConsensusRuleEngine(
             Network network,
@@ -76,7 +66,8 @@ namespace Stratis.Bitcoin.Consensus
             ICheckpoints checkpoints,
             IChainState chainState,
             IInvalidBlockHashStore invalidBlockHashStore,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            ConsensusRulesContainer consensusRules)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -100,21 +91,18 @@ namespace Stratis.Bitcoin.Consensus
             this.ConsensusSettings = consensusSettings;
             this.DateTimeProvider = dateTimeProvider;
             this.invalidBlockHashStore = invalidBlockHashStore;
+            this.consensusRules = consensusRules;
             this.LoggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.NodeDeployments = nodeDeployments;
 
-            this.headerValidationRules = new List<HeaderValidationConsensusRule>();
-            this.integrityValidationRules = new List<IntegrityValidationConsensusRule>();
-            this.partialValidationRules = new List<PartialValidationConsensusRule>();
-            this.fullValidationRules = new List<FullValidationConsensusRule>();
-
-            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 500);
+            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, this.GetType().Name, 500);
         }
 
         /// <inheritdoc />
         public virtual void Initialize(ChainedHeader chainTip)
         {
+            this.SetupRulesEngineParent();
         }
 
         /// <inheritdoc />
@@ -122,27 +110,23 @@ namespace Stratis.Bitcoin.Consensus
         {
         }
 
+        /// TODO: this method needs to be deleted once all rules use dependency injection
         /// <inheritdoc />
-        public ConsensusRuleEngine Register()
+        [NoTrace]
+        public ConsensusRuleEngine SetupRulesEngineParent()
         {
-            this.headerValidationRules = this.Network.Consensus.HeaderValidationRules.Select(x => x as HeaderValidationConsensusRule).ToList();
-            this.SetupConsensusRules(this.headerValidationRules.Select(x => x as ConsensusRuleBase));
-
-            this.integrityValidationRules = this.Network.Consensus.IntegrityValidationRules.Select(x => x as IntegrityValidationConsensusRule).ToList();
-            this.SetupConsensusRules(this.integrityValidationRules.Select(x => x as ConsensusRuleBase));
-
-            this.partialValidationRules = this.Network.Consensus.PartialValidationRules.Select(x => x as PartialValidationConsensusRule).ToList();
-            this.SetupConsensusRules(this.partialValidationRules.Select(x => x as ConsensusRuleBase));
-
-            this.fullValidationRules = this.Network.Consensus.FullValidationRules.Select(x => x as FullValidationConsensusRule).ToList();
-            this.SetupConsensusRules(this.fullValidationRules.Select(x => x as ConsensusRuleBase));
+            this.SetupConsensusRules(this.consensusRules.HeaderValidationRules.Select(x => x as ConsensusRuleBase));
+            this.SetupConsensusRules(this.consensusRules.IntegrityValidationRules.Select(x => x as ConsensusRuleBase));
+            this.SetupConsensusRules(this.consensusRules.PartialValidationRules.Select(x => x as ConsensusRuleBase));
+            this.SetupConsensusRules(this.consensusRules.FullValidationRules.Select(x => x as ConsensusRuleBase));
 
             // Registers all rules that might be executed to the performance counter.
-            this.performanceCounter = new ConsensusRulesPerformanceCounter(this.Network.Consensus);
+            this.performanceCounter = new ConsensusRulesPerformanceCounter(this.consensusRules);
 
             return this;
         }
 
+        [NoTrace]
         private void SetupConsensusRules(IEnumerable<ConsensusRuleBase> rules)
         {
             foreach (ConsensusRuleBase rule in rules)
@@ -171,7 +155,7 @@ namespace Stratis.Bitcoin.Consensus
             var validationContext = new ValidationContext { ChainedHeaderToValidate = header };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
-            this.ExecuteRules(this.headerValidationRules, ruleContext);
+            this.ExecuteRules(this.consensusRules.HeaderValidationRules, ruleContext);
 
             return validationContext;
         }
@@ -185,7 +169,7 @@ namespace Stratis.Bitcoin.Consensus
             var validationContext = new ValidationContext { BlockToValidate = block, ChainedHeaderToValidate = header };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
-            this.ExecuteRules(this.integrityValidationRules, ruleContext);
+            this.ExecuteRules(this.consensusRules.IntegrityValidationRules, ruleContext);
 
             return validationContext;
         }
@@ -199,10 +183,13 @@ namespace Stratis.Bitcoin.Consensus
             var validationContext = new ValidationContext { BlockToValidate = block, ChainedHeaderToValidate = header };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
-            await this.ExecuteRulesAsync(this.fullValidationRules, ruleContext).ConfigureAwait(false);
+            await this.ExecuteRulesAsync(this.consensusRules.FullValidationRules, ruleContext).ConfigureAwait(false);
 
             if (validationContext.Error != null)
+            {
+                this.logger.LogWarning("Block '{0}' failed full validation with error: '{1}'.", header, validationContext.Error);
                 this.HandleConsensusError(validationContext);
+            }
 
             return validationContext;
         }
@@ -216,10 +203,13 @@ namespace Stratis.Bitcoin.Consensus
             var validationContext = new ValidationContext { BlockToValidate = block, ChainedHeaderToValidate = header };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
-            await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);
+            await this.ExecuteRulesAsync(this.consensusRules.PartialValidationRules, ruleContext).ConfigureAwait(false);
 
             if (validationContext.Error != null)
+            {
+                this.logger.LogWarning("Block '{0}' failed partial validation with error: '{1}'.", header, validationContext.Error);
                 this.HandleConsensusError(validationContext);
+            }
 
             return validationContext;
         }
@@ -262,7 +252,7 @@ namespace Stratis.Bitcoin.Consensus
 
             uint256 hashToBan = validationContext.ChainedHeaderToValidate.HashBlock;
 
-            this.logger.LogTrace("Marking '{0}' invalid.", hashToBan);
+            this.logger.LogWarning("Marking '{0}' invalid.", hashToBan);
             this.invalidBlockHashStore.MarkInvalid(hashToBan, validationContext.RejectUntil);
         }
 
@@ -303,16 +293,16 @@ namespace Stratis.Bitcoin.Consensus
         [NoTrace]
         public T GetRule<T>() where T : ConsensusRuleBase
         {
-            object rule = this.headerValidationRules.SingleOrDefault(r => r is T);
+            object rule = this.consensusRules.HeaderValidationRules.OfType<T>().SingleOrDefault();
 
             if (rule == null)
-                rule = this.integrityValidationRules.SingleOrDefault(r => r is T);
+                rule = this.consensusRules.IntegrityValidationRules.OfType<T>().SingleOrDefault();
 
             if (rule == null)
-                rule = this.partialValidationRules.SingleOrDefault(r => r is T);
+                rule = this.consensusRules.PartialValidationRules.OfType<T>().SingleOrDefault();
 
             if (rule == null)
-                rule = this.fullValidationRules.SingleOrDefault(r => r is T);
+                rule = this.consensusRules.FullValidationRules.OfType<T>().SingleOrDefault();
 
             return rule as T;
         }

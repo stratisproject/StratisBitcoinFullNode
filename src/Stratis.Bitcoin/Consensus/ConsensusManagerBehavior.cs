@@ -380,7 +380,7 @@ namespace Stratis.Bitcoin.Consensus
                     return;
                 }
 
-                this.logger.LogTrace("{0} is {1} and {2} is {3}", nameof(this.BestReceivedTip), this.BestReceivedTip, nameof(result.Consumed), result.Consumed);
+                this.logger.LogDebug("{0} is {1} and {2} is {3}", nameof(this.BestReceivedTip), this.BestReceivedTip, nameof(result.Consumed), result.Consumed);
 
                 this.BestReceivedTip = result.Consumed;
                 this.UpdateBestSentHeader(this.BestReceivedTip);
@@ -676,6 +676,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void AttachCore()
         {
             // Initialize auto sync timer.
@@ -694,6 +695,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void DetachCore()
         {
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
@@ -701,6 +703,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public override void Dispose()
         {
             this.autosyncTimer?.Dispose();
@@ -709,11 +712,13 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public override object Clone()
         {
             return new ConsensusManagerBehavior(this.ChainIndexer, this.InitialBlockDownloadState, this.ConsensusManager, this.PeerBanning, this.LoggerFactory);
         }
 
+        [NoTrace]
         internal int GetCachedItemsCount()
         {
             return this.cachedHeaders.Count;

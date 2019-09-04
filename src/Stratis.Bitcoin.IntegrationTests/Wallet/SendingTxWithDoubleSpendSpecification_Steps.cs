@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.transaction = this.stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(WalletTests.CreateContext(this.stratisSender.FullNode.Network,
                 new WalletAccountReference(Name, AccountName), Password, this.receivingAddress.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
 
-            this.stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(this.transaction.ToHex()));
+            this.stratisSender.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(this.transaction.ToHex()));
 
             TestBase.WaitLoop(() => this.stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
             TestBase.WaitLoop(() => this.stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Any());

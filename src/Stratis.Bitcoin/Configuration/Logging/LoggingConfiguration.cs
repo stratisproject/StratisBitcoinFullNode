@@ -12,6 +12,7 @@ using NLog.Targets;
 using NLog.Targets.Wrappers;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Configuration.Logging
 {
@@ -46,7 +47,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
     public static class LoggingConfiguration
     {
         /// <summary>Width of a column for pretty console/log outputs.</summary>
-        public const int ColumnLength = 20;
+        public const int ColumnLength = 24;
 
         /// <summary>Currently used node's log settings.</summary>
         private static LogSettings logSettings;
@@ -139,7 +140,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
 
                 if (debugFileTarget.ArchiveFileName != null)
                 {
-                    string currentArchive = debugFileTarget.ArchiveFileName.Render(new LogEventInfo {TimeStamp = DateTime.UtcNow});
+                    string currentArchive = debugFileTarget.ArchiveFileName.Render(new LogEventInfo { TimeStamp = DateTime.UtcNow });
                     debugFileTarget.ArchiveFileName = Path.Combine(folder.LogPath, currentArchive);
                 }
             }
@@ -306,6 +307,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// </summary>
         /// <param name="loggerFactory">Logger factory interface being extended.</param>
         /// <returns>Console logger provider.</returns>
+        [NoTrace]
         public static ConsoleLoggerProvider GetConsoleLoggerProvider(this ILoggerFactory loggerFactory)
         {
             var extendedLoggerFactory = loggerFactory as ExtendedLoggerFactory;

@@ -15,10 +15,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
     /// </summary>
     public sealed class ConnectionManagerSettings
     {
-        /// <summary>Number of seconds to keep misbehaving peers from reconnecting (Default 24-hour ban).</summary>
-        public const int DefaultMisbehavingBantimeSeconds = 24 * 60 * 60;
-        public const int DefaultMisbehavingBantimeSecondsTestnet = 10 * 60;
-
         /// <summary>Maximum number of AgentPrefix characters to use in the Agent value.</summary>
         private const int MaximumAgentPrefixLength = 10;
 
@@ -28,6 +24,15 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
+
+        /// <summary>List of end points that the node should try to connect to.</summary>
+        /// <remarks>All access should be protected under <see cref="addNodeLock"/></remarks>
+        private readonly List<IPEndPoint> addNode;
+
+        /// <summary>
+        /// Protects access to the list of addnode endpoints.
+        /// </summary>
+        private readonly object addNodeLock;
 
         /// <summary>
         /// Initializes an instance of the object from the node configuration.
@@ -39,8 +44,15 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ConnectionManagerSettings).FullName);
 
+            this.addNodeLock = new object();
+
             this.Connect = new List<IPEndPoint>();
-            this.AddNode = new List<IPEndPoint>();
+
+            lock (this.addNodeLock)
+            {
+                this.addNode = new List<IPEndPoint>();
+            }
+
             this.Bind = new List<NodeServerEndpoint>();
             this.Whitelist = new List<IPEndPoint>();
 
@@ -57,7 +69,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             try
             {
-                this.AddNode.AddRange(config.GetAll("addnode", this.logger).Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)));
+                foreach (IPEndPoint addNode in config.GetAll("addnode", this.logger).Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)))
+                    this.AddAddNode(addNode);
             }
             catch (FormatException)
             {
@@ -132,7 +145,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
                 this.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, this.Port);
             }
 
-            this.BanTimeSeconds = config.GetOrDefault<int>("bantime", nodeSettings.Network.IsTest() ? DefaultMisbehavingBantimeSecondsTestnet : DefaultMisbehavingBantimeSeconds, this.logger);
+            this.BanTimeSeconds = config.GetOrDefault<int>("bantime", nodeSettings.Network.DefaultBanTimeSeconds, this.logger);
 
             // Listen option will default to true in case there are no connect option specified.
             // When running the node with connect option listen flag has to be explicitly passed to the node to enable listen flag.
@@ -161,6 +174,30 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.IsGateway = config.GetOrDefault<bool>("gateway", false, this.logger);
         }
 
+        public void AddAddNode(IPEndPoint addNode)
+        {
+            lock (this.addNodeLock)
+            {
+                this.addNode.Add(addNode);
+            }
+        }
+
+        public void RemoveAddNode(IPEndPoint addNode)
+        {
+            lock (this.addNodeLock)
+            {
+                this.addNode.Remove(addNode);
+            }
+        }
+
+        public List<IPEndPoint> RetrieveAddNodes()
+        {
+            lock (this.addNodeLock)
+            {
+                return this.addNode.ToList();
+            }
+        }
+
         /// <summary>
         /// Get the default configuration.
         /// </summary>
@@ -187,7 +224,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#whitelist=<ip:port>");
             builder.AppendLine($"#Specify your own public address.");
             builder.AppendLine($"#externalip=<ip>");
-            builder.AppendLine($"#Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
+            builder.AppendLine($"#Number of seconds to keep misbehaving peers from reconnecting. Default {network.DefaultBanTimeSeconds}.");
             builder.AppendLine($"#bantime=<number>");
             builder.AppendLine($"#The maximum number of outbound connections. Default {network.DefaultMaxOutboundConnections}.");
             builder.AppendLine($"#maxoutboundconnections=<number>");
@@ -225,7 +262,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
             builder.AppendLine($"-whitelist=<ip:port>      Whitelist peers having the given IP:port address, both inbound or outbound. Can be specified multiple times.");
             builder.AppendLine($"-externalip=<ip>          Specify your own public address.");
-            builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
+            builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting. Default {network.DefaultBanTimeSeconds}.");
             builder.AppendLine($"-maxoutboundconnections=<number> The maximum number of outbound connections. Default {network.DefaultMaxOutboundConnections}.");
             builder.AppendLine($"-maxinboundconnections=<number> The maximum number of inbound connections. Default {network.DefaultMaxInboundConnections}.");
             builder.AppendLine($"-initialconnectiontarget=<number> The number of connections to be reached before a 1 second connection interval (initally 100ms). Default 1.");
@@ -239,9 +276,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
         /// <summary>List of exclusive end points that the node should be connected to.</summary>
         public List<IPEndPoint> Connect { get; set; }
-
-        /// <summary>List of end points that the node should try to connect to.</summary>
-        public List<IPEndPoint> AddNode { get; set; }
 
         /// <summary>
         /// Accepts incoming connections by starting the node server.

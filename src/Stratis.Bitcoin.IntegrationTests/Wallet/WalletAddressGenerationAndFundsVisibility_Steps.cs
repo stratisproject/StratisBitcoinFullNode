@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             var transaction = this.sendingStratisBitcoinNode.FullNode.WalletTransactionHandler()
                  .BuildTransaction(transactionBuildContext);
 
-            this.sendingStratisBitcoinNode.FullNode.NodeService<WalletController>()
+            this.sendingStratisBitcoinNode.FullNode.NodeController<WalletController>()
                 .SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
             TestHelper.MineBlocks(this.sendingStratisBitcoinNode, 1);

@@ -21,6 +21,18 @@ namespace Stratis.Bitcoin.AsyncWork
         /// <seealso cref="Stratis.Bitcoin.AsyncWork.AsyncProvider.IAsyncTaskInfoSetter" />
         internal class AsyncTaskInfo : IAsyncTaskInfoSetter
         {
+            internal enum AsyncTaskType
+            {
+                /// <summary> Refers to an <see cref="IAsyncLoop"/>.</summary>
+                Loop,
+
+                /// <summary> Refers to an <see cref="IAsyncDelegateDequeuer{T}"/>.</summary>
+                Dequeuer,
+
+                /// <summary> Refers to a registered <see cref="Task"/>.</summary>
+                RegisteredTask
+            }
+
             public string FriendlyName { get; }
 
             /// <summary>
@@ -35,14 +47,9 @@ namespace Stratis.Bitcoin.AsyncWork
             Exception IAsyncTaskInfoSetter.Exception { set => this.Exception = value; }
 
             /// <summary>
-            /// Gets a value indicating whether this instance contains an <see cref="IAsyncLoop"/> information.
+            /// Specifies which type of async worker this instance contains information about.
             /// </summary>
-            public bool IsLoop { get; }
-
-            /// <summary>
-            /// Gets a value indicating whether this instance contains an <see cref="IAsyncDelegateDequeuer{T}"/> information.
-            /// </summary>
-            public bool IsDelegateWorker { get; }
+            public AsyncTaskType Type { get; }
 
             public bool IsRunning => this.Status != TaskStatus.Faulted;
 
@@ -51,11 +58,10 @@ namespace Stratis.Bitcoin.AsyncWork
             /// </summary>
             /// <param name="friendlyName">Friendly name of the async delegate.</param>
             /// <param name="isDelegateWorker">if set to <c>true</c> the information represents an <see cref="IAsyncDelegateDequeuer"/>, otherwise an <see cref="IAsyncLoop"/>.</param>
-            public AsyncTaskInfo(string friendlyName, bool isDelegateWorker)
+            public AsyncTaskInfo(string friendlyName, AsyncTaskType type)
             {
                 this.FriendlyName = friendlyName;
-                this.IsDelegateWorker = isDelegateWorker;
-                this.IsLoop = !isDelegateWorker;
+                this.Type = type;
             }
         }
     }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using NBitcoin;
 using NBitcoin.Rules;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
 
@@ -19,14 +20,14 @@ namespace Stratis.Bitcoin.Consensus.PerformanceCounters.Rules
         /// <summary>Snapshot that is currently being populated.</summary>
         private ConsensusRulesPerformanceSnapshot currentSnapshot;
 
-        public ConsensusRulesPerformanceCounter(IConsensus consensus)
+        public ConsensusRulesPerformanceCounter(ConsensusRulesContainer consensusRules)
         {
             this.registeredRules = new List<RuleItem>();
 
-            this.RegisterRulesCollection(consensus.HeaderValidationRules.Select(x => x as IConsensusRuleBase), RuleType.Header);
-            this.RegisterRulesCollection(consensus.IntegrityValidationRules.Select(x => x as IConsensusRuleBase), RuleType.Integrity);
-            this.RegisterRulesCollection(consensus.PartialValidationRules.Select(x => x as IConsensusRuleBase), RuleType.Partial);
-            this.RegisterRulesCollection(consensus.FullValidationRules.Select(x => x as IConsensusRuleBase), RuleType.Full);
+            this.RegisterRulesCollection(consensusRules.HeaderValidationRules.Select(x => x as IConsensusRuleBase), RuleType.Header);
+            this.RegisterRulesCollection(consensusRules.IntegrityValidationRules.Select(x => x as IConsensusRuleBase), RuleType.Integrity);
+            this.RegisterRulesCollection(consensusRules.PartialValidationRules.Select(x => x as IConsensusRuleBase), RuleType.Partial);
+            this.RegisterRulesCollection(consensusRules.FullValidationRules.Select(x => x as IConsensusRuleBase), RuleType.Full);
 
             this.currentSnapshot = new ConsensusRulesPerformanceSnapshot(this.registeredRules);
         }

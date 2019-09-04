@@ -30,6 +30,9 @@ namespace Stratis.Bitcoin.Features.PoA
         void AddFederationMember(IFederationMember federationMember);
 
         void RemoveFederationMember(IFederationMember federationMember);
+
+        /// <summary>Provides federation member of this node or <c>null</c> if <see cref="IsFederationMember"/> is <c>false</c>.</summary>
+        IFederationMember GetCurrentFederationMember();
     }
 
     public abstract class FederationManagerBase : IFederationManager
@@ -123,6 +126,15 @@ namespace Stratis.Bitcoin.Features.PoA
             lock (this.locker)
             {
                 return new List<IFederationMember>(this.federationMembers);
+            }
+        }
+
+        /// <inheritdoc />
+        public IFederationMember GetCurrentFederationMember()
+        {
+            lock (this.locker)
+            {
+                return this.federationMembers.SingleOrDefault(x => x.PubKey == this.CurrentFederationKey.PubKey);
             }
         }
 

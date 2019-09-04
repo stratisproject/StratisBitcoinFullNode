@@ -39,6 +39,11 @@ namespace Stratis.Bitcoin.Connection
         void ClearBannedPeers();
 
         /// <summary>
+        /// Returns a list of all the banned peers.
+        /// </summary>
+        List<PeerAddress> GetAllBanned();
+
+        /// <summary>
         /// Check if a peer is banned.
         /// </summary>
         /// <param name="endpoint">The endpoint to check if it was banned.</param>
@@ -115,7 +120,7 @@ namespace Stratis.Bitcoin.Connection
                 if (address != null)
                 {
                     peerAddresses.Add(address);
-                    this.logger.LogTrace("{0} added to the address manager.");
+                    this.logger.LogDebug("{0} added to the address manager.");
                 }
             }
 
@@ -146,6 +151,12 @@ namespace Stratis.Bitcoin.Connection
                     this.logger.LogDebug("Peer '{0}' was un-banned.", peer.Endpoint);
                 }
             }
+        }
+
+        /// <inheritdoc />
+        public List<PeerAddress> GetAllBanned()
+        {
+            return this.peerAddressManager.Peers.Where(p => p.IsBanned(this.dateTimeProvider.GetUtcNow())).Select(p => p).ToList();
         }
 
         /// <inheritdoc />

@@ -227,7 +227,7 @@ namespace Stratis.Bitcoin.Base
                         {
                             // If we reached the maximum number of samples, we need to remove oldest sample.
                             sources.Remove(oldSample.Source);
-                            this.logger.LogTrace("Oldest sample {0} from peer '{1}' removed.", oldSample.TimeOffset, oldSample.Source);
+                            this.logger.LogDebug("Oldest sample {0} from peer '{1}' removed.", oldSample.TimeOffset, oldSample.Source);
                         }
 
                         this.RecalculateTimeOffsetLocked();
@@ -243,9 +243,9 @@ namespace Stratis.Bitcoin.Base
 
                         res = true;
                     }
-                    else this.logger.LogTrace("Sample from peer '{0}' is already included.", peerAddress);
+                    else this.logger.LogDebug("Sample from peer '{0}' is already included.", peerAddress);
                 }
-                else this.logger.LogTrace("Time sync feature is switched off.");
+                else this.logger.LogDebug("Time sync feature is switched off.");
             }
 
             if (startWarningLoopNow)
@@ -276,7 +276,7 @@ namespace Stratis.Bitcoin.Base
         {
             if (this.outboundTimestampOffsets.Count >= MinOutboundSampleCount)
             {
-                this.logger.LogTrace("We have {0} outbound samples and {1} inbound samples.", this.outboundTimestampOffsets.Count, this.inboundSampleSources.Count);
+                this.logger.LogDebug("We have {0} outbound samples and {1} inbound samples.", this.outboundTimestampOffsets.Count, this.inboundSampleSources.Count);
                 List<double> inboundOffsets = this.inboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds).ToList();
                 List<double> outboundOffsets = this.outboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds).ToList();
 
@@ -307,7 +307,7 @@ namespace Stratis.Bitcoin.Base
                     this.dateTimeProvider.SetAdjustedTimeOffset(TimeSpan.Zero);
                 }
             }
-            else this.logger.LogTrace("We have {0} outbound samples, which is below required minimum of {1} outbound samples.", this.outboundTimestampOffsets.Count, MinOutboundSampleCount);
+            else this.logger.LogDebug("We have {0} outbound samples, which is below required minimum of {1} outbound samples.", this.outboundTimestampOffsets.Count, MinOutboundSampleCount);
         }
 
         /// <summary>
@@ -447,9 +447,9 @@ namespace Stratis.Bitcoin.Base
                         TimeSpan timeOffset = version.Timestamp - this.dateTimeProvider.GetTimeOffset();
                         if (timeOffset != null) this.state.AddTimeData(address, timeOffset, peer.Inbound);
                     }
-                    else this.logger.LogTrace("Node '{0}' does not have an initialized time offset.", peer.RemoteSocketEndpoint);
+                    else this.logger.LogDebug("Node '{0}' does not have an initialized time offset.", peer.RemoteSocketEndpoint);
                 }
-                else this.logger.LogTrace("Message received from unknown node's address.");
+                else this.logger.LogDebug("Message received from unknown node's address.");
             }
 
             return Task.CompletedTask;

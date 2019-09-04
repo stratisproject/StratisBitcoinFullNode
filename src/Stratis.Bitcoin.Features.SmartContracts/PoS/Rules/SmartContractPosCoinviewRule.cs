@@ -30,8 +30,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
         public SmartContractPosCoinviewRule(Network network, IStateRepositoryRoot stateRepositoryRoot,
             IContractExecutorFactory executorFactory, ICallDataSerializer callDataSerializer,
             ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView,
-            IStakeChain stakeChain, IStakeValidator stakeValidator) 
-            : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView)
+            IStakeChain stakeChain, IStakeValidator stakeValidator, ILoggerFactory loggerFactory) 
+            : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView, loggerFactory)
         {
             this.consensus = network.Consensus;
             this.stakeChain = stakeChain;
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
                 Money stakeReward = block.Transactions[1].TotalOut - posRuleContext.TotalCoinStakeValueIn;
                 Money calcStakeReward = fees + this.GetProofOfStakeReward(height);
 
-                this.Logger.LogTrace("Block stake reward is {0}, calculated reward is {1}.", stakeReward, calcStakeReward);
+                this.Logger.LogDebug("Block stake reward is {0}, calculated reward is {1}.", stakeReward, calcStakeReward);
                 if (stakeReward > calcStakeReward)
                 {
                     this.Logger.LogTrace("(-)[BAD_COINSTAKE_AMOUNT]");
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
             else
             {
                 Money blockReward = fees + this.GetProofOfWorkReward(height);
-                this.Logger.LogTrace("Block reward is {0}, calculated reward is {1}.", block.Transactions[0].TotalOut, blockReward);
+                this.Logger.LogDebug("Block reward is {0}, calculated reward is {1}.", block.Transactions[0].TotalOut, blockReward);
                 if (block.Transactions[0].TotalOut > blockReward)
                 {
                     this.Logger.LogTrace("(-)[BAD_COINBASE_AMOUNT]");
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
             {
                 if ((spendHeight - coins.Height) < this.consensus.CoinbaseMaturity)
                 {
-                    this.Logger.LogTrace("Coinstake transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.consensus.CoinbaseMaturity);
+                    this.Logger.LogDebug("Coinstake transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, spendHeight, this.consensus.CoinbaseMaturity);
                     this.Logger.LogTrace("(-)[COINSTAKE_PREMATURE_SPENDING]");
                     ConsensusErrors.BadTransactionPrematureCoinstakeSpending.Throw();
                 }
@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
                 {
                     this.stakeValidator.CheckProofOfStake(posRuleContext, prevChainedHeader, prevBlockStake, block.Transactions[1], chainedHeader.Header.Bits.ToCompact());
                 }
-                else this.Logger.LogTrace("POS validation skipped for block at height {0}.", chainedHeader.Height);
+                else this.Logger.LogDebug("POS validation skipped for block at height {0}.", chainedHeader.Height);
             }
 
             // PoW is checked in CheckBlock().
@@ -196,9 +196,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
                 // Copy checkpointed stake modifier.
                 CheckpointInfo checkpoint = this.Parent.Checkpoints.GetCheckpoint(lastCheckpointHeight);
                 blockStake.StakeModifierV2 = checkpoint.StakeModifierV2;
-                this.Logger.LogTrace("Last checkpoint stake modifier V2 loaded: '{0}'.", blockStake.StakeModifierV2);
+                this.Logger.LogDebug("Last checkpoint stake modifier V2 loaded: '{0}'.", blockStake.StakeModifierV2);
             }
-            else this.Logger.LogTrace("POS stake modifier computation skipped for block at height {0} because it is not above last checkpoint block height {1}.", chainedHeader.Height, lastCheckpointHeight);
+            else this.Logger.LogDebug("POS stake modifier computation skipped for block at height {0} because it is not above last checkpoint block height {1}.", chainedHeader.Height, lastCheckpointHeight);
         }
 
         /// <inheritdoc />

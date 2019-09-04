@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -17,12 +16,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 {
     public static class BlockStoreRouteEndPoint
     {
-        public const string GetAddressBalance = "getaddressbalance";
         public const string GetAddressesBalances = "getaddressesbalances";
+        public const string GetVerboseAddressesBalances = "getverboseaddressesbalances";
         public const string GetAddressIndexerTip = "addressindexertip";
         public const string GetBlock = "block";
         public const string GetBlockCount = "GetBlockCount";
-        public const string GetReceivedByAddress = "getreceivedbyaddress";
     }
 
     /// <summary>Controller providing operations on a blockstore.</summary>
@@ -31,7 +29,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
     {
         private readonly IAddressIndexer addressIndexer;
 
-        /// <see cref="IBlockStore"/>
+        /// <summary>Provides access to the block store on disk.</summary>
         private readonly IBlockStore blockStore;
 
         /// <summary>Instance logger.</summary>
@@ -94,30 +92,46 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         /// <returns><see cref="BlockModel"/> if block is found, <see cref="NotFoundObjectResult"/> if not found. Returns <see cref="IActionResult"/> with error information if exception thrown.</returns>
         [Route(BlockStoreRouteEndPoint.GetBlock)]
         [HttpGet]
-        public async Task<IActionResult> GetBlockAsync([FromQuery] SearchByHashRequest query)
+        public IActionResult GetBlock([FromQuery] SearchByHashRequest query)
         {
             if (!this.ModelState.IsValid)
-            {
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
 
             try
             {
-                Block block = this.blockStore.GetBlock(uint256.Parse(query.Hash));
+                uint256 blockId = uint256.Parse(query.Hash);
 
+                ChainedHeader chainedHeader = this.chainIndexer.GetHeader(blockId);
+
+                if (chainedHeader == null)
+                    return this.Ok("Block not found");
+
+                Block block = chainedHeader.Block ?? this.blockStore.GetBlock(blockId);
+
+                // In rare occasions a block that is found in the
+                // indexer may not have been pushed to the store yet. 
                 if (block == null)
-                {
-                    return new NotFoundObjectResult("Block not found");
-                }
+                    return this.Ok("Block not found");
 
                 if (!query.OutputJson)
                 {
                     return this.Json(block);
                 }
 
-                return query.ShowTransactionDetails
-                    ? this.Json(new BlockTransactionDetailsModel(block, this.chainIndexer.GetHeader(block.GetHash()), this.chainIndexer.Tip, this.network))
-                    : this.Json(new BlockModel(block, this.chainIndexer.GetHeader(block.GetHash()), this.chainIndexer.Tip, this.network));
+                BlockModel blockModel = query.ShowTransactionDetails
+                    ? new BlockTransactionDetailsModel(block, chainedHeader, this.chainIndexer.Tip, this.network)
+                    : new BlockModel(block, chainedHeader, this.chainIndexer.Tip, this.network);
+
+                if (this.network.Consensus.IsProofOfStake)
+                {
+                    var posBlock = block as PosBlock;
+
+                    blockModel.PosBlockSignature = posBlock.BlockSignature.ToHex(this.network);
+                    blockModel.PosBlockTrust = new Target(chainedHeader.GetBlockProof()).ToUInt256().ToString();
+                    blockModel.PosChainTrust = chainedHeader.ChainWork.ToString(); // this should be similar to ChainWork
+                }
+
+                return this.Json(blockModel);
             }
             catch (Exception e)
             {
@@ -146,28 +160,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             }
         }
 
-        /// <summary>Provides balance of the given address confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
-        [Route(BlockStoreRouteEndPoint.GetAddressBalance)]
-        [HttpGet]
-        public IActionResult GetAddressBalance([FromQuery] string address, int minConfirmations)
-        {
-            try
-            {
-                Money balance = this.addressIndexer.GetAddressBalance(address, minConfirmations);
-
-                if (balance == null)
-                    balance = new Money(0);
-
-                return this.Json(balance);
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }
-
         /// <summary>Provides balance of the given addresses confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
+        /// <param name="addresses">A comma delimited set of addresses that will be queried.</param>
+        /// <param name="minConfirmations">Only blocks below consensus tip less this parameter will be considered.</param>
+        /// <returns>A result object containing the balance for each requested address and if so, a meesage stating why the indexer is not queryable.</returns>
         [Route(BlockStoreRouteEndPoint.GetAddressesBalances)]
         [HttpGet]
         public IActionResult GetAddressesBalances(string addresses, int minConfirmations)
@@ -176,22 +172,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             {
                 string[] addressesArray = addresses.Split(',');
 
-                this.logger.LogDebug($"Asking data for {addressesArray.Length} addresses.");
+                this.logger.LogDebug("Asking data for {0} addresses.", addressesArray.Length);
 
-                var model = new AddressBalancesModel();
-                foreach (string address in addressesArray)
-                {
-                    Money balance = this.addressIndexer.GetAddressBalance(address, minConfirmations);
+                AddressBalancesResult result = this.addressIndexer.GetAddressBalances(addressesArray, minConfirmations);
 
-                    if (balance == null)
-                        balance = new Money(0);
+                this.logger.LogDebug("Sending data for {0} addresses.", result.Balances.Count);
 
-                    model.Balances.Add(new AddressBalanceModel(address, balance));
-                }
-
-                this.logger.LogDebug("Sending {0} entries.", model.Balances.Count);
-
-                return this.Json(model);
+                return this.Json(result);
             }
             catch (Exception e)
             {
@@ -200,14 +187,23 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             }
         }
 
-        /// <summary>Returns the total amount received by the given address in transactions with at least<paramref name= "minConfirmations" /> confirmations.</ summary >
-        [Route(BlockStoreRouteEndPoint.GetReceivedByAddress)]
+
+        /// <summary>Provides verbose balance data of the given addresses.</summary>
+        /// <param name="addresses">A comma delimited set of addresses that will be queried.</param>
+        /// <returns>A result object containing the balance for each requested address and if so, a meesage stating why the indexer is not queryable.</returns>
+        [Route(BlockStoreRouteEndPoint.GetVerboseAddressesBalances)]
         [HttpGet]
-        public IActionResult GetReceivedByAddress([FromQuery] string address, int minConfirmations)
+        public IActionResult GetVerboseAddressesBalancesData(string addresses)
         {
             try
             {
-                return this.Json(this.addressIndexer.GetReceivedByAddress(address, minConfirmations));
+                string[] addressesArray = addresses?.Split(',') ?? new string[] { };
+
+                this.logger.LogDebug("Asking data for {0} addresses.", addressesArray.Length);
+
+                VerboseAddressBalancesResult result = this.addressIndexer.GetAddressIndexerState(addressesArray);
+
+                return this.Json(result);
             }
             catch (Exception e)
             {

@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             builder.AppendLine($"-txindex=<0 or 1>              Enable to maintain a full transaction index.");
             builder.AppendLine($"-reindex=<0 or 1>              Rebuild chain state and block index from block data files on disk.");
-            builder.AppendLine($"-addressindex=<0 or 1>         Enable to maintain a full addresses index.");
+            builder.AppendLine($"-addressindex=<0 or 1>         Enable to maintain a full address index.");
 
             NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
         }

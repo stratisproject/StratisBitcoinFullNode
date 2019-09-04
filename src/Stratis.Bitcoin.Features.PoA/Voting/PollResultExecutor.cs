@@ -11,6 +11,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         /// <summary>Reverts effect of <see cref="VotingData"/>.</summary>
         void RevertChange(VotingData data);
+
+        /// <summary>Converts <see cref="VotingData"/> to a human readable format.</summary>
+        string ConvertToString(VotingData data);
     }
 
     public class PollResultExecutor : IPollResultExecutor
@@ -76,6 +79,27 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                     this.AddHash(data.Data);
                     break;
             }
+        }
+
+        /// <inheritdoc />
+        public string ConvertToString(VotingData data)
+        {
+            string action = $"Action:'{data.Key}'";
+
+            switch (data.Key)
+            {
+                case VoteKey.AddFederationMember:
+                case VoteKey.KickFederationMember:
+                    IFederationMember federationMember = this.consensusFactory.DeserializeFederationMember(data.Data);
+                    return $"{action},FederationMember:'{federationMember}'";
+
+                case VoteKey.WhitelistHash:
+                case VoteKey.RemoveHash:
+                    var hash = new uint256(data.Data);
+                    return $"{action},Hash:'{hash}'";
+            }
+
+            return "unknown (not supported voting data key)";
         }
 
         public void AddFederationMember(byte[] federationMemberBytes)

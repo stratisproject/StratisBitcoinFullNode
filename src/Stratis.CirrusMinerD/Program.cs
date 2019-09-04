@@ -20,8 +20,8 @@ using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Features.FederatedPeg.Collateral;
-using Stratis.Features.FederatedPeg.CounterChain;
+using Stratis.Features.Collateral;
+using Stratis.Features.Collateral.CounterChain;
 using Stratis.Sidechains.Networks;
 
 namespace Stratis.CirrusMinerD
@@ -68,7 +68,7 @@ namespace Stratis.CirrusMinerD
 
         private static IFullNode GetCirrusMiningNode(string[] args)
         {
-            var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args)
+            var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.CIRRUS_VERSION, args: args)
             {
                 MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
             };
@@ -78,7 +78,7 @@ namespace Stratis.CirrusMinerD
                 .UseBlockStore()
                 .SetCounterChainNetwork(MainChainNetworks[nodeSettings.Network.NetworkType]())
                 .UseSmartContractPoAConsensus()
-                .UseSmartContractPoAMining()
+                .UseSmartContractCollateralPoAMining()
                 .CheckForPoAMembersCollateral()
                 .UseTransactionNotification()
                 .UseBlockNotification()

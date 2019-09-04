@@ -12,19 +12,26 @@ using TracerAttributes;
 namespace Stratis.Bitcoin.AsyncWork
 {
     /// <summary>
-    /// Provides functionality for creating and tracking asynchronous operations that happens in background.
+    /// Provides functionality for creating and tracking asynchronous operations that happen in the background.
     /// </summary>
     public partial class AsyncProvider : IAsyncProvider
     {
         private const int DefaultLoopRepeatInterval = 1000;
 
         private object lockAsyncDelegates;
+        private object lockRegisteredTasks;
 
         /// <summary>
         /// Holds a list of currently running async delegates or delegates that stopped because of unhandled exceptions.
         /// Protected by <see cref="lockAsyncDelegates"/> lock
         /// </summary>
         private Dictionary<IAsyncDelegate, AsyncTaskInfo> asyncDelegates;
+
+        /// <summary>
+        /// Holds a list of currently registered tasks with their health status.
+        /// Protected by <see cref="lockRegisteredTasks"/> lock
+        /// </summary>
+        private Dictionary<Task, AsyncTaskInfo> registeredTasks;
 
         private ILoggerFactory loggerFactory;
         private ILogger logger;
@@ -38,11 +45,16 @@ namespace Stratis.Bitcoin.AsyncWork
             (Name: "Health", Width: 15)
         };
 
+        /// <inheritdoc />
+        public ISignals Signals => this.signals;
+
         public AsyncProvider(ILoggerFactory loggerFactory, ISignals signals, INodeLifetime nodeLifetime)
         {
             this.lockAsyncDelegates = new object();
+            this.lockRegisteredTasks = new object();
 
             this.asyncDelegates = new Dictionary<IAsyncDelegate, AsyncTaskInfo>();
+            this.registeredTasks = new Dictionary<Task, AsyncTaskInfo>();
 
             this.loggerFactory = Guard.NotNull(loggerFactory, nameof(loggerFactory));
             this.logger = this.loggerFactory.CreateLogger(this.GetType().FullName);
@@ -60,12 +72,12 @@ namespace Stratis.Bitcoin.AsyncWork
             {
                 newDelegate = new AsyncQueue<T>(new AsyncQueue<T>.OnEnqueueAsync(@delegate));
 
-                this.asyncDelegates.Add(newDelegate, new AsyncTaskInfo(friendlyName, true));
+                this.asyncDelegates.Add(newDelegate, new AsyncTaskInfo(friendlyName, AsyncTaskInfo.AsyncTaskType.Dequeuer));
             }
 
             // task will continue with onAsyncDelegateUnhandledException if @delegate had unhandled exceptions
             newDelegate.ConsumerTask.ContinueWith(
-                this.onAsyncDelegateUnhandledException,
+                this.OnAsyncDelegateUnhandledException,
                 newDelegate,
                 CancellationToken.None,
                 TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
@@ -74,7 +86,7 @@ namespace Stratis.Bitcoin.AsyncWork
 
             // task will continue with onAsyncDelegateCompleted if @delegate completed or was canceled
             newDelegate.ConsumerTask.ContinueWith(
-                this.onAsyncDelegateCompleted,
+                this.OnAsyncDelegateCompleted,
                 newDelegate,
                 CancellationToken.None,
                 TaskContinuationOptions.NotOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
@@ -97,14 +109,14 @@ namespace Stratis.Bitcoin.AsyncWork
             Task loopTask;
             lock (this.asyncDelegates)
             {
-                this.asyncDelegates.Add(loopInstance, new AsyncTaskInfo(name, false));
+                this.asyncDelegates.Add(loopInstance, new AsyncTaskInfo(name, AsyncTaskInfo.AsyncTaskType.Loop));
             }
 
             loopTask = loopInstance.Run(cancellation, repeatEvery ?? TimeSpan.FromMilliseconds(DefaultLoopRepeatInterval), startAfter).RunningTask;
 
             // task will continue with onAsyncDelegateUnhandledException if @delegate had unhandled exceptions
             loopTask.ContinueWith(
-                this.onAsyncDelegateUnhandledException,
+                this.OnAsyncDelegateUnhandledException,
                 loopInstance,
                 CancellationToken.None,
                 TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
@@ -113,7 +125,7 @@ namespace Stratis.Bitcoin.AsyncWork
 
             // task will continue with onAsyncDelegateCompleted if @delegate completed or was canceled
             loopTask.ContinueWith(
-                this.onAsyncDelegateCompleted,
+                this.OnAsyncDelegateCompleted,
                 loopInstance,
                 CancellationToken.None,
                 TaskContinuationOptions.NotOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
@@ -158,6 +170,38 @@ namespace Stratis.Bitcoin.AsyncWork
         }
 
         /// <inheritdoc />
+        public Task RegisterTask(string name, Task taskToRegister)
+        {
+            Guard.NotEmpty(name, nameof(name));
+            Guard.NotNull(taskToRegister, nameof(taskToRegister));
+
+            // instantiate the loop
+
+            lock (this.lockRegisteredTasks)
+            {
+                this.registeredTasks.Add(taskToRegister, new AsyncTaskInfo(name, AsyncTaskInfo.AsyncTaskType.RegisteredTask));
+            }
+
+            // task will continue with OnRegisteredTaskUnhandledException if @delegate had unhandled exceptions
+            taskToRegister.ContinueWith(
+                this.OnRegisteredTaskUnhandledException,
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default
+                );
+
+            // task will continue with OnRegisteredTaskCompleted if @delegate completed or was canceled
+            taskToRegister.ContinueWith(
+                this.OnRegisteredTaskCompleted,
+                CancellationToken.None,
+                TaskContinuationOptions.NotOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default
+                );
+
+            return taskToRegister;
+        }
+
+        /// <inheritdoc />
         public bool IsAsyncDelegateDequeuerRunning(IAsyncDelegate asyncDelegate)
         {
             lock (this.lockAsyncDelegates)
@@ -178,7 +222,7 @@ namespace Stratis.Bitcoin.AsyncWork
             lock (this.lockAsyncDelegates)
             {
                 // task in the dictionaries are either running or faulted so we just look for an IAsyncDelegate with the given name and status not faulted.
-                return this.asyncDelegates.Values.Any(@delegate => @delegate.FriendlyName == name && @delegate.Status != TaskStatus.Faulted && @delegate.IsDelegateWorker == true);
+                return this.asyncDelegates.Values.Any(@delegate => @delegate.FriendlyName == name && @delegate.Status != TaskStatus.Faulted && @delegate.Type == AsyncTaskInfo.AsyncTaskType.Dequeuer);
             }
         }
 
@@ -188,7 +232,17 @@ namespace Stratis.Bitcoin.AsyncWork
             lock (this.lockAsyncDelegates)
             {
                 // task in the dictionaries are either running or faulted so we just look for a dequeuer with the given name and status not faulted.
-                return this.asyncDelegates.Values.Any(@delegate => @delegate.FriendlyName == name && @delegate.Status != TaskStatus.Faulted && @delegate.IsLoop == true);
+                return this.asyncDelegates.Values.Any(@delegate => @delegate.FriendlyName == name && @delegate.Status != TaskStatus.Faulted && @delegate.Type == AsyncTaskInfo.AsyncTaskType.Loop);
+            }
+        }
+
+        /// <inheritdoc />
+        public bool IsRegisteredTaskRunning(string name)
+        {
+            lock (this.lockRegisteredTasks)
+            {
+                // task in the dictionaries are either running or faulted so we just look for a registered task with the given name and status not faulted.
+                return this.registeredTasks.Values.Any(@delegate => @delegate.FriendlyName == name && @delegate.Status != TaskStatus.Faulted && @delegate.Type == AsyncTaskInfo.AsyncTaskType.RegisteredTask);
             }
         }
 
@@ -196,15 +250,19 @@ namespace Stratis.Bitcoin.AsyncWork
         [NoTrace]
         public string GetStatistics(bool faultyOnly)
         {
-            List<KeyValuePair<IAsyncDelegate, AsyncTaskInfo>> taskInformationsDump;
+            var taskInformations = new List<AsyncTaskInfo>();
             lock (this.lockAsyncDelegates)
             {
-                // takes a snapshot of the informations.
-                taskInformationsDump = this.asyncDelegates.ToList();
+                taskInformations.AddRange(this.asyncDelegates.Values);
             }
 
-            int running = taskInformationsDump.Where(info => info.Value.IsRunning).Count();
-            int faulted = taskInformationsDump.Where(info => !info.Value.IsRunning).Count();
+            lock (this.lockRegisteredTasks)
+            {
+                taskInformations.AddRange(this.registeredTasks.Values);
+            }
+
+            int running = taskInformations.Where(info => info.IsRunning).Count();
+            int faulted = taskInformations.Where(info => !info.IsRunning).Count();
 
             var sb = new StringBuilder();
             sb.AppendLine();
@@ -214,15 +272,14 @@ namespace Stratis.Bitcoin.AsyncWork
                 return sb.ToString(); // If there are no faulty tasks and faultOnly is set to true, return just the header.
 
             var data =
-                from item in taskInformationsDump
-                let info = item.Value
+                from info in taskInformations
                 orderby info.FriendlyName
                 select new
                 {
                     Columns = new string[]
                     {
                         info.FriendlyName,
-                        (info.IsLoop ? "Loop" : "Dequeuer"),
+                        (info.Type.ToString()),
                         (info.IsRunning ? "Running" : "Faulted")
                     },
                     Exception = info.Exception?.Message
@@ -262,13 +319,85 @@ namespace Stratis.Bitcoin.AsyncWork
             return sb.ToString();
         }
 
+        /// <inheritdoc />
+        [NoTrace]
+        public List<(string loopName, TaskStatus status)> GetAll()
+        {
+            var taskInformation = new List<AsyncTaskInfo>();
+
+            lock (this.lockAsyncDelegates)
+            {
+                taskInformation.AddRange(this.asyncDelegates.Values);
+            }
+
+            lock (this.lockRegisteredTasks)
+            {
+                taskInformation.AddRange(this.registeredTasks.Values);
+            }
+
+            List<(string, TaskStatus)> runningTasks = taskInformation.Select(a => (a.FriendlyName, a.Status)).OrderBy(a => a.Item1).ToList();
+
+            return runningTasks;
+        }
+
+        private void OnRegisteredTaskCompleted(Task task)
+        {
+            AsyncTaskInfo itemToRemove;
+            lock (this.lockRegisteredTasks)
+            {
+                if (this.registeredTasks.TryGetValue(task, out itemToRemove))
+                {
+                    this.registeredTasks.Remove(task);
+                }
+            }
+
+            if (itemToRemove != null)
+            {
+                this.logger.LogDebug("Registered task '{0}' Removed. Id: {1}.", itemToRemove.FriendlyName, task.Id);
+            }
+            else
+            {
+                // Should never happen.
+                this.logger.LogError("Cannot find the registered task with Id {0}.", task.Id);
+            }
+        }
+
+        /// <summary>
+        ///  This method is called when a registered Task throws an unhandled exception.
+        /// </summary>
+        /// <param name="task">The task causing the exception.</param>
+        /// <param name="state">not used</param>
+        private void OnRegisteredTaskUnhandledException(Task task)
+        {
+            AsyncTaskInfo delegateInfo;
+            lock (this.lockRegisteredTasks)
+            {
+                if (this.registeredTasks.TryGetValue(task, out delegateInfo))
+                {
+                    // casted to IAsyncTaskInfoSetter to be able to set properties
+                    IAsyncTaskInfoSetter infoSetter = delegateInfo;
+
+                    infoSetter.Exception = task.Exception.GetBaseException();
+                    infoSetter.Status = task.Status;
+                }
+                else
+                {
+                    // Should never happen.
+                    this.logger.LogError("Cannot find the registered task with Id {0}.", task.Id);
+                    return;
+                }
+
+                this.logger.LogError(task.Exception.GetBaseException(), "Unhandled exception for registered task {0}.", delegateInfo.FriendlyName);
+            }
+        }
+
         /// <summary>
         ///  This method is called when a Task running an <see cref="IAsyncDelegate"/> captured an unhandled exception.
         /// </summary>
         /// <param name="task">The delegate task.</param>
         /// <param name="state">The <see cref="IAsyncDelegate"/> that's run by the delegateTask</param>
         /// <remarks>state can be either of type <see cref="IAsyncDelegateDequeuer{T}"/> or <see cref="IAsyncLoop"/></remarks>
-        private void onAsyncDelegateUnhandledException(Task task, object state)
+        private void OnAsyncDelegateUnhandledException(Task task, object state)
         {
             AsyncTaskInfo delegateInfo;
             lock (this.lockAsyncDelegates)
@@ -298,7 +427,7 @@ namespace Stratis.Bitcoin.AsyncWork
         /// </summary>
         /// <param name="task">The delegate task.</param>
         /// <param name="state">The <see cref="IAsyncDelegate"/> that's run by the delegateTask</param>
-        private void onAsyncDelegateCompleted(Task task, object state)
+        private void OnAsyncDelegateCompleted(Task task, object state)
         {
             AsyncTaskInfo itemToRemove;
             lock (this.lockAsyncDelegates)
@@ -328,7 +457,7 @@ namespace Stratis.Bitcoin.AsyncWork
 
             if (itemToRemove != null)
             {
-                this.logger.LogTrace("IAsyncDelegate task '{0}' Removed. Id: {1}.", itemToRemove.FriendlyName, task.Id);
+                this.logger.LogDebug("IAsyncDelegate task '{0}' Removed. Id: {1}.", itemToRemove.FriendlyName, task.Id);
             }
             else
             {

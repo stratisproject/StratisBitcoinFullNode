@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 
@@ -173,7 +174,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     // might be now valid, e.g. due to a nLockTime'd tx becoming valid,
                     // or a double-spend. Reset the rejects filter and give those
                     // txs a second chance.
-                    this.logger.LogTrace("Executing task to clear rejected transactions.");
+                    this.logger.LogDebug("Executing task to clear rejected transactions.");
                     this.hashRecentRejectsChainTip = this.chainIndexer.Tip.HashBlock;
                     this.recentRejects.Clear();
                 }
@@ -395,7 +396,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             lock (this.lockObject)
             {
-                this.logger.LogTrace("Executing task to prune orphan txs to max limit.");
+                this.logger.LogDebug("Executing task to prune orphan txs to max limit.");
                 while (this.mapOrphanTransactions.Count > maxOrphanTx)
                 {
                     // Evict a random orphan:
@@ -514,7 +515,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             lock (this.lockObject)
             {
-                this.logger.LogTrace("Executing task to erase orphan transactions.");
+                this.logger.LogDebug("Executing task to erase orphan transactions.");
 
                 int erased = 0;
 

@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         {
             Guard.NotNull(request, nameof(request));
 
-            this.logger.LogTrace("({0}:'{1}')", nameof(request), request);
+            this.logger.LogDebug("({0}:'{1}')", nameof(request), request);
 
             // Checks that the request is valid.
             if (!this.ModelState.IsValid)
@@ -89,9 +89,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         public IActionResult CreateColdStakingAccount([FromBody]CreateColdStakingAccountRequest request)
         {
             Guard.NotNull(request, nameof(request));
-
-            this.logger.LogTrace("({0}:'{1}')", nameof(request), request);
-
+            
             // Checks that the request is valid.
             if (!this.ModelState.IsValid)
             {
@@ -130,9 +128,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         public IActionResult GetColdStakingAddress([FromQuery]GetColdStakingAddressRequest request)
         {
             Guard.NotNull(request, nameof(request));
-
-            this.logger.LogTrace("({0}:'{1}')", nameof(request), request);
-
+            
             // Checks that the request is valid.
             if (!this.ModelState.IsValid)
             {
@@ -174,9 +170,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         public IActionResult SetupColdStaking([FromBody]SetupColdStakingRequest request)
         {
             Guard.NotNull(request, nameof(request));
-
-            this.logger.LogTrace("({0}:'{1}')", nameof(request), request);
-
+            
             // Checks the request is valid.
             if (!this.ModelState.IsValid)
             {
@@ -221,9 +215,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         public IActionResult ColdStakingWithdrawal([FromBody]ColdStakingWithdrawalRequest request)
         {
             Guard.NotNull(request, nameof(request));
-
-            this.logger.LogTrace("({0}:'{1}')", nameof(request), request);
-
+            
             // Checks the request is valid.
             if (!this.ModelState.IsValid)
             {

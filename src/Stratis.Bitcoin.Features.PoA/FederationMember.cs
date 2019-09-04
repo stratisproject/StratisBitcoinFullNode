@@ -77,7 +77,6 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Mainchain address that should have the collateral.</summary>
         public string CollateralMainchainAddress { get; set; }
 
-
         /// <inheritdoc />
         public override bool Equals(object obj)
         {

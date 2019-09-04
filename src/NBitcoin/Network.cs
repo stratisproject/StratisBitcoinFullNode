@@ -65,6 +65,14 @@ namespace NBitcoin
         protected Block Genesis;
 
         /// <summary>
+        /// The default amount of seconds to keep misbehaving peers from reconnecting.
+        /// <para>
+        /// This value should be calculated as (TargetSpacingSeconds * maxReorgLength) / 2.
+        /// </para>
+        /// </summary>
+        public int DefaultBanTimeSeconds { get; protected set; }
+
+        /// <summary>
         /// Maximal value for the calculated time offset.
         /// If the value is over this limit, the time syncing feature will be switched off.
         /// </summary>

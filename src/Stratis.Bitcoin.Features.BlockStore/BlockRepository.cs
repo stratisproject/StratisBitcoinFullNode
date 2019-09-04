@@ -539,13 +539,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     results[key.Item1] = this.dBreezeSerializer.Deserialize<Block>(blockRow.Value);
 
-                    this.logger.LogTrace("Block hash '{0}' loaded from the store.", key.Item1);
+                    this.logger.LogDebug("Block hash '{0}' loaded from the store.", key.Item1);
                 }
                 else
                 {
                     results[key.Item1] = null;
 
-                    this.logger.LogTrace("Block hash '{0}' not found in the store.", key.Item1);
+                    this.logger.LogDebug("Block hash '{0}' not found in the store.", key.Item1);
                 }
             }
 

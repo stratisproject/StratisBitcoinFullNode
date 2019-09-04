@@ -202,7 +202,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             try
             {
                 await peer.ConnectAsync(peer.ConnectionParameters.ConnectCancellation).ConfigureAwait(false);
-
                 networkPeerDisposer?.AddPeer(peer);
             }
             catch

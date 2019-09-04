@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Moq;
+﻿using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Base;
@@ -70,11 +69,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             service.Initialize();
 
             Assert.Equal(chainHeaderTip, service.PrunedUpToHeaderTip);
-
         }
 
         [Fact]
-        public async Task PruneService_Blockstore_Height_Below_AmountofBlockstoKeep_PruneAbortedAsync()
+        public void PruneService_Blockstore_Height_Below_AmountofBlockstoKeep_PruneAborted()
         {
             var block = this.Network.CreateBlock();
             var genesisHeader = new ChainedHeader(block.Header, block.GetHash(), 0);
@@ -95,13 +93,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var service = new PruneBlockStoreService(this.asyncProvider, blockRepository.Object, this.prunedBlockRepository.Object, this.chainState.Object, this.LoggerFactory.Object, this.nodeLifetime, storeSettings);
             service.Initialize();
 
-            await service.PruneBlocksAsync();
+            service.PruneBlocks();
 
             Assert.Equal(genesisHeader, service.PrunedUpToHeaderTip);
         }
 
         [Fact]
-        public async Task PruneService_Blockstore_Height_Equals_Prunedtip_PruneAbortedAsync()
+        public void PruneService_Blockstore_Height_Equals_Prunedtip_PruneAborted()
         {
             var block = this.Network.CreateBlock();
             var header = new ChainedHeader(block.Header, block.GetHash(), 2880);
@@ -122,13 +120,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var service = new PruneBlockStoreService(this.asyncProvider, blockRepository.Object, this.prunedBlockRepository.Object, this.chainState.Object, this.LoggerFactory.Object, this.nodeLifetime, storeSettings);
             service.Initialize();
 
-            await service.PruneBlocksAsync();
+            service.PruneBlocks();
 
             Assert.Equal(header, service.PrunedUpToHeaderTip);
         }
 
         [Fact]
-        public async Task PruneService_Blockstore_Height_Below_PrunedTip_Plus_AmountToKeep_PruneAbortedAsync()
+        public void PruneService_Blockstore_Height_Below_PrunedTip_Plus_AmountToKeep_PruneAborted()
         {
             var chain = this.BuildProvenHeaderChain(50);
 
@@ -152,13 +150,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var service = new PruneBlockStoreService(this.asyncProvider, blockRepository.Object, this.prunedBlockRepository.Object, this.chainState.Object, this.LoggerFactory.Object, this.nodeLifetime, storeSettings);
             service.Initialize();
 
-            await service.PruneBlocksAsync();
+            service.PruneBlocks();
 
             Assert.Equal(prunedUptoHeaderTipAt10, service.PrunedUpToHeaderTip);
         }
 
         [Fact]
-        public async Task PruneService_Triggered_FromGenesis_Respect_AmountOfBlocksToKeepAsync()
+        public void PruneService_Triggered_FromGenesis_Respect_AmountOfBlocksToKeep()
         {
             var chain = this.BuildProvenHeaderChain(50);
 
@@ -182,13 +180,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var service = new PruneBlockStoreService(this.asyncProvider, blockRepository.Object, this.prunedBlockRepository.Object, this.chainState.Object, this.LoggerFactory.Object, this.nodeLifetime, storeSettings);
             service.Initialize();
 
-            await service.PruneBlocksAsync();
+            service.PruneBlocks();
 
             Assert.Equal(15, service.PrunedUpToHeaderTip.Height);
         }
 
         [Fact]
-        public async Task PruneService_Triggered_MidChain_Respect_AmountOfBlocksToKeepAsync()
+        public void PruneService_Triggered_MidChain_Respect_AmountOfBlocksToKeep()
         {
             var chain = this.BuildProvenHeaderChain(50);
 
@@ -212,7 +210,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var service = new PruneBlockStoreService(this.asyncProvider, blockRepository.Object, this.prunedBlockRepository.Object, this.chainState.Object, this.LoggerFactory.Object, this.nodeLifetime, storeSettings);
             service.Initialize();
 
-            await service.PruneBlocksAsync();
+            service.PruneBlocks();
 
             Assert.Equal(25, service.PrunedUpToHeaderTip.Height);
         }

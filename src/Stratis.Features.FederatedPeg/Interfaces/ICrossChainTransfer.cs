@@ -7,10 +7,20 @@ namespace Stratis.Features.FederatedPeg.Interfaces
     /// </summary>
     public enum CrossChainTransferStatus
     {
+        /// <summary>Transaction will be recreated.</summary>
         Suspended = 'U',
+
+        /// <summary>Transaction needs more signatures.</summary>
         Partial = 'P',
+
+        /// <summary>Transaction awaiting confirmation.</summary>
         FullySigned = 'F',
-        SeenInBlock = 'S'
+
+        /// <summary>Transaction confirmed.</summary>
+        SeenInBlock = 'S',
+
+        /// <summary>Transfer will not be processed.</summary>
+        Rejected = 'R'
     }
 
     public interface ICrossChainTransfer : IBitcoinSerializable

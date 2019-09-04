@@ -4,8 +4,11 @@ using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.Features.SmartContracts.MempoolRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
+using Stratis.Bitcoin.Features.SmartContracts.PoA.MempoolRules;
 using Stratis.SmartContracts.Networks.Policies;
 
 namespace Stratis.Sidechains.Networks
@@ -26,7 +29,7 @@ namespace Stratis.Sidechains.Networks
         // public IList<Mnemonic> FederationMnemonics { get; }
         public IList<Key> FederationKeys { get; private set; }
 
-        internal CirrusRegTest()
+        public CirrusRegTest()
         {
             this.Name = "CirrusRegTest";
             this.NetworkType = NetworkType.Regtest;
@@ -37,13 +40,14 @@ namespace Stratis.Sidechains.Networks
             this.DefaultMaxInboundConnections = 109;
             this.DefaultRPCPort = 26175;
             this.DefaultAPIPort = 38223;
-            this.MaxTipAge = 2 * 60 * 60;
+            this.MaxTipAge = 768; // 20% of the fastest time it takes for one MaxReorgLength of blocks to be mined.
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
             this.MinRelayTxFee = 10000;
             this.RootFolderName = NetworkRootFolderName;
             this.DefaultConfigFilename = NetworkDefaultConfigFilename;
             this.MaxTimeOffsetSeconds = 25 * 60;
+            this.DefaultBanTimeSeconds = 1920; // 240 (MaxReorg) * 16 (TargetSpacing) / 2 = 32 Minutes
 
             var consensusFactory = new SmartContractCollateralPoAConsensusFactory();
 
@@ -157,7 +161,43 @@ namespace Stratis.Sidechains.Networks
 
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
 
+            // 16 below should be changed to TargetSpacingSeconds when we move that field.
+            Assert(this.DefaultBanTimeSeconds <= this.Consensus.MaxReorgLength * 16 / 2);
+
             // TODO: Do we need Asserts for block hash
+
+            this.RegisterMempoolRules(this.Consensus);
+        }
+
+        private void RegisterMempoolRules(IConsensus consensus)
+        {
+            consensus.MempoolRules = new List<Type>()
+            {
+                typeof(OpSpendMempoolRule),
+                typeof(TxOutSmartContractExecMempoolRule),
+                typeof(AllowedScriptTypeMempoolRule),
+                typeof(P2PKHNotContractMempoolRule),
+
+                // The non- smart contract mempool rules
+                typeof(CheckConflictsMempoolRule),
+                typeof(CheckCoinViewMempoolRule),
+                typeof(CreateMempoolEntryMempoolRule),
+                typeof(CheckSigOpsMempoolRule),
+                typeof(CheckFeeMempoolRule),
+
+                // The smart contract mempool needs to do more fee checks than its counterpart, so include extra rules.
+                // These rules occur directly after the fee check rule in the non- smart contract mempool.
+                typeof(SmartContractFormatLogicMempoolRule),
+                typeof(CanGetSenderMempoolRule),
+                typeof(AllowedCodeHashLogicMempoolRule), // PoA-specific
+                typeof(CheckMinGasLimitSmartContractMempoolRule),
+
+                // Remaining non-SC rules.
+                typeof(CheckRateLimitMempoolRule),
+                typeof(CheckAncestorsMempoolRule),
+                typeof(CheckReplacementMempoolRule),
+                typeof(CheckAllInputsMempoolRule)
+            };
         }
     }
 }

@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             long divideBy = (interval + 1) * targetSpacing;
             target = target.Divide(BigInteger.ValueOf(divideBy));
 
-            this.logger.LogTrace("The next target difficulty will be {0} times higher (easier to satisfy) than the previous target.", (double)multiplyBy / (double)divideBy);
+            this.logger.LogDebug("The next target difficulty will be {0} times higher (easier to satisfy) than the previous target.", (double)multiplyBy / (double)divideBy);
 
             if ((target.CompareTo(BigInteger.Zero) <= 0) || (target.CompareTo(targetLimit) >= 1))
                 target = targetLimit;
@@ -302,7 +302,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (transactionTime < stakingCoins.Time)
             {
-                this.logger.LogTrace("Coinstake transaction timestamp {0} is lower than it's own UTXO timestamp {1}.", transactionTime, stakingCoins.Time);
+                this.logger.LogDebug("Coinstake transaction timestamp {0} is lower than it's own UTXO timestamp {1}.", transactionTime, stakingCoins.Time);
                 this.logger.LogTrace("(-)[BAD_STAKE_TIME]");
                 ConsensusErrors.StakeTimeViolation.Throw();
             }
@@ -321,7 +321,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             BigInteger weightedTarget = target.Multiply(weight);
 
             context.TargetProofOfStake = this.ToUInt256(weightedTarget);
-            this.logger.LogTrace("POS target is '{0}', weighted target for {1} coins is '{2}'.", this.ToUInt256(target), valueIn, context.TargetProofOfStake);
+            this.logger.LogDebug("POS target is '{0}', weighted target for {1} coins is '{2}'.", this.ToUInt256(target), valueIn, context.TargetProofOfStake);
 
             // Calculate hash.
             using (var ms = new MemoryStream())
@@ -336,7 +336,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 context.HashProofOfStake = Hashes.Hash256(ms.ToArray());
             }
 
-            this.logger.LogTrace("Stake modifier V2 is '{0}', hash POS is '{1}'.", prevStakeModifier, context.HashProofOfStake);
+            this.logger.LogDebug("Stake modifier V2 is '{0}', hash POS is '{1}'.", prevStakeModifier, context.HashProofOfStake);
 
             // Now check if proof-of-stake hash meets target protocol.
             var hashProofOfStakeTarget = new BigInteger(1, context.HashProofOfStake.ToBytes(false));

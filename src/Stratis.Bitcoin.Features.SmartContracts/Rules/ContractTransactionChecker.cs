@@ -35,14 +35,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             return Task.CompletedTask;
         }
-
-        public void CheckTransaction(MempoolValidationContext context, IEnumerable<IContractTransactionValidationRule> rules)
+        
+        public static ContractTxData GetContractTxData(ICallDataSerializer callDataSerializer, TxOut scTxOut)
         {
-            this.CheckTransaction(context.Transaction, rules, context.Fees);
+            Result<ContractTxData> callDataDeserializationResult = callDataSerializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
+
+            if (callDataDeserializationResult.IsFailure)
+            {
+                new ConsensusError("invalid-calldata-format", string.Format("Invalid {0} format", typeof(ContractTxData).Name)).Throw();
+            }
+
+            ContractTxData txData = callDataDeserializationResult.Value;
+
+            return txData;
         }
 
-        private void CheckTransaction(Transaction transaction, IEnumerable<IContractTransactionValidationRule> rules,
-            Money suppliedBudget)
+        private void CheckTransaction(Transaction transaction, IEnumerable<IContractTransactionValidationRule> rules, Money suppliedBudget)
         {
             TxOut scTxOut = transaction.TryGetSmartContractTxOut();
 
@@ -52,14 +60,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
                 return;
             }
 
-            Result<ContractTxData> callDataDeserializationResult = this.callDataSerializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
-
-            if (callDataDeserializationResult.IsFailure)
-            {
-                new ConsensusError("invalid-calldata-format", string.Format("Invalid {0} format", typeof(ContractTxData).Name)).Throw();
-            }
-
-            ContractTxData txData = callDataDeserializationResult.Value;
+            ContractTxData txData = GetContractTxData(this.callDataSerializer, scTxOut);
 
             foreach (IContractTransactionValidationRule rule in rules)
             {

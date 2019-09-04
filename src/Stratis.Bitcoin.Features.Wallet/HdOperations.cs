@@ -26,6 +26,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             int change = isChange ? 1 : 0;
             var keyPath = new KeyPath($"{change}/{index}");
+            // TODO: Should probably explicitly be passing the network into Parse
             ExtPubKey extPubKey = ExtPubKey.Parse(accountExtPubKey).Derive(keyPath);
             return extPubKey.PubKey;
         }
@@ -199,7 +200,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="encryptedSeed">The encrypted seed to decrypt.</param>
         /// <param name="password">The password used to decrypt the encrypted seed.</param>
         /// <param name="network">The network this seed applies to.</param>
-        /// <returns></returns>
+        /// <returns>The decrypted private key.</returns>
+        [NoTrace]
         public static Key DecryptSeed(string encryptedSeed, string password, Network network)
         {
             Guard.NotEmpty(encryptedSeed, nameof(encryptedSeed));

@@ -31,13 +31,13 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// Lists all spendable transactions from all accounts in the wallet.
         /// </summary>
         /// <returns>A collection of spendable outputs</returns>
-        IEnumerable<Wallet.UnspentOutputReference> GetSpendableTransactionsInWallet(int confirmations = 0);
+        IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(int confirmations = 0);
 
         /// <summary>
-        /// Gets the last block height.
+        /// Gets the hash of the last block received by the wallet.
         /// </summary>
-        /// <returns></returns>
-        int LastBlockHeight();
+        /// <returns>Hash height pair of the last block received by the wallet.</returns>
+        HashHeightPair LastBlockSyncedHashHeight();
 
         /// <summary>
         /// Remove all the transactions in the wallet that are above this block height
@@ -69,6 +69,14 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// <param name="checkSignature">Indicates whether to check the signature.</param>
         /// <returns><c>True</c> if all's well and <c>false</c> otherwise.</returns>
         bool ValidateTransaction(Transaction transaction, bool checkSignature = false);
+
+        /// <summary>
+        /// Verifies that a transaction's inputs aren't being consumed by any other transactions.
+        /// </summary>
+        /// <param name="transaction">The transaction to check.</param>
+        /// <param name="checkSignature">Indicates whether to check the signature.</param>
+        /// <returns><c>True</c> if all's well and <c>false</c> otherwise.</returns>
+        bool ValidateConsolidatingTransaction(Transaction transaction, bool checkSignature = false);
 
         /// <summary>
         /// Saves the wallet into the file system.

@@ -222,8 +222,6 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<IPowMining, PowMining>();
                         services.AddSingleton<IBlockProvider, BlockProvider>();
                         services.AddSingleton<BlockDefinition, PowBlockDefinition>();
-                        services.AddSingleton<MiningRpcController>();
-                        services.AddSingleton<MiningController>();
                         services.AddSingleton<MinerSettings>();
                     });
             });
@@ -257,10 +255,6 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<BlockDefinition, PowBlockDefinition>();
                         services.AddSingleton<BlockDefinition, PosBlockDefinition>();
                         services.AddSingleton<BlockDefinition, PosPowBlockDefinition>();
-                        services.AddSingleton<StakingRpcController>();
-                        services.AddSingleton<StakingController>();
-                        services.AddSingleton<MiningRpcController>();
-                        services.AddSingleton<MiningController>();
                         services.AddSingleton<MinerSettings>();
                     });
             });

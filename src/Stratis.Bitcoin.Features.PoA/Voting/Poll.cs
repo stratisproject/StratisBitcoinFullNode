@@ -86,4 +86,35 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                    $"{nameof(this.PubKeysHexVotedInFavor)}:{string.Join(" ", this.PubKeysHexVotedInFavor)}";
         }
     }
+
+    public class PollViewModel
+    {
+        public bool IsPending { get; private set; }
+
+        public bool IsExecuted { get; private set; }
+
+        public int Id { get; private set; }
+
+        public HashHeightPair PollVotedInFavorBlockData { get; private set; }
+
+        public HashHeightPair PollStartBlockData { get; private set; }
+
+        public HashHeightPair PollExecutedBlockData { get; private set; }
+
+        public List<string> PubKeysHexVotedInFavor { get; private set; }
+
+        public string VotingDataString { get; private set; }
+
+        public PollViewModel(Poll poll, IPollResultExecutor executor)
+        {
+            this.IsPending = poll.IsPending;
+            this.IsExecuted = poll.IsExecuted;
+            this.Id = poll.Id;
+            this.PollVotedInFavorBlockData = poll.PollVotedInFavorBlockData;
+            this.PollStartBlockData = poll.PollStartBlockData;
+            this.PollExecutedBlockData = poll.PollExecutedBlockData;
+            this.PubKeysHexVotedInFavor = poll.PubKeysHexVotedInFavor;
+            this.VotingDataString = executor.ConvertToString(poll.VotingData);
+        }
+    }
 }

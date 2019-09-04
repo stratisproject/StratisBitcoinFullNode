@@ -124,7 +124,14 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             var transactionBuilder = new TransactionBuilder(this.network);
 
-            transactionBuilder.CoinSelector = new DeterministicCoinSelector();
+            if (context.IsConsolidatingTransaction)
+            {
+                transactionBuilder.CoinSelector = new ConsolidationCoinSelector();
+            }
+            else
+            {
+                transactionBuilder.CoinSelector = new DeterministicCoinSelector();
+            }
 
             this.AddRecipients(transactionBuilder, context);
             this.AddOpReturnOutput(transactionBuilder, context);
@@ -245,18 +252,18 @@ namespace Stratis.Features.FederatedPeg.Wallet
             int count = 0;
             var coins = new List<Coin>();
 
-            // We order the potential inputs now because we order them by information that the coin selector won't have access to.
-            IEnumerable<UnspentOutputReference> orderedUnspentOutputs = DeterministicCoinOrdering.GetOrderedUnspentOutputs(unspentOutputs);
+            // Assume the outputs came in in-order
 
-            foreach (UnspentOutputReference item in orderedUnspentOutputs)
+            foreach (UnspentOutputReference item in unspentOutputs)
             {
                 coins.Add(ScriptCoin.Create(network, item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, walletManager.GetWallet().MultiSigAddress.RedeemScript));
                 sum += item.Transaction.Amount;
 
                 count++;
 
-                // Sufficient UTXOs are selected to cover the value of the outputs + fee.
-                if (sum >= (totalToSend + settings.GetWithdrawalTransactionFee(count)))
+                // Sufficient UTXOs are selected to cover the value of the outputs + fee. But if it's a consolidating transaction, consume all.
+                if (sum >= (totalToSend + settings.GetWithdrawalTransactionFee(count))
+                    && !context.IsConsolidatingTransaction)
                     break;
             }
 
@@ -451,6 +458,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// The timestamp to set on the transaction.
         /// </summary>
         public uint? Time { get; set; }
+
+        /// <summary>
+        /// Whether or not this is a transaction built by the federation to consolidate its own inputs.
+        /// </summary>
+        public bool IsConsolidatingTransaction { get; set; }
     }
 
     /// <summary>

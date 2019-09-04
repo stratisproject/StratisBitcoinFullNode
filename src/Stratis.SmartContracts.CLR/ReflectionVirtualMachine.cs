@@ -54,7 +54,7 @@ namespace Stratis.SmartContracts.CLR
             Result<IContractModuleDefinition> moduleResult = this.moduleDefinitionReader.Read(contractCode);
             if (moduleResult.IsFailure)
             {
-                this.logger.LogTrace(moduleResult.Error);
+                this.logger.LogDebug(moduleResult.Error);
                 this.logger.LogTrace("(-)[CONTRACT_BYTECODE_INVALID]");
                 return VmExecutionResult.Fail(VmExecutionErrorKind.LoadFailed, "Contract bytecode is not valid IL.");
             }
@@ -115,11 +115,11 @@ namespace Stratis.SmartContracts.CLR
 
             if (!invocationResult.IsSuccess)
             {
-                this.logger.LogTrace("[CREATE_CONTRACT_INSTANTIATION_FAILED]");
+                this.logger.LogDebug("CREATE_CONTRACT_INSTANTIATION_FAILED");
                 return GetInvocationVmErrorResult(invocationResult);
             }
 
-            this.logger.LogTrace("[CREATE_CONTRACT_INSTANTIATION_SUCCEEDED]");
+            this.logger.LogDebug("CREATE_CONTRACT_INSTANTIATION_SUCCEEDED");
 
             return VmExecutionResult.Ok(invocationResult.Return, typeToInstantiate);
         }
@@ -176,7 +176,7 @@ namespace Stratis.SmartContracts.CLR
                 return GetInvocationVmErrorResult(invocationResult);
             }
 
-            this.logger.LogTrace("[CALL_CONTRACT_INSTANTIATION_SUCCEEDED]");
+            this.logger.LogDebug("CALL_CONTRACT_INSTANTIATION_SUCCEEDED");
 
             return VmExecutionResult.Ok(invocationResult.Return, typeName);
         }
@@ -209,7 +209,7 @@ namespace Stratis.SmartContracts.CLR
 
             if (!assemblyLoadResult.IsSuccess)
             {
-                this.logger.LogTrace(assemblyLoadResult.Error);
+                this.logger.LogDebug(assemblyLoadResult.Error);
 
                 return Result.Fail<IContract>(assemblyLoadResult.Error);
             }
@@ -222,7 +222,7 @@ namespace Stratis.SmartContracts.CLR
             {
                 const string typeNotFoundError = "Type not found!";
 
-                this.logger.LogTrace(typeNotFoundError);
+                this.logger.LogDebug(typeNotFoundError);
 
                 return Result.Fail<IContract>(typeNotFoundError);
             }
@@ -283,7 +283,7 @@ namespace Stratis.SmartContracts.CLR
             builder.Append(string.Format("{0}:{1},{2}:{3},", nameof(block.Coinbase), block.Coinbase, nameof(block.Number), block.Number));
             builder.Append(string.Format("{0}:{1},", nameof(contractAddress), contractAddress.ToAddress()));
             builder.Append(string.Format("{0}:{1},{2}:{3},{4}:{5}", nameof(message.ContractAddress), message.ContractAddress, nameof(message.Sender), message.Sender, nameof(message.Value), message.Value));
-            this.logger.LogTrace("{0}", builder.ToString());
+            this.logger.LogDebug("{0}", builder.ToString());
         }
     }
 }

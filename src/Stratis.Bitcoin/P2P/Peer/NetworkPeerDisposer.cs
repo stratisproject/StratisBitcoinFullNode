@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 peer.Disconnect("Node shutdown");
 
-                this.logger.LogTrace("Disposing and waiting for connection ID {0}.", peer.Connection.Id);
+                this.logger.LogDebug("Disposing and waiting for connection ID {0}.", peer.Connection.Id);
 
                 peer.Dispose();
             }

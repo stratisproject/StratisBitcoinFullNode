@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
@@ -19,13 +20,11 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
     {
         private readonly EditableTimeProvider timeProvider;
 
-        private CancellationTokenSource cancellation;
+        private readonly CancellationTokenSource cancellation;
 
         private readonly ISlotsManager slotsManager;
 
         private readonly IConsensusManager consensusManager;
-
-        private readonly IFederationManager federationManager;
 
         public TestPoAMiner(
             IConsensusManager consensusManager,
@@ -43,15 +42,15 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
             IWalletManager walletManager,
             INodeStats nodeStats,
             VotingManager votingManager,
-            PoAMinerSettings poAMinerSettings) : base(consensusManager, dateTimeProvider, network, nodeLifetime, loggerFactory, ibdState, blockDefinition, slotsManager,
-                connectionManager, poaHeaderValidator, federationManager, integrityValidator, walletManager, nodeStats, votingManager, poAMinerSettings)
+            PoAMinerSettings poAMinerSettings,
+            IAsyncProvider asyncProvider) : base(consensusManager, dateTimeProvider, network, nodeLifetime, loggerFactory, ibdState, blockDefinition, slotsManager,
+                connectionManager, poaHeaderValidator, federationManager, integrityValidator, walletManager, nodeStats, votingManager, poAMinerSettings, asyncProvider)
         {
             this.timeProvider = dateTimeProvider as EditableTimeProvider;
 
             this.cancellation = new CancellationTokenSource();
             this.slotsManager = slotsManager;
             this.consensusManager = consensusManager;
-            this.federationManager = federationManager;
         }
 
         public override void InitializeMining()
@@ -85,7 +84,6 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
                 builder.AppendLine($"Block was mined {chainedHeader}.");
                 builder.AppendLine("<<==============================================================>>");
                 this.logger.LogInformation(builder.ToString());
-
             }
         }
 

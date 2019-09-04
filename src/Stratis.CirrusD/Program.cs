@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.Diagnostic;
 using Stratis.Sidechains.Networks;
 
 namespace Stratis.CirrusD
@@ -27,9 +28,12 @@ namespace Stratis.CirrusD
         {
             try
             {
-                var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+                var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.CIRRUS_VERSION, args: args)
+                {
+                    MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
+                };
 
-                IFullNode node = GetFederatedPegFullNode(nodeSettings);
+                IFullNode node = GetSideChainFullNode(nodeSettings);
 
                 if (node != null)
                     await node.RunAsync();
@@ -40,7 +44,7 @@ namespace Stratis.CirrusD
             }
         }
 
-        private static IFullNode GetFederatedPegFullNode(NodeSettings nodeSettings)
+        private static IFullNode GetSideChainFullNode(NodeSettings nodeSettings)
         {
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
@@ -56,6 +60,7 @@ namespace Stratis.CirrusD
                 .UseSmartContractWallet()
                 .UseApi()
                 .AddRPC()
+                .UseDiagnosticFeature()
                 .Build();
 
             return node;

@@ -1,5 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using NBitcoin;
+﻿using NBitcoin;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Xunit;
@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             string dir = CreateTestDir(this);
 
             IFullNode fullNode = this.BuildServicedNode(dir);
-            var controller = fullNode.Services.ServiceProvider.GetService<ConsensusController>();
+            var controller = fullNode.NodeController<ConsensusController>();
 
             uint256 result = controller.GetBestBlockHashRPC();
 
@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             string dir = CreateTestDir(this);
 
             IFullNode fullNode = this.BuildServicedNode(dir);
-            var controller = fullNode.Services.ServiceProvider.GetService<ConsensusController>();
+            var controller = fullNode.NodeController<ConsensusController>();
 
             uint256 result = controller.GetBlockHashRPC(0);
 

@@ -26,7 +26,7 @@ public class Token : SmartContract
 
     public bool Mint(Address receiver, ulong amount)
     {
-        Assert(this.Message.Sender != this.Owner);
+        Assert(this.Message.Sender == this.Owner);
 
         ulong balance = this.GetBalance(receiver);
         this.SetBalance(receiver, balance += amount);
