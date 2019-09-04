@@ -103,15 +103,17 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private void AddInlineStats(StringBuilder log)
         {
-            var walletManager = this.walletManager as WalletManager;
+            //var walletManager = this.walletManager as WalletManager;
 
-            if (walletManager != null)
-            {
-                HashHeightPair hashHeightPair = walletManager.LastReceivedBlockInfo();
+            //if (walletManager != null)
+            //{
+                //HashHeightPair hashHeightPair = walletManager.LastReceivedBlockInfo();
 
+            if(this.walletSyncManager != null)
+            { 
                 log.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                                        (walletManager.ContainsWallets ? hashHeightPair.Height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
-                                        (walletManager.ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashHeightPair.Hash) : string.Empty));
+                                        (((WalletSyncManager)this.walletSyncManager).ContainsWallets ? ((WalletSyncManager)this.walletSyncManager).WalletTip.Height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
+                                        (((WalletSyncManager)this.walletSyncManager).ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + ((WalletSyncManager)this.walletSyncManager).WalletTip.HashBlock) : string.Empty));
             }
         }
 
