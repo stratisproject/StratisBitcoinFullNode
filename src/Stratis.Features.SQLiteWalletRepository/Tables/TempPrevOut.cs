@@ -4,6 +4,7 @@
     {
         public string OutputTxId { get; set; }
         public int OutputIndex { get; set; }
+        public string ScriptPubKey { get; set; }
         public int SpendBlockHeight { get; set; }
         public string SpendBlockHash { get; set; }
         public int SpendTxIsCoinBase { get; set; }

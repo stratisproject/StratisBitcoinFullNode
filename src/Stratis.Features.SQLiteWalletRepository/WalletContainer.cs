@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 
 namespace Stratis.Features.SQLiteWalletRepository
@@ -15,7 +16,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         internal AddressesOfInterest AddressesOfInterest;
         internal TransactionsOfInterest TransactionsOfInterest;
         internal ChainedHeader NewTip;
-        internal ChainedHeader PrevTip;
+        internal HashHeightPair PrevTip;
         internal bool MustCommit;
         internal DBConnection Conn;
         internal HDWallet Wallet;

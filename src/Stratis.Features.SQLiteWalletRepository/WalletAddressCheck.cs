@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.SQLiteWalletRepository.Tables;
@@ -12,8 +13,9 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// the given public key hash script.
         /// </summary>
         /// <param name="scriptPubKey">The public key hash script of the address.</param>
+        /// <param name="address">An address identifier.</param>
         /// <returns><c>True</c> if the address exists or has been added tentatively.</returns>
-        bool Contains(Script scriptPubKey, out HDAddress address);
+        bool Contains(Script scriptPubKey, out AddressIdentifier address);
 
         /// <summary>
         /// Addresses from the "tentative" collection are moved to the "may exist" collection
@@ -25,7 +27,8 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// Top-up addresses that have to be added to the "may exist" collection are added here.
         /// </summary>
         /// <param name="scriptPubKey">The address to add.</param>
-        void AddTentative(Script scriptPubKey);
+        /// <param name="address">The address identifier.</param>
+        void AddTentative(Script scriptPubKey, AddressIdentifier address);
 
         /// <summary>
         /// Looks in the given account for addresses to add to the "may exist" collection.
@@ -57,11 +60,19 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public bool Contains(Script scriptPubKey, out HDAddress address)
+        public bool Contains(Script scriptPubKey, out AddressIdentifier address)
         {
             address = null;
 
-            return Contains(scriptPubKey.ToBytes()) ?? Exists(scriptPubKey, out address);
+            var res = base.Contains(scriptPubKey.ToBytes(), out HashSet<AddressIdentifier> addresses);
+            if (res != null)
+            {
+                if ((bool)res) address = addresses.First();
+
+                return (bool)res;
+            }
+
+            return Exists(scriptPubKey, out address);
         }
 
         /// <inheritdoc />
@@ -71,9 +82,9 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public void AddTentative(Script scriptPubKey)
+        public void AddTentative(Script scriptPubKey, AddressIdentifier address)
         {
-            this.AddTentative(scriptPubKey.ToBytes());
+            base.AddTentative(scriptPubKey.ToBytes(), address);
         }
 
         /// <inheritdoc />
@@ -107,12 +118,16 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.Add(scriptPubKey.ToBytes());
         }
 
-        private bool Exists(Script scriptPubKey, out HDAddress address)
+        private bool Exists(Script scriptPubKey, out AddressIdentifier address)
         {
             string hex = scriptPubKey.ToHex();
 
-            address = this.conn.FindWithQuery<HDAddress>($@"
-                        SELECT *
+            address = this.conn.FindWithQuery<AddressIdentifier>($@"
+                        SELECT  WalletId
+                        ,       AccountIndex
+                        ,       AddressType
+                        ,       AddressIndex
+                        ,       ScriptPubKey
                         FROM    HDAddress
                         WHERE   ScriptPubKey = '{hex}' {
                     // Restrict to wallet if provided.

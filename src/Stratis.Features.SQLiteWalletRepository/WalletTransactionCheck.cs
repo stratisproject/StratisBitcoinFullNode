@@ -5,31 +5,53 @@ using Stratis.Features.SQLiteWalletRepository.Tables;
 
 namespace Stratis.Features.SQLiteWalletRepository
 {
+    public class AddressIdentifier
+    {
+        public int WalletId { get; set; }
+        public int AccountIndex { get; set; }
+        public int AddressType { get; set; }
+        public int AddressIndex { get; set; }
+        public string ScriptPubKey { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            var address = (AddressIdentifier)obj;
+            return this.WalletId == address.WalletId &&
+                this.AccountIndex == address.AccountIndex &&
+                this.AddressType == address.AddressType &&
+                this.AddressIndex == address.AddressIndex;
+        }
+
+        public override int GetHashCode()
+        {
+            return (this.WalletId << 16) ^ (this.AccountIndex << 14) ^ (this.AddressType << 12) ^ this.AddressIndex;
+        }
+    }
+
     interface IWalletTransactionCheck
     {
         /// <summary>
-        /// Determines whether the "tentative" or "(may) exist" collections or the wallet itself contains
-        /// the given outpoint.
+        /// Determines if the outpoint has been added to this collection.
         /// </summary>
         /// <param name="outPoint">The transaction id.</param>
-        /// <param name="tranData">The transaction data found in the database (if any).</param>
+        /// <param name="addresses">Identifies the addresses related to the outpoint (if any).</param>
         /// <returns><c>True</c> if the address exists or has been added tentatively.</returns>
-        bool Contains(OutPoint outPoint, out HDTransactionData tranData);
+        bool Contains(OutPoint outPoint, out HashSet<AddressIdentifier> addresses);
 
         /// <summary>
-        /// Transactions from the "tentative" collection are moved to the "(may) exist" collection
-        /// if they appear in the wallet after the wallet updates have been committed.
+        /// Call this after all tentative outpoints have been committed to the wallet.
         /// </summary>
         void Confirm();
 
         /// <summary>
-        /// Outpoints paying to one of our addresses are added to the "(may) exist" collection.
+        /// Call this to add outpoints paying to any of our addresses.
         /// </summary>
         /// <param name="outPoint">The transaction id to add.</param>
-        void AddTentative(OutPoint outPoint);
+        /// <param name="address">An address to relate to the outpoint.</param>
+        void AddTentative(OutPoint outPoint, AddressIdentifier address);
 
         /// <summary>
-        /// Looks in the given account for outpoints to add to the "(may) exist" collection.
+        /// Adds all outpoints found in the wallet or wallet account.
         /// </summary>
         /// <param name="walletId">The wallet to look in.</param>
         /// <param name="accountIndex">The account to look in.</param>
@@ -51,23 +73,21 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public bool Contains(OutPoint outPoint, out HDTransactionData tranData)
+        public bool Contains(OutPoint outPoint, out HashSet<AddressIdentifier> addresses)
         {
-            tranData = null;
-
-            return Contains(outPoint.ToBytes()) ?? Exists(outPoint, out tranData);
+            return base.Contains(outPoint.ToBytes(), out addresses) ?? Exists(outPoint, out addresses);
         }
 
         /// <inheritdoc />
         public void Confirm()
         {
-            Confirm(o => { var x = new OutPoint(); x.FromBytes(o); return this.Exists(x, out _); });
+            base.Confirm(o => { var x = new OutPoint(); x.FromBytes(o); return this.Exists(x, out _); });
         }
 
         /// <inheritdoc />
-        public void AddTentative(OutPoint outPoint)
+        public void AddTentative(OutPoint outPoint, AddressIdentifier address)
         {
-            this.AddTentative(outPoint.ToBytes());
+            base.AddTentative(outPoint.ToBytes(), address);
         }
 
         /// <inheritdoc />
@@ -98,10 +118,15 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.Add(outPoint.ToBytes());
         }
 
-        private bool Exists(OutPoint outPoint, out HDTransactionData tranData)
+        private bool Exists(OutPoint outPoint, out HashSet<AddressIdentifier> addresses)
         {
-            tranData = this.conn.FindWithQuery<HDTransactionData>($@"
-                SELECT  *
+            addresses = new HashSet<AddressIdentifier>(
+                this.conn.Query<AddressIdentifier>($@"
+                SELECT  WalletId
+                ,       AccountIndex
+                ,       AddressType
+                ,       AddressIndex
+                ,       ScriptPubKey
                 FROM    HDTransactionData
                 WHERE   OutputTxId = ?
                 AND     OutputIndex = ? {
@@ -110,9 +135,9 @@ namespace Stratis.Features.SQLiteWalletRepository
                 ((this.walletId != null) ? $@"
                 AND     WalletId BETWEEN {this.walletId} AND {this.walletId}" : "")}",
                 outPoint.Hash.ToString(),
-                outPoint.N);
+                outPoint.N));
 
-            return tranData != null;
+            return addresses.Count != 0;
         }
     }
 }

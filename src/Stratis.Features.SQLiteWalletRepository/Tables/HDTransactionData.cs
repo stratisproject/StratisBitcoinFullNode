@@ -40,7 +40,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 OutputBlockHash     INTEGER,
                 OutputTxIsCoinBase  INTEGER NOT NULL,
                 OutputTxTime        INTEGER NOT NULL,
-                OutputTxId          VARCHAR(50) NOT NULL,
+                OutputTxId          TEXT NOT NULL,
                 OutputIndex         INTEGER NOT NULL,
                 SpendBlockHeight    INTEGER,
                 SpendBlockHash      TEXT,

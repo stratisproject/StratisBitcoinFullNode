@@ -35,14 +35,14 @@ namespace Stratis.Features.SQLiteWalletRepository
         private byte[] hashArray;
         private int maxHashArrayLengthLog;
         private uint bitIndexLimiter;
-        protected HashSet<byte[]> tentative;
+        protected Dictionary<byte[], HashSet<AddressIdentifier>> tentative;
 
         public ObjectsOfInterest(int MaxHashArrayLengthLog)
         {
             this.maxHashArrayLengthLog = MaxHashArrayLengthLog;
             this.hashArray = new byte[1 << this.maxHashArrayLengthLog];
             this.bitIndexLimiter = ((uint)1 << (this.maxHashArrayLengthLog + 3)) - 1;
-            this.tentative = new HashSet<byte[]>(new ByteArrayEqualityComparer());
+            this.tentative = new Dictionary<byte[], HashSet<AddressIdentifier>>(new ByteArrayEqualityComparer());
         }
 
         private uint GetHashCode(byte[] obj)
@@ -64,10 +64,15 @@ namespace Stratis.Features.SQLiteWalletRepository
             return (this.hashArray[hashArrayBitIndex >> 3] & (1 << (int)(hashArrayBitIndex & 7))) != 0;
         }
 
-        protected bool? Contains(byte[] obj)
+        protected bool? Contains(byte[] obj, out HashSet<AddressIdentifier> objData)
         {
-            if (this.tentative.Contains(obj))
+            if (this.tentative.ContainsKey(obj))
+            {
+                objData = this.tentative[obj];
                 return true;
+            }
+
+            objData = null;
 
             if (!this.MayContain(obj))
                 return false;
@@ -83,15 +88,20 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.hashArray[hashArrayBitIndex >> 3] |= (byte)(1 << (int)(hashArrayBitIndex & 7));
         }
 
-        protected void AddTentative(byte[] obj)
+        protected void AddTentative(byte[] obj, AddressIdentifier address)
         {
-            if (!this.MayContain(obj))
-                this.tentative.Add(obj);
+            if (!this.tentative.TryGetValue(obj, out HashSet<AddressIdentifier> addresses))
+            {
+                addresses = new HashSet<AddressIdentifier>();
+                this.tentative[obj] = addresses;
+            }
+
+            addresses.Add(address);
         }
 
         public void Confirm(Func<byte[], bool> exists)
         {
-            foreach (byte[] obj in this.tentative)
+            foreach (byte[] obj in this.tentative.Keys)
                 if (exists(obj))
                     Add(obj);
 

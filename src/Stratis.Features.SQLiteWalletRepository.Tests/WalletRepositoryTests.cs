@@ -133,7 +133,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
         public IEnumerable<(ChainedHeader, Block)> TheSource()
         {
-            for (int height = 1; height <= this.BlockRepo.TipHashAndHeight.Height;)
+            for (int height = 0; height <= this.BlockRepo.TipHashAndHeight.Height;)
             {
                 var hashes = new List<uint256>();
                 for (int i = 0; i < 100 && (height + i) <= this.BlockRepo.TipHashAndHeight.Height; i++)

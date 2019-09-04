@@ -109,7 +109,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
                 ,       T.SpendTxId
                 ,       T.OutputTxId
                 ,       T.OutputIndex
-                ,       TD.ScriptPubKey
+                ,       T.ScriptPubKey
                 ,       O.OutputIndex SpendIndex
                 ,       O.RedeemScript SpendScriptPubKey
                 ,       O.Value SpendValue
@@ -120,6 +120,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
                 JOIN    HDTransactionData TD
                 ON      TD.OutputTxId = T.OutputTxId
                 AND     TD.OutputIndex = T.OutputIndex
+                AND     TD.ScriptPubKey = T.ScriptPubKey
                 AND     TD.SpendBlockHeight IS NULL
                 AND     TD.SpendBlockHash IS NULL
                 AND     TD.WalletId IN (
@@ -156,6 +157,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
                 JOIN   HDTransactionData TD
                 ON     TD.OutputTxID = T.OutputTxId
                 AND    TD.OutputIndex = T.OutputIndex
+                AND    TD.ScriptPubKey = T.ScriptPubKey
                 AND    TD.SpendBlockHeight IS NULL
                 AND    TD.SpendBlockHash IS NULL
                 AND    TD.WalletId IN (

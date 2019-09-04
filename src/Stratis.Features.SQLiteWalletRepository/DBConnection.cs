@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 using NBitcoin;
 using SQLite;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Features.SQLiteWalletRepository.Commands;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 
@@ -443,7 +443,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.SQLiteConnection.Update(wallet);
         }
 
-        internal void ProcessTransactions(IEnumerable<IEnumerable<string>> tableScripts, HDWallet wallet, ChainedHeader newLastSynced = null, ChainedHeader prevLastSynced = null, AddressesOfInterest addressesOfInterest = null)
+        internal void ProcessTransactions(IEnumerable<IEnumerable<string>> tableScripts, HDWallet wallet, ChainedHeader newLastSynced = null, HashHeightPair prevLastSynced = null)
         {
             // Execute the scripts providing the temporary tables to merge with the wallet tables.
             foreach (IEnumerable<string> tableScript in tableScripts)
@@ -452,7 +452,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             // Inserts or updates HDTransactionData records based on change or funds received.
             string walletName = wallet?.Name;
-            string prevHash = (prevLastSynced?.HashBlock ?? uint256.Zero).ToString();
+            string prevHash = (prevLastSynced?.Hash ?? uint256.Zero).ToString();
 
             DBCommand cmdUploadPrevOut = this.Commands["CmdUploadPrevOut"];
             cmdUploadPrevOut.Bind("walletName", walletName);

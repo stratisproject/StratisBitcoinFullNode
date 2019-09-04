@@ -507,10 +507,19 @@ namespace Stratis.Features.SQLiteWalletRepository
                     {
                         Parallel.ForEach(rounds, round =>
                         {
-                            ParallelProcessBlock(round, block, header);
-                            if (block == null)
-                                round.LockProcessBlocks.Release();
+                            try
+                            {
+                                ParallelProcessBlock(round, block, header);
+                            }
+                            finally
+                            {
+                                if (header == null)
+                                    round.LockProcessBlocks.Release();
+                            }
                         });
+
+                        if (header == null)
+                            break;
                     }
                 }
             }
@@ -525,9 +534,18 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     foreach ((ChainedHeader header, Block block) in blocks.Append((null, null)))
                     {
-                        ParallelProcessBlock(round, block, header);
-                        if (block == null)
-                            round.LockProcessBlocks.Release();
+                        try
+                        {
+                            ParallelProcessBlock(round, block, header);
+                        }
+                        finally
+                        {
+                            if (header == null)
+                                round.LockProcessBlocks.Release();
+                        }
+
+                        if (header == null)
+                            break;
                     }
                 }
             }
@@ -552,7 +570,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     // See if other threads are waiting to update any of the wallets.
                     bool threadsWaiting = conn.TransactionLock.WaitingThreads >= 1 || round.ParticipatingWallets.Any(name => this.Wallets[name].HaveWaitingThreads);
-                    if (threadsWaiting || ((round.Outputs.Count + round.PrevOuts.Count) >= 10000) || block == null || walletsJoining || DateTime.Now.Ticks >= round.NextScheduledCatchup)
+                    if (threadsWaiting || ((round.Outputs.Count + round.PrevOuts.Count) >= 10000) || header == null || walletsJoining || DateTime.Now.Ticks >= round.NextScheduledCatchup)
                     {
                         long flagFall = DateTime.Now.Ticks;
 
@@ -566,7 +584,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                         {
                             IEnumerable<IEnumerable<string>> blockToScript = (new[] { round.Outputs, round.PrevOuts }).Select(list => list.CreateScript());
 
-                            conn.ProcessTransactions(blockToScript, wallet, round.NewTip, round.PrevTip, round.AddressesOfInterest);
+                            conn.ProcessTransactions(blockToScript, wallet, round.NewTip, round.PrevTip);
 
                             round.Outputs.Clear();
                             round.PrevOuts.Clear();
@@ -619,7 +637,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                     }
                 }
 
-                if (block == null || header == null)
+                if (header == null)
                     return;
 
                 if (round.PrevTip == null)
@@ -637,18 +655,21 @@ namespace Stratis.Features.SQLiteWalletRepository
                         this.Wallets[walletName].WriteLockWait();
 
                     // Batch starting.
-                    round.PrevTip = header.Previous;
+                    round.PrevTip = (header.Previous == null) ? new HashHeightPair(0, -1) : new HashHeightPair(header.Previous);
                 }
 
-                // Maintain metrics.
-                long flagFall2 = DateTime.Now.Ticks;
-                this.Metrics.BlockCount++;
+                if (block != null)
+                {
+                    // Maintain metrics.
+                    long flagFall2 = DateTime.Now.Ticks;
+                    this.Metrics.BlockCount++;
 
-                // Determine the scripts for creating temporary tables and inserting the block's information into them.
-                if (TransactionsToLists(conn, block.Transactions, header, null, round))
-                    this.Metrics.ProcessCount++;
+                    // Determine the scripts for creating temporary tables and inserting the block's information into them.
+                    if (TransactionsToLists(conn, block.Transactions, header, null, round))
+                        this.Metrics.ProcessCount++;
 
-                this.Metrics.BlockTime += (DateTime.Now.Ticks - flagFall2);
+                    this.Metrics.BlockTime += (DateTime.Now.Ticks - flagFall2);
+                }
 
                 round.NewTip = header;
             }
@@ -816,21 +837,25 @@ namespace Stratis.Features.SQLiteWalletRepository
                 {
                     TxIn txIn = tx.Inputs[i];
 
-                    if (transactionsOfInterest?.Contains(txIn.PrevOut, out _) ?? true)
+                    if (transactionsOfInterest.Contains(txIn.PrevOut, out HashSet<AddressIdentifier> addresses))
                     {
-                        // Record our outputs that are being spent.
-                        processBlocksInfo.PrevOuts.Add(new TempPrevOut()
+                        foreach (AddressIdentifier address in addresses)
                         {
-                            OutputTxId = txIn.PrevOut.Hash.ToString(),
-                            OutputIndex = (int)txIn.PrevOut.N,
-                            SpendBlockHeight = header?.Height ?? 0,
-                            SpendBlockHash = header?.HashBlock.ToString(),
-                            SpendTxIsCoinBase = (tx.IsCoinBase || tx.IsCoinStake) ? 1 : 0,
-                            SpendTxTime = (int)tx.Time,
-                            SpendTxId = txId.ToString(),
-                            SpendIndex = i,
-                            SpendTxTotalOut = tx.TotalOut.ToDecimal(MoneyUnit.BTC)
-                        });
+                            // Record our outputs that are being spent.
+                            processBlocksInfo.PrevOuts.Add(new TempPrevOut()
+                            {
+                                OutputTxId = txIn.PrevOut.Hash.ToString(),
+                                OutputIndex = (int)txIn.PrevOut.N,
+                                ScriptPubKey = address.ScriptPubKey,
+                                SpendBlockHeight = header?.Height ?? 0,
+                                SpendBlockHash = header?.HashBlock.ToString(),
+                                SpendTxIsCoinBase = (tx.IsCoinBase || tx.IsCoinStake) ? 1 : 0,
+                                SpendTxTime = (int)tx.Time,
+                                SpendTxId = txId.ToString(),
+                                SpendIndex = i,
+                                SpendTxTotalOut = tx.TotalOut.ToDecimal(MoneyUnit.BTC)
+                            });
+                        }
 
                         additions = true;
                         addSpendTx = true;
@@ -850,7 +875,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                     foreach (Script pubKeyScript in this.GetDestinations(txOut.ScriptPubKey))
                     {
-                        bool containsAddress = addressesOfInterest.Contains(pubKeyScript, out HDAddress address);
+                        bool containsAddress = addressesOfInterest.Contains(pubKeyScript, out AddressIdentifier address);
 
                         // Paying to one of our addresses?
                         if (addSpendTx || containsAddress)
@@ -884,8 +909,16 @@ namespace Stratis.Features.SQLiteWalletRepository
                                     conn.Insert(newAddress);
 
                                     // Add the new address to our addresses of interest.
-                                    addressesOfInterest.AddTentative(Script.FromHex(newAddress.ScriptPubKey));
-                                    addressesOfInterest.Confirm();
+                                    addressesOfInterest.AddTentative(Script.FromHex(newAddress.ScriptPubKey),
+                                        new AddressIdentifier()
+                                        {
+                                             WalletId = newAddress.WalletId,
+                                             AccountIndex = newAddress.AccountIndex,
+                                             AddressType = newAddress.AddressType,
+                                             AddressIndex = newAddress.AddressIndex
+                                        });
+
+                                    //addressesOfInterest.Confirm();
 
                                     // Update the information in the tracker.
                                     tracker.NextAddressIndex++;
@@ -914,7 +947,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                             additions = true;
 
                             if (containsAddress)
-                                transactionsOfInterest?.AddTentative(new OutPoint(txId, i));
+                                transactionsOfInterest.AddTentative(new OutPoint(txId, i), address);
                         }
                     }
                 }
