@@ -29,6 +29,8 @@ namespace Stratis.Bitcoin.Features.RPC
         private readonly IHttpContextFactory httpContextFactory;
         private readonly DataFolder dataFolder;
 
+        public const string ContentType = "application/json; charset=utf-8";
+
         public RPCMiddleware(RequestDelegate next, IRPCAuthorization authorization, ILoggerFactory loggerFactory, IHttpContextFactory httpContextFactory, DataFolder dataFolder)
         {
             Guard.NotNull(next, nameof(next));
@@ -76,10 +78,10 @@ namespace Stratis.Bitcoin.Features.RPC
                     throw new NotImplementedException("The request is not supported.");
                 }
 
-                httpContext.Response.ContentType = "application/json; charset=utf-8";
+                httpContext.Response.ContentType = ContentType;
 
                 // Write the response body.
-                using (StreamWriter streamWriter = new StreamWriter(httpContext.Response.Body))
+                using (StreamWriter streamWriter = new StreamWriter(httpContext.Response.Body, Encoding.Default, 1024, true))
                 using (JsonTextWriter textWriter = new JsonTextWriter(streamWriter))
                 {
                     await response.WriteToAsync(textWriter);
@@ -120,38 +122,38 @@ namespace Stratis.Bitcoin.Features.RPC
             if (ex is ArgumentException || ex is FormatException)
             {
                 JObject response = CreateError(RPCErrorCode.RPC_MISC_ERROR, "Argument error: " + ex.Message);
-                httpContext.Response.ContentType = "application/json";
+                httpContext.Response.ContentType = ContentType;
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
             else if (ex is ConfigurationException)
             {
                 JObject response = CreateError(RPCErrorCode.RPC_INTERNAL_ERROR, ex.Message);
-                httpContext.Response.ContentType = "application/json";
+                httpContext.Response.ContentType = ContentType;
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
             else if (ex is RPCServerException)
             {
                 var rpcEx = (RPCServerException)ex;
                 JObject response = CreateError(rpcEx.ErrorCode, ex.Message);
-                httpContext.Response.ContentType = "application/json";
+                httpContext.Response.ContentType = ContentType;
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
             else if (httpContext.Response?.StatusCode == 404)
             {
                 JObject response = CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, "Method not found");
-                httpContext.Response.ContentType = "application/json";
+                httpContext.Response.ContentType = ContentType;
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
             else if (this.IsDependencyFailure(ex))
             {
                 JObject response = CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, ex.Message);
-                httpContext.Response.ContentType = "application/json";
+                httpContext.Response.ContentType = ContentType;
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
             else if (httpContext.Response?.StatusCode == 500 || ex != null)
             {
                 JObject response = CreateError(RPCErrorCode.RPC_INTERNAL_ERROR, "Internal error");
-                httpContext.Response.ContentType = "application/json";
+                httpContext.Response.ContentType = ContentType;
                 this.logger.LogError(new EventId(0), ex, "Internal error while calling RPC Method");
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
@@ -185,11 +187,9 @@ namespace Stratis.Bitcoin.Features.RPC
         {
             var contextFeatures = new FeatureCollection(httpContext.Features);
 
-            StringBuilder requestStringBuilder = new StringBuilder();
-            await requestObj.WriteToAsync(new JsonTextWriter(new StringWriter(requestStringBuilder)));
             var requestFeature = new HttpRequestFeature()
             {
-                Body = new MemoryStream(Encoding.UTF8.GetBytes(requestStringBuilder.ToString())),
+                Body = new MemoryStream(Encoding.UTF8.GetBytes(requestObj.ToString())),
                 Headers = httpContext.Request.Headers,
                 Method = httpContext.Request.Method,
                 Protocol = httpContext.Request.Protocol,
@@ -208,28 +208,31 @@ namespace Stratis.Bitcoin.Features.RPC
             contextFeatures.Set<IHttpRequestLifetimeFeature>(new HttpRequestLifetimeFeature());
 
             var context = this.httpContextFactory.Create(contextFeatures);
-
+            JObject response;
             try
             {
                 await this.next.Invoke(context).ConfigureAwait(false);
+
+                if (responseMemoryStream.Length == 0)
+                    throw new Exception("Method not found");
+
+                responseMemoryStream.Position = 0;
+                using (StreamReader streamReader = new StreamReader(responseMemoryStream))
+                using (JsonTextReader textReader = new JsonTextReader(streamReader))
+                {
+                    response = await JObject.LoadAsync(textReader);
+                }
             }
             catch (Exception ex)
             {
                 await this.HandleRpcInvokeExceptionAsync(context, ex);
-            }
 
-            responseMemoryStream.Position = 0;
-
-            JObject response;
-            if (responseMemoryStream.Length == 0)
-            {
-                response = CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, "Method not found");
-            }
-            else
-            {
-                using (StreamReader streamReader = new StreamReader(responseMemoryStream))
+                context.Response.Body.Position = 0;
+                using (StreamReader streamReader = new StreamReader(context.Response.Body, Encoding.Default, true, 1024, true))
                 using (JsonTextReader textReader = new JsonTextReader(streamReader))
                 {
+                    string val = streamReader.ReadToEnd();
+                    context.Response.Body.Position = 0;
                     response = await JObject.LoadAsync(textReader);
                 }
             }
