@@ -365,7 +365,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <summary>
         /// Gets some general information about a wallet. This includes the network the wallet is for,
         /// the creation date and time for the wallet, the height of the blocks the wallet currently holds,
-        /// and the number of connected nodes. 
+        /// and the number of connected nodes.
         /// </summary>
         /// <param name="request">The name of the wallet to get the information for.</param>
         /// <returns>A JSON object containing the wallet information.</returns>
@@ -416,7 +416,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
         /// <summary>
         /// Gets the history of a wallet. This includes the transactions held by the entire wallet
-        /// or a single account if one is specified. 
+        /// or a single account if one is specified.
         /// </summary>
         /// <param name="request">An object containing the parameters used to retrieve a wallet's history.</param>
         /// <returns>A JSON object containing the wallet history.</returns>
@@ -746,7 +746,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Gets the spendable transactions for an account with the option to specify how many confirmations
         /// a transaction needs to be included.
         /// </summary>
-        /// <param name="request">An object containing the parameters used to retrieve the spendable 
+        /// <param name="request">An object containing the parameters used to retrieve the spendable
         /// transactions for an account.</param>
         /// <returns>A JSON object containing the spendable transactions for an account.</returns>
         [Route("spendable-transactions")]
@@ -791,7 +791,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Fee can be estimated by creating a <see cref="TransactionBuildContext"/> with no password
         /// and then building the transaction and retrieving the fee from the context.
         /// </summary>
-        /// <param name="request">An object containing the parameters used to estimate the fee 
+        /// <param name="request">An object containing the parameters used to estimate the fee
         /// for a specific transaction.</param>
         /// <returns>The estimated fee for the transaction.</returns>
         [Route("estimate-txfee")]
@@ -1207,14 +1207,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Removes transactions from the wallet.
         /// You might want to remove transactions from a wallet if some unconfirmed transactions disappear
         /// from the blockchain or the transaction fields within the wallet are updated and a refresh is required to
-        /// populate the new fields. 
+        /// populate the new fields.
         /// In one situation, you might notice several unconfirmed transaction in the wallet, which you now know were
         /// never confirmed. You can use this API to correct this by specifying a date and time before the first
         /// unconfirmed transaction thereby removing all transactions after this point. You can also request a resync as
         /// part of the call, which calculates the block height for the earliest removal. The wallet sync manager then
         /// proceeds to resync from there reinstating the confirmed transactions in the wallet. You can also cherry pick
-        /// transactions to remove by specifying their transaction ID. 
-        /// 
+        /// transactions to remove by specifying their transaction ID.
+        ///
         /// <param name="request">An object containing the necessary parameters to remove transactions
         /// from a wallet. The includes several options for specifying the transactions to remove.</param>
         /// <returns>A JSON object containing all removed transactions identified by their
@@ -1409,6 +1409,64 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
+        }
+
+
+        /// <summary>
+        /// Sends the many.
+        /// </summary>
+        /// <param name="request">An object containing the necessary parameters.</param>
+        /// <returns>The value of the txid. Only 1 transaction is created regardless of the number of addresses.</returns>
+        [HttpPost]
+        [Route("sendmany")]
+        public IActionResult SendMany([FromBody] SendManyRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            var recipients = new List<Recipient>();
+            foreach (var payment in request.Payments)
+            {
+                // Check for duplicate recipients
+                var recipientAddress = BitcoinAddress.Create(payment.Address, this.network).ScriptPubKey;
+                if (recipients.Any(r => r.ScriptPubKey == recipientAddress))
+                    throw new WalletException($"Invalid parameter, duplicated address: {recipientAddress}.");
+
+                var recipient = new Recipient
+                {
+                    ScriptPubKey = recipientAddress,
+                    Amount = Money.Parse(payment.Amount),
+                    SubtractFeeFromAmount = payment.DeductFee
+                };
+
+                recipients.Add(recipient);
+            }
+
+            var context = new TransactionBuildContext(this.network)
+            {
+                AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
+                MinConfirmations = request.MinConfirmations,
+                Shuffle = true, // We shuffle transaction outputs by default as it's better for anonymity.
+                Recipients = recipients,
+                CacheSecret = false
+            };
+
+            // Set fee type for transaction build context.
+            context.FeeType = FeeType.Medium;
+
+            // Log warnings for currently unsupported parameters.
+            if (!string.IsNullOrEmpty(request.Comment))
+                this.logger.LogWarning("'comment' parameter is currently unsupported. Ignored.");
+
+            Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
+            this.broadcasterManager.BroadcastTransactionAsync(transaction).ConfigureAwait(false).GetAwaiter().GetResult();
+
+            return Ok(transaction.GetHash());
         }
 
         private void SyncFromBestHeightForRecoveredWallets(DateTime walletCreationDate)

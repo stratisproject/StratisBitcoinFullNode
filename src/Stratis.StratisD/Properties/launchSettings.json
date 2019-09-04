@@ -22,6 +22,10 @@
     "Stratis.StratisD Test No assumevalid": {
       "commandName": "Project",
       "commandLineArgs": "-testnet -assumevalid=0 -checkpoints=false"
+    },
+    "coinselection": {
+      "commandName": "Project",
+      "commandLineArgs": "-datadir=E:\\Sviluppo\\_Data -agentprefix=CoinSelection -listen=0 -txindex -addressindex=1 -maxoutboundconnections=40 -maxinboundconnections=40 -maxtipage=315360000 -bantime=4000"
     }
   }
 }

@@ -3,6 +3,10 @@
     "Stratis.CirrusPegD": {
       "commandName": "Project",
       "commandLineArgs": "-mainchain"
+    },
+    "NodeMAA": {
+      "commandName": "Project",
+      "commandLineArgs": "-datadir=E:\\Sviluppo\\InternalTestnet_Data\\Runtime\\NodeMAA -mainchain -agentprefix=NodeMAA -txindex -addressindex=1 -maxoutboundconnections=40 -maxinboundconnections=40 -maxtipage=315360000 -bantime=4000"
     }
   }
 }
