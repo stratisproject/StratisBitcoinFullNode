@@ -116,9 +116,13 @@ namespace Stratis.Bitcoin.Base.Deployments
 
                 // look in the cache for the hash of the first block an item was deployed
 
-                var firstSeenHash = this.cache.Reverse().FirstOrDefault(c => c.Value[deploymentIndex] != null);
+                var firstSeenHash = this.cache.FirstOrDefault(c => c.Value[deploymentIndex] == ThresholdState.Started);
+                int sinceHeight = 0;
 
-                int sinceHeight = indexPrev.FindAncestorOrSelf(firstSeenHash.Key).Height;
+                if (firstSeenHash.Key != null)
+                {
+                    sinceHeight = indexPrev.FindAncestorOrSelf(firstSeenHash.Key).Height;
+                }
 
                 thresholdStateModels.Add(new ThresholdStateModel()
                 {

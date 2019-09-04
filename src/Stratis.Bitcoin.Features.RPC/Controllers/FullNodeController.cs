@@ -467,7 +467,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 blockchainInfo.SoftForks.Add(new SoftForks
                 {
                     Id = consensusBuriedDeployment.ToString().ToLower(),
-                    Version = (int)consensusBuriedDeployment + 2, // hack
+                    Version = (int)consensusBuriedDeployment + 2, // hack to get the deployment number similar to bitcoin core without changing the enums
                     Status = new SoftForksStatus {Status = active}
                 });
             }
@@ -475,7 +475,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             // softforkbip9 deployments
             blockchainInfo.SoftForksBip9 = new Dictionary<string, SoftForksBip9>();
 
-            ConsensusRuleEngine ruleEngine = this.ConsensusManager.ConsensusRules as ConsensusRuleEngine;
+            ConsensusRuleEngine ruleEngine = (ConsensusRuleEngine)this.ConsensusManager.ConsensusRules;
             ThresholdState[] thresholdStates = ruleEngine.NodeDeployments.BIP9.GetStates(this.ChainIndexer.Tip.Previous);
             List<ThresholdStateModel> metrics = ruleEngine.NodeDeployments.BIP9.GetThresholdStateMetrics(this.ChainIndexer.Tip.Previous, thresholdStates);
 
