@@ -751,8 +751,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string WalletPassword { get; set; }
 
         [DefaultValue(false)]
-        public bool UseUniqueAddressPerUtxo{ get; set; }
+        public bool UseUniqueAddressPerUtxo { get; set; }
 
+        [DefaultValue(true)]
+        public bool ReuseAddresses { get; set; }
+
+        [DefaultValue(false)]
+        public bool UseChangeAddresses { get; set; }
+        
         [Required]
         public int UtxosCount { get; set; }
 

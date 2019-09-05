@@ -1439,7 +1439,25 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             try
             {
                 var walletReference = new WalletAccountReference(request.WalletName, request.AccountName);
-                List<HdAddress> addresses = this.walletManager.GetUnusedAddresses(walletReference, request.UseUniqueAddressPerUtxo ? request.UtxosCount : 1).ToList();
+
+                Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+                HdAccount account = wallet.GetAccount(request.AccountName);
+
+                List<HdAddress> addresses;
+                if (request.ReuseAddresses)
+                {
+                    addresses = this.walletManager.GetUnusedAddresses(walletReference, request.UseUniqueAddressPerUtxo ? request.UtxosCount : 1, request.UseChangeAddresses).ToList();
+                }
+                else if (request.UseChangeAddresses)
+                {
+                    
+                    addresses = account.InternalAddresses.Take(request.UseUniqueAddressPerUtxo ? request.UtxosCount : 1).ToList();
+                }
+                else if (!request.UseChangeAddresses)
+                {
+                    addresses = account.ExternalAddresses.Take(request.UseUniqueAddressPerUtxo ? request.UtxosCount : 1).ToList();
+                }
+
                 IEnumerable<UnspentOutputReference> spendableTransactions = this.walletManager.GetSpendableTransactionsInAccount(new WalletAccountReference(request.WalletName, request.AccountName), request.MinConfirmations);
 
                 if (request.Outpoints != null && request.Outpoints.Any())
