@@ -103,8 +103,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                     return Task.CompletedTask;
                 }, 
                 this.nodeLifetime.ApplicationStopping, 
-                TimeSpan.FromSeconds(5),
-                TimeSpan.FromSeconds(5));
+                TimeSpan.FromSeconds(1),
+                TimeSpan.FromSeconds(1));
 
             //this.walletTip = this.chainIndexer.GetHeader(this.walletManager.WalletTipHash);
             //if (this.walletTip == null)

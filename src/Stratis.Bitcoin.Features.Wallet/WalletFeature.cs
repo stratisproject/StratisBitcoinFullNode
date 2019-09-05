@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -147,11 +148,14 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 foreach (string walletName in walletNamesSQL)
                 {
-                    foreach (AccountBalance accountBalance in ((WalletManager)this.walletManager).GetBalancesSQL(walletName))
+                    foreach (AccountBalance accountBalance in ((WalletManager)this.walletManager).GetBalancesSQL(walletName, this.walletSyncManager.WalletTip.Height))
                     {
-                        log.AppendLine(($"{walletName}/{accountBalance.Account.Name}" + ",").PadRight(LoggingConfiguration.ColumnLength + 10)
-                                       + (" Confirmed balance: " + accountBalance.AmountConfirmed.ToString()).PadRight(LoggingConfiguration.ColumnLength + 20)
-                                       + " Unconfirmed balance: " + accountBalance.AmountUnconfirmed.ToString());
+                            log.AppendLine(
+                                ($"{walletName}/{accountBalance.Account.Name}" + ",").PadRight(
+                                    LoggingConfiguration.ColumnLength + 10)
+                                + (" Confirmed balance: " + accountBalance.AmountConfirmed.ToString()).PadRight(
+                                    LoggingConfiguration.ColumnLength + 20)
+                                + " Unconfirmed balance: " + accountBalance.AmountUnconfirmed.ToString());
                     }
                 }
             }
