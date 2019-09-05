@@ -4,11 +4,11 @@ using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.SignalR.Events;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.AsyncWork;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
@@ -20,9 +20,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
     {
         private readonly IWalletManager walletManager;
         private readonly IConnectionManager connectionManager;
-        private readonly Network network;
         private readonly ChainIndexer chainIndexer;
-        private ILogger logger;
 
         public WalletInfoBroadcaster(
             ILoggerFactory loggerFactory,
