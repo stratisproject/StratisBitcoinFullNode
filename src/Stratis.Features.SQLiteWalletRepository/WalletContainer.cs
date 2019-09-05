@@ -13,8 +13,8 @@ namespace Stratis.Features.SQLiteWalletRepository
     {
         internal TempTable Outputs;
         internal TempTable PrevOuts;
-        internal AddressesOfInterest AddressesOfInterest;
-        internal TransactionsOfInterest TransactionsOfInterest;
+        internal WalletAddressLookup AddressesOfInterest;
+        internal WalletTransactionLookup TransactionsOfInterest;
         internal ChainedHeader NewTip;
         internal HashHeightPair PrevTip;
         internal bool MustCommit;
@@ -37,8 +37,8 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.PrevOuts = TempTable.Create<TempPrevOut>();
             this.ParticipatingWallets = new List<string>();
 
-            this.AddressesOfInterest = processBlocksInfo?.AddressesOfInterest ?? new AddressesOfInterest(conn, wallet?.WalletId);
-            this.TransactionsOfInterest = processBlocksInfo?.TransactionsOfInterest ?? new TransactionsOfInterest(conn, wallet?.WalletId);
+            this.AddressesOfInterest = processBlocksInfo?.AddressesOfInterest ?? new WalletAddressLookup(conn, wallet?.WalletId);
+            this.TransactionsOfInterest = processBlocksInfo?.TransactionsOfInterest ?? new WalletTransactionLookup(conn, wallet?.WalletId);
         }
     }
 

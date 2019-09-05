@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Stratis.Features.SQLiteWalletRepository.External;
 
 namespace Stratis.Features.SQLiteWalletRepository
 {
@@ -30,14 +31,14 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
     }
 
-    internal class ObjectsOfInterest
+    internal class BaseLookup
     {
         private byte[] hashArray;
         private int maxHashArrayLengthLog;
         private uint bitIndexLimiter;
         protected Dictionary<byte[], HashSet<AddressIdentifier>> tentative;
 
-        public ObjectsOfInterest(int MaxHashArrayLengthLog)
+        public BaseLookup(int MaxHashArrayLengthLog)
         {
             this.maxHashArrayLengthLog = MaxHashArrayLengthLog;
             this.hashArray = new byte[1 << this.maxHashArrayLengthLog];
@@ -108,5 +109,4 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.tentative.Clear();
         }
     }
-
 }

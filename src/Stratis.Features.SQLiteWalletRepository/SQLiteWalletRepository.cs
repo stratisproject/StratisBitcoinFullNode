@@ -665,7 +665,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                     this.Metrics.BlockCount++;
 
                     // Determine the scripts for creating temporary tables and inserting the block's information into them.
-                    if (TransactionsToLists(conn, block.Transactions, header, null, round))
+                    ITransactionsToLists transactionsToLists = new TransactionsToLists(this.Network, this.ScriptAddressReader, round);
+                    if (transactionsToLists.ProcessTransactions(block.Transactions, header))
                         this.Metrics.ProcessCount++;
 
                     this.Metrics.BlockTime += (DateTime.Now.Ticks - flagFall2);
@@ -719,7 +720,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 var processBlocksInfo = new ProcessBlocksInfo(conn, walletContainer, wallet);
                 IEnumerable<IEnumerable<string>> txToScript;
                 {
-                    TransactionsToLists(conn, new[] { transaction }, null, fixedTxId, processBlocksInfo: processBlocksInfo);
+                    var transactionsToLists = new TransactionsToLists(this.Network, this.ScriptAddressReader, processBlocksInfo);
+                    transactionsToLists.ProcessTransactions(new[] { transaction }, null, fixedTxId);
                     txToScript = (new[] { processBlocksInfo.Outputs, processBlocksInfo.PrevOuts }).Select(list => list.CreateScript());
                 }
 
@@ -813,147 +815,6 @@ namespace Stratis.Features.SQLiteWalletRepository
                     History = history
                 };
             }
-        }
-
-        private bool TransactionsToLists(DBConnection conn, IEnumerable<Transaction> transactions, ChainedHeader header, uint256 fixedTxId = null, ProcessBlocksInfo processBlocksInfo = null)
-        {
-            bool additions = false;
-            var walletsAffected = new HashSet<int>();
-
-            // Convert relevant information in the block to information that can be joined to the wallet tables.
-            TransactionsOfInterest transactionsOfInterest = processBlocksInfo.TransactionsOfInterest;
-            AddressesOfInterest addressesOfInterest = processBlocksInfo.AddressesOfInterest;
-
-            // Used for tracking address top-up requirements.
-            var trackers = new Dictionary<TopUpTracker, TopUpTracker>();
-
-            foreach (Transaction tx in transactions)
-            {
-                // Build temp.PrevOuts
-                uint256 txId = fixedTxId ?? tx.GetHash();
-                bool addSpendTx = false;
-
-                for (int i = 0; i < tx.Inputs.Count; i++)
-                {
-                    TxIn txIn = tx.Inputs[i];
-
-                    if (transactionsOfInterest.Contains(txIn.PrevOut, out HashSet<AddressIdentifier> addresses))
-                    {
-                        foreach (AddressIdentifier address in addresses)
-                        {
-                            // Record our outputs that are being spent.
-                            processBlocksInfo.PrevOuts.Add(new TempPrevOut()
-                            {
-                                OutputTxId = txIn.PrevOut.Hash.ToString(),
-                                OutputIndex = (int)txIn.PrevOut.N,
-                                ScriptPubKey = address.ScriptPubKey,
-                                SpendBlockHeight = header?.Height ?? 0,
-                                SpendBlockHash = header?.HashBlock.ToString(),
-                                SpendTxIsCoinBase = (tx.IsCoinBase || tx.IsCoinStake) ? 1 : 0,
-                                SpendTxTime = (int)tx.Time,
-                                SpendTxId = txId.ToString(),
-                                SpendIndex = i,
-                                SpendTxTotalOut = tx.TotalOut.ToDecimal(MoneyUnit.BTC)
-                            });
-                        }
-
-                        additions = true;
-                        addSpendTx = true;
-                    }
-                }
-
-                // Build temp.Outputs.
-                for (int i = 0; i < tx.Outputs.Count; i++)
-                {
-                    TxOut txOut = tx.Outputs[i];
-
-                    if (txOut.IsEmpty)
-                        continue;
-
-                    if (txOut.ScriptPubKey.ToBytes(true)[0] == (byte)OpcodeType.OP_RETURN)
-                        continue;
-
-                    foreach (Script pubKeyScript in this.GetDestinations(txOut.ScriptPubKey))
-                    {
-                        bool containsAddress = addressesOfInterest.Contains(pubKeyScript, out AddressIdentifier address);
-
-                        // Paying to one of our addresses?
-                        if (addSpendTx || containsAddress)
-                        {
-                            // Check if top-up is required.
-                            if (containsAddress && address != null)
-                            {
-                                // Get the top-up tracker that applies to this account and address type.
-                                var key = new TopUpTracker(address.WalletId, address.AccountIndex, address.AddressType);
-                                if (!trackers.TryGetValue(key, out TopUpTracker tracker))
-                                {
-                                    tracker = key;
-                                    tracker.ReadAccount(conn);
-                                    trackers.Add(tracker, tracker);
-                                }
-
-                                // If an address inside the address buffer is being used then top-up the buffer.
-                                while (address.AddressIndex >= tracker.NextAddressIndex)
-                                {
-                                    HDAddress newAddress = conn.CreateAddress(tracker.Account, tracker.AddressType, tracker.AddressCount);
-
-                                    if (!conn.IsInTransaction)
-                                    {
-                                        // We've postponed creating a transaction since we weren't sure we will need it.
-                                        // Create it now.
-                                        conn.BeginTransaction();
-                                        processBlocksInfo.MustCommit = true;
-                                    }
-
-                                    // Insert the new address into the database.
-                                    conn.Insert(newAddress);
-
-                                    // Add the new address to our addresses of interest.
-                                    addressesOfInterest.AddTentative(Script.FromHex(newAddress.ScriptPubKey),
-                                        new AddressIdentifier()
-                                        {
-                                             WalletId = newAddress.WalletId,
-                                             AccountIndex = newAddress.AccountIndex,
-                                             AddressType = newAddress.AddressType,
-                                             AddressIndex = newAddress.AddressIndex
-                                        });
-
-                                    //addressesOfInterest.Confirm();
-
-                                    // Update the information in the tracker.
-                                    tracker.NextAddressIndex++;
-                                    tracker.AddressCount++;
-                                }
-                            }
-
-                            // Record outputs received by our wallets.
-                            processBlocksInfo.Outputs.Add(new TempOutput()
-                            {
-                                // For matching HDAddress.ScriptPubKey.
-                                ScriptPubKey = pubKeyScript.ToHex(),
-
-                                // The ScriptPubKey from the txOut.
-                                RedeemScript = txOut.ScriptPubKey.ToHex(),
-
-                                OutputBlockHeight = header?.Height ?? 0,
-                                OutputBlockHash = header?.HashBlock.ToString(),
-                                OutputTxIsCoinBase = (tx.IsCoinBase || tx.IsCoinStake) ? 1 : 0,
-                                OutputTxTime = (int)tx.Time,
-                                OutputTxId = txId.ToString(),
-                                OutputIndex = i,
-                                Value = txOut.Value.ToDecimal(MoneyUnit.BTC)
-                            });
-
-                            additions = true;
-
-                            if (containsAddress)
-                                transactionsOfInterest.AddTentative(new OutPoint(txId, i), address);
-                        }
-                    }
-                }
-            }
-
-            return additions;
         }
     }
 }

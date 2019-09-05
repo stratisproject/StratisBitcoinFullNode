@@ -84,44 +84,5 @@ namespace Stratis.Features.SQLiteWalletRepository
                 }
             };
         }
-
-        internal static IEnumerable<Script> GetDestinations(this SQLiteWalletRepository repo, Script redeemScript)
-        {
-            ScriptTemplate scriptTemplate = repo.Network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(redeemScript);
-
-            if (scriptTemplate != null)
-            {
-                // We need scripts suitable for matching to HDAddress.ScriptPubKey.
-                switch (scriptTemplate.Type)
-                {
-                    case TxOutType.TX_PUBKEYHASH:
-                        yield return redeemScript;
-                        break;
-                    case TxOutType.TX_PUBKEY:
-                        yield return PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(redeemScript).Hash.ScriptPubKey;
-                        break;
-                    case TxOutType.TX_SCRIPTHASH:
-                        yield return PayToScriptHashTemplate.Instance.ExtractScriptPubKeyParameters(redeemScript).ScriptPubKey;
-                        break;
-                    default:
-                        if (repo.ScriptAddressReader is IScriptDestinationReader scriptDestinationReader)
-                        {
-                            foreach (TxDestination destination in scriptDestinationReader.GetDestinationFromScriptPubKey(repo.Network, redeemScript))
-                            {
-                                yield return destination.ScriptPubKey;
-                            }
-                        }
-                        else
-                        {
-                            string address = repo.ScriptAddressReader.GetAddressFromScriptPubKey(repo.Network, redeemScript);
-                            TxDestination destination = ScriptDestinationReader.GetDestinationForAddress(address, repo.Network);
-                            if (destination != null)
-                                yield return destination.ScriptPubKey;
-                        }
-
-                        break;
-                }
-            }
-        }
     }
 }

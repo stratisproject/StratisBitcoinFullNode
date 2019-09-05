@@ -415,7 +415,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             }
         }
 
-        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
+        [Fact]//(Skip = "Configure this test then run it manually. Comment this Skip.")]
         public void CanProcessTestnetBlocks()
         {
             string[] walletNames = this.walletNames.ToArray();
@@ -423,7 +423,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             CanProcessBlocks(false, walletNames);
         }
 
-        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
+        [Fact]//(Skip = "Configure this test then run it manually. Comment this Skip.")]
         public void CanProcessBinanceAddresses()
         {
             // 180 Binance addresses.
