@@ -1,18 +1,20 @@
-﻿using Stratis.Features.SQLiteWalletRepository.Tables;
+﻿using Stratis.Features.SQLiteWalletRepository.External;
+using Stratis.Features.SQLiteWalletRepository.Tables;
 
 namespace Stratis.Features.SQLiteWalletRepository
 {
     /// <summary>
     /// This class tracks an address type to top-up while scanning block transactions.
     /// </summary>
-    internal class TopUpTracker
+    internal class TopUpTracker : ITopUpTracker
     {
-        internal int WalletId;
-        internal int AccountIndex;
-        internal int AddressType;
+        public int WalletId {get; private set; }
+        public int AccountIndex { get; private set; }
+        public int AddressType { get; private set; }
+        public int AddressCount { get; internal set; }
+        public int NextAddressIndex { get; internal set; }
+
         internal HDAccount Account;
-        internal int AddressCount;
-        internal int NextAddressIndex;
 
         internal TopUpTracker(int walletId, int accountIndex, int addressType)
         {

@@ -2,6 +2,7 @@
 using System.Linq;
 using NBitcoin;
 using SQLite;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Features.SQLiteWalletRepository.Extensions;
 
 namespace Stratis.Features.SQLiteWalletRepository.Tables
@@ -95,7 +96,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 WHERE  EncryptedSeed = ?", encryptedSeed);
         }
 
-        internal static void AdvanceTip(SQLiteConnection conn, HDWallet wallet, ChainedHeader newTip, ChainedHeader prevTip)
+        internal static void AdvanceTip(SQLiteConnection conn, HDWallet wallet, ChainedHeader newTip, HashHeightPair prevTip)
         {
             uint256 lastBlockSyncedHash = newTip?.HashBlock ?? uint256.Zero;
             int lastBlockSyncedHeight = newTip?.Height ?? -1;
@@ -108,7 +109,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                     SET    LastBlockSyncedHash = '{lastBlockSyncedHash}',
                            LastBlockSyncedHeight = {lastBlockSyncedHeight},
                            BlockLocator = '{blockLocator}'
-                    WHERE  LastBlockSyncedHash = '{(prevTip?.HashBlock ?? uint256.Zero)}' {
+                    WHERE  LastBlockSyncedHash = '{(prevTip?.Hash ?? uint256.Zero)}' {
                     // Respect the wallet name if provided.
                     ((wallet?.Name != null) ? $@"
                     AND    Name = '{wallet?.Name}'" : "")}");

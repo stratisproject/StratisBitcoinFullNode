@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 using NBitcoin;
 using SQLite;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Features.SQLiteWalletRepository.Commands;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 
@@ -194,22 +194,6 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
 
             return addresses;
-        }
-
-        internal IEnumerable<HDAddress> TopUpAddresses(int walletId, int accountIndex, int addressType)
-        {
-            int addressCount = HDAddress.GetAddressCount(this.SQLiteConnection, walletId, accountIndex, addressType);
-            int nextAddressIndex = HDAddress.GetNextAddressIndex(this, walletId, accountIndex, addressType);
-            int buffer = addressCount - nextAddressIndex;
-
-            var account = HDAccount.GetAccount(this, walletId, accountIndex);
-
-            for (int addressIndex = addressCount; buffer < HDAddress.StandardAddressBuffer; buffer++, addressIndex++)
-            {
-                HDAddress address = CreateAddress(account, addressType, addressIndex);
-                this.Insert(address);
-                yield return address;
-            }
         }
 
         internal HDAddress CreateAddress(HDAccount account, int addressType, int addressIndex)
@@ -431,7 +415,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                     wallet.BlockLocator
                 }, (dynamic rollBackData) =>
                 {
-                    HDWallet wallet2 = this.GetWalletByName(rollBackData.Name);
+                    HDWallet wallet2 = this.Repository.Wallets[rollBackData.Name];
                     wallet2.LastBlockSyncedHash = rollBackData.LastBlockSyncedHash;
                     wallet2.LastBlockSyncedHeight = rollBackData.LastBlockSyncedHeight;
                     wallet2.BlockLocator = rollBackData.BlockLocator;
@@ -443,7 +427,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.SQLiteConnection.Update(wallet);
         }
 
-        internal void ProcessTransactions(IEnumerable<IEnumerable<string>> tableScripts, HDWallet wallet, ChainedHeader newLastSynced = null, ChainedHeader prevLastSynced = null, AddressesOfInterest addressesOfInterest = null)
+        internal void ProcessTransactions(IEnumerable<IEnumerable<string>> tableScripts, HDWallet wallet, ChainedHeader newLastSynced = null, HashHeightPair prevLastSynced = null)
         {
             // Execute the scripts providing the temporary tables to merge with the wallet tables.
             foreach (IEnumerable<string> tableScript in tableScripts)
@@ -452,7 +436,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             // Inserts or updates HDTransactionData records based on change or funds received.
             string walletName = wallet?.Name;
-            string prevHash = (prevLastSynced?.HashBlock ?? uint256.Zero).ToString();
+            string prevHash = (prevLastSynced?.Hash ?? uint256.Zero).ToString();
 
             DBCommand cmdUploadPrevOut = this.Commands["CmdUploadPrevOut"];
             cmdUploadPrevOut.Bind("walletName", walletName);

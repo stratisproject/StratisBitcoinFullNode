@@ -1,47 +1,17 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.SQLiteWalletRepository.External;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 
 namespace Stratis.Features.SQLiteWalletRepository
 {
-    interface IWalletTransactionCheck
-    {
-        /// <summary>
-        /// Determines whether the "tentative" or "(may) exist" collections or the wallet itself contains
-        /// the given outpoint.
-        /// </summary>
-        /// <param name="outPoint">The transaction id.</param>
-        /// <param name="tranData">The transaction data found in the database (if any).</param>
-        /// <returns><c>True</c> if the address exists or has been added tentatively.</returns>
-        bool Contains(OutPoint outPoint, out HDTransactionData tranData);
-
-        /// <summary>
-        /// Transactions from the "tentative" collection are moved to the "(may) exist" collection
-        /// if they appear in the wallet after the wallet updates have been committed.
-        /// </summary>
-        void Confirm();
-
-        /// <summary>
-        /// Outpoints paying to one of our addresses are added to the "(may) exist" collection.
-        /// </summary>
-        /// <param name="outPoint">The transaction id to add.</param>
-        void AddTentative(OutPoint outPoint);
-
-        /// <summary>
-        /// Looks in the given account for outpoints to add to the "(may) exist" collection.
-        /// </summary>
-        /// <param name="walletId">The wallet to look in.</param>
-        /// <param name="accountIndex">The account to look in.</param>
-        void AddAll(int? walletId = null, int? accountIndex = null);
-    }
-
-    internal class TransactionsOfInterest : ObjectsOfInterest, IWalletTransactionCheck
+    internal class WalletTransactionLookup : BaseLookup, IWalletTransactionLookup
     {
         private readonly DBConnection conn;
         private readonly int? walletId;
 
-        internal TransactionsOfInterest(DBConnection conn, int? walletId) :
+        internal WalletTransactionLookup(DBConnection conn, int? walletId) :
             // Create a bigger hash table if its shared.
             // TODO: Make this configurable.
             base(conn.Repository.DatabasePerWallet ? 20 : 26)
@@ -51,23 +21,21 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public bool Contains(OutPoint outPoint, out HDTransactionData tranData)
+        public bool Contains(OutPoint outPoint, out HashSet<AddressIdentifier> addresses)
         {
-            tranData = null;
-
-            return Contains(outPoint.ToBytes()) ?? Exists(outPoint, out tranData);
+            return base.Contains(outPoint.ToBytes(), out addresses) ?? Exists(outPoint, out addresses);
         }
 
         /// <inheritdoc />
         public void Confirm()
         {
-            Confirm(o => { var x = new OutPoint(); x.FromBytes(o); return this.Exists(x, out _); });
+            base.Confirm(o => { var x = new OutPoint(); x.FromBytes(o); return this.Exists(x, out _); });
         }
 
         /// <inheritdoc />
-        public void AddTentative(OutPoint outPoint)
+        public void AddTentative(OutPoint outPoint, AddressIdentifier address)
         {
-            this.AddTentative(outPoint.ToBytes());
+            base.AddTentative(outPoint.ToBytes(), address);
         }
 
         /// <inheritdoc />
@@ -98,10 +66,15 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.Add(outPoint.ToBytes());
         }
 
-        private bool Exists(OutPoint outPoint, out HDTransactionData tranData)
+        private bool Exists(OutPoint outPoint, out HashSet<AddressIdentifier> addresses)
         {
-            tranData = this.conn.FindWithQuery<HDTransactionData>($@"
-                SELECT  *
+            addresses = new HashSet<AddressIdentifier>(
+                this.conn.Query<AddressIdentifier>($@"
+                SELECT  WalletId
+                ,       AccountIndex
+                ,       AddressType
+                ,       AddressIndex
+                ,       ScriptPubKey
                 FROM    HDTransactionData
                 WHERE   OutputTxId = ?
                 AND     OutputIndex = ? {
@@ -110,9 +83,9 @@ namespace Stratis.Features.SQLiteWalletRepository
                 ((this.walletId != null) ? $@"
                 AND     WalletId BETWEEN {this.walletId} AND {this.walletId}" : "")}",
                 outPoint.Hash.ToString(),
-                outPoint.N);
+                outPoint.N));
 
-            return tranData != null;
+            return addresses.Count != 0;
         }
     }
 }
