@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <returns>A list of receipts for transactions relating to a specific smart contract and a specific event in that smart contract.</returns>
         [Route("receipt-search")]
         [HttpGet]
-        public async Task<IActionResult> ReceiptSearch([FromQuery] string contractAddress, [FromQuery] string eventName, [FromQuery] int fromBlock = 0, [FromQuery] int? toBlock = null)
+        public async Task<IActionResult> ReceiptSearch([FromQuery] string contractAddress, [FromQuery] string eventName, [FromQuery] List<string> topics = null, [FromQuery] int fromBlock = 0, [FromQuery] int? toBlock = null)
         {
             uint160 address = contractAddress.ToUint160(this.network);
 
@@ -258,11 +258,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, "No code exists", $"No contract execution code exists at {address}");
             }
 
+            var topicsBytes = topics != null ? topics.Select(t => t.HexToByteArray()) : new List<byte[]>();
+
             Assembly assembly = Assembly.Load(contractCode);
 
             var deserializer = new ApiLogDeserializer(this.primitiveSerializer, this.network);
 
-            List<Receipt> receipts = this.SearchReceipts(contractAddress, eventName, fromBlock, toBlock);
+            List<Receipt> receipts = this.SearchReceipts(contractAddress, eventName, fromBlock, toBlock, topicsBytes);
 
             var result = new List<ReceiptResponse>();
 
@@ -312,7 +314,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             return logResponses;
         }
 
-        private List<Receipt> SearchReceipts(string contractAddress, string eventName, int fromBlock, int? toBlock)
+        private List<Receipt> SearchReceipts(string contractAddress, string eventName, int fromBlock, int? toBlock, IEnumerable<byte[]> topics)
         {
             // Build the bytes we can use to check for this event.
             uint160 addressUint160 = contractAddress.ToUint160(this.network);
@@ -324,11 +326,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // Loop through all headers and check bloom.
             IEnumerable<ChainedHeader> blockHeaders = chainIndexerRangeQuery.EnumerateRange(fromBlock, toBlock);
 
+            var bloom = new Bloom();
+            bloom.Add(addressBytes);
+            bloom.Add(eventBytes);
+
+            foreach (var topic in topics)
+            {
+                bloom.Add(topic);
+            }
+
             List<ChainedHeader> matches = new List<ChainedHeader>();
             foreach (ChainedHeader chainedHeader in blockHeaders)
             {
                 var scHeader = (ISmartContractBlockHeader)chainedHeader.Header;
-                if (scHeader.LogsBloom.Test(addressBytes) && scHeader.LogsBloom.Test(eventBytes)) // TODO: This is really inefficient, should build bloom for query and then compare.
+
+                // Use to array here to ensure it's a copy of the internal byte[] structure.
+                var bloomCopy = new Bloom(bloom.ToBytes().ToArray());
+                bloomCopy.Or(scHeader.LogsBloom);
+
+                if(scHeader.LogsBloom == bloomCopy)
                     matches.Add(chainedHeader);
             }
 
