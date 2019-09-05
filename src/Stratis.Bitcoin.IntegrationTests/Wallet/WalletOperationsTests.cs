@@ -1378,6 +1378,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     $"Please use '{nameof(BuildTransactionRequest.FeeAmount)}' if you'd like to set the fee manually, or '{nameof(BuildTransactionRequest.FeeType)}' if you want the wallet to calculate it for you.");
         }
 
+        /// TODO: I don't think this test is valid because it depends on coinselection algoritm.
+        /// would be better to pre-select Outpoints so that we know ahead the expected fee
         [Fact]
         public async Task EstimateFeeAsync()
         {
@@ -1404,9 +1406,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                         .ReceiveJson<Money>();
 
             // Assert.
-            act.Should().Be(new Money(10000));
+            act.Should().Be(new Money(10040));
         }
 
+        /// TODO: I don't think this test is valid because it depends on coinselection algoritm.
+        /// would be better to pre-select Outpoints so that we know ahead the expected fee
         [Fact]
         public async Task EstimateFeeWithOpReturnAsync()
         {
@@ -1435,7 +1439,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                         .ReceiveJson<Money>();
 
             // Assert.
-            act.Should().Be(new Money(10000));
+            act.Should().Be(new Money(10550));
         }
 
         [Fact]
