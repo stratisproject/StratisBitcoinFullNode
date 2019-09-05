@@ -77,8 +77,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 throw new WalletException("Wallet can not yet run on a pruned node");
             }
 
-            // ToDo get rid of call to wallet manager, wallet manager has to go!
-            this.logger.LogInformation("WalletSyncManager starting. Wallet at block {0}.", this.walletManager.LastBlockHeight());
+            this.logger.LogInformation("WalletSyncManager starting.");
 
             // Start sync job for wallets
             this.walletSynchronisationLoop = this.asyncProvider.CreateAndRunAsyncLoop("WalletSyncManager.OrchestrateWalletSync",
