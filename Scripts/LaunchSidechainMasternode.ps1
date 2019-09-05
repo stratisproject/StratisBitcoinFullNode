@@ -40,7 +40,6 @@ function Get-IndexerStatus
             }
         }
     }
-
 }
 
 function Shutdown-MainchainNode
