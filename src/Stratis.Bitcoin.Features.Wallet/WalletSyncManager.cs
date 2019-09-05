@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
@@ -28,18 +29,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly ISignals signals;
         private readonly IAsyncProvider asyncProvider;
         private readonly IWalletRepository walletRepository;
-        private List<string> wallets = new List<string>();
-
-        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
+        private List<(string name, ChainedHeader tipHeader)> wallets = new List<(string name, ChainedHeader tipHeader)>();
+        private ConcurrentDictionary<string, WalletSyncState> walletStateMap = new ConcurrentDictionary<string, WalletSyncState>();
         private readonly INodeLifetime nodeLifetime;
-
         private IAsyncLoop walletSynchronisationLoop;
         private SubscriptionToken blockConnectedSubscription;
         private SubscriptionToken transactionReceivedSubscription;
-        private ConcurrentDictionary<string, WalletSyncState> walletStateMap = new ConcurrentDictionary<string, WalletSyncState>();
 
         protected ChainedHeader walletTip;
 
+        // ToDo this is frankly a controversial function that has to do with some weird concept of top wallet tip between the wallets for now I shall simply display this as highest tip
         public ChainedHeader WalletTip => this.walletTip;
 
         public bool ContainsWallets => this.wallets.Any();
@@ -73,7 +72,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         public void Start()
         {
             // ToDo check if this is still required
-            if (this.storeSettings.PruningEnabled) throw new WalletException("Wallet can not yet run on a pruned node");
+            if (this.storeSettings.PruningEnabled)
+            {
+                throw new WalletException("Wallet can not yet run on a pruned node");
+            }
 
             // ToDo get rid of call to wallet manager, wallet manager has to go!
             this.logger.LogInformation("WalletSyncManager starting. Wallet at block {0}.", this.walletManager.LastBlockHeight());
@@ -124,7 +126,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             Guard.NotNull(transaction, nameof(transaction));
             
-            this.wallets.ForEach(wallet => this.walletRepository.ProcessTransaction(wallet, transaction));
+            this.wallets.ForEach(wallet => this.walletRepository.ProcessTransaction(wallet.name, transaction));
         }
 
         /// <inheritdoc />
@@ -141,33 +143,68 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private void OrchestrateWalletSync()
         {
-            this.wallets = ((SQLiteWalletRepository)this.walletRepository).GetWalletNames();
+            if (!ReadWallets()) return;
 
-            if (this.ContainsWallets)
+            this.walletTip = this.wallets.OrderByDescending(wallet => wallet.tipHeader.Height).First().tipHeader;
+
+            Parallel.ForEach(this.wallets, wallet =>
             {
-                foreach (string wallet in this.wallets)
+                try
+                {
+                    ChainedHeader walletTip = this.walletRepository.FindFork(wallet.name, this.chainIndexer.Tip);
+                    bool walletIsNotSyncing = this.walletStateMap.TryAdd(wallet.name, WalletSyncState.Syncing);
+
+                    if (walletIsNotSyncing)
+                    {
+                        this.walletRepository.RewindWallet(wallet.name, walletTip);
+                        ProccessRangeToRepo(walletTip.Height + 1, this.chainIndexer.Tip.Height, wallet.name);
+                        this.walletStateMap.TryRemove(wallet.name, out _);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    //ToDo handle exception here
+                    this.walletStateMap.TryRemove(wallet.name, out _);
+                    //this needs to be elaborated how it will work during reorg
+                    this.logger.LogInformation($"Error calling find fork on {wallet}");
+                }
+            });
+        }
+
+        private bool ReadWallets()
+        {
+            try
+            {
+                this.wallets = new List<(string name, ChainedHeader tipHeader)>();
+                ((SQLiteWalletRepository) this.walletRepository).GetWalletNames().ForEach(wallet =>
                 {
                     try
                     {
-                        this.walletTip = this.walletRepository.FindFork(wallet, this.chainIndexer.Tip);
-                        bool walletIsNotSyncing = this.walletStateMap.TryAdd(wallet, WalletSyncState.Syncing);
-
-                        if (walletIsNotSyncing)
-                        {
-                            this.walletRepository.RewindWallet(wallet, this.walletTip);
-                            ProccessRangeToRepo(this.walletTip.Height + 1, this.chainIndexer.Tip.Height, wallet);
-                            this.walletStateMap.TryRemove(wallet, out _);
-                        }
+                        this.wallets.Add((wallet, this.walletRepository.FindFork(wallet, this.chainIndexer.Tip)));
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        //ToDo handle exception here
-                        this.walletStateMap.TryRemove(wallet, out _);
-                        //this needs to be elaborated how it will work during reorg
-                        this.logger.LogInformation("Error calling find fork");
+                        // Dont add wallet if cant figure out what height its on
+                        //return false;
                     }
-                }
+                });
+           
+                return this.wallets.Any();
             }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private int GetMaxHeight()
+        {
+            if (this.ContainsWallets)
+            {
+                return this.wallets.Max(wallet => wallet.tipHeader.Height);
+            }
+
+            return 0;
         }
 
         private void ProccessRangeToRepo(int leftBoundry, int rightBoundry, string wallet)

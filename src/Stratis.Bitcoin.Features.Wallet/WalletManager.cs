@@ -1006,58 +1006,58 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public void ProcessBlock(Block block, ChainedHeader chainedHeader)
         {
-            Guard.NotNull(block, nameof(block));
-            Guard.NotNull(chainedHeader, nameof(chainedHeader));
+            //Guard.NotNull(block, nameof(block));
+            //Guard.NotNull(chainedHeader, nameof(chainedHeader));
 
-            // If there is no wallet yet, update the wallet tip hash and do nothing else.
-            if (!this.Wallets.Any())
-            {
-                this.WalletTipHash = chainedHeader.HashBlock;
-                this.WalletTipHeight = chainedHeader.Height;
-                this.logger.LogTrace("(-)[NO_WALLET]");
-                return;
-            }
-
-            // Is this the next block.
-            //if (chainedHeader.Header.HashPrevBlock != this.WalletTipHash)
+            //// If there is no wallet yet, update the wallet tip hash and do nothing else.
+            //if (!this.Wallets.Any())
             //{
-            //    this.logger.LogDebug("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
-
-            //    // The block coming in to the wallet should never be ahead of the wallet.
-            //    // If the block is behind, let it pass.
-            //    if (chainedHeader.Height > this.WalletTipHeight)
-            //    {
-            //        this.logger.LogTrace("(-)[BLOCK_TOO_FAR]");
-            //        throw new WalletException("block too far in the future has arrived to the wallet");
-            //    }
+            //    this.WalletTipHash = chainedHeader.HashBlock;
+            //    this.WalletTipHeight = chainedHeader.Height;
+            //    this.logger.LogTrace("(-)[NO_WALLET]");
+            //    return;
             //}
 
-            this.UpdateLastBlockSyncedHeight(chainedHeader);
+            //// Is this the next block.
+            ////if (chainedHeader.Header.HashPrevBlock != this.WalletTipHash)
+            ////{
+            ////    this.logger.LogDebug("New block's previous hash '{0}' does not match current wallet's tip hash '{1}'.", chainedHeader.Header.HashPrevBlock, this.WalletTipHash);
 
-            //// This lock will become redundant as all the nonsense code below
-            //lock (this.lockObject)
-            //{
-            //    bool trxFoundInBlock = false;
-            //    foreach (Transaction transaction in block.Transactions)
-            //    {
-            //        bool trxFound = this.ProcessTransaction(transaction, chainedHeader.Height, block, true);
-            //        if (trxFound)
-            //        {
-            //            trxFoundInBlock = true;
-            //        }
-            //    }
+            ////    // The block coming in to the wallet should never be ahead of the wallet.
+            ////    // If the block is behind, let it pass.
+            ////    if (chainedHeader.Height > this.WalletTipHeight)
+            ////    {
+            ////        this.logger.LogTrace("(-)[BLOCK_TOO_FAR]");
+            ////        throw new WalletException("block too far in the future has arrived to the wallet");
+            ////    }
+            ////}
 
-            //    // Update the wallets with the last processed block height.
-            //    // It's important that updating the height happens after the block processing is complete,
-            //    // as if the node is stopped, on re-opening it will start updating from the previous height.
-            //    this.UpdateLastBlockSyncedHeight(chainedHeader);
+            //this.UpdateLastBlockSyncedHeight(chainedHeader);
 
-            //    if (trxFoundInBlock)
-            //    {
-            //        this.logger.LogDebug("Block {0} contains at least one transaction affecting the user's wallet(s).",
-            //            chainedHeader);
-            //    }
-            //}
+            ////// This lock will become redundant as all the nonsense code below
+            ////lock (this.lockObject)
+            ////{
+            ////    bool trxFoundInBlock = false;
+            ////    foreach (Transaction transaction in block.Transactions)
+            ////    {
+            ////        bool trxFound = this.ProcessTransaction(transaction, chainedHeader.Height, block, true);
+            ////        if (trxFound)
+            ////        {
+            ////            trxFoundInBlock = true;
+            ////        }
+            ////    }
+
+            ////    // Update the wallets with the last processed block height.
+            ////    // It's important that updating the height happens after the block processing is complete,
+            ////    // as if the node is stopped, on re-opening it will start updating from the previous height.
+            ////    this.UpdateLastBlockSyncedHeight(chainedHeader);
+
+            ////    if (trxFoundInBlock)
+            ////    {
+            ////        this.logger.LogDebug("Block {0} contains at least one transaction affecting the user's wallet(s).",
+            ////            chainedHeader);
+            ////    }
+            ////}
         }
 
         /// <inheritdoc />
