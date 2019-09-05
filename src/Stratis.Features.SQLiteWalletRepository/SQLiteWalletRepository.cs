@@ -297,7 +297,6 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                 bool isInTransaction = conn.IsInTransaction;
 
-                // TODO: Delete HDPayments no longer required.
                 if (!this.DatabasePerWallet)
                 {
                     int walletId = walletContainer.Wallet.WalletId;
@@ -306,14 +305,15 @@ namespace Stratis.Features.SQLiteWalletRepository
                     this.RewindWallet(walletName, null);
 
                     conn.Delete<HDWallet>(walletId);
+
                     conn.Execute($@"
-                DELETE  FROM HDAddress
-                WHERE   WalletId = {walletId}
-                ");
+                        DELETE  FROM HDAddress
+                        WHERE   WalletId = {walletId}");
+
                     conn.Execute($@"
-                DELETE  FROM HDAccount
-                WHERE   WalletId = {walletId}
-                ");
+                        DELETE  FROM HDAccount
+                        WHERE   WalletId = {walletId}");
+
                     conn.Commit();
                 }
                 else
@@ -694,8 +694,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             try
             {
-                DBConnection conn = this.GetConnection(walletName);
-                HDWallet wallet = conn.GetWalletByName(walletName);
+                DBConnection conn = walletContainer.Conn;
+                HDWallet wallet = walletContainer.Wallet;
                 conn.BeginTransaction();
                 conn.RemoveUnconfirmedTransaction(wallet.WalletId, txId);
                 conn.Commit();

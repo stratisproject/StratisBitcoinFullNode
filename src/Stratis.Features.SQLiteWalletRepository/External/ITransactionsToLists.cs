@@ -71,7 +71,6 @@ namespace Stratis.Features.SQLiteWalletRepository.External
         public bool ProcessTransactions(IEnumerable<Transaction> transactions, ChainedHeader header, uint256 fixedTxId = null)
         {
             bool additions = false;
-            var walletsAffected = new HashSet<int>();
 
             // Convert relevant information in the block to information that can be joined to the wallet tables.
             IWalletTransactionLookup transactionsOfInterest = this.transactionsOfInterest;

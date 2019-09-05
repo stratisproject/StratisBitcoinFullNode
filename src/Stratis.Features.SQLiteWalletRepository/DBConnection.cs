@@ -196,22 +196,6 @@ namespace Stratis.Features.SQLiteWalletRepository
             return addresses;
         }
 
-        internal IEnumerable<HDAddress> TopUpAddresses(int walletId, int accountIndex, int addressType)
-        {
-            int addressCount = HDAddress.GetAddressCount(this.SQLiteConnection, walletId, accountIndex, addressType);
-            int nextAddressIndex = HDAddress.GetNextAddressIndex(this, walletId, accountIndex, addressType);
-            int buffer = addressCount - nextAddressIndex;
-
-            var account = HDAccount.GetAccount(this, walletId, accountIndex);
-
-            for (int addressIndex = addressCount; buffer < HDAddress.StandardAddressBuffer; buffer++, addressIndex++)
-            {
-                HDAddress address = CreateAddress(account, addressType, addressIndex);
-                this.Insert(address);
-                yield return address;
-            }
-        }
-
         internal HDAddress CreateAddress(HDAccount account, int addressType, int addressIndex)
         {
             // Retrieve the pubkey associated with the private key of this address index.
@@ -431,7 +415,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                     wallet.BlockLocator
                 }, (dynamic rollBackData) =>
                 {
-                    HDWallet wallet2 = this.GetWalletByName(rollBackData.Name);
+                    HDWallet wallet2 = this.Repository.Wallets[rollBackData.Name];
                     wallet2.LastBlockSyncedHash = rollBackData.LastBlockSyncedHash;
                     wallet2.LastBlockSyncedHeight = rollBackData.LastBlockSyncedHeight;
                     wallet2.BlockLocator = rollBackData.BlockLocator;
