@@ -82,10 +82,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             return conn.Query<HDTransactionData>($@"
                 SELECT  *
                 FROM    HDTransactionData
-                WHERE   WalletId = {walletId}
-                AND     AccountIndex = {accountIndex}
-                AND     OutputBlockHeight IS NOT NULL
-                AND     SpendTxId IS NULL
+                WHERE   (WalletId, AccountIndex) IN (SELECT {walletId}, {accountIndex})
+                AND     SpendTxTime IS NULL
                 AND     OutputBlockHeight <= {maxConfirmationHeight}
                 AND     (OutputTxIsCoinBase = 0 OR OutputBlockHeight <= {maxCoinBaseHeight})
                 ORDER   BY OutputBlockHeight
