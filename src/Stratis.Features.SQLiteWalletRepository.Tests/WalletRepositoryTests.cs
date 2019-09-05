@@ -236,6 +236,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     var chainedHeader1 = new ChainedHeader(blockHeader1, blockHeader1.GetHash(), chainedHeader0);
                     repo.ProcessBlock(block1, chainedHeader1, account.WalletName);
 
+                    (Money totalAmount1, Money confirmedAmount1) = repo.GetAccountBalance(account, chainedHeader1.Height, 2);
+                    Assert.Equal(new Money(100m, MoneyUnit.BTC), totalAmount1);
+                    Assert.Equal(new Money(0m, MoneyUnit.BTC), confirmedAmount1);
+
                     // List the unspent outputs.
                     List<UnspentOutputReference> outputs1 = repo.GetSpendableTransactionsInAccount(account, chainedHeader1.Height, 0).ToList();
                     Assert.Single(outputs1);
@@ -264,6 +268,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     // Process block 2.
                     var chainedHeader2 = new ChainedHeader(blockHeader2, blockHeader2.HashPrevBlock, chainedHeader1);
                     repo.ProcessBlock(block2, chainedHeader2, account.WalletName);
+
+                    (Money totalAmount2, Money confirmedAmount2) = repo.GetAccountBalance(account, chainedHeader1.Height, 2);
+                    Assert.Equal(new Money(9m, MoneyUnit.BTC), totalAmount2);
+                    Assert.Equal(new Money(0m, MoneyUnit.BTC), confirmedAmount2);
 
                     // List the unspent outputs.
                     List<UnspentOutputReference> outputs2 = repo.GetSpendableTransactionsInAccount(account, chainedHeader2.Height, 0).ToList();

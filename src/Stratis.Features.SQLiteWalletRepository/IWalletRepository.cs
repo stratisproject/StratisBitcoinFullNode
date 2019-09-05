@@ -131,6 +131,15 @@ namespace Stratis.Features.SQLiteWalletRepository
         IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference accountReference, int currentChainHeight, int confirmations = 0);
 
         /// <summary>
+        /// Gets an account's total balance and confirmed balance amounts.
+        /// </summary>
+        /// <param name="walletAccountReference">The account to get the balances for.</param>
+        /// <param name="currentChainHeight">The current chain height.</param>
+        /// <param name="confirmations">The minimum number of confirmations for a transactions to be regarded spendable.</param>
+        /// <returns>The account's total balance and confirmed balance amounts.</returns>
+        (Money totalAmount, Money confirmedAmount) GetAccountBalance(WalletAccountReference walletAccountReference, int currentChainHeight, int confirmations = 0);
+
+        /// <summary>
         /// Returns a history of all transactions in the wallet.
         /// </summary>
         /// <param name="walletName">The name of the wallet to return the transactions of.</param>

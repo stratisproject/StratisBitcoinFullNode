@@ -90,5 +90,27 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 ,       OutputTxId
                 ,       OutputIndex");
         }
+
+        public class BalanceData
+        {
+            public decimal TotalBalance { get; set; }
+            public decimal ConfirmedBalance { get; set; }
+        }
+
+        internal static (decimal total, decimal confirmed) GetBalance(DBConnection conn, int walletId, int accountIndex, (int type, int index)? address, int currentChainHeight, int coinbaseMaturity, int confirmations = 0)
+        {
+            int maxConfirmationHeight = (currentChainHeight + 1) - confirmations;
+            int maxCoinBaseHeight = currentChainHeight - (int)coinbaseMaturity;
+
+            var balanceData = conn.FindWithQuery<BalanceData>($@"
+                SELECT SUM(Value) TotalBalance
+                ,      SUM(CASE WHEN OutputBlockHeight <= {maxConfirmationHeight} AND (OutputTxIsCoinBase = 0 OR OutputBlockHeight <= {maxCoinBaseHeight}) THEN Value ELSE 0 END) ConfirmedBalance
+                FROM   HDTransactionData
+                WHERE  (WalletId, AccountIndex) IN (SELECT {walletId}, {accountIndex})
+                AND    SpendTxTime IS NULL { ((address == null) ? "" : $@"
+                AND    (AddressType, AddressIndex) IN (SELECT {address?.type}, {address?.index}")}");
+
+            return (balanceData.TotalBalance, balanceData.ConfirmedBalance);
+        }
     }
 }

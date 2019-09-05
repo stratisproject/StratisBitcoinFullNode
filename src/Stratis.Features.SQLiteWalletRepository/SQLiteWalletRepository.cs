@@ -773,6 +773,17 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
+        public (Money totalAmount, Money confirmedAmount) GetAccountBalance(WalletAccountReference walletAccountReference, int currentChainHeight, int confirmations = 0)
+        {
+            DBConnection conn = this.GetConnection(walletAccountReference.WalletName);
+            HDAccount account = conn.GetAccountByName(walletAccountReference.WalletName, walletAccountReference.AccountName);
+
+            (decimal total, decimal confirmed) = HDTransactionData.GetBalance(conn, account.WalletId, account.AccountIndex, null, currentChainHeight, (int)this.Network.Consensus.CoinbaseMaturity, confirmations);
+
+            return (new Money(total, MoneyUnit.BTC), new Money(confirmed, MoneyUnit.BTC));
+        }
+
+        /// <inheritdoc />
         public IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null)
         {
             DBConnection conn = this.GetConnection(walletName);
