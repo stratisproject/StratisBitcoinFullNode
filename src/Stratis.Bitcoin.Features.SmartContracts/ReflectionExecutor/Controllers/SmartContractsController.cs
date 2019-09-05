@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <returns>A list of receipts for transactions relating to a specific smart contract and a specific event in that smart contract.</returns>
         [Route("receipt-search")]
         [HttpGet]
-        public async Task<IActionResult> ReceiptSearch([FromQuery] string contractAddress, [FromQuery] string eventName)
+        public async Task<IActionResult> ReceiptSearch([FromQuery] string contractAddress, [FromQuery] string eventName, [FromQuery] int fromBlock = 0, [FromQuery] int? toBlock = null)
         {
             uint160 address = contractAddress.ToUint160(this.network);
 
@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             var deserializer = new ApiLogDeserializer(this.primitiveSerializer, this.network);
 
-            List<Receipt> receipts = this.SearchReceipts(contractAddress, eventName);
+            List<Receipt> receipts = this.SearchReceipts(contractAddress, eventName, fromBlock, toBlock);
 
             var result = new List<ReceiptResponse>();
 
@@ -312,15 +312,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             return logResponses;
         }
 
-        private List<Receipt> SearchReceipts(string contractAddress, string eventName)
+        private List<Receipt> SearchReceipts(string contractAddress, string eventName, int fromBlock, int? toBlock)
         {
             // Build the bytes we can use to check for this event.
             uint160 addressUint160 = contractAddress.ToUint160(this.network);
             byte[] addressBytes = addressUint160.ToBytes();
             byte[] eventBytes = Encoding.UTF8.GetBytes(eventName);
 
+            var chainIndexerRangeQuery = new ChainIndexerRangeQuery(this.chainIndexer);
+
             // Loop through all headers and check bloom.
-            IEnumerable<ChainedHeader> blockHeaders = this.chainIndexer.EnumerateToTip(this.chainIndexer.Genesis);
+            IEnumerable<ChainedHeader> blockHeaders = chainIndexerRangeQuery.EnumerateRange(fromBlock, toBlock);
+
             List<ChainedHeader> matches = new List<ChainedHeader>();
             foreach (ChainedHeader chainedHeader in blockHeaders)
             {
