@@ -104,12 +104,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private void AddInlineStats(StringBuilder log)
         {
-            //var walletManager = this.walletManager as WalletManager;
-
-            //if (walletManager != null)
-            //{
-                //HashHeightPair hashHeightPair = walletManager.LastReceivedBlockInfo();
-
             if(this.walletSyncManager != null)
             { 
                 log.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
@@ -120,31 +114,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private void AddComponentStats(StringBuilder log)
         {
-            IEnumerable<string> walletNames = this.walletManager.GetWalletsNames();
-
-            if (walletNames.Any())
-            {
-                log.AppendLine();
-                log.AppendLine("======Wallets======");
-
-                foreach (string walletName in walletNames)
-                {
-                    foreach (HdAccount account in this.walletManager.GetAccounts(walletName))
-                    {
-                        AccountBalance accountBalance = this.walletManager.GetBalances(walletName, account.Name).Single();
-                        log.AppendLine(($"{walletName}/{account.Name}" + ",").PadRight(LoggingConfiguration.ColumnLength + 10)
-                                                  + (" Confirmed balance: " + accountBalance.AmountConfirmed.ToString()).PadRight(LoggingConfiguration.ColumnLength + 20)
-                                                  + " Unconfirmed balance: " + accountBalance.AmountUnconfirmed.ToString());
-                    }
-                }
-            }
-
             List<string> walletNamesSQL = ((SQLiteWalletRepository) this.walletRepository).GetWalletNames();
 
             if (walletNamesSQL.Any())
             {
                 log.AppendLine();
-                log.AppendLine("======SQLWallets======");
+                log.AppendLine("======Wallets======");
 
                 foreach (string walletName in walletNamesSQL)
                 {
