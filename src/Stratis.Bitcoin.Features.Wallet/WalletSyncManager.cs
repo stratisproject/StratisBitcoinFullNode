@@ -197,16 +197,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
-        private int GetMaxHeight()
-        {
-            if (this.ContainsWallets)
-            {
-                return this.wallets.Max(wallet => wallet.tipHeader.Height);
-            }
-
-            return 0;
-        }
-
         private void ProccessRangeToRepo(int leftBoundry, int rightBoundry, string wallet)
         {
             IEnumerable<(ChainedHeader, Block)> range =
@@ -217,15 +207,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private IEnumerable<(ChainedHeader, Block)> BatchBlocksFromRange(int leftBoundry, int rightBoundry, string wallet)
         {
-            //ToDo this bit need proper review
-            // This is were optimisation needs to happen
-            // It is possible it will be more efficient to have this to add
-            // all hashes to a list and then call List<Block> blocks = this.BlockRepo.GetBlocks(hashes);
             for (int x = leftBoundry; x <= rightBoundry; x++)
             {
-                // This might cause issues so I think there should be some other way to monitor 
-                // height
-                this.walletTip = this.walletRepository.FindFork(wallet, this.chainIndexer.Tip);
                 ChainedHeader chainedHeader = this.chainIndexer.GetHeader(x);
                 Block block = this.blockStore.GetBlock(chainedHeader.HashBlock);
                 yield return (chainedHeader, block);
