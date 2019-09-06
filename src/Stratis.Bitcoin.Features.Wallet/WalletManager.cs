@@ -363,7 +363,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             catch (Exception ex)
             {
                 this.logger.LogWarning("Exception occurred: {0}", ex.ToString());
-                this.logger.LogTrace("[EXCEPTION]");
+                this.logger.LogTrace("(-)[EXCEPTION]");
                 throw new SecurityException(ex.Message);
             }
 

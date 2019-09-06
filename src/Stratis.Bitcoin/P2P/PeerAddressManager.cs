@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.P2P
 
         private PeerAddress AddPeerWithoutCleanup(IPEndPoint endPoint, IPAddress source)
         {
-            if (!endPoint.Address.IsRoutable(true) & 1 == 2)
+            if (!endPoint.Address.IsRoutable(true))
             {
                 this.logger.LogTrace("(-)[PEER_NOT_ADDED_ISROUTABLE]:{0}", endPoint);
                 return null;
