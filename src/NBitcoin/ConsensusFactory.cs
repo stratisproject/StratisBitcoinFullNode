@@ -20,6 +20,7 @@ namespace NBitcoin
         /// </summary>
         private readonly TypeInfo blockHeaderType = typeof(BlockHeader).GetTypeInfo();
 
+
         /// <summary>
         /// A dictionary for types assignable from <see cref="Block"/>.
         /// </summary>
@@ -51,8 +52,9 @@ namespace NBitcoin
         /// <returns><c>true</c> if it is assignable.</returns>
         protected bool IsBlockHeader<T>()
         {
-            return IsAssignable<T>(this.blockHeaderType, this.isAssignableFromBlockHeader);
+            return this.IsAssignable<T>(this.blockHeaderType, this.isAssignableFromBlockHeader);
         }
+
 
         /// <summary>
         /// Check if the generic type is assignable from <see cref="Block"/>.
@@ -61,7 +63,7 @@ namespace NBitcoin
         /// <returns><c>true</c> if it is assignable.</returns>
         protected bool IsBlock<T>()
         {
-            return IsAssignable<T>(this.blockType, this.isAssignableFromBlock);
+            return this.IsAssignable<T>(this.blockType, this.isAssignableFromBlock);
         }
 
         /// <summary>
@@ -71,7 +73,7 @@ namespace NBitcoin
         /// <returns><c>true</c> if it is assignable.</returns>
         protected bool IsTransaction<T>()
         {
-            return IsAssignable<T>(this.transactionType, this.isAssignableFromTransaction);
+            return this.IsAssignable<T>(this.transactionType, this.isAssignableFromTransaction);
         }
 
         /// <summary>
@@ -81,7 +83,7 @@ namespace NBitcoin
         /// <param name="type">The type to compare against.</param>
         /// <param name="cache">A collection of already checked types.</param>
         /// <returns><c>true</c> if it is assignable.</returns>
-        private bool IsAssignable<T>(TypeInfo type, ConcurrentDictionary<Type, bool> cache)
+        protected bool IsAssignable<T>(TypeInfo type, ConcurrentDictionary<Type, bool> cache)
         {
             if (!cache.TryGetValue(typeof(T), out bool isAssignable))
             {
@@ -102,14 +104,14 @@ namespace NBitcoin
         {
             object result = null;
 
-            if (IsBlock<T>())
-                result = (T)(object)CreateBlock();
+            if (this.IsBlock<T>())
+                result = (T)(object)this.CreateBlock();
 
-            if (IsBlockHeader<T>())
-                result = (T)(object)CreateBlockHeader();
+            else if (this.IsBlockHeader<T>())
+                result = (T)(object)this.CreateBlockHeader();
 
-            if (IsTransaction<T>())
-                result = (T)(object)CreateTransaction();
+            else if (this.IsTransaction<T>())
+                result = (T)(object)this.CreateTransaction();
 
             return (T)result;
         }
@@ -144,7 +146,7 @@ namespace NBitcoin
         public virtual Block CreateBlock()
         {
 #pragma warning disable CS0618 // Type or member is obsolete
-            return new Block(CreateBlockHeader());
+            return new Block(this.CreateBlockHeader());
 #pragma warning restore CS0618 // Type or member is obsolete
         }
 
