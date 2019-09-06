@@ -219,19 +219,19 @@ namespace Stratis.Bitcoin.P2P
         {
             if (this.selfEndpointTracker.IsSelf(peerAddress.Endpoint))
             {
-                this.logger.LogInfo("Connect aborted: {0} is self.", peerAddress.Endpoint);
+                this.logger.LogDebug("Connect aborted: {0} is self.", peerAddress.Endpoint);
                 return;
             }
 
             if (this.IsPeerConnected(peerAddress.Endpoint))
             {
-                this.logger.LogInfo("Connect aborted: {0} is already connected.", peerAddress.Endpoint);
+                this.logger.LogDebug("Connect aborted: {0} is already connected.", peerAddress.Endpoint);
                 return;
             }
 
             if (peerAddress.IsBanned(this.dateTimeProvider.GetUtcNow()))
             {
-                this.logger.LogInfo("Connect aborted: {0} is banned until {1}.", peerAddress.Endpoint, peerAddress.BanUntil);
+                this.logger.LogInformation("Connect aborted: {0} is banned until {1}.", peerAddress.Endpoint, peerAddress.BanUntil);
                 return;
             }
 
@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.P2P
                 }
                 else
                 {
-                    this.logger.LogInfo("Peer {0} connection timeout.", peerAddress.Endpoint);
+                    this.logger.LogInformation("Peer {0} connection timeout.", peerAddress.Endpoint);
                     peerAddress.SetHandshakeAttempted(this.dateTimeProvider.GetUtcNow());
                     peer?.Disconnect("Connection timeout");
                 }

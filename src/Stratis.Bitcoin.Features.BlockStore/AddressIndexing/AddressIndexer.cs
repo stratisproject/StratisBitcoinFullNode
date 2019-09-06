@@ -259,7 +259,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.AddressIndexing
                 {
                     ChainedHeader lastCommonHeader = nextHeader.FindFork(this.IndexerTip);
 
-                    this.logger.LogInfo("Reorganization detected. Rewinding till '{0}'.", lastCommonHeader);
+                    this.logger.LogInformation("Reorganization detected. Rewinding till '{0}'.", lastCommonHeader);
 
                     this.RewindAndSave(lastCommonHeader);
 

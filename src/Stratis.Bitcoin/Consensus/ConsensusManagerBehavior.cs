@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Consensus
             // because that will slow down our own syncing process.
             if (this.InitialBlockDownloadState.IsInitialBlockDownload() && !peer.IsWhitelisted())
             {
-                this.logger.LogInfo("GetHeaders message from {0} was ignored because node is in IBD.", peer.PeerEndPoint);
+                this.logger.LogInformation("GetHeaders message from {0} was ignored because node is in IBD.", peer.PeerEndPoint);
                 this.logger.LogTrace("(-)[IGNORE_ON_IBD]");
                 return;
             }
@@ -314,7 +314,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (this.cachedHeaders.Count > CacheSyncHeadersThreshold) // TODO when proven headers are implemented combine this with size threshold of N mb.
                 {
                     // Ignore this message because cache is full.
-                    this.logger.LogInfo("Cache is full. Headers ignored.");
+                    this.logger.LogInformation("Cache is full. Headers ignored.");
                     this.logger.LogTrace("(-)[CACHE_IS_FULL]");
                     return;
                 }
@@ -425,7 +425,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (headers[i].HashPrevBlock != headers[i - 1].GetHash())
                 {
-                    this.logger.LogInfo("Peer '{0}' presented non-consecutiveness hashes at position {1} with prev hash '{2}' not matching hash '{3}'.",
+                    this.logger.LogInformation("Peer '{0}' presented non-consecutiveness hashes at position {1} with prev hash '{2}' not matching hash '{3}'.",
                         peer.RemoteSocketEndpoint, i, headers[i].HashPrevBlock, headers[i - 1].GetHash());
 
                     validationError = "Peer presented nonconsecutive headers.";

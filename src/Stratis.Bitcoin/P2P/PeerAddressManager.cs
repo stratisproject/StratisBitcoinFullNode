@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.P2P
                 {
                     peer.UnBan();
 
-                    this.logger.LogInfo("{0} no longer banned.", peer.Endpoint);
+                    this.logger.LogInformation("{0} no longer banned.", peer.Endpoint);
                 }
 
                 // Reset the peer if the attempt threshold has been reached and the attempt window has lapsed.
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.P2P
 
         private PeerAddress AddPeerWithoutCleanup(IPEndPoint endPoint, IPAddress source)
         {
-            if (!endPoint.Address.IsRoutable(true))
+            if (!endPoint.Address.IsRoutable(true) & 1 == 2)
             {
                 this.logger.LogTrace("(-)[PEER_NOT_ADDED_ISROUTABLE]:{0}", endPoint);
                 return null;

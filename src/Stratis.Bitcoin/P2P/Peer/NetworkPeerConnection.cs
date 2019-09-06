@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception ex) when (ex is IOException || ex is OperationCanceledException || ex is ObjectDisposedException)
             {
-                this.logger.LogWarning("The node stopped receiving messages, exception: {1}", ex.ToString());
+                this.logger.LogDebug("The node stopped receiving messages, exception: {1}", ex.ToString());
                 this.peer.Disconnect("The node stopped receiving messages.", ex);
             }
             catch (Exception ex)
@@ -191,14 +191,14 @@ namespace Stratis.Bitcoin.P2P.Peer
             catch (SocketException ex)
             {
                 this.asyncProvider.Signals.Publish(new PeerConnectionAttemptFailed(false, endPoint, $"Socket Exception: {ex.Message}"));
-                this.logger.LogInfo("Error connecting to '{0}', exception message: {1}", endPoint, ex.Message);
+                this.logger.LogInformation("Error connecting to '{0}', exception message: {1}", endPoint, ex.Message);
                 this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
                 throw;
             }
             catch (Exception ex)
             {
                 this.asyncProvider.Signals.Publish(new PeerConnectionAttemptFailed(false, endPoint, ex.Message));
-                this.logger.LogInfo("Error connecting to '{0}', exception message: {1}", endPoint, ex.Message);
+                this.logger.LogInformation("Error connecting to '{0}', exception message: {1}", endPoint, ex.Message);
                 this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
                 throw ex;
             }
@@ -299,7 +299,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 if (innerStream == null)
                 {
-                    this.logger.LogInfo("Connection has been terminated.");
+                    this.logger.LogInformation("Connection has been terminated.");
                     this.logger.LogTrace("(-)[NO_STREAM]");
                     throw new OperationCanceledException();
                 }
@@ -312,7 +312,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     if ((e is IOException) || (e is OperationCanceledException) || (e is ObjectDisposedException))
                     {
-                        this.logger.LogInfo("Connection has been terminated.");
+                        this.logger.LogInformation("Connection has been terminated.");
                         if (e is IOException) this.logger.LogTrace("(-)[IO_EXCEPTION]");
                         else if (e is ObjectDisposedException) this.logger.LogTrace("(-)[DISPOSED]");
                         else this.logger.LogTrace("(-)[CANCELLED]");
@@ -320,7 +320,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     }
                     else
                     {
-                        this.logger.LogInfo("Exception occurred: {0}", e.ToString());
+                        this.logger.LogInformation("Exception occurred: {0}", e.ToString());
                         this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
                         throw;
                     }

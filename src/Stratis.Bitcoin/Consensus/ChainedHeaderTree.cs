@@ -1183,7 +1183,7 @@ namespace Stratis.Bitcoin.Consensus
                         throw new MaxReorgViolationException();
                     }
 
-                    this.logger.LogInfo("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
+                    this.logger.LogInformation("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
                 }
             }
         }
