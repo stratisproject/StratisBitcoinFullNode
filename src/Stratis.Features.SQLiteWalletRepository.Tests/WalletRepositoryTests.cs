@@ -629,8 +629,11 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 repo.WriteMetricsToFile = true;
                 blockBase.Metrics = repo.Metrics;
                 repo.Initialize(this.dbPerWallet);
-                this.LoadWallet(blockBase, repo, "wallet1");
-                repo.AddAddresses("wallet1", "account 0", 0, binance
+
+                // Create a watch-only wallet.
+                repo.CreateWallet("wallet1", null, null);
+                repo.CreateAccount("wallet1", 0, "account 0", (ExtPubKey)null);
+                repo.AddWatchOnlyAddresses("wallet1", "account 0", 0, binance
                     .Select(b => b.Item1)
                     .Select(addr => BitcoinAddress.Create(addr, network).ScriptPubKey)
                     .ToList());

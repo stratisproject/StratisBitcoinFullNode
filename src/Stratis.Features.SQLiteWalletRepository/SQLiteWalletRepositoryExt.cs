@@ -4,7 +4,6 @@ using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Features.SQLiteWalletRepository.External;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 
 namespace Stratis.Features.SQLiteWalletRepository

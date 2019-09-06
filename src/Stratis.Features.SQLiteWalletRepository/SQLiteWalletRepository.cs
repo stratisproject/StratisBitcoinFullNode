@@ -230,7 +230,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 Name = walletName,
                 EncryptedSeed = encryptedSeed,
-                ChainCode = Convert.ToBase64String(chainCode),
+                ChainCode = (chainCode == null) ? null : Convert.ToBase64String(chainCode),
                 CreationTime = creationTime
             };
 
@@ -241,8 +241,19 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.logger.LogDebug("Creating wallet '{0}'.", walletName);
 
             conn.BeginTransaction();
-            wallet.CreateWallet(conn);
-            conn.Commit();
+
+            try
+            {
+                if (encryptedSeed != null && HDWallet.GetWalletByEncryptedSeed(conn, encryptedSeed) != null)
+                    throw new Exception("Wallet with same encrypted seed already exisits.");
+                wallet.CreateWallet(conn);
+                conn.Commit();
+            }
+            catch (Exception)
+            {
+                conn.Rollback();
+                throw;
+            }
 
             this.logger.LogDebug("Adding wallet '{0}' to wallet collection.", walletName);
 
@@ -252,33 +263,31 @@ namespace Stratis.Features.SQLiteWalletRepository
             else
                 walletContainer = new WalletContainer(conn, wallet, this.processBlocksInfo);
 
-            walletContainer.WriteLockWait();
+            this.Wallets[wallet.Name] = walletContainer;
 
-            try
+            if (conn.IsInTransaction)
             {
-                this.Wallets[wallet.Name] = walletContainer;
-
-                if (conn.IsInTransaction)
+                conn.AddRollbackAction(new
                 {
-                    conn.AddRollbackAction(new
+                    wallet.Name,
+                }, (dynamic rollBackData) =>
+                {
+                    if (this.Wallets.TryGetValue(rollBackData.Name, out WalletContainer walletContainer2))
                     {
-                        wallet.Name,
-                    }, (dynamic rollBackData) =>
-                    {
-                        if (this.Wallets.TryRemove(rollBackData.Name, out WalletContainer walletContaner))
+                        walletContainer2.WriteLockWait();
+
+                        if (this.Wallets.TryRemove(rollBackData.Name, out WalletContainer _))
                         {
                             if (this.DatabasePerWallet)
                             {
-                                walletContainer.Conn.Close();
+                                walletContainer2.Conn.Close();
                                 File.Delete(Path.Combine(this.DBPath, $"{walletContainer.Wallet.Name}.db"));
                             }
                         }
-                    });
-                }
-            }
-            finally
-            {
-                walletContainer.WriteLockRelease();
+
+                        walletContainer2.WriteLockRelease();
+                    }
+                });
             }
         }
 
@@ -379,9 +388,15 @@ namespace Stratis.Features.SQLiteWalletRepository
                 var conn = this.GetConnection(walletName);
                 conn.BeginTransaction();
 
-                var account = conn.CreateAccount(wallet.WalletId, accountIndex, accountName, extPubKey.ToString(this.Network), (int)(creationTime ?? this.dateTimeProvider.GetTimeOffset()).ToUnixTimeSeconds());
-                conn.CreateAddresses(account, HDAddress.Internal, HDAddress.StandardAddressBuffer);
-                conn.CreateAddresses(account, HDAddress.External, HDAddress.StandardAddressBuffer);
+                var account = conn.CreateAccount(wallet.WalletId, accountIndex, accountName, extPubKey?.ToString(this.Network), (int)(creationTime ?? this.dateTimeProvider.GetTimeOffset()).ToUnixTimeSeconds());
+
+                // Add the standard number of addresses if this is not a watch-only wallet.
+                if (extPubKey != null)
+                {
+                    conn.CreateAddresses(account, HDAddress.Internal, HDAddress.StandardAddressBuffer);
+                    conn.CreateAddresses(account, HDAddress.External, HDAddress.StandardAddressBuffer);
+                }
+
                 conn.Commit();
 
                 walletContainer.AddressesOfInterest.AddAll(wallet.WalletId, accountIndex);
@@ -392,7 +407,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
         }
 
-        internal void AddAddresses(string walletName, string accountName, int addressType, List<Script> addresses)
+        public void AddWatchOnlyAddresses(string walletName, string accountName, int addressType, List<Script> addresses)
         {
             WalletContainer walletContainer = this.Wallets[walletName];
 
@@ -403,6 +418,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 var conn = this.GetConnection(walletName);
                 conn.BeginTransaction();
                 HDAccount account = conn.GetAccountByName(walletName, accountName);
+                if (account.ExtPubKey != null)
+                    throw new Exception("Addresses can only be added to watch-only accounts.");
                 conn.AddAdresses(account, addressType, addresses);
                 conn.Commit();
 
@@ -425,12 +442,14 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 HDWallet wallet = walletContainer.Wallet;
 
+                if (wallet.EncryptedSeed == null)
+                    throw new InvalidProgramException("Unsupported method call for watch-only wallet.");
+
                 ExtPubKey extPubKey;
 
                 var conn = this.GetConnection(walletName);
 
                 // Get the extended pub key used to generate addresses for this account.
-                // Not passing extPubKey into the method to guarantee DB integrity.
                 Key privateKey = Key.Parse(wallet.EncryptedSeed, password, this.Network);
                 var seedExtKey = new ExtKey(privateKey, Convert.FromBase64String(wallet.ChainCode));
                 ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(this.ToHdPath(accountIndex)));
@@ -743,14 +762,14 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, int currentChainHeight, int confirmations = 0)
+        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, int currentChainHeight, int confirmations = 0, int? coinBaseMaturity = null)
         {
             DBConnection conn = this.GetConnection(walletAccountReference.WalletName);
             HDAccount account = conn.GetAccountByName(walletAccountReference.WalletName, walletAccountReference.AccountName);
 
             var hdAccount = this.ToHdAccount(account);
 
-            foreach (HDTransactionData transactionData in conn.GetSpendableOutputs(account.WalletId, account.AccountIndex, currentChainHeight, this.Network.Consensus.CoinbaseMaturity, confirmations))
+            foreach (HDTransactionData transactionData in conn.GetSpendableOutputs(account.WalletId, account.AccountIndex, currentChainHeight, coinBaseMaturity ?? this.Network.Consensus.CoinbaseMaturity, confirmations))
             {
                 var pubKeyScript = new Script(Encoders.Hex.DecodeData(transactionData.ScriptPubKey));
                 PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(pubKeyScript);
@@ -773,12 +792,12 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public (Money totalAmount, Money confirmedAmount) GetAccountBalance(WalletAccountReference walletAccountReference, int currentChainHeight, int confirmations = 0)
+        public (Money totalAmount, Money confirmedAmount) GetAccountBalance(WalletAccountReference walletAccountReference, int currentChainHeight, int confirmations = 0, int? coinBaseMaturity = null)
         {
             DBConnection conn = this.GetConnection(walletAccountReference.WalletName);
             HDAccount account = conn.GetAccountByName(walletAccountReference.WalletName, walletAccountReference.AccountName);
 
-            (decimal total, decimal confirmed) = HDTransactionData.GetBalance(conn, account.WalletId, account.AccountIndex, null, currentChainHeight, (int)this.Network.Consensus.CoinbaseMaturity, confirmations);
+            (decimal total, decimal confirmed) = HDTransactionData.GetBalance(conn, account.WalletId, account.AccountIndex, null, currentChainHeight, coinBaseMaturity ?? (int)this.Network.Consensus.CoinbaseMaturity, confirmations);
 
             return (new Money(total, MoneyUnit.BTC), new Money(confirmed, MoneyUnit.BTC));
         }

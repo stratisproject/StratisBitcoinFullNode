@@ -126,9 +126,10 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <param name="accountReference">The account to get unused addresses for.</param>
         /// <param name="currentChainHeight">The chain height to use in the determination of the number of confirmations of a transaction. </param>
         /// <param name="confirmations">The minimum number of confirmations for a transactions to be regarded spendable.</param>
+        /// <param name="coinBaseMaturity">Can be used to override <see cref="Network.Consensus.CoinbaseMaturity"/>.</param>
         /// <returns>The list of spendable transactions for the account.</returns>
         /// <remarks>For coinbase transactions <see cref="Network.Consensus.CoinbaseMaturity" /> will be used in addition to <paramref name="confirmations"/>.</remarks>
-        IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference accountReference, int currentChainHeight, int confirmations = 0);
+        IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference accountReference, int currentChainHeight, int confirmations = 0, int? coinBaseMaturity = null);
 
         /// <summary>
         /// Gets an account's total balance and confirmed balance amounts.
@@ -136,8 +137,10 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <param name="walletAccountReference">The account to get the balances for.</param>
         /// <param name="currentChainHeight">The current chain height.</param>
         /// <param name="confirmations">The minimum number of confirmations for a transactions to be regarded spendable.</param>
+        /// <param name="coinBaseMaturity">Can be used to override <see cref="Network.Consensus.CoinbaseMaturity"/>.</param>
         /// <returns>The account's total balance and confirmed balance amounts.</returns>
-        (Money totalAmount, Money confirmedAmount) GetAccountBalance(WalletAccountReference walletAccountReference, int currentChainHeight, int confirmations = 0);
+        /// <remarks>For coinbase transactions <see cref="Network.Consensus.CoinbaseMaturity" /> will be used in addition to <paramref name="confirmations"/>.</remarks>
+        (Money totalAmount, Money confirmedAmount) GetAccountBalance(WalletAccountReference walletAccountReference, int currentChainHeight, int confirmations = 0, int? coinBaseMaturity = null);
 
         /// <summary>
         /// Returns a history of all transactions in the wallet.

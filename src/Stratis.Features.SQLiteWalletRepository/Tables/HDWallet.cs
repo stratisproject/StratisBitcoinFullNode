@@ -29,14 +29,13 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 LastBlockSyncedHeight INTEGER NOT NULL,
                 LastBlockSyncedHash TEXT NOT NULL,
                 IsExtPubKeyWallet   INTEGER NOT NULL,
-                EncryptedSeed       TEXT NOT NULL UNIQUE,
-                ChainCode           TEXT NOT NULL,
+                EncryptedSeed       TEXT,
+                ChainCode           TEXT,
                 BlockLocator        TEXT NOT NULL,
                 CreationTime        INTEGER NOT NULL
             );";
 
             yield return "CREATE UNIQUE INDEX UX_HDWallet_Name ON HDWallet(Name)";
-            yield return "CREATE UNIQUE INDEX UX_HDWallet_EncryptedSeed ON HDWallet(EncryptedSeed)";
         }
 
         internal static void CreateTable(DBConnection conn)
