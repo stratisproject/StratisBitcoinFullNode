@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Base
             }
             else
             {
-                this.logger.LogDebug("Time synchronization with peers is disabled.");
+                this.logger.LogWarning("Time synchronization with peers is disabled.");
             }
 
             // Block store must be initialized before consensus manager.

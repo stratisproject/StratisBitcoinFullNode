@@ -100,25 +100,25 @@ namespace Stratis.Features.FederatedPeg
             // on chain and as such the store was not able to sync.
             if (transfer == null)
             {
-                this.logger.LogDebug("{0}: Unable to retrieve transfers for deposit {1} at this time, the store is not synced.", nameof(this.OnMessageReceivedAsync), payload.DepositId);
+                this.logger.LogWarning("{0}: Unable to retrieve transfers for deposit {1} at this time, the store is not synced.", nameof(this.OnMessageReceivedAsync), payload.DepositId);
                 return;
             }
 
             if (transfer[0] == null)
             {
-                this.logger.LogDebug("{0}: Deposit {1} does not exist.", nameof(this.OnMessageReceivedAsync), payload.DepositId);
+                this.logger.LogWarning("{0}: Deposit {1} does not exist.", nameof(this.OnMessageReceivedAsync), payload.DepositId);
                 return;
             }
 
             if (transfer[0].Status != CrossChainTransferStatus.Partial)
             {
-                this.logger.LogDebug("{0}: Deposit {1} is {2}.", nameof(this.OnMessageReceivedAsync), payload.DepositId, transfer[0].Status);
+                this.logger.LogWarning("{0}: Deposit {1} is {2}.", nameof(this.OnMessageReceivedAsync), payload.DepositId, transfer[0].Status);
                 return;
             }
 
             if (transfer[0].PartialTransaction == null)
             {
-                this.logger.LogDebug("{0}: Deposit {1}, PartialTransaction not found.", nameof(this.OnMessageReceivedAsync), payload.DepositId);
+                this.logger.LogWarning("{0}: Deposit {1}, PartialTransaction not found.", nameof(this.OnMessageReceivedAsync), payload.DepositId);
                 return;
             }
 
@@ -128,7 +128,7 @@ namespace Stratis.Features.FederatedPeg
 
             if (signedTransaction == null)
             {
-                this.logger.LogDebug("{0}: Deposit {1}, signedTransaction not found.", nameof(this.OnMessageReceivedAsync), payload.DepositId);
+                this.logger.LogWarning("{0}: Deposit {1}, signedTransaction not found.", nameof(this.OnMessageReceivedAsync), payload.DepositId);
                 return;
             }
 

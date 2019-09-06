@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.Controllers
 
         protected virtual void OnRetry(Exception exception, TimeSpan delay)
         {
-            this.logger.LogDebug("Exception while calling API method: {0}. Retrying...", exception.ToString());
+            this.logger.LogWarning("Exception while calling API method: {0}. Retrying...", exception.ToString());
         }
     }
 

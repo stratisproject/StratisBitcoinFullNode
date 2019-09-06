@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             if (getHeadersPayload.BlockLocator.Blocks.Count > BlockLocator.MaxLocatorSize)
             {
-                this.logger.LogDebug("Peer '{0}' sent getheader with oversized locator, disconnecting.", peer.RemoteSocketEndpoint);
+                this.logger.LogWarning("Peer '{0}' sent getheader with oversized locator, disconnecting.", peer.RemoteSocketEndpoint);
 
                 peer.Disconnect("Peer sent getheaders with oversized locator");
 
@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Consensus
             // because that will slow down our own syncing process.
             if (this.InitialBlockDownloadState.IsInitialBlockDownload() && !peer.IsWhitelisted())
             {
-                this.logger.LogDebug("GetHeaders message from {0} was ignored because node is in IBD.", peer.PeerEndPoint);
+                this.logger.LogInfo("GetHeaders message from {0} was ignored because node is in IBD.", peer.PeerEndPoint);
                 this.logger.LogTrace("(-)[IGNORE_ON_IBD]");
                 return;
             }
@@ -304,7 +304,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, validationError);
 
-                this.logger.LogDebug("Headers are invalid. Peer was banned.");
+                this.logger.LogWarning("Headers are invalid. Peer was banned.");
                 this.logger.LogTrace("(-)[VALIDATION_FAILED]");
                 return;
             }
@@ -314,7 +314,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (this.cachedHeaders.Count > CacheSyncHeadersThreshold) // TODO when proven headers are implemented combine this with size threshold of N mb.
                 {
                     // Ignore this message because cache is full.
-                    this.logger.LogDebug("Cache is full. Headers ignored.");
+                    this.logger.LogInfo("Cache is full. Headers ignored.");
                     this.logger.LogTrace("(-)[CACHE_IS_FULL]");
                     return;
                 }
@@ -425,7 +425,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (headers[i].HashPrevBlock != headers[i - 1].GetHash())
                 {
-                    this.logger.LogDebug("Peer '{0}' presented non-consecutiveness hashes at position {1} with prev hash '{2}' not matching hash '{3}'.",
+                    this.logger.LogInfo("Peer '{0}' presented non-consecutiveness hashes at position {1} with prev hash '{2}' not matching hash '{3}'.",
                         peer.RemoteSocketEndpoint, i, headers[i].HashPrevBlock, headers[i - 1].GetHash());
 
                     validationError = "Peer presented nonconsecutive headers.";
@@ -484,22 +484,22 @@ namespace Stratis.Bitcoin.Consensus
             }
             catch (ConsensusRuleException exception)
             {
-                this.logger.LogDebug("Peer's header is invalid. Peer will be banned and disconnected. Error: {0}.", exception.ConsensusError);
+                this.logger.LogWarning("Peer's header is invalid. Peer will be banned and disconnected. Error: {0}.", exception.ConsensusError);
                 this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, $"Peer presented invalid header, error: {exception.ConsensusError}.");
             }
             catch (HeaderInvalidException)
             {
-                this.logger.LogDebug("Peer's header is invalid. Peer will be banned and disconnected.");
+                this.logger.LogWarning("Peer's header is invalid. Peer will be banned and disconnected.");
                 this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, $"Peer presented invalid header.");
             }
             catch (CheckpointMismatchException)
             {
-                this.logger.LogDebug("Peer's headers violated a checkpoint. Peer will be banned and disconnected.");
+                this.logger.LogWarning("Peer's headers violated a checkpoint. Peer will be banned and disconnected.");
                 this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer presented header that violates a checkpoint.");
             }
             catch (MaxReorgViolationException)
             {
-                this.logger.LogDebug("Peer violates max reorg. Peer will be banned and disconnected.");
+                this.logger.LogWarning("Peer violates max reorg. Peer will be banned and disconnected.");
                 this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer violates max reorg rule.");
             }
 
@@ -648,7 +648,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (inventory.Count > InvPayload.MaxInventorySize)
             {
-                this.logger.LogDebug("Peer sent oversize inventory message. Peer will be banned and disconnected.");
+                this.logger.LogWarning("Peer sent oversize inventory message. Peer will be banned and disconnected.");
                 this.PeerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer sent oversize inventory message.");
                 this.logger.LogTrace("(-)[OVERSIZE_INVENTORY]");
                 return;

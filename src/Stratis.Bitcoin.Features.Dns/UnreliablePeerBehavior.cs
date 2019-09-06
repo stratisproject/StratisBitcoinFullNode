@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Dns
                     // If it can't, disconnect from him and ban for few minutes
                     if (this.IsProvenHeaderActivated() && !this.CanServeProvenHeader(version))
                     {
-                        this.logger.LogDebug("Peer '{0}' has been banned because can't serve proven headers. Peer Version: {1}", peer.RemoteSocketEndpoint, version.Version);
+                        this.logger.LogWarning("Peer '{0}' has been banned because can't serve proven headers. Peer Version: {1}", peer.RemoteSocketEndpoint, version.Version);
                         this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Can't serve proven headers.");
                     }
                     break;

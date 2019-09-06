@@ -318,7 +318,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                 if (this.isBlocksOnlyMode)
                 {
-                    this.logger.LogDebug("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, peer.RemoteSocketEndpoint);
+                    this.logger.LogWarning("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, peer.RemoteSocketEndpoint);
                     continue;
                 }
 
@@ -371,7 +371,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // Stop processing the transaction early if we are in blocks only mode.
             if (this.isBlocksOnlyMode)
             {
-                this.logger.LogDebug("Transaction sent in violation of protocol from peer '{0}'.", peer.RemoteSocketEndpoint);
+                this.logger.LogWarning("Transaction sent in violation of protocol from peer '{0}'.", peer.RemoteSocketEndpoint);
                 this.logger.LogTrace("(-)[BLOCKSONLY]");
                 return;
             }

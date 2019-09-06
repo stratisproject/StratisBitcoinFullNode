@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
             catch (Exception e)
             {
-                this.logger.LogDebug("Exception during deserialization: '{0}'.", e.ToString());
+                this.logger.LogWarning("Exception during deserialization: '{0}'.", e.ToString());
                 this.logger.LogTrace("(-)[DESERIALIZING_EXCEPTION]");
 
                 PoAConsensusErrors.VotingDataInvalidFormat.Throw();

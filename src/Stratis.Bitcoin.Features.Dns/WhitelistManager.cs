@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.Dns
             {
                 if (this.peerBanning.IsBanned(whitelistEntry.Endpoint))
                 {
-                    this.logger.LogDebug("{0}:{1} is banned, therefore removing from masterfile.", whitelistEntry.Endpoint.Address, whitelistEntry.Endpoint.Port);
+                    this.logger.LogInfo("{0}:{1} is banned, therefore removing from masterfile.", whitelistEntry.Endpoint.Address, whitelistEntry.Endpoint.Port);
                     continue;
                 }
 

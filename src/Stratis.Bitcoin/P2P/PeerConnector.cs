@@ -219,19 +219,19 @@ namespace Stratis.Bitcoin.P2P
         {
             if (this.selfEndpointTracker.IsSelf(peerAddress.Endpoint))
             {
-                this.logger.LogDebug("Connect aborted: {0} is self.", peerAddress.Endpoint);
+                this.logger.LogInfo("Connect aborted: {0} is self.", peerAddress.Endpoint);
                 return;
             }
 
             if (this.IsPeerConnected(peerAddress.Endpoint))
             {
-                this.logger.LogDebug("Connect aborted: {0} is already connected.", peerAddress.Endpoint);
+                this.logger.LogInfo("Connect aborted: {0} is already connected.", peerAddress.Endpoint);
                 return;
             }
 
             if (peerAddress.IsBanned(this.dateTimeProvider.GetUtcNow()))
             {
-                this.logger.LogDebug("Connect aborted: {0} is banned until {1}.", peerAddress.Endpoint, peerAddress.BanUntil);
+                this.logger.LogInfo("Connect aborted: {0} is banned until {1}.", peerAddress.Endpoint, peerAddress.BanUntil);
                 return;
             }
 
@@ -262,20 +262,20 @@ namespace Stratis.Bitcoin.P2P
                 }
                 else
                 {
-                    this.logger.LogDebug("Peer {0} connection timeout.", peerAddress.Endpoint);
+                    this.logger.LogInfo("Peer {0} connection timeout.", peerAddress.Endpoint);
                     peerAddress.SetHandshakeAttempted(this.dateTimeProvider.GetUtcNow());
                     peer?.Disconnect("Connection timeout");
                 }
             }
             catch (NBitcoin.Protocol.ProtocolException)
             {
-                this.logger.LogDebug("Handshake rejected by peer '{0}'.", peerAddress.Endpoint);
+                this.logger.LogWarning("Handshake rejected by peer '{0}'.", peerAddress.Endpoint);
                 peerAddress.SetHandshakeAttempted(this.dateTimeProvider.GetUtcNow());
                 peer?.Disconnect("Error while handshaking");
             }
             catch (Exception exception)
             {
-                this.logger.LogDebug("Exception occurred while connecting: {0}", exception is SocketException ? exception.Message : exception.ToString());
+                this.logger.LogWarning("Exception occurred while connecting: {0}", exception is SocketException ? exception.Message : exception.ToString());
                 peerAddress.SetHandshakeAttempted(this.dateTimeProvider.GetUtcNow());
                 peer?.Disconnect("Error while connecting", exception);
             }

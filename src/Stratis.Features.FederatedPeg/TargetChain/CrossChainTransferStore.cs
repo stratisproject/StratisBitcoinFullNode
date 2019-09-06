@@ -491,7 +491,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                                             if (!this.ValidateTransaction(transaction))
                                             {
-                                                this.logger.LogDebug("Suspending transfer for deposit '{0}' to retry invalid transaction later.", deposit.Id);
+                                                this.logger.LogInfo("Suspending transfer for deposit '{0}' to retry invalid transaction later.", deposit.Id);
 
                                                 this.federationWalletManager.RemoveWithdrawalTransactions(deposit.Id);
                                                 haveSuspendedTransfers = true;
@@ -606,7 +606,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                         if (transfer == null)
                         {
-                            this.logger.LogDebug("FAILED ValidateCrossChainTransfers : {0}", depositId);
+                            this.logger.LogWarning("FAILED ValidateCrossChainTransfers : {0}", depositId);
 
                             this.logger.LogTrace("(-)[MERGE_NOT_FOUND]:null");
                             return null;
@@ -628,7 +628,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                             // We will finish dealing with the request here if an invalid signature is sent.
                             // The incoming partial transaction will not have the same inputs / outputs as what our node has generated
                             // so would have failed CrossChainTransfer.TemplatesMatch() and leave through here.
-                            this.logger.LogDebug("FAILED to combineSignatures : {0}", transfer.DepositTransactionId);
+                            this.logger.LogInfo("FAILED to combineSignatures : {0}", transfer.DepositTransactionId);
 
                             this.logger.LogTrace("(-)[MERGE_UNCHANGED]");
                             return transfer.PartialTransaction;
@@ -903,7 +903,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 // Check if the federation wallet's tip is on chain, if not exit.
                 if (this.chainIndexer.GetHeader(federationWalletTip.Hash) == null)
                 {
-                    this.logger.LogDebug("Synchronization failed as the federation wallet tip is not on chain; {0}='{1}', {2}='{3}'", nameof(this.chainIndexer.Tip), this.chainIndexer.Tip, nameof(federationWalletTip), federationWalletTip);
+                    this.logger.LogWarning("Synchronization failed as the federation wallet tip is not on chain; {0}='{1}', {2}='{3}'", nameof(this.chainIndexer.Tip), this.chainIndexer.Tip, nameof(federationWalletTip), federationWalletTip);
                     this.logger.LogTrace("(-)[FED_WALLET_TIP_NOT_ONCHAIN]:false");
                     return false;
                 }

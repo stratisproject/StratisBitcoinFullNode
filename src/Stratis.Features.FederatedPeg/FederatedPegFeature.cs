@@ -300,7 +300,7 @@ namespace Stratis.Features.FederatedPeg
             {
                 benchLog.AppendLine("--- Pending Withdrawals ---");
                 benchLog.AppendLine("Failed to retrieve data");
-                this.logger.LogDebug("Exception occurred while getting pending withdrawals: '{0}'.", exception.ToString());
+                this.logger.LogWarning("Exception occurred while getting pending withdrawals: '{0}'.", exception.ToString());
             }
 
             List<WithdrawalModel> completedWithdrawals = this.withdrawalHistoryProvider.GetHistory(TransfersToDisplay);

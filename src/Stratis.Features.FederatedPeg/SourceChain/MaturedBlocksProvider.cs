@@ -95,7 +95,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
                 {
                     if (chainedHeaderBlock?.Block?.Transactions == null)
                     {
-                        this.logger.LogDebug(UnableToRetrieveBlockDataFromConsensusMessage, chainedHeaderBlock.ChainedHeader);
+                        this.logger.LogWarning(UnableToRetrieveBlockDataFromConsensusMessage, chainedHeaderBlock.ChainedHeader);
                         this.logger.LogTrace("(-)[BLOCKDATA_MISSING_FROM_CONSENSUS]");
                         return SerializableResult<List<MaturedBlockDepositsModel>>.Ok(maturedBlockDepositModels, string.Format(UnableToRetrieveBlockDataFromConsensusMessage, chainedHeaderBlock.ChainedHeader));
                     }

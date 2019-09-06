@@ -139,7 +139,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                 if (oldTransaction.GetHash() == newTransaction.GetHash())
                 {
                     // Signing didn't work if the hash is still the same
-                    this.logger.LogDebug("Signing failed.");
+                    this.logger.LogWarning("Signing failed.");
                     return ConsolidationSignatureResult.Failed();
                 }
 
@@ -200,7 +200,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                     // Something went wrong building transaction - start over. We will want to build them all from scratch in case wallet has changed state.
                     if (transaction == null)
                     {
-                        this.logger.LogDebug("Failure building specific consolidating transaction.");
+                        this.logger.LogWarning("Failure building specific consolidating transaction.");
                         return null;
                     }
 
@@ -334,7 +334,7 @@ namespace Stratis.Features.FederatedPeg.InputConsolidation
                     if (!this.walletManager.ValidateConsolidatingTransaction(cTransaction.PartialTransaction))
                     {
                         // If we find an invalid one, everything will need redoing!
-                        this.logger.LogDebug(
+                        this.logger.LogWarning(
                             "Consolidation transaction {0} failed validation, resetting InputConsolidator",
                             cTransaction.PartialTransaction.GetHash());
                         this.ConsolidationTransactions = null;

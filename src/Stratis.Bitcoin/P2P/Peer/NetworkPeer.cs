@@ -447,7 +447,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception ex)
             {
-                this.logger.LogDebug("Exception occurred while connecting to peer '{0}': {1}", this.PeerEndPoint, ex is SocketException ? ex.Message : ex.ToString());
+                this.logger.LogInfo("Exception occurred while connecting to peer '{0}': {1}", this.PeerEndPoint, ex is SocketException ? ex.Message : ex.ToString());
 
                 this.DisconnectReason = new NetworkPeerDisconnectReason()
                 {
@@ -517,7 +517,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch
             {
-                this.logger.LogDebug("Exception occurred while processing a message from the peer. Connection has been closed and message won't be processed further.");
+                this.logger.LogWarning("Exception occurred while processing a message from the peer. Connection has been closed and message won't be processed further.");
                 this.logger.LogTrace("(-)[EXCEPTION_PROCESSING]");
                 return;
             }
@@ -621,12 +621,12 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     if (ex.CancellationToken == cancellationSource.Token)
                     {
-                        this.logger.LogDebug("Remote peer hasn't responded within 10 seconds of the handshake completion, dropping connection.");
+                        this.logger.LogInfo("Remote peer hasn't responded within 10 seconds of the handshake completion, dropping connection.");
                         this.Disconnect("Handshake timeout");
                     }
                     else
                     {
-                        this.logger.LogDebug("Handshake problem, dropping connection. Problem: '{0}'.", ex.Message);
+                        this.logger.LogWarning("Handshake problem, dropping connection. Problem: '{0}'.", ex.Message);
                         this.Disconnect($"Handshake problem, reason: '{ex.Message}'.");
                     }
 
@@ -635,7 +635,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
                 catch (Exception ex)
                 {
-                    this.logger.LogDebug("Exception occurred: {0}", ex.ToString());
+                    this.logger.LogWarning("Exception occurred: {0}", ex.ToString());
 
                     this.Disconnect("Handshake exception", ex);
 
@@ -695,7 +695,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (OperationCanceledException)
             {
-                this.logger.LogDebug("Connection to '{0}' cancelled.", this.PeerEndPoint);
+                this.logger.LogWarning("Connection to '{0}' cancelled.", this.PeerEndPoint);
             }
             catch (Exception ex)
             {
@@ -764,7 +764,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                             if (versionPayload.Version < ProtocolVersion.MIN_PEER_PROTO_VERSION)
                             {
-                                this.logger.LogDebug("Outdated version {0} received, disconnecting peer.", versionPayload.Version);
+                                this.logger.LogInfo("Outdated version {0} received, disconnecting peer.", versionPayload.Version);
 
                                 this.Disconnect("Outdated version");
                                 this.logger.LogTrace("(-)[OUTDATED]");

@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.P2P
                 {
                     peer.UnBan();
 
-                    this.logger.LogDebug("{0} no longer banned.", peer.Endpoint);
+                    this.logger.LogInfo("{0} no longer banned.", peer.Endpoint);
                 }
 
                 // Reset the peer if the attempt threshold has been reached and the attempt window has lapsed.

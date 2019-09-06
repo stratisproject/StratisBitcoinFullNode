@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Connection
                 peerAddress.BanUntil = this.dateTimeProvider.GetUtcNow().AddSeconds((banTimeSeconds == 0) ? this.connectionManager.ConnectionSettings.BanTimeSeconds : banTimeSeconds);
                 peerAddress.BanReason = reason;
 
-                this.logger.LogDebug("Peer '{0}' banned for reason '{1}', until '{2}'.", endpoint, reason, peerAddress.BanUntil.ToString());
+                this.logger.LogWarning("Peer '{0}' banned for reason '{1}', until '{2}'.", endpoint, reason, peerAddress.BanUntil.ToString());
             }
         }
 

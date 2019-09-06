@@ -1200,7 +1200,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     }
                     catch (NotSupportedException ex)
                     {
-                        this.logger.LogDebug("Exception occurred: {0}", ex.ToString());
+                        this.logger.LogWarning("Exception occurred: {0}", ex.ToString());
                         this.logger.LogTrace("(-)[EXCEPTION]");
 
                         if (ex.Message == "Unknown")

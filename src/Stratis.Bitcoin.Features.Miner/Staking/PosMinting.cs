@@ -297,7 +297,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     // Miner exceptions should be ignored. It means that the miner
                     // possibly mined a block that was not accepted by peers or is even invalid,
                     // but it should not halted the staking operation.
-                    this.logger.LogDebug("Miner exception occurred in miner loop: {0}", me.ToString());
+                    this.logger.LogWarning("Miner exception occurred in miner loop: {0}", me.ToString());
                     this.rpcGetStakingInfoModel.Errors = me.Message;
                 }
                 catch (ConsensusErrorException cee)
@@ -305,7 +305,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     // All consensus exceptions should be ignored. It means that the miner
                     // run into problems while constructing block or verifying it
                     // but it should not halted the staking operation.
-                    this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
+                    this.logger.LogWarning("Consensus error exception occurred in miner loop: {0}", cee.ToString());
                     this.rpcGetStakingInfoModel.Errors = cee.Message;
                 }
                 catch (ConsensusException ce)
@@ -313,7 +313,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     // All consensus exceptions should be ignored. It means that the miner
                     // run into problems while constructing block or verifying it
                     // but it should not halted the staking operation.
-                    this.logger.LogDebug("Consensus exception occurred in miner loop: {0}", ce.ToString());
+                    this.logger.LogWarning("Consensus exception occurred in miner loop: {0}", ce.ToString());
                     this.rpcGetStakingInfoModel.Errors = ce.Message;
                 }
                 catch (Exception ex)
@@ -882,7 +882,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     }
                     catch (ConsensusErrorException cex)
                     {
-                        context.Logger.LogDebug("Checking kernel failed with exception: {0}.", cex.Message);
+                        context.Logger.LogWarning("Checking kernel failed with exception: {0}.", cex.Message);
                         stopWork = true;
                     }
 

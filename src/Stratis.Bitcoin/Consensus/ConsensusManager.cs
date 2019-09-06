@@ -522,7 +522,7 @@ namespace Stratis.Bitcoin.Consensus
                             }
                         }
 
-                        this.logger.LogDebug("{0} peers will be banned.", peersToBan.Count);
+                        this.logger.LogWarning("{0} peers will be banned.", peersToBan.Count);
 
                         foreach (INetworkPeer peer in peersToBan)
                             this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, connectBlocksResult.BanDurationSeconds, connectBlocksResult.BanReason);

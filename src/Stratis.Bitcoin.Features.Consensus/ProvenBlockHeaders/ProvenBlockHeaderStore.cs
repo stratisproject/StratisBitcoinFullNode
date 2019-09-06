@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                     if (tip == null)
                     {
-                        this.logger.LogDebug("[TIP_NOT_FOUND]:{0}", highestHeader);
+                        this.logger.LogWarning("[TIP_NOT_FOUND]:{0}", highestHeader);
                         throw new ProvenBlockHeaderException($"{highestHeader} was not found in the store.");
                     }
                 }

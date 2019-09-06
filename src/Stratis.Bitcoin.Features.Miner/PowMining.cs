@@ -131,12 +131,12 @@ namespace Stratis.Bitcoin.Features.Miner
                 catch (MinerException me)
                 {
                     // Block not accepted by peers or invalid. Should not halt mining.
-                    this.logger.LogDebug("Miner exception occurred in miner loop: {0}", me.ToString());
+                    this.logger.LogWarning("Miner exception occurred in miner loop: {0}", me.ToString());
                 }
                 catch (ConsensusErrorException cee)
                 {
                     // Issues constructing block or verifying it. Should not halt mining.
-                    this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
+                    this.logger.LogWarning("Consensus error exception occurred in miner loop: {0}", cee.ToString());
                 }
                 catch
                 {

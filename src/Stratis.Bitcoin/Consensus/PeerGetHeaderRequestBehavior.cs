@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (this.getHeaderRequestCount >= GetHeaderRequestCountThresholdSeconds)
                 {
                     this.peerBanning.BanAndDisconnectPeer(this.AttachedPeer.PeerEndPoint, BanDurationSeconds, $"Banned via rate limiting for {BanDurationSeconds} seconds.");
-                    this.logger.LogDebug("{0} banned via rate limiting for {1} seconds.", this.AttachedPeer.PeerEndPoint, BanDurationSeconds);
+                    this.logger.LogWarning("{0} banned via rate limiting for {1} seconds.", this.AttachedPeer.PeerEndPoint, BanDurationSeconds);
                 }
             }
             else

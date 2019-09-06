@@ -510,7 +510,7 @@ namespace Stratis.Bitcoin.Consensus
                     if ((fork != null) && (fork.Height < finalizedHeight))
                     {
                         peerIdsToResync.Add(peerId);
-                        this.logger.LogDebug("Peer with Id {0} claims a chain that violates max reorg, its tip is '{1}' and the last finalized block height is {2}.", peerId, peerTip, finalizedHeight);
+                        this.logger.LogWarning("Peer with Id {0} claims a chain that violates max reorg, its tip is '{1}' and the last finalized block height is {2}.", peerId, peerTip, finalizedHeight);
                     }
                 }
             }
@@ -1178,12 +1178,12 @@ namespace Stratis.Bitcoin.Consensus
 
                     if (fork.Height < finalizedHeight)
                     {
-                        this.logger.LogDebug("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}' and the last finalized block height is {3}.", reorgLength, maxReorgLength, consensusTip, finalizedHeight);
+                        this.logger.LogWarning("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}' and the last finalized block height is {3}.", reorgLength, maxReorgLength, consensusTip, finalizedHeight);
                         this.logger.LogTrace("(-)[MAX_REORG_VIOLATION]");
                         throw new MaxReorgViolationException();
                     }
 
-                    this.logger.LogDebug("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
+                    this.logger.LogInfo("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
                 }
             }
         }

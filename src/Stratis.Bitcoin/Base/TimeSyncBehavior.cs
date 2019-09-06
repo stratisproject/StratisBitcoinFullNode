@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.Base
                     }
                     else this.logger.LogDebug("Sample from peer '{0}' is already included.", peerAddress);
                 }
-                else this.logger.LogDebug("Time sync feature is switched off.");
+                else this.logger.LogWarning("Time sync feature is switched off.");
             }
 
             if (startWarningLoopNow)
@@ -447,9 +447,9 @@ namespace Stratis.Bitcoin.Base
                         TimeSpan timeOffset = version.Timestamp - this.dateTimeProvider.GetTimeOffset();
                         if (timeOffset != null) this.state.AddTimeData(address, timeOffset, peer.Inbound);
                     }
-                    else this.logger.LogDebug("Node '{0}' does not have an initialized time offset.", peer.RemoteSocketEndpoint);
+                    else this.logger.LogWarning("Node '{0}' does not have an initialized time offset.", peer.RemoteSocketEndpoint);
                 }
-                else this.logger.LogDebug("Message received from unknown node's address.");
+                else this.logger.LogWarning("Message received from unknown node's address.");
             }
 
             return Task.CompletedTask;

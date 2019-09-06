@@ -117,14 +117,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
             if (matureBlockDepositsResult == null)
             {
-                this.logger.LogDebug("Failed to fetch matured block deposits from counter chain node; {0} didn't respond.", this.federationGatewayClient.EndpointUrl);
+                this.logger.LogWarning("Failed to fetch matured block deposits from counter chain node; {0} didn't respond.", this.federationGatewayClient.EndpointUrl);
                 this.logger.LogTrace("(-)[COUNTERCHAIN_NODE_NO_RESPONSE]:true");
                 return true;
             }
 
             if (matureBlockDepositsResult.Value == null)
             {
-                this.logger.LogDebug("Failed to fetch matured block deposits from counter chain node; {0} didn't reply with any deposits; Message: {1}", this.federationGatewayClient.EndpointUrl, matureBlockDepositsResult.Message ?? "none");
+                this.logger.LogWarning("Failed to fetch matured block deposits from counter chain node; {0} didn't reply with any deposits; Message: {1}", this.federationGatewayClient.EndpointUrl, matureBlockDepositsResult.Message ?? "none");
                 this.logger.LogTrace("(-)[COUNTERCHAIN_NODE_SENT_NO_DEPOSITS]:true");
                 return true;
             }

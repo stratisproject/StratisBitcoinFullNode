@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception e)
             {
-                this.logger.LogDebug("Exception occurred: {0}", e.ToString());
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 throw;
             }
         }
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                     if (!connectionAttempt.successful)
                     {
                         this.signals.Publish(new PeerConnectionAttemptFailed(true, (IPEndPoint)tcpClient.Client.RemoteEndPoint, connectionAttempt.reason));
-                        this.logger.LogDebug("Connection from client '{0}' was rejected and will be closed.", tcpClient.Client.RemoteEndPoint);
+                        this.logger.LogWarning("Connection from client '{0}' was rejected and will be closed.", tcpClient.Client.RemoteEndPoint);
                         tcpClient.Close();
                         continue;
                     }
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (Exception e)
             {
-                this.logger.LogDebug("Exception occurred: {0}", e.ToString());
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
             }
         }
 

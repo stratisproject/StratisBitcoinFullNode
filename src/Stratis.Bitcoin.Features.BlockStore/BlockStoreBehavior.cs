@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             if (getBlocksPayload.BlockLocators.Blocks.Count > BlockLocator.MaxLocatorSize)
             {
-                this.logger.LogDebug("Peer '{0}' sent getblocks with oversized locator, disconnecting.", peer.RemoteSocketEndpoint);
+                this.logger.LogWarning("Peer '{0}' sent getblocks with oversized locator, disconnecting.", peer.RemoteSocketEndpoint);
 
                 peer.Disconnect("Peer sent getblocks with oversized locator");
 

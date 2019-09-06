@@ -193,7 +193,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             else
             {
-                this.logger.LogDebug("Exception occurred: {0}", transactionEntry.ErrorMessage);
+                this.logger.LogWarning("Exception occurred: {0}", transactionEntry.ErrorMessage);
                 this.logger.LogTrace("(-)[EXCEPTION]");
             }
         }
@@ -339,7 +339,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             catch (Exception ex)
             {
-                this.logger.LogDebug("Failed to verify message: {0}", ex.ToString());
+                this.logger.LogWarning("Failed to verify message: {0}", ex.ToString());
                 this.logger.LogTrace("(-)[EXCEPTION]");
             }
             return result;
@@ -362,8 +362,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             catch (Exception ex)
             {
-                this.logger.LogDebug("Exception occurred: {0}", ex.ToString());
-                this.logger.LogTrace("(-)[EXCEPTION]");
+                this.logger.LogWarning("Exception occurred: {0}", ex.ToString());
+                this.logger.LogTrace("[EXCEPTION]");
                 throw new SecurityException(ex.Message);
             }
 
@@ -427,7 +427,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             catch (NotSupportedException ex)
             {
-                this.logger.LogDebug("Exception occurred: {0}", ex.ToString());
+                this.logger.LogWarning("Exception occurred: {0}", ex.ToString());
                 this.logger.LogTrace("(-)[EXCEPTION]");
 
                 if (ex.Message == "Unknown")

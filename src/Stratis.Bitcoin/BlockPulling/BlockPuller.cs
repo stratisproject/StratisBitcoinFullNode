@@ -267,7 +267,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
                     if ((peer == null) || !this.networkPeerRequirement.Check(peer.PeerVersion, peer.Inbound, out reason))
                     {
-                        this.logger.LogDebug("Peer Id {0} does not meet requirements, reason: {1}", peerIdToBehavior.Key, reason);
+                        this.logger.LogWarning("Peer Id {0} does not meet requirements, reason: {1}", peerIdToBehavior.Key, reason);
                         peerIdsToRemove.Add(peerIdToBehavior.Key);
                     }
                 }
@@ -335,7 +335,7 @@ namespace Stratis.Bitcoin.BlockPulling
                         this.logger.LogDebug("New peer with ID {0} and tip '{1}' was added.", peerId, newTip);
                     }
                     else
-                        this.logger.LogDebug("Peer ID {0} was discarded since he doesn't support the requirements, reason: {1}", peerId, reason);
+                        this.logger.LogWarning("Peer ID {0} was discarded since he doesn't support the requirements, reason: {1}", peerId, reason);
                 }
             }
         }
@@ -597,7 +597,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
                 if (!success)
                 {
-                    this.logger.LogDebug("Failed to ask peer {0} for {1} blocks.", peerId, hashes.Count);
+                    this.logger.LogWarning("Failed to ask peer {0} for {1} blocks.", peerId, hashes.Count);
                     this.PeerDisconnected(peerId);
                 }
             }
@@ -632,7 +632,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
             if (peerBehaviors.Count == 0)
             {
-                this.logger.LogDebug("There are no peers that can participate in download job distribution! Job ID {0} failed.", downloadJob.Id);
+                this.logger.LogWarning("There are no peers that can participate in download job distribution! Job ID {0} failed.", downloadJob.Id);
                 jobFailed = true;
             }
 
@@ -690,7 +690,7 @@ namespace Stratis.Bitcoin.BlockPulling
                             continue;
 
                         jobFailed = true;
-                        this.logger.LogDebug("Job {0} failed because there is no peer claiming header '{1}'.", downloadJob.Id, header);
+                        this.logger.LogWarning("Job {0} failed because there is no peer claiming header '{1}'.", downloadJob.Id, header);
                     }
                 }
             }
@@ -750,7 +750,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
                     int assignedCount = this.assignedHeadersByPeerId[peerId].Count;
 
-                    this.logger.LogDebug("Peer {0} failed to deliver {1} blocks from which some were important.", peerId, assignedCount);
+                    this.logger.LogWarning("Peer {0} failed to deliver {1} blocks from which some were important.", peerId, assignedCount);
 
                     lock (this.peerLock)
                     {

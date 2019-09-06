@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     bool success = await this.mempoolValidator.AcceptToMemoryPool(state, transaction);
 
                     if (!success)
-                        this.logger.LogDebug("Transaction with hash '{0}' failed to go back into mempool on block disconnect.", transaction.GetHash());
+                        this.logger.LogWarning("Transaction with hash '{0}' failed to go back into mempool on block disconnect.", transaction.GetHash());
                     else
                         this.logger.LogDebug("Transaction with hash '{0}' accepted back to mempool.", transaction.GetHash());
                 }
