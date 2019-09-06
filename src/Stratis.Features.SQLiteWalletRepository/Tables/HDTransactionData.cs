@@ -62,16 +62,19 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 conn.Execute(command);
         }
 
-        internal static IEnumerable<HDTransactionData> GetAllTransactions(DBConnection conn, int walletId, int accountIndex, int addressType, int addressIndex)
+        internal static IEnumerable<HDTransactionData> GetAllTransactions(DBConnection conn, int walletId, int? accountIndex, int? addressType, int? addressIndex, int limit = int.MaxValue, HDTransactionData prev = null)
         {
             return conn.Query<HDTransactionData>($@"
                 SELECT  *
                 FROM    HDTransactionData
-                WHERE   WalletId = {walletId}
-                AND     AccountIndex = {accountIndex}
-                AND     AddressType = {addressType}
-                AND     AddressIndex = {addressIndex}
-                ORDER   BY OutputTxTime");
+                WHERE   WalletId = {walletId} {((accountIndex == null) ? $@"
+                AND     AccountIndex IN (SELECT AccountIndex FROM HDAccount WHERE WalletId = {walletId})" : $@"
+                AND     AccountIndex = {accountIndex}")} {((addressType == null) ? "" : $@"
+                AND     AddressType = {addressType}")} {((addressIndex == null) ? "" : $@"
+                AND     AddressIndex = {addressIndex}")} {((prev == null) ? "" : $@"
+                AND 	(OutputTxTime > {prev.OutputTxTime} OR (OutputTxTime = { prev.OutputTxTime} AND OutputIndex > {prev.OutputIndex}))")}
+                ORDER   BY WalletId, AccountIndex, OutputTxTime, OutputIndex
+                LIMIT   {limit}");
         }
 
         internal static IEnumerable<HDTransactionData> GetSpendableTransactions(DBConnection conn, int walletId, int accountIndex, int currentChainHeight, long coinbaseMaturity, int confirmations = 0)
@@ -111,6 +114,30 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AND    (AddressType, AddressIndex) IN (SELECT {address?.type}, {address?.index}")}");
 
             return (balanceData.TotalBalance, balanceData.ConfirmedBalance);
+        }
+
+        // Finds account transactions acting as inputs to other wallet transactions - i.e. not a complete list of transaction inputs.
+        internal static IEnumerable<HDTransactionData> FindTransactionInputs(DBConnection conn, int walletId, int transactionTime, string transactionId)
+        {
+            return conn.Query<HDTransactionData>($@"
+                SELECT  *
+                FROM    HDTransactionData
+                WHERE   WalletId = {walletId}
+                AND     AccountIndex IN (SELECT AccountIndex FROM HDAccount WHERE WalletId = {walletId})
+                AND     SpendTxTime = {transactionTime}
+                AND     SpendTxId = '{transactionId}'");
+        }
+
+        // Finds the wallet transaction data related to a transaction - i.e. not a complete list of transaction outputs.
+        internal static IEnumerable<HDTransactionData> FindTransactionOutputs(DBConnection conn, int walletId, int transactionTime, string transactionId)
+        {
+            return conn.Query<HDTransactionData>($@"
+                SELECT  *
+                FROM    HDTransactionData
+                WHERE   WalletId = {walletId}
+                AND     AccountIndex IN (SELECT AccountIndex FROM HDAccount WHERE WalletId = {walletId})
+                AND     OutputTxTime = {transactionTime}
+                AND     OutputTxId = '{transactionId}'");
         }
     }
 }

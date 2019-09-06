@@ -13,7 +13,7 @@ namespace Stratis.Features.SQLiteWalletRepository.External
         bool Contains(Script scriptPubKey, out AddressIdentifier address);
     }
 
-    public interface IWalletAddressLookup
+    public interface IWalletAddressLookup : IWalletAddressReadOnlyLookup
     {
         /// <summary>
         /// Call this after all tentative addresses have been committed to the wallet.

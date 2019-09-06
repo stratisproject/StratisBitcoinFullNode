@@ -781,11 +781,11 @@ namespace Stratis.Features.SQLiteWalletRepository
                     Confirmations = (currentChainHeight + 1) - transactionData.OutputBlockHeight,
                     Address = this.ToHdAddress(new HDAddress()
                     {
-                            AccountIndex = transactionData.AccountIndex,
-                            AddressIndex = transactionData.AddressIndex,
-                            AddressType = (int)transactionData.AddressType,
-                            PubKey = transactionData.ScriptPubKey,
-                            ScriptPubKey = transactionData.RedeemScript
+                        AccountIndex = transactionData.AccountIndex,
+                        AddressIndex = transactionData.AddressIndex,
+                        AddressType = (int)transactionData.AddressType,
+                        PubKey = transactionData.ScriptPubKey,
+                        ScriptPubKey = transactionData.RedeemScript
                     })
                 };
             }
@@ -812,6 +812,35 @@ namespace Stratis.Features.SQLiteWalletRepository
         public IWalletTransactionReadOnlyLookup GetWalletTransactionLookup(string walletName)
         {
             return (IWalletTransactionReadOnlyLookup)this.Wallets[walletName].TransactionsOfInterest;
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<TransactionData> GetAllTransactions(string walletName, string accountName, int? addressType, int? addressIndex, int limit = int.MaxValue, TransactionData prev = null)
+        {
+            DBConnection conn = this.GetConnection(walletName);
+            int walletId;
+            int? accountIndex;
+
+            if (accountName == null)
+            {
+                HDWallet wallet = conn.GetWalletByName(walletName);
+                walletId = wallet.WalletId;
+                accountIndex = null;
+            }
+            else
+            {
+                HDAccount account = conn.GetAccountByName(walletName, accountName);
+                walletId = account.WalletId;
+                accountIndex = account.AccountIndex;
+            }
+
+            var prevTran = (prev == null) ? null : new HDTransactionData() {
+                OutputTxTime = (int)prev.CreationTime.ToUnixTimeSeconds(),
+                OutputIndex = prev.Index
+            };
+
+            foreach (HDTransactionData tranData in HDTransactionData.GetAllTransactions(conn, walletId, accountIndex, addressType, addressIndex, limit, prevTran))
+                yield return this.ToTransactionData(tranData, new HDPayment[] { });
         }
 
         /// <inheritdoc />
@@ -857,6 +886,26 @@ namespace Stratis.Features.SQLiteWalletRepository
                     History = history
                 };
             }
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<TransactionData> GetTransactionInputs(string walletName, DateTimeOffset transactionTime, uint256 transactionId)
+        {
+            DBConnection conn = this.GetConnection(walletName);
+            HDWallet wallet = conn.GetWalletByName(walletName);
+
+            foreach (HDTransactionData tranData in HDTransactionData.FindTransactionInputs(conn, wallet.WalletId, (int)transactionTime.ToUnixTimeSeconds(), transactionId.ToString()))
+                yield return this.ToTransactionData(tranData, new HDPayment[] { });
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<TransactionData> GetTransactionOutputs(string walletName, DateTimeOffset transactionTime, uint256 transactionId)
+        {
+            DBConnection conn = this.GetConnection(walletName);
+            HDWallet wallet = conn.GetWalletByName(walletName);
+
+            foreach (HDTransactionData tranData in HDTransactionData.FindTransactionOutputs(conn, wallet.WalletId, (int)transactionTime.ToUnixTimeSeconds(), transactionId.ToString()))
+                yield return this.ToTransactionData(tranData, new HDPayment[] { });
         }
     }
 }
