@@ -129,11 +129,32 @@ function Shutdown-Dashboard
         }
 }
 
+function Get-Median($numberSeries)
+{
+    $sortedNumbers = @($numberSeries | Sort-Object)
+    if ( $numberSeries.Count % 2 ) 
+	{
+	    # Odd, pick the middle
+        $sortedNumbers[(($sortedNumbers.Count - 1) / 2)]
+    } 
+		Else 
+		{
+			# Even, average the middle two
+			($sortedNumbers[($sortedNumbers.Count / 2)] + $sortedNumbers[($sortedNumbers.Count / 2) - 1]) / 2
+		}
+}
+
 function Check-TimeDifference
 {
     Write-Host "Checking UTC Time Difference" -ForegroundColor Cyan
-    $timeDif = New-TimeSpan -Start (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ") -End ( Invoke-WebRequest http://worldtimeapi.org/api/timezone/UTC | ConvertFrom-Json | Select-Object -ExpandProperty utc_datetime ) | Select-Object -ExpandProperty TotalSeconds
-    if ( $timeDif -gt 8 )
+    $timeDifSamples = @([int16]::MaxValue,[int16]::MaxValue,[int16]::MaxValue)
+    $timeDifSamples[0] = New-TimeSpan -Start (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ") -End ( Invoke-WebRequest http://worldtimeapi.org/api/timezone/UTC | ConvertFrom-Json | Select-Object -ExpandProperty utc_datetime ) | Select-Object -ExpandProperty TotalSeconds
+    $timeDifSamples[1] = New-TimeSpan -Start (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ") -End ( Invoke-WebRequest http://worldtimeapi.org/api/timezone/UTC | ConvertFrom-Json | Select-Object -ExpandProperty utc_datetime ) | Select-Object -ExpandProperty TotalSeconds
+    $timeDifSamples[2] = New-TimeSpan -Start (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffffffZ") -End ( Invoke-WebRequest http://worldtimeapi.org/api/timezone/UTC | ConvertFrom-Json | Select-Object -ExpandProperty utc_datetime ) | Select-Object -ExpandProperty TotalSeconds
+
+    $timeDif = Get-Median -numberSeries $timeDifSamples
+
+    if ( $timeDif -gt 2 )
     {
         Write-Host "ERROR: System Time is not accurate. Currently $timeDif seconds diffence with actual time! Correct Time & Date and restart" -ForegroundColor Red
         Start-Sleep 30
@@ -173,18 +194,20 @@ if ( $multiSigMnemonic -ne $null )
 #Check for Completion
 if ( $NodeType -eq "50K" )
 {
-    if ( -not ( $multiSigPassword ) ) { $varError = 1 }
+    if ( -not ( $multiSigPassword ) ) 
+	{ 
+		$varError = $true 
+	}
 }
-    Else
-    {
-        if ( -not ( $miningPassword ) ) { $varError = 1 }
-    }
+	ElseIf ( -not ( $miningPassword ) ) 
+	{ 
+		$varError = $true 
+	}
 
-if ( -not ( $mainChainDataDir )  ) { $varError = 1 }
-if ( -not ( $sideChainDataDir )  ) { $varError = 1 }
-if ( -not ( Test-Path $sideChainDataDir/federationKey.dat ) ) { $varError = 1 }
-
-if ( $varError -eq '1' )  
+if ( -not ( $mainChainDataDir )  ) { $varError = $true }
+if ( -not ( $sideChainDataDir )  ) { $varError = $true }
+if ( -not ( Test-Path $sideChainDataDir/federationKey.dat ) ) { $varError = $true }
+if ( $varError -eq $true )  
 {
     Write-Host "ERROR: Some Values were not set. Please re-run this script" -ForegroundColor Red
     Start-Sleep 30
@@ -241,11 +264,11 @@ $API = $mainChainAPIPort
 Write-Host "Starting Mainchain Masternode" -ForegroundColor Cyan
 if ( $NodeType -eq "50K" ) 
 {
-    $StartNode = Start-Process dotnet -ArgumentList "run -mainchain -addressindex=1 -apiport=$mainChainAPIPort -counterchainapiport=$sideChainAPIPort -redeemscript=""$redeemscript"" -publickey=$multiSigPublicKey -federationips=$federationIPs" -PassThru
+    $StartNode = Start-Process dotnet -ArgumentList "run -c release -mainchain -addressindex=1 -apiport=$mainChainAPIPort -counterchainapiport=$sideChainAPIPort -redeemscript=""$redeemscript"" -publickey=$multiSigPublicKey -federationips=$federationIPs" -PassThru
 }
     Else
     {
-        $StartNode = Start-Process dotnet -ArgumentList "run -mainchain -addressindex=1 -apiport=$mainChainAPIPort" -PassThru
+        $StartNode = Start-Process dotnet -ArgumentList "run -c release -mainchain -addressindex=1 -apiport=$mainChainAPIPort" -PassThru
     }
 
 #Wait for API
@@ -304,11 +327,11 @@ $API = $sideChainAPIPort
 Write-Host "Starting Sidechain Masternode" -ForegroundColor Cyan
 if ( $NodeType -eq "50K" ) 
 {
-    $StartNode = Start-Process dotnet -ArgumentList "run -sidechain -apiport=$sideChainAPIPort -counterchainapiport=$mainChainAPIPort -redeemscript=""$redeemscript"" -publickey=$multiSigPublicKey -federationips=$federationIPs" -PassThru
+    $StartNode = Start-Process dotnet -ArgumentList "run -c release -sidechain -apiport=$sideChainAPIPort -counterchainapiport=$mainChainAPIPort -redeemscript=""$redeemscript"" -publickey=$multiSigPublicKey -federationips=$federationIPs" -PassThru
 }
     Else
     {
-        $StartNode = Start-Process dotnet -ArgumentList "run -sidechain -apiport=$sideChainAPIPort -counterchainapiport=$mainChainAPIPort" -PassThru
+        $StartNode = Start-Process dotnet -ArgumentList "run -c release -sidechain -apiport=$sideChainAPIPort -counterchainapiport=$mainChainAPIPort" -PassThru
     }
 
 #Wait for API
@@ -458,7 +481,7 @@ if ( $NodeType -eq "50K" )
         Write-Host "Cleaning Stratis Masternode Dashboard..." -ForegroundColor Yellow
         Start-Sleep 3
     }
-    Start-Process dotnet.exe -ArgumentList "run --nodetype 50K --mainchainport $mainChainAPIPort --sidechainport $sideChainAPIPort --env mainnet" -WindowStyle Hidden
+    Start-Process dotnet.exe -ArgumentList "run -c release --nodetype 50K --mainchainport $mainChainAPIPort --sidechainport $sideChainAPIPort --env mainnet" -WindowStyle Hidden
 }
     Else
     {
