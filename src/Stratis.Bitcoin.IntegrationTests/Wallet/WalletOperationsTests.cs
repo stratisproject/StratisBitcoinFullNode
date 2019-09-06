@@ -1406,7 +1406,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                         .ReceiveJson<Money>();
 
             // Assert.
-            act.Should().Be(new Money(10040));
+            act.Should().Be(new Money(10000));
         }
 
         /// TODO: I don't think this test is valid because it depends on coinselection algoritm.
@@ -1439,7 +1439,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                         .ReceiveJson<Money>();
 
             // Assert.
-            act.Should().Be(new Money(10550));
+            act.Should().Be(new Money(10000));
         }
 
         [Fact]
