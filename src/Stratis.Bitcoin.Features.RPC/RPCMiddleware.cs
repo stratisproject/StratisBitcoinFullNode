@@ -29,6 +29,8 @@ namespace Stratis.Bitcoin.Features.RPC
         private readonly IHttpContextFactory httpContextFactory;
         private readonly DataFolder dataFolder;
 
+        public const string ContentType = "application/json; charset=utf-8";
+
         public RPCMiddleware(RequestDelegate next, IRPCAuthorization authorization, ILoggerFactory loggerFactory, IHttpContextFactory httpContextFactory, DataFolder dataFolder)
         {
             Guard.NotNull(next, nameof(next));
@@ -59,16 +61,30 @@ namespace Stratis.Bitcoin.Features.RPC
                 this.logger.LogDebug("RPC request: {0}", string.IsNullOrEmpty(request) ? request : JToken.Parse(request).ToString(Formatting.Indented));
 
                 JToken token = string.IsNullOrEmpty(request) ? null : JToken.Parse(request);
+                JToken response;
 
                 if (token is JArray)
                 {
-                    // Batch request, invoke each request and accumulate responses.
-                    await this.InvokeAsyncBatchAsync(httpContext, token as JArray);
+                    // Batch request, invoke each request and accumulate responses into JArray.
+                    response = await this.InvokeBatchAsync(httpContext, token as JArray);
+                }
+                else if (token is JObject)
+                {
+                    // Single request, invoke single request and return single response object.
+                    response = await this.InvokeSingleAsync(httpContext, token as JObject);
                 }
                 else
                 {
-                    // Single request, invoke the request.
-                    await this.next.Invoke(httpContext);
+                    throw new NotImplementedException("The request is not supported.");
+                }
+
+                httpContext.Response.ContentType = ContentType;
+
+                // Write the response body.
+                using (StreamWriter streamWriter = new StreamWriter(httpContext.Response.Body, Encoding.Default, 1024, true))
+                using (JsonTextWriter textWriter = new JsonTextWriter(streamWriter))
+                {
+                    await response.WriteToAsync(textWriter);
                 }
             }
             catch (Exception exx)
@@ -106,38 +122,38 @@ namespace Stratis.Bitcoin.Features.RPC
             if (ex is ArgumentException || ex is FormatException)
             {
                 JObject response = CreateError(RPCErrorCode.RPC_MISC_ERROR, "Argument error: " + ex.Message);
-                httpContext.Response.ContentType = "application/json";
+                httpContext.Response.ContentType = ContentType;
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
             else if (ex is ConfigurationException)
             {
                 JObject response = CreateError(RPCErrorCode.RPC_INTERNAL_ERROR, ex.Message);
-                httpContext.Response.ContentType = "application/json";
+                httpContext.Response.ContentType = ContentType;
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
             else if (ex is RPCServerException)
             {
                 var rpcEx = (RPCServerException)ex;
                 JObject response = CreateError(rpcEx.ErrorCode, ex.Message);
-                httpContext.Response.ContentType = "application/json";
+                httpContext.Response.ContentType = ContentType;
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
             else if (httpContext.Response?.StatusCode == 404)
             {
                 JObject response = CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, "Method not found");
-                httpContext.Response.ContentType = "application/json";
+                httpContext.Response.ContentType = ContentType;
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
             else if (this.IsDependencyFailure(ex))
             {
                 JObject response = CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, ex.Message);
-                httpContext.Response.ContentType = "application/json";
+                httpContext.Response.ContentType = ContentType;
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
             else if (httpContext.Response?.StatusCode == 500 || ex != null)
             {
                 JObject response = CreateError(RPCErrorCode.RPC_INTERNAL_ERROR, "Internal error");
-                httpContext.Response.ContentType = "application/json";
+                httpContext.Response.ContentType = ContentType;
                 this.logger.LogError(new EventId(0), ex, "Internal error while calling RPC Method");
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
@@ -148,68 +164,85 @@ namespace Stratis.Bitcoin.Features.RPC
         /// </summary>
         /// <param name="httpContext">Source batch request context.</param>
         /// <param name="requests">Array of requests.</param>
-        private async Task InvokeAsyncBatchAsync(HttpContext httpContext, JArray requests)
+        /// <returns>Array of response objects.</returns>
+        private async Task<JArray> InvokeBatchAsync(HttpContext httpContext, JArray requests)
         {
-            JArray responses = new JArray();
-            int i = 1;
+            JArray responseArray = new JArray();
             foreach (JObject requestObj in requests)
             {
-                var contextFeatures = new FeatureCollection(httpContext.Features);
+                JObject response = await InvokeSingleAsync(httpContext, requestObj);
+                responseArray.Add(response);
+            }
 
-                StringBuilder requestStringBuilder = new StringBuilder();
-                await requestObj.WriteToAsync(new JsonTextWriter(new StringWriter(requestStringBuilder)));
-                var requestFeature = new HttpRequestFeature()
-                {
-                    Body = new MemoryStream(Encoding.UTF8.GetBytes(requestStringBuilder.ToString())),
-                    Headers = httpContext.Request.Headers,
-                    Method = httpContext.Request.Method,
-                    Protocol = httpContext.Request.Protocol,
-                    Scheme = httpContext.Request.Scheme,
-                    QueryString = httpContext.Request.QueryString.Value
-                };
-                contextFeatures.Set<IHttpRequestFeature>(requestFeature);
+            return responseArray;
+        }
 
-                var responseMemoryStream = new MemoryStream();
-                var responseFeature = new HttpResponseFeature()
-                {
-                    Body = responseMemoryStream
-                };
-                contextFeatures.Set<IHttpResponseFeature>(responseFeature);
+        /// <summary>
+        /// Invokes single request.
+        /// </summary>
+        /// <param name="httpContext">Source batch request context.</param>
+        /// <param name="requestObj">Single request object.</param>
+        /// <returns>Single response objects.</returns>
+        private async Task<JObject> InvokeSingleAsync(HttpContext httpContext, JObject requestObj)
+        {
+            var contextFeatures = new FeatureCollection(httpContext.Features);
 
-                contextFeatures.Set<IHttpRequestLifetimeFeature>(new HttpRequestLifetimeFeature());
+            var requestFeature = new HttpRequestFeature()
+            {
+                Body = new MemoryStream(Encoding.UTF8.GetBytes(requestObj.ToString())),
+                Headers = httpContext.Request.Headers,
+                Method = httpContext.Request.Method,
+                Protocol = httpContext.Request.Protocol,
+                Scheme = httpContext.Request.Scheme,
+                QueryString = httpContext.Request.QueryString.Value
+            };
+            contextFeatures.Set<IHttpRequestFeature>(requestFeature);
 
-                var context = this.httpContextFactory.Create(contextFeatures);
+            var responseMemoryStream = new MemoryStream();
+            var responseFeature = new HttpResponseFeature()
+            {
+                Body = responseMemoryStream
+            };
+            contextFeatures.Set<IHttpResponseFeature>(responseFeature);
 
-                try
-                {
-                    await this.next.Invoke(context).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    await this.HandleRpcInvokeExceptionAsync(context, ex);
-                }
+            contextFeatures.Set<IHttpRequestLifetimeFeature>(new HttpRequestLifetimeFeature());
+
+            var context = this.httpContextFactory.Create(contextFeatures);
+            JObject response;
+            try
+            {
+                await this.next.Invoke(context).ConfigureAwait(false);
+
+                if (responseMemoryStream.Length == 0)
+                    throw new Exception("Method not found");
 
                 responseMemoryStream.Position = 0;
-
-                var response = (responseMemoryStream.Length == 0) ? CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, "Method not found") : await JObject.LoadAsync(new JsonTextReader(new StreamReader(responseMemoryStream)));
-
-                if (requestObj.ContainsKey("id"))
-                    response["id"] = requestObj["id"];
-                else
-                    response.Remove("id");
-
-                responses.Add(response);
-                i++;
+                using (StreamReader streamReader = new StreamReader(responseMemoryStream))
+                using (JsonTextReader textReader = new JsonTextReader(streamReader))
+                {
+                    response = await JObject.LoadAsync(textReader);
+                }
             }
-
-            httpContext.Response.ContentType = "application/json; charset=utf-8";
-
-            // Update the response with the array of responses.
-            using (StreamWriter streamWriter = new StreamWriter(httpContext.Response.Body))
-            using (JsonTextWriter textWriter = new JsonTextWriter(streamWriter))
+            catch (Exception ex)
             {
-                await responses.WriteToAsync(textWriter);
+                await this.HandleRpcInvokeExceptionAsync(context, ex);
+
+                context.Response.Body.Position = 0;
+                using (StreamReader streamReader = new StreamReader(context.Response.Body, Encoding.Default, true, 1024, true))
+                using (JsonTextReader textReader = new JsonTextReader(streamReader))
+                {
+                    string val = streamReader.ReadToEnd();
+                    context.Response.Body.Position = 0;
+                    response = await JObject.LoadAsync(textReader);
+                }
             }
+
+            if (requestObj.ContainsKey("id"))
+                response["id"] = requestObj["id"];
+            else
+                response.Remove("id");
+
+            return response;
         }
 
         private bool IsDependencyFailure(Exception ex)

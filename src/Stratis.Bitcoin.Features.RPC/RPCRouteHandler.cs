@@ -40,21 +40,21 @@ namespace Stratis.Bitcoin.Features.RPC
         {
             Guard.NotNull(context, nameof(context));
 
-            var ms = new MemoryStream();
-            await context.HttpContext.Request.Body.CopyToAsync(ms);
-            context.HttpContext.Request.Body = ms;
-            ms.Position = 0;
-            JObject req = JObject.Load(new JsonTextReader(new StreamReader(ms)));
-            ms.Position = 0;
-            string method = (string)req["method"];
-
+            JToken request;
+            using (StreamReader streamReader = new StreamReader(context.HttpContext.Request.Body))
+            using (JsonTextReader textReader = new JsonTextReader(streamReader))
+            {
+                request = await JObject.LoadAsync(textReader);
+            }
+            
+            string method = (string)request["method"];
             string controllerName = this.actionDescriptor.ActionDescriptors.Items.OfType<ControllerActionDescriptor>()
                     .FirstOrDefault(w => w.ActionName == method)?.ControllerName ?? string.Empty;
 
             context.RouteData.Values.Add("action", method);
             //TODO: Need to be extensible
             context.RouteData.Values.Add("controller", controllerName);
-            context.RouteData.Values.Add("req", req);
+            context.RouteData.Values.Add("req", request);
             await this.inner.RouteAsync(context);
         }
     }
