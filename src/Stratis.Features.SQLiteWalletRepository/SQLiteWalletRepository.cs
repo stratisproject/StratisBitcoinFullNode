@@ -803,6 +803,18 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
+        public IWalletAddressReadOnlyLookup GetWalletAddressLookup(string walletName)
+        {
+            return (IWalletAddressReadOnlyLookup)this.Wallets[walletName].AddressesOfInterest;
+        }
+
+        /// <inheritdoc />
+        public IWalletTransactionReadOnlyLookup GetWalletTransactionLookup(string walletName)
+        {
+            return (IWalletTransactionReadOnlyLookup)this.Wallets[walletName].TransactionsOfInterest;
+        }
+
+        /// <inheritdoc />
         public IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null)
         {
             DBConnection conn = this.GetConnection(walletName);

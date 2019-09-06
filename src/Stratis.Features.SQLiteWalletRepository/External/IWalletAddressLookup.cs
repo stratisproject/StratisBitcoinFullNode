@@ -2,7 +2,7 @@
 
 namespace Stratis.Features.SQLiteWalletRepository.External
 {
-    public interface IWalletAddressLookup
+    public interface IWalletAddressReadOnlyLookup
     {
         /// <summary>
         /// Determines if the address has been added to this collection.
@@ -11,7 +11,10 @@ namespace Stratis.Features.SQLiteWalletRepository.External
         /// <param name="address">An address identifier.</param>
         /// <returns><c>True</c> if the address exists or has been added tentatively.</returns>
         bool Contains(Script scriptPubKey, out AddressIdentifier address);
+    }
 
+    public interface IWalletAddressLookup
+    {
         /// <summary>
         /// Call this after all tentative addresses have been committed to the wallet.
         /// </summary>

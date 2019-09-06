@@ -179,5 +179,19 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <param name="walletName">The wallet the transaction is for.</param>
         /// <returns>A transaction context providing <see cref="ITransactionContext.Commit"/> and <see cref="ITransactionContext.Rollback"/> methods.</returns>
         ITransactionContext BeginTransaction(string walletName);
+
+        /// <summary>
+        /// Used to obtain information about addresses present in the wallet.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet.</param>
+        /// <returns>A lookup for the addresses present in the wallet.</returns>
+        IWalletAddressReadOnlyLookup GetWalletAddressLookup(string walletName);
+
+        /// <summary>
+        /// Used to obtain information about transactions present in the wallet.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet.</param>
+        /// <returns>A lookup for the transactions present in the wallet.</returns>
+        IWalletTransactionReadOnlyLookup GetWalletTransactionLookup(string walletName);
     }
 }
