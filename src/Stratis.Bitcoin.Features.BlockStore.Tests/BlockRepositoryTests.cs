@@ -511,6 +511,32 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             }
         }
 
+        [Fact]
+        public void GetBlockByHashReturnsGenesisBlock()
+        {
+            string dir = CreateTestDir(this);
+            using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
+            {
+                Block genesis = repository.GetBlock(this.Network.GetGenesis().GetHash());
+
+                Assert.Equal(this.Network.GetGenesis().GetHash(), genesis.GetHash());
+            }
+        }
+
+        [Fact]
+        public void GetBlocksByHashReturnsGenesisBlock()
+        {
+            string dir = CreateTestDir(this);
+            using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
+            {
+                List<Block> results = repository.GetBlocks(new List<uint256> { this.Network.GetGenesis().GetHash() });
+
+                Assert.NotEmpty(results);
+                Assert.NotNull(results.First());
+                Assert.Equal(this.Network.GetGenesis().GetHash(), results.First().GetHash());
+            }
+        }
+
         private IBlockRepository SetupRepository(Network main, string dir)
         {
             var dBreezeSerializer = new DBreezeSerializer(main.Consensus.ConsensusFactory);
