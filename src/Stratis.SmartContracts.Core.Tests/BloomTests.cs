@@ -139,9 +139,10 @@ namespace Stratis.SmartContracts.Core.Tests
         {
             var bloom = new Bloom();
 
-            var newBloom = new Bloom(bloom.ToBytes());
+            var call1 = bloom.ToBytes();
+            var call2 = bloom.ToBytes();
 
-            Assert.NotSame(bloom.ToBytes(), newBloom.ToBytes());
+            Assert.NotSame(call1, call2);
         }
 
         [Fact]
