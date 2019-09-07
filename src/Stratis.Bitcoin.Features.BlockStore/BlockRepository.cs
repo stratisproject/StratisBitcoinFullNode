@@ -449,16 +449,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 transaction.ValuesLazyLoadingIsOn = false;
 
-                byte[] key = hash.ToBytes();
-                Row<byte[], byte[]> blockRow = transaction.Select<byte[], byte[]>(BlockTableName, key);
-                if (blockRow.Exists)
-                    res = this.dBreezeSerializer.Deserialize<Block>(blockRow.Value);
-            }
+                var results = this.GetBlocksFromHashes(transaction, new List<uint256> {hash});
 
-            // If searching for genesis block, return it.
-            if (res == null && hash == this.network.GenesisHash)
-            {
-                res = this.network.GetGenesis();
+                if (results.FirstOrDefault() != null)
+                    res = results.FirstOrDefault();
             }
 
             return res;
