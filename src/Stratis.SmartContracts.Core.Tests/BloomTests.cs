@@ -155,5 +155,40 @@ namespace Stratis.SmartContracts.Core.Tests
 
             Assert.NotSame(bloom.ToBytes(), data);
         }
+
+        [Fact]
+        public void Test_Bloom_Contains_Another_Bloom_Success()
+        {
+            var topics =
+                new List<byte[]>
+                {
+                    Encoding.UTF8.GetBytes("Topic1"),
+                    Encoding.UTF8.GetBytes("Topic2"),
+                    Encoding.UTF8.GetBytes("Topic3"),
+                    Encoding.UTF8.GetBytes("Topic4")
+                };
+
+            var bloom = new Bloom();
+            foreach (var topic in topics)
+            {
+                bloom.Add(topic);
+            }
+
+            // Test all combos of topics.
+            for (var i = 0; i < topics.Count; i++)
+            {
+                var bloom2 = new Bloom();
+                bloom2.Add(topics[i]);
+
+                Assert.True(bloom.Test(bloom2));
+
+                for (var j = i + 1; j < topics.Count; j++)
+                {
+                    bloom2.Add(topics[j]);
+
+                    Assert.True(bloom.Test(bloom2));
+                }
+            }
+        }
     }
 }

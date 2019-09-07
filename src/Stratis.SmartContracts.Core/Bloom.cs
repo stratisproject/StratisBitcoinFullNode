@@ -14,7 +14,7 @@ namespace Stratis.SmartContracts.Core
         /// <summary>
         /// Length of the bloom data in bytes. 2048 bits.
         /// </summary>
-        private const int BloomLength = 256; 
+        public const int BloomLength = 256;
 
         /// <summary>
         /// The actual bloom value represented as a byte array.
@@ -77,8 +77,19 @@ namespace Stratis.SmartContracts.Core
         {
             var compare = new Bloom();
             compare.Add(test);
-            compare.Or(this);
-            return this.Equals(compare);
+            return this.Test(compare);
+        }
+
+        /// <summary>
+        /// Determine whether a second bloom is possibly contained within the filter.
+        /// </summary>
+        /// <param name="bloom">The second bloom to test.</param>
+        /// <returns>Whether this data could be contained within the filter.</returns>
+        public bool Test(Bloom bloom)
+        {
+            var copy = new Bloom(bloom.ToBytes());
+            copy.Or(this);
+            return this.Equals(copy);
         }
 
         /// <summary>
