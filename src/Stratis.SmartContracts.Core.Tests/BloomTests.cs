@@ -152,7 +152,13 @@ namespace Stratis.SmartContracts.Core.Tests
 
             var bloom = new Bloom(data);
 
-            Assert.NotSame(bloom.ToBytes(), data);
+            // Change original data.
+            data[1] = 0xFF;
+
+            var bloom2 = new Bloom(data);
+
+            // If they were not using a copy, this would return true.
+            Assert.False(bloom.Equals(bloom2));
         }
 
         [Fact]
