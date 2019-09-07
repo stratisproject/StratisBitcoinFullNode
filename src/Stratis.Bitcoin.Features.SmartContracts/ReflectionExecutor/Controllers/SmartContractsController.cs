@@ -323,6 +323,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             var chainIndexerRangeQuery = new ChainIndexerRangeQuery(this.chainIndexer);
 
+            // WORKAROUND
+            // This is a workaround due to the BlockStore.GetBlocks returning null for genesis.
+            // We don't ever expect any receipts in the genesis block, so it's safe to ignore it.
+            if (fromBlock == 0)
+                fromBlock = 1;
+
             // Loop through all headers and check bloom.
             IEnumerable<ChainedHeader> blockHeaders = chainIndexerRangeQuery.EnumerateRange(fromBlock, toBlock);
 
@@ -349,28 +355,28 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             }
 
             // For all matching headers, get the block from local db.
-            List<NBitcoin.Block> blocks = new List<NBitcoin.Block>();
-            foreach (ChainedHeader chainedHeader in matches)
-            {
-                blocks.Add(this.blockStore.GetBlock(chainedHeader.HashBlock));
-            }
+            List<uint256> matchedBlockHashes = matches.Select(m => m.HashBlock).ToList();
+            List<NBitcoin.Block> blocks = this.blockStore.GetBlocks(matchedBlockHashes);
 
             // For each block, get all receipts, and if they match, add to list to return.
             List<Receipt> receiptResponses = new List<Receipt>();
 
-            foreach (NBitcoin.Block block in blocks)
-            {
-                foreach (Transaction transaction in block.Transactions)
-                {
-                    Receipt storedReceipt = this.receiptRepository.Retrieve(transaction.GetHash());
-                    if (storedReceipt == null) // not a smart contract transaction. Move to next transaction.
-                        continue;
+            List<uint256> transactionHashes = blocks
+                    .SelectMany(block => block.Transactions)
+                    .Select(t => t.GetHash())
+                    .ToList();
 
-                    // Check if address and first topic (event name) match.
-                    if (storedReceipt.Logs.Any(x =>
-                        x.Address == addressUint160 && Enumerable.SequenceEqual(x.Topics[0], eventBytes)))
-                        receiptResponses.Add(storedReceipt);
-                }
+            IList<Receipt> receipts = this.receiptRepository.RetrieveMany(transactionHashes);
+
+            foreach (Receipt storedReceipt in receipts)
+            {
+                if (storedReceipt == null) // not a smart contract transaction. Move to next transaction.
+                    continue;
+
+                // Check if address and first topic (event name) match.
+                if (storedReceipt.Logs.Any(x =>
+                    x.Address == addressUint160 && Enumerable.SequenceEqual(x.Topics[0], eventBytes)))
+                    receiptResponses.Add(storedReceipt);
             }
 
             return receiptResponses;
