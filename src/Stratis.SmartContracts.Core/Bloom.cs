@@ -109,7 +109,7 @@ namespace Stratis.SmartContracts.Core
         {
             if (stream.Serializing)
             {
-                byte[] b = this.data.ToArray(); // doing this cos I'm scared af of that ref...
+                byte[] b = CopyBloom(this.data);
                 stream.ReadWrite(ref b);
             }
             else
