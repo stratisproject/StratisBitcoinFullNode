@@ -31,7 +31,7 @@ namespace Stratis.SmartContracts.Core
             if (data?.Length != BloomLength)
                 throw new ArgumentException($"Bloom byte array must be {BloomLength} bytes long.", nameof(data));
 
-            this.data = data;
+            this.data = CopyBloom(data);
         }
 
         /// <summary>
@@ -109,9 +109,13 @@ namespace Stratis.SmartContracts.Core
             }
         }
 
+        /// <summary>
+        /// Returns the raw bytes of this filter.
+        /// </summary>
+        /// <returns></returns>
         public byte[] ToBytes()
         {
-            return this.data;
+            return CopyBloom(this.data);
         }
 
         public override string ToString()
@@ -151,6 +155,13 @@ namespace Stratis.SmartContracts.Core
         public override int GetHashCode()
         {
             return HashCode.Combine(this.data);
+        }
+
+        private static byte[] CopyBloom(byte[] bloom)
+        {
+            var result = new byte[BloomLength];
+            Buffer.BlockCopy(bloom, 0, result, 0, BloomLength);
+            return result;
         }
     }
 }

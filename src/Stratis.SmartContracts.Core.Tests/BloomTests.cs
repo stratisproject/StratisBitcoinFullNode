@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
 using NBitcoin;
 using Stratis.SmartContracts.Core.Receipts;
@@ -132,6 +134,26 @@ namespace Stratis.SmartContracts.Core.Tests
             Assert.False((bool) receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic8")));
             Assert.False((bool) receipt.Bloom.Test(new uint160(11111).ToBytes()));
             Assert.False((bool) receipt.Bloom.Test(new uint160(1234567).ToBytes()));
+        }
+
+        [Fact]
+        public void ToBytes_Should_Return_Copy()
+        {
+            var bloom = new Bloom();
+
+            var newBloom = new Bloom(bloom.ToBytes());
+
+            Assert.NotSame(bloom.ToBytes(), newBloom.ToBytes());
+        }
+
+        [Fact]
+        public void NewBloom_Should_Use_Copy()
+        {
+            var data = new byte[256];
+
+            var bloom = new Bloom(data);
+
+            Assert.NotSame(bloom.ToBytes(), data);
         }
     }
 }
