@@ -534,6 +534,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             foreach ((uint256, byte[]) key in keys)
             {
+                // If searching for genesis block, return it.
+                if (key.Item1 == this.network.GenesisHash)
+                {
+                    results[key.Item1] = this.network.GetGenesis();
+                    continue;
+                }
+
                 Row<byte[], byte[]> blockRow = dbreezeTransaction.Select<byte[], byte[]>(BlockTableName, key.Item2);
                 if (blockRow.Exists)
                 {
