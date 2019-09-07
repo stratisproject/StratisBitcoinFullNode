@@ -512,28 +512,60 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         }
 
         [Fact]
-        public void GetBlockByHashReturnsGenesisBlock()
+        public void GetTransactionByIdForGenesisBlock()
         {
+            var genesis = this.Network.GetGenesis();
+            var genesisTransactions = genesis.Transactions;
+
             string dir = CreateTestDir(this);
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Block genesis = repository.GetBlock(this.Network.GetGenesis().GetHash());
+                foreach (var transaction in genesisTransactions)
+                {
+                    var result = repository.GetTransactionById(transaction.GetHash());
 
-                Assert.Equal(this.Network.GetGenesis().GetHash(), genesis.GetHash());
+                    Assert.NotNull(result);
+                    Assert.Equal(transaction.GetHash(), result.GetHash());
+                }
             }
         }
 
         [Fact]
-        public void GetBlocksByHashReturnsGenesisBlock()
+        public void GetTransactionsByIdsForGenesisBlock()
         {
+            var genesis = this.Network.GetGenesis();
+            var genesisTransactions = genesis.Transactions;
+
             string dir = CreateTestDir(this);
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                List<Block> results = repository.GetBlocks(new List<uint256> { this.Network.GetGenesis().GetHash() });
+                var result = repository.GetTransactionsByIds(genesis.Transactions.Select(t => t.GetHash()).ToArray());
 
-                Assert.NotEmpty(results);
-                Assert.NotNull(results.First());
-                Assert.Equal(this.Network.GetGenesis().GetHash(), results.First().GetHash());
+                Assert.NotNull(result);
+
+                for (var i = 0; i < genesisTransactions.Count; i++)
+                {
+                    Assert.Equal(genesisTransactions[i], result[i]);
+                }
+            }
+        }
+
+        [Fact]
+        public void GetBlockIdByTransactionIdForGenesisBlock()
+        {
+            var genesis = this.Network.GetGenesis();
+            var genesisTransactions = genesis.Transactions;
+
+            string dir = CreateTestDir(this);
+            using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
+            {
+                foreach (var transaction in genesisTransactions)
+                {
+                    var result = repository.GetBlockIdByTransactionId(transaction.GetHash());
+
+                    Assert.NotNull(result);
+                    Assert.Equal(this.Network.GenesisHash, result);
+                }
             }
         }
 
