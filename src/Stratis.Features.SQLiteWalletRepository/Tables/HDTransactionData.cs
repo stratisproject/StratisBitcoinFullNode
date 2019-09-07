@@ -52,8 +52,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             )";
 
             yield return "CREATE UNIQUE INDEX UX_HDTransactionData_Output ON HDTransactionData(OutputTxId, OutputIndex, ScriptPubKey)";
-            yield return "CREATE INDEX IX_HDTransactionData_SpendTxTime ON HDTransactionData (WalletId, AccountIndex, SpendTxTime DESC)";
-            yield return "CREATE INDEX IX_HDTransactionData_OutputTxTime ON HDTransactionData (WalletId, AccountIndex, OutputTxTime DESC)";
+            yield return "CREATE INDEX IX_HDTransactionData_SpendTxTime ON HDTransactionData (WalletId, AccountIndex, SpendTxTime)";
+            yield return "CREATE INDEX IX_HDTransactionData_OutputTxTime ON HDTransactionData (WalletId, AccountIndex, OutputTxTime, OutputIndex)";
         }
 
         internal static void CreateTable(SQLiteConnection conn)
@@ -62,18 +62,21 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 conn.Execute(command);
         }
 
-        internal static IEnumerable<HDTransactionData> GetAllTransactions(DBConnection conn, int walletId, int? accountIndex, int? addressType, int? addressIndex, int limit = int.MaxValue, HDTransactionData prev = null)
+        internal static IEnumerable<HDTransactionData> GetAllTransactions(DBConnection conn, int walletId, int? accountIndex, int? addressType, int? addressIndex, int limit = int.MaxValue, HDTransactionData prev = null, bool descending = true)
         {
             return conn.Query<HDTransactionData>($@"
                 SELECT  *
                 FROM    HDTransactionData
                 WHERE   WalletId = {walletId} {((accountIndex == null) ? $@"
                 AND     AccountIndex IN (SELECT AccountIndex FROM HDAccount WHERE WalletId = {walletId})" : $@"
-                AND     AccountIndex = {accountIndex}")} {((addressType == null) ? "" : $@"
+                AND     AccountIndex = {accountIndex}")} {((addressType == null) ? $@"
+                AND     AddressType IN (0, 1)" : $@"
                 AND     AddressType = {addressType}")} {((addressIndex == null) ? "" : $@"
-                AND     AddressIndex = {addressIndex}")} {((prev == null) ? "" : $@"
-                AND 	(OutputTxTime > {prev.OutputTxTime} OR (OutputTxTime = { prev.OutputTxTime} AND OutputIndex > {prev.OutputIndex}))")}
-                ORDER   BY WalletId, AccountIndex, OutputTxTime, OutputIndex
+                AND     AddressIndex = {addressIndex}")} {((prev == null) ? "" : (!descending ? $@"
+                AND 	(OutputTxTime > {prev.OutputTxTime} OR (OutputTxTime = {prev.OutputTxTime} AND OutputIndex > {prev.OutputIndex}))" : $@"
+                AND 	(OutputTxTime < {prev.OutputTxTime} OR (OutputTxTime = {prev.OutputTxTime} AND OutputIndex < {prev.OutputIndex}))"))} {(!descending ? $@"
+                ORDER   BY WalletId, AccountIndex, OutputTxTime, OutputIndex" : $@"
+                ORDER   BY WalletId DESC, AccountIndex DESC, OutputTxTime DESC, OutputIndex DESC")}
                 LIMIT   {limit}");
         }
 

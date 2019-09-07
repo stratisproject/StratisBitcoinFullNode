@@ -815,7 +815,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public IEnumerable<TransactionData> GetAllTransactions(string walletName, string accountName, int? addressType, int? addressIndex, int limit = int.MaxValue, TransactionData prev = null)
+        public IEnumerable<TransactionData> GetAllTransactions(string walletName, string accountName, int? addressType, int? addressIndex, int limit = int.MaxValue, TransactionData prev = null, bool descending = true)
         {
             DBConnection conn = this.GetConnection(walletName);
             int walletId;
@@ -839,7 +839,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                 OutputIndex = prev.Index
             };
 
-            foreach (HDTransactionData tranData in HDTransactionData.GetAllTransactions(conn, walletId, accountIndex, addressType, addressIndex, limit, prevTran))
+            foreach (HDTransactionData tranData in HDTransactionData.GetAllTransactions(conn, walletId, accountIndex, addressType, addressIndex, limit, prevTran, descending))
                 yield return this.ToTransactionData(tranData, new HDPayment[] { });
         }
 

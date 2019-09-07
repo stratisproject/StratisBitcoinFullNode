@@ -203,26 +203,9 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <param name="addressIndex">An optional address index filter.</param>
         /// <param name="limit">The maximum number of records to return.</param>
         /// <param name="prev">The record preceding the first record to be returned. Can be <c>null</c> to return the first record.</param>
+        /// <param name="descending">The default is descending. Set to <c>false</c> to return records in ascending order.</param>
         /// <returns>The wallet's <see cref="TransactionData"/> records.</returns>
         /// <remarks>Spending details are not included.</remarks>
-        IEnumerable<TransactionData> GetAllTransactions(string walletName, string accountName, int? addressType, int? addressIndex, int limit = int.MaxValue, TransactionData prev = null);
-
-        /// <summary>
-        /// Returns <see cref="TransactionData"/> records in the wallet acting as inputs to the given transaction.
-        /// </summary>
-        /// <param name="walletName">The name of the wallet.</param>
-        /// <param name="transactionTime">The transaction creation time.</param>
-        /// <param name="transactionId">The transaction id.</param>
-        /// <returns><see cref="TransactionData"/> records in the wallet acting as inputs to the given transaction.</returns>
-        IEnumerable<TransactionData> GetTransactionInputs(string walletName, DateTimeOffset transactionTime, uint256 transactionId);
-
-        /// <summary>
-        /// Returns <see cref="TransactionData"/> records in the wallet acting as outputs to the given transaction.
-        /// </summary>
-        /// <param name="walletName">The name of the wallet.</param>
-        /// <param name="transactionTime">The transaction creation time.</param>
-        /// <param name="transactionId">The transaction id.</param>
-        /// <returns><see cref="TransactionData"/> records in the wallet acting as outputs to the given transaction.</returns>
-        IEnumerable<TransactionData> GetTransactionOutputs(string walletName, DateTimeOffset transactionTime, uint256 transactionId);
+        IEnumerable<TransactionData> GetAllTransactions(string walletName, string accountName, int? addressType, int? addressIndex, int limit = int.MaxValue, TransactionData prev = null, bool descending = true);
     }
 }
