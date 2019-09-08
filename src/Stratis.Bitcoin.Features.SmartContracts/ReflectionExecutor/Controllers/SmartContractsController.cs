@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
@@ -28,7 +29,6 @@ using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
-using State = Stratis.SmartContracts.CLR.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 {
@@ -50,6 +50,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly IStateRepositoryRoot stateRoot;
         private readonly IWalletManager walletManager;
         private readonly ISerializer serializer;
+        private readonly IContractPrimitiveSerializer primitiveSerializer;
         private readonly IReceiptRepository receiptRepository;
         private readonly ILocalExecutor localExecutor;
         private readonly ISmartContractTransactionService smartContractTransactionService;
@@ -59,12 +60,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             IBlockStore blockStore,
             ChainIndexer chainIndexer,
             CSharpContractDecompiler contractDecompiler,
-            IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
             IStateRepositoryRoot stateRoot,
             IWalletManager walletManager,
             ISerializer serializer,
+            IContractPrimitiveSerializer primitiveSerializer,
             IReceiptRepository receiptRepository,
             ILocalExecutor localExecutor,
             ISmartContractTransactionService smartContractTransactionService,
@@ -79,6 +80,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.walletManager = walletManager;
             this.broadcasterManager = broadcasterManager;
             this.serializer = serializer;
+            this.primitiveSerializer = primitiveSerializer;
             this.receiptRepository = receiptRepository;
             this.localExecutor = localExecutor;
             this.smartContractTransactionService = smartContractTransactionService;
@@ -204,7 +206,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                     "No stored transaction could be found for the supplied hash.");
             }
 
-            var receiptResponse = new ReceiptResponse(receipt, this.network);
+            uint160 address = receipt.NewContractAddress ?? receipt.To;
+
+            if (!receipt.Logs.Any())
+            {
+                return this.Json(new ReceiptResponse(receipt, new List<LogResponse>(), this.network));
+            }
+
+            byte[] contractCode = this.stateRoot.GetCode(address);
+
+            Assembly assembly = Assembly.Load(contractCode);
+
+            var deserializer = new ApiLogDeserializer(this.primitiveSerializer, this.network);
+
+            List<LogResponse> logResponses = this.MapLogResponses(receipt, assembly, deserializer);
+
+            var receiptResponse = new ReceiptResponse(receipt, logResponses, this.network);
 
             return this.Json(receiptResponse);
         }
@@ -232,6 +249,71 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         [HttpGet]
         public async Task<IActionResult> ReceiptSearch([FromQuery] string contractAddress, [FromQuery] string eventName)
         {
+            uint160 address = contractAddress.ToUint160(this.network);
+
+            byte[] contractCode = this.stateRoot.GetCode(address);
+
+            if (contractCode == null || !contractCode.Any())
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, "No code exists", $"No contract execution code exists at {address}");
+            }
+
+            Assembly assembly = Assembly.Load(contractCode);
+
+            var deserializer = new ApiLogDeserializer(this.primitiveSerializer, this.network);
+
+            List<Receipt> receipts = this.SearchReceipts(contractAddress, eventName);
+
+            var result = new List<ReceiptResponse>();
+
+            foreach (Receipt receipt in receipts)
+            {
+                List<LogResponse> logResponses = this.MapLogResponses(receipt, assembly, deserializer);
+
+                var receiptResponse = new ReceiptResponse(receipt, logResponses, this.network);
+
+                result.Add(receiptResponse);
+            }
+
+            return this.Json(result);
+        }
+
+        private List<LogResponse> MapLogResponses(Receipt receipt, Assembly assembly, ApiLogDeserializer deserializer)
+        {
+            var logResponses = new List<LogResponse>();
+
+            foreach (Log log in receipt.Logs)
+            {
+                var logResponse = new LogResponse(log, this.network);
+
+                logResponses.Add(logResponse);
+
+                if (log.Topics.Count == 0)
+                    continue;
+
+                // Get receipt struct name
+                string eventTypeName = Encoding.UTF8.GetString(log.Topics[0]);
+
+                // Find the type in the module def
+                Type eventType = assembly.DefinedTypes.FirstOrDefault(t => t.Name == eventTypeName);
+
+                if (eventType == null)
+                {
+                    // Couldn't match the type, continue?
+                    continue;
+                }
+
+                // Deserialize it
+                dynamic deserialized = deserializer.DeserializeLogData(log.Data, eventType);
+
+                logResponse.Log = deserialized;
+            }
+
+            return logResponses;
+        }
+
+        private List<Receipt> SearchReceipts(string contractAddress, string eventName)
+        {
             // Build the bytes we can use to check for this event.
             uint160 addressUint160 = contractAddress.ToUint160(this.network);
             byte[] addressBytes = addressUint160.ToBytes();
@@ -240,37 +322,39 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // Loop through all headers and check bloom.
             IEnumerable<ChainedHeader> blockHeaders = this.chainIndexer.EnumerateToTip(this.chainIndexer.Genesis);
             List<ChainedHeader> matches = new List<ChainedHeader>();
-            foreach(ChainedHeader chainedHeader in blockHeaders)
+            foreach (ChainedHeader chainedHeader in blockHeaders)
             {
-                var scHeader = (ISmartContractBlockHeader) chainedHeader.Header;
+                var scHeader = (ISmartContractBlockHeader)chainedHeader.Header;
                 if (scHeader.LogsBloom.Test(addressBytes) && scHeader.LogsBloom.Test(eventBytes)) // TODO: This is really inefficient, should build bloom for query and then compare.
                     matches.Add(chainedHeader);
             }
 
             // For all matching headers, get the block from local db.
             List<NBitcoin.Block> blocks = new List<NBitcoin.Block>();
-            foreach(ChainedHeader chainedHeader in matches)
+            foreach (ChainedHeader chainedHeader in matches)
             {
                 blocks.Add(this.blockStore.GetBlock(chainedHeader.HashBlock));
             }
 
             // For each block, get all receipts, and if they match, add to list to return.
-            List<ReceiptResponse> receiptResponses = new List<ReceiptResponse>();
-            foreach(NBitcoin.Block block in blocks)
+            List<Receipt> receiptResponses = new List<Receipt>();
+
+            foreach (NBitcoin.Block block in blocks)
             {
-                foreach(Transaction transaction in block.Transactions)
+                foreach (Transaction transaction in block.Transactions)
                 {
                     Receipt storedReceipt = this.receiptRepository.Retrieve(transaction.GetHash());
                     if (storedReceipt == null) // not a smart contract transaction. Move to next transaction.
                         continue;
 
                     // Check if address and first topic (event name) match.
-                    if (storedReceipt.Logs.Any(x => x.Address == addressUint160 && Enumerable.SequenceEqual(x.Topics[0], eventBytes)))
-                        receiptResponses.Add(new ReceiptResponse(storedReceipt, this.network));
+                    if (storedReceipt.Logs.Any(x =>
+                        x.Address == addressUint160 && Enumerable.SequenceEqual(x.Topics[0], eventBytes)))
+                        receiptResponses.Add(storedReceipt);
                 }
             }
 
-            return this.Json(receiptResponses);
+            return receiptResponses;
         }
 
         /// <summary>
@@ -391,10 +475,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// and you should check for a transaction receipt to see if it was successful.</returns>
         [Route("build-and-send-create")]
         [HttpPost]
-        public IActionResult BuildAndSendCreateSmartContractTransaction([FromBody] BuildCreateContractTransactionRequest request)
+        public async Task<IActionResult> BuildAndSendCreateSmartContractTransactionAsync([FromBody] BuildCreateContractTransactionRequest request)
         {
             if (!this.ModelState.IsValid)
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
+
+            if (!this.connectionManager.ConnectedPeers.Any())
+            {
+                this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]");
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, "Can't send transaction as the node requires at least one connection.", string.Empty);
+            }
 
             BuildCreateContractTransactionResponse response = this.smartContractTransactionService.BuildCreateTx(request);
 
@@ -403,13 +493,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
 
-            if (!this.connectionManager.ConnectedPeers.Any())
-            {
-                this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]");
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, "Can't send transaction: sending transaction requires at least one connection!", string.Empty);
-            }
-
-            this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+            await this.broadcasterManager.BroadcastTransactionAsync(transaction);
 
             // Check if transaction was actually added to a mempool.
             TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
@@ -419,6 +503,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
             }
+
+            response.Message = "Your CREATE contract transaction was successfully built and sent. Check the receipt using the transaction ID once it has been included in a new block.";
 
             return this.Json(response);
         }
@@ -435,10 +521,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// and you should check for a transaction receipt to see if it was successful.</returns>
         [Route("build-and-send-call")]
         [HttpPost]
-        public IActionResult BuildAndSendCallSmartContractTransaction([FromBody] BuildCallContractTransactionRequest request)
+        public async Task<IActionResult> BuildAndSendCallSmartContractTransactionAsync([FromBody] BuildCallContractTransactionRequest request)
         {
             if (!this.ModelState.IsValid)
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
+
+            if (!this.connectionManager.ConnectedPeers.Any())
+            {
+                this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]");
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, "Can't send transaction as the node requires at least one connection.", string.Empty);
+            }
 
             BuildCallContractTransactionResponse response = this.smartContractTransactionService.BuildCallTx(request);
             if (!response.Success)
@@ -446,13 +538,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
 
-            if (!this.connectionManager.ConnectedPeers.Any())
-            {
-                this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]");
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, "Can't send transaction: sending transaction requires at least one connection!", string.Empty);
-            }
-
-            this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+            await this.broadcasterManager.BroadcastTransactionAsync(transaction);
 
             // Check if transaction was actually added to a mempool.
             TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
@@ -462,6 +548,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
             }
+
+            response.Message = $"Your CALL method {request.MethodName} transaction was successfully built and sent. Check the receipt using the transaction ID once it has been included in a new block.";
 
             return this.Json(response);
         }
@@ -495,7 +583,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 ILocalExecutionResult result = this.localExecutor.Execute(
                     (ulong)this.chainIndexer.Height,
                     request.Sender?.ToUint160(this.network) ?? new uint160(),
-                    string.IsNullOrWhiteSpace(request.Amount) ? (Money) request.Amount : 0,
+                    string.IsNullOrWhiteSpace(request.Amount) ? (Money)request.Amount : 0,
                     txData);
 
                 return this.Json(result, new JsonSerializerSettings
@@ -561,7 +649,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                     Sum = grouping.Sum(x => x.Transaction.GetUnspentAmount(false))
                 });
             }
-            
+
             return this.Json(result);
         }
 

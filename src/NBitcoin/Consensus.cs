@@ -89,6 +89,9 @@ namespace NBitcoin
         /// <inheritdoc />
         public ConsensusRules ConsensusRules { get; }
 
+        /// <inheritdoc />
+        public List<Type> MempoolRules { get; set; }
+
         public Consensus(
             ConsensusFactory consensusFactory,
             ConsensusOptions consensusOptions,
@@ -156,6 +159,7 @@ namespace NBitcoin
             this.DefaultAssumeValid = defaultAssumeValid;
             this.ConsensusFactory = consensusFactory;
             this.ConsensusRules = new ConsensusRules();
+            this.MempoolRules = new List<Type>();
         }
     }
 }

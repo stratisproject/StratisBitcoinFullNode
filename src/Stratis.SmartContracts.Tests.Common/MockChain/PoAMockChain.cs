@@ -78,9 +78,9 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
         {
         }
 
-        public void MineBlocks(int num)
+        public void MineBlocks(int amountOfBlocks)
         {
-            this.nodes[0].CoreNode.MineBlocksAsync(num).GetAwaiter().GetResult();
+            this.nodes[0].CoreNode.MineBlocksAsync(amountOfBlocks).GetAwaiter().GetResult();
 
             this.WaitForAllNodesToSync();
         }

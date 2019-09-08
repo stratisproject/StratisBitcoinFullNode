@@ -21,7 +21,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         public WhitelistedContractTests()
         {
-            this.network = new SmartContractsPoARegTest();
+            this.network = new SmartContractsPoAWhitelistRegTest();
 
             this.builder = SmartContractNodeBuilder.Create(this);
             this.nodeFactory = (nodeIndex) => this.builder.CreateWhitelistedContractPoANode(this.network, nodeIndex).Start();
@@ -92,6 +92,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         private void SetupNodes(IMockChain chain, MockChainNode node1, MockChainNode node2)
         {
+            // TODO: Use ready chain data
             // Get premine
             chain.MineBlocks(10);
 

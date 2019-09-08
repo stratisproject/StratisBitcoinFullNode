@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.AsyncWork
         /// Having a single entry point for COMMON SERVICES allows us to speed up changes.
         /// </summary>
         ISignals Signals { get; }
-
+     
         /// <summary>
         /// Returns a list of friendly names of all loops, as well as their current status.
         /// </summary>
