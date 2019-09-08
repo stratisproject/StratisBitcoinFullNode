@@ -7,6 +7,7 @@ using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules;
+using Stratis.Bitcoin.Features.MemoryPool.Rules;
 
 namespace City.Networks
 {
@@ -42,6 +43,7 @@ namespace City.Networks
             this.DefaultConfigFilename = CityDefaultConfigFilename;
             this.MaxTimeOffsetSeconds = 25 * 60;
             this.CoinTicker = "CITY";
+            this.DefaultBanTimeSeconds = 16000; // 500 (MaxReorg) * 64 (TargetSpacing) / 2 = 4 hours, 26 minutes and 40 seconds
 
             var consensusFactory = new PosConsensusFactory();
 
@@ -176,6 +178,7 @@ namespace City.Networks
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0xb3425d46594a954b141898c7eebe369c6e6a35d2dab393c1f495504d2147883b"));
 
             this.RegisterRules(this.Consensus);
+            this.RegisterMempoolRules(this.Consensus);
         }
 
         protected void RegisterRules(IConsensus consensus)
@@ -225,6 +228,22 @@ namespace City.Networks
                                              // and that the "IsColdCoinStake" flag would have been set by the OP_CHECKCOLDSTAKEVERIFY opcode if applicable.
                 .Register<PosColdStakingRule>()
                 .Register<SaveCoinviewRule>();
+        }
+
+        protected void RegisterMempoolRules(IConsensus consensus)
+        {
+            consensus.MempoolRules = new List<Type>()
+            {
+                typeof(CheckConflictsMempoolRule),
+                typeof(CheckCoinViewMempoolRule),
+                typeof(CreateMempoolEntryMempoolRule),
+                typeof(CheckSigOpsMempoolRule),
+                typeof(CheckFeeMempoolRule),
+                typeof(CheckRateLimitMempoolRule),
+                typeof(CheckAncestorsMempoolRule),
+                typeof(CheckReplacementMempoolRule),
+                typeof(CheckAllInputsMempoolRule)
+            };
         }
 
         protected static Block CreateCityGenesisBlock(string pszTimestamp, ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
