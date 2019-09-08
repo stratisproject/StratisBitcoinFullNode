@@ -438,8 +438,11 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         {
             var utxoStakeDescriptions = new List<UtxoStakeDescription>();
 
+            var options = (PosConsensusOptions)this.network.Consensus.Options;
+            int minDepth = options.GetStakeMinConfirmations(this.chainIndexer.Height, this.network);
+
             List<UnspentOutputReference> stakableUtxos = this.walletManager
-                .GetSpendableTransactionsInWalletForStaking(walletSecret.WalletName, (int)this.network.Consensus.CoinbaseMaturity)
+                .GetSpendableTransactionsInWalletForStaking(walletSecret.WalletName, minDepth)
                 .Where(utxo => utxo.Transaction.Amount >= this.MinimumStakingCoinValue) // exclude dust from stake process
                 .ToList();
 
