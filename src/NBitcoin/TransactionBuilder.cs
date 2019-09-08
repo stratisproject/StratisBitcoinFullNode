@@ -139,6 +139,10 @@ namespace NBitcoin
                             }
                         }
 
+                        if (minTotal != null)
+                        {
+                            total = minTotal;
+                        }
                         break;
                     }
                 }
