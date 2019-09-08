@@ -12,14 +12,13 @@ namespace Stratis.Features.SQLiteWalletRepository.External
         public static List<HashSet<string>> GetAddressGroupings(this IWalletRepository repo, Network network, string walletName)
         {
             var addressGroupings = new Dictionary<string, HashSet<string>>();
-            var addressChangeGroupings = new Dictionary<string, HashSet<string>>();
 
             TransactionData prev = null;
 
             while (true)
             {
                 // Read the transactions in batches.
-                List<TransactionData> transactions = repo.GetAllTransactions(walletName, null, null, null, TransactionBatchSize, prev).ToList();
+                List<TransactionData> transactions = repo.GetAllTransactions(walletName, null, null, null, TransactionBatchSize, prev, false).ToList();
                 if (transactions.Count == 0)
                     break;
 
@@ -44,15 +43,10 @@ namespace Stratis.Features.SQLiteWalletRepository.External
                         grouping.Add(addressBase58.ToString());
                     }
 
+                    // Include any change addresses.
                     {
-                        var spendTxId = transaction.Id.ToString();
-                        if (!addressChangeGroupings.TryGetValue(spendTxId, out HashSet<string> grouping))
-                        {
-                            grouping = new HashSet<string>();
-                            addressChangeGroupings[spendTxId] = grouping;
-                        }
-
-                        grouping.Add(addressBase58.ToString());
+                        if (addressGroupings.TryGetValue(transaction.Id.ToString(), out HashSet<string> grouping))
+                            grouping.Add(addressBase58.ToString());
                     }
                 }
             }
@@ -62,10 +56,6 @@ namespace Stratis.Features.SQLiteWalletRepository.External
 
             foreach ((string spendTxId, HashSet<string> grouping) in addressGroupings.Select(kv => (kv.Key, kv.Value)))
             {
-                // Include any change addresses.
-                if (addressChangeGroupings.TryGetValue(spendTxId, out HashSet<string> changeGrouping))
-                    grouping.UnionWith(changeGrouping);
-
                 // Create a list of unique groupings intersecting this grouping.
                 var hits = new List<HashSet<string>>();
                 foreach (string addressBase58 in grouping)
