@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.consensusManager = new Mock<IConsensusManager>();
             this.network = KnownNetworks.StratisTest;
-            this.network.Consensus.Options = new ConsensusOptions();
+            this.network.Consensus.Options = new PosConsensusOptions();
             this.chainIndexer = new ChainIndexer(this.network);
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
             this.initialBlockDownloadState = new Mock<IInitialBlockDownloadState>();
