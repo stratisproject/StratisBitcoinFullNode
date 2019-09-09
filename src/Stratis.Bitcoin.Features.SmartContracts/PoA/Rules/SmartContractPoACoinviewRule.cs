@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -22,6 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
         private readonly ISenderRetriever senderRetriever;
         private readonly IReceiptRepository receiptRepository;
         private readonly ICoinView coinView;
+        private readonly ILoggerFactory loggerFactory;
 
         public SmartContractPoACoinviewRule(
             IStateRepositoryRoot stateRepositoryRoot,
@@ -29,7 +31,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
             ICallDataSerializer callDataSerializer,
             ISenderRetriever senderRetriever,
             IReceiptRepository receiptRepository,
-            ICoinView coinView)
+            ICoinView coinView,
+            ILoggerFactory loggerFactory)
         {
             this.stateRepositoryRoot = stateRepositoryRoot;
             this.executorFactory = executorFactory;
@@ -37,6 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
             this.senderRetriever = senderRetriever;
             this.receiptRepository = receiptRepository;
             this.coinView = coinView;
+            this.loggerFactory = loggerFactory;
         }
 
         /// <inheritdoc />
@@ -44,7 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
         {
             base.Initialize();
 
-            this.logic = new SmartContractCoinViewRuleLogic(this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView);
+            this.logic = new SmartContractCoinViewRuleLogic(this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView, this.loggerFactory);
         }
 
         /// <inheritdoc />
