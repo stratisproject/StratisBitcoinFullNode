@@ -345,20 +345,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 {
                     this.logger.LogDebug("Removing reorged tx '{0}'.", transactionData.Id);
                     this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
-
-                    // Delete the unconfirmed spendable transaction associated to this transaction.
-                    if (transactionData.SpendingDetails != null)
-                    {
-                        this.logger.LogDebug("Try and remove the reorged tx's associated unconfirmed spending transaction '{0}'.", transactionData.SpendingDetails.TransactionId);
-                        if (this.Wallet.MultiSigAddress.Transactions.TryGetTransaction(transactionData.SpendingDetails.TransactionId, 0, out TransactionData associatedUnconfirmedSpendingTx))
-                        {
-                            if (!associatedUnconfirmedSpendingTx.IsConfirmed())
-                            {
-                                this.Wallet.MultiSigAddress.Transactions.Remove(associatedUnconfirmedSpendingTx);
-                                this.logger.LogDebug("The reorged tx's associated unconfirmed spending transaction '{0}' was removed.", associatedUnconfirmedSpendingTx.Id);
-                            }
-                        }
-                    }
+                    this.RemoveAssociatedUnconfirmedSpentByTransaction(transactionData);
                 }
 
                 // Bring back all the UTXO that are now spendable after the reorg.
@@ -624,14 +611,44 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     if (this.Wallet.MultiSigAddress.Transactions.TryGetTransaction(hash, index, out TransactionData foundTransaction))
                     {
                         this.logger.LogDebug("Removing transaction {0}-{1}.", foundTransaction.Id, foundTransaction.Index);
-
                         this.Wallet.MultiSigAddress.Transactions.Remove(foundTransaction);
+
+                        this.RemoveAssociatedUnconfirmedSpentByTransaction(foundTransaction);
+
                         updatedWallet = true;
                     }
                 }
             }
 
             return updatedWallet;
+        }
+
+        /// <summary>
+        /// If the transaction we are trying to remove has spending details, it's associated unconfirmed transaction should also be removed.
+        /// </summary>
+        /// <param name="transaction">The transaction to process.</param>
+        private void RemoveAssociatedUnconfirmedSpentByTransaction(TransactionData transaction)
+        {
+            if (transaction.SpendingDetails == null)
+            {
+                this.logger.LogDebug("{0}'s spending details are null.", transaction.Id);
+                return;
+            }
+
+            if (!this.Wallet.MultiSigAddress.Transactions.TryGetTransaction(transaction.SpendingDetails.TransactionId, 0, out TransactionData associatedSpendingTx))
+            {
+                this.logger.LogDebug("{0}'s associated spending transaction does not exist.", transaction.SpendingDetails.TransactionId);
+                return;
+            }
+
+            if (associatedSpendingTx.IsConfirmed())
+            {
+                this.logger.LogDebug("{0}'s associated spending transaction '{1}' was not removed as it is already confirmed.", transaction.SpendingDetails.TransactionId, associatedSpendingTx.Id);
+                return;
+            }
+
+            this.Wallet.MultiSigAddress.Transactions.Remove(associatedSpendingTx);
+            this.logger.LogDebug("{0}'s associated spending transaction '{1}' was removed.", transaction.SpendingDetails.TransactionId, associatedSpendingTx.Id);
         }
 
         /// <inheritdoc />
