@@ -20,6 +20,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
 using Stratis.Bitcoin.Features.PoA.Behaviors;
+using Stratis.Bitcoin.Features.PoA.ProtocolEncryption;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.PoA.Voting.ConsensusRules;
 using Stratis.Bitcoin.Interfaces;
@@ -64,10 +65,12 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly IBlockStoreQueue blockStoreQueue;
 
+        private readonly CertificatesManager certificatesManager;
+
         public PoAFeature(IFederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ChainIndexer chainIndexer,
             IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory,
             IPoAMiner miner, VotingManager votingManager, Network network, IWhitelistedHashesRepository whitelistedHashesRepository,
-            IdleFederationMembersKicker idleFederationMembersKicker, IChainState chainState, IBlockStoreQueue blockStoreQueue)
+            IdleFederationMembersKicker idleFederationMembersKicker, IChainState chainState, IBlockStoreQueue blockStoreQueue, CertificatesManager certificatesManager)
         {
             this.federationManager = federationManager;
             this.connectionManager = connectionManager;
@@ -83,6 +86,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.idleFederationMembersKicker = idleFederationMembersKicker;
             this.chainState = chainState;
             this.blockStoreQueue = blockStoreQueue;
+            this.certificatesManager = certificatesManager;
 
             payloadProvider.DiscoverPayloads(this.GetType().Assembly);
         }
@@ -107,6 +111,11 @@ namespace Stratis.Bitcoin.Features.PoA
 
                 if (options.AutoKickIdleMembers)
                     this.idleFederationMembersKicker.Initialize();
+            }
+
+            if (options.EnablePermissionedMembership)
+            {
+                this.certificatesManager.Initialize();
             }
 
             this.miner.InitializeMining();
@@ -164,15 +173,14 @@ namespace Stratis.Bitcoin.Features.PoA
                 typeof(PoAHeaderDifficultyRule),
                 typeof(PoAHeaderSignatureRule)
             })
-                    services.AddSingleton(typeof(IHeaderValidationConsensusRule), ruleType);
+            services.AddSingleton(typeof(IHeaderValidationConsensusRule), ruleType);
 
             foreach (Type ruleType in new List<Type>()
             {
                 typeof(BlockMerkleRootRule),
                 typeof(PoAIntegritySignatureRule)
             })
-                services.AddSingleton(typeof(IIntegrityValidationConsensusRule), ruleType);
-
+            services.AddSingleton(typeof(IIntegrityValidationConsensusRule), ruleType);
 
             foreach (Type ruleType in new List<Type>()
             {
@@ -190,7 +198,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
                 typeof(PoAVotingCoinbaseOutputFormatRule),
             })
-                services.AddSingleton(typeof(IPartialValidationConsensusRule), ruleType);
+            services.AddSingleton(typeof(IPartialValidationConsensusRule), ruleType);
 
             foreach (Type ruleType in new List<Type>()
             {
@@ -202,7 +210,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 typeof(PoACoinviewRule),
                 typeof(SaveCoinviewRule)
             })
-                services.AddSingleton(typeof(IFullValidationConsensusRule), ruleType);
+            services.AddSingleton(typeof(IFullValidationConsensusRule), ruleType);
         }
     }
 
@@ -253,6 +261,9 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
                         services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
                         services.AddSingleton<IdleFederationMembersKicker>();
+
+                        // Permissioned membership.
+                        services.AddSingleton<CertificatesManager>();
                     });
             });
 
