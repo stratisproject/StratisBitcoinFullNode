@@ -92,23 +92,25 @@ namespace Stratis.Bitcoin.Base.Deployments
                 var hexVersions = new Dictionary<string, int>();
                 int totalBlocks = 0;
 
-                while (indexPrev != periodStartsHeader)
+                ChainedHeader headerTemp = indexPrev;
+
+                while (headerTemp != periodStartsHeader)
                 {
-                    if (this.Condition(indexPrev, deploymentIndex))
+                    if (this.Condition(headerTemp, deploymentIndex))
                     {
                         votes++;
                     }
 
                     totalBlocks++;
 
-                    string hexVersion = indexPrev.Header.Version.ToString("X8");
+                    string hexVersion = headerTemp.Header.Version.ToString("X8");
 
                     if (!hexVersions.TryGetValue(hexVersion, out int count))
                         count = 0;
 
                     hexVersions[hexVersion] = count + 1;
 
-                    indexPrev = indexPrev.Previous;
+                    headerTemp = headerTemp.Previous;
                 }
 
                 thresholdStateModels.Add(new ThresholdStateModel()

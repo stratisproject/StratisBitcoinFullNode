@@ -449,16 +449,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 transaction.ValuesLazyLoadingIsOn = false;
 
-                byte[] key = hash.ToBytes();
-                Row<byte[], byte[]> blockRow = transaction.Select<byte[], byte[]>(BlockTableName, key);
-                if (blockRow.Exists)
-                    res = this.dBreezeSerializer.Deserialize<Block>(blockRow.Value);
-            }
+                var results = this.GetBlocksFromHashes(transaction, new List<uint256> {hash});
 
-            // If searching for genesis block, return it.
-            if (res == null && hash == this.network.GenesisHash)
-            {
-                res = this.network.GetGenesis();
+                if (results.FirstOrDefault() != null)
+                    res = results.FirstOrDefault();
             }
 
             return res;
@@ -534,6 +528,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             foreach ((uint256, byte[]) key in keys)
             {
+                // If searching for genesis block, return it.
+                if (key.Item1 == this.network.GenesisHash)
+                {
+                    results[key.Item1] = this.network.GetGenesis();
+                    continue;
+                }
+
                 Row<byte[], byte[]> blockRow = dbreezeTransaction.Select<byte[], byte[]>(BlockTableName, key.Item2);
                 if (blockRow.Exists)
                 {
