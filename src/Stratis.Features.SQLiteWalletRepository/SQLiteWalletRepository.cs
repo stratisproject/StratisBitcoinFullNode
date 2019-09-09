@@ -888,7 +888,13 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Returns <see cref="TransactionData"/> records in the wallet acting as inputs to the given transaction.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet.</param>
+        /// <param name="transactionTime">The transaction creation time.</param>
+        /// <param name="transactionId">The transaction id.</param>
+        /// <returns><see cref="TransactionData"/> records in the wallet acting as inputs to the given transaction.</returns>
         public IEnumerable<TransactionData> GetTransactionInputs(string walletName, DateTimeOffset transactionTime, uint256 transactionId)
         {
             DBConnection conn = this.GetConnection(walletName);
@@ -898,7 +904,13 @@ namespace Stratis.Features.SQLiteWalletRepository
                 yield return this.ToTransactionData(tranData, new HDPayment[] { });
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Returns <see cref="TransactionData"/> records in the wallet acting as outputs to the given transaction.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet.</param>
+        /// <param name="transactionTime">The transaction creation time.</param>
+        /// <param name="transactionId">The transaction id.</param>
+        /// <returns><see cref="TransactionData"/> records in the wallet acting as outputs to the given transaction.</returns>
         public IEnumerable<TransactionData> GetTransactionOutputs(string walletName, DateTimeOffset transactionTime, uint256 transactionId)
         {
             DBConnection conn = this.GetConnection(walletName);
@@ -906,6 +918,97 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             foreach (HDTransactionData tranData in HDTransactionData.FindTransactionOutputs(conn, wallet.WalletId, (int)transactionTime.ToUnixTimeSeconds(), transactionId.ToString()))
                 yield return this.ToTransactionData(tranData, new HDPayment[] { });
+        }
+
+        private class ScriptTransaction
+        {
+            public string ScriptPubKey { get; set; }
+            public string TransactionId { get; set; }
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<IEnumerable<string>> GetAddressGroupings(string walletName)
+        {
+            var addressGroupings = new Dictionary<string, HashSet<string>>();
+
+            DBConnection conn = GetConnection(walletName);
+            HDWallet wallet = conn.GetWalletByName(walletName);
+
+            // Group all input addresses with each other.
+            foreach (var spendData in conn.Query<ScriptTransaction>($@"
+                SELECT  ScriptPubKey
+                ,       TransactionId
+                FROM    HDTransactionData
+                WHERE   WalletId = {wallet.WalletId}"))
+            {
+                var spendTxId = spendData.TransactionId;
+                if (spendTxId != null)
+                {
+                    if (!addressGroupings.TryGetValue(spendTxId, out HashSet<string> grouping))
+                    {
+                        grouping = new HashSet<string>();
+                        addressGroupings[spendTxId] = grouping;
+                    }
+
+                    grouping.Add(spendData.ScriptPubKey);
+                }
+            }
+
+            // Include any change addresses.
+            foreach (var outputData in conn.Query<ScriptTransaction>($@"
+                SELECT  ScriptPubKey
+                ,       OutputTxId
+                FROM    HDTransactionData
+                WHERE   WalletId = {wallet.WalletId}"))
+            {
+                if (addressGroupings.TryGetValue(outputData.TransactionId, out HashSet<string> grouping))
+                    grouping.Add(outputData.ScriptPubKey);
+            }
+
+            // Determine unique mappings.
+            var uniqueGroupings = new List<HashSet<string>>();
+            var setMap = new Dictionary<string, HashSet<string>>();
+
+            foreach ((string spendTxId, HashSet<string> grouping) in addressGroupings.Select(kv => (kv.Key, kv.Value)))
+            {
+                // Create a list of unique groupings intersecting this grouping.
+                var hits = new List<HashSet<string>>();
+                foreach (string scriptPubkey in grouping)
+                    if (setMap.TryGetValue(scriptPubkey, out HashSet<string> it))
+                        hits.Add(it);
+
+                // Merge the matching uinique groupings into this grouping and remove the old groupings.
+                foreach (HashSet<string> hit in hits)
+                {
+                    grouping.UnionWith(hit);
+                    uniqueGroupings.Remove(hit);
+                }
+
+                // Add the new merged grouping.
+                uniqueGroupings.Add(grouping);
+
+                // Update the set map which maps addresses to the unique grouping they appear in.
+                foreach (string scriptPubKey in grouping)
+                    setMap[scriptPubKey] = grouping;
+            }
+
+            // Return the result.
+            foreach (HashSet<string> scriptPubKeys in uniqueGroupings)
+            {
+                var addressBase58s = new List<string>();
+
+                foreach (string scriptPubKey in scriptPubKeys)
+                {
+                    Script script = Script.FromHex(scriptPubKey);
+                    var addressBase58 = script.GetDestinationAddress(this.Network);
+                    if (addressBase58 == null)
+                        continue;
+
+                    addressBase58s.Add(addressBase58.ToString());
+                }
+
+                yield return addressBase58s;
+            }
         }
     }
 }

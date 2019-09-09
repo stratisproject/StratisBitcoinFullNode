@@ -642,8 +642,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 long ticksTotal = DateTime.Now.Ticks;
                 repo.ProcessBlocks(blockBase.TheSource());
                 ticksTotal = DateTime.Now.Ticks - ticksTotal;
-
-                var groupings = repo.GetAddressGroupings(repo.Network, "wallet1");
             }
         }
     }

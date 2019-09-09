@@ -207,5 +207,12 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <returns>The wallet's <see cref="TransactionData"/> records.</returns>
         /// <remarks>Spending details are not included.</remarks>
         IEnumerable<TransactionData> GetAllTransactions(string walletName, string accountName, int? addressType, int? addressIndex, int limit = int.MaxValue, TransactionData prev = null, bool descending = true);
+
+        /// <summary>
+        /// Determines address groupings.
+        /// </summary>
+        /// <param name="walletName">The wallet name.</param>
+        /// <returns>Returns an enumeration of grouped addresses.</returns>
+        IEnumerable<IEnumerable<string>> GetAddressGroupings(string walletName);
     }
 }
