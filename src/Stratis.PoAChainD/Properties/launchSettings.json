@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Stratis.PoAChainD": {
+      "commandName": "Project",
+      "commandLineArgs": "-certificatepassword=\"qweqwe\""
+    }
+  }
+}
