@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="externalEndPoint">IP address and port that the server is reachable from the Internet on.</param>
         /// <param name="version">Version of the network protocol that the server should run.</param>
         /// <returns>Newly created network peer server, which is ready to be started.</returns>
-        NetworkPeerServer CreateNetworkPeerServer(IPEndPoint localEndPoint, IPEndPoint externalEndPoint, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION);
+        INetworkPeerServer CreateNetworkPeerServer(IPEndPoint localEndPoint, IPEndPoint externalEndPoint, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION);
 
         /// <summary>
         /// Creates a new representation of the network connection using TCP client object.
@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc/>
-        public NetworkPeerServer CreateNetworkPeerServer(IPEndPoint localEndPoint, IPEndPoint externalEndPoint, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+        public INetworkPeerServer CreateNetworkPeerServer(IPEndPoint localEndPoint, IPEndPoint externalEndPoint, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
         {
             Guard.NotNull(localEndPoint, nameof(localEndPoint));
             Guard.NotNull(externalEndPoint, nameof(externalEndPoint));

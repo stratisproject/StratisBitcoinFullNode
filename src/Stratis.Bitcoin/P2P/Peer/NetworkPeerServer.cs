@@ -17,7 +17,30 @@ using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
-    public class NetworkPeerServer : IDisposable
+    public interface INetworkPeerServer : IDisposable
+    {
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
+        Network Network { get; }
+
+        /// <summary>Version of the protocol that the server is running.</summary>
+        ProtocolVersion Version { get; }
+
+        /// <summary>The parameters that will be cloned and applied for each peer connecting to <see cref="NetworkPeerServer"/>.</summary>
+        NetworkPeerConnectionParameters InboundNetworkPeerConnectionParameters { get; set; }
+
+        /// <summary>IP address and port, on which the server listens to incoming connections.</summary>
+        IPEndPoint LocalEndpoint { get; }
+
+        /// <summary>IP address and port of the external network interface that is accessible from the Internet.</summary>
+        IPEndPoint ExternalEndpoint { get; }
+
+        /// <summary>
+        /// Starts listening on the server's initialized endpoint.
+        /// </summary>
+        void Listen();
+    }
+
+    public class NetworkPeerServer : INetworkPeerServer
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -25,19 +48,19 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Factory for creating P2P network peers.</summary>
         private readonly INetworkPeerFactory networkPeerFactory;
 
-        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
+        /// <inheritdoc />
         public Network Network { get; private set; }
 
-        /// <summary>Version of the protocol that the server is running.</summary>
+        /// <inheritdoc />
         public ProtocolVersion Version { get; private set; }
 
-        /// <summary>The parameters that will be cloned and applied for each peer connecting to <see cref="NetworkPeerServer"/>.</summary>
+        /// <inheritdoc />
         public NetworkPeerConnectionParameters InboundNetworkPeerConnectionParameters { get; set; }
 
-        /// <summary>IP address and port, on which the server listens to incoming connections.</summary>
+        /// <inheritdoc />
         public IPEndPoint LocalEndpoint { get; private set; }
 
-        /// <summary>IP address and port of the external network interface that is accessible from the Internet.</summary>
+        /// <inheritdoc />
         public IPEndPoint ExternalEndpoint { get; private set; }
 
         /// <summary>TCP server listener accepting inbound connections.</summary>
@@ -109,9 +132,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.logger.LogDebug("Network peer server ready to listen on '{0}'.", this.LocalEndpoint);
         }
 
-        /// <summary>
-        /// Starts listening on the server's initialized endpoint.
-        /// </summary>
+        /// <inheritdoc />
         public void Listen()
         {
             try

@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <inheritdoc/>
-        public List<NetworkPeerServer> Servers { get; }
+        public List<INetworkPeerServer> Servers { get; }
 
         /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
         private readonly NetworkPeerDisposer networkPeerDisposer;
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Connection
             this.peerDiscovery = peerDiscovery;
             this.ConnectionSettings = connectionSettings;
             this.networkPeerDisposer = new NetworkPeerDisposer(this.loggerFactory, this.asyncProvider);
-            this.Servers = new List<NetworkPeerServer>();
+            this.Servers = new List<INetworkPeerServer>();
 
             this.Parameters = parameters;
             this.Parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.Connection
             foreach (NodeServerEndpoint listen in this.ConnectionSettings.Bind)
             {
                 NetworkPeerConnectionParameters cloneParameters = this.Parameters.Clone();
-                NetworkPeerServer server = this.NetworkPeerFactory.CreateNetworkPeerServer(listen.Endpoint, this.ConnectionSettings.ExternalEndpoint, this.Parameters.Version);
+                INetworkPeerServer server = this.NetworkPeerFactory.CreateNetworkPeerServer(listen.Endpoint, this.ConnectionSettings.ExternalEndpoint, this.Parameters.Version);
 
                 this.Servers.Add(server);
                 var cmb = (cloneParameters.TemplateBehaviors.Single(x => x is IConnectionManagerBehavior) as ConnectionManagerBehavior);
@@ -364,7 +364,7 @@ namespace Stratis.Bitcoin.Connection
             foreach (IPeerConnector peerConnector in this.PeerConnectors)
                 peerConnector.Dispose();
 
-            foreach (NetworkPeerServer server in this.Servers)
+            foreach (INetworkPeerServer server in this.Servers)
                 server.Dispose();
 
             this.networkPeerDisposer.Dispose();
