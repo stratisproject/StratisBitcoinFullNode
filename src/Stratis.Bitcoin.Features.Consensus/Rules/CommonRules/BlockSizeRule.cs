@@ -22,6 +22,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 return Task.CompletedTask;
 
             var consensus = this.Parent.Network.Consensus;
+            
+            // An unexpected consequence of serialization is to change the Block.BlockSize property
+            // This rule serializes the block in a few ways to determine the block weight and as
+            // a result changes the BlockSize property unintentionally, to fix this we create a new instance of the Block
+            Block block = consensus.ConsensusFactory.CreateBlock();
+            block.ReadWrite(context.ValidationContext.BlockToValidate.ToBytes(consensus.ConsensusFactory), consensus.ConsensusFactory);
 
             // After the coinbase witness nonce and commitment are verified,
             // we can check if the block weight passes (before we've checked the
@@ -29,13 +35,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // large by filling up the coinbase witness, which doesn't change
             // the block hash, so we couldn't mark the block as permanently
             // failed).
-            if (context.ValidationContext.BlockToValidate.GetBlockWeight(consensus) > consensus.Options.MaxBlockWeight)
+            if (block.GetBlockWeight(consensus) > consensus.Options.MaxBlockWeight)
             {
                 this.Logger.LogTrace("(-)[BAD_BLOCK_WEIGHT]");
                 ConsensusErrors.BadBlockWeight.Throw();
             }
-
-            Block block = context.ValidationContext.BlockToValidate;
 
             // Size limits.
             if ((block.Transactions.Count == 0) || (block.Transactions.Count > consensus.Options.MaxBlockBaseSize) ||
