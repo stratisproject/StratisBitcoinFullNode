@@ -345,7 +345,9 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 {
                     this.logger.LogDebug("Removing reorged tx '{0}'.", transactionData.Id);
                     this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
-                    this.RemoveAssociatedUnconfirmedSpentByTransaction(transactionData);
+
+                    if (transactionData.SpendingDetails != null)
+                        this.RemoveAssociatedUnconfirmedSpentByTransaction(transactionData.SpendingDetails.TransactionId);
                 }
 
                 // Bring back all the UTXO that are now spendable after the reorg.
@@ -529,7 +531,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         return true;
                     });
 
-                    this.AddSpendingTransactionToWallet(transaction, paidOutTo, tTx.Id, tTx.Index, blockHeight, blockHash, block, withdrawal);
+                    this.AddSpendingTransactionToWalletLocked(transaction, paidOutTo, tTx.Id, tTx.Index, blockHeight, blockHash, block, withdrawal);
                     foundSendingTrx = true;
                 }
 
@@ -593,11 +595,14 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     continue;
                 }
 
-                // Get the transaction being spent and unspend it.
-                this.logger.LogDebug("Unspending transaction {0}-{1}.", spentTransaction.Id, spentTransaction.Index);
-
-                spentTransaction.SpendingDetails = null;
-                updatedWallet = true;
+                if (spentTransaction.SpendingDetails != null)
+                {
+                    // Get the transaction being spent and unspend it.
+                    this.logger.LogDebug("Unspending transaction {0}-{1}.", spentTransaction.Id, spentTransaction.Index);
+                    this.RemoveAssociatedUnconfirmedSpentByTransaction(spentTransaction.SpendingDetails.TransactionId);
+                    spentTransaction.SpendingDetails = null;
+                    updatedWallet = true;
+                }
             }
 
             foreach (TxOut utxo in transaction.Outputs)
@@ -612,9 +617,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     {
                         this.logger.LogDebug("Removing transaction {0}-{1}.", foundTransaction.Id, foundTransaction.Index);
                         this.Wallet.MultiSigAddress.Transactions.Remove(foundTransaction);
-
-                        this.RemoveAssociatedUnconfirmedSpentByTransaction(foundTransaction);
-
                         updatedWallet = true;
                     }
                 }
@@ -626,29 +628,23 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <summary>
         /// If the transaction we are trying to remove has spending details, it's associated unconfirmed transaction should also be removed.
         /// </summary>
-        /// <param name="transaction">The transaction to process.</param>
-        private void RemoveAssociatedUnconfirmedSpentByTransaction(TransactionData transaction)
+        /// <param name="transactionId">The transaction to process.</param>
+        private void RemoveAssociatedUnconfirmedSpentByTransaction(uint256 transactionId)
         {
-            if (transaction.SpendingDetails == null)
+            if (!this.Wallet.MultiSigAddress.Transactions.TryGetTransaction(transactionId, 0, out TransactionData associatedSpendingTx))
             {
-                this.logger.LogDebug("{0}'s spending details are null.", transaction.Id);
-                return;
-            }
-
-            if (!this.Wallet.MultiSigAddress.Transactions.TryGetTransaction(transaction.SpendingDetails.TransactionId, 0, out TransactionData associatedSpendingTx))
-            {
-                this.logger.LogDebug("{0}'s associated spending transaction does not exist.", transaction.SpendingDetails.TransactionId);
+                this.logger.LogDebug("{0}'s associated spending transaction does not exist.", transactionId);
                 return;
             }
 
             if (associatedSpendingTx.IsConfirmed())
             {
-                this.logger.LogDebug("{0}'s associated spending transaction '{1}' was not removed as it is already confirmed.", transaction.SpendingDetails.TransactionId, associatedSpendingTx.Id);
+                this.logger.LogDebug("{0}'s associated spending transaction '{1}' was not removed as it is already confirmed.", transactionId, associatedSpendingTx.Id);
                 return;
             }
 
             this.Wallet.MultiSigAddress.Transactions.Remove(associatedSpendingTx);
-            this.logger.LogDebug("{0}'s associated spending transaction '{1}' was removed.", transaction.SpendingDetails.TransactionId, associatedSpendingTx.Id);
+            this.logger.LogDebug("{0}'s associated spending transaction '{1}' was removed.", transactionId, associatedSpendingTx.Id);
         }
 
         /// <inheritdoc />
@@ -747,7 +743,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <param name="blockHeight">Height of the block.</param>
         /// <param name="blockHash">Hash of the block.</param>
         /// <param name="block">The block containing the transaction to add.</param>
-        private void AddSpendingTransactionToWallet(Transaction transaction,
+        private void AddSpendingTransactionToWalletLocked(Transaction transaction,
             IEnumerable<TxOut> paidToOutputs,
             uint256 spendingTransactionId,
             int spendingTransactionIndex,
@@ -761,44 +757,35 @@ namespace Stratis.Features.FederatedPeg.Wallet
             Guard.Assert(blockHash == (blockHash ?? block?.GetHash()));
 
             // Get the transaction being spent.
-            if (!this.Wallet.MultiSigAddress.Transactions.TryGetTransaction(spendingTransactionId, spendingTransactionIndex, out TransactionData spentTransaction))
+            if (!this.Wallet.MultiSigAddress.Transactions.TryGetTransaction(spendingTransactionId, spendingTransactionIndex, out TransactionData spendingTransaction))
             {
                 // Strange, why would it be null?
                 this.logger.LogTrace("(-)[TX_NULL]");
                 return;
             }
 
-            if (spentTransaction.SpendingDetails == null)
+            if (spendingTransaction.SpendingDetails?.BlockHeight != null && blockHeight == null)
             {
-                // 1) If no existing spending details, always set new spending details.
-
-                this.logger.LogDebug("Spending UTXO '{0}-{1}' is new at height {2}; Spending with transaction '{3}'.", spendingTransactionId, spendingTransactionIndex, blockHeight, transaction.GetHash());
-
-                spentTransaction.SpendingDetails = this.BuildSpendingDetails(transaction, paidToOutputs, blockHeight, blockHash, block, withdrawal);
+                // If the spending tx's spending details are confirmed and this is coming in unconfirmed, ignore.
+                // This is probably an unlucky concurrency issues, e.g. tx from mempool coming in after confirmed in a block.
+                this.logger.LogDebug("Unconfirmed spending UTXO '{0}-{1}' is being ignored as it is already confirmed in block {2}", spendingTransactionId, spendingTransactionIndex, spendingTransaction.SpendingDetails.BlockHeight);
+                return;
             }
-            else if (spentTransaction.SpendingDetails.BlockHeight == null)
-            {
-                // 2) If there are unconfirmed existing spending details, always overwrite with new one. Could be a
-                //   "more" signed tx, a FullySigned mempool tx or a confirmed block tx.
 
-                this.logger.LogDebug("Spending UTXO '{0}-{1}' is being overwritten at height {2} (spent transaction's spending details height is null).", spendingTransactionId, spendingTransactionIndex, blockHeight);
+            // If spending details is null, always set new spending details.
+            if (spendingTransaction.SpendingDetails == null)
+                this.logger.LogDebug("Spending UTXO '{0}-{1}' is new at height {2}, spending with tx '{3}'.", spendingTransactionId, spendingTransactionIndex, blockHeight, transaction.GetHash());
 
-                spentTransaction.SpendingDetails = this.BuildSpendingDetails(transaction, paidToOutputs, blockHeight, blockHash, block, withdrawal);
-            }
-            else if (spentTransaction.SpendingDetails.BlockHeight != null && blockHeight == null)
-            {
-                // 3) If we have confirmed existing spending details, and this is coming in unconfirmed,
-                //   probably just unlucky concurrency issues, e.g. tx from mempool coming in after confirmed in a block.
-                this.logger.LogDebug("Unconfirmed spending UTXO '{0}-{1}' is being ignored. Already confirmed in block.", spendingTransactionId, spendingTransactionIndex);
-            }
-            else
-            {
-                // 4) If we have confirmed existing spending details, and this is also coming in confirmed, then update the spending details.
+            // If there are unconfirmed existing spending details, always overwrite with new one. 
+            // Could be a "more" signed tx, a FullySigned mempool tx or a confirmed block tx.
+            if (spendingTransaction.SpendingDetails?.BlockHeight == null)
+                this.logger.LogDebug("Spending UTXO '{0}-{1}' has unconfirmed spending details at height {2}, spending with tx '{3}'.", spendingTransactionId, spendingTransactionIndex, blockHeight, transaction.GetHash());
 
-                this.logger.LogDebug("Spending UTXO '{0}-{1}' is being overwritten at height {2}.", spendingTransactionId, spendingTransactionIndex, blockHeight);
+            // If the spending details are confirmed and this is also coming in confirmed, then update the spending details.
+            if (spendingTransaction.SpendingDetails?.BlockHeight != null && blockHeight != null)
+                this.logger.LogDebug("Spending UTXO '{0}-{1}' has confirmed spending details height {2}, spending with tx '{3}'.", spendingTransactionId, spendingTransactionIndex, blockHeight, transaction.GetHash());
 
-                spentTransaction.SpendingDetails = this.BuildSpendingDetails(transaction, paidToOutputs, blockHeight, blockHash, block, withdrawal);
-            }
+            spendingTransaction.SpendingDetails = this.BuildSpendingDetails(transaction, paidToOutputs, blockHeight, blockHash, block, withdrawal);
         }
 
         /// <summary>
