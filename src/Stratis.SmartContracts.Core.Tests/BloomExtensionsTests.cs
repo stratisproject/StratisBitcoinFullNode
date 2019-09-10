@@ -15,7 +15,7 @@ namespace Stratis.SmartContracts.Core.Tests
             var bloom = new Bloom();
             bloom.Add(data);
 
-            Assert.True(bloom.Test(null, null));
+            Assert.True(bloom.Test((uint160)null, (IEnumerable<byte[]>)null));
         }
 
         [Fact]
