@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="peer">Network peer the node is connected to, or will connect to.</param>
         /// <param name="client">Initialized and possibly connected TCP client to the peer.</param>
         /// <param name="processMessageAsync">Callback to be called when a new message arrives from the peer.</param>
-        NetworkPeerConnection CreateNetworkPeerConnection(INetworkPeer peer, TcpClient client, ProcessMessageAsync<IncomingMessage> processMessageAsync);
+        INetworkPeerConnection CreateNetworkPeerConnection(INetworkPeer peer, TcpClient client, ProcessMessageAsync<IncomingMessage> processMessageAsync);
 
         /// <summary>
         /// Registers a callback that will be passed to all created peers. It gets called prior to sending messages to the peer.
@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc/>
-        public NetworkPeerConnection CreateNetworkPeerConnection(INetworkPeer peer, TcpClient client, ProcessMessageAsync<IncomingMessage> processMessageAsync)
+        public INetworkPeerConnection CreateNetworkPeerConnection(INetworkPeer peer, TcpClient client, ProcessMessageAsync<IncomingMessage> processMessageAsync)
         {
             Guard.NotNull(peer, nameof(peer));
             Guard.NotNull(client, nameof(client));

@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public TimeSpan? TimeOffset { get; private set; }
 
         /// <inheritdoc/>
-        public NetworkPeerConnection Connection { get; private set; }
+        public INetworkPeerConnection Connection { get; private set; }
 
         /// <summary>Statistics about the number of bytes transferred from and to the peer.</summary>
         private PerformanceCounter counter;

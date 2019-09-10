@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         TimeSpan? TimeOffset { get; }
 
         /// <summary>Component representing the network connection to the peer that is responsible for sending and receiving messages.</summary>
-        NetworkPeerConnection Connection { get; }
+        INetworkPeerConnection Connection { get; }
 
         /// <summary>Statistics about the number of bytes transferred from and to the peer.</summary>
         PerformanceCounter Counter { get; }
