@@ -332,26 +332,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // Loop through all headers and check bloom.
             IEnumerable<ChainedHeader> blockHeaders = chainIndexerRangeQuery.EnumerateRange(fromBlock, toBlock);
 
-            var bloom = new Bloom();
-            bloom.Add(addressBytes);
-            bloom.Add(eventBytes);
-
-            foreach (var topic in topics)
-            {
-                bloom.Add(topic);
-            }
-
             var matches = new List<ChainedHeader>();
             foreach (ChainedHeader chainedHeader in blockHeaders)
             {
                 var scHeader = (ISmartContractBlockHeader)chainedHeader.Header;
 
-                // Use to array here to ensure it's a copy of the internal byte[] structure.
-                // TODO Use Bloom.Test(Bloom other) in future.
-                var bloomCopy = new Bloom(bloom.ToBytes().ToArray());
-                bloomCopy.Or(scHeader.LogsBloom);
-
-                if(scHeader.LogsBloom == bloomCopy)
+                if(scHeader.LogsBloom.Test(addressUint160, topics))
                     matches.Add(chainedHeader);
             }
 
