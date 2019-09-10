@@ -631,20 +631,20 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <param name="transactionId">The transaction to process.</param>
         private void RemoveAssociatedUnconfirmedSpentByTransaction(uint256 transactionId)
         {
-            if (!this.Wallet.MultiSigAddress.Transactions.TryGetTransaction(transactionId, 0, out TransactionData associatedSpendingTx))
+            if (!this.Wallet.MultiSigAddress.Transactions.TryGetTransaction(transactionId, 0, out TransactionData transactionData))
             {
-                this.logger.LogDebug("{0}'s associated spending transaction does not exist.", transactionId);
+                this.logger.LogDebug("Spending transaction '{0}' does not exist.", transactionId);
                 return;
             }
 
-            if (associatedSpendingTx.IsConfirmed())
+            if (transactionData.IsConfirmed())
             {
-                this.logger.LogDebug("{0}'s associated spending transaction '{1}' was not removed as it is already confirmed.", transactionId, associatedSpendingTx.Id);
+                this.logger.LogDebug("Spending transaction '{0}' was not removed as it is already confirmed.", transactionId);
                 return;
             }
 
-            this.Wallet.MultiSigAddress.Transactions.Remove(associatedSpendingTx);
-            this.logger.LogDebug("{0}'s associated spending transaction '{1}' was removed.", transactionId, associatedSpendingTx.Id);
+            this.Wallet.MultiSigAddress.Transactions.Remove(transactionData);
+            this.logger.LogDebug("'{0}' was removed.", transactionId);
         }
 
         /// <inheritdoc />
@@ -778,11 +778,16 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             // If there are unconfirmed existing spending details, always overwrite with new one. 
             // Could be a "more" signed tx, a FullySigned mempool tx or a confirmed block tx.
-            if (spendingTransaction.SpendingDetails?.BlockHeight == null)
+            if (spendingTransaction.SpendingDetails != null && spendingTransaction.SpendingDetails.BlockHeight == null)
+            {
                 this.logger.LogDebug("Spending UTXO '{0}-{1}' has unconfirmed spending details at height {2}, spending with tx '{3}'.", spendingTransactionId, spendingTransactionIndex, blockHeight, transaction.GetHash());
 
+                //If we are overwriting existing spending details, remove the associated transaction as well.
+                this.RemoveAssociatedUnconfirmedSpentByTransaction(spendingTransaction.SpendingDetails.TransactionId);
+            }
+
             // If the spending details are confirmed and this is also coming in confirmed, then update the spending details.
-            if (spendingTransaction.SpendingDetails?.BlockHeight != null && blockHeight != null)
+            if (spendingTransaction.SpendingDetails != null && spendingTransaction.SpendingDetails.BlockHeight != null && blockHeight != null)
                 this.logger.LogDebug("Spending UTXO '{0}-{1}' has confirmed spending details height {2}, spending with tx '{3}'.", spendingTransactionId, spendingTransactionIndex, blockHeight, transaction.GetHash());
 
             spendingTransaction.SpendingDetails = this.BuildSpendingDetails(transaction, paidToOutputs, blockHeight, blockHash, block, withdrawal);
