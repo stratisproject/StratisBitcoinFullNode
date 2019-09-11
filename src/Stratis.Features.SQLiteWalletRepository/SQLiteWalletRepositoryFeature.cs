@@ -21,11 +21,11 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <summary>The instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>The cold staking manager.</summary>
+        /// <summary>The SQLite wallet repository.</summary>
         private readonly SQLiteWalletRepository sqliteWalletRepository;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ColdStakingFeature"/> class.
+        /// Initializes a new instance of the <see cref="SQLiteWalletRepositoryFeature"/> class.
         /// </summary>
         /// <param name="nodeSettings">The settings for the node.</param>
         /// <param name="loggerFactory">The factory used to create instance loggers.</param>
@@ -75,8 +75,6 @@ namespace Stratis.Features.SQLiteWalletRepository
     {
         public static IFullNodeBuilder UseSQLiteWalletRepository(this IFullNodeBuilder fullNodeBuilder)
         {
-            // Ensure that this feature is only used on a Stratis network.
-
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
