@@ -520,6 +520,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             string dir = CreateTestDir(this);
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
+                repository.SetTxIndex(true);
+
                 foreach (var transaction in genesisTransactions)
                 {
                     var result = repository.GetTransactionById(transaction.GetHash());
@@ -539,13 +541,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             string dir = CreateTestDir(this);
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
+                repository.SetTxIndex(true);
+
                 var result = repository.GetTransactionsByIds(genesis.Transactions.Select(t => t.GetHash()).ToArray());
 
                 Assert.NotNull(result);
 
                 for (var i = 0; i < genesisTransactions.Count; i++)
                 {
-                    Assert.Equal(genesisTransactions[i], result[i]);
+                    Assert.Equal(genesisTransactions[i].GetHash(), result[i].GetHash());
                 }
             }
         }
@@ -559,6 +563,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             string dir = CreateTestDir(this);
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
+                repository.SetTxIndex(true);
+
                 foreach (var transaction in genesisTransactions)
                 {
                     var result = repository.GetBlockIdByTransactionId(transaction.GetHash());
