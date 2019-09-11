@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.RPC.Tests.Models
 {
-    public class GetInfoModelTest : BaseRPCModelTest
+    public class GetInfoModelTest
     {
         private static readonly string[] AllPropertyNames = new string[] {
                 "version",
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
                 PayTxFee = default(decimal),
             };
 
-            JObject obj = ModelToJObject(info);
+            JObject obj = JObject.FromObject(info);
             Assert.True(obj.HasValues);
             IEnumerable<string> actualOrderedPropertyNames = obj.Children().Select(o => (o as JProperty)?.Name);
 
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             string[] expectedOrderedPropertyNames = RequiredPropertyNames;
             var info = new GetInfoModel();
 
-            JObject obj = ModelToJObject(info);
+            JObject obj = JObject.FromObject(info);
             Assert.True(obj.HasValues);
             IEnumerable<string> actualOrderedPropertyNames = obj.Children().Select(o => (o as JProperty)?.Name);
 
