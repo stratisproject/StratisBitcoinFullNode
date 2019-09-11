@@ -1,9 +1,5 @@
 ﻿using System.Text;
 using NBitcoin;
-using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Networks;
-using Stratis.Sidechains.Networks;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace FederationSetup
