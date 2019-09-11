@@ -318,8 +318,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         {
             // Build the bytes we can use to check for this event.
             uint160 addressUint160 = contractAddress.ToUint160(this.network);
-            byte[] addressBytes = addressUint160.ToBytes();
             byte[] eventBytes = Encoding.UTF8.GetBytes(eventName);
+
+            var topicsList = new List<byte[]> { eventBytes };
+
+            if (topics != null)
+            {
+                topicsList.AddRange(topics);
+            }
 
             var chainIndexerRangeQuery = new ChainIndexerRangeQuery(this.chainIndexer);
 
@@ -337,23 +343,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             {
                 var scHeader = (ISmartContractBlockHeader)chainedHeader.Header;
 
-                if(scHeader.LogsBloom.Test(addressUint160, topics))
+                if(scHeader.LogsBloom.Test(addressUint160, topicsList))
                     matches.Add(chainedHeader);
             }
 
             // For all matching headers, get the block from local db.
             List<uint256> matchedBlockHashes = matches.Select(m => m.HashBlock).ToList();
             List<NBitcoin.Block> blocks = this.blockStore.GetBlocks(matchedBlockHashes);
-
-            // For each block, get all receipts, and if they match, add to list to return.
-            List<Receipt> receiptResponses = new List<Receipt>();
-
+            
             List<uint256> transactionHashes = blocks
                     .SelectMany(block => block.Transactions)
                     .Select(t => t.GetHash())
                     .ToList();
 
             IList<Receipt> receipts = this.receiptRepository.RetrieveMany(transactionHashes);
+
+            // For each block, get all receipts, and if they match, add to list to return.
+            List<Receipt> receiptResponses = new List<Receipt>();
 
             foreach (Receipt storedReceipt in receipts)
             {
