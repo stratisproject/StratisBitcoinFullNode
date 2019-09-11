@@ -73,7 +73,7 @@ namespace Stratis.Features.SQLiteWalletRepository
     /// <exception cref="InvalidOperationException">Thrown if this is not a Stratis network.</exception>
     public static class FullNodeBuilderSQLiteWalletRepositoryExtension
     {
-        public static IFullNodeBuilder UseSQLiteWalletRepository(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder AddSQLiteWalletRepository(this IFullNodeBuilder fullNodeBuilder)
         {
             fullNodeBuilder.ConfigureFeature(features =>
             {
