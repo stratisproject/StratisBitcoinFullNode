@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using DBreeze.Utils;
 using NBitcoin;
 
 namespace Stratis.SmartContracts.Core
