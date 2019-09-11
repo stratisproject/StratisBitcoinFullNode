@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Stratis.Bitcoin.EventBus;
 using Stratis.Bitcoin.Features.Wallet.Models;
 
@@ -15,6 +16,8 @@ namespace Stratis.Bitcoin.Features.SignalR.Events
     {
         public string WalletName { get; set; }
         public Type NodeEventType => typeof(WalletGeneralInfo);
+        
+        public IEnumerable<AddressModel> Addresses { get; set; }
 
         public void BuildFrom(EventBase @event)
         {

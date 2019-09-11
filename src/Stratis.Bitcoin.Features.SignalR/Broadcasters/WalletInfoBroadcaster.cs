@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.SignalR.Events;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Features.Wallet.Models;
 
 namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 {
@@ -46,6 +47,22 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                 try
                 {
                     Wallet.Wallet wallet = this.walletManager.GetWallet(walletName);
+                 
+                    HdAccount account = wallet.GetAccount("account 0");
+
+                    var addresses = account.GetCombinedAddresses().Select(address =>
+                    {
+                        (Money confirmedAmount, Money unConfirmedAmount) = address.GetBalances();
+
+                        return new AddressModel
+                        {
+                            Address = address.Address,
+                            IsUsed = address.Transactions.Any(),
+                            IsChange = address.IsChangeAddress(),
+                            AmountConfirmed = confirmedAmount,
+                            AmountUnconfirmed = unConfirmedAmount
+                        };
+                    });
 
                     clientEvent = new WalletGeneralInfoClientEvent
                     {
@@ -56,7 +73,8 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                         ConnectedNodes = this.connectionManager.ConnectedPeers.Count(),
                         ChainTip = this.chainIndexer.Tip.Height,
                         IsChainSynced = this.chainIndexer.IsDownloaded(),
-                        IsDecrypted = true
+                        IsDecrypted = true,
+                        Addresses = addresses
                     };
 
                     // Get the wallet's file path.
