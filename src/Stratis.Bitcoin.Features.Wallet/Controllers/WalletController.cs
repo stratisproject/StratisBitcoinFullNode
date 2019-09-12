@@ -697,7 +697,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     CoinType = this.coinType,
                     Address = balanceResult.Address,
                     AmountConfirmed = balanceResult.AmountConfirmed,
-                    AmountUnconfirmed = balanceResult.AmountUnconfirmed
+                    AmountUnconfirmed = balanceResult.AmountUnconfirmed,
+                    SpendableAmount = balanceResult.SpendableAmount
                 });
             }
             catch (Exception e)
