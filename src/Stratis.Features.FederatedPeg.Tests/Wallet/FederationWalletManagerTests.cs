@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
@@ -57,6 +56,7 @@ namespace Stratis.Features.FederatedPeg.Tests.Wallet
 
             // Create a spending transaction that spends transaction A
             Transaction transactionB = this.network.CreateTransaction();
+            transactionB.Time = transactionA.Time + 1;
             transactionB.AddInput(transactionA, 0);
             transactionB.AddOutput(new TxOut(Money.Coins(5), this.federationMultiSigAddress));
             federationWalletManager.ProcessTransaction(transactionB);
@@ -72,12 +72,9 @@ namespace Stratis.Features.FederatedPeg.Tests.Wallet
             Assert.NotNull(addedTx_A.SpendingDetails);
             Assert.Equal(addedTx_A.SpendingDetails.TransactionId, transactionB.GetHash());
 
-            // This delay needs to be further investigated to establish why it is needed
-            // here in order to make the test pass.
-            Task.Delay(TimeSpans.Second).GetAwaiter().GetResult();
-
             // Create another spending transaction that also spends transaction A
             Transaction transactionC = this.network.CreateTransaction();
+            transactionC.Time = transactionB.Time + 1;
             transactionC.AddInput(transactionA, 0);
             transactionC.AddOutput(new TxOut(Money.Coins(5), this.federationMultiSigAddress));
             federationWalletManager.ProcessTransaction(transactionC);
