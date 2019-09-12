@@ -30,8 +30,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
         public SmartContractPosCoinviewRule(Network network, IStateRepositoryRoot stateRepositoryRoot,
             IContractExecutorFactory executorFactory, ICallDataSerializer callDataSerializer,
             ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView,
-            IStakeChain stakeChain, IStakeValidator stakeValidator) 
-            : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView)
+            IStakeChain stakeChain, IStakeValidator stakeValidator, ILoggerFactory loggerFactory) 
+            : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView, loggerFactory)
         {
             this.consensus = network.Consensus;
             this.stakeChain = stakeChain;

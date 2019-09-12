@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var network = new StratisOverrideRegTest();
 
                 // Set the date ranges such that ColdStaking will 'Start' immediately after the initial confirmation window.
-                network.Consensus.BIP9Deployments[StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(1, 0, DateTime.Now.AddDays(50).ToUnixTimestamp());
+                network.Consensus.BIP9Deployments[StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters("Test", 1, 0, DateTime.Now.AddDays(50).ToUnixTimestamp());
 
                 // Set a small confirmation window to reduce time taken by this test.
                 network.Consensus.MinerConfirmationWindow = 10;

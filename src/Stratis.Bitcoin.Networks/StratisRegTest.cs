@@ -70,10 +70,10 @@ namespace Stratis.Bitcoin.Networks
             var bip9Deployments = new StratisBIP9Deployments()
             {
                 // Always active on StratisRegTest.
-                [StratisBIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, BIP9DeploymentsParameters.AlwaysActive, 999999999),
-                [StratisBIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, BIP9DeploymentsParameters.AlwaysActive, 999999999),
-                [StratisBIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999),
-                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(2, BIP9DeploymentsParameters.AlwaysActive, 999999999)
+                [StratisBIP9Deployments.TestDummy] = new BIP9DeploymentsParameters("TestDummy", 28, BIP9DeploymentsParameters.AlwaysActive, 999999999),
+                [StratisBIP9Deployments.CSV] = new BIP9DeploymentsParameters("CSV", 0, BIP9DeploymentsParameters.AlwaysActive, 999999999),
+                [StratisBIP9Deployments.Segwit] = new BIP9DeploymentsParameters("Segwit", 1, BIP9DeploymentsParameters.AlwaysActive, 999999999),
+                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters("ColdStaking", 2, BIP9DeploymentsParameters.AlwaysActive, 999999999)
             };
 
             this.Consensus = new NBitcoin.Consensus(
