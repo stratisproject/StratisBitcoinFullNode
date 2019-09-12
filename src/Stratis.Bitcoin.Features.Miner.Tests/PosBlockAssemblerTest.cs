@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             {
                 var newOptions = new PosConsensusOptions();
                 this.stratisTest.Consensus.Options = newOptions;
-                this.stratisTest.Consensus.BIP9Deployments[0] = new BIP9DeploymentsParameters(19,
+                this.stratisTest.Consensus.BIP9Deployments[0] = new BIP9DeploymentsParameters("Test",19,
                     new DateTimeOffset(new DateTime(2016, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
                     new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
 

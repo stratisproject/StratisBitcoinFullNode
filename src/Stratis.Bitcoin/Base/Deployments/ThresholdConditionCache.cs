@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments.Models;
 using Stratis.Bitcoin.Utilities;
@@ -77,6 +78,8 @@ namespace Stratis.Bitcoin.Base.Deployments
             {
                 if (this.consensus.BIP9Deployments[deploymentIndex] == null) continue;
 
+                string deploymentName = this.consensus.BIP9Deployments[deploymentIndex]?.Name;
+
                 DateTime? timeStart = this.consensus.BIP9Deployments[deploymentIndex]?.StartTime.Date;
                 DateTime? timeTimeout = this.consensus.BIP9Deployments[deploymentIndex]?.Timeout.Date;
                 int threshold = this.consensus.RuleChangeActivationThreshold;
@@ -113,8 +116,19 @@ namespace Stratis.Bitcoin.Base.Deployments
                     headerTemp = headerTemp.Previous;
                 }
 
+                // look in the cache for the hash of the first block an item was deployed
+
+                var firstSeenHash = this.cache.FirstOrDefault(c => c.Value[deploymentIndex] == ThresholdState.Started);
+                int sinceHeight = 0;
+
+                if (firstSeenHash.Key != null)
+                {
+                    sinceHeight = indexPrev.FindAncestorOrSelf(firstSeenHash.Key).Height;
+                }
+
                 thresholdStateModels.Add(new ThresholdStateModel()
                 {
+                    DeploymentName = deploymentName,
                     DeploymentIndex = deploymentIndex,
                     ConfirmationPeriod = period,
                     Blocks = totalBlocks,
@@ -124,6 +138,7 @@ namespace Stratis.Bitcoin.Base.Deployments
                     TimeTimeOut = timeTimeout,
                     Threshold = threshold,
                     Height = currentHeight,
+                    SinceHeight = sinceHeight,
                     PeriodStartHeight = periodStartsHeader.Height,
                     PeriodEndHeight = periodEndsHeight,
                     StateValue = thresholdStates[deploymentIndex],
