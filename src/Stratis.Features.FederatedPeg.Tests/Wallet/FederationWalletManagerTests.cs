@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
@@ -70,6 +71,8 @@ namespace Stratis.Features.FederatedPeg.Tests.Wallet
             Assert.NotNull(addedTx_A);
             Assert.NotNull(addedTx_A.SpendingDetails);
             Assert.Equal(addedTx_A.SpendingDetails.TransactionId, transactionB.GetHash());
+
+            Task.Delay(TimeSpans.Second).GetAwaiter().GetResult();
 
             // Create another spending transaction that also spends transaction A
             Transaction transactionC = this.network.CreateTransaction();
