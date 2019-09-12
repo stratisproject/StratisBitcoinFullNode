@@ -396,7 +396,6 @@ namespace Stratis.Features.FederatedPeg.Tests
                 var deposit2 = new Deposit(txId2, new Money(2m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, blockHash);
                 var deposit3 = new Deposit(txId3, new Money(3m, MoneyUnit.BTC), address3.ToString(), crossChainTransferStore.NextMatureDepositHeight, blockHash);
 
-
                 MaturedBlockDepositsModel[] blockDeposits = new[] { new MaturedBlockDepositsModel(
                     new MaturedBlockInfoModel() {
                         BlockHash = blockHash,
@@ -1182,7 +1181,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             }
         }
 
-        private Q Post<T,Q>(string url, T body)
+        private Q Post<T, Q>(string url, T body)
         {
             // Request is sent to mainchain user.
             var request = (HttpWebRequest)WebRequest.Create(url);

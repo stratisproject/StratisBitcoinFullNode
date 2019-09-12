@@ -233,7 +233,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 consensusRulesContainer.FullValidationRules.Add(new CanGetSenderRule(senderRetriever) as FullValidationConsensusRule);
                 consensusRulesContainer.FullValidationRules.Add(new P2PKHNotContractRule(this.StateRoot) as FullValidationConsensusRule);
                 consensusRulesContainer.FullValidationRules.Add(new CanGetSenderRule(senderRetriever) as FullValidationConsensusRule);
-                consensusRulesContainer.FullValidationRules.Add(new SmartContractPowCoinviewRule(this.network, this.StateRoot, this.ExecutorFactory, this.callDataSerializer, senderRetriever, receiptRepository, this.cachedCoinView) as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new SmartContractPowCoinviewRule(this.network, this.StateRoot, this.ExecutorFactory, this.callDataSerializer, senderRetriever, receiptRepository, this.cachedCoinView, new LoggerFactory()) as FullValidationConsensusRule);
                 consensusRulesContainer.FullValidationRules.Add(new SaveCoinviewRule() as FullValidationConsensusRule);
 
                 this.consensusRules = new PowConsensusRuleEngine(

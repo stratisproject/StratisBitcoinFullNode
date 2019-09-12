@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Tests.Common.Logging
             logger.Verify(f => f.Log<Object>(logLevel,
                 It.IsAny<EventId>(),
                 It.Is<object>(l => ((FormattedLogValues)l)[0].Value.ToString().EndsWith(message)),
-                null,
+                It.IsAny<Exception>(),
                 It.IsAny<Func<object, Exception, string>>()));
         }
 

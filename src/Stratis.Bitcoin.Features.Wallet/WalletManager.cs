@@ -770,8 +770,14 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                     (Money amountConfirmed, Money amountUnconfirmed) result = hdAddress.GetBalances();
 
+                    Money spendableAmount = wallet
+                        .GetAllSpendableTransactions(this.ChainIndexer.Tip.Height)
+                        .Where(s => s.Address.Address == hdAddress.Address)
+                        .Sum(s => s.Transaction?.Amount ?? 0);
+
                     balance.AmountConfirmed = result.amountConfirmed;
                     balance.AmountUnconfirmed = result.amountUnconfirmed;
+                    balance.SpendableAmount = spendableAmount;
 
                     break;
                 }
