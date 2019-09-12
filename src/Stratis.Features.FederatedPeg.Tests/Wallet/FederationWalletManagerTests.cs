@@ -72,6 +72,8 @@ namespace Stratis.Features.FederatedPeg.Tests.Wallet
             Assert.NotNull(addedTx_A.SpendingDetails);
             Assert.Equal(addedTx_A.SpendingDetails.TransactionId, transactionB.GetHash());
 
+            // This delay needs to be further investigated to establish why it is needed
+            // here in order to make the test pass.
             Task.Delay(TimeSpans.Second).GetAwaiter().GetResult();
 
             // Create another spending transaction that also spends transaction A
