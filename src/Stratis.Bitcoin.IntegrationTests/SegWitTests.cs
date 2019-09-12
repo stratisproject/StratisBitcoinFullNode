@@ -506,5 +506,96 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestBase.WaitLoop(() => listener.CreateRPCClient().GetRawMempool().Length == 0, cancellationToken: new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token);
             }
         }
+
+        [Fact]
+        public void StakeSegwitBlock_On_SBFN_Check_StratisX_Syncs()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this).WithLogsEnabled())
+            {
+                // Even though we are mining, we still want to use PoS consensus rules.
+                CoreNode node = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).WithWallet().Start();
+
+                CoreNode stratisX = builder.CreateStratisXNode().Start();
+
+                // Need the premine to be past coinbase maturity so that we can stake with it.
+                RPCClient rpc = node.CreateRPCClient();
+                rpc.Generate(12);
+
+                var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetBlockCount() >= 12, cancellationToken: cancellationToken);
+
+                // Now need to start staking.
+                var staker = node.FullNode.NodeService<IPosMinting>() as PosMinting;
+
+                staker.Stake(new WalletSecret()
+                {
+                    WalletName = node.WalletName,
+                    WalletPassword = node.WalletPassword
+                });
+
+                // Wait for the chain height to increase.
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetBlockCount() >= 13, cancellationToken: cancellationToken);
+
+                // Get the first staked block.
+                Block block = node.FullNode.ChainIndexer.GetHeader(13).Block;
+
+                // Confirm that the staked block is Segwit-ted.
+                Script commitment = WitnessCommitmentsRule.GetWitnessCommitment(node.FullNode.Network, block);
+
+                // We presume that the consensus rules are checking the actual validity of the commitment, we just ensure that it exists here.
+                Assert.NotNull(commitment);
+
+                // Now connect the stratisX node and allow it to sync.
+                node.CreateRPCClient().AddNode(stratisX.Endpoint);
+
+                TestBase.WaitLoop(() => stratisX.CreateRPCClient().GetBlockCount() >= 13, cancellationToken: cancellationToken);
+            }
+        }
+
+        [Fact]
+        public void StakeSegwitBlock_On_SBFN_Check_StratisX_Syncs_When_StratisX_Initiates_Connection()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this).WithLogsEnabled())
+            {
+                // Even though we are mining, we still want to use PoS consensus rules.
+                CoreNode node = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).WithWallet().Start();
+
+                CoreNode stratisX = builder.CreateStratisXNode().Start();
+
+                // Need the premine to be past coinbase maturity so that we can stake with it.
+                RPCClient rpc = node.CreateRPCClient();
+                rpc.Generate(12);
+
+                var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetBlockCount() >= 12, cancellationToken: cancellationToken);
+
+                // Now need to start staking.
+                var staker = node.FullNode.NodeService<IPosMinting>() as PosMinting;
+
+                staker.Stake(new WalletSecret()
+                {
+                    WalletName = node.WalletName,
+                    WalletPassword = node.WalletPassword
+                });
+
+                // Wait for the chain height to increase.
+                TestBase.WaitLoop(() => node.CreateRPCClient().GetBlockCount() >= 13, cancellationToken: cancellationToken);
+
+                // Get the first staked block.
+                Block block = node.FullNode.ChainIndexer.GetHeader(13).Block;
+
+                // Confirm that the staked block is Segwit-ted.
+                Script commitment = WitnessCommitmentsRule.GetWitnessCommitment(node.FullNode.Network, block);
+
+                // We presume that the consensus rules are checking the actual validity of the commitment, we just ensure that it exists here.
+                Assert.NotNull(commitment);
+
+                // Now connect the SBFN node to the stratisX node and allow stratisX to sync.
+                // The P2P behaviours have asymmetric rules about version requirements, so we have to test in both directions.
+                stratisX.CreateRPCClient().AddNode(node.Endpoint);
+
+                TestBase.WaitLoop(() => stratisX.CreateRPCClient().GetBlockCount() >= 13, cancellationToken: cancellationToken);
+            }
+        }
     }
 }
