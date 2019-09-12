@@ -2,25 +2,15 @@
 using System.Collections.Generic;
 using NBitcoin;
 using Stratis.Bitcoin.Features.MemoryPool.Rules;
-using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.MempoolRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoA.MempoolRules;
 
 namespace Stratis.SmartContracts.Networks
 {
-    public class SignedContractsPoARegTest : SmartContractsPoARegTest, ISignedCodePubKeyHolder
+    public class SmartContractsPoAWhitelistRegTest : SmartContractsPoARegTest
     {
-        public Key SigningContractPrivKey { get;}
-
-        public PubKey SigningContractPubKey { get;}
-
-        public SignedContractsPoARegTest()
+        public SmartContractsPoAWhitelistRegTest()
         {
-            this.Name = "SignedContractsPoARegTest";
-            this.NetworkType = NetworkType.Regtest;
-            this.SigningContractPrivKey = new Mnemonic("lava frown leave wedding virtual ghost sibling able mammal liar wide wisdom").DeriveExtKey().PrivateKey;
-            this.SigningContractPubKey = this.SigningContractPrivKey.PubKey;
-
             this.RegisterMempoolRules(this.Consensus);
         }
 
@@ -44,6 +34,7 @@ namespace Stratis.SmartContracts.Networks
                 // These rules occur directly after the fee check rule in the non- smart contract mempool.
                 typeof(SmartContractFormatLogicMempoolRule),
                 typeof(CanGetSenderMempoolRule),
+                typeof(AllowedCodeHashLogicMempoolRule), // The important distinction for this network.
                 typeof(CheckMinGasLimitSmartContractMempoolRule),
 
                 // Remaining non-SC rules.

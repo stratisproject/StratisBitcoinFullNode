@@ -31,7 +31,10 @@ namespace Stratis.CirrusDnsD
         {
             try
             {
-                var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+                var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.CIRRUS_VERSION, args: args)
+                {
+                    MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
+                };
 
                 var dnsSettings = new DnsSettings(nodeSettings);
 

@@ -91,19 +91,19 @@ namespace Stratis.Bitcoin.Networks
 
             var bip9Deployments = new StratisBIP9Deployments()
             {
-                [StratisBIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28,
+                [StratisBIP9Deployments.TestDummy] = new BIP9DeploymentsParameters("TestDummy", 28,
                     new DateTime(2019, 10, 1, 0, 0, 0, DateTimeKind.Utc),
                     new DateTime(2020, 10, 1, 0, 0, 0, DateTimeKind.Utc)),
 
-                [StratisBIP9Deployments.CSV] = new BIP9DeploymentsParameters(0,
+                [StratisBIP9Deployments.CSV] = new BIP9DeploymentsParameters("CSV", 0,
                     new DateTime(2019, 10, 1, 0, 0, 0, DateTimeKind.Utc),
                     new DateTime(2020, 10, 1, 0, 0, 0, DateTimeKind.Utc)),
 
-                [StratisBIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1,
+                [StratisBIP9Deployments.Segwit] = new BIP9DeploymentsParameters("Segwit", 1,
                     new DateTime(2019, 10, 1, 0, 0, 0, DateTimeKind.Utc),
                     new DateTime(2020, 10, 1, 0, 0, 0, DateTimeKind.Utc)),
 
-                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(2, 
+                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters("ColdStaking", 2, 
                     new DateTime(2018, 12, 1, 0, 0, 0, DateTimeKind.Utc),
                     new DateTime(2019, 12, 1, 0, 0, 0, DateTimeKind.Utc))
             };

@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
@@ -43,8 +43,7 @@ namespace Stratis.Bitcoin.Features.SignalR
 
         public override Task InitializeAsync()
         {
-            this.webHost = Program.Initialize(this.fullNodeBuilder.Services, this.fullNode, this.settings,
-                new WebHostBuilder());
+            this.webHost = Program.Initialize(this.fullNodeBuilder.Services, this.fullNode, this.settings, new WebHostBuilder());
 
             this.eventsSubscriptionService.Init();
             foreach (IClientEventBroadcaster clientEventBroadcaster in this.eventBroadcasters)
@@ -90,8 +89,7 @@ namespace Stratis.Bitcoin.Features.SignalR
     {
         public IClientEvent[] EventsToHandle { get; set; }
 
-        public (Type Broadcaster, ClientEventBroadcasterSettings clientEventBroadcasterSettings)[]
-            ClientEventBroadcasters { get; set; }
+        public (Type Broadcaster, ClientEventBroadcasterSettings clientEventBroadcasterSettings)[] ClientEventBroadcasters { get; set; }
     }
 
     public class ClientEventBroadcasterSettings
@@ -101,12 +99,13 @@ namespace Stratis.Bitcoin.Features.SignalR
 
     public static partial class IFullNodeBuilderExtensions
     {
-        public static IFullNodeBuilder AddSignalR(this IFullNodeBuilder fullNodeBuilder,
-            Action<SignalROptions> optionsAction = null)
+        public static IFullNodeBuilder AddSignalR(this IFullNodeBuilder fullNodeBuilder, Action<SignalROptions> optionsAction = null)
         {
             LoggingConfiguration.RegisterFeatureNamespace<SignalRFeature>("signalr");
+
             var options = new SignalROptions();
             optionsAction?.Invoke(options);
+
             SignalRFeature.eventBroadcasterSettings =
                 options.ClientEventBroadcasters.ToDictionary(
                     pair => pair.Broadcaster, pair => pair.clientEventBroadcasterSettings);
@@ -125,17 +124,15 @@ namespace Stratis.Bitcoin.Features.SignalR
 
                         if (null != options.ClientEventBroadcasters)
                         {
-                            foreach (var eventBroadcaster in options.ClientEventBroadcasters)
+                            foreach ((Type Broadcaster, ClientEventBroadcasterSettings clientEventBroadcasterSettings) in options.ClientEventBroadcasters)
                             {
-                                if (typeof(IClientEventBroadcaster).IsAssignableFrom(eventBroadcaster.Broadcaster))
+                                if (typeof(IClientEventBroadcaster).IsAssignableFrom(Broadcaster))
                                 {
-                                    services.AddSingleton(typeof(IClientEventBroadcaster),
-                                        eventBroadcaster.Broadcaster);
+                                    services.AddSingleton(typeof(IClientEventBroadcaster), Broadcaster);
                                 }
                                 else
                                 {
-                                    Console.WriteLine(
-                                        $"Warning {eventBroadcaster.Broadcaster.Name} is not of type {typeof(IClientEventBroadcaster).Name}");
+                                    Console.WriteLine($"Warning {Broadcaster.Name} is not of type {typeof(IClientEventBroadcaster).Name}");
                                 }
                             }
                         }

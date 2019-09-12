@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Models
 {
-    public class TransactionModelsTest : BaseModelTest, IDisposable
+    public class TransactionModelsTest : IDisposable
     {
         private const string TxBlock10Hex = "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d0136ffffffff0100f2052a01000000434104fcc2888ca91cf0103d8c5797c256bf976e81f280205d002d85b9b622ed1a6f820866c7b5fe12285cfa78c035355d752fc94a398b67597dc4fbb5b386816425ddac00000000";
         private const string TxBlock10Hash = "d3ad39fa52a89997ac7381c95eeffeaf40b66af7a57e9eba144be0a175a12b11";
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Tests.Models
         public void TransactionModelBriefRenderTest()
         {
             TransactionBriefModel model = this.txBlock10CoinbaseModelBrief;
-            string json = ModelToJson(model);
+            string json = JsonConvert.SerializeObject(model);
 
             string expectedJson = "\"" + TxBlock10Hex + "\"";
 
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Tests.Models
         public void TransactionModelVerboseRenderTest()
         {
             var expectedPropertyNameOrder = new string[] { "hex", "txid", "hash", "version", "size", "vsize", "locktime", "vin", "vout" };
-            JObject obj = ModelToJObject(this.txBlock460373CoinbaseModelVerbose);
+            JObject obj = JObject.FromObject(this.txBlock460373CoinbaseModelVerbose);
             Assert.True(obj.HasValues);
 
             int actualElements = obj.Children().Count();
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Tests.Models
         {
             var expectedPropertyNameOrder = new string[] { "coinbase", "sequence" };
             string expectedCoinbase = "0355060704eba7e3582f4254432e434f4d2fb6000ddbcbe5000000000000";
-            JObject obj = ModelToJObject(this.txBlock460373CoinbaseModelVerbose);
+            JObject obj = JObject.FromObject(this.txBlock460373CoinbaseModelVerbose);
             Assert.True(obj.HasValues);
             JToken vin = obj["vin"];
             Assert.NotNull(vin);
@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.Tests.Models
         public void TransactionModelVerboseRenderVoutTest()
         {
             var expectedPropertyNameOrder = new string[] { "value", "n", "scriptPubKey" };
-            JObject obj = ModelToJObject(this.txBlock460373CoinbaseModelVerbose);
+            JObject obj = JObject.FromObject(this.txBlock460373CoinbaseModelVerbose);
             Assert.True(obj.HasValues);
             JToken vout = obj["vout"];
             Assert.NotNull(vout);
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Tests.Models
         {
             var expectedFirstPropertyNameOrder = new string[] { "asm", "hex", "reqSigs", "type", "addresses" };
             var expectedSecondPropertyNameOrder = new string[] { "asm", "hex", "type" };
-            JObject obj = ModelToJObject(this.txBlock460373CoinbaseModelVerbose);
+            JObject obj = JObject.FromObject(this.txBlock460373CoinbaseModelVerbose);
             var firstScript = obj["vout"]?.FirstOrDefault()?.Value<JToken>("scriptPubKey");
             var secondScript = obj["vout"]?.LastOrDefault()?.Value<JToken>("scriptPubKey");
 
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Tests.Models
         public void TransactionModelVerboseRenderNonCoinbaseTest()
         {
             var expectedPropertyNameOrder = new string[] { "txid", "vout", "scriptSig", "sequence" };
-            JObject obj = ModelToJObject(this.txTwoInTwoOutModelVerbose);
+            JObject obj = JObject.FromObject(this.txTwoInTwoOutModelVerbose);
             Assert.True(obj.HasValues);
             JToken vin = obj["vin"];
             JToken firstIn = vin.FirstOrDefault();
@@ -175,25 +175,6 @@ namespace Stratis.Bitcoin.Tests.Models
             Assert.Equal(0, actualLastNdx);
             Assert.Equal(4294967295, actualLastSequence);
             Assert.Equal(expectedPropertyNameOrder, actualPropertyNameOrder);
-        }
-    }
-
-    public class BaseModelTest
-    {
-        protected static JObject ModelToJObject(object model)
-        {
-            string json = ModelToJson(model);
-            JObject obj = JObject.Parse(json);
-            return obj;
-        }
-
-        protected static string ModelToJson(object model)
-        {
-            var formatter = new RPCJsonOutputFormatter(new JsonSerializerSettings(), System.Buffers.ArrayPool<char>.Create());
-            var sw = new StringWriter();
-            formatter.WriteObject(sw, model);
-            string json = sw.ToString();
-            return json;
         }
     }
 }

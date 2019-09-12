@@ -138,13 +138,12 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 while (!this.serverCancel.IsCancellationRequested)
                 {
-                    TcpClient tcpClient = await this.tcpListener.AcceptTcpClientAsync()
-                        .WithCancellationAsync(this.serverCancel.Token);
+                    TcpClient tcpClient = await this.tcpListener.AcceptTcpClientAsync().WithCancellationAsync(this.serverCancel.Token).ConfigureAwait(false);
 
-                    (bool successful, string reason) connectionAttempt = this.AllowClientConnection(tcpClient);
-                    if (!connectionAttempt.successful)
+                    (bool successful, string reason) = this.AllowClientConnection(tcpClient);
+                    if (!successful)
                     {
-                        this.signals.Publish(new PeerConnectionAttemptFailed(true, (IPEndPoint)tcpClient.Client.RemoteEndPoint, connectionAttempt.reason));
+                        this.signals.Publish(new PeerConnectionAttemptFailed(true, (IPEndPoint)tcpClient.Client.RemoteEndPoint, reason));
                         this.logger.LogDebug("Connection from client '{0}' was rejected and will be closed.", tcpClient.Client.RemoteEndPoint);
                         tcpClient.Close();
                         continue;
