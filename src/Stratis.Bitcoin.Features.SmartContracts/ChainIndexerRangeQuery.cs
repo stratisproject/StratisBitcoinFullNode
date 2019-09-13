@@ -5,25 +5,6 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
-    /// <summary>
-    /// Enumerates block headers and returns those that match the supplied log filter criteria.
-    /// </summary>
-    public class HeaderLogMatcher
-    {
-
-    }
-
-    /// <summary>
-    /// Searches the chain for receipts that match the given criteria and returns the receipts.
-    /// </summary>
-    public class ReceiptSearcher
-    {
-        public ReceiptSearcher()
-        {
-
-        }
-    }
-
     public class ChainIndexerRangeQuery
     {
         private readonly ChainIndexer chainIndexer;
