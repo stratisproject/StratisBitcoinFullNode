@@ -27,7 +27,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AddressType         INTEGER NOT NULL,
                 AddressIndex        INTEGER NOT NULL,
                 ScriptPubKey        TEXT    NOT NULL,
-                PubKey              TEXT    NOT NULL,
+                PubKey              TEXT,
                 PRIMARY KEY(WalletId, AccountIndex, AddressType, AddressIndex)
             )";
 

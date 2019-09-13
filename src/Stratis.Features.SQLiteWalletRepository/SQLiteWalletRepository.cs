@@ -235,7 +235,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 Name = walletName,
                 EncryptedSeed = encryptedSeed,
-                ChainCode = Convert.ToBase64String(chainCode),
+                ChainCode = (chainCode == null) ? null : Convert.ToBase64String(chainCode),
                 CreationTime = creationTime
             };
 
@@ -246,8 +246,19 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.logger.LogDebug("Creating wallet '{0}'.", walletName);
 
             conn.BeginTransaction();
-            wallet.CreateWallet(conn);
-            conn.Commit();
+
+            try
+            {
+                if (encryptedSeed != null && HDWallet.GetWalletByEncryptedSeed(conn, encryptedSeed) != null)
+                    throw new Exception("Wallet with same encrypted seed already exisits.");
+                wallet.CreateWallet(conn);
+                conn.Commit();
+            }
+            catch (Exception)
+            {
+                conn.Rollback();
+                throw;
+            }
 
             this.logger.LogDebug("Adding wallet '{0}' to wallet collection.", walletName);
 
@@ -257,33 +268,31 @@ namespace Stratis.Features.SQLiteWalletRepository
             else
                 walletContainer = new WalletContainer(conn, wallet, this.processBlocksInfo);
 
-            walletContainer.WriteLockWait();
+            this.Wallets[wallet.Name] = walletContainer;
 
-            try
+            if (conn.IsInTransaction)
             {
-                this.Wallets[wallet.Name] = walletContainer;
-
-                if (conn.IsInTransaction)
+                conn.AddRollbackAction(new
                 {
-                    conn.AddRollbackAction(new
+                    wallet.Name,
+                }, (dynamic rollBackData) =>
+                {
+                    if (this.Wallets.TryGetValue(rollBackData.Name, out WalletContainer walletContainer2))
                     {
-                        wallet.Name,
-                    }, (dynamic rollBackData) =>
-                    {
-                        if (this.Wallets.TryRemove(rollBackData.Name, out WalletContainer walletContaner))
+                        walletContainer2.WriteLockWait();
+
+                        if (this.Wallets.TryRemove(rollBackData.Name, out WalletContainer _))
                         {
                             if (this.DatabasePerWallet)
                             {
-                                walletContainer.Conn.Close();
+                                walletContainer2.Conn.Close();
                                 File.Delete(Path.Combine(this.DBPath, $"{walletContainer.Wallet.Name}.db"));
                             }
                         }
-                    });
-                }
-            }
-            finally
-            {
-                walletContainer.WriteLockRelease();
+
+                        walletContainer2.WriteLockRelease();
+                    }
+                });
             }
         }
 
@@ -384,9 +393,15 @@ namespace Stratis.Features.SQLiteWalletRepository
                 var conn = this.GetConnection(walletName);
                 conn.BeginTransaction();
 
-                var account = conn.CreateAccount(wallet.WalletId, accountIndex, accountName, extPubKey.ToString(this.Network), (int)(creationTime ?? this.dateTimeProvider.GetTimeOffset()).ToUnixTimeSeconds());
-                conn.CreateAddresses(account, HDAddress.Internal, HDAddress.StandardAddressBuffer);
-                conn.CreateAddresses(account, HDAddress.External, HDAddress.StandardAddressBuffer);
+                var account = conn.CreateAccount(wallet.WalletId, accountIndex, accountName, extPubKey?.ToString(this.Network), (int)(creationTime ?? this.dateTimeProvider.GetTimeOffset()).ToUnixTimeSeconds());
+
+                // Add the standard number of addresses if this is not a watch-only wallet.
+                if (extPubKey != null)
+                {
+                    conn.CreateAddresses(account, HDAddress.Internal, HDAddress.StandardAddressBuffer);
+                    conn.CreateAddresses(account, HDAddress.External, HDAddress.StandardAddressBuffer);
+                }
+
                 conn.Commit();
 
                 walletContainer.AddressesOfInterest.AddAll(wallet.WalletId, accountIndex);
@@ -397,7 +412,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
         }
 
-        internal void AddAddresses(string walletName, string accountName, int addressType, List<Script> addresses)
+        public void AddWatchOnlyAddresses(string walletName, string accountName, int addressType, List<Script> addresses)
         {
             WalletContainer walletContainer = this.Wallets[walletName];
 
@@ -408,6 +423,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 var conn = this.GetConnection(walletName);
                 conn.BeginTransaction();
                 HDAccount account = conn.GetAccountByName(walletName, accountName);
+                if (account.ExtPubKey != null)
+                    throw new Exception("Addresses can only be added to watch-only accounts.");
                 conn.AddAdresses(account, addressType, addresses);
                 conn.Commit();
 
@@ -430,12 +447,14 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 HDWallet wallet = walletContainer.Wallet;
 
+                if (wallet.EncryptedSeed == null)
+                    throw new InvalidProgramException("Unsupported method call for watch-only wallet.");
+
                 ExtPubKey extPubKey;
 
                 var conn = this.GetConnection(walletName);
 
                 // Get the extended pub key used to generate addresses for this account.
-                // Not passing extPubKey into the method to guarantee DB integrity.
                 Key privateKey = Key.Parse(wallet.EncryptedSeed, password, this.Network);
                 var seedExtKey = new ExtKey(privateKey, Convert.FromBase64String(wallet.ChainCode));
                 ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(this.ToHdPath(accountIndex)));
@@ -748,14 +767,14 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
-        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, int currentChainHeight, int confirmations = 0)
+        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, int currentChainHeight, int confirmations = 0, int? coinBaseMaturity = null)
         {
             DBConnection conn = this.GetConnection(walletAccountReference.WalletName);
             HDAccount account = conn.GetAccountByName(walletAccountReference.WalletName, walletAccountReference.AccountName);
 
             var hdAccount = this.ToHdAccount(account);
 
-            foreach (HDTransactionData transactionData in conn.GetSpendableOutputs(account.WalletId, account.AccountIndex, currentChainHeight, this.Network.Consensus.CoinbaseMaturity, confirmations))
+            foreach (HDTransactionData transactionData in conn.GetSpendableOutputs(account.WalletId, account.AccountIndex, currentChainHeight, coinBaseMaturity ?? this.Network.Consensus.CoinbaseMaturity, confirmations))
             {
                 var pubKeyScript = new Script(Encoders.Hex.DecodeData(transactionData.ScriptPubKey));
                 PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(pubKeyScript);
@@ -767,25 +786,66 @@ namespace Stratis.Features.SQLiteWalletRepository
                     Confirmations = (currentChainHeight + 1) - transactionData.OutputBlockHeight,
                     Address = this.ToHdAddress(new HDAddress()
                     {
-                            AccountIndex = transactionData.AccountIndex,
-                            AddressIndex = transactionData.AddressIndex,
-                            AddressType = (int)transactionData.AddressType,
-                            PubKey = transactionData.ScriptPubKey,
-                            ScriptPubKey = transactionData.RedeemScript
+                        AccountIndex = transactionData.AccountIndex,
+                        AddressIndex = transactionData.AddressIndex,
+                        AddressType = (int)transactionData.AddressType,
+                        PubKey = transactionData.ScriptPubKey,
+                        ScriptPubKey = transactionData.RedeemScript
                     })
                 };
             }
         }
 
         /// <inheritdoc />
-        public (Money totalAmount, Money confirmedAmount) GetAccountBalance(WalletAccountReference walletAccountReference, int currentChainHeight, int confirmations = 0)
+        public (Money totalAmount, Money confirmedAmount) GetAccountBalance(WalletAccountReference walletAccountReference, int currentChainHeight, int confirmations = 0, int? coinBaseMaturity = null)
         {
             DBConnection conn = this.GetConnection(walletAccountReference.WalletName);
             HDAccount account = conn.GetAccountByName(walletAccountReference.WalletName, walletAccountReference.AccountName);
 
-            (decimal total, decimal confirmed) = HDTransactionData.GetBalance(conn, account.WalletId, account.AccountIndex, null, currentChainHeight, (int)this.Network.Consensus.CoinbaseMaturity, confirmations);
+            (decimal total, decimal confirmed) = HDTransactionData.GetBalance(conn, account.WalletId, account.AccountIndex, null, currentChainHeight, coinBaseMaturity ?? (int)this.Network.Consensus.CoinbaseMaturity, confirmations);
 
             return (new Money(total, MoneyUnit.BTC), new Money(confirmed, MoneyUnit.BTC));
+        }
+
+        /// <inheritdoc />
+        public IWalletAddressReadOnlyLookup GetWalletAddressLookup(string walletName)
+        {
+            return (IWalletAddressReadOnlyLookup)this.Wallets[walletName].AddressesOfInterest;
+        }
+
+        /// <inheritdoc />
+        public IWalletTransactionReadOnlyLookup GetWalletTransactionLookup(string walletName)
+        {
+            return (IWalletTransactionReadOnlyLookup)this.Wallets[walletName].TransactionsOfInterest;
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<TransactionData> GetAllTransactions(string walletName, string accountName, int? addressType, int? addressIndex, int limit = int.MaxValue, TransactionData prev = null, bool descending = true)
+        {
+            DBConnection conn = this.GetConnection(walletName);
+            int walletId;
+            int? accountIndex;
+
+            if (accountName == null)
+            {
+                HDWallet wallet = conn.GetWalletByName(walletName);
+                walletId = wallet.WalletId;
+                accountIndex = null;
+            }
+            else
+            {
+                HDAccount account = conn.GetAccountByName(walletName, accountName);
+                walletId = account.WalletId;
+                accountIndex = account.AccountIndex;
+            }
+
+            var prevTran = (prev == null) ? null : new HDTransactionData() {
+                OutputTxTime = (int)prev.CreationTime.ToUnixTimeSeconds(),
+                OutputIndex = prev.Index
+            };
+
+            foreach (HDTransactionData tranData in HDTransactionData.GetAllTransactions(conn, walletId, accountIndex, addressType, addressIndex, limit, prevTran, descending))
+                yield return this.ToTransactionData(tranData, new HDPayment[] { });
         }
 
         /// <inheritdoc />
@@ -830,6 +890,129 @@ namespace Stratis.Features.SQLiteWalletRepository
                     Account = this.ToHdAccount(account),
                     History = history
                 };
+            }
+        }
+
+        /// <summary>
+        /// Returns <see cref="TransactionData"/> records in the wallet acting as inputs to the given transaction.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet.</param>
+        /// <param name="transactionTime">The transaction creation time.</param>
+        /// <param name="transactionId">The transaction id.</param>
+        /// <returns><see cref="TransactionData"/> records in the wallet acting as inputs to the given transaction.</returns>
+        public IEnumerable<TransactionData> GetTransactionInputs(string walletName, DateTimeOffset transactionTime, uint256 transactionId)
+        {
+            DBConnection conn = this.GetConnection(walletName);
+            HDWallet wallet = conn.GetWalletByName(walletName);
+
+            foreach (HDTransactionData tranData in HDTransactionData.FindTransactionInputs(conn, wallet.WalletId, (int)transactionTime.ToUnixTimeSeconds(), transactionId.ToString()))
+                yield return this.ToTransactionData(tranData, new HDPayment[] { });
+        }
+
+        /// <summary>
+        /// Returns <see cref="TransactionData"/> records in the wallet acting as outputs to the given transaction.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet.</param>
+        /// <param name="transactionTime">The transaction creation time.</param>
+        /// <param name="transactionId">The transaction id.</param>
+        /// <returns><see cref="TransactionData"/> records in the wallet acting as outputs to the given transaction.</returns>
+        public IEnumerable<TransactionData> GetTransactionOutputs(string walletName, DateTimeOffset transactionTime, uint256 transactionId)
+        {
+            DBConnection conn = this.GetConnection(walletName);
+            HDWallet wallet = conn.GetWalletByName(walletName);
+
+            foreach (HDTransactionData tranData in HDTransactionData.FindTransactionOutputs(conn, wallet.WalletId, (int)transactionTime.ToUnixTimeSeconds(), transactionId.ToString()))
+                yield return this.ToTransactionData(tranData, new HDPayment[] { });
+        }
+
+        private class ScriptTransaction
+        {
+            public string ScriptPubKey { get; set; }
+            public string TransactionId { get; set; }
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<IEnumerable<string>> GetAddressGroupings(string walletName)
+        {
+            var addressGroupings = new Dictionary<string, HashSet<string>>();
+
+            DBConnection conn = GetConnection(walletName);
+            HDWallet wallet = conn.GetWalletByName(walletName);
+
+            // Group all input addresses with each other.
+            foreach (var spendData in conn.Query<ScriptTransaction>($@"
+                SELECT  ScriptPubKey
+                ,       TransactionId
+                FROM    HDTransactionData
+                WHERE   WalletId = {wallet.WalletId}"))
+            {
+                var spendTxId = spendData.TransactionId;
+                if (spendTxId != null)
+                {
+                    if (!addressGroupings.TryGetValue(spendTxId, out HashSet<string> grouping))
+                    {
+                        grouping = new HashSet<string>();
+                        addressGroupings[spendTxId] = grouping;
+                    }
+
+                    grouping.Add(spendData.ScriptPubKey);
+                }
+            }
+
+            // Include any change addresses.
+            foreach (var outputData in conn.Query<ScriptTransaction>($@"
+                SELECT  ScriptPubKey
+                ,       OutputTxId
+                FROM    HDTransactionData
+                WHERE   WalletId = {wallet.WalletId}"))
+            {
+                if (addressGroupings.TryGetValue(outputData.TransactionId, out HashSet<string> grouping))
+                    grouping.Add(outputData.ScriptPubKey);
+            }
+
+            // Determine unique mappings.
+            var uniqueGroupings = new List<HashSet<string>>();
+            var setMap = new Dictionary<string, HashSet<string>>();
+
+            foreach ((string spendTxId, HashSet<string> grouping) in addressGroupings.Select(kv => (kv.Key, kv.Value)))
+            {
+                // Create a list of unique groupings intersecting this grouping.
+                var hits = new List<HashSet<string>>();
+                foreach (string scriptPubkey in grouping)
+                    if (setMap.TryGetValue(scriptPubkey, out HashSet<string> it))
+                        hits.Add(it);
+
+                // Merge the matching uinique groupings into this grouping and remove the old groupings.
+                foreach (HashSet<string> hit in hits)
+                {
+                    grouping.UnionWith(hit);
+                    uniqueGroupings.Remove(hit);
+                }
+
+                // Add the new merged grouping.
+                uniqueGroupings.Add(grouping);
+
+                // Update the set map which maps addresses to the unique grouping they appear in.
+                foreach (string scriptPubKey in grouping)
+                    setMap[scriptPubKey] = grouping;
+            }
+
+            // Return the result.
+            foreach (HashSet<string> scriptPubKeys in uniqueGroupings)
+            {
+                var addressBase58s = new List<string>();
+
+                foreach (string scriptPubKey in scriptPubKeys)
+                {
+                    Script script = Script.FromHex(scriptPubKey);
+                    var addressBase58 = script.GetDestinationAddress(this.Network);
+                    if (addressBase58 == null)
+                        continue;
+
+                    addressBase58s.Add(addressBase58.ToString());
+                }
+
+                yield return addressBase58s;
             }
         }
     }

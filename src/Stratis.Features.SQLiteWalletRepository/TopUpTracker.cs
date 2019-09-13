@@ -13,6 +13,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         public int AddressType { get; private set; }
         public int AddressCount { get; internal set; }
         public int NextAddressIndex { get; internal set; }
+        public bool IsWatchOnlyAccount { get; internal set; }
 
         internal HDAccount Account;
 
@@ -28,6 +29,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.Account = HDAccount.GetAccount(conn, this.WalletId, this.AccountIndex);
             this.AddressCount = HDAddress.GetAddressCount(conn, this.WalletId, this.AccountIndex, this.AddressType);
             this.NextAddressIndex = HDAddress.GetNextAddressIndex(conn, this.WalletId, this.AccountIndex, this.AddressType);
+            this.IsWatchOnlyAccount = this.Account.ExtPubKey == null;
         }
 
         public override int GetHashCode()

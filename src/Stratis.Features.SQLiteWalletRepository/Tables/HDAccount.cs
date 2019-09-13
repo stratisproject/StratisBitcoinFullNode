@@ -32,7 +32,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 WalletId            INTEGER NOT NULL,
                 AccountIndex        INTEGER NOT NULL,
                 AccountName         TEXT NOT NULL,
-                ExtPubKey           TEXT NOT NULL UNIQUE,
+                ExtPubKey           TEXT,
                 CreationTime        INTEGER NOT NULL,
                 PRIMARY KEY(WalletId, AccountIndex)
             );";

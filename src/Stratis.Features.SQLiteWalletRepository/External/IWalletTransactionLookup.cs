@@ -3,7 +3,7 @@ using NBitcoin;
 
 namespace Stratis.Features.SQLiteWalletRepository.External
 {
-    public interface IWalletTransactionLookup
+    public interface IWalletTransactionReadOnlyLookup
     {
         /// <summary>
         /// Determines if the outpoint has been added to this collection.
@@ -12,7 +12,10 @@ namespace Stratis.Features.SQLiteWalletRepository.External
         /// <param name="addresses">Identifies the addresses related to the outpoint (if any).</param>
         /// <returns><c>True</c> if the address exists or has been added tentatively.</returns>
         bool Contains(OutPoint outPoint, out HashSet<AddressIdentifier> addresses);
+    }
 
+    public interface IWalletTransactionLookup : IWalletTransactionReadOnlyLookup
+    {
         /// <summary>
         /// Call this after all tentative outpoints have been committed to the wallet.
         /// </summary>

@@ -7,5 +7,6 @@
         int AddressType { get; }
         int AddressCount { get; }
         int NextAddressIndex { get; }
+        bool IsWatchOnlyAccount { get; }
     }
 }

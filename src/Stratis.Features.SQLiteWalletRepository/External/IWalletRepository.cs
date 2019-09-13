@@ -126,9 +126,10 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <param name="accountReference">The account to get unused addresses for.</param>
         /// <param name="currentChainHeight">The chain height to use in the determination of the number of confirmations of a transaction. </param>
         /// <param name="confirmations">The minimum number of confirmations for a transactions to be regarded spendable.</param>
+        /// <param name="coinBaseMaturity">Can be used to override <see cref="Network.Consensus.CoinbaseMaturity"/>.</param>
         /// <returns>The list of spendable transactions for the account.</returns>
         /// <remarks>For coinbase transactions <see cref="Network.Consensus.CoinbaseMaturity" /> will be used in addition to <paramref name="confirmations"/>.</remarks>
-        IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference accountReference, int currentChainHeight, int confirmations = 0);
+        IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference accountReference, int currentChainHeight, int confirmations = 0, int? coinBaseMaturity = null);
 
         /// <summary>
         /// Gets an account's total balance and confirmed balance amounts.
@@ -136,8 +137,10 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <param name="walletAccountReference">The account to get the balances for.</param>
         /// <param name="currentChainHeight">The current chain height.</param>
         /// <param name="confirmations">The minimum number of confirmations for a transactions to be regarded spendable.</param>
+        /// <param name="coinBaseMaturity">Can be used to override <see cref="Network.Consensus.CoinbaseMaturity"/>.</param>
         /// <returns>The account's total balance and confirmed balance amounts.</returns>
-        (Money totalAmount, Money confirmedAmount) GetAccountBalance(WalletAccountReference walletAccountReference, int currentChainHeight, int confirmations = 0);
+        /// <remarks>For coinbase transactions <see cref="Network.Consensus.CoinbaseMaturity" /> will be used in addition to <paramref name="confirmations"/>.</remarks>
+        (Money totalAmount, Money confirmedAmount) GetAccountBalance(WalletAccountReference walletAccountReference, int currentChainHeight, int confirmations = 0, int? coinBaseMaturity = null);
 
         /// <summary>
         /// Returns a history of all transactions in the wallet.
@@ -176,5 +179,40 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// <param name="walletName">The wallet the transaction is for.</param>
         /// <returns>A transaction context providing <see cref="ITransactionContext.Commit"/> and <see cref="ITransactionContext.Rollback"/> methods.</returns>
         ITransactionContext BeginTransaction(string walletName);
+
+        /// <summary>
+        /// Used to obtain information about addresses present in the wallet.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet.</param>
+        /// <returns>A lookup for the addresses present in the wallet.</returns>
+        IWalletAddressReadOnlyLookup GetWalletAddressLookup(string walletName);
+
+        /// <summary>
+        /// Used to obtain information about transactions present in the wallet.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet.</param>
+        /// <returns>A lookup for the transactions present in the wallet.</returns>
+        IWalletTransactionReadOnlyLookup GetWalletTransactionLookup(string walletName);
+
+        /// <summary>
+        /// Gets the wallet's <see cref="TransactionData"/> records. Records are sorted by transaction creation time and output index.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet.</param>
+        /// <param name="accountName">An optional account name filter.</param>
+        /// <param name="addressType">An optional address type filter.</param>
+        /// <param name="addressIndex">An optional address index filter.</param>
+        /// <param name="limit">The maximum number of records to return.</param>
+        /// <param name="prev">The record preceding the first record to be returned. Can be <c>null</c> to return the first record.</param>
+        /// <param name="descending">The default is descending. Set to <c>false</c> to return records in ascending order.</param>
+        /// <returns>The wallet's <see cref="TransactionData"/> records.</returns>
+        /// <remarks>Spending details are not included.</remarks>
+        IEnumerable<TransactionData> GetAllTransactions(string walletName, string accountName, int? addressType, int? addressIndex, int limit = int.MaxValue, TransactionData prev = null, bool descending = true);
+
+        /// <summary>
+        /// Determines address groupings.
+        /// </summary>
+        /// <param name="walletName">The wallet name.</param>
+        /// <returns>Returns an enumeration of grouped addresses.</returns>
+        IEnumerable<IEnumerable<string>> GetAddressGroupings(string walletName);
     }
 }

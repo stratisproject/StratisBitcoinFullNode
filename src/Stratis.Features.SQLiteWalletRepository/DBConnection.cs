@@ -201,10 +201,16 @@ namespace Stratis.Features.SQLiteWalletRepository
             // Retrieve the pubkey associated with the private key of this address index.
             var keyPath = new KeyPath($"{addressType}/{addressIndex}");
 
-            ExtPubKey extPubKey = account.GetExtPubKey(this.Repository.Network).Derive(keyPath);
-            PubKey pubKey = extPubKey.PubKey;
-            Script pubKeyScript = pubKey.ScriptPubKey;
-            Script scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(pubKey);
+            Script pubKeyScript = null;
+            Script scriptPubKey = null;
+
+            if (account.ExtPubKey != null)
+            {
+                ExtPubKey extPubKey = account.GetExtPubKey(this.Repository.Network).Derive(keyPath);
+                PubKey pubKey = extPubKey.PubKey;
+                pubKeyScript = pubKey.ScriptPubKey;
+                scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(pubKey);
+            }
 
             // Add the new address details to the list of addresses.
             return new HDAddress()
@@ -213,8 +219,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 AccountIndex = account.AccountIndex,
                 AddressType = addressType,
                 AddressIndex = addressIndex,
-                PubKey = pubKeyScript.ToHex(),
-                ScriptPubKey = scriptPubKey.ToHex()
+                PubKey = pubKeyScript?.ToHex(),
+                ScriptPubKey = scriptPubKey?.ToHex()
             };
         }
 

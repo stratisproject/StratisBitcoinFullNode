@@ -123,21 +123,23 @@ namespace Stratis.Features.SQLiteWalletRepository.External
                             {
                                 // Get the top-up tracker that applies to this account and address type.
                                 ITopUpTracker tracker = this.GetTopUpTracker(address);
-
-                                // If an address inside the address buffer is being used then top-up the buffer.
-                                while (address.AddressIndex >= tracker.NextAddressIndex)
+                                if (!tracker.IsWatchOnlyAccount)
                                 {
-                                    AddressIdentifier newAddress = CreateAddress(tracker);
+                                    // If an address inside the address buffer is being used then top-up the buffer.
+                                    while (address.AddressIndex >= tracker.NextAddressIndex)
+                                    {
+                                        AddressIdentifier newAddress = CreateAddress(tracker);
 
-                                    // Add the new address to our addresses of interest.
-                                    addressesOfInterest.AddTentative(Script.FromHex(newAddress.ScriptPubKey),
-                                        new AddressIdentifier()
-                                        {
-                                            WalletId = newAddress.WalletId,
-                                            AccountIndex = newAddress.AccountIndex,
-                                            AddressType = newAddress.AddressType,
-                                            AddressIndex = newAddress.AddressIndex
-                                        });
+                                        // Add the new address to our addresses of interest.
+                                        addressesOfInterest.AddTentative(Script.FromHex(newAddress.ScriptPubKey),
+                                            new AddressIdentifier()
+                                            {
+                                                WalletId = newAddress.WalletId,
+                                                AccountIndex = newAddress.AccountIndex,
+                                                AddressType = newAddress.AddressType,
+                                                AddressIndex = newAddress.AddressIndex
+                                            });
+                                    }
                                 }
                             }
 
