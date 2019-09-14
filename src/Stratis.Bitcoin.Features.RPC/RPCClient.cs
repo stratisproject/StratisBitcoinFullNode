@@ -856,7 +856,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
                 result[i++] = new PeerInfo
                 {
-                    Id = (int)peer["id"],
+                    Id = peer["id"] != null ? (int)peer["id"] : -1,
                     Address = Utils.ParseIpEndpoint((string)peer["addr"], this.Network.DefaultPort),
                     LocalAddress = Utils.ParseIpEndpoint(localAddr, this.Network.DefaultPort),
                     Services = ulong.Parse((string)peer["services"]),
@@ -873,11 +873,11 @@ namespace Stratis.Bitcoin.Features.RPC
                     SubVersion = (string)peer["subver"],
                     Inbound = (bool)peer["inbound"],
                     StartingHeight = (int)peer["startingheight"],
-                    SynchronizedBlocks = (int)peer["synced_blocks"],
-                    SynchronizedHeaders = (int)peer["synced_headers"],
-                    IsWhiteListed = (bool)peer["whitelisted"],
+                    SynchronizedBlocks = peer["synced_blocks"] != null ? (int)peer["synced_blocks"] : -1,
+                    SynchronizedHeaders = peer["synced_headers"] != null ? (int)peer["synced_headers"] : -1,
+                    IsWhiteListed = peer["whitelisted"] != null ? (bool)peer["whitelisted"] : false,
                     BanScore = peer["banscore"] == null ? 0 : (int)peer["banscore"],
-                    Inflight = peer["inflight"].Select(x => uint.Parse((string)x)).ToArray()
+                    Inflight = peer["inflight"] != null ? peer["inflight"].Select(x => uint.Parse((string)x)).ToArray() : new uint[] { }
                 };
             }
 

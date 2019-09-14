@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         /// Disposes of the test fixtures resources.
         /// Note: do not call this dispose in the class itself xunit will handle it. 
         /// </summary>
-        public void Dispose()
+        public virtual void Dispose()
         {
             this.Builder.Dispose();
             this.NetworkPeerClient.Dispose();
