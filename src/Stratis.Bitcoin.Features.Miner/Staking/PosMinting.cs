@@ -438,9 +438,12 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         {
             var utxoStakeDescriptions = new List<UtxoStakeDescription>();
 
+            // UTXOs with insufficient confirmations cannot be used as a coinstake kernel.
+            // https://github.com/stratisproject/stratisX/blob/f9ef7fbb76a385b207c92c3de1fecb31047e441a/src/kernel.cpp#L436-L442
             var options = (PosConsensusOptions)this.network.Consensus.Options;
             int minDepth = options.GetStakeMinConfirmations(this.chainIndexer.Height, this.network);
 
+            // We filter out insufficiently confirmed UTXOs here so that the coinview is not placed under unnecessary load.
             List<UnspentOutputReference> stakableUtxos = this.walletManager
                 .GetSpendableTransactionsInWalletForStaking(walletSecret.WalletName, minDepth)
                 .Where(utxo => utxo.Transaction.Amount >= this.MinimumStakingCoinValue) // exclude dust from stake process
@@ -599,9 +602,13 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             // Mark coinstake transaction.
             coinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(Money.Zero, new Script()));
 
-            // TODO: Is the difference and duplication in logic between GetMatureBalanceAsync and GetStakeMinConfirmations acceptable?
-            (Money balance, Money immature) = await this.GetMatureBalanceAsync(utxoStakeDescriptions).ConfigureAwait(false);
-            this.rpcGetStakingInfoModel.Immature = immature.Satoshi;
+            Money balance = await this.GetMatureBalanceAsync(utxoStakeDescriptions).ConfigureAwait(false);
+
+            // To compute the immature balance we sum up the entire wallet balance and subtract the 'stakable' balance from it.
+            // This is not entirely accurate, as dust UTXOs will therefore be regarded as immature.
+            Money totalUnspent = this.walletManager.GetWalletsNames().SelectMany(w => this.walletManager.GetWallet(w).GetAllAddresses().SelectMany(a => a.UnspentTransactions())).Sum(b => b.Amount);
+            
+            this.rpcGetStakingInfoModel.Immature = totalUnspent.Satoshi - balance.Satoshi;
 
             if (balance <= this.targetReserveBalance)
             {
@@ -612,8 +619,8 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 return false;
             }
 
-            // Select UTXOs with suitable depth.
-            List<UtxoStakeDescription> stakingUtxoDescriptions = await this.GetUtxoStakeDescriptionsSuitableForStakingAsync(utxoStakeDescriptions, chainTip, coinstakeContext.CoinstakeTx.Time, balance - this.targetReserveBalance).ConfigureAwait(false);
+            // Select suitable UTXOs from the current set.
+            List<UtxoStakeDescription> stakingUtxoDescriptions = await this.GetUtxoStakeDescriptionsSuitableForStakingAsync(utxoStakeDescriptions, coinstakeContext.CoinstakeTx.Time, balance - this.targetReserveBalance).ConfigureAwait(false);
             if (!stakingUtxoDescriptions.Any())
             {
                 this.rpcGetStakingInfoModel.PauseStaking();
@@ -928,31 +935,16 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         }
 
         /// <inheritdoc/>
-        public async Task<(Money balance, Money immature)> GetMatureBalanceAsync(List<UtxoStakeDescription> utxoStakeDescriptions)
+        public async Task<Money> GetMatureBalanceAsync(List<UtxoStakeDescription> utxoStakeDescriptions)
         {
-            var money = new Money(0);
-            var immature = new Money(0);
-
-            foreach (UtxoStakeDescription utxoStakeDescription in utxoStakeDescriptions)
-            {
-                // Must wait until coinbase is safely deep enough in the chain before valuing it.
-                if ((utxoStakeDescription.UtxoSet.IsCoinbase || utxoStakeDescription.UtxoSet.IsCoinstake) && (await this.GetBlocksCountToMaturityAsync(utxoStakeDescription).ConfigureAwait(false) > 0))
-                {
-                    immature += utxoStakeDescription.TxOut.Value;
-                    continue;
-                }
-
-                money += utxoStakeDescription.TxOut.Value;
-            }
-
-            return (money, immature);
+            // The immature outputs should have been filtered out already, so just sum the UTXO values.
+            return utxoStakeDescriptions.Sum(u => u.TxOut.Value);
         }
 
         /// <summary>
         /// Selects UTXOs that are suitable for staking.
         /// <para>
-        /// Such a UTXO has to be confirmed with enough confirmations - i.e. has suitable depth,
-        /// and it also has to be mature and meet requirement for minimal value.
+        /// Such a UTXO has to meet the requirement for minimal value.
         /// </para>
         /// </summary>
         /// <param name="utxoStakeDescriptions">List of UTXO descriptions that are candidates for being used for staking.</param>
@@ -960,12 +952,12 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// <param name="spendTime">Timestamp of the coinstake transaction.</param>
         /// <param name="targetValue">Target money amount of UTXOs that can be used for staking.</param>
         /// <returns>List of UTXO descriptions that meet the requirements for staking.</returns>
-        internal async Task<List<UtxoStakeDescription>> GetUtxoStakeDescriptionsSuitableForStakingAsync(List<UtxoStakeDescription> utxoStakeDescriptions, ChainedHeader chainTip, uint spendTime, long targetValue)
+        internal async Task<List<UtxoStakeDescription>> GetUtxoStakeDescriptionsSuitableForStakingAsync(List<UtxoStakeDescription> utxoStakeDescriptions, uint spendTime, long targetValue)
         {
             var res = new List<UtxoStakeDescription>();
 
             long currentValue = 0;
-            long requiredDepth = ((PosConsensusOptions)this.network.Consensus.Options).GetStakeMinConfirmations(chainTip.Height + 1, this.network) - 1;
+
             foreach (UtxoStakeDescription utxoStakeDescription in utxoStakeDescriptions.OrderByDescending(x => x.TxOut.Value))
             {
                 int depth = await this.GetDepthInMainChainAsync(utxoStakeDescription).ConfigureAwait(false);
@@ -977,22 +969,9 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     continue;
                 }
 
-                if (depth < requiredDepth)
-                {
-                    this.logger.LogDebug("UTXO '{0}' depth {1} is lower than required minimum depth {2}.", utxoStakeDescription.OutPoint, depth, requiredDepth);
-                    continue;
-                }
-
                 if (utxoStakeDescription.UtxoSet.Time > spendTime)
                 {
                     this.logger.LogDebug("UTXO '{0}' can't be added because its time {1} is greater than coinstake time {2}.", utxoStakeDescription.OutPoint, utxoStakeDescription.UtxoSet.Time, spendTime);
-                    continue;
-                }
-
-                int toMaturity = await this.GetBlocksCountToMaturityAsync(utxoStakeDescription).ConfigureAwait(false);
-                if (toMaturity > 0)
-                {
-                    this.logger.LogDebug("UTXO '{0}' can't be added because it is not mature, {1} blocks to maturity left.", utxoStakeDescription.OutPoint, toMaturity);
                     continue;
                 }
 
