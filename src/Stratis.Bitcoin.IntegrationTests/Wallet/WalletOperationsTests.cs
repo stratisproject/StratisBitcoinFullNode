@@ -961,6 +961,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             addressBalance.CoinType.Should().Be(CoinType.Stratis);
             addressBalance.AmountConfirmed.Should().Be(new Money(10150100000000));
             addressBalance.AmountUnconfirmed.Should().Be(Money.Zero);
+
+            // Only one tx in the wallet for this address that is not spent and not a coinbase/coinstake.
+            addressBalance.SpendableAmount.Should().Be(new Money(150000000000));
         }
 
         [Fact]
