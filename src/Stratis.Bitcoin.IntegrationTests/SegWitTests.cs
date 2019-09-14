@@ -598,5 +598,57 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestBase.WaitLoop(() => stratisX.CreateRPCClient().GetBlockCount() >= 13, cancellationToken: cancellationToken);
             }
         }
+
+        [Fact]
+        public void StakeSegwitBlock_On_SBFN_Connected_To_SBFN_Check_StratisX_Syncs_When_StratisX_Connects_Later()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode node1 = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).WithWallet().Start();
+                CoreNode node2 = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).WithWallet().Start();
+
+                // Need the premine to be past coinbase maturity so that we can stake with it.
+                RPCClient rpc = node1.CreateRPCClient();
+                rpc.Generate(12);
+
+                var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+                TestBase.WaitLoop(() => node1.CreateRPCClient().GetBlockCount() >= 12, cancellationToken: cancellationToken);
+
+                TestHelper.ConnectAndSync(node1, node2);
+
+                // Now need to start staking on one of the SBFN nodes.
+                var staker = node1.FullNode.NodeService<IPosMinting>() as PosMinting;
+
+                staker.Stake(new WalletSecret()
+                {
+                    WalletName = node1.WalletName,
+                    WalletPassword = node1.WalletPassword
+                });
+
+                // Wait for the chain height to increase.
+                TestBase.WaitLoop(() => node1.CreateRPCClient().GetBlockCount() >= 13, cancellationToken: cancellationToken);
+
+                // Get the first staked block.
+                Block block = node1.FullNode.ChainIndexer.GetHeader(13).Block;
+
+                // Confirm that the staked block is Segwit-ted.
+                Script commitment = WitnessCommitmentsRule.GetWitnessCommitment(node1.FullNode.Network, block);
+
+                Assert.NotNull(commitment);
+
+                // Wait for the other SBFN node to sync.
+                TestBase.WaitLoop(() => node2.CreateRPCClient().GetBlockCount() >= 13, cancellationToken: cancellationToken);
+
+                // The idea here is that the second SBFN node has received and validated a segwit block from node1. So it should now be expecting witness data from its other peers.
+                // However, for this test we only sync stratisX rather than allow it to mine.
+                var parameters = new NodeConfigParameters { { "addnode", node2.Endpoint.ToString() } };
+
+                // Start the stratisX node and allow it to sync.
+                // The P2P behaviours can have asymmetric rules about version requirements, so we have to test in both directions.
+                CoreNode stratisX = builder.CreateStratisXNode(configParameters: parameters).Start();
+
+                TestBase.WaitLoop(() => stratisX.CreateRPCClient().GetBlockCount() >= 13, cancellationToken: cancellationToken);
+            }
+        }
     }
 }
