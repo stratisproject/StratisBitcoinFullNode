@@ -508,14 +508,12 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void StakeSegwitBlock_On_SBFN_Check_StratisX_Syncs()
+        public void StakeSegwitBlock_On_SBFN_Check_StratisX_Syncs_When_SBFN_Initiates_Connection()
         {
-            using (NodeBuilder builder = NodeBuilder.Create(this).WithLogsEnabled())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // Even though we are mining, we still want to use PoS consensus rules.
                 CoreNode node = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).WithWallet().Start();
-
-                CoreNode stratisX = builder.CreateStratisXNode().Start();
 
                 // Need the premine to be past coinbase maturity so that we can stake with it.
                 RPCClient rpc = node.CreateRPCClient();
@@ -544,6 +542,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // We presume that the consensus rules are checking the actual validity of the commitment, we just ensure that it exists here.
                 Assert.NotNull(commitment);
+
+                CoreNode stratisX = builder.CreateStratisXNode().Start();
 
                 // Now connect the stratisX node and allow it to sync.
                 node.CreateRPCClient().AddNode(stratisX.Endpoint);
@@ -555,12 +555,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void StakeSegwitBlock_On_SBFN_Check_StratisX_Syncs_When_StratisX_Initiates_Connection()
         {
-            using (NodeBuilder builder = NodeBuilder.Create(this).WithLogsEnabled())
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // Even though we are mining, we still want to use PoS consensus rules.
                 CoreNode node = builder.CreateStratisPosNode(KnownNetworks.StratisRegTest).WithWallet().Start();
-
-                CoreNode stratisX = builder.CreateStratisXNode().Start();
 
                 // Need the premine to be past coinbase maturity so that we can stake with it.
                 RPCClient rpc = node.CreateRPCClient();
@@ -590,9 +588,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // We presume that the consensus rules are checking the actual validity of the commitment, we just ensure that it exists here.
                 Assert.NotNull(commitment);
 
-                // Now connect the SBFN node to the stratisX node and allow stratisX to sync.
-                // The P2P behaviours have asymmetric rules about version requirements, so we have to test in both directions.
-                stratisX.CreateRPCClient().AddNode(node.Endpoint);
+                // stratisX appears to have problems with addnode RPC calls sent after the node has started up, so set the endpoint in the config instead.
+                var parameters = new NodeConfigParameters { { "addnode", node.Endpoint.ToString() } };
+
+                // Start the stratisX node and allow it to sync.
+                // The P2P behaviours can have asymmetric rules about version requirements, so we have to test in both directions.
+                CoreNode stratisX = builder.CreateStratisXNode(configParameters: parameters).Start();
 
                 TestBase.WaitLoop(() => stratisX.CreateRPCClient().GetBlockCount() >= 13, cancellationToken: cancellationToken);
             }
