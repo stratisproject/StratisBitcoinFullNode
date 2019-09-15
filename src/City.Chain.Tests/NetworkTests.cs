@@ -52,7 +52,7 @@ namespace City.Chain.Tests
         {
             Network network = new CityMain();
 
-            Assert.Equal(10, network.Checkpoints.Count);
+            Assert.Equal(12, network.Checkpoints.Count);
             Assert.Equal(4, network.DNSSeeds.Count);
             Assert.Equal(4, network.SeedNodes.Count);
 
