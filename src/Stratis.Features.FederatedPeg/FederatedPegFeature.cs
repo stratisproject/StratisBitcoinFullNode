@@ -23,6 +23,8 @@ using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -424,6 +426,8 @@ namespace Stratis.Features.FederatedPeg
                     services.AddSingleton<BlockDefinition, FederatedPegBlockDefinition>();
                     services.AddSingleton<ICoinbaseSplitter, PremineCoinbaseSplitter>();
                     services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();
+
+                    services.AddSingleton(typeof(IContractTransactionPartialValidationRule), typeof(SmartContractFormatLogic));
                 });
             });
 
