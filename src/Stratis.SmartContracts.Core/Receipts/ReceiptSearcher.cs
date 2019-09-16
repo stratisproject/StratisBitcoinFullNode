@@ -3,12 +3,9 @@ using System.Linq;
 using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.SmartContracts.CLR;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Interfaces;
-using Stratis.SmartContracts.Core.Receipts;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
+namespace Stratis.SmartContracts.Core.Receipts
 {
     /// <summary>
     /// Searches the chain for receipts that match the given criteria and returns the receipts.
@@ -49,7 +46,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             topics = topics ?? Enumerable.Empty<byte[]>();
 
             // Build the bytes we can use to check for this event.
-            uint160 addressUint160 = contractAddress.ToUint160(this.network);
+            // TODO use address.ToUint160 extension when it is in .Core.
+            var addressUint160 = new uint160(new BitcoinPubKeyAddress(contractAddress, this.network).Hash.ToBytes());
 
             var chainIndexerRangeQuery = new ChainIndexerRangeQuery(this.chainIndexer);
 
