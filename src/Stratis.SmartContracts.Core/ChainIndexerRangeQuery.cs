@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 
-namespace Stratis.Bitcoin.Features.SmartContracts
+namespace Stratis.SmartContracts.Core
 {
     public class ChainIndexerRangeQuery
     {

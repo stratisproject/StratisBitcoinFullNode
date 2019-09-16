@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.SmartContracts.Networks;
 using Xunit;
 
-namespace Stratis.SmartContracts.CLR.Tests
+namespace Stratis.SmartContracts.Core.Tests
 {
     public class ChainIndexerRangeQueryTests
     {
