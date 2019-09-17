@@ -6,6 +6,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.SignalR
 {
+    using Newtonsoft.Json;
+    using Utilities.JsonConverters;
+
     public class Startup
     {
         public void ConfigureServices(IServiceCollection services)
@@ -17,7 +20,7 @@ namespace Stratis.Bitcoin.Features.SignalR
                         "CorsPolicy",
                         builder =>
                         {
-                            var allowedDomains = new[] { "http://localhost", "http://localhost:4200" };
+                            var allowedDomains = new[] {"http://localhost", "http://localhost:4200"};
 
                             builder
                                 .WithOrigins(allowedDomains)
@@ -26,10 +29,16 @@ namespace Stratis.Bitcoin.Features.SignalR
                                 .AllowCredentials();
                         });
                 });
-            services.AddSignalR();
+            services.AddSignalR().AddJsonProtocol(options =>
+            {
+                var settings = new JsonSerializerSettings();
+                Serializer.RegisterFrontConverters(settings);
+                options.PayloadSerializerSettings = settings;
+            });
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IServiceProvider serviceProvider)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory,
+            IServiceProvider serviceProvider)
         {
             if (env.IsDevelopment())
             {
@@ -37,10 +46,7 @@ namespace Stratis.Bitcoin.Features.SignalR
             }
 
             app.UseCors("CorsPolicy");
-            app.UseSignalR(route =>
-            {
-                route.MapHub<EventsHub>("/events-hub");
-            });
+            app.UseSignalR(route => { route.MapHub<EventsHub>("/events-hub"); });
         }
     }
 }
