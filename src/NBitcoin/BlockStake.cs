@@ -353,10 +353,16 @@ namespace NBitcoin
         /// </summary>
         public override void ReadWrite(BitcoinStream stream)
         {
+            // Capture the value in BlockSize as calling base will change it.
+            long? blockSize = this.BlockSize;
+
             base.ReadWrite(stream);
             stream.ReadWrite(ref this.blockSignature);
 
-            this.BlockSize = stream.Serializing ? stream.Counter.WrittenBytes : stream.Counter.ReadBytes;
+            if (blockSize == null)
+            {
+                this.BlockSize = stream.Serializing ? stream.Counter.WrittenBytes : stream.Counter.ReadBytes;
+            }
         }
 
         /// <summary>
