@@ -42,10 +42,9 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
 
         protected override IEnumerable<IClientEvent> GetMessages()
         {
-            WalletGeneralInfoClientEvent clientEvent = null;
-
             foreach (string walletName in this.walletManager.GetWalletsNames())
             {
+                WalletGeneralInfoClientEvent clientEvent = null;
                 try
                 {
                     Wallet.Wallet wallet = this.walletManager.GetWallet(walletName);
@@ -76,10 +75,10 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                                 };
                             })
                         };
-                        
+
                         accountBalanceModels.Add(accountBalanceModel);
                     }
-                    
+
                     clientEvent = new WalletGeneralInfoClientEvent
                     {
                         WalletName = walletName,
@@ -90,7 +89,7 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                         ChainTip = this.chainIndexer.Tip.Height,
                         IsChainSynced = this.chainIndexer.IsDownloaded(),
                         IsDecrypted = true,
-                        AccountsBalances =  accountBalanceModels
+                        AccountsBalances = accountBalanceModels
                     };
 
                     // Get the wallet's file path.
@@ -107,11 +106,11 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                 {
                     this.logger.LogError(e, "Exception occurred: {0}");
                 }
-            }
 
-            if (null != clientEvent)
-            {
-                yield return clientEvent;
+                if (null != clientEvent)
+                {
+                    yield return clientEvent;
+                }
             }
         }
     }
