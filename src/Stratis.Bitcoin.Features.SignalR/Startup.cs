@@ -3,12 +3,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.Bitcoin.Features.SignalR
 {
-    using Newtonsoft.Json;
-    using Utilities.JsonConverters;
-
     public class Startup
     {
         public void ConfigureServices(IServiceCollection services)
