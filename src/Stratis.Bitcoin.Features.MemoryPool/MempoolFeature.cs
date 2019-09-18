@@ -142,6 +142,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Include the memory pool feature and related services in the full node.
         /// </summary>
         /// <param name="fullNodeBuilder">Full node builder.</param>
+        /// <param name="injectRules">Whether or not to inject the mempool rules now, or defer it to another feature.</param>
         /// <returns>Full node builder.</returns>
         public static IFullNodeBuilder UseMempool(this IFullNodeBuilder fullNodeBuilder)
         {
@@ -168,6 +169,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         services.AddSingleton<BlocksDisconnectedSignaled>();
                         services.AddSingleton<IMempoolPersistence, MempoolPersistence>();
                         services.AddSingleton<MempoolSettings>();
+
+                        foreach (var ruleType in fullNodeBuilder.Network.Consensus.MempoolRules)
+                            services.AddSingleton(typeof(IMempoolRule), ruleType);
                     });
             });
 

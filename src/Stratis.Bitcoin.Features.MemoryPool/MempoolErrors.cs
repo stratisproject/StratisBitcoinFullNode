@@ -207,5 +207,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>'time-too-new' error returns a <see cref="RejectNonStandard"/> reject code.</summary>
         public static MempoolError TimeTooNew = new MempoolError(RejectNonstandard, "time-too-new");
+
+        /// <summary>'no-witness-yet' error returns a <see cref="RejectNonStandard"/> reject code.</summary>
+        public static MempoolError NoWitnessYet = new MempoolError(RejectNonstandard, "no-witness-yet");
+
     }
 }

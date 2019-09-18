@@ -174,6 +174,14 @@ namespace Stratis.Bitcoin.Features.PoA
                     // but it should not halt the mining operation.
                     this.logger.LogWarning("Miner failed to mine block due to: '{0}'.", ce.ConsensusError.Message);
                 }
+                catch (ConsensusException ce)
+                {
+                    // Text from PosMinting:
+                    // All consensus exceptions (including translated ConsensusErrorException) should be ignored. It means that the miner
+                    // ran into problems while constructing block or verifying it
+                    // but it should not halt the mining operation.
+                    this.logger.LogWarning("Miner failed to mine block due to: '{0}'.", ce.Message);
+                }
                 catch (Exception exception)
                 {
                     this.logger.LogCritical("Exception occurred during mining: {0}", exception.ToString());

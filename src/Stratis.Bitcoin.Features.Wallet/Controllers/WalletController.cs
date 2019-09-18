@@ -656,7 +656,19 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         HdPath = account.HdPath,
                         AmountConfirmed = balance.AmountConfirmed,
                         AmountUnconfirmed = balance.AmountUnconfirmed,
-                        SpendableAmount = balance.SpendableAmount
+                        SpendableAmount = balance.SpendableAmount,
+                        Addresses = account.GetCombinedAddresses().Select(address =>
+                        {
+                            (Money confirmedAmount, Money unConfirmedAmount) = address.GetBalances();
+                            return new AddressModel
+                            {
+                                Address = address.Address,
+                                IsUsed = address.Transactions.Any(),
+                                IsChange = address.IsChangeAddress(),
+                                AmountConfirmed = confirmedAmount,
+                                AmountUnconfirmed = unConfirmedAmount
+                            };
+                        })
                     });
                 }
 
@@ -697,7 +709,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     CoinType = this.coinType,
                     Address = balanceResult.Address,
                     AmountConfirmed = balanceResult.AmountConfirmed,
-                    AmountUnconfirmed = balanceResult.AmountUnconfirmed
+                    AmountUnconfirmed = balanceResult.AmountUnconfirmed,
+                    SpendableAmount = balanceResult.SpendableAmount
                 });
             }
             catch (Exception e)

@@ -10,7 +10,6 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.ContractSigning;
 using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
@@ -300,19 +299,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             if (deserialized.IsFailure)
             {
                 return BuildCreateContractTransactionResponse.Failed("Invalid data. If network requires code signing, check the code contains a signature.");
-            }
-
-            // HACK
-            // If requiring a signature, also check the signature.
-            if (this.network is ISignedCodePubKeyHolder holder)
-            {
-                var signedTxData = (SignedCodeContractTxData)deserialized.Value;
-                bool validSig = new ContractSigner().Verify(holder.SigningContractPubKey, signedTxData.ContractExecutionCode, signedTxData.CodeSignature);
-
-                if (!validSig)
-                {
-                    return BuildCreateContractTransactionResponse.Failed("Signature in code does not come from required signing key.");
-                }
             }
 
             var recipient = new Recipient { Amount = request.Amount ?? "0", ScriptPubKey = new Script(serializedTxData) };
