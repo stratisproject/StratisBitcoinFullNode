@@ -3,11 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
-using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
 using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.PoA.Policies;
-using Stratis.Bitcoin.Features.PoA.Voting.ConsensusRules;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -183,7 +180,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.RegisterMempoolRules(this.Consensus);
         }
 
-        private void RegisterMempoolRules(IConsensus consensus)
+        protected virtual void RegisterMempoolRules(IConsensus consensus)
         {
             // TODO: These are currently the PoW/PoS rules as PoA does not have smart contracts by itself. Are other specialised rules needed?
             consensus.MempoolRules = new List<Type>()
