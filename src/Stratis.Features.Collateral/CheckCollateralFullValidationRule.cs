@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
 using Stratis.Bitcoin.Features.PoA;
@@ -20,7 +19,7 @@ namespace Stratis.Features.Collateral
 
         private readonly ICollateralChecker collateralChecker;
 
-        private readonly IFullNode fullNode;
+        private readonly IPoAMiner poaMiner;
 
         private readonly ISlotsManager slotsManager;
 
@@ -33,10 +32,10 @@ namespace Stratis.Features.Collateral
         /// <summary>For how many seconds the block should be banned in case collateral check failed.</summary>
         private readonly int collateralCheckBanDurationSeconds;
 
-        public CheckCollateralFullValidationRule(IFullNode fullNode, IInitialBlockDownloadState ibdState, ICollateralChecker collateralChecker,
+        public CheckCollateralFullValidationRule(IPoAMiner poaMiner, IInitialBlockDownloadState ibdState, ICollateralChecker collateralChecker,
             ISlotsManager slotsManager, IDateTimeProvider dateTime, Network network)
         {
-            this.fullNode = fullNode;
+            this.poaMiner = poaMiner;
             this.network = network;
             this.encoder = new CollateralHeightCommitmentEncoder();
             this.ibdState = ibdState;
@@ -50,7 +49,7 @@ namespace Stratis.Features.Collateral
         public override Task RunAsync(RuleContext context)
         {
             // If this node is not mining on the side-chain, the rule does not apply.
-            if (!this.fullNode.IsMiningOnSideChain())
+            if (!this.poaMiner.IsMining)
             {
                 this.Logger.LogTrace("(-)[SKIPPED_NOT_MINING]");
                 return Task.CompletedTask;
