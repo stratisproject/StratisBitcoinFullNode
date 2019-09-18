@@ -25,6 +25,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     public class MempoolBehavior : NetworkPeerBehavior
     {
         /// <summary>
+        /// Hashes of transactions those were processed by a mempool behavior.
+        /// State that is global to all mempool behaviors.
+        /// </summary>
+        private static readonly HashSet<uint256> ProcessedTransactions = new HashSet<uint256>();
+
+        /// <summary>
+        /// Locking object for the processed transactions.
+        /// </summary>
+        private static readonly object ProcessedTransactionsLockObject = new object();
+
+        /// <summary>
         /// Average delay between trickled inventory transmissions in seconds.
         /// Blocks and white-listed receivers bypass this, outbound peers get half this delay.
         /// </summary>
@@ -322,6 +333,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     continue;
                 }
 
+                lock (ProcessedTransactionsLockObject)
+                {
+                    // If we already processed the transaction in any of the mempool behaviors, we don't need to ask for it again.
+                    if (ProcessedTransactions.Contains(inv.Hash))
+                    {
+                        continue;
+                    }
+                }
+
                 send.Inventory.Add(new InventoryVector(peer.AddSupportedOptions(InventoryType.MSG_TX), inv.Hash));
             }
 
@@ -384,7 +404,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 this.filterInventoryKnown.Add(trxHash);
             }
+
             this.logger.LogDebug("Added transaction ID '{0}' to known inventory filter.", trxHash);
+
+            lock (ProcessedTransactionsLockObject)
+            {
+                if (!ProcessedTransactions.Add(trxHash))
+                {
+                    this.logger.LogDebug("Transaction ID '{0}' was already processed, no need to process it again.", trxHash);
+                    return;
+                }
+            }
 
             var state = new MempoolValidationState(true);
             if (!await this.orphans.AlreadyHaveAsync(trxHash) && await this.validator.AcceptToMemoryPool(state, trx))
