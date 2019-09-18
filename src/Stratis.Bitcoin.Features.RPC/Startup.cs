@@ -26,7 +26,8 @@ namespace Stratis.Bitcoin.Features.RPC
                 o.ValueProviderFactories.Add(new RPCParametersValueProvider());
             })
                 .AddJsonFormatters()
-                .AddFormatterMappings();
+                .AddFormatterMappings()
+                .AddControllersAsServices();
             services.TryAddEnumerable(ServiceDescriptor.Transient<IConfigureOptions<MvcOptions>, RPCJsonMvcOptionsSetup>());
         }
 

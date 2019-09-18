@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
@@ -184,33 +185,27 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         }
 
         /// <summary>
-        /// Gets a smart contract transaction receipt. Receipts contain information about how a smart contract transaction was executed.
-        /// This includes the value returned from a smart contract call and how much gas was used.  
+        /// Test
         /// </summary>
-        /// 
-        /// <param name="txHash">A hash of the smart contract transaction (the transaction ID).</param>
-        /// 
-        /// <returns>The receipt for the smart contract.</returns> 
-        [Route("receipt")]
-        [HttpGet]
-        public IActionResult GetReceipt([FromQuery] string txHash)
+        /// <returns></returns>
+        [ActionName("getreceipt")]
+        [ApiExplorerSettings(IgnoreApi = true)]
+        [ActionDescription("Get the hash of the block at the consensus tip.")]
+        public ReceiptResponse GetReceipt(string txHash)
         {
             uint256 txHashNum = new uint256(txHash);
             Receipt receipt = this.receiptRepository.Retrieve(txHashNum);
 
             if (receipt == null)
             {
-                this.logger.LogTrace("(-)[RECEIPT_NOT_FOUND]");
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest,
-                    "The receipt was not found.",
-                    "No stored transaction could be found for the supplied hash.");
+                return null;
             }
 
             uint160 address = receipt.NewContractAddress ?? receipt.To;
 
             if (!receipt.Logs.Any())
             {
-                return this.Json(new ReceiptResponse(receipt, new List<LogResponse>(), this.network));
+                return new ReceiptResponse(receipt, new List<LogResponse>(), this.network);
             }
 
             byte[] contractCode = this.stateRoot.GetCode(address);
@@ -221,7 +216,31 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             List<LogResponse> logResponses = this.MapLogResponses(receipt, assembly, deserializer);
 
-            var receiptResponse = new ReceiptResponse(receipt, logResponses, this.network);
+            return new ReceiptResponse(receipt, logResponses, this.network);
+        }
+
+        /// <summary>
+        /// Gets a smart contract transaction receipt. Receipts contain information about how a smart contract transaction was executed.
+        /// This includes the value returned from a smart contract call and how much gas was used.  
+        /// </summary>
+        /// 
+        /// <param name="txHash">A hash of the smart contract transaction (the transaction ID).</param>
+        /// 
+        /// <returns>The receipt for the smart contract.</returns> 
+        [Route("receipt")]
+        [ActionName("getreceipt")]
+        [HttpGet]
+        public IActionResult GetReceiptAPI([FromQuery] string txHash)
+        {
+            ReceiptResponse receiptResponse = this.GetReceipt(txHash);
+
+            if (receiptResponse == null)
+            {
+                this.logger.LogTrace("(-)[RECEIPT_NOT_FOUND]");
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest,
+                    "The receipt was not found.",
+                    "No stored transaction could be found for the supplied hash.");
+            }
 
             return this.Json(receiptResponse);
         }
