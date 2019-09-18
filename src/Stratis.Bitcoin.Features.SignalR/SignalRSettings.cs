@@ -15,8 +15,6 @@ namespace Stratis.Bitcoin.Features.SignalR
         /// <summary>The default host used by the signalR when the node runs on the Stratis network.</summary>
         public const string DefaultSignalRHost = "http://localhost";
 
-        public const int DefaultSignalRPort = 38824;
-
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -38,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SignalR
             var uri = new Uri(host);
 
             // Find out which port should be used for the API.
-            int port = config.GetOrDefault("signalrport", DefaultSignalRPort, this.logger);
+            int port = config.GetOrDefault("signalrport", nodeSettings.Network.DefaultSignalRPort, this.logger);
 
             // If no port is set in the API URI.
             if (uri.IsDefaultPort)
