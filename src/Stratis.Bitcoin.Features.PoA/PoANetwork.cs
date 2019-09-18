@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
 using Stratis.Bitcoin.Features.PoA.Policies;
+using Stratis.Bitcoin.Features.PoA.Voting.ConsensusRules;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
