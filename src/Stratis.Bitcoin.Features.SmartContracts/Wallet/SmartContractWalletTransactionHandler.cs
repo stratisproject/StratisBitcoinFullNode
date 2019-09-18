@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 GroupByScriptPubKey = false
             };
 
-            context.TransactionBuilder.DustPrevention = false;
+            //context.TransactionBuilder.DustPrevention = false;
             context.TransactionBuilder.StandardTransactionPolicy = this.TransactionPolicy;
 
             this.AddRecipients(context);

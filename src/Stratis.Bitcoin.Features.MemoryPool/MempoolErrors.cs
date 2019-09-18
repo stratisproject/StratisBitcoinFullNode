@@ -211,5 +211,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>'no-witness-yet' error returns a <see cref="RejectNonStandard"/> reject code.</summary>
         public static MempoolError NoWitnessYet = new MempoolError(RejectNonstandard, "no-witness-yet");
 
+        /// <summary>'mempool-tx-totalout-less-than-fee' error returns a <see cref="RejectInvalid"/> reject code.</summary>
+        public static MempoolError TxTotalOutLessThanFee = new MempoolError(RejectInvalid, "mempool-tx-totalout-less-than-fee");
     }
 }
