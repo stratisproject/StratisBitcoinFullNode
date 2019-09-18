@@ -128,7 +128,7 @@ namespace Stratis.Sidechains.Networks
                 autoKickIdleMembers: false
             )
             {
-                EnforceMinProtocolVersionAtBlockHeight = 0, // setting the value to zero makes the functionality inactive
+                EnforceMinProtocolVersionAtBlockHeight = 384675, // setting the value to zero makes the functionality inactive
                 EnforcedMinProtocolVersion = NBitcoin.Protocol.ProtocolVersion.CIRRUS_VERSION // minimum protocol version which will be enforced at block height defined in EnforceMinProtocolVersionAtBlockHeight
             };
 
