@@ -28,12 +28,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Hashes of transactions those were processed by a mempool behavior.
         /// State that is global to all mempool behaviors.
         /// </summary>
-        private static readonly HashSet<uint256> ProcessedTransactions = new HashSet<uint256>();
+        private readonly HashSet<uint256> processedTransactions = new HashSet<uint256>();
 
         /// <summary>
         /// Locking object for the processed transactions.
         /// </summary>
-        private static readonly object ProcessedTransactionsLockObject = new object();
+        private readonly object processedTransactionsLockObject = new object();
 
         /// <summary>
         /// Average delay between trickled inventory transmissions in seconds.
@@ -110,7 +110,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IInitialBlockDownloadState initialBlockDownloadState,
             Signals.ISignals signals,
             ILoggerFactory loggerFactory,
-            Network network)
+            Network network,
+            HashSet<uint256> processedTransactions = null,
+            object processedTransactionsLockObject = null)
         {
             this.validator = validator;
             this.mempoolManager = mempoolManager;
@@ -127,6 +129,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.filterInventoryKnown = new HashSet<uint256>();
             this.isPeerWhitelistedForRelay = false;
             this.isBlocksOnlyMode = false;
+
+            this.processedTransactions = processedTransactions ?? new HashSet<uint256>();
+            this.processedTransactionsLockObject = processedTransactionsLockObject ?? new object();
         }
 
         /// <summary>Time of last memory pool request in unix time.</summary>
@@ -152,7 +157,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         [NoTrace]
         public override object Clone()
         {
-            return new MempoolBehavior(this.validator, this.mempoolManager, this.orphans, this.connectionManager, this.initialBlockDownloadState, this.signals, this.loggerFactory, this.network);
+            return new MempoolBehavior(this.validator, this.mempoolManager, this.orphans, this.connectionManager, this.initialBlockDownloadState, this.signals, this.loggerFactory, this.network, this.processedTransactions, this.processedTransactionsLockObject);
         }
 
         /// <summary>
@@ -333,10 +338,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     continue;
                 }
 
-                lock (ProcessedTransactionsLockObject)
+                lock (this.processedTransactionsLockObject)
                 {
                     // If we already processed the transaction in any of the mempool behaviors, we don't need to ask for it again.
-                    if (ProcessedTransactions.Contains(inv.Hash))
+                    if (this.processedTransactions.Contains(inv.Hash))
                     {
                         continue;
                     }
@@ -407,9 +412,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             this.logger.LogDebug("Added transaction ID '{0}' to known inventory filter.", trxHash);
 
-            lock (ProcessedTransactionsLockObject)
+            lock (this.processedTransactionsLockObject)
             {
-                if (!ProcessedTransactions.Add(trxHash))
+                if (!this.processedTransactions.Add(trxHash))
                 {
                     this.logger.LogDebug("Transaction ID '{0}' was already processed, no need to process it again.", trxHash);
                     return;
