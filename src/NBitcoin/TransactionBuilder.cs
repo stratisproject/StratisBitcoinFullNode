@@ -248,6 +248,7 @@ namespace NBitcoin
 
             #endregion
         }
+
         internal class TransactionBuilderKeyRepository : IKeyRepository
         {
             private TransactionSigningContext _Ctx;
@@ -519,11 +520,13 @@ namespace NBitcoin
                 ctx.Transaction.AddOutput(new TxOut(changeAmount, ctx.Group.ChangeScript[(int)ChangeType.Uncolored]));
                 return changeAmount;
             }
+
             internal List<Builder> Builders = new List<Builder>();
             internal Dictionary<OutPoint, ICoin> Coins = new Dictionary<OutPoint, ICoin>();
             internal List<Builder> IssuanceBuilders = new List<Builder>();
             internal Dictionary<AssetId, List<Builder>> BuildersByAsset = new Dictionary<AssetId, List<Builder>>();
             internal Script[] ChangeScript = new Script[3];
+
             internal void Shuffle()
             {
                 Shuffle(this.Builders);
@@ -531,6 +534,7 @@ namespace NBitcoin
                     Shuffle(builders.Value);
                 Shuffle(this.IssuanceBuilders);
             }
+
             private void Shuffle(List<Builder> builders)
             {
                 Utils.Shuffle(builders, this._Parent._Rand);
@@ -817,13 +821,14 @@ namespace NBitcoin
         {
             return Send(destination.ScriptPubKey, amount);
         }
+
         /// <summary>
         /// Send a money amount to the destination
         /// </summary>
         /// <param name="destination">The destination</param>
         /// <param name="amount">The amount (supported : Money, AssetMoney, MoneyBag)</param>
         /// <returns></returns>
-        /// <exception cref="System.NotSupportedException">The coin type is not supported</exception>
+        /// <exception cref="NotSupportedException">The coin type is not supported</exception>
         public TransactionBuilder Send(Script scriptPubKey, IMoney amount)
         {
             var bag = amount as MoneyBag;
@@ -833,12 +838,15 @@ namespace NBitcoin
                     Send(scriptPubKey, amount);
                 return this;
             }
+
             var coinAmount = amount as Money;
             if (coinAmount != null)
                 return Send(scriptPubKey, coinAmount);
+
             var assetAmount = amount as AssetMoney;
             if (assetAmount != null)
                 return SendAsset(scriptPubKey, assetAmount);
+
             throw new NotSupportedException("Type of Money not supported");
         }
 
@@ -877,6 +885,7 @@ namespace NBitcoin
             var changeAmount = (AssetMoney)ctx.ChangeAmount;
             if (changeAmount.Quantity == 0)
                 return changeAmount;
+
             ColorMarker marker = ctx.GetColorMarker(false);
             Script script = ctx.Group.ChangeScript[(int)ChangeType.Colored];
             TxOut txout = ctx.Transaction.AddOutput(new TxOut(GetDust(script), script));
@@ -894,9 +903,12 @@ namespace NBitcoin
         {
             if (asset.Quantity < 0)
                 throw new ArgumentOutOfRangeException("asset", "Asset amount can't be negative");
+
             if (asset.Quantity == 0)
                 return this;
+
             AssertOpReturn("Colored Coin");
+
             List<Builder> builders = this.CurrentGroup.BuildersByAsset.TryGet(asset.Id);
             if (builders == null)
             {
@@ -904,6 +916,7 @@ namespace NBitcoin
                 this.CurrentGroup.BuildersByAsset.Add(asset.Id, builders);
                 builders.Add(SetColoredChange);
             }
+
             builders.Add(ctx =>
             {
                 ColorMarker marker = ctx.GetColorMarker(false);
@@ -912,6 +925,7 @@ namespace NBitcoin
                 ctx.AdditionalFees += txout.Value;
                 return asset;
             });
+
             return this;
         }
 
@@ -937,12 +951,12 @@ namespace NBitcoin
             this.StandardTransactionPolicy = policy;
             return this;
         }
+
         public StandardTransactionPolicy StandardTransactionPolicy
         {
             get;
             set;
         }
-
 
         private string _OpReturnUser;
         private void AssertOpReturn(string name)
@@ -987,6 +1001,7 @@ namespace NBitcoin
         public TransactionBuilder IssueAsset(Script scriptPubKey, AssetMoney asset)
         {
             AssertOpReturn("Colored Coin");
+
             if (this._IssuedAsset == null)
                 this._IssuedAsset = asset.Id;
             else if (this._IssuedAsset != asset.Id)
@@ -1063,6 +1078,7 @@ namespace NBitcoin
         {
             if (fees == null)
                 throw new ArgumentNullException("fees");
+
             BuilderGroup lastGroup = this.CurrentGroup; //Make sure at least one group exists
             decimal totalWeight = this._BuilderGroups.Select(b => b.FeeWeight).Sum();
             Money totalSent = Money.Zero;
@@ -1079,7 +1095,6 @@ namespace NBitcoin
             }
             return this;
         }
-
 
         /// <summary>
         /// If using SendFeesSplit or SendEstimatedFeesSplit, determine the weight this group participate in paying the fees
@@ -1369,6 +1384,7 @@ namespace NBitcoin
             TransactionPolicyError[] errors;
             return Verify(tx, null as Money, out errors);
         }
+
         /// <summary>
         /// Verify that a transaction is fully signed and have enough fees
         /// </summary>
@@ -1403,6 +1419,7 @@ namespace NBitcoin
         {
             return Verify(tx, null as Money, out errors);
         }
+
         /// <summary>
         /// Verify that a transaction is fully signed, have enough fees, and follow the Standard and Miner Transaction Policy rules
         /// </summary>
@@ -1435,6 +1452,7 @@ namespace NBitcoin
             errors = exceptions.ToArray();
             return errors.Length == 0;
         }
+
         /// <summary>
         /// Verify that a transaction is fully signed and have enough fees
         /// </summary>
@@ -1448,6 +1466,7 @@ namespace NBitcoin
                 throw new ArgumentNullException("tx");
             return Verify(tx, expectedFeeRate == null ? null : expectedFeeRate.GetFee(tx), out errors);
         }
+
         /// <summary>
         /// Verify that a transaction is fully signed and have enough fees
         /// </summary>
@@ -1458,6 +1477,7 @@ namespace NBitcoin
         {
             return Check(tx, expectedFeeRate == null ? null : expectedFeeRate.GetFee(tx));
         }
+
         /// <summary>
         /// Verify that a transaction is fully signed and have enough fees
         /// </summary>
@@ -1470,6 +1490,7 @@ namespace NBitcoin
             Verify(tx, expectedFee, out errors);
             return errors;
         }
+
         /// <summary>
         /// Verify that a transaction is fully signed and have enough fees
         /// </summary>
@@ -1484,7 +1505,6 @@ namespace NBitcoin
         {
             return new CoinNotFoundException(txIn);
         }
-
 
         public ICoin FindCoin(OutPoint outPoint)
         {
@@ -1709,7 +1729,6 @@ namespace NBitcoin
             }
         }
 
-
         private static Script RemoveRedeem(Script script)
         {
             if (script == Script.Empty)
@@ -1826,7 +1845,6 @@ namespace NBitcoin
             this.CurrentGroup.CoverOnly = amount;
             return this;
         }
-
 
         private Transaction _CompletedTransaction;
 

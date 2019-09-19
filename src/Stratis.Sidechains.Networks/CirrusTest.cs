@@ -34,6 +34,7 @@ namespace Stratis.Sidechains.Networks
             this.DefaultMaxInboundConnections = 109;
             this.DefaultRPCPort = 26175;
             this.DefaultAPIPort = 38223;
+            this.DefaultSignalRPort = 39823;
             this.MaxTipAge = 768; // 20% of the fastest time it takes for one MaxReorgLength of blocks to be mined.
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
@@ -89,7 +90,11 @@ namespace Stratis.Sidechains.Networks
                 targetSpacingSeconds: 16,
                 votingEnabled: true,
                 autoKickIdleMembers: false
-            );
+            )
+            {
+                EnforceMinProtocolVersionAtBlockHeight = 505900, // setting the value to zero makes the functionality inactive
+                EnforcedMinProtocolVersion = NBitcoin.Protocol.ProtocolVersion.CIRRUS_VERSION // minimum protocol version which will be enforced at block height defined in EnforceMinProtocolVersionAtBlockHeight
+            };
 
             var buriedDeployments = new BuriedDeploymentsArray
             {

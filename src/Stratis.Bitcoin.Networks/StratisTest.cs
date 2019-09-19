@@ -31,6 +31,7 @@ namespace Stratis.Bitcoin.Networks
             this.DefaultMaxInboundConnections = 109;
             this.DefaultRPCPort = 26174;
             this.DefaultAPIPort = 38221;
+            this.DefaultSignalRPort = 39824;
             this.CoinTicker = "TSTRAT";
             this.DefaultBanTimeSeconds = 16000; // 500 (MaxReorg) * 64 (TargetSpacing) / 2 = 4 hours, 26 minutes and 40 seconds
 
@@ -71,7 +72,7 @@ namespace Stratis.Bitcoin.Networks
 
             var bip9Deployments = new StratisBIP9Deployments()
             {
-                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(2,
+                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters("ColdStaking", 2,
                     new DateTime(2018, 11, 1, 0, 0, 0, DateTimeKind.Utc),
                     new DateTime(2019, 6, 1, 0, 0, 0, DateTimeKind.Utc))
             };

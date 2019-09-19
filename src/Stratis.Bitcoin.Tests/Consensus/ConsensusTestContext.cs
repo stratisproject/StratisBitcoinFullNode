@@ -263,6 +263,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                         Script script = Script.FromBytesUnsafe(new string('A', requiredScriptWeight).Select(c => (byte)c).ToArray());
                         transaction.Outputs.Add(new TxOut(new Money(10000000000), script));
 
+                        this.ResetBlockSize(block);
                         block.GetSerializedSize();
 
                         if (block.BlockSize != avgBlockSize.Value)
@@ -279,6 +280,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
             }
 
             return previousHeader;
+        }
+
+        public void ResetBlockSize(Block block)
+        {
+            block.SetPrivatePropertyValue("BlockSize", default(long?));
         }
 
         public Block CreateBlock()
