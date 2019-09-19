@@ -33,7 +33,6 @@ using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 {
-    [Route("api/[controller]")]
     public class SmartContractsController : Controller
     {
         /// <summary>
@@ -97,7 +96,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <param name="address">The address of the smart contract to retrieve as bytecode and C# source.</param>
         ///
         /// <returns>A response object containing the bytecode and the decompiled C# code.</returns>
-        [Route("code")]
+        [Route("api/[controller]/code")]
         [HttpGet]
         public IActionResult GetCode([FromQuery]string address)
         {
@@ -132,7 +131,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <param name="address">The address of the smart contract to retrieve the balance for.</param>
         /// 
         /// <returns>The balance of a smart contract in STRAT (or the sidechain coin).</returns>
-        [Route("balance")]
+        [Route("api/[controller]/balance")]
         [HttpGet]
         public IActionResult GetBalance([FromQuery]string address)
         {
@@ -155,7 +154,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <param name="request">An object containing the necessary parameters to perform a retrieve stored data request.</param>
         ///
         /// <returns>A single piece of stored smart contract data.</returns>
-        [Route("storage")]
+        [Route("api/[controller]/storage")]
         [HttpGet]
         public IActionResult GetStorage([FromQuery] GetStorageRequest request)
         {
@@ -227,7 +226,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <param name="txHash">A hash of the smart contract transaction (the transaction ID).</param>
         /// 
         /// <returns>The receipt for the smart contract.</returns> 
-        [Route("receipt")]
+        [Route("api/[controller]/receipt")]
         [ActionName("getreceipt")]
         [HttpGet]
         public IActionResult GetReceiptAPI([FromQuery] string txHash)
@@ -264,7 +263,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <param name="eventName">The name of the event struct to retrieve matching receipts for.</param>
         /// 
         /// <returns>A list of receipts for transactions relating to a specific smart contract and a specific event in that smart contract.</returns>
-        [Route("receipt-search")]
+        [Route("api/[controller]/receipt-search")]
         [HttpGet]
         public async Task<IActionResult> ReceiptSearch([FromQuery] string contractAddress, [FromQuery] string eventName, [FromQuery] List<string> topics = null, [FromQuery] int fromBlock = 0, [FromQuery] int? toBlock = null)
         {
@@ -347,7 +346,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <param name="request">An object containing the necessary parameters to build the transaction.</param>
         /// 
         /// <returns>A transaction ready to create a smart contract.</returns>
-        [Route("build-create")]
+        [Route("api/[controller]/build-create")]
         [HttpPost]
         public IActionResult BuildCreateSmartContractTransaction([FromBody] BuildCreateContractTransactionRequest request)
         {
@@ -374,7 +373,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <param name="request">An object containing the necessary parameters to build the transaction.</param>
         /// 
         /// <returns>A transaction ready to call a method on a smart contract.</returns>
-        [Route("build-call")]
+        [Route("api/[controller]/build-call")]
         [HttpPost]
         public IActionResult BuildCallSmartContractTransaction([FromBody] BuildCallContractTransactionRequest request)
         {
@@ -396,7 +395,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <param name="request">An object containing the necessary parameters to build the transaction.</param>
         /// 
         /// <returns>The build transaction hex.</returns>
-        [Route("build-transaction")]
+        [Route("api/[controller]/build-transaction")]
         [HttpPost]
         public IActionResult BuildTransaction([FromBody] BuildContractTransactionRequest request)
         {
@@ -422,7 +421,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// </summary>
         /// <param name="request">An object containing the parameters used to build the the fee estimation transaction.</param>
         /// <returns>The estimated fee for the transaction.</returns>
-        [Route("estimate-fee")]
+        [Route("api/[controller]/estimate-fee")]
         [HttpPost]
         public IActionResult EstimateFee([FromBody] ScTxFeeEstimateRequest request)
         {
@@ -451,7 +450,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// 
         /// <returns>The transaction used to create the smart contract. The result of the transaction broadcast is not returned
         /// and you should check for a transaction receipt to see if it was successful.</returns>
-        [Route("build-and-send-create")]
+        [Route("api/[controller]/build-and-send-create")]
         [HttpPost]
         public async Task<IActionResult> BuildAndSendCreateSmartContractTransactionAsync([FromBody] BuildCreateContractTransactionRequest request)
         {
@@ -497,7 +496,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         ///
         /// <returns>The transaction used to call a smart contract method. The result of the transaction broadcast is not returned
         /// and you should check for a transaction receipt to see if it was successful.</returns>
-        [Route("build-and-send-call")]
+        [Route("api/[controller]/build-and-send-call")]
         [HttpPost]
         public async Task<IActionResult> BuildAndSendCallSmartContractTransactionAsync([FromBody] BuildCallContractTransactionRequest request)
         {
@@ -544,7 +543,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <param name="request">An object containing the necessary parameters to build the transaction.</param>
         /// 
         /// <results>The result of the local call to the smart contract method.</results>
-        [Route("local-call")]
+        [Route("api/[controller]/local-call")]
         [HttpPost]
         public IActionResult LocalCallSmartContractTransaction([FromBody] LocalCallContractRequest request)
         {
@@ -613,7 +612,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <param name="walletName">The name of the wallet to retrieve the addresses from.</param>
         /// 
         /// <returns>The addresses owned by a wallet which have a balance associated with them.</returns>
-        [Route("address-balances")]
+        [Route("api/[controller]/address-balances")]
         [HttpGet]
         public IActionResult GetAddressesWithBalances([FromQuery] string walletName)
         {
