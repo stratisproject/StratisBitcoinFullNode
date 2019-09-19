@@ -100,27 +100,6 @@ namespace Stratis.Bitcoin.Features.RPC
                 {
                     throw new ConfigurationException("Invalid rpcbind value");
                 }
-            }
-        }
-
-        /// <summary>
-        /// Checks the validity of the RPC settings or forces them to be valid.
-        /// </summary>
-        /// <param name="logger">Logger to use.</param>
-        private void CheckConfigurationValidity(ILogger logger)
-        {
-            // Check that the settings are valid or force them to be valid
-            // (Note that these values will not be set if server = false in the config)
-            if (this.RpcPassword == null && this.RpcUser != null)
-                throw new ConfigurationException("rpcpassword should be provided");
-            if (this.RpcUser == null && this.RpcPassword != null)
-                throw new ConfigurationException("rpcuser should be provided");
-
-            // We can now safely assume that server was set to true in the config or that the
-            // "AddRpc" callback provided a user and password implying that the Rpc feature will be used.
-            if (this.RpcPassword != null && this.RpcUser != null)
-            {
-                // this.Server = true;
 
                 // If the "Bind" list has not been specified via callback..
                 if (this.Bind.Count == 0)
@@ -142,6 +121,20 @@ namespace Stratis.Bitcoin.Features.RPC
                     this.Bind.Add(new IPEndPoint(IPAddress.Parse("0.0.0.0"), this.RPCPort));
                 }
             }
+        }
+
+        /// <summary>
+        /// Checks the validity of the RPC settings or forces them to be valid.
+        /// </summary>
+        /// <param name="logger">Logger to use.</param>
+        private void CheckConfigurationValidity(ILogger logger)
+        {
+            // Check that the settings are valid or force them to be valid
+            // (Note that these values will not be set if server = false in the config)
+            if (this.RpcPassword == null && this.RpcUser != null)
+                throw new ConfigurationException("rpcpassword should be provided");
+            if (this.RpcUser == null && this.RpcPassword != null)
+                throw new ConfigurationException("rpcuser should be provided");
         }
 
         /// <summary> Prints the help information on how to configure the rpc settings to the logger.</summary>
