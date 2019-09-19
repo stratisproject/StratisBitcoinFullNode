@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Features.RPC
                 if (this.AllowIp.Count == 0)
                 {
                     if (this.Bind.Count > 0)
-                        logger.LogWarning("WARNING: RPC bind selection (-rpcbind) was ignored because allowed ip's (-rpcallowip) were not specified, refusing to allow everyone to connect");
+                        this.logger.LogWarning("WARNING: RPC bind selection (-rpcbind) was ignored because allowed ip's (-rpcallowip) were not specified, refusing to allow everyone to connect");
 
                     this.Bind.Clear();
                     this.Bind.Add(new IPEndPoint(IPAddress.Parse("::1"), this.RPCPort));
