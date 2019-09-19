@@ -227,7 +227,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// 
         /// <returns>The receipt for the smart contract.</returns> 
         [Route("api/[controller]/receipt")]
-        [ActionName("getreceipt")]
         [HttpGet]
         public IActionResult GetReceiptAPI([FromQuery] string txHash)
         {
