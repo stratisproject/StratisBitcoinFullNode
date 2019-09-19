@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <returns></returns>
         [ActionName("getreceipt")]
         [ApiExplorerSettings(IgnoreApi = true)]
-        [ActionDescription("Get the hash of the block at the consensus tip.")]
+        [ActionDescription("Gets the receipt for this transaction hash.")]
         public ReceiptResponse GetReceipt(string txHash)
         {
             uint256 txHashNum = new uint256(txHash);
