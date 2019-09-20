@@ -62,8 +62,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             var retryOptions = new RetryOptions(3, TimeSpan.FromMilliseconds(5), RetryStrategyType.Simple, typeof(ArgumentNullException));
             RetryStrategy.Run(retryOptions, () =>
                 {
-                    validationSuccess =
-                        context.TransactionBuilder.Verify(transaction, out errors);
+                    validationSuccess = context.TransactionBuilder.Verify(transaction, out errors);
                 });
 
             if (validationSuccess) return transaction;
