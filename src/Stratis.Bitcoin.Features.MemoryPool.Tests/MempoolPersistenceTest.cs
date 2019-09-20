@@ -304,7 +304,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             // The mempool rule constructors aren't parameterless, so we have to manually inject the dependencies for every rule
             var mempoolRules = new List<MempoolRule>
             {
-                new CheckTxTotalOutVsFeeRule(this.network, txMemPool, mempoolSettings, chain, loggerFactory),
                 new CheckConflictsMempoolRule(this.network, txMemPool, mempoolSettings, chain, loggerFactory),
                 new CheckCoinViewMempoolRule(this.network, txMemPool, mempoolSettings, chain, loggerFactory),
                 new CreateMempoolEntryMempoolRule(this.network, txMemPool, mempoolSettings, chain, consensusRules, loggerFactory),
@@ -313,7 +312,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 new CheckRateLimitMempoolRule(this.network, txMemPool, mempoolSettings, chain, loggerFactory),
                 new CheckAncestorsMempoolRule(this.network, txMemPool, mempoolSettings, chain, loggerFactory),
                 new CheckReplacementMempoolRule(this.network, txMemPool, mempoolSettings, chain, loggerFactory),
-                new CheckAllInputsMempoolRule(this.network, txMemPool, mempoolSettings, chain, consensusRules, loggerFactory)
+                new CheckAllInputsMempoolRule(this.network, txMemPool, mempoolSettings, chain, consensusRules, loggerFactory),
+                new CheckTxTotalOutVsFeeRule(this.network, txMemPool, mempoolSettings, chain, loggerFactory),
             };
 
             // We also have to check that the manually instantiated rules match the ones in the network, or the test isn't valid
