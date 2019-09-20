@@ -20,6 +20,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.MempoolRules
         {
         }
 
+        /// <inheritdoc/>
         public override void CheckTransaction(MempoolValidationContext context)
         {
             AllowedScriptTypeRule.CheckTransaction(this.network, context.Transaction);
