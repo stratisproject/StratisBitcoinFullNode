@@ -56,8 +56,16 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             Transaction transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
 
-            if (context.TransactionBuilder.Verify(transaction, out TransactionPolicyError[] errors))
-                return transaction;
+            var retryOptions = new RetryOptions(3, TimeSpan.FromMilliseconds(5), RetryStrategyType.Simple, typeof(ArgumentNullException));
+            bool validationSuccess = false;
+            TransactionPolicyError[] errors = null;
+            RetryStrategy.Run(retryOptions, () =>
+                {
+                    validationSuccess =
+                        context.TransactionBuilder.Verify(transaction, out errors);
+                });
+
+            if (validationSuccess) return transaction;
 
             string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
             this.logger.LogError($"Build transaction failed: {errorsMessage}");
