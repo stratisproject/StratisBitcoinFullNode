@@ -38,7 +38,7 @@ namespace Stratis.SmartContracts.Networks
             var consensusFactory = new SmartContractPowConsensusFactory();
 
             NBitcoin.Block genesisBlock = SmartContractNetworkUtils.CreateGenesis(consensusFactory, 1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
-            ((SmartContractBlockHeader) genesisBlock.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
+            ((SmartContractBlockHeader)genesisBlock.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
 
             this.Genesis = genesisBlock;
 
@@ -96,23 +96,23 @@ namespace Stratis.SmartContracts.Networks
             );
 
             this.Base58Prefixes = new byte[12][];
-            this.Base58Prefixes[(int) Base58Type.PUBKEY_ADDRESS] = new byte[] {(111)};
-            this.Base58Prefixes[(int) Base58Type.SCRIPT_ADDRESS] = new byte[] {(196)};
-            this.Base58Prefixes[(int) Base58Type.SECRET_KEY] = new byte[] {(239)};
-            this.Base58Prefixes[(int) Base58Type.ENCRYPTED_SECRET_KEY_NO_EC] = new byte[] {0x01, 0x42};
-            this.Base58Prefixes[(int) Base58Type.ENCRYPTED_SECRET_KEY_EC] = new byte[] {0x01, 0x43};
-            this.Base58Prefixes[(int) Base58Type.EXT_PUBLIC_KEY] = new byte[] {(0x04), (0x35), (0x87), (0xCF)};
-            this.Base58Prefixes[(int) Base58Type.EXT_SECRET_KEY] = new byte[] {(0x04), (0x35), (0x83), (0x94)};
-            this.Base58Prefixes[(int) Base58Type.PASSPHRASE_CODE] = new byte[] {0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2};
-            this.Base58Prefixes[(int) Base58Type.CONFIRMATION_CODE] = new byte[] {0x64, 0x3B, 0xF6, 0xA8, 0x9A};
-            this.Base58Prefixes[(int) Base58Type.STEALTH_ADDRESS] = new byte[] {0x2b};
-            this.Base58Prefixes[(int) Base58Type.ASSET_ID] = new byte[] {115};
-            this.Base58Prefixes[(int) Base58Type.COLORED_ADDRESS] = new byte[] {0x13};
+            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
+            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
+            this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (239) };
+            this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC] = new byte[] { 0x01, 0x42 };
+            this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC] = new byte[] { 0x01, 0x43 };
+            this.Base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY] = new byte[] { (0x04), (0x35), (0x87), (0xCF) };
+            this.Base58Prefixes[(int)Base58Type.EXT_SECRET_KEY] = new byte[] { (0x04), (0x35), (0x83), (0x94) };
+            this.Base58Prefixes[(int)Base58Type.PASSPHRASE_CODE] = new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 };
+            this.Base58Prefixes[(int)Base58Type.CONFIRMATION_CODE] = new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A };
+            this.Base58Prefixes[(int)Base58Type.STEALTH_ADDRESS] = new byte[] { 0x2b };
+            this.Base58Prefixes[(int)Base58Type.ASSET_ID] = new byte[] { 115 };
+            this.Base58Prefixes[(int)Base58Type.COLORED_ADDRESS] = new byte[] { 0x13 };
 
             Bech32Encoder encoder = Encoders.Bech32("tb");
             this.Bech32Encoders = new Bech32Encoder[2];
-            this.Bech32Encoders[(int) Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
-            this.Bech32Encoders[(int) Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
+            this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
+            this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
 
             this.Checkpoints = new Dictionary<int, CheckpointInfo>();
 
@@ -151,7 +151,8 @@ namespace Stratis.SmartContracts.Networks
                 typeof(CheckRateLimitMempoolRule),
                 typeof(CheckAncestorsMempoolRule),
                 typeof(CheckReplacementMempoolRule),
-                typeof(CheckAllInputsMempoolRule)
+                typeof(CheckAllInputsMempoolRule),
+                typeof(CheckTxTotalOutVsFeeRule)
             };
         }
     }

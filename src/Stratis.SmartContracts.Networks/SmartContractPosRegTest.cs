@@ -8,7 +8,6 @@ using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.MempoolRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoA.MempoolRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoS;
-using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.SmartContracts.Networks.Policies;
 
 namespace Stratis.SmartContracts.Networks
@@ -148,7 +147,8 @@ namespace Stratis.SmartContracts.Networks
                 typeof(CheckRateLimitMempoolRule),
                 typeof(CheckAncestorsMempoolRule),
                 typeof(CheckReplacementMempoolRule),
-                typeof(CheckAllInputsMempoolRule)
+                typeof(CheckAllInputsMempoolRule),
+                typeof(CheckTxTotalOutVsFeeRule)
             };
         }
     }
