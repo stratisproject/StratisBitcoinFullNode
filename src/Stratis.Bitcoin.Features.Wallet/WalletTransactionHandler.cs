@@ -54,18 +54,19 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (context.Shuffle)
                 context.TransactionBuilder.Shuffle();
 
-            Transaction transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
-
             bool validationSuccess = false;
+            Transaction transaction = null;
             TransactionPolicyError[] errors = null;
 
             var retryOptions = new RetryOptions(3, TimeSpan.FromMilliseconds(5), RetryStrategyType.Simple, typeof(ArgumentNullException));
             RetryStrategy.Run(retryOptions, () =>
-                {
-                    validationSuccess = context.TransactionBuilder.Verify(transaction, out errors);
-                });
+            {
+                transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
+                validationSuccess = context.TransactionBuilder.Verify(transaction, out errors);
+            });
 
-            if (validationSuccess) return transaction;
+            if (validationSuccess)
+                return transaction;
 
             string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
             this.logger.LogError($"Build transaction failed: {errorsMessage}");
@@ -217,7 +218,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
             ExtKey seedExtKey = this.walletManager.GetExtKey(context.AccountReference, context.WalletPassword, context.CacheSecret);
-            
+
             var signingKeys = new HashSet<ISecret>();
             var added = new HashSet<HdAddress>();
             foreach (UnspentOutputReference unspentOutputsItem in context.UnspentOutputs)
