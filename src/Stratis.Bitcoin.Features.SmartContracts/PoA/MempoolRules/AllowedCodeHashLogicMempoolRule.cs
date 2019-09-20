@@ -32,6 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.MempoolRules
             this.hashingStrategy = hashingStrategy;
         }
 
+        /// <inheritdoc/>
         public override void CheckTransaction(MempoolValidationContext context)
         {
             TxOut scTxOut = context.Transaction.TryGetSmartContractTxOut();

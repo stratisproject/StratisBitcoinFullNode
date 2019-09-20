@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -25,6 +24,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.MempoolRules
             this.stateRepositoryRoot = stateRepositoryRoot;
         }
 
+        /// <inheritdoc/>
         public override void CheckTransaction(MempoolValidationContext context)
         {
             P2PKHNotContractRule.CheckTransaction(this.stateRepositoryRoot, context.Transaction);
