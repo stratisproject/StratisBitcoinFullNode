@@ -26,6 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.MempoolRules
             this.callDataSerializer = callDataSerializer;
         }
 
+        /// <inheritdoc/>
         public override void CheckTransaction(MempoolValidationContext context)
         {
             TxOut scTxOut = context.Transaction.TryGetSmartContractTxOut();
