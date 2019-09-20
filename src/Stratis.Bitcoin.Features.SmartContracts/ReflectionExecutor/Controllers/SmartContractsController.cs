@@ -243,28 +243,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             return this.Json(receiptResponse);
         }
 
-        // Note: We may not know exactly how to best structure "receipt search" queries until we start building 
-        // a web3-like library. For now the following method serves as a very basic example of how we can query the block
-        // bloom filters to retrieve events.
-
-
         /// <summary>
-        /// Searches a smart contract's receipts for those which match a specific event. The SmartContract.Log() function
-        /// is capable of storing C# structs, and structs are used to store information about different events occurring 
-        /// on the smart contract. For example, a "TransferLog" struct could contain "From" and "To" fields and be used to log
-        /// when a smart contract makes a transfer of funds from one wallet to another. The log entries are held inside the smart contract,
-        /// indexed using the name of the struct, and are linked to individual transaction receipts.
-        /// Therefore, it is possible to return a smart contract's transaction receipts
-        /// which match a specific event (as defined by the struct name).  
+        /// Searches for receipts that match the given filter criteria. Filter criteria are ANDed together.
         /// </summary>
-        /// 
-        /// <param name="contractAddress">The address of the smart contract to retrieve the receipts for.</param>
-        /// <param name="eventName">The name of the event struct to retrieve matching receipts for.</param>
-        /// 
-        /// <returns>A list of receipts for transactions relating to a specific smart contract and a specific event in that smart contract.</returns>
-        [Route("api/[controller]/receipt-search")]
-        [HttpGet]
-        public async Task<IActionResult> ReceiptSearch([FromQuery] string contractAddress, [FromQuery] string eventName, [FromQuery] List<string> topics = null, [FromQuery] int fromBlock = 0, [FromQuery] int? toBlock = null)
+        /// <param name="contractAddress">The contract address from which events were raised.</param>
+        /// <param name="eventName">The name of the event raised.</param>
+        /// <param name="topics">The topics to search. All specified topics must be present.</param>
+        /// <param name="fromBlock">The block number from which to start searching.</param>
+        /// <param name="toBlock">The block number where searching finishes.</param>
+        /// <returns>A list of all matching receipts.</returns>
+        [ActionName("searchreceipts")]
+        [ApiExplorerSettings(IgnoreApi = true)]
+        [ActionDescription("Searches for receipts matching the filter criteria.")]
+        public List<ReceiptResponse> ReceiptSearch(string contractAddress, string eventName, List<string> topics = null, int fromBlock = 0, int? toBlock = null)
         {
             uint160 address = contractAddress.ToUint160(this.network);
 
@@ -272,10 +263,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             if (contractCode == null || !contractCode.Any())
             {
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, "No code exists", $"No contract execution code exists at {address}");
+                return null;
             }
 
-            var topicsBytes = topics != null ? topics.Select(t => t.HexToByteArray()) : new List<byte[]>();
+            IEnumerable<byte[]> topicsBytes = topics != null ? topics.Select(t => t.HexToByteArray()) : new List<byte[]>();
 
             Assembly assembly = Assembly.Load(contractCode);
 
@@ -294,6 +285,42 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 var receiptResponse = new ReceiptResponse(receipt, logResponses, this.network);
 
                 result.Add(receiptResponse);
+            }
+
+            return result;
+        }
+
+        // Note: We may not know exactly how to best structure "receipt search" queries until we start building 
+        // a web3-like library. For now the following method serves as a very basic example of how we can query the block
+        // bloom filters to retrieve events.
+
+
+        /// <summary>
+        /// Searches a smart contract's receipts for those which match a specific event. The SmartContract.Log() function
+        /// is capable of storing C# structs, and structs are used to store information about different events occurring 
+        /// on the smart contract. For example, a "TransferLog" struct could contain "From" and "To" fields and be used to log
+        /// when a smart contract makes a transfer of funds from one wallet to another. The log entries are held inside the smart contract,
+        /// indexed using the name of the struct, and are linked to individual transaction receipts.
+        /// Therefore, it is possible to return a smart contract's transaction receipts
+        /// which match a specific event (as defined by the struct name).  
+        /// </summary>
+        /// 
+        /// <param name="contractAddress">The contract address from which events were raised.</param>
+        /// <param name="eventName">The name of the event raised.</param>
+        /// <param name="topics">The topics to search. All specified topics must be present.</param>
+        /// <param name="fromBlock">The block number from which to start searching.</param>
+        /// <param name="toBlock">The block number where searching finishes.</param>
+        /// 
+        /// <returns>A list of receipts for transactions relating to a specific smart contract and a specific event in that smart contract.</returns>
+        [Route("api/[controller]/receipt-search")]
+        [HttpGet]
+        public async Task<IActionResult> ReceiptSearchAPI([FromQuery] string contractAddress, [FromQuery] string eventName, [FromQuery] List<string> topics = null, [FromQuery] int fromBlock = 0, [FromQuery] int? toBlock = null)
+        {
+            List<ReceiptResponse> result = this.ReceiptSearch(contractAddress, eventName, topics, fromBlock, toBlock);
+
+            if (result == null)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, "No code exists", $"No contract execution code exists at {contractAddress}");
             }
 
             return this.Json(result);
