@@ -35,6 +35,7 @@ namespace City.Networks
             this.DefaultPort = 4333;
             this.DefaultRPCPort = 4334;
 			this.DefaultAPIPort = 4335;
+            this.DefaultSignalRPort = 4336;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;

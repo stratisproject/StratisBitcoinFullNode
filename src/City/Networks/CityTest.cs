@@ -17,7 +17,8 @@ namespace City.Networks
             this.DefaultPort = 24333;
             this.DefaultRPCPort = 24334;
 			this.DefaultAPIPort = 24335;
-			this.CoinTicker = "TCITY";
+            this.DefaultSignalRPort = 24336;
+            this.CoinTicker = "TCITY";
             this.DefaultBanTimeSeconds = 16000; // 500 (MaxReorg) * 64 (TargetSpacing) / 2 = 4 hours, 26 minutes and 40 seconds
 
             var powLimit = new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000"));

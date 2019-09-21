@@ -18,7 +18,8 @@ namespace City.Networks
             this.DefaultPort = 14333;
             this.DefaultRPCPort = 14334;
 			this.DefaultAPIPort = 14335;
-			this.MinTxFee = 0;
+            this.DefaultSignalRPort = 14336;
+            this.MinTxFee = 0;
             this.FallbackFee = 0;
             this.MinRelayTxFee = 0;
             this.CoinTicker = "TCITY";
