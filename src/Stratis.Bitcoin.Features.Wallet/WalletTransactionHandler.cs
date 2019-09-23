@@ -55,20 +55,20 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (context.Shuffle)
                 context.TransactionBuilder.Shuffle();
 
-            Transaction transaction = context.TransactionBuilder.BuildTransaction(false);
-            if (context.Sign)
-            {
-                ICoin[] coinsSpent = context.TransactionBuilder.FindSpentCoins(transaction);
-                this.AddSecrets(context, coinsSpent);
-                context.TransactionBuilder.SignTransactionInPlace(transaction);
-            }
-
             const int maxRetries = 3;
             int retryCount = 0;
 
             TransactionPolicyError[] errors = null;
             while (retryCount <= maxRetries)
             {
+                Transaction transaction = context.TransactionBuilder.BuildTransaction(false);
+                if (context.Sign)
+                {
+                    ICoin[] coinsSpent = context.TransactionBuilder.FindSpentCoins(transaction);
+                    this.AddSecrets(context, coinsSpent);
+                    context.TransactionBuilder.SignTransactionInPlace(transaction);
+                }
+
                 if (context.TransactionBuilder.Verify(transaction, out errors))
                     return transaction;
 
