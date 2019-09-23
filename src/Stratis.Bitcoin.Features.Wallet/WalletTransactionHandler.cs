@@ -65,6 +65,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 if (context.Sign)
                 {
                     ICoin[] coinsSpent = context.TransactionBuilder.FindSpentCoins(transaction);
+                    // TODO: Improve this as we already have secrets when running a retry iteration.
                     this.AddSecrets(context, coinsSpent);
                     context.TransactionBuilder.SignTransactionInPlace(transaction);
                 }
