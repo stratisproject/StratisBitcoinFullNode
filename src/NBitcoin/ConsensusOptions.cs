@@ -115,7 +115,7 @@
     public class PosConsensusOptions : ConsensusOptions
     {
         /// <summary>Coinstake minimal confirmations softfork activation height for mainnet.</summary>
-        public const int CoinstakeMinConfirmationActivationHeightMainnet = 1270;
+        public const int CoinstakeMinConfirmationActivationHeightMainnet = 1005000;
 
         /// <summary>Coinstake minimal confirmations softfork activation height for testnet.</summary>
         public const int CoinstakeMinConfirmationActivationHeightTestnet = 436000;
