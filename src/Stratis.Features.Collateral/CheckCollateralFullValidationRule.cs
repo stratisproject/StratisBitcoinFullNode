@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.BlockStore.AddressIndexing;
 using Stratis.Bitcoin.Features.PoA;
@@ -19,8 +18,6 @@ namespace Stratis.Features.Collateral
         private readonly IInitialBlockDownloadState ibdState;
 
         private readonly ICollateralChecker collateralChecker;
-
-        private readonly IFullNode fullNode;
 
         private readonly ISlotsManager slotsManager;
 
