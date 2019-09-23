@@ -7,14 +7,15 @@ using Stratis.Bitcoin.Features.SmartContracts.PoA.MempoolRules;
 
 namespace Stratis.SmartContracts.Networks
 {
-    public class SmartContractsPoAWhitelistRegTest : SmartContractsPoARegTest
+    public sealed class SmartContractsPoAWhitelistRegTest : SmartContractsPoARegTest
     {
         public SmartContractsPoAWhitelistRegTest()
         {
-            this.RegisterMempoolRules(this.Consensus);
+            this.Name = "SmartContractsPoARegTestWhiteList";
+            this.CoinTicker = "SCPOAWL";
         }
 
-        private void RegisterMempoolRules(IConsensus consensus)
+        protected override void RegisterMempoolRules(IConsensus consensus)
         {
             consensus.MempoolRules = new List<Type>()
             {
@@ -23,7 +24,7 @@ namespace Stratis.SmartContracts.Networks
                 typeof(AllowedScriptTypeMempoolRule),
                 typeof(P2PKHNotContractMempoolRule),
 
-                // The non- smart contract mempool rules
+                // The non-smart contract mempool rules.
                 typeof(CheckConflictsMempoolRule),
                 typeof(CheckCoinViewMempoolRule),
                 typeof(CreateMempoolEntryMempoolRule),

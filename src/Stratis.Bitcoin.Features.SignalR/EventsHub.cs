@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.SignalR
             return base.OnDisconnectedAsync(exception);
         }
 
-        public async Task SendToClients(IClientEvent @event)
+        public async Task SendToClientsAsync(IClientEvent @event)
         {
             // Check if any there are any connected clients
             if (this.Clients == null) return;

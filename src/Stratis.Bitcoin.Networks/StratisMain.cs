@@ -49,6 +49,7 @@ namespace Stratis.Bitcoin.Networks
             this.DefaultMaxInboundConnections = 109;
             this.DefaultRPCPort = 16174;
             this.DefaultAPIPort = 37221;
+            this.DefaultSignalRPort = 38824;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
@@ -90,7 +91,7 @@ namespace Stratis.Bitcoin.Networks
 
             var bip9Deployments = new StratisBIP9Deployments()
             {
-                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(2,
+                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters("ColdStaking", 2,
                     new DateTime(2018, 12, 1, 0, 0, 0, DateTimeKind.Utc),
                     new DateTime(2019, 12, 1, 0, 0, 0, DateTimeKind.Utc))
             };

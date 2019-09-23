@@ -22,32 +22,23 @@ namespace Stratis.Bitcoin.Features.RPC
         {
             this.JsonRpc = "1.0";
         }
-        public string JsonRpc
-        {
-            get;
-            set;
-        }
-        public string Id
-        {
-            get;
-            set;
-        }
-        public string Method
-        {
-            get;
-            set;
-        }
-        public object[] Params
-        {
-            get;
-            set;
-        }
+
+        public string JsonRpc { get; set; }
+
+        public string Id { get; set; }
+
+        public string Method { get; set; }
+
+        public object[] Params { get; set; }
 
         public void WriteJSON(TextWriter writer)
         {
-            var jsonWriter = new JsonTextWriter(writer);
-            WriteJSON(jsonWriter);
-            jsonWriter.Flush();
+            using (JsonTextWriter jsonWriter = new JsonTextWriter(writer))
+            {
+                jsonWriter.CloseOutput = false;
+                WriteJSON(jsonWriter);
+                jsonWriter.Flush();
+            }
         }
 
         internal void WriteJSON(JsonTextWriter writer)
