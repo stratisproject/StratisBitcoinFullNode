@@ -151,7 +151,7 @@ namespace Stratis.SmartContracts.Networks
                 typeof(AllowedScriptTypeMempoolRule),
                 typeof(P2PKHNotContractMempoolRule),
 
-                // The non- smart contract mempool rules
+                // The non-smart contract mempool rules.
                 typeof(CheckConflictsMempoolRule),
                 typeof(CheckCoinViewMempoolRule),
                 typeof(CreateMempoolEntryMempoolRule),
