@@ -273,7 +273,7 @@ namespace Stratis.Sidechains.Networks
             // ------------------------------------------------------
         }
 
-        private void RegisterMempoolRules(IConsensus consensus)
+        protected override void RegisterMempoolRules(IConsensus consensus)
         {
             consensus.MempoolRules = new List<Type>()
             {
