@@ -41,6 +41,10 @@ namespace Stratis.Features.Collateral
         // Both Cirrus Peg and Cirrus Miner calls this.
         public static IFullNodeBuilder CheckForPoAMembersCollateral(this IFullNodeBuilder fullNodeBuilder)
         {
+            // Inject the CheckCollateralFullValidationRule as the first Full Validation Rule.
+            // This is still a bit hacky and we need to properly review the dependencies again between the different side chain nodes.
+            fullNodeBuilder.Network.Consensus.ConsensusRules.FullValidationRules.Insert(0, typeof(CheckCollateralFullValidationRule));
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features.AddFeature<CollateralFeature>()

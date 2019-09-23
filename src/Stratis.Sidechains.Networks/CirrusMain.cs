@@ -12,7 +12,6 @@ using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA.MempoolRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
-using Stratis.Features.Collateral;
 using Stratis.SmartContracts.Networks.Policies;
 
 namespace Stratis.Sidechains.Networks
@@ -268,7 +267,6 @@ namespace Stratis.Sidechains.Networks
                 .Register<CanGetSenderRule>()
                 .Register<P2PKHNotContractRule>()
                 .Register<SmartContractPoACoinviewRule>()
-                .Register<CheckCollateralFullValidationRule>()
                 .Register<SaveCoinviewRule>();
             // ------------------------------------------------------
         }

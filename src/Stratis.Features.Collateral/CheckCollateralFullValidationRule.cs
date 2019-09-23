@@ -33,10 +33,9 @@ namespace Stratis.Features.Collateral
         /// <summary>For how many seconds the block should be banned in case collateral check failed.</summary>
         private readonly int collateralCheckBanDurationSeconds;
 
-        public CheckCollateralFullValidationRule(IFullNode fullNode, IInitialBlockDownloadState ibdState, ICollateralChecker collateralChecker,
+        public CheckCollateralFullValidationRule(IInitialBlockDownloadState ibdState, ICollateralChecker collateralChecker,
             ISlotsManager slotsManager, IDateTimeProvider dateTime, Network network)
         {
-            this.fullNode = fullNode;
             this.network = network;
             this.encoder = new CollateralHeightCommitmentEncoder();
             this.ibdState = ibdState;
@@ -49,13 +48,6 @@ namespace Stratis.Features.Collateral
 
         public override Task RunAsync(RuleContext context)
         {
-            // If this node is not mining on the side-chain, the rule does not apply.
-            if (!this.fullNode.IsMiningOnSideChain())
-            {
-                this.Logger.LogTrace("(-)[SKIPPED_NOT_MINING]");
-                return Task.CompletedTask;
-            }
-
             if (this.ibdState.IsInitialBlockDownload())
             {
                 this.Logger.LogTrace("(-)[SKIPPED_IN_IBD]");
