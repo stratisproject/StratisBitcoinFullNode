@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         services.AddSingleton<VotingManager>();
                         services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
-                        // TODO: Perhaps create a SC specific rule container for this?
+
                         services.AddSingleton(typeof(IContractTransactionPartialValidationRule), typeof(SmartContractFormatLogic));
                         services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
 
