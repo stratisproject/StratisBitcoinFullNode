@@ -139,12 +139,36 @@ namespace NBitcoin
                             }
                         }
 
-                        return result;
+                        if (minTotal != null)
+                        {
+                            total = minTotal;
+                        }
+                        break;
                     }
                 }
             }
+
             if (total.CompareTo(target) == -1)
                 return null;
+
+            // optimize the set of used coins, removing unnecessary small inputs
+            List<ICoin> sortedUsedCoins = result.OrderBy(c => c.Amount).ToList();
+            IMoney excess = total.Sub(target);
+            for (int i = 0; i < sortedUsedCoins.Count; i++)
+            {
+                // if the smallest coin in the set is smaller or equal to the difference between the excess of
+                // the total and its amount, we can safely remove it
+                ICoin coin = sortedUsedCoins[i];
+                if (coin.Amount.CompareTo(excess) <= 0)
+                {
+                    result.Remove(coin);
+                    excess = excess.Sub(coin.Amount);
+                }
+
+                if (excess.CompareTo(zero) <= 0)
+                    break;
+            }
+
             return result;
         }
 
