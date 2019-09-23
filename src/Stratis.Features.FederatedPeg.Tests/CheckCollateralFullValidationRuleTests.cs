@@ -2,6 +2,8 @@
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -49,10 +51,20 @@ namespace Stratis.Features.FederatedPeg.Tests
             var votingOutputScript = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(encodedHeight));
             block.Transactions[0].AddOutput(Money.Zero, votingOutputScript);
 
+            var fullNode = new Mock<IFullNode>();
+            var fullNodeServiceProvider = new Mock<IFullNodeServiceProvider>();
+
             var poaMiner = new Mock<IPoAMiner>();
             poaMiner.Setup(m => m.IsMining).Returns(true);
 
-            this.rule = new CheckCollateralFullValidationRule(poaMiner.Object, this.ibdMock.Object, this.collateralCheckerMock.Object, this.slotsManagerMock.Object, new Mock<IDateTimeProvider>().Object, new PoANetwork());
+            var serviceProvider = new Mock<IServiceProvider>();
+            serviceProvider.Setup(sp => sp.GetService(It.IsAny<Type>())).Returns(poaMiner.Object);
+
+            fullNodeServiceProvider.Setup(fsp => fsp.ServiceProvider).Returns(serviceProvider.Object);
+
+            fullNode.Setup(f => f.Services).Returns(fullNodeServiceProvider.Object);
+
+            this.rule = new CheckCollateralFullValidationRule(fullNode.Object, this.ibdMock.Object, this.collateralCheckerMock.Object, this.slotsManagerMock.Object, new Mock<IDateTimeProvider>().Object, new PoANetwork());
             this.rule.Logger = new ExtendedLoggerFactory().CreateLogger(this.rule.GetType().FullName);
             this.rule.Initialize();
         }
