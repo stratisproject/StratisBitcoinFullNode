@@ -29,9 +29,12 @@ namespace Stratis.SmartContracts.Core.Receipts
 
         public List<Receipt> SearchReceipts(string contractAddress, string eventName, int fromBlock, int? toBlock, IEnumerable<byte[]> topics)
         {
-            byte[] eventBytes = Encoding.UTF8.GetBytes(eventName);
+            var topicsList = new List<byte[]>();
 
-            var topicsList = new List<byte[]> { eventBytes };
+            if (!string.IsNullOrWhiteSpace(eventName))
+            {
+                topicsList.Add(Encoding.UTF8.GetBytes(eventName));
+            }
 
             if (topics != null)
             {
