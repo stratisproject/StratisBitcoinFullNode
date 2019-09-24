@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Networks
             var bip9Deployments = new StratisBIP9Deployments()
             {
                 // Always active on StratisRegTest.
-                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999, BIP9DeploymentsParameters.AlwaysActive)
+                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters("ColdStaking", 1, BIP9DeploymentsParameters.AlwaysActive, 999999999, BIP9DeploymentsParameters.AlwaysActive)
             };
 
             this.Consensus = new NBitcoin.Consensus(
@@ -125,6 +125,7 @@ namespace Stratis.Bitcoin.Networks
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
 
             this.RegisterRules(this.Consensus);
+            this.RegisterMempoolRules(this.Consensus);
         }
     }
 }

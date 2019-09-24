@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -311,6 +312,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             configParameters.SetDefaultValueIfUndefined("rest", "1");
             configParameters.SetDefaultValueIfUndefined("server", "1");
             configParameters.SetDefaultValueIfUndefined("txindex", "1");
+
             if (!this.CookieAuth)
             {
                 configParameters.SetDefaultValueIfUndefined("rpcuser", this.creds.UserName);
@@ -332,6 +334,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             configParameters.SetDefaultValueIfUndefined("keypool", "10");
             configParameters.SetDefaultValueIfUndefined("agentprefix", "node" + this.ProtocolPort);
             configParameters.Import(this.ConfigParameters);
+
             File.WriteAllText(this.Config, configParameters.ToString());
         }
 

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.IO;
+using System.Reflection;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
@@ -183,22 +185,43 @@ namespace NBitcoin
         }
     }
 
-    public class ProvenHeaderConsensusFactory : PosConsensusFactory
-    {
-        public override BlockHeader CreateBlockHeader()
-        {
-            return base.CreateProvenBlockHeader();
-        }
-    }
-
     /// <summary>
     /// The consensus factory for creating POS protocol types.
     /// </summary>
     public class PosConsensusFactory : ConsensusFactory
     {
+        /// <summary>
+        /// A dictionary for types assignable from <see cref="ProvenBlockHeader"/>.
+        /// </summary>
+        private readonly ConcurrentDictionary<Type, bool> isAssignableFromProvenBlockHeader = new ConcurrentDictionary<Type, bool>();
+
+        /// <summary>
+        /// The <see cref="ProvenBlockHeader"/> type.
+        /// </summary>
+        private readonly TypeInfo provenBlockHeaderType = typeof(ProvenBlockHeader).GetTypeInfo();
+
         public PosConsensusFactory()
             : base()
         {
+        }
+
+        /// <summary>
+        /// Check if the generic type is assignable from <see cref="BlockHeader"/>.
+        /// </summary>
+        /// <typeparam name="T">The type to check if it is IsAssignable from <see cref="BlockHeader"/>.</typeparam>
+        /// <returns><c>true</c> if it is assignable.</returns>
+        protected bool IsProvenBlockHeader<T>()
+        {
+            return this.IsAssignable<T>(this.provenBlockHeaderType, this.isAssignableFromProvenBlockHeader);
+        }
+
+        /// <inheritdoc />
+        public override T TryCreateNew<T>()
+        {
+            if (this.IsProvenBlockHeader<T>())
+                return (T)(object)this.CreateProvenBlockHeader();
+
+            return base.TryCreateNew<T>();
         }
 
         /// <inheritdoc />
@@ -213,12 +236,12 @@ namespace NBitcoin
             return new PosBlockHeader();
         }
 
-        public ProvenBlockHeader CreateProvenBlockHeader()
+        public virtual ProvenBlockHeader CreateProvenBlockHeader()
         {
             return new ProvenBlockHeader();
         }
 
-        public ProvenBlockHeader CreateProvenBlockHeader(PosBlock block)
+        public virtual ProvenBlockHeader CreateProvenBlockHeader(PosBlock block)
         {
             var provenBlockHeader = new ProvenBlockHeader(block);
 
@@ -330,10 +353,16 @@ namespace NBitcoin
         /// </summary>
         public override void ReadWrite(BitcoinStream stream)
         {
+            // Capture the value in BlockSize as calling base will change it.
+            long? blockSize = this.BlockSize;
+
             base.ReadWrite(stream);
             stream.ReadWrite(ref this.blockSignature);
 
-            this.BlockSize = stream.Serializing ? stream.Counter.WrittenBytes : stream.Counter.ReadBytes;
+            if (blockSize == null)
+            {
+                this.BlockSize = stream.Serializing ? stream.Counter.WrittenBytes : stream.Counter.ReadBytes;
+            }
         }
 
         /// <summary>

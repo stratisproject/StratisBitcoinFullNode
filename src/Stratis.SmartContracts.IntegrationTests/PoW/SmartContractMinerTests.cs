@@ -21,6 +21,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
@@ -118,7 +119,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             testContext.mempoolLock.ReadAsync(() => context.View.LoadViewLocked(tx)).GetAwaiter().GetResult();
 
-            return MempoolValidator.CheckSequenceLocks(testContext.network, chainedBlock, context, flags, uselock, false);
+            return CreateMempoolEntryMempoolRule.CheckSequenceLocks(testContext.network, chainedBlock, context, flags, uselock, false);
         }
 
         public class TestContext
@@ -230,7 +231,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 consensusRulesContainer.FullValidationRules.Add(new CanGetSenderRule(senderRetriever) as FullValidationConsensusRule);
                 consensusRulesContainer.FullValidationRules.Add(new P2PKHNotContractRule(this.StateRoot) as FullValidationConsensusRule);
                 consensusRulesContainer.FullValidationRules.Add(new CanGetSenderRule(senderRetriever) as FullValidationConsensusRule);
-                consensusRulesContainer.FullValidationRules.Add(new SmartContractPowCoinviewRule(this.network, this.StateRoot, this.ExecutorFactory, this.callDataSerializer, senderRetriever, receiptRepository, this.cachedCoinView) as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new SmartContractPowCoinviewRule(this.network, this.StateRoot, this.ExecutorFactory, this.callDataSerializer, senderRetriever, receiptRepository, this.cachedCoinView, new LoggerFactory()) as FullValidationConsensusRule);
                 consensusRulesContainer.FullValidationRules.Add(new SaveCoinviewRule() as FullValidationConsensusRule);
 
                 this.consensusRules = new PowConsensusRuleEngine(

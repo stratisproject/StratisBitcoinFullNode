@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.SmartContracts.CLR;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
@@ -9,7 +10,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// <summary>
     /// Checks that smart contract transactions are in a valid format and the data is serialized correctly.
     /// </summary>
-    public class ContractTransactionFullValidationRule : FullValidationConsensusRule, ISmartContractMempoolRule
+    public class ContractTransactionFullValidationRule : FullValidationConsensusRule
     {
         private readonly ContractTransactionChecker transactionChecker;
 
@@ -27,12 +28,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         public override Task RunAsync(RuleContext context)
         {
             return this.transactionChecker.RunAsync(context, this.internalRules);
-        }
-
-        /// <inheritdoc/>
-        public void CheckTransaction(MempoolValidationContext context)
-        {
-            this.transactionChecker.CheckTransaction(context, this.internalRules);
         }
     }
 }

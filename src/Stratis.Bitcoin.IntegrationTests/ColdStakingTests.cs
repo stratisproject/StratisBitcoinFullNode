@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Set the date ranges such that ColdStaking will 'Start' immediately after the initial confirmation window.
                 // Also reduce the minimum number of 'votes' required within the conformation window to reach 'LockedIn' state.
-                network.Consensus.BIP9Deployments[StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(1, 0, DateTime.Now.AddDays(50).ToUnixTimestamp(), 8);
+                network.Consensus.BIP9Deployments[StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters("Test", 1, 0, DateTime.Now.AddDays(50).ToUnixTimestamp(), 8);
 
                 // Set a small confirmation window to reduce time taken by this test.
                 network.Consensus.MinerConfirmationWindow = 10;

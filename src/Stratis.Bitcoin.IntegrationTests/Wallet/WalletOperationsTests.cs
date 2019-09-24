@@ -961,6 +961,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             addressBalance.CoinType.Should().Be(CoinType.Stratis);
             addressBalance.AmountConfirmed.Should().Be(new Money(10150100000000));
             addressBalance.AmountUnconfirmed.Should().Be(Money.Zero);
+
+            // Only one tx in the wallet for this address that is not spent and not a coinbase/coinstake.
+            addressBalance.SpendableAmount.Should().Be(new Money(150000000000));
         }
 
         [Fact]
@@ -1378,6 +1381,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     $"Please use '{nameof(BuildTransactionRequest.FeeAmount)}' if you'd like to set the fee manually, or '{nameof(BuildTransactionRequest.FeeType)}' if you want the wallet to calculate it for you.");
         }
 
+        /// TODO: I don't think this test is valid because it depends on coinselection algoritm.
+        /// would be better to pre-select Outpoints so that we know ahead the expected fee
         [Fact]
         public async Task EstimateFeeAsync()
         {
@@ -1407,6 +1412,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             act.Should().Be(new Money(10000));
         }
 
+        /// TODO: I don't think this test is valid because it depends on coinselection algoritm.
+        /// would be better to pre-select Outpoints so that we know ahead the expected fee
         [Fact]
         public async Task EstimateFeeWithOpReturnAsync()
         {

@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.MempoolRules;
+using Stratis.Bitcoin.Features.SmartContracts.PoA.MempoolRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
 using Stratis.SmartContracts.Networks.Policies;
 
@@ -116,6 +119,39 @@ namespace Stratis.SmartContracts.Networks
             this.SeedNodes = new List<NetworkAddress>();
 
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
+
+            this.RegisterMempoolRules(this.Consensus);
+        }
+
+        // TODO: Refactor the network hierarchy so this isn't duplicated everywhere
+        private void RegisterMempoolRules(IConsensus consensus)
+        {
+            consensus.MempoolRules = new List<Type>()
+            {
+                typeof(OpSpendMempoolRule),
+                typeof(TxOutSmartContractExecMempoolRule),
+                typeof(AllowedScriptTypeMempoolRule),
+                typeof(P2PKHNotContractMempoolRule),
+
+                // The non- smart contract mempool rules
+                typeof(CheckConflictsMempoolRule),
+                typeof(CheckCoinViewMempoolRule),
+                typeof(CreateMempoolEntryMempoolRule),
+                typeof(CheckSigOpsMempoolRule),
+                typeof(CheckFeeMempoolRule),
+
+                // The smart contract mempool needs to do more fee checks than its counterpart, so include extra rules.
+                // These rules occur directly after the fee check rule in the non- smart contract mempool.
+                typeof(SmartContractFormatLogicMempoolRule),
+                typeof(CanGetSenderMempoolRule),
+                typeof(CheckMinGasLimitSmartContractMempoolRule),
+
+                // Remaining non-SC rules.
+                typeof(CheckRateLimitMempoolRule),
+                typeof(CheckAncestorsMempoolRule),
+                typeof(CheckReplacementMempoolRule),
+                typeof(CheckAllInputsMempoolRule)
+            };
         }
     }
 }

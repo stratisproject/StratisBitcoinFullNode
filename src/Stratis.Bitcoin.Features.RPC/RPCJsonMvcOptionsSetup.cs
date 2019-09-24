@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.RPC
         {
             JsonOutputFormatter jsonOutput = options.OutputFormatters.OfType<JsonOutputFormatter>().First();
             options.OutputFormatters.Remove(jsonOutput);
-            options.OutputFormatters.Add(new RPCJsonOutputFormatter(serializerSettings, charPool));
+            options.OutputFormatters.Add(new RPCJsonOutputFormatter(serializerSettings));
         }
     }
 }

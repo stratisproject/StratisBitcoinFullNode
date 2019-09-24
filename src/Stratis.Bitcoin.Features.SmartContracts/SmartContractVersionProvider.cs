@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <inheritdoc />
         public string GetVersion()
         {
-            return "1.0.2.0-beta";
+            return "1.0.2.0";
         }
     }
 }
