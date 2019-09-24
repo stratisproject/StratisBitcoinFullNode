@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
@@ -25,11 +24,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
         private readonly IReceiptRepository receiptRepository;
         private readonly ICoinView coinView;
         private readonly ILoggerFactory loggerFactory;
-        private readonly List<Transaction> blockTxsProcessed;
-        private Transaction generatedTransaction;
-        private readonly IList<Receipt> receipts;
-        private uint refundCounter;
-        private IStateRepositoryRoot mutableStateRepository;
 
         public SmartContractPoACoinviewRule(
             IStateRepositoryRoot stateRepositoryRoot,

@@ -381,8 +381,8 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<ISignals, Signals.Signals>();
                     services.AddSingleton<ISubscriptionErrorHandler, DefaultSubscriptionErrorHandler>();
                     services.AddSingleton<FullNode>().AddSingleton((provider) => { return provider.GetService<FullNode>() as IFullNode; });
-                    services.AddSingleton<ChainIndexer>(new ChainIndexer(fullNodeBuilder.Network));
-                    services.AddSingleton<IDateTimeProvider>(DateTimeProvider.Default);
+                    services.AddSingleton(new ChainIndexer(fullNodeBuilder.Network));
+                    services.AddSingleton(DateTimeProvider.Default);
                     services.AddSingleton<IInvalidBlockHashStore, InvalidBlockHashStore>();
                     services.AddSingleton<IChainState, ChainState>();
                     services.AddSingleton<IChainRepository, ChainRepository>();
@@ -416,7 +416,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<NetworkPeerConnectionParameters>();
                     services.AddSingleton<IConnectionManager, ConnectionManager>();
                     services.AddSingleton<ConnectionManagerSettings>();
-                    services.AddSingleton<PayloadProvider>(new PayloadProvider().DiscoverPayloads());
+                    services.AddSingleton(new PayloadProvider().DiscoverPayloads());
                     services.AddSingleton<IVersionProvider, VersionProvider>();
                     services.AddSingleton<IBlockPuller, BlockPuller>();
 

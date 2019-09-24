@@ -58,7 +58,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         }
 
         [Retry]
-        public async Task Create_NoWhitelist_Mempool_Rejects()
+        public async Task Create_NoWhitelist_Mempool_RejectsAsync()
         {
             using (var chain = new PoAMockChain(2, this.nodeFactory).Build())
             {

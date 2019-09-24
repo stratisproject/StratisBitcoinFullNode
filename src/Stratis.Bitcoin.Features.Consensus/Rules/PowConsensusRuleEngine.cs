@@ -26,9 +26,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
 
         private readonly CoinviewPrefetcher prefetcher;
 
-        /// <summary>
-        /// Initializes an instance of the object.
-        /// </summary>
         public PowConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ChainIndexer chainIndexer,
             NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IChainState chainState,
             IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IAsyncProvider asyncProvider, ConsensusRulesContainer consensusRulesContainer)
