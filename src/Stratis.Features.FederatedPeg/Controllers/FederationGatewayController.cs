@@ -24,6 +24,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
     /// <summary>
     /// API used to communicate across to the counter chain.
     /// </summary>
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public class FederationGatewayController : Controller
     {

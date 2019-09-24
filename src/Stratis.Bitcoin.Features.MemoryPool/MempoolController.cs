@@ -14,6 +14,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// <summary>
     /// Controller providing operations on the Mempool.
     /// </summary>
+    [ApiVersion("1")]
     public class MempoolController : FeatureController
     {
         public MempoolManager MempoolManager { get; private set; }
