@@ -55,16 +55,29 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (context.Shuffle)
                 context.TransactionBuilder.Shuffle();
 
-            Transaction transaction = context.TransactionBuilder.BuildTransaction(false);
-            if (context.Sign)
-            {
-                ICoin[] coinsSpent = context.TransactionBuilder.FindSpentCoins(transaction);
-                this.AddSecrets(context, coinsSpent);
-                context.TransactionBuilder.SignTransactionInPlace(transaction);
-            }
+            const int maxRetries = 3;
+            int retryCount = 0;
 
-            if (context.TransactionBuilder.Verify(transaction, out TransactionPolicyError[] errors))
-                return transaction;
+            TransactionPolicyError[] errors = null;
+            while (retryCount <= maxRetries)
+            {
+                Transaction transaction = context.TransactionBuilder.BuildTransaction(false);
+                if (context.Sign)
+                {
+                    ICoin[] coinsSpent = context.TransactionBuilder.FindSpentCoins(transaction);
+                    // TODO: Improve this as we already have secrets when running a retry iteration.
+                    this.AddSecrets(context, coinsSpent);
+                    context.TransactionBuilder.SignTransactionInPlace(transaction);
+                }
+
+                if (context.TransactionBuilder.Verify(transaction, out errors))
+                    return transaction;
+
+                // Retry only if error is of type 'FeeTooLowPolicyError'
+                if (!errors.Any(e => e is FeeTooLowPolicyError)) break;
+
+                retryCount++;
+            }
 
             string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
             this.logger.LogError($"Build transaction failed: {errorsMessage}");
