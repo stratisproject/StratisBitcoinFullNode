@@ -46,7 +46,7 @@ namespace Stratis.SmartContracts.Core.Receipts
 
         public List<Receipt> SearchReceipts(string contractAddress, int fromBlock = 0, int? toBlock = null, IEnumerable<byte[]> topics = null)
         {
-            topics = topics ?? Enumerable.Empty<byte[]>();
+            topics = topics?.Where(topic => topic != null) ?? Enumerable.Empty<byte[]>();
 
             // Build the bytes we can use to check for this event.
             // TODO use address.ToUint160 extension when it is in .Core.

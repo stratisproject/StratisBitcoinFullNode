@@ -266,7 +266,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 return null;
             }
 
-            IEnumerable<byte[]> topicsBytes = topics != null ? topics.Select(t => t.HexToByteArray()) : new List<byte[]>();
+            IEnumerable<byte[]> topicsBytes = topics != null ? topics.Where(topic => topic != null).Select(t => t.HexToByteArray()) : new List<byte[]>();
 
             Assembly assembly = Assembly.Load(contractCode);
 
