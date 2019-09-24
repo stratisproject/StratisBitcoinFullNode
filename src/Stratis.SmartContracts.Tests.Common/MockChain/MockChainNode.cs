@@ -250,13 +250,13 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
         /// </summary>
         public IList<ReceiptResponse> GetReceipts(string contractAddress, string eventName)
         {
-            JsonResult response = (JsonResult)this.smartContractsController.ReceiptSearch(contractAddress, eventName).Result;
+            JsonResult response = (JsonResult)this.smartContractsController.ReceiptSearchAPI(contractAddress, eventName).Result;
             return (IList<ReceiptResponse>)response.Value;
         }
 
         public ReceiptResponse GetReceipt(string txHash)
         {
-            JsonResult response = (JsonResult)this.smartContractsController.GetReceipt(txHash);
+            JsonResult response = (JsonResult)this.smartContractsController.GetReceiptAPI(txHash);
             return (ReceiptResponse)response.Value;
         }
 
