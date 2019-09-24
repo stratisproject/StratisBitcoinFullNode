@@ -133,5 +133,67 @@ namespace Stratis.SmartContracts.Core.Tests
             Assert.False((bool) receipt.Bloom.Test(new uint160(11111).ToBytes()));
             Assert.False((bool) receipt.Bloom.Test(new uint160(1234567).ToBytes()));
         }
+
+        [Fact]
+        public void ToBytes_Should_Return_Copy()
+        {
+            var bloom = new Bloom();
+
+            var call1 = bloom.ToBytes();
+            var call2 = bloom.ToBytes();
+
+            Assert.NotSame(call1, call2);
+        }
+
+        [Fact]
+        public void NewBloom_Should_Use_Copy()
+        {
+            var data = new byte[256];
+
+            var bloom = new Bloom(data);
+
+            // Change original data.
+            data[1] = 0xFF;
+
+            var bloom2 = new Bloom(data);
+
+            // If they were not using a copy, this would return true.
+            Assert.False(bloom.Equals(bloom2));
+        }
+
+        [Fact]
+        public void Test_Bloom_Contains_Another_Bloom_Success()
+        {
+            var topics =
+                new List<byte[]>
+                {
+                    Encoding.UTF8.GetBytes("Topic1"),
+                    Encoding.UTF8.GetBytes("Topic2"),
+                    Encoding.UTF8.GetBytes("Topic3"),
+                    Encoding.UTF8.GetBytes("Topic4")
+                };
+
+            var bloom = new Bloom();
+            foreach (var topic in topics)
+            {
+                bloom.Add(topic);
+            }
+
+            // Test all combos of topics.
+            for (var i = 0; i < topics.Count; i++)
+            {
+                var bloom2 = new Bloom();
+                bloom2.Add(topics[i]);
+
+                Assert.True(bloom.Test(bloom2));
+
+                for (var j = i + 1; j < topics.Count; j++)
+                {
+                    bloom2.Add(topics[j]);
+
+                    Assert.True(bloom.Test(bloom2));
+                }
+            }
+        }
     }
 }
