@@ -1443,14 +1443,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccount(request.AccountName);
 
-                List<HdAddress> addresses;
+                List<HdAddress> addresses = new List<HdAddress>();
                 if (request.ReuseAddresses)
                 {
                     addresses = this.walletManager.GetUnusedAddresses(walletReference, request.UseUniqueAddressPerUtxo ? request.UtxosCount : 1, request.UseChangeAddresses).ToList();
                 }
                 else if (request.UseChangeAddresses)
                 {
-                    
+
                     addresses = account.InternalAddresses.Take(request.UseUniqueAddressPerUtxo ? request.UtxosCount : 1).ToList();
                 }
                 else if (!request.UseChangeAddresses)
@@ -1472,7 +1472,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     }
                     spendableTransactions = selectedunspentOutputReferenceList;
                 }
-                
+
                 int totalOutpointCount = spendableTransactions.Count();
                 Money totalAmount = spendableTransactions.Sum(s => s.Transaction.Amount);
                 int calculatedTransactionCount = request.UtxosCount / request.UtxoPerTransaction;
@@ -1489,7 +1489,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 List<Transaction> transactionList = new List<Transaction>();
                 for (int i = 0; i < request.UtxosCount; i++)
                 {
-                    recipients.Add(new Recipient { ScriptPubKey = addresses[addressIndex].ScriptPubKey});
+                    recipients.Add(new Recipient { ScriptPubKey = addresses[addressIndex].ScriptPubKey });
                     if (request.UseUniqueAddressPerUtxo)
                         addressIndex++;
 
@@ -1538,7 +1538,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
                             //Due to how the code works the line below is probably never used
                             transactionFee = feeRate.GetFee(transaction);
-                        } catch (NotEnoughFundsException ex)
+                        }
+                        catch (NotEnoughFundsException ex)
                         {
                             //This remains the best apprach for estimating transaction fees
                             transactionFee = (Money)ex.Missing;
@@ -1549,7 +1550,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                         transferAmount = (transactionTransferAmount - transactionFee) / recipients.Count;
                         recipients.ForEach(r => r.Amount = transferAmount);
-                        
+
                         context = new TransactionBuildContext(this.network)
                         {
                             AccountReference = walletReference,
