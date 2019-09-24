@@ -33,6 +33,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
     /// <summary>
     /// Controller providing operations on a wallet.
     /// </summary>
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public class FederationWalletController : Controller
     {

@@ -19,8 +19,8 @@ namespace City.Features.BlockExplorer.Controllers
     /// <summary>
     /// Controller providing operations on a blockstore.
     /// </summary>
-    [ApiVersion("2.0")]
-    [Route("api/blocks")]
+    [ApiVersion("2.0-dev")]
+    [Route("api/v{version:apiVersion}/blocks")]
     public class BlockExplorerController : Controller
     {
         /// <summary>An interface for getting blocks asynchronously from the blockstore cache.</summary>

@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>
         /// A cancellation token source that can cancel the mining processes and is linked to the <see cref="INodeLifetime.ApplicationStopping"/>.
         /// </summary>
-        private CancellationTokenSource cancellation;
+        private readonly CancellationTokenSource cancellation;
 
         private readonly IInitialBlockDownloadState ibdState;
 
@@ -74,6 +74,7 @@ namespace Stratis.Bitcoin.Features.PoA
         private readonly VotingDataEncoder votingDataEncoder;
 
         private readonly PoAMinerSettings settings;
+
         private readonly IAsyncProvider asyncProvider;
 
         private Task miningTask;

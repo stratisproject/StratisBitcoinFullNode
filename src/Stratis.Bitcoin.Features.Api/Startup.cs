@@ -1,14 +1,13 @@
-﻿using System.IO;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.PlatformAbstractions;
-using Swashbuckle.AspNetCore.Swagger;
+using Microsoft.Extensions.Options;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using Swashbuckle.AspNetCore.SwaggerUI;
 
 namespace Stratis.Bitcoin.Features.Api
 {
@@ -72,55 +71,33 @@ namespace Stratis.Bitcoin.Features.Api
                 .AddJsonOptions(options => Utilities.JsonConverters.Serializer.RegisterFrontConverters(options.SerializerSettings))
                 .AddControllers(this.fullNode.Services.Features, services);
 
-            services.AddMvcCore().AddVersionedApiExplorer(options =>
-            {
-                options.AssumeDefaultVersionWhenUnspecified = true;
-                options.DefaultApiVersion = new ApiVersion(1, 0);
-            });
-
+            // Enable API versioning.
+            // Note much of this is borrowed from https://github.com/microsoft/aspnet-api-versioning/blob/master/samples/aspnetcore/SwaggerSample/Startup.cs
             services.AddApiVersioning(options =>
             {
-                options.ReportApiVersions = true;
+                // Our versions are configured to be set via URL path, no need to read from querystring etc.
+                options.ApiVersionReader = new UrlSegmentApiVersionReader();
+
+                // When no API version is specified, redirect to version 1.
                 options.AssumeDefaultVersionWhenUnspecified = true;
-                options.DefaultApiVersion = new ApiVersion(1, 0);
-                options.ApiVersionReader = new QueryStringApiVersionReader();
             });
 
-            services.AddSwaggerGen(
-              options =>
-              {
-                  IApiVersionDescriptionProvider provider = services.BuildServiceProvider().GetRequiredService<IApiVersionDescriptionProvider>();
+            // Add the versioned API explorer, which adds the IApiVersionDescriptionProvider service and allows Swagger integration.
+            services.AddVersionedApiExplorer(
+                options =>
+                {
+                    // Format the version as "'v'major[.minor][-status]"
+                    options.GroupNameFormat = "'v'VVV";
 
-                  foreach (ApiVersionDescription description in provider.ApiVersionDescriptions)
-                  {
-                      options.SwaggerDoc(
-                          description.GroupName,
-                            new Info()
-                            {
-                                Title = $"Stratis.Bitcoin.Api",
-                                Version = description.ApiVersion.ToString()
-                            });
-                  }
+                    // Substitute the version into the URLs in the swagger interface where we would otherwise see {version:apiVersion}
+                    options.SubstituteApiVersionInUrl = true;
+                });
 
-                  options.OperationFilter<SwaggerDefaultValues>();
+            // Add custom Options injectable for Swagger. This is injected with the IApiVersionDescriptionProvider service from above.
+            services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 
-                  //Set the comments path for the swagger json and ui.
-                  string basePath = PlatformServices.Default.Application.ApplicationBasePath;
-                  string apiXmlPath = Path.Combine(basePath, "Stratis.Bitcoin.Api.xml");
-                  string walletXmlPath = Path.Combine(basePath, "Stratis.Bitcoin.LightWallet.xml");
-
-                  if (File.Exists(apiXmlPath))
-                  {
-                      options.IncludeXmlComments(apiXmlPath);
-                  }
-
-                  if (File.Exists(walletXmlPath))
-                  {
-                      options.IncludeXmlComments(walletXmlPath);
-                  }
-
-                  options.DescribeAllEnumsAsStrings();
-              });
+            // Register the Swagger generator. This will use the options we injected just above.
+            services.AddSwaggerGen();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -139,23 +116,17 @@ namespace Stratis.Bitcoin.Features.Api
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();
 
-            app.UseSwaggerUI(
-            options =>
+            // Enable middleware to serve swagger-ui (HTML, JS, CSS etc.)
+            app.UseSwaggerUI(c =>
             {
-                // build a swagger endpoint for each discovered API version
+                c.DefaultModelRendering(ModelRendering.Model);
+
+                // Build a swagger endpoint for each discovered API version
                 foreach (ApiVersionDescription description in provider.ApiVersionDescriptions)
                 {
-                    // This changes version endpoint for swagger file from previous releases, where it was "v1" and now becomes "1.0". Code left below to show it was.
-                    options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", description.GroupName.ToUpperInvariant());
+                    c.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", description.GroupName.ToUpperInvariant());
                 }
             });
-
-            // Enable middleware to serve swagger-ui (HTML, JS, CSS etc.), specifying the Swagger JSON endpoint.
-            //app.UseSwaggerUI(c =>
-            //{
-            //    c.DefaultModelRendering(ModelRendering.Model);
-            //    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Stratis.Bitcoin.Api V1");
-            //});
         }
     }
 }

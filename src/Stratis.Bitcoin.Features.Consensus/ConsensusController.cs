@@ -17,6 +17,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// <summary>
     /// A <see cref="FeatureController"/> that provides API and RPC methods from the consensus loop.
     /// </summary>
+    [ApiVersion("1")]
     public class ConsensusController : FeatureController
     {
         /// <summary>Instance logger.</summary>

@@ -27,8 +27,8 @@ namespace City.Features.BlockExplorer.Controllers
     /// <summary>
     /// Controller providing operations on a blockstore.
     /// </summary>
-    [ApiVersion("2.0")]
-    [Route("api/transactions")]
+    [ApiVersion("2.0-dev")]
+    [Route("api/v{version:apiVersion}/transactions")]
     public class TransactionStoreController : Controller
     {
         private readonly IWalletManager walletManager;

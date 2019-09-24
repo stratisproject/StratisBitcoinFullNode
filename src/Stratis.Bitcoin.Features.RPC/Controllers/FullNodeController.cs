@@ -26,6 +26,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
     /// <summary>
     /// A <see cref="FeatureController"/> that implements several RPC methods for the full node.
     /// </summary>
+    [ApiVersion("1")]
     public class FullNodeController : FeatureController
     {
         /// <summary>Instance logger.</summary>
