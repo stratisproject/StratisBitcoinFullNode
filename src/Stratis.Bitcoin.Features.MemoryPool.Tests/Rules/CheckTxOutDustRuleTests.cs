@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Tests.Rules
 {
-    public sealed class CheckTxTotalOutVsFeeRuleTests
+    public sealed class CheckTxOutDustRuleTests
     {
         private readonly ChainIndexer chainIndexer;
         private readonly ILoggerFactory loggerFactory;
@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.Rules
         private readonly NodeSettings nodeSettings;
         private readonly ITxMempool txMempool;
 
-        public CheckTxTotalOutVsFeeRuleTests()
+        public CheckTxOutDustRuleTests()
         {
             this.network = new StratisMain();
             this.chainIndexer = new ChainIndexer(this.network);
@@ -29,9 +29,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.Rules
         }
 
         [Fact]
-        public void CheckTxTotalOutVsFeeRule_Pass()
+        public void CheckTxOutDustRule_Pass()
         {
-            var rule = new CheckTxTotalOutVsFeeRule(this.network, this.txMempool, new MempoolSettings(this.nodeSettings), this.chainIndexer, this.loggerFactory);
+            var rule = new CheckTxOutDustRule(this.network, this.txMempool, new MempoolSettings(this.nodeSettings), this.chainIndexer, this.loggerFactory);
             var transaction = CreateTransaction(Money.Coins(1));
             var mempoolValidationContext = new MempoolValidationContext(transaction, new MempoolValidationState(false))
             {
@@ -44,9 +44,24 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.Rules
         }
 
         [Fact]
-        public void CheckTxTotalOutVsFeeRule_Fail()
+        public void CheckTxOutDustRule_TxOut_Is_OpReturn_Pass()
         {
-            var rule = new CheckTxTotalOutVsFeeRule(this.network, this.txMempool, new MempoolSettings(this.nodeSettings), this.chainIndexer, this.loggerFactory);
+            var rule = new CheckTxOutDustRule(this.network, this.txMempool, new MempoolSettings(this.nodeSettings), this.chainIndexer, this.loggerFactory);
+            var transaction = CreateTransaction(Money.Coins(1), true);
+            var mempoolValidationContext = new MempoolValidationContext(transaction, new MempoolValidationState(false))
+            {
+                MinRelayTxFee = this.nodeSettings.MinRelayTxFeeRate,
+                ValueOut = transaction.TotalOut
+            };
+
+            rule.CheckTransaction(mempoolValidationContext);
+            Assert.Null(mempoolValidationContext.State.Error);
+        }
+
+        [Fact]
+        public void CheckTxOutDustRule_Fail()
+        {
+            var rule = new CheckTxOutDustRule(this.network, this.txMempool, new MempoolSettings(this.nodeSettings), this.chainIndexer, this.loggerFactory);
             var transaction = CreateTransaction(Money.Coins(0.000001m));
             var mempoolValidationContext = new MempoolValidationContext(transaction, new MempoolValidationState(false))
             {
@@ -56,14 +71,20 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.Rules
 
             Assert.Throws<MempoolErrorException>(() => rule.CheckTransaction(mempoolValidationContext));
             Assert.NotNull(mempoolValidationContext.State.Error);
-            Assert.Equal(MempoolErrors.TxTotalOutLessThanMinRelayFee, mempoolValidationContext.State.Error);
+            Assert.Equal(MempoolErrors.TransactionContainsDustTxOuts, mempoolValidationContext.State.Error);
         }
 
-        private Transaction CreateTransaction(Money amount)
+        private Transaction CreateTransaction(Money amount, bool isOpReturn = false)
         {
             var transaction = this.network.CreateTransaction();
+
             transaction.AddInput(TxIn.CreateCoinbase(1));
-            transaction.AddOutput(new TxOut(amount, new Script()));
+
+            if (isOpReturn)
+                transaction.AddOutput(new TxOut(0, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(new Key().PubKey.Compress().ToBytes()))));
+            else
+                transaction.AddOutput(new TxOut(amount, new Script()));
+
             return transaction;
         }
     }

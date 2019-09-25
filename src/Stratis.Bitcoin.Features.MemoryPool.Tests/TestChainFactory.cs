@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 new CheckAncestorsMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
                 new CheckReplacementMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
                 new CheckAllInputsMempoolRule(network, mempool, mempoolSettings, chain, consensusRules, loggerFactory),
-                new CheckTxTotalOutVsFeeRule(network, mempool, mempoolSettings, chain, loggerFactory),
+                new CheckTxOutDustRule(network, mempool, mempoolSettings, chain, loggerFactory),
             };
 
             // We also have to check that the manually instantiated rules match the ones in the network, or the test isn't valid
@@ -248,7 +248,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 new CheckAncestorsMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
                 new CheckReplacementMempoolRule(network, mempool, mempoolSettings, chain, loggerFactory),
                 new CheckAllInputsMempoolRule(network, mempool, mempoolSettings, chain, consensusRules, loggerFactory),
-                new CheckTxTotalOutVsFeeRule(network, mempool, mempoolSettings, chain, loggerFactory),
+                new CheckTxOutDustRule(network, mempool, mempoolSettings, chain, loggerFactory),
             };
 
             // We also have to check that the manually instantiated rules match the ones in the network, or the test isn't valid

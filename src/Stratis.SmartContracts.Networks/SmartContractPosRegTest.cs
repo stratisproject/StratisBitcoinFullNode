@@ -192,7 +192,6 @@ namespace Stratis.SmartContracts.Networks
                 typeof(CheckAncestorsMempoolRule),
                 typeof(CheckReplacementMempoolRule),
                 typeof(CheckAllInputsMempoolRule),
-                typeof(CheckTxTotalOutVsFeeRule)
             };
         }
     }

@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin.Networks
                 typeof(CheckAncestorsMempoolRule),
                 typeof(CheckReplacementMempoolRule),
                 typeof(CheckAllInputsMempoolRule),
-                typeof(CheckTxTotalOutVsFeeRule)
+                typeof(CheckTxOutDustRule)
             };
         }
 
