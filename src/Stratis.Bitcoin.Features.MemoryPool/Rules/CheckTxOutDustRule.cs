@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
             foreach (var txOut in context.Transaction.Outputs)
             {
                 if (StandardTransactionPolicy.IsOpReturn(txOut.ScriptPubKey.ToBytes()))
-                    continue;
+                    break;
 
                 if (txOut.IsDust(context.MinRelayTxFee))
                 {
