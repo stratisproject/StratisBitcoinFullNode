@@ -230,7 +230,7 @@ namespace Stratis.SmartContracts.Networks
                 typeof(CheckRateLimitMempoolRule),
                 typeof(CheckAncestorsMempoolRule),
                 typeof(CheckReplacementMempoolRule),
-                typeof(CheckAllInputsMempoolRule),
+                typeof(CheckAllInputsMempoolRule)
             };
         }
     }
