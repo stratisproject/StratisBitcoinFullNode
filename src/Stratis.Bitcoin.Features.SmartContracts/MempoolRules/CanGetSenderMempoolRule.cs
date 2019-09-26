@@ -23,6 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.MempoolRules
             this.senderRetriever = senderRetriever;
         }
 
+        /// <inheritdoc/>
         public override void CheckTransaction(MempoolValidationContext context)
         {
             // If wanting to execute a contract, we must be able to get the sender.

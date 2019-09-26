@@ -22,6 +22,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
     /// <summary>
     /// Controller providing operations on a wallet.
     /// </summary>
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public class WalletController : Controller
     {
@@ -656,7 +657,19 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         HdPath = account.HdPath,
                         AmountConfirmed = balance.AmountConfirmed,
                         AmountUnconfirmed = balance.AmountUnconfirmed,
-                        SpendableAmount = balance.SpendableAmount
+                        SpendableAmount = balance.SpendableAmount,
+                        Addresses = account.GetCombinedAddresses().Select(address =>
+                        {
+                            (Money confirmedAmount, Money unConfirmedAmount) = address.GetBalances();
+                            return new AddressModel
+                            {
+                                Address = address.Address,
+                                IsUsed = address.Transactions.Any(),
+                                IsChange = address.IsChangeAddress(),
+                                AmountConfirmed = confirmedAmount,
+                                AmountUnconfirmed = unConfirmedAmount
+                            };
+                        })
                     });
                 }
 
@@ -697,7 +710,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     CoinType = this.coinType,
                     Address = balanceResult.Address,
                     AmountConfirmed = balanceResult.AmountConfirmed,
-                    AmountUnconfirmed = balanceResult.AmountUnconfirmed
+                    AmountUnconfirmed = balanceResult.AmountUnconfirmed,
+                    SpendableAmount = balanceResult.SpendableAmount
                 });
             }
             catch (Exception e)
@@ -1363,6 +1377,63 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             this.walletSyncManager.SyncFromDate(request.Date);
 
             return this.Ok();
+        }
+
+        [Route("wallet-stats")]
+        [HttpGet]
+        public IActionResult WalletStats([FromQuery] WalletStatsRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            var model = new WalletStatsModel
+            {
+                WalletName = request.WalletName
+            };
+
+            if (!this.ModelState.IsValid)
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+
+            try
+            {
+                IEnumerable<UnspentOutputReference> spendableTransactions = this.walletManager.GetSpendableTransactionsInAccount(new WalletAccountReference(request.WalletName, request.AccountName), request.MinConfirmations);
+
+                model.TotalUtxoCount = spendableTransactions.Count();
+                model.UniqueTransactionCount = spendableTransactions.GroupBy(s => s.Transaction.Id).Select(s => s.Key).Count();
+                model.UniqueBlockCount = spendableTransactions.GroupBy(s => s.Transaction.BlockHeight).Select(s => s.Key).Count();
+                model.FinalizedTransactions = spendableTransactions.Count(s => s.Confirmations >= this.network.Consensus.MaxReorgLength);
+
+                if (request.Verbose)
+                {
+                    model.UtxoAmounts = spendableTransactions
+                                        .GroupBy(s => s.Transaction.Amount)
+                                        .OrderByDescending(sg => sg.Count())
+                                        .Select(sg => new UtxoAmountModel { Amount = sg.Key.ToDecimal(MoneyUnit.BTC), Count = sg.Count() })
+                                        .ToList();
+
+                    // This is number of UTXO originating from the same transaction
+                    // WalletInputsPerTransaction = 2000 and Count = 1; would be the result of one split coin operation into 2000 UTXOs
+                    model.UtxoPerTransaction = spendableTransactions
+                                               .GroupBy(s => s.Transaction.Id)
+                                               .GroupBy(sg => sg.Count())
+                                               .OrderByDescending(sgg => sgg.Count())
+                                               .Select(utxo => new UtxoPerTransactionModel { WalletInputsPerTransaction = utxo.Key, Count = utxo.Count() })
+                                               .ToList();
+
+                    model.UtxoPerBlock = spendableTransactions
+                                               .GroupBy(s => s.Transaction.BlockHeight)
+                                               .GroupBy(sg => sg.Count())
+                                               .OrderByDescending(sgg => sgg.Count())
+                                               .Select(utxo => new UtxoPerBlockModel { WalletInputsPerBlock = utxo.Key, Count = utxo.Count() })
+                                               .ToList();
+                }
+
+                return this.Json(model);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
         }
 
         /// <summary>Creates requested amount of UTXOs each of equal value.</summary>

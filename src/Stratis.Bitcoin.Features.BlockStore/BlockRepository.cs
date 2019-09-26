@@ -107,6 +107,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public bool TxIndex { get; private set; }
 
         private readonly DBreezeSerializer dBreezeSerializer;
+        private readonly IReadOnlyDictionary<uint256, Transaction> genesisTransactions;
 
         public BlockRepository(Network network, DataFolder dataFolder,
             ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer)
@@ -125,6 +126,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.dBreezeSerializer = dBreezeSerializer;
+            this.genesisTransactions = network.GetGenesis().Transactions.ToDictionary(k => k.GetHash());
         }
 
         /// <inheritdoc />
@@ -161,6 +163,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 this.logger.LogTrace("(-)[TX_INDEXING_DISABLED]:null");
                 return default(Transaction);
+            }
+
+            if (this.genesisTransactions.TryGetValue(trxid, out Transaction genesisTransaction))
+            {
+                return genesisTransaction;
             }
 
             Transaction res = null;
@@ -216,6 +223,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         continue;
                     }
 
+                    if (this.genesisTransactions.TryGetValue(trxids[i], out Transaction genesisTransaction))
+                    {
+                        txes[i] = genesisTransaction;
+                        continue;
+                    }
+
                     Row<byte[], byte[]> transactionRow = transaction.Select<byte[], byte[]>(TransactionTableName, trxids[i].ToBytes());
                     if (!transactionRow.Exists)
                     {
@@ -250,6 +263,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 this.logger.LogTrace("(-)[NO_TXINDEX]:null");
                 return default(uint256);
+            }
+
+            if (this.genesisTransactions.ContainsKey(trxid))
+            {
+                return this.network.GenesisHash;
             }
 
             uint256 res = null;

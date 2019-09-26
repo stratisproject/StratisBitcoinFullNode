@@ -1,27 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Rules;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
 using Stratis.Bitcoin.Features.PoA.Behaviors;
 using Stratis.Bitcoin.Features.PoA.Voting;
-using Stratis.Bitcoin.Features.PoA.Voting.ConsensusRules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -153,59 +146,6 @@ namespace Stratis.Bitcoin.Features.PoA
         }
     }
 
-    public class PoAConsensusRulesRegistration : IRuleRegistration
-    {
-        public void RegisterRules(IServiceCollection services)
-        {
-            foreach (Type ruleType in new List<Type>()
-            {
-                typeof(HeaderTimeChecksPoARule),
-                typeof(StratisHeaderVersionRule),
-                typeof(PoAHeaderDifficultyRule),
-                typeof(PoAHeaderSignatureRule)
-            })
-                    services.AddSingleton(typeof(IHeaderValidationConsensusRule), ruleType);
-
-            foreach (Type ruleType in new List<Type>()
-            {
-                typeof(BlockMerkleRootRule),
-                typeof(PoAIntegritySignatureRule)
-            })
-                services.AddSingleton(typeof(IIntegrityValidationConsensusRule), ruleType);
-
-
-            foreach (Type ruleType in new List<Type>()
-            {
-                typeof(SetActivationDeploymentsPartialValidationRule),
-
-                // rules that are inside the method ContextualCheckBlock
-                typeof(TransactionLocktimeActivationRule), // implements BIP113
-                typeof(CoinbaseHeightActivationRule), // implements BIP34
-                typeof(BlockSizeRule),
-
-                // rules that are inside the method CheckBlock
-                typeof(EnsureCoinbaseRule),
-                typeof(CheckPowTransactionRule),
-                typeof(CheckSigOpsRule),
-
-                typeof(PoAVotingCoinbaseOutputFormatRule),
-            })
-                services.AddSingleton(typeof(IPartialValidationConsensusRule), ruleType);
-
-            foreach (Type ruleType in new List<Type>()
-            {
-                typeof(SetActivationDeploymentsFullValidationRule),
-
-                // rules that require the store to be loaded (coinview)
-                typeof(LoadCoinviewRule),
-                typeof(TransactionDuplicationActivationRule), // implements BIP30
-                typeof(PoACoinviewRule),
-                typeof(SaveCoinviewRule)
-            })
-                services.AddSingleton(typeof(IFullValidationConsensusRule), ruleType);
-        }
-    }
-
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
@@ -245,8 +185,6 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<ConsensusQuery>()
                             .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())
                             .AddSingleton<IGetUnspentTransaction, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>());
-
-                        new PoAConsensusRulesRegistration().RegisterRules(services);
 
                         // Voting.
                         services.AddSingleton<VotingManager>();
