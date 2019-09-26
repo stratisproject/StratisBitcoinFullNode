@@ -46,10 +46,7 @@ namespace Stratis.SmartContracts.Core
                 }
             }
 
-            // TODO Use Bloom.Test(Bloom other) in future.
-            filterBloom.Or(bloom);
-
-            return bloom == filterBloom;
+            return bloom.Test(filterBloom);
         }
     }
 }
