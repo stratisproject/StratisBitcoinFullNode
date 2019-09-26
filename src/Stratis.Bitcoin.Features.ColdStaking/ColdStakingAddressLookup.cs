@@ -1,7 +1,6 @@
 ﻿using System;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Wallet;
 
 namespace Stratis.Bitcoin.Features.ColdStaking
 {
