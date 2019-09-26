@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.Diagnostic;
+using Stratis.Features.SQLiteWalletRepository;
 using Stratis.Sidechains.Networks;
 
 namespace Stratis.CirrusD
@@ -55,6 +56,7 @@ namespace Stratis.CirrusD
                 .UseSmartContractPoAConsensus()
                 .UseSmartContractPoAMining()
                 .UseSmartContractWallet()
+                .AddSQLiteWalletRepository()
                 .UseApi()
                 .AddRPC()
                 .UseDiagnosticFeature()

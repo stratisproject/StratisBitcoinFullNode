@@ -8,6 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Stratis.Features.Diagnostic\Stratis.Features.Diagnostic.csproj" />
     <ProjectReference Include="..\Stratis.Features.FederatedPeg\Stratis.Features.FederatedPeg.csproj" />
+    <ProjectReference Include="..\Stratis.Features.SQLiteWalletRepository\Stratis.Features.SQLiteWalletRepository.csproj" />
     <ProjectReference Include="..\Stratis.Sidechains.Networks\Stratis.Sidechains.Networks.csproj" />
   </ItemGroup>
 

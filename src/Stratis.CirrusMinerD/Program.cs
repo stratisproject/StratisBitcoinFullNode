@@ -22,6 +22,7 @@ using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.Collateral;
 using Stratis.Features.Collateral.CounterChain;
+using Stratis.Features.SQLiteWalletRepository;
 using Stratis.Sidechains.Networks;
 
 namespace Stratis.CirrusMinerD
@@ -91,6 +92,7 @@ namespace Stratis.CirrusMinerD
                     options.UsePoAWhitelistedContracts();
                 })
                 .UseSmartContractWallet()
+                .AddSQLiteWalletRepository()
                 .Build();
 
             return node;
@@ -118,6 +120,7 @@ namespace Stratis.CirrusMinerD
                 .AddRPC()
                 .UsePosConsensus()
                 .UseWallet()
+                .AddSQLiteWalletRepository()
                 .AddPowPosMining()
                 .Build();
 

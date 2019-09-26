@@ -31,6 +31,7 @@
     <ProjectReference Include="..\Stratis.Bitcoin.Features.RPC\Stratis.Bitcoin.Features.RPC.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Networks\Stratis.Bitcoin.Networks.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
+    <ProjectReference Include="..\Stratis.Features.SQLiteWalletRepository\Stratis.Features.SQLiteWalletRepository.csproj" />
   </ItemGroup>
 
   <ItemGroup>

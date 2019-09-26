@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Features.ColdStaking;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.Diagnostic;
+using Stratis.Features.SQLiteWalletRepository;
 
 namespace Stratis.StratisD
 {
@@ -35,6 +36,7 @@ namespace Stratis.StratisD
                     .UsePosConsensus()
                     .UseMempool()
                     .UseColdStakingWallet()
+                    .AddSQLiteWalletRepository()
                     .AddPowPosMining()
                     .UseApi()
                     .UseApps()
