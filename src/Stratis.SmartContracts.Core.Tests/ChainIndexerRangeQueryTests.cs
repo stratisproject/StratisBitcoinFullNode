@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.SmartContracts.Networks;
@@ -41,6 +43,59 @@ namespace Stratis.SmartContracts.Core.Tests
             }
 
             Assert.Equal((end ?? (chainLength - 1)) - start + 1, result.Count);
+        }
+
+        [Theory]
+        [InlineData(10, 0, 10)]
+        [InlineData(10, 2, 9)]
+        [InlineData(10, 2, 8)]
+        [InlineData(10, 2, 7)]
+        public void Query_Range_During_Reorg_Success(int chainLength, int start, int? end)
+        {
+            // Simulate a reorg occuring mid-enumeration and check that the query still returns the full old chain.
+
+            var chainIndexer = new ChainIndexer(this.network);
+
+            ChainedHeader[] chainBeforeReorg = this.CreateChain(chainIndexer.Genesis, chainLength);
+
+            // Create a new reorg that removes 3 blocks and adds another 5.
+            ChainedHeader[] chainAfterReorg = this.CreateChain(chainBeforeReorg[chainLength - 3], 5);
+
+            chainIndexer.Initialize(chainBeforeReorg.Last());
+
+            var query = new ChainIndexerRangeQuery(chainIndexer);
+
+            IEnumerator<ChainedHeader> enumerator = query.EnumerateRange(0, 10).GetEnumerator();
+
+            int position = start;
+
+            while (position < (end ?? chainBeforeReorg.Length))
+            {
+                enumerator.MoveNext();
+
+                ChainedHeader item = enumerator.Current;
+
+                // Trigger a reorg at position chainLength - 3
+                if (position == chainLength - 3)
+                {
+                    // Remove two headers.
+                    chainIndexer.Remove(chainIndexer.Tip);
+                    chainIndexer.Remove(chainIndexer.Tip);
+
+                    // Add the reorged chain's headers.
+                    // Note: Most likely is that headers are removed only before the enumeration is completed.
+                    chainIndexer.Add(chainAfterReorg[1]);
+                    chainIndexer.Add(chainAfterReorg[2]);
+                    chainIndexer.Add(chainAfterReorg[3]);
+                    chainIndexer.Add(chainAfterReorg[4]);
+                }
+
+                Assert.Equal(chainBeforeReorg[position], item);
+
+                position++;
+            }
+
+            enumerator.Dispose();
         }
 
         [Fact]
