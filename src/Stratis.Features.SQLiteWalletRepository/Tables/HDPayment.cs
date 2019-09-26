@@ -5,12 +5,13 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 {
     internal class HDPayment
     {
-        public int OutputTxTime { get; set; }
+        public long OutputTxTime { get; set; }
         public string OutputTxId { get; set; }
         public int OutputIndex { get; set; }
         public int SpendIndex { get; set; }
         public string SpendScriptPubKey { get; set; }
         public decimal SpendValue { get; set; }
+        public int SpendIsChange { get; set; }
 
         internal static IEnumerable<string> CreateScript()
         {
@@ -24,6 +25,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 SpendIndex          INTEGER NOT NULL,
                 SpendScriptPubKey   TEXT,
                 SpendValue          DECIMAL NOT NULL,
+                SpendIsChange       INTEGER NOT NULL,
                 PRIMARY KEY(SpendTxTime, SpendTxId, OutputTxId, OutputIndex, ScriptPubKey, SpendIndex)
             )";
         }
@@ -34,7 +36,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 conn.Execute(command);
         }
 
-        internal static IEnumerable<HDPayment> GetAllPayments(DBConnection conn, int spendTxTime, string spendTxId, string outputTxId, int outputIndex, string scriptPubKey)
+        internal static IEnumerable<HDPayment> GetAllPayments(DBConnection conn, long spendTxTime, string spendTxId, string outputTxId, int outputIndex, string scriptPubKey)
         {
             return conn.Query<HDPayment>($@"
                 SELECT  *

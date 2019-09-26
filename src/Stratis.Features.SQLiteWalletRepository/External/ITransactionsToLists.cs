@@ -1,12 +1,16 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Features.SQLiteWalletRepository.External
 {
     public interface ITransactionsToLists
     {
-        bool ProcessTransactions(IEnumerable<Transaction> transactions, ChainedHeader header, uint256 fixedTxId = null);
+        bool ProcessTransactions(IEnumerable<Transaction> transactions, HashHeightPair block, uint256 fixedTxId = null);
     }
 
     public abstract class TransactionsToListsBase : ITransactionsToLists
@@ -17,9 +21,8 @@ namespace Stratis.Features.SQLiteWalletRepository.External
         protected readonly IWalletAddressLookup addressesOfInterest;
 
         public abstract ITopUpTracker GetTopUpTracker(AddressIdentifier address);
-        public abstract void RecordSpend(ChainedHeader header, TxIn txIn, AddressIdentifier address, Transaction spendTx, uint256 spendTxId, int spendIndex);
-        public abstract void RecordReceipt(ChainedHeader header, Script pubKeyScript, TxOut txOut, Transaction outputTx, uint256 outputTxId, int outputIndex);
-        public abstract AddressIdentifier CreateAddress(ITopUpTracker tracker);
+        public abstract void RecordSpend(HashHeightPair block, TxIn txIn, string pubKeyScript, bool isCoinBase, long spendTime, Money totalOut, uint256 spendTxId, int spendIndex);
+        public abstract void RecordReceipt(HashHeightPair block, Script pubKeyScript, TxOut txOut, bool isCoinBase, long creationTime, uint256 outputTxId, int outputIndex, bool isChange);
 
         public TransactionsToListsBase(Network network, IScriptAddressReader scriptAddressReader, IWalletTransactionLookup transactionsOfInterest, IWalletAddressLookup addressesOfInterest)
         {
@@ -48,7 +51,7 @@ namespace Stratis.Features.SQLiteWalletRepository.External
                         yield return PayToScriptHashTemplate.Instance.ExtractScriptPubKeyParameters(redeemScript).ScriptPubKey;
                         break;
                     default:
-                        if (this.scriptAddressReader is IScriptDestinationReader scriptDestinationReader)
+                        if (this.scriptAddressReader is ScriptDestinationReader scriptDestinationReader)
                         {
                             foreach (TxDestination destination in scriptDestinationReader.GetDestinationFromScriptPubKey(this.network, redeemScript))
                             {
@@ -68,7 +71,7 @@ namespace Stratis.Features.SQLiteWalletRepository.External
             }
         }
 
-        public bool ProcessTransactions(IEnumerable<Transaction> transactions, ChainedHeader header, uint256 fixedTxId = null)
+        public bool ProcessTransactions(IEnumerable<Transaction> transactions, HashHeightPair block, uint256 fixedTxId = null)
         {
             bool additions = false;
 
@@ -93,7 +96,7 @@ namespace Stratis.Features.SQLiteWalletRepository.External
                     {
                         // Record our outputs that are being spent.
                         foreach (AddressIdentifier address in addresses)
-                            RecordSpend(header, txIn, address, tx, txId, i);
+                            RecordSpend(block, txIn, address.ScriptPubKey, tx.IsCoinBase | tx.IsCoinStake, tx.Time, tx.TotalOut, txId, i);
 
                         additions = true;
                         addSpendTx = true;
@@ -128,7 +131,7 @@ namespace Stratis.Features.SQLiteWalletRepository.External
                                     // If an address inside the address buffer is being used then top-up the buffer.
                                     while (address.AddressIndex >= tracker.NextAddressIndex)
                                     {
-                                        AddressIdentifier newAddress = CreateAddress(tracker);
+                                        AddressIdentifier newAddress = tracker.CreateAddress();
 
                                         // Add the new address to our addresses of interest.
                                         addressesOfInterest.AddTentative(Script.FromHex(newAddress.ScriptPubKey),
@@ -144,7 +147,7 @@ namespace Stratis.Features.SQLiteWalletRepository.External
                             }
 
                             // Record outputs received by our wallets.
-                            this.RecordReceipt(header, pubKeyScript, txOut, tx, txId, i);
+                            this.RecordReceipt(block, pubKeyScript, txOut, tx.IsCoinBase | tx.IsCoinStake, tx.Time, txId, i, containsAddress && address.AddressType == 1);
 
                             additions = true;
 

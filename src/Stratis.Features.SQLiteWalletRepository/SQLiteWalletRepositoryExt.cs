@@ -37,7 +37,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal static HdAddress ToHdAddress(this SQLiteWalletRepository repo, HDAddress address)
         {
-            var pubKeyScript = new Script(Encoders.Hex.DecodeData(address.PubKey)); // P2PK
+            var pubKeyScript = (address.PubKey == null) ? null : new Script(Encoders.Hex.DecodeData(address.PubKey)); // P2PK
             var scriptPubKey = new Script(Encoders.Hex.DecodeData(address.ScriptPubKey));
 
             var res = new HdAddress()
@@ -54,34 +54,54 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal static TransactionData ToTransactionData(this SQLiteWalletRepository repo, HDTransactionData transactionData, IEnumerable<HDPayment> payments)
         {
-            return new TransactionData()
+            TransactionData txData = new TransactionData()
             {
                 Amount = new Money(transactionData.Value, MoneyUnit.BTC),
-                BlockHash = uint256.Parse(transactionData.OutputBlockHash),
+                BlockHash = (transactionData.OutputBlockHash == null) ? null : uint256.Parse(transactionData.OutputBlockHash),
                 BlockHeight = transactionData.OutputBlockHeight,
                 CreationTime = DateTimeOffset.FromUnixTimeSeconds(transactionData.OutputTxTime),
                 Id = uint256.Parse(transactionData.OutputTxId),
                 Index = transactionData.OutputIndex,
                 // These two are always updated and used in tandem so we update them from a single source value.
-                IsCoinBase = transactionData.OutputTxIsCoinBase == 1,
-                IsCoinStake = transactionData.OutputTxIsCoinBase == 1,
+                IsCoinBase = transactionData.OutputTxIsCoinBase == 1 && transactionData.OutputIndex == 0,
+                IsCoinStake = transactionData.OutputTxIsCoinBase == 1 && transactionData.OutputIndex != 0,
                 // IsPropagated  // Not used currently.
                 ScriptPubKey = new Script(Encoders.Hex.DecodeData(transactionData.RedeemScript)),
                 SpendingDetails = (transactionData.SpendTxId == null) ? null : new SpendingDetails()
                 {
                     BlockHeight = transactionData.SpendBlockHeight,
                     // BlockIndex // Not used currently.
-                    CreationTime = DateTimeOffset.FromUnixTimeSeconds((int)transactionData.SpendTxTime),
+                    CreationTime = DateTimeOffset.FromUnixTimeSeconds((long)transactionData.SpendTxTime),
                     IsCoinStake = transactionData.SpendTxIsCoinBase == 1,
                     TransactionId = uint256.Parse(transactionData.SpendTxId),
                     Payments = payments.Select(p => new PaymentDetails()
                     {
-                         Amount = new Money((decimal)p.SpendValue, MoneyUnit.BTC),
-                         DestinationScriptPubKey = new Script(Encoders.Hex.DecodeData(p.SpendScriptPubKey)),
-                         OutputIndex = p.SpendIndex
+                        Amount = new Money((decimal)p.SpendValue, MoneyUnit.BTC),
+                        DestinationScriptPubKey = new Script(Encoders.Hex.DecodeData(p.SpendScriptPubKey)),
+                        OutputIndex = p.SpendIndex
                     }).ToList()
                 }
             };
+
+            if (txData.SpendingDetails == null || repo.ScriptAddressReader == null)
+                return txData;
+
+            try
+            {
+                IEnumerable<PaymentDetails> allDetails = txData.SpendingDetails.Payments;
+                var lookup = allDetails.Select(d => d.DestinationScriptPubKey).Distinct().ToDictionary(d => d, d => (string)null);
+                foreach (Script script in lookup.Keys.ToList())
+                    lookup[script] = repo.ScriptAddressReader.GetAddressFromScriptPubKey(repo.Network, script);
+
+                foreach (PaymentDetails paymentDetails in allDetails)
+                    paymentDetails.DestinationAddress = lookup[paymentDetails.DestinationScriptPubKey];
+            }
+            catch (Exception err)
+            {
+                throw;
+            }
+
+            return txData;
         }
     }
 }
