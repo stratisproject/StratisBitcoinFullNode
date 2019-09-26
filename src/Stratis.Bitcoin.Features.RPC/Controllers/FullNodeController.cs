@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// Retrieves a transaction given a transaction hash in either simple or verbose form.
         /// </summary>
         /// <param name="txid">The transaction hash.</param>
-        /// <param name="verbose">Non-zero if verbose model wanted.</param>
+        /// <param name="verbose">True if verbose model wanted.</param>
         /// <param name="blockHash">The hash of the block in which to look for the transaction.</param>
         /// <returns>A <see cref="TransactionBriefModel"/> or <see cref="TransactionVerboseModel"/> as specified by verbose. <c>null</c> if no transaction matching the hash.</returns>
         /// <exception cref="ArgumentException">Thrown if txid is invalid uint256.</exception>"
