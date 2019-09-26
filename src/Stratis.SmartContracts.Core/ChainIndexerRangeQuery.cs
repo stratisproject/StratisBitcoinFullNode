@@ -25,33 +25,41 @@ namespace Stratis.SmartContracts.Core
             if (toBlockHeight.HasValue && toBlockHeight.Value < fromBlockHeight)
                 yield break;
 
-            ChainedHeader fromHeader = this.chainIndexer.GetHeader(fromBlockHeight);
+            // Snapshot the tip here.
+            ChainedHeader tip = this.chainIndexer.Tip;
 
-            if (fromHeader == null)
+            if (tip.Height < fromBlockHeight)
             {
                 yield break;
             }
 
-            // Return the start header.
-            yield return fromHeader;
+            ChainedHeader toHeader = toBlockHeight.HasValue && toBlockHeight <= tip.Height
+                ? this.chainIndexer.GetHeader(toBlockHeight.Value)
+                : tip;
 
-            // Enumerating the remaining headers in this way ensures that if a reorg occurs during enumeration
-            // we will only return headers up until the reorg point.
-            int i = fromHeader.Height + 1;
-            ChainedHeader prev = fromHeader;
-
-            while (true)
+            if (toHeader == null)
             {
-                if (toBlockHeight.HasValue && i > toBlockHeight.Value)
-                    yield break;
+                yield break;
+            }
 
-                ChainedHeader b = this.chainIndexer.GetHeader(i);
-                if ((b == null) || (b.Previous != prev))
-                    yield break;
+            // In order to 'snapshot' the chain, enumerate all headers in reverse order from the tip.
+            var chain = new List<ChainedHeader>();
 
-                yield return b;
-                i++;
-                prev = b;
+            ChainedHeader currentHeader = toHeader;
+
+            while (currentHeader != null)
+            {
+                chain.Add(currentHeader);
+
+                if (currentHeader.Height == fromBlockHeight)
+                    break;
+
+                currentHeader = currentHeader.Previous;
+            }
+
+            for (int i = chain.Count - 1; i >= 0; i--)
+            {
+                yield return chain[i];
             }
         }
     }

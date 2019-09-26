@@ -65,7 +65,7 @@ namespace Stratis.SmartContracts.Core.Tests
 
             var query = new ChainIndexerRangeQuery(chainIndexer);
 
-            IEnumerator<ChainedHeader> enumerator = query.EnumerateRange(0, 10).GetEnumerator();
+            IEnumerator<ChainedHeader> enumerator = query.EnumerateRange(start, end).GetEnumerator();
 
             int position = start;
 
