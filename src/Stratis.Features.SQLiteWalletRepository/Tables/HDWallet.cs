@@ -18,7 +18,15 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         public string EncryptedSeed { get; set; }
         public string ChainCode { get; set; }
         public string BlockLocator { get; set; }
-        public int CreationTime { get; set; }
+        public long CreationTime { get; set; }
+
+        internal uint256[] GetBlockLocatorHashes()
+        {
+            if (string.IsNullOrEmpty(this.BlockLocator.Trim()))
+                return new uint256[] { };
+
+            return this.BlockLocator.Split(',').Select(strHash => uint256.Parse(strHash)).ToArray();
+        }
 
         internal static IEnumerable<string> CreateScript()
         {
@@ -95,7 +103,33 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 WHERE  EncryptedSeed = ?", encryptedSeed);
         }
 
-        internal static void AdvanceTip(SQLiteConnection conn, HDWallet wallet, ChainedHeader newTip, HashHeightPair prevTip)
+        internal class HeightHashPair
+        {
+            internal int Height { get; set; }
+            internal string Hash { get; set; }
+        }
+
+        /*
+        internal static HeightHashPair GreatestBlockHeightBeforeOrAt(SQLiteConnection conn, int walletId, int height)
+        {
+            return conn.FindWithQuery<HeightHashPair>($@"
+                SELECT  OutputBlockHeight BlockHeight
+                ,       OutputBlockHash BlockHash
+                FROM    HDTransactionData
+                WHERE   WalletId = { walletId }
+                AND     OutputBlockHeight <= { height }
+                UNION   ALL
+                SELECT  SpendBlockHeight BlockHeight
+                ,       SpendBlockHash BlockHash
+                FROM    HDTransactionData
+                WHERE   WalletId = { walletId }
+                AND     SpendBlockHeight <= { height }
+                ORDER   BY BlockHeight desc
+                LIMIT   1");
+        }
+        */
+
+        internal static void AdvanceTip(SQLiteConnection conn, HDWallet wallet, ChainedHeader newTip, uint256 prevTipHash)
         {
             uint256 lastBlockSyncedHash = newTip?.HashBlock ?? uint256.Zero;
             int lastBlockSyncedHeight = newTip?.Height ?? -1;
@@ -108,23 +142,26 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                     SET    LastBlockSyncedHash = '{lastBlockSyncedHash}',
                            LastBlockSyncedHeight = {lastBlockSyncedHeight},
                            BlockLocator = '{blockLocator}'
-                    WHERE  LastBlockSyncedHash = '{(prevTip?.Hash ?? uint256.Zero)}' {
+                    WHERE  LastBlockSyncedHash = '{prevTipHash}' {
                     // Respect the wallet name if provided.
                     ((wallet?.Name != null) ? $@"
                     AND    Name = '{wallet?.Name}'" : "")}");
         }
 
-        internal void SetLastBlockSynced(ChainedHeader lastBlockSynced, Network network)
+        internal void SetLastBlockSynced(HashHeightPair lastBlockSynced, BlockLocator blockLocator, Network network)
         {
-            uint256 lastBlockSyncedHash = lastBlockSynced?.HashBlock ?? network.GenesisHash;
-            int lastBlockSyncedHeight = lastBlockSynced?.Height ?? 0;
-            string blockLocator = "";
-            if (lastBlockSynced != null)
-                blockLocator = string.Join(",", lastBlockSynced?.GetLocator().Blocks);
+            uint256 lastBlockSyncedHash = lastBlockSynced?.Hash ?? (uint256)0;
+
+            Guard.Assert(((blockLocator?.Blocks?.Count ?? 0) == 0 && lastBlockSyncedHash == 0) || (blockLocator.Blocks[0] == lastBlockSyncedHash));
 
             this.LastBlockSyncedHash = lastBlockSyncedHash.ToString();
-            this.LastBlockSyncedHeight = lastBlockSyncedHeight;
-            this.BlockLocator = blockLocator;
+            this.LastBlockSyncedHeight = lastBlockSynced?.Height ?? -1;
+            this.BlockLocator = (blockLocator == null) ? "" : string.Join(",", blockLocator.Blocks);
+        }
+
+        internal void SetLastBlockSynced(ChainedHeader lastBlockSynced, Network network)
+        {
+            SetLastBlockSynced((lastBlockSynced == null) ? null : new HashHeightPair(lastBlockSynced), lastBlockSynced?.GetLocator(), network);
         }
 
         internal ChainedHeader GetFork(ChainedHeader chainTip)
@@ -133,7 +170,12 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 return null;
 
             if (chainTip.Height > this.LastBlockSyncedHeight)
+            {
+                if (this.LastBlockSyncedHeight < 0)
+                    return null;
+
                 chainTip = chainTip.GetAncestor(this.LastBlockSyncedHeight);
+            }
 
             if (chainTip.Height == this.LastBlockSyncedHeight)
             {
@@ -167,10 +209,13 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             if (lastBlockSynced == null)
                 return true;
 
-            if (this.LastBlockSyncedHeight == lastBlockSynced.Height)
+            if (this.LastBlockSyncedHeight <= lastBlockSynced.Height)
                 return uint256.Parse(this.LastBlockSyncedHash) == lastBlockSynced.HashBlock;
 
-            uint256[] hashes = this.BlockLocator.Split(',').Select(strHash => uint256.Parse(strHash)).ToArray();
+            uint256[] hashes = GetBlockLocatorHashes();
+            if (hashes.Length == 0)
+                return false;
+
             int[] heights = ChainedHeaderExt.GetLocatorHeights(this.LastBlockSyncedHeight).ToArray();
 
             return hashes.Select((h, n) => lastBlockSynced.HashBlock == h && lastBlockSynced.Height == heights[n]).Any(e => true);

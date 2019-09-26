@@ -15,6 +15,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             this.conn = conn;
             this.transactionDepth = conn.TransactionDepth;
+            conn.BeginTransaction();
         }
 
         public void Rollback()

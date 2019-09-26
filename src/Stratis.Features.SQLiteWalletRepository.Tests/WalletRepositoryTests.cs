@@ -212,7 +212,14 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     byte[] chainCode = extendedKey.ChainCode;
                     ITransactionContext dbTran = repo.BeginTransaction(account.WalletName);
                     repo.CreateWallet(account.WalletName, encryptedSeed, chainCode);
-                    repo.CreateAccount(account.WalletName, 0, account.AccountName, password);
+
+                    // Get the extended pub key used to generate addresses for this account.
+                    Key privateKey = Key.Parse(encryptedSeed, password, this.network);
+                    var seedExtKey = new ExtKey(privateKey, chainCode);
+                    ExtKey addressExtKey = seedExtKey.Derive(new KeyPath($"m/44'/{this.network.Consensus.CoinType}'/0'"));
+                    ExtPubKey extPubKey = addressExtKey.Neuter();
+
+                    repo.CreateAccount(account.WalletName, 0, account.AccountName, extPubKey);
                     dbTran.Commit();
 
                     // Verify the wallet exisits.
@@ -222,6 +229,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     Block block0 = this.network.Consensus.ConsensusFactory.CreateBlock();
                     BlockHeader blockHeader0 = block0.Header;
                     var chainedHeader0 = new ChainedHeader(blockHeader0, this.network.GenesisHash, null);
+
+                    repo.ProcessBlock(block0, chainedHeader0, account.WalletName);
 
                     Block block1 = this.network.Consensus.ConsensusFactory.CreateBlock();
                     BlockHeader blockHeader1 = block1.Header;
@@ -241,9 +250,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     var chainedHeader1 = new ChainedHeader(blockHeader1, blockHeader1.GetHash(), chainedHeader0);
                     repo.ProcessBlock(block1, chainedHeader1, account.WalletName);
 
-                    (Money totalAmount1, Money confirmedAmount1) = repo.GetAccountBalance(account, chainedHeader1.Height, 2);
+                    (Money totalAmount1, Money confirmedAmount1, Money spendableAmount1) = repo.GetAccountBalance(account, chainedHeader1.Height, 2);
                     Assert.Equal(new Money(100m, MoneyUnit.BTC), totalAmount1);
-                    Assert.Equal(new Money(0m, MoneyUnit.BTC), confirmedAmount1);
+                    Assert.Equal(new Money(100m, MoneyUnit.BTC), confirmedAmount1);
+                    Assert.Equal(new Money(0m, MoneyUnit.BTC), spendableAmount1);
 
                     // List the unspent outputs.
                     List<UnspentOutputReference> outputs1 = repo.GetSpendableTransactionsInAccount(account, chainedHeader1.Height, 0).ToList();
@@ -274,9 +284,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     var chainedHeader2 = new ChainedHeader(blockHeader2, blockHeader2.HashPrevBlock, chainedHeader1);
                     repo.ProcessBlock(block2, chainedHeader2, account.WalletName);
 
-                    (Money totalAmount2, Money confirmedAmount2) = repo.GetAccountBalance(account, chainedHeader1.Height, 2);
+                    (Money totalAmount2, Money confirmedAmount2, Money spendableAmount2) = repo.GetAccountBalance(account, chainedHeader1.Height, 2);
                     Assert.Equal(new Money(9m, MoneyUnit.BTC), totalAmount2);
-                    Assert.Equal(new Money(0m, MoneyUnit.BTC), confirmedAmount2);
+                    Assert.Equal(new Money(9m, MoneyUnit.BTC), confirmedAmount2);
+                    Assert.Equal(new Money(0m, MoneyUnit.BTC), spendableAmount2);
 
                     // List the unspent outputs.
                     List<UnspentOutputReference> outputs2 = repo.GetSpendableTransactionsInAccount(account, chainedHeader2.Height, 0).ToList();
@@ -418,7 +429,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                         List<UnspentOutputReference> spendable = repo.GetSpendableTransactionsInAccount(
                             new WalletAccountReference(walletName, hdAccount.Name),
-                            walletHeight, (int)network.Consensus.CoinbaseMaturity).ToList();
+                            walletHeight).ToList();
 
                         Money amountRepo = spendable.Sum(s => s.Transaction.Amount);
 
@@ -436,7 +447,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             CanProcessBlocks(false, walletNames);
         }
 
-        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
+        [Fact]//(Skip = "Configure this test then run it manually. Comment this Skip.")]
         public void CanProcessBinanceAddresses()
         {
             // 180 Binance addresses.
@@ -640,7 +651,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                 repo.CreateAccount("wallet1", 0, "account 0", (ExtPubKey)null);
                 repo.AddWatchOnlyAddresses("wallet1", "account 0", 0, binance
                     .Select(b => b.Item1)
-                    .Select(addr => BitcoinAddress.Create(addr, network).ScriptPubKey)
+                    .Select(addr => new HdAddress() { ScriptPubKey = BitcoinAddress.Create(addr, network).ScriptPubKey })
                     .ToList());
 
                 // Process the blocks and calculate statistics.

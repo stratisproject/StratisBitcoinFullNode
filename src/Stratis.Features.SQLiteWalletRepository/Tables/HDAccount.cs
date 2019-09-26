@@ -10,7 +10,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
         public int AccountIndex { get; set; }
         public string AccountName { get; set; }
         public string ExtPubKey { get; set; }
-        public int CreationTime { get; set; }
+        public long CreationTime { get; set; }
 
         private static Dictionary<string, ExtPubKey> extPubKeys = new Dictionary<string, ExtPubKey>();
 
@@ -45,12 +45,15 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
             return conn.Find<HDAccount>(a => a.WalletId == walletId && a.AccountIndex == accountIndex);
         }
 
-        internal static IEnumerable<HDAccount> GetAccounts(SQLiteConnection conn, int walletId)
+        internal static IEnumerable<HDAccount> GetAccounts(SQLiteConnection conn, int walletId, string accountName = null)
         {
             return conn.Query<HDAccount>($@"
                     SELECT  *
                     FROM    HDAccount
-                    WHERE   WalletId = {walletId}");
+                    WHERE   WalletId = ? {((accountName == null) ? "" : $@"
+                    AND     AccountName = ?")}",
+                    walletId,
+                    accountName);
         }
 
         internal static void CreateTable(SQLiteConnection conn)
