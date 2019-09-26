@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.AsyncWork;
@@ -15,7 +14,6 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Features.SQLiteWalletRepository;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -28,13 +26,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly StoreSettings storeSettings;
         private readonly ISignals signals;
         private readonly IAsyncProvider asyncProvider;
-        private readonly IWalletRepository walletRepository;
         private List<(string name, ChainedHeader tipHeader)> wallets = new List<(string name, ChainedHeader tipHeader)>();
         private ConcurrentDictionary<string, WalletSyncState> walletStateMap = new ConcurrentDictionary<string, WalletSyncState>();
         private readonly INodeLifetime nodeLifetime;
         private IAsyncLoop walletSynchronisationLoop;
-        private SubscriptionToken blockConnectedSubscription;
         private SubscriptionToken transactionReceivedSubscription;
+        private CancellationTokenSource syncCancellationToken;
+        private object lockObject;
 
         protected ChainedHeader walletTip;
 
@@ -44,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool ContainsWallets => this.wallets.Any();
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ChainIndexer chainIndexer,
-            Network network, IBlockStore blockStore, StoreSettings storeSettings, ISignals signals, IAsyncProvider asyncProvider, IWalletRepository walletRepository, INodeLifetime nodeLifetime)
+            Network network, IBlockStore blockStore, StoreSettings storeSettings, ISignals signals, IAsyncProvider asyncProvider, INodeLifetime nodeLifetime)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
@@ -54,7 +52,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(storeSettings, nameof(storeSettings));
             Guard.NotNull(signals, nameof(signals));
             Guard.NotNull(asyncProvider, nameof(asyncProvider));
-            Guard.NotNull(walletRepository, nameof(walletRepository));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 
             this.walletManager = walletManager;
@@ -64,8 +61,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.signals = signals;
             this.asyncProvider = asyncProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.walletRepository = walletRepository;
             this.nodeLifetime = nodeLifetime;
+            this.syncCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping);
+            this.lockObject = new object();
         }
 
         /// <inheritdoc />
@@ -83,14 +81,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletSynchronisationLoop = this.asyncProvider.CreateAndRunAsyncLoop("WalletSyncManager.OrchestrateWalletSync",
                 token =>
                 {
-                    this.OrchestrateWalletSync(); 
+                    this.OrchestrateWalletSync();
                     return Task.CompletedTask;
-                }, 
-                this.nodeLifetime.ApplicationStopping, 
+                },
+                this.syncCancellationToken.Token,
                 TimeSpan.FromSeconds(1),
                 TimeSpan.FromSeconds(1));
 
-            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(this.OnBlockConnected);
             this.transactionReceivedSubscription = this.signals.Subscribe<TransactionReceived>(this.OnTransactionAvailable);
         }
 
@@ -99,118 +96,107 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.ProcessTransaction(transactionReceived.ReceivedTransaction);
         }
 
-        private void OnBlockConnected(BlockConnected blockConnected)
-        {
-            this.ProcessBlock(blockConnected.ConnectedBlock.Block);
-        }
-
         /// <inheritdoc />
         public void Stop()
         {
-            this.signals.Unsubscribe(this.blockConnectedSubscription);
+            this.syncCancellationToken.Cancel();
+            while (this.walletSynchronisationLoop?.RunningTask.Status != TaskStatus.Canceled &&
+                   this.walletSynchronisationLoop?.RunningTask.Status != TaskStatus.Faulted &&
+                   this.walletSynchronisationLoop?.RunningTask.Status != TaskStatus.RanToCompletion)
+            {
+                Thread.Yield();
+            }
+
             this.signals.Unsubscribe(this.transactionReceivedSubscription);
         }
 
         /// <inheritdoc />
         public virtual void ProcessBlock(Block block)
         {
-            // ToDo Fshutdown to come up with how to call this
-            // in conjunction with Sync Job
+            lock (this.lockObject)
+            {
+                this.walletManager.ProcessBlock(block);
+            }
         }
 
         /// <inheritdoc />
         public virtual void ProcessTransaction(Transaction transaction)
         {
-            if (!this.ContainsWallets) return;
+            lock (this.lockObject)
+            {
+                this.walletManager.ProcessTransaction(transaction);
+            }
+        }
 
-            Guard.NotNull(transaction, nameof(transaction));
-            
-            this.wallets.ForEach(wallet => this.walletRepository.ProcessTransaction(wallet.name, transaction));
+        /// <inheritdoc />
+        public void ProcessBlocks()
+        {
+            lock (this.lockObject)
+            {
+                this.walletManager.ProcessBlocks((height) => { return this.BatchBlocksFromRange(height, this.chainIndexer.Tip.Height); });
+            }
         }
 
         /// <inheritdoc />
         public virtual void SyncFromDate(DateTime date)
         {
-            throw new Exception("Not Implemented!");
+            lock (this.lockObject)
+            {
+                int syncFromHeight = this.chainIndexer.GetHeightAtTime(date);
+
+                this.SyncFromHeight(syncFromHeight);
+            }
         }
 
         /// <inheritdoc />
-        public virtual void SyncFromHeight(int height)
+        public virtual void SyncFromHeight(int height, string walletName = null)
         {
-            throw new Exception("Not Implemented!");
-        }
-
-        private void OrchestrateWalletSync()
-        {
-            if (!ReadWallets()) return;
-
-            this.walletTip = this.wallets.OrderByDescending(wallet => wallet.tipHeader.Height).First().tipHeader;
-
-            Parallel.ForEach(this.wallets, wallet =>
+            lock (this.lockObject)
             {
-                try
-                {
-                    ChainedHeader walletTip = this.walletRepository.FindFork(wallet.name, this.chainIndexer.Tip);
-                    bool walletIsNotSyncing = this.walletStateMap.TryAdd(wallet.name, WalletSyncState.Syncing);
+                if (height > (this.chainIndexer.Tip?.Height ?? -1))
+                    throw new WalletException("Can't start sync beyond end of chain");
 
-                    if (walletIsNotSyncing)
-                    {
-                        this.walletRepository.RewindWallet(wallet.name, walletTip);
-                        ProccessRangeToRepo(walletTip.Height + 1, this.chainIndexer.Tip.Height, wallet.name);
-                        this.walletStateMap.TryRemove(wallet.name, out _);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    //ToDo handle exception here
-                    this.walletStateMap.TryRemove(wallet.name, out _);
-                    //this needs to be elaborated how it will work during reorg
-                    this.logger.LogInformation($"Error calling find fork on {wallet}");
-                }
-            });
+                if (walletName != null)
+                    this.walletManager.RewindWallet(walletName, this.chainIndexer.GetHeader(height - 1));
+                else
+                    foreach (string wallet in this.walletManager.GetWalletsNames())
+                        this.walletManager.RewindWallet(wallet, this.chainIndexer.GetHeader(height - 1));
+            }
         }
 
-        private bool ReadWallets()
+        internal void OrchestrateWalletSync()
         {
             try
             {
-                this.wallets = new List<(string name, ChainedHeader tipHeader)>();
-                ((SQLiteWalletRepository) this.walletRepository).GetWalletNames().ForEach(wallet =>
+                this.ProcessBlocks();
+            }
+            catch (Exception)
+            {
+                // TODO: Log the error but keep going.
+            }
+        }
+
+        public IEnumerable<(ChainedHeader, Block)> BatchBlocksFromRange(int leftBoundry, int rightBoundry)
+        {
+            for (int height = leftBoundry; height <= rightBoundry && !this.syncCancellationToken.IsCancellationRequested;)
+            {
+                var hashes = new List<uint256>();
+                for (int i = 0; i < 100 && (height + i) <= rightBoundry; i++)
                 {
-                    try
-                    {
-                        this.wallets.Add((wallet, this.walletRepository.FindFork(wallet, this.chainIndexer.Tip)));
-                    }
-                    catch
-                    {
-                        // Dont add wallet if cant figure out what height its on
-                        //return false;
-                    }
-                });
-           
-                return this.wallets.Any();
-            }
-            catch
-            {
-                return false;
-            }
-        }
+                    ChainedHeader header = this.chainIndexer.GetHeader(height + i);
+                    hashes.Add(header.HashBlock);
+                }
 
-        private void ProccessRangeToRepo(int leftBoundry, int rightBoundry, string wallet)
-        {
-            IEnumerable<(ChainedHeader, Block)> range =
-                this.BatchBlocksFromRange(leftBoundry, rightBoundry, wallet);
+                long flagFall = DateTime.Now.Ticks;
 
-            this.walletRepository.ProcessBlocks(range, wallet);
-        }
+                List<Block> blocks = this.blockStore.GetBlocks(hashes);
 
-        private IEnumerable<(ChainedHeader, Block)> BatchBlocksFromRange(int leftBoundry, int rightBoundry, string wallet)
-        {
-            for (int x = leftBoundry; x <= rightBoundry; x++)
-            {
-                ChainedHeader chainedHeader = this.chainIndexer.GetHeader(x);
-                Block block = this.blockStore.GetBlock(chainedHeader.HashBlock);
-                yield return (chainedHeader, block);
+                var buffer = new List<(ChainedHeader, Block)>();
+                for (int i = 0; i < 100 && height <= rightBoundry && !this.syncCancellationToken.IsCancellationRequested; height++, i++)
+                {
+                    ChainedHeader header = this.chainIndexer.GetHeader(height);
+                    yield return ((header, blocks[i]));
+                }
             }
         }
 
@@ -228,7 +214,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
     }
-    
+
     /// <summary>
     /// This should be further developed for monitoring state per each wallet
     /// </summary>
