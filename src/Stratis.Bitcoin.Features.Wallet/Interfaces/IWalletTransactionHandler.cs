@@ -1,5 +1,4 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.Wallet;
 
 namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 {

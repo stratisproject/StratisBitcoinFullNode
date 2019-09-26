@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.BuilderExtensions;
-using Stratis.Bitcoin.Wallet;
 
 namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 {
@@ -25,12 +24,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <summary>
         /// The last processed block.
         /// </summary>
-        uint256 WalletTipHash { get; set; }
+        uint256 WalletTipHash { get; }
 
         /// <summary>
         /// The last processed block height.
         /// </summary>
-        int WalletTipHeight { get; set; }
+        int WalletTipHeight { get; }
 
         /// <summary>
         /// Lists all spendable transactions from all accounts in the wallet.
@@ -70,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="passphrase">The passphrase used in the seed.</param>
         /// <param name="mnemonic">The user's mnemonic for the wallet.</param>
         /// <returns>A mnemonic defining the wallet's seed used to generate addresses.</returns>
-        Mnemonic CreateWallet(string password, string name, string passphrase = null, Mnemonic mnemonic = null);
+        (Wallet, Mnemonic) CreateWallet(string password, string name, string passphrase = null, Mnemonic mnemonic = null);
 
         /// <summary>
         /// Signs a string message.
@@ -92,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         bool VerifySignedMessage(string externalAddress, string message, string signature);
 
         /// <summary>
-        /// Loads a wallet from a file.
+        /// Checks the wallet password.
         /// </summary>
         /// <param name="password">The user's password.</param>
         /// <param name="name">The name of the wallet.</param>
@@ -122,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="passphrase">The passphrase used in the seed.</param>
         /// <param name="creationTime">The date and time this wallet was created.</param>
         /// <returns>The recovered wallet.</returns>
-        Wallet RecoverWallet(string password, string name, string mnemonic, DateTime creationTime, string passphrase = null);
+        Wallet RecoverWallet(string password, string name, string mnemonic, DateTime creationTime, string passphrase = null, ChainedHeader lastBlockSynced = null);
 
         /// <summary>
         /// Recovers a wallet using extended public key and account index.
@@ -132,7 +131,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="accountIndex">The account number.</param>
         /// <param name="creationTime">The date and time this wallet was created.</param>
         /// <returns></returns>
-        Wallet RecoverWallet(string name, ExtPubKey extPubKey, int accountIndex, DateTime creationTime);
+        Wallet RecoverWallet(string name, ExtPubKey extPubKey, int accountIndex, DateTime creationTime, ChainedHeader lastBlockSynced = null);
 
         /// <summary>
         /// Deletes a wallet.
@@ -219,13 +218,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         AddressBalance GetAddressBalance(string address);
 
         /// <summary>
-        /// Gets some general information about a wallet.
-        /// </summary>
-        /// <param name="walletName">The name of the wallet.</param>
-        /// <returns></returns>
-        Wallet GetWallet(string walletName);
-
-        /// <summary>
         /// Gets a list of accounts.
         /// </summary>
         /// <param name="walletName">The name of the wallet to look into.</param>
@@ -248,28 +240,22 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <param name="block">The block.</param>
         /// <param name="chainedHeader">The blocks chain of headers.</param>
-        void ProcessBlock(Block block, ChainedHeader chainedHeader);
+        void ProcessBlock(Block block, ChainedHeader chainedHeader = null);
+
+        void ProcessBlocks(Func<int, IEnumerable<(ChainedHeader, Block)>> blockProvider);
 
         /// <summary>
         /// Processes a transaction received from the network.
         /// </summary>
         /// <param name="transaction">The transaction.</param>
-        /// <param name="blockHeight">The height of the block this transaction came from. Null if it was not a transaction included in a block.</param>
-        /// <param name="block">The block in which this transaction was included.</param>
-        /// <param name="isPropagated">Transaction propagation state.</param>
         /// <returns>A value indicating whether this transaction affects the wallet.</returns>
-        bool ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null, bool isPropagated = true);
+        bool ProcessTransaction(Transaction transaction);
 
         /// <summary>
         /// Saves the wallet into the file system.
         /// </summary>
         /// <param name="wallet">The wallet to save.</param>
-        void SaveWallet(Wallet wallet);
-
-        /// <summary>
-        /// Saves all the loaded wallets into the file system.
-        /// </summary>
-        void SaveWallets();
+        void SaveWallet(string wallet);
 
         /// <summary>
         /// Gets the extension of the wallet files.
@@ -284,30 +270,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         IEnumerable<string> GetWalletsNames();
 
         /// <summary>
-        /// Updates the wallet with the height of the last block synced.
-        /// </summary>
-        /// <param name="wallet">The wallet to update.</param>
-        /// <param name="chainedHeader">The height of the last block synced.</param>
-        void UpdateLastBlockSyncedHeight(Wallet wallet, ChainedHeader chainedHeader);
-
-        /// <summary>
-        /// Updates all the loaded wallets with the height of the last block synced.
-        /// </summary>
-        /// <param name="chainedHeader">The height of the last block synced.</param>
-        void UpdateLastBlockSyncedHeight(ChainedHeader chainedHeader);
-
-        /// <summary>
         /// Gets a wallet given its name.
         /// </summary>
         /// <param name="walletName">The name of the wallet to get.</param>
         /// <returns>A wallet or null if it doesn't exist</returns>
-        Wallet GetWalletByName(string walletName);
-
-        /// <summary>
-        /// Gets the block locator of the first loaded wallet.
-        /// </summary>
-        /// <returns></returns>
-        ICollection<uint256> GetFirstWalletBlockLocator();
+        Wallet GetWallet(string walletName);
 
         /// <summary>
         /// Gets the list of the wallet filenames, along with the folder in which they're contained.
@@ -338,18 +305,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         ExtKey GetExtKey(WalletAccountReference accountReference, string password = "", bool cache = false);
 
         /// <summary>
-        /// Gets the lowest LastBlockSyncedHeight of all loaded wallet account roots.
-        /// </summary>
-        /// <returns>The lowest LastBlockSyncedHeight or null if there are no account roots yet.</returns>
-        int? GetEarliestWalletHeight();
-
-        /// <summary>
-        /// Gets the oldest wallet creation time.
-        /// </summary>
-        /// <returns></returns>
-        DateTimeOffset GetOldestWalletCreationTime();
-
-        /// <summary>
         /// Removes the specified transactions from the wallet and persist it.
         /// </summary>
         /// <param name="walletName">The name of the wallet to remove transactions from.</param>
@@ -371,5 +326,41 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="fromDate">The date after which the transactions should be removed.</param>
         /// <returns>A list of objects made up of a transactions ID along with the time at which they were created.</returns>
         HashSet<(uint256, DateTimeOffset)> RemoveTransactionsFromDate(string walletName, DateTimeOffset fromDate);
+
+        /// <summary>
+        /// Finds the fork point between the wallet and the passed header.
+        /// </summary>
+        /// <param name="walletName">The wallet name to identify the fork for.</param>
+        /// <param name="chainedHeader">The header to use in determining the fork.</param>
+        /// <returns>Returns the last block in common betweeen the wallet and the chain identified by the passed header.</returns>
+        ChainedHeader FindFork(string walletName, ChainedHeader chainedHeader);
+
+        /// <summary>
+        /// Finds the highest common wallet tip on the consensus chain.
+        /// </summary>
+        /// <param name="consensusTip">Identifies the tip of the consensus chain.</param>
+        /// <returns>The highest common wallet tip on the consensus chain.</returns>
+        ChainedHeader WalletCommonTip(ChainedHeader consensusTip);
+
+        /// <summary>
+        /// Rewind a wallet to the fork point identified via the supplied header.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet to rewind.</param>
+        /// <param name="chainedHeader">The header to use in determining the fork.</param>
+        void RewindWallet(string walletName, ChainedHeader chainedHeader);
+
+        IWalletRepository WalletRepository { get; }
+
+        int GetAddressBufferSize();
+
+        /// <summary>
+        /// Returns a list of grouped addresses which have had their common ownership made public by common use as inputs or as the resulting change in past transactions.
+        /// </summary
+        /// <remarks>
+        /// Please see https://github.com/bitcoin/bitcoin/blob/726d0668ff780acb59ab0200359488ce700f6ae6/src/wallet/wallet.cpp#L3641
+        /// </remarks>
+        /// <param name="walletName">The wallet in question.</param>
+        /// <returns>The grouped list of base58 addresses.</returns>
+        IEnumerable<IEnumerable<string>> GetAddressGroupings(string walletName);
     }
 }
