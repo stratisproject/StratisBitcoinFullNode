@@ -22,11 +22,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
         /// <inheritdoc />
         public override void CheckTransaction(MempoolValidationContext context)
         {
-            // If there are more inputs than outputs we don't care if they are dust transactions
-            // as we are effectively consolidating utxo's on the network.
-            if (context.Transaction.Inputs.Count > context.Transaction.Outputs.Count)
-                return;
-
             foreach (var txOut in context.Transaction.Outputs)
             {
                 if (StandardTransactionPolicy.IsOpReturn(txOut.ScriptPubKey.ToBytes()))

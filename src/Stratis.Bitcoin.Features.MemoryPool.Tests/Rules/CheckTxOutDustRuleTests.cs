@@ -59,23 +59,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests.Rules
         }
 
         [Fact]
-        public void CheckTxOutDustRule_More_TxIns_Than_TxOuts_Pass()
-        {
-            var rule = new CheckTxOutDustRule(this.network, this.txMempool, new MempoolSettings(this.nodeSettings), this.chainIndexer, this.loggerFactory);
-            var transaction = CreateTransaction(Money.Coins(1));
-            transaction.AddInput(new TxIn());
-
-            var mempoolValidationContext = new MempoolValidationContext(transaction, new MempoolValidationState(false))
-            {
-                MinRelayTxFee = this.nodeSettings.MinRelayTxFeeRate,
-                ValueOut = transaction.TotalOut
-            };
-
-            rule.CheckTransaction(mempoolValidationContext);
-            Assert.Null(mempoolValidationContext.State.Error);
-        }
-
-        [Fact]
         public void CheckTxOutDustRule_TxOut_Is_OpReturn_WithDustTxOut_Fail()
         {
             var rule = new CheckTxOutDustRule(this.network, this.txMempool, new MempoolSettings(this.nodeSettings), this.chainIndexer, this.loggerFactory);
