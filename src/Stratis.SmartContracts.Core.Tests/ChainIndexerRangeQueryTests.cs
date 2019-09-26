@@ -95,6 +95,7 @@ namespace Stratis.SmartContracts.Core.Tests
         /// <returns></returns>
         private ChainedHeader[] CreateChain(ChainedHeader start, int length)
         {
+            var random = new Random();
             var prevBlockHeader = start;
             var headers = new ChainedHeader[length];
 
@@ -105,9 +106,12 @@ namespace Stratis.SmartContracts.Core.Tests
                 var bh = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
                 bh.HashPrevBlock = prevBlockHeader.HashBlock;
 
+                var hash = new byte[32];
+                random.NextBytes(hash);
+
                 var header = new ChainedHeader(
                     bh,
-                    new uint256((ulong) i + 1UL),
+                    new uint256(hash),
                     prevBlockHeader
                 );
 
