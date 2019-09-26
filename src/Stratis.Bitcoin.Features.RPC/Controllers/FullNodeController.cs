@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
+using Stratis.Bitcoin.Features.RPC.ModelBinders;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
@@ -115,7 +116,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// When called without a blockhash argument, getrawtransaction will return the transaction if it is in the mempool, or if -txindex is enabled and the transaction is in a block in the blockchain.</remarks>
         [ActionName("getrawtransaction")]
         [ActionDescription("Gets a raw, possibly pooled, transaction from the full node.")]
-        public async Task<TransactionModel> GetRawTransactionAsync(string txid, int verbose = 0, string blockHash = null)
+        public async Task<TransactionModel> GetRawTransactionAsync(string txid, [IntToBool]bool verbose = false, string blockHash = null)
         {
             Guard.NotEmpty(txid, nameof(txid));
 
@@ -168,7 +169,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 }
             }
 
-            if (verbose != 0)
+            if (verbose)
             {
                 ChainedHeader block = chainedHeaderBlock != null ? chainedHeaderBlock.ChainedHeader : this.GetTransactionBlock(trxid);
                 return new TransactionVerboseModel(trx, this.Network, block, this.ChainState?.ConsensusTip);
