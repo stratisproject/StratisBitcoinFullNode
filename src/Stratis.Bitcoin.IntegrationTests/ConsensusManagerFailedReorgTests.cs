@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public async Task ReorgChain_FailsFullValidation_Reconnect_OldChain_FromSecondMiner_DisconnectedAsync()
+        public async Task ReorgChain_FailsFV_Reconnect_OldChain_From2ndMiner_DisconnectsAsync()
         {
             using (var builder = NodeBuilder.Create(this))
             {
@@ -363,7 +363,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// 13 -> Header Only
         /// </summary>
         [Fact]
-        public async Task ReorgChain_FailsFullValidation_ChainHasBlocksAndHeadersOnly_NodesDisconnectedAsync()
+        public async Task ReorgChain_FailsFV_ChainHasBlocksAndHeadersOnly_NodesDisconnectedAsync()
         {
             using (var builder = NodeBuilder.Create(this))
             {

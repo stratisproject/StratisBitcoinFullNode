@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.P2P;
+using Stratis.Features.SQLiteWalletRepository;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
@@ -39,6 +40,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                 .UsePosConsensus()
                 .UseMempool()
                 .UseWallet()
+                .AddSQLiteWalletRepository()
                 .AddPowPosMining()
                 .AddRPC()
                 .UseApi()
@@ -74,6 +76,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                                 .UsePosConsensus()
                                 .UseMempool()
                                 .UseWallet()
+                                .AddSQLiteWalletRepository()
                                 .AddPowPosMining()
                                 .AddRPC()
                                 .MockIBD()

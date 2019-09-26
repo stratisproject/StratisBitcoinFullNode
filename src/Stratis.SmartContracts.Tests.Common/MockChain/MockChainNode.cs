@@ -84,9 +84,10 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             this.chain = chain;
 
             // Set up address and mining
-            this.CoreNode.FullNode.WalletManager().CreateWallet(this.Password, this.WalletName, this.Passphrase, mnemonic);
-            this.MinerAddress = this.CoreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(this.WalletName, this.AccountName));
-            Wallet wallet = this.CoreNode.FullNode.WalletManager().GetWalletByName(this.WalletName);
+            (Wallet wallet, _) = this.CoreNode.FullNode.WalletManager().CreateWallet(this.Password, this.WalletName, this.Passphrase, mnemonic);
+            HdAccount account = wallet.GetAccount(this.AccountName);
+            this.MinerAddress = account.GetFirstUnusedReceivingAddress();
+
             Key key = wallet.GetExtendedPrivateKeyForAddress(this.Password, this.MinerAddress).PrivateKey;
             this.CoreNode.SetMinerSecret(new BitcoinSecret(key, this.CoreNode.FullNode.Network));
 
@@ -181,7 +182,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             IActionResult result = this.smartContractsController.BuildAndSendCreateSmartContractTransaction(request);
             if (result is JsonResult response)
             {
-                return (BuildCreateContractTransactionResponse)response.Value; 
+                return (BuildCreateContractTransactionResponse)response.Value;
             }
 
             return null;
@@ -243,7 +244,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
-            decimal feeAmount = 0.01M, 
+            decimal feeAmount = 0.01M,
             string sender = null)
         {
             var request = new BuildCallContractTransactionRequest

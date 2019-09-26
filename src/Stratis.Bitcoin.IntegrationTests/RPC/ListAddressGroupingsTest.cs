@@ -52,6 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 var result = await CallListAddressGroupingsAsync();
                 result.Count().Should().Be(1);
                 result[0].AddressGroups.First().Amount.Should().Be(Money.Coins(10));
+                var receiverAddress = result[0].AddressGroups.First().Address;
 
                 // Send 5 coins to miner from receiver; this will return 5 coins back to a change address on receiver.
                 SendCoins(this.receiver, this.miner, Money.Coins(5));
@@ -68,7 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 result = await CallListAddressGroupingsAsync();
                 result.Count().Should().Be(1);
                 result[0].AddressGroups.Count().Should().Be(2);
-                result[0].AddressGroups.First().Amount.Should().Be(Money.Coins(0)); // Initial receive address balance should be 0.
+                result[0].AddressGroups.First(a => a.Address == receiverAddress).Amount.Should().Be(Money.Coins(0)); // Initial receive address balance should be 0.
                 result[0].AddressGroups.First(a => a.Address == firstChangeAddress.Address).Amount.Should().Be(Money.Coins((decimal)4.9999548)); // Change address balance after sending 5 coins.
                 //---------------------------------------------------
 
@@ -83,7 +84,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 result = await CallListAddressGroupingsAsync();
                 result.Count().Should().Be(1);
                 result[0].AddressGroups.Count().Should().Be(2);
-                result[0].AddressGroups.First().Amount.Should().Be(Money.Coins(0)); // Initial receive address balance should be 0.
+                result[0].AddressGroups.First(a => a.Address == receiverAddress).Amount.Should().Be(Money.Coins(0)); // Initial receive address balance should be 0.
                 result[0].AddressGroups.First(a => a.Address == firstChangeAddress.Address).Amount.Should().Be(Money.Coins((decimal)4.9999548 + 5)); // Change address balance + 5 coins.
                 //---------------------------------------------------
 
@@ -120,7 +121,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 //  - Array 2 > The receive address of the new transaction
                 result = await CallListAddressGroupingsAsync();
                 result.Count().Should().Be(2);
-                result[1].AddressGroups[0].Amount.Should().Be(Money.Coins(5));
+                result.Where(r => r.AddressGroups.Count() == 1).First().AddressGroups[0].Amount.Should().Be(Money.Coins(5));
             }
         }
 

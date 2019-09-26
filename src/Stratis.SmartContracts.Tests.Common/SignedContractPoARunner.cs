@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.SQLiteWalletRepository;
 
 namespace Stratis.SmartContracts.Tests.Common
 {
@@ -45,6 +46,7 @@ namespace Stratis.SmartContracts.Tests.Common
                 .UseSmartContractPoAConsensus()
                 .UseSmartContractPoAMining()
                 .UseSmartContractWallet()
+                .AddSQLiteWalletRepository()
                 .ReplaceTimeProvider(this.dateTimeProvider)
                 .MockIBD()
                 .AddFastMiningCapability()

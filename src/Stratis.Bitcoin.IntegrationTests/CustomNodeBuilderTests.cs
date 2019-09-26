@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
+using Stratis.Features.SQLiteWalletRepository;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -43,6 +44,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .UseMempool()
                         .AddMining()
                         .UseWallet()
+                        .AddSQLiteWalletRepository()
                         .AddRPC()
                         .UseApi()
                         .MockIBD());
@@ -74,6 +76,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .UseMempool()
                         .AddMining()
                         .UseWallet()
+                        .AddSQLiteWalletRepository()
                         .AddRPC()
                         .UseApi()
                         .MockIBD());

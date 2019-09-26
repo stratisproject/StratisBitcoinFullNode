@@ -198,19 +198,21 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             if (coreNode.MinerSecret == null)
             {
+                Wallet wallet = coreNode.FullNode.WalletManager().GetWallet(walletName);
+                HdAccount account = wallet.GetAccount(accountName);
+
                 HdAddress address;
                 if (!string.IsNullOrEmpty(miningAddress))
                 {
-                    address = coreNode.FullNode.WalletManager().GetAccounts(walletName).Single(a => a.Name == accountName).GetCombinedAddresses().Single(add => add.Address == miningAddress);
+                    address = account.ExternalAddresses.Concat(account.InternalAddresses).Single(add => add.Address == miningAddress);
                 }
                 else
                 {
-                    address = coreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
+                    address = account.GetFirstUnusedReceivingAddress();
                 }
 
                 coreNode.MinerHDAddress = address;
 
-                Wallet wallet = coreNode.FullNode.WalletManager().GetWalletByName(walletName);
                 Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, address).PrivateKey;
                 coreNode.SetMinerSecret(new BitcoinSecret(extendedPrivateKey, coreNode.FullNode.Network));
             }

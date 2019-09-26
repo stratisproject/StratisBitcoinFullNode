@@ -210,10 +210,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public void GenerateBlocks_does_not_use_small_coins()
         {
             var walletSecret = new WalletSecret() { WalletName = "wallet", WalletPassword = "password" };
-            var wallet = new Wallet.Wallet()
-            {
-                Network = this.network
-            };
+            var wallet = new Wallet.Wallet(this.network);
 
             var milliseconds550MinutesAgo = (uint)Math.Max(this.chainIndexer.Tip.Header.Time - TimeSpan.FromMinutes(550).Milliseconds, 0);
             this.AddAccountWithSpendableOutputs(wallet);
@@ -265,14 +262,13 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private void AddAccountWithSpendableOutputs(Wallet.Wallet wallet)
         {
-            var account = new HdAccount();
-            account.ExternalAddresses.Add(new HdAddress { Index = 1, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(15), Index = 0, Amount = this.posMinting.MinimumStakingCoinValue - 1 } } });
-            account.ExternalAddresses.Add(new HdAddress { Index = 1, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(16), Index = 0, Amount = this.posMinting.MinimumStakingCoinValue } } });
-            account.ExternalAddresses.Add(new HdAddress { Index = 2, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(17), Index = 0, Amount = 2 * Money.COIN } } });
-            account.ExternalAddresses.Add(new HdAddress { Index = 2, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(18), Index = 0, Amount = 2 * Money.CENT } } });
-            account.ExternalAddresses.Add(new HdAddress { Index = 3, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(19), Index = 0, Amount = 1 * Money.NANO } } });
-            account.ExternalAddresses.Add(new HdAddress { Index = 4, Transactions = null });
-            wallet.AccountsRoot.Add(new AccountRoot() { Accounts = new[] { account }, CoinType = CoinType.Stratis });
+            var account = new HdAccount(wallet.AccountsRoot.First().Accounts) { Name = "account 0" };
+            account.ExternalAddresses.Add(new HdAddress(new[] { new TransactionData { Id = new uint256(15), Index = 0, Amount = this.posMinting.MinimumStakingCoinValue - 1 } }) { Index = 1 });
+            account.ExternalAddresses.Add(new HdAddress(new[] { new TransactionData { Id = new uint256(16), Index = 0, Amount = this.posMinting.MinimumStakingCoinValue } }) { Index = 1 });
+            account.ExternalAddresses.Add(new HdAddress(new[] { new TransactionData { Id = new uint256(17), Index = 0, Amount = 2 * Money.COIN } }) { Index = 2 });
+            account.ExternalAddresses.Add(new HdAddress(new[] { new TransactionData { Id = new uint256(18), Index = 0, Amount = 2 * Money.CENT } }) { Index = 2 });
+            account.ExternalAddresses.Add(new HdAddress(new[] { new TransactionData { Id = new uint256(19), Index = 0, Amount = 1 * Money.NANO } }) { Index = 3 });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 4, Transactions = null });
         }
 
         // the difficulty tests are ported from: https://github.com/bitcoin/bitcoin/blob/3e1ee310437f4c93113f6121425beffdc94702c2/src/test/blockchain_tests.cpp

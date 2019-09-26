@@ -78,17 +78,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
 
             var addresses = new List<HdAddress> { address };
             Features.Wallet.Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
-            var account = new HdAccount { ExternalAddresses = addresses };
-            wallet.AccountsRoot.Add(new AccountRoot()
-            {
-                Accounts = new List<HdAccount> { account }
-            });
+            HdAccount account = wallet.AddNewAccount((ExtPubKey)null);
+
+            foreach (HdAddress addr in addresses)
+                account.ExternalAddresses.Add(address);
 
             List<FlatHistory> flat = addresses.SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToList();
 
             var accountsHistory = new List<AccountHistory> { new AccountHistory { History = flat, Account = account } };
             this.walletManager.Setup(w => w.GetHistory(walletName, It.IsAny<string>())).Returns(accountsHistory);
-            this.walletManager.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
+            this.walletManager.Setup(w => w.GetWallet(walletName)).Returns(wallet);
             this.walletManager.Setup(w => w.GetAccounts(walletName)).Returns(new List<HdAccount> { account });
 
             var receipt = new Receipt(null, 12345, new Log[0], null, null, null, uint160.Zero, true, null, null, 2, 100000);
@@ -173,17 +172,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
 
             var addresses = new List<HdAddress> { address };
             Features.Wallet.Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
-            var account = new HdAccount { ExternalAddresses = addresses };
-            wallet.AccountsRoot.Add(new AccountRoot()
-            {
-                Accounts = new List<HdAccount> { account }
-            });
+            HdAccount account = wallet.AddNewAccount((ExtPubKey)null);
+
+            foreach (HdAddress addr in addresses)
+                account.ExternalAddresses.Add(addr);
 
             List<FlatHistory> flat = addresses.SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToList();
 
             var accountsHistory = new List<AccountHistory> { new AccountHistory { History = flat, Account = account } };
             this.walletManager.Setup(w => w.GetHistory(walletName, It.IsAny<string>())).Returns(accountsHistory);
-            this.walletManager.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
+            this.walletManager.Setup(w => w.GetWallet(walletName)).Returns(wallet);
             this.walletManager.Setup(w => w.GetAccounts(walletName)).Returns(new List<HdAccount> { account });
 
             var receipt = new Receipt(null, 12345, new Log[0], null, null, null, uint160.Zero, true, null, null, 2, 100000);

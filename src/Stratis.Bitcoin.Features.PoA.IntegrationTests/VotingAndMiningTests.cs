@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -299,6 +300,10 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
                 long toMineCount = network.Consensus.PremineHeight + network.Consensus.CoinbaseMaturity + 1 - node.GetTip().Height;
 
                 await node.MineBlocksAsync((int)toMineCount).ConfigureAwait(false);
+
+                // Sync the wallet.
+                var walletSyncManager = (WalletSyncManager)node.FullNode.NodeService<IWalletSyncManager>();
+                walletSyncManager.ProcessBlocks();
 
                 long balanceAfterPremine = walletManager.GetBalances(walletName, "account 0").Sum(x => x.AmountConfirmed);
 

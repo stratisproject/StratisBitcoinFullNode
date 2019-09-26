@@ -97,9 +97,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
                 TestHelper.Connect(syncer, minerA);
 
-                Assert.True(TestHelper.IsNodeSyncedAtHeight(syncer, 35));
-                Assert.True(TestHelper.IsNodeSyncedAtHeight(minerA, 35));
-                Assert.True(TestHelper.IsNodeSyncedAtHeight(minerB, 35));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(syncer, 35));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 35));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerB, 35));
 
                 TestBase.WaitLoop(() => minerA.FullNode.NodeService<IAddressIndexer>().IndexerTip.Height == 35);
                 TestBase.WaitLoop(() => minerB.FullNode.NodeService<IAddressIndexer>().IndexerTip.Height == 35);
@@ -182,9 +182,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 // Reconnect minerB (the longer chain), this will trigger the reorg.
                 TestHelper.Connect(syncer, minerB);
 
-                Assert.True(TestHelper.IsNodeSyncedAtHeight(syncer, 60));
-                Assert.True(TestHelper.IsNodeSyncedAtHeight(minerA, 60));
-                Assert.True(TestHelper.IsNodeSyncedAtHeight(minerB, 60));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(syncer, 60));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 60));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerB, 60));
 
                 TestBase.WaitLoop(() => minerA.FullNode.NodeService<IAddressIndexer>().IndexerTip.Height == 60);
                 TestBase.WaitLoop(() => minerB.FullNode.NodeService<IAddressIndexer>().IndexerTip.Height == 60);

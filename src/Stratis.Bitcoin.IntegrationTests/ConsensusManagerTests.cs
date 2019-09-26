@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Staking;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -59,7 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             public StratisConsensusOptionsOverrideTest()
             {
-                this.Name = Guid.NewGuid().ToString();
+                this.Name = Guid.NewGuid().ToString("N").Substring(0, 7);
             }
         }
 
@@ -312,7 +313,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Reorgs_Then_Try_To_Connect_Longer_Chain_With_Connected_Blocks_And_Fail_Then_Revert_Back()
+        public void ConsensusManager_Reorgs_Connect_Longer_Chain_With_Connected_Blocks_Fails_Reverts()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -357,7 +358,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Reorgs_Then_Try_To_Connect_Longer_Chain_With_No_Connected_Blocks_And_Fail_Then_Revert_Back()
+        public void ConsensusManager_Reorgs_Try_Connect_Longer_Chain_No_Connected_Blocks_Fails_Reverts_Back()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -528,7 +529,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Sync the peers A and B (height 3)
                 TestHelper.ConnectAndSync(minerA, minerB);
 
-                // Miner A will spend the coins 
+                // Miner A will spend the coins
                 WalletSendTransactionModel walletSendTransactionModel = $"http://localhost:{minerA.ApiPort}/api"
                     .AppendPathSegment("wallet/splitcoins")
                     .PostJsonAsync(new SplitCoinsRequest

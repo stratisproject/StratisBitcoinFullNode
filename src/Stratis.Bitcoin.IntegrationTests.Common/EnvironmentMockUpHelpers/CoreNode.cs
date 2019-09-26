@@ -22,6 +22,7 @@ using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
@@ -224,6 +225,19 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             // Extract the zipped blockchain data to the node's DataFolder.
             ZipFile.ExtractToDirectory(Path.GetFullPath(readyDataName), this.DataFolder, true);
 
+            /*
+            // Import wallets to DB.
+            this.runActions.Add(() =>
+            {
+                foreach (string walletPath in Directory.GetFiles(this.FullNode.DataFolder.WalletPath, "*.wallet.json"))
+                {
+                    string walletName = Path.GetFileName(walletPath);
+                    walletName = walletName.Substring(0, walletName.Length - ".wallet.json".Length);
+                    ((WalletManager)this.FullNode.NodeService<IWalletManager>()).LoadWallet(walletName);
+                }
+            });
+            */
+
             return this;
         }
 
@@ -275,6 +289,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 return this.runner.FullNode.NodeService<IAsyncProvider>();
         }
 
+        List<Action> runActions = new List<Action>();
+
         public CoreNode Start(Action startAction = null)
         {
             lock (this.lockObject)
@@ -298,6 +314,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 StartStratisRunner();
 
             this.State = CoreNodeState.Running;
+
+            foreach (Action runAction in this.runActions)
+                runAction.Invoke();
 
             return this;
         }
@@ -383,7 +402,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
             if (this.builderWithWallet)
             {
-                this.Mnemonic = this.FullNode.WalletManager().CreateWallet(
+                (_, this.Mnemonic) = this.FullNode.WalletManager().CreateWallet(
                     this.builderWalletPassword,
                     this.builderWalletName,
                     this.builderWalletPassphrase,

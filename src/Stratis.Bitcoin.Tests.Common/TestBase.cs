@@ -39,10 +39,10 @@ namespace Stratis.Bitcoin.Tests.Common
         /// <param name="caller">The calling object, from which we derive the namespace in which the test is contained.</param>
         /// <param name="callingMethod">The name of the test being executed. A directory with the same name will be created.</param>
         /// <returns>The <see cref="DataFolder"/> that was initialized.</returns>
-        public static DataFolder CreateDataFolder(object caller, [System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
+        public static DataFolder CreateDataFolder(object caller, [System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "", Network network = null)
         {
             string directoryPath = GetTestDirectoryPath(caller, callingMethod);
-            var dataFolder = new DataFolder(new NodeSettings(networksSelector: Networks.Networks.Bitcoin, args: new string[] { $"-datadir={AssureEmptyDir(directoryPath)}" }).DataDir);
+            var dataFolder = new DataFolder(new NodeSettings(network, networksSelector: Networks.Networks.Bitcoin, args: new string[] { $"-datadir={AssureEmptyDir(directoryPath)}" }).DataDir);
             return dataFolder;
         }
 

@@ -19,6 +19,7 @@ using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.IntegrationTests.Common.TestNetworks;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
+using Stratis.Features.SQLiteWalletRepository;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Compatibility
@@ -87,6 +88,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                     .UsePosConsensus()
                     .UseMempool()
                     .UseWallet()
+                    .AddSQLiteWalletRepository()
                     .AddPowPosMining()
                     .AddRPC());
 
@@ -144,6 +146,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                     .UsePosConsensus()
                     .UseMempool()
                     .UseWallet()
+                    .AddSQLiteWalletRepository()
                     .AddPowPosMining()
                     .AddRPC()
                     .UseTestChainedHeaderTree()
@@ -214,6 +217,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                     .UsePosConsensus()
                     .UseMempool()
                     .UseWallet()
+                    .AddSQLiteWalletRepository()
                     .AddPowPosMining()
                     .AddRPC()
                     .UseTestChainedHeaderTree()
@@ -282,6 +286,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                     .UsePosConsensus()
                     .UseMempool()
                     .UseWallet()
+                    .AddSQLiteWalletRepository()
                     .AddPowPosMining()
                     .AddRPC());
 
@@ -358,6 +363,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                     .UsePosConsensus()
                     .UseMempool()
                     .UseWallet()
+                    .AddSQLiteWalletRepository()
                     .AddPowPosMining()
                     .AddRPC());
 
@@ -463,6 +469,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                     .UsePosConsensus()
                     .UseMempool()
                     .UseWallet()
+                    .AddSQLiteWalletRepository()
                     .AddPowPosMining()
                     .AddRPC());
 

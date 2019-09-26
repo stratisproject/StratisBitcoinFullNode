@@ -19,6 +19,7 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
+using Stratis.Features.SQLiteWalletRepository;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
@@ -84,6 +85,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 }
 
                 builder
+                 .AddSQLiteWalletRepository()
                  .AddPowPosMining()
                  .AddRPC()
                  .UseApi()

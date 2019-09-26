@@ -14,7 +14,7 @@ using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
-    public partial class Wallet_address_generation_and_funds_visibility : BddSpecification
+    public partial class WalletAddressBuffer : BddSpecification
     {
         private const string WalletName = "mywallet";
         private const string WalletPassword = "password";
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.nodeBuilder.Dispose();
         }
 
-        public Wallet_address_generation_and_funds_visibility(ITestOutputHelper output) : base(output)
+        public WalletAddressBuffer(ITestOutputHelper output) : base(output)
         {
         }
 

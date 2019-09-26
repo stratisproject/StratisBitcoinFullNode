@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.addressGenerator = new Mock<IAddressGenerator>();
             this.stateRepository = new Mock<IStateRepositoryRoot>();
         }
-        
+
         [Fact]
         public void CanChooseInputsForCall()
         {
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     {
                         Index = utxoIndex,
                         TransactionId = utxoId.ToString()
-                    }, 
+                    },
                 }
             };
 
@@ -104,30 +104,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     }
                 });
 
+            var wallet = new Features.Wallet.Wallet();
+            wallet.AccountsRoot.Add(new AccountRoot(wallet));
+            var account0 = new HdAccount(wallet.AccountsRoot.First().Accounts) { Name = request.AccountName };
+            account0.ExternalAddresses.Add(new HdAddress() { Address = senderAddress });
+
             this.walletManager.Setup(x => x.GetWallet(request.WalletName))
-                .Returns(new Features.Wallet.Wallet
-                {
-                    AccountsRoot = new List<AccountRoot>
-                    {
-                        new AccountRoot
-                        {
-                            Accounts = new List<HdAccount>
-                            {
-                                new HdAccount
-                                {
-                                    ExternalAddresses = new List<HdAddress>
-                                    {
-                                        new HdAddress
-                                        {
-                                            Address = senderAddress
-                                        }
-                                    },
-                                    Name = request.AccountName
-                                }
-                            }
-                        }
-                    }
-                });
+                .Returns(wallet);
 
             SmartContractTransactionService service = new SmartContractTransactionService(
                 this.network,
@@ -288,30 +271,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     }
                 });
 
+            var wallet = new Features.Wallet.Wallet();
+            wallet.AccountsRoot.Add(new AccountRoot(wallet));
+            var account0 = new HdAccount(wallet.AccountsRoot.First().Accounts) { Name = request.AccountName };;
+            account0.ExternalAddresses.Add(new HdAddress() { Address = senderAddress });
+
             this.walletManager.Setup(x => x.GetWallet(request.WalletName))
-                .Returns(new Features.Wallet.Wallet
-                {
-                    AccountsRoot = new List<AccountRoot>
-                    {
-                        new AccountRoot
-                        {
-                            Accounts = new List<HdAccount>
-                            {
-                                new HdAccount
-                                {
-                                    ExternalAddresses = new List<HdAddress>
-                                    {
-                                        new HdAddress
-                                        {
-                                            Address = senderAddress
-                                        }
-                                    },
-                                    Name = request.AccountName
-                                }
-                            }
-                        }
-                    }
-                });
+                .Returns(wallet);
 
             this.callDataSerializer.Setup(x => x.Deserialize(It.IsAny<byte[]>()))
                 .Returns(Result.Ok(new ContractTxData(1, 100, (Gas) 100_000, new byte[0])));
@@ -352,25 +318,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 Sender = senderAddress,
             };
 
+            var wallet = new Features.Wallet.Wallet();
+            wallet.AccountsRoot.Add(new AccountRoot(wallet));
+            var account0 = new HdAccount(wallet.AccountsRoot.First().Accounts) { Name = request.AccountName };
+
             // Create a wallet but without the sender address
             this.walletManager.Setup(x => x.GetWallet(request.WalletName))
-                .Returns(new Features.Wallet.Wallet
-                {
-                    AccountsRoot = new List<AccountRoot>
-                    {
-                        new AccountRoot
-                        {
-                            Accounts = new List<HdAccount>
-                            {
-                                new HdAccount
-                                {
-                                    ExternalAddresses = new List<HdAddress>(),
-                                    Name = request.AccountName
-                                }
-                            }
-                        }
-                    }
-                });
+                .Returns(wallet);
 
             BuildContractTransactionResult result = service.BuildTx(request);
 
@@ -401,25 +355,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 Sender = senderAddress,
             };
 
+            var wallet = new Features.Wallet.Wallet();
+            wallet.AccountsRoot.Add(new AccountRoot(wallet));
+            var account0 = new HdAccount(wallet.AccountsRoot.First().Accounts) { Name = "account 1" };
+
             // Create a wallet but without the correct account name
             this.walletManager.Setup(x => x.GetWallet(request.WalletName))
-                .Returns(new Features.Wallet.Wallet
-                {
-                    AccountsRoot = new List<AccountRoot>
-                    {
-                        new AccountRoot
-                        {
-                            Accounts = new List<HdAccount>
-                            {
-                                new HdAccount
-                                {
-                                    ExternalAddresses = new List<HdAddress>(),
-                                    Name = "account 1"
-                                }
-                            }
-                        }
-                    }
-                });
+                .Returns(wallet);
 
             BuildContractTransactionResult result = service.BuildTx(request);
 
@@ -450,30 +392,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 Sender = senderAddress,
             };
 
+            var wallet = new Features.Wallet.Wallet();
+            wallet.AccountsRoot.Add(new AccountRoot(wallet));
+            var account0 = new HdAccount(wallet.AccountsRoot.First().Accounts) { Name = request.AccountName };
+            account0.ExternalAddresses.Add(new HdAddress() { Address = senderAddress });
+
             this.walletManager.Setup(x => x.GetWallet(request.WalletName))
-                .Returns(new Features.Wallet.Wallet
-                {
-                    AccountsRoot = new List<AccountRoot>
-                    {
-                        new AccountRoot
-                        {
-                            Accounts = new List<HdAccount>
-                            {
-                                new HdAccount
-                                {
-                                    ExternalAddresses = new List<HdAddress>
-                                    {
-                                        new HdAddress
-                                        {
-                                            Address = senderAddress
-                                        }
-                                    },
-                                    Name = request.AccountName,                                    
-                                }
-                            }
-                        }
-                    }
-                });
+                .Returns(wallet);
 
             this.walletManager.Setup(x => x.GetAddressBalance(request.Sender))
                 .Returns(new AddressBalance { Address = request.Sender, AmountConfirmed = 0, AmountUnconfirmed = 0 });
@@ -515,30 +440,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 }
             };
 
+            var wallet = new Features.Wallet.Wallet();
+            wallet.AccountsRoot.Add(new AccountRoot(wallet));
+            var account0 = new HdAccount(wallet.AccountsRoot.First().Accounts) { Name = request.AccountName };
+            account0.ExternalAddresses.Add(new HdAddress() { Address = senderAddress });
+
             this.walletManager.Setup(x => x.GetWallet(request.WalletName))
-                .Returns(new Features.Wallet.Wallet
-                {
-                    AccountsRoot = new List<AccountRoot>
-                    {
-                        new AccountRoot
-                        {
-                            Accounts = new List<HdAccount>
-                            {
-                                new HdAccount
-                                {
-                                    ExternalAddresses = new List<HdAddress>
-                                    {
-                                        new HdAddress
-                                        {
-                                            Address = senderAddress
-                                        }
-                                    },
-                                    Name = request.AccountName,
-                                }
-                            }
-                        }
-                    }
-                });
+                .Returns(wallet);
 
             this.walletManager.Setup(x => x.GetAddressBalance(request.Sender))
                 .Returns(new AddressBalance { Address = request.Sender, AmountConfirmed = 10, AmountUnconfirmed = 0 });
@@ -619,27 +527,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var senderHdAddress = new HdAddress { Address = senderAddress };
 
+            var wallet = new Features.Wallet.Wallet();
+            wallet.AccountsRoot.Add(new AccountRoot(wallet));
+            var account0 = new HdAccount(wallet.AccountsRoot.First().Accounts) { Name = request.AccountName };
+            account0.ExternalAddresses.Add(new HdAddress() { Address = senderAddress });
+
             this.walletManager.Setup(x => x.GetWallet(request.WalletName))
-                .Returns(new Features.Wallet.Wallet
-                {
-                    AccountsRoot = new List<AccountRoot>
-                    {
-                        new AccountRoot
-                        {
-                            Accounts = new List<HdAccount>
-                            {
-                                new HdAccount
-                                {
-                                    ExternalAddresses = new List<HdAddress>
-                                    {
-                                        senderHdAddress 
-                                    },
-                                    Name = request.AccountName,
-                                }
-                            }
-                        }
-                    }
-                });
+                .Returns(wallet);
 
             this.walletManager.Setup(x => x.GetAddressBalance(request.Sender))
                 .Returns(new AddressBalance { Address = request.Sender, AmountConfirmed = Money.FromUnit(amount, MoneyUnit.BTC), AmountUnconfirmed = 0 });
@@ -688,7 +582,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 context.Shuffle == false &&
                 context.SelectedInputs.All(i => outputs.Select(o => o.Transaction.Id).Contains(i.Hash)) &&
                 context.Recipients.Single().Amount == Money.FromUnit(amount, MoneyUnit.BTC) &&
-                context.ChangeAddress == senderHdAddress
+                context.ChangeAddress.Address == senderHdAddress.Address
             )));
         }
     }
