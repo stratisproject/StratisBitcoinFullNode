@@ -134,14 +134,7 @@ namespace Stratis.Features.SQLiteWalletRepository.External
                                         AddressIdentifier newAddress = tracker.CreateAddress();
 
                                         // Add the new address to our addresses of interest.
-                                        addressesOfInterest.AddTentative(Script.FromHex(newAddress.ScriptPubKey),
-                                            new AddressIdentifier()
-                                            {
-                                                WalletId = newAddress.WalletId,
-                                                AccountIndex = newAddress.AccountIndex,
-                                                AddressType = newAddress.AddressType,
-                                                AddressIndex = newAddress.AddressIndex
-                                            });
+                                        addressesOfInterest.AddTentative(Script.FromHex(newAddress.ScriptPubKey), newAddress);
                                     }
                                 }
                             }

@@ -787,36 +787,58 @@ namespace Stratis.Features.SQLiteWalletRepository
                     {
                         long flagFall = DateTime.Now.Ticks;
 
-                        if (!round.MustCommit && !conn.IsInTransaction)
+                        conn.BeginTransaction();
+                        try
                         {
-                            conn.BeginTransaction();
-                            round.MustCommit = true;
-                        }
 
-                        if (round.Outputs.Count != 0 || round.PrevOuts.Count != 0)
-                        {
-                            IEnumerable<IEnumerable<string>> blockToScript = (new[] { round.Outputs, round.PrevOuts }).Select(list => list.CreateScript());
+                            if (round.Outputs.Count != 0 || round.PrevOuts.Count != 0)
+                            {
+                                IEnumerable<IEnumerable<string>> blockToScript = (new[] { round.Outputs, round.PrevOuts }).Select(list => list.CreateScript());
 
-                            conn.ProcessTransactions(blockToScript, wallet, round.NewTip, round.PrevTip?.Hash ?? 0);
+                                // Ensure that any new addresses are present in the database before accessing the HDAddress table.
+                                foreach (AddressIdentifier addressId in round.AddressesOfInterest.GetTentative())
+                                {
+                                    if (addressId.ScriptPubKey == null)
+                                    {
 
-                            round.Outputs.Clear();
-                            round.PrevOuts.Clear();
+                                    }
 
-                            round.AddressesOfInterest.Confirm();
-                            round.TransactionsOfInterest.Confirm();
+                                    var address = new HDAddress()
+                                    {
+                                        WalletId = addressId.WalletId,
+                                        AccountIndex = (int)addressId.AccountIndex,
+                                        AddressType = (int)addressId.AddressType,
+                                        AddressIndex = (int)addressId.AddressIndex,
+                                        PubKey = addressId.PubKeyScript,
+                                        ScriptPubKey = addressId.ScriptPubKey
+                                    };
 
-                        }
-                        else
-                        {
-                            HDWallet.AdvanceTip(conn, wallet, round.NewTip, round.PrevTip?.Hash ?? 0);
-                        }
+                                    conn.Insert(address);
+                                }
 
-                        if (round.MustCommit)
-                        {
+                                conn.ProcessTransactions(blockToScript, wallet, round.NewTip, round.PrevTip?.Hash ?? 0);
+
+                                round.Outputs.Clear();
+                                round.PrevOuts.Clear();
+
+                                round.AddressesOfInterest.Confirm();
+                                round.TransactionsOfInterest.Confirm();
+
+                            }
+                            else
+                            {
+                                HDWallet.AdvanceTip(conn, wallet, round.NewTip, round.PrevTip?.Hash ?? 0);
+                            }
+
                             long flagFall3 = DateTime.Now.Ticks;
                             conn.Commit();
                             this.Metrics.CommitTime += (DateTime.Now.Ticks - flagFall3);
-                            round.MustCommit = false;
+                        }
+                        catch (Exception)
+                        {
+                            conn.Rollback();
+
+                            throw;
                         }
 
                         this.Metrics.ProcessTime += (DateTime.Now.Ticks - flagFall);
@@ -889,11 +911,6 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
             catch (Exception)
             {
-                if (round.MustCommit)
-                {
-                    round.Conn.Rollback();
-                    round.MustCommit = false;
-                }
 
                 throw;
             }
@@ -961,16 +978,17 @@ namespace Stratis.Features.SQLiteWalletRepository
                     txToScript = (new[] { processBlocksInfo.Outputs, processBlocksInfo.PrevOuts }).Select(list => list.CreateScript());
                 }
 
-                if (!conn.IsInTransaction)
+                conn.BeginTransaction();
+                try
                 {
-                    conn.BeginTransaction();
-                    processBlocksInfo.MustCommit = true;
-                }
-
-                conn.ProcessTransactions(txToScript, wallet);
-
-                if (processBlocksInfo.MustCommit)
+                    conn.ProcessTransactions(txToScript, wallet);
                     conn.Commit();
+                }
+                catch (Exception)
+                {
+                    conn.Rollback();
+                    throw;
+                }
             }
             finally
             {

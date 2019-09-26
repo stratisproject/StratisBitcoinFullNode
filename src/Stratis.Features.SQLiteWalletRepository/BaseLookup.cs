@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Features.SQLiteWalletRepository.External;
 
 namespace Stratis.Features.SQLiteWalletRepository
 {
@@ -99,6 +99,11 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
 
             addresses.Add(address);
+        }
+
+        public IEnumerable<AddressIdentifier> GetTentative()
+        {
+            return this.tentative.SelectMany(t => t.Value);
         }
 
         public void Confirm(Func<byte[], bool> exists)

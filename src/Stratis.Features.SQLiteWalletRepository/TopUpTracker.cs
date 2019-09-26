@@ -1,4 +1,6 @@
-﻿using Stratis.Bitcoin.Features.Wallet.Interfaces;
+﻿using NBitcoin;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Features.SQLiteWalletRepository.External;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 
@@ -59,31 +61,26 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         public AddressIdentifier CreateAddress()
         {
-            HDAddress newAddress = this.conn.Repository.CreateAddress(this.Account, this.AddressType, this.AddressCount);
+            Guard.NotNull(this.Account.ExtPubKey, nameof(this.Account.ExtPubKey));
 
-            if (!this.conn.IsInTransaction)
-            {
-                // We've postponed creating a transaction since we weren't sure we will need it.
-                // Create it now.
-                this.conn.BeginTransaction();
-                if (this.processBlocksInfo != null)
-                    this.processBlocksInfo.MustCommit = true;
-            }
+            int addressIndex = this.AddressCount;
+            var keyPath = new KeyPath($"{this.AddressType}/{addressIndex}");
 
-            // Insert the new address into the database.
-            this.conn.Insert(newAddress);
+            ExtPubKey extPubKey = this.Account.GetExtPubKey(this.conn.Repository.Network).Derive(keyPath);
+            PubKey pubKey = extPubKey.PubKey;
 
             // Update the information in the tracker.
-            this.NextAddressIndex++;
             this.AddressCount++;
+            this.NextAddressIndex++;
 
             return new AddressIdentifier()
             {
-                WalletId = newAddress.WalletId,
-                AccountIndex = newAddress.AccountIndex,
-                AddressType = newAddress.AddressType,
-                AddressIndex = newAddress.AddressIndex,
-                ScriptPubKey = newAddress.ScriptPubKey
+                WalletId = this.WalletId,
+                AccountIndex = this.AccountIndex,
+                AddressType = this.AddressType,
+                AddressIndex = addressIndex,
+                ScriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(pubKey).ToHex(),
+                PubKeyScript = pubKey.ScriptPubKey.ToHex()
             };
         }
     }
