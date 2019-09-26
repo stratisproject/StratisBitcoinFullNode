@@ -7,7 +7,6 @@ using NBitcoin;
 using NBitcoin.Policy;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Wallet;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -208,9 +207,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (!context.Sign)
                 return;
 
-            Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
+            Wallet wallet = this.walletManager.GetWallet(context.AccountReference.WalletName);
             ExtKey seedExtKey = this.walletManager.GetExtKey(context.AccountReference, context.WalletPassword, context.CacheSecret);
-            
+
             var signingKeys = new HashSet<ISecret>();
             var added = new HashSet<HdAddress>();
             foreach (UnspentOutputReference unspentOutputsItem in context.UnspentOutputs)

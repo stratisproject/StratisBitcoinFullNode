@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,13 +14,9 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
-using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Features.SQLiteWalletRepository;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Wallet;
-
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -104,26 +99,25 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private void AddInlineStats(StringBuilder log)
         {
-            if(this.walletSyncManager != null)
-            { 
-                log.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                                        (((WalletSyncManager)this.walletSyncManager).ContainsWallets ? ((WalletSyncManager)this.walletSyncManager).WalletTip.Height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
-                                        (((WalletSyncManager)this.walletSyncManager).ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + ((WalletSyncManager)this.walletSyncManager).WalletTip.HashBlock) : string.Empty));
-            }
+            log.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
+                (this.walletManager.ContainsWallets ? this.walletManager.WalletTipHeight.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
+                (this.walletManager.ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.walletManager.WalletTipHash) : string.Empty));
         }
 
         private void AddComponentStats(StringBuilder log)
         {
-            List<string> walletNamesSQL = ((SQLiteWalletRepository) this.walletRepository).GetWalletNames();
+            List<string> walletNamesSQL = this.walletRepository.GetWalletNames();
 
             if (walletNamesSQL.Any())
             {
                 log.AppendLine();
                 log.AppendLine("======Wallets======");
 
+                var walletManager = (WalletManager)this.walletManager;
+
                 foreach (string walletName in walletNamesSQL)
                 {
-                    foreach (AccountBalance accountBalance in ((WalletManager)this.walletManager).GetBalancesSQL(walletName, this.walletSyncManager.WalletTip.Height))
+                    foreach (AccountBalance accountBalance in walletManager.GetBalances(walletName))
                     {
                             log.AppendLine(
                                 ($"{walletName}/{accountBalance.Account.Name}" + ",").PadRight(
@@ -139,7 +133,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
-            this.walletRepository.Initialize();
             this.walletManager.Start();
             this.walletSyncManager.Start();
             this.addressBookManager.Initialize();
@@ -185,7 +178,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                         services.AddSingleton<IScriptAddressReader>(new ScriptAddressReader());
                         services.AddSingleton<StandardTransactionPolicy>();
                         services.AddSingleton<IAddressBookManager, AddressBookManager>();
-                        services.AddSingleton<IWalletRepository, SQLiteWalletRepository>();
                     });
             });
 

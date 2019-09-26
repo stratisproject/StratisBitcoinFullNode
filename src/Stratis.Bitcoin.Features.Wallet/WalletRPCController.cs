@@ -17,7 +17,6 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Wallet;
 using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Wallet
@@ -294,7 +293,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (sendTransactions.Any())
             {
                 Wallet wallet = this.walletManager.GetWallet(accountReference.WalletName);
-                feeSent = wallet.GetSentTransactionFee(trxid);
+                feeSent = wallet.GetSentTransactionFee(transactionTime, trxid);
             }
 
             // Send transactions details.
@@ -350,7 +349,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, $"{nameof(ListAddressGroupings)} is incompatible with transaction indexing turned off (i.e. -txIndex=0).");
 
             var walletReference = this.GetWalletAccountReference();
-            var addressGroupings = this.GetAddressGroupings(walletReference.WalletName);
+            var addressGroupings = this.walletManager.GetAddressGroupings(walletReference.WalletName);
             var addressGroupingModels = new List<AddressGroupingModel>();
 
             foreach (var addressGrouping in addressGroupings)
@@ -371,130 +370,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return addressGroupingModels.ToArray();
-        }
-
-        /// <summary>
-        /// Returns a list of grouped addresses which have had their common ownership made public by common use as inputs or as the resulting change in past transactions.
-        /// </summary
-        /// <remarks>
-        /// Please see https://github.com/bitcoin/bitcoin/blob/726d0668ff780acb59ab0200359488ce700f6ae6/src/wallet/wallet.cpp#L3641
-        /// </remarks>
-        /// <param name="walletName">The wallet in question.</param>
-        /// <returns>The grouped list of base58 addresses.</returns>
-        private List<List<string>> GetAddressGroupings(string walletName)
-        {
-            // Get the wallet to check.
-            var wallet = this.walletManager.GetWallet(walletName);
-
-            // Cache all the addresses in the wallet.
-            var addresses = wallet.GetAllAddresses();
-
-            // Get the transaction data for this wallet.
-            var txs = wallet.GetAllTransactions();
-
-            // Create a transaction dictionary for performant lookups.
-            var txDictionary = new Dictionary<uint256, TransactionData>(txs.Count());
-            foreach (var item in txs)
-            {
-                txDictionary.TryAdd(item.Id, item);
-            }
-
-            // Cache the wallet's set of internal (change addresses).
-            var internalAddresses = wallet.GetAccounts().SelectMany(a => a.InternalAddresses);
-
-            var addressGroupings = new List<List<string>>();
-
-            foreach (var transaction in txDictionary)
-            {
-                var tx = this.blockStore.GetTransactionById(transaction.Value.Id);
-                if (tx.Inputs.Count > 0)
-                {
-                    var addressGroupBase58 = new List<string>();
-
-                    // Group all input addresses with each other.
-                    foreach (var txIn in tx.Inputs)
-                    {
-                        if (!IsTxInMine(addresses, txDictionary, txIn))
-                            continue;
-
-                        // Get the txIn's previous transaction address.
-                        var prevTransactionData = txs.FirstOrDefault(t => t.Id == txIn.PrevOut.Hash);
-                        var prevTransaction = this.blockStore.GetTransactionById(prevTransactionData.Id);
-                        var prevTransactionScriptPubkey = prevTransaction.Outputs[txIn.PrevOut.N].ScriptPubKey;
-
-                        var addressBase58 = this.scriptAddressReader.GetAddressFromScriptPubKey(this.Network, prevTransactionScriptPubkey);
-                        if (string.IsNullOrEmpty(addressBase58))
-                            continue;
-
-                        addressGroupBase58.Add(addressBase58);
-                    }
-
-                    // If any of the inputs were "mine", also include any change addresses associated to the transaction.
-                    if (addressGroupBase58.Any())
-                    {
-                        foreach (var txOut in tx.Outputs)
-                        {
-                            if (IsChange(internalAddresses, txOut.ScriptPubKey))
-                            {
-                                var txOutAddressBase58 = this.scriptAddressReader.GetAddressFromScriptPubKey(this.Network, txOut.ScriptPubKey);
-                                if (!string.IsNullOrEmpty(txOutAddressBase58))
-                                    addressGroupBase58.Add(txOutAddressBase58);
-                            }
-                        }
-
-                        addressGroupings.Add(addressGroupBase58);
-                    }
-                }
-
-                // Group lone addresses by themselves.
-                foreach (var txOut in tx.Outputs)
-                {
-                    if (IsAddressMine(addresses, txOut.ScriptPubKey))
-                    {
-                        var grouping = new List<string>();
-
-                        string addressBase58 = this.scriptAddressReader.GetAddressFromScriptPubKey(this.Network, txOut.ScriptPubKey);
-                        if (string.IsNullOrEmpty(addressBase58))
-                            continue;
-
-                        grouping.Add(addressBase58);
-                        addressGroupings.Add(grouping);
-                    }
-                }
-            }
-
-            // Merge the results into a distinct set of grouped addresses.
-            var uniqueGroupings = new List<List<string>>();
-            foreach (var addressGroup in addressGroupings)
-            {
-                var addressGroupDistinct = addressGroup.Distinct();
-
-                List<string> existing = null;
-
-                foreach (var address in addressGroupDistinct)
-                {
-                    // If the address was found to be apart of an existing group add it here.
-                    // The assumption here is that if we have a grouping of [a,b], finding [a] would have returned
-                    // the existing set and we can just add the address to that set.
-                    if (existing != null)
-                    {
-                        var existingAddress = existing.FirstOrDefault(a => a == address);
-                        if (existingAddress == null)
-                            existing.Add(address);
-
-                        continue;
-                    }
-
-                    // Check if the address already exists in a group.
-                    // If it does not, add the distinct set into the unique groupings list,
-                    // thereby creating a new "grouping".
-                    existing = uniqueGroupings.FirstOrDefault(g => g.Contains(address));
-                    if (existing == null)
-                        uniqueGroupings.Add(new List<string>(addressGroupDistinct));
-                }
-            }
-
-            return uniqueGroupings.ToList();
         }
 
         /// <summary>
