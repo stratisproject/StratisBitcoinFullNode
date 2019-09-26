@@ -160,5 +160,55 @@ namespace Stratis.Features.SQLiteWalletRepository.External
 
             return additions;
         }
+
+        // Used by tests.
+        internal void ProcessTransactionData(HdAddress address, ICollection<TransactionData> transactions)
+        {
+            if (transactions.Count == 0)
+                return;
+
+            // Convert relevant information in the block to information that can be joined to the wallet tables.
+            IWalletTransactionLookup transactionsOfInterest = this.transactionsOfInterest;
+            IWalletAddressLookup addressesOfInterest = this.addressesOfInterest;
+
+            // Used for tracking address top-up requirements.
+            var trackers = new Dictionary<TopUpTracker, TopUpTracker>();
+
+            foreach (TransactionData transactionData in transactions)
+            {
+                var spendingDetails = transactionData.SpendingDetails;
+                if (spendingDetails != null)
+                {
+                    // TODO: Add block hash to spending details.
+                    var block = (spendingDetails.BlockHeight == null) ? null :
+                        new HashHeightPair(spendingDetails.BlockHash ?? 0, (int)spendingDetails.BlockHeight);
+
+                    Money totalOut = spendingDetails.Change.Concat(spendingDetails.Payments).Sum(d => d.Amount);
+
+                    this.RecordSpend(block, new TxIn() { PrevOut = new OutPoint(transactionData.Id, transactionData.Index) }, address.ScriptPubKey.ToHex(),
+                        transactionData.SpendingDetails.IsCoinStake ?? false, transactionData.SpendingDetails.CreationTime.ToUnixTimeSeconds(),
+                        totalOut, spendingDetails.TransactionId ?? 0, 0);
+                }
+
+                // One per scriptPubKey from scriptPubKey. Original to RedeemScript via TxOut.
+                {
+                    var block = (transactionData.BlockHeight == null) ? null :
+                        new HashHeightPair(transactionData.BlockHash ?? 0, (int)transactionData.BlockHeight);
+
+                    Script scriptPubKey = transactionData.ScriptPubKey;
+                    foreach (Script pubKeyScript in this.GetDestinations(scriptPubKey))
+                    {
+                        bool containsAddress = addressesOfInterest.Contains(pubKeyScript, out AddressIdentifier targetAddress);
+
+                        this.RecordReceipt(block, pubKeyScript, new TxOut(transactionData.Amount ?? 0, scriptPubKey),
+                            (transactionData.IsCoinBase ?? false) || (transactionData.IsCoinStake ?? false),
+                            transactionData.CreationTime.ToUnixTimeSeconds(), transactionData.Id, transactionData.Index, address.AddressType == 1);
+
+                        if (containsAddress)
+                            transactionsOfInterest.AddTentative(new OutPoint(transactionData.Id, transactionData.Index), targetAddress);
+                    }
+                }
+            }
+        }
     }
 }

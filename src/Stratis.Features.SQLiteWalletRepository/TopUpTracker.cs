@@ -65,7 +65,6 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 // We've postponed creating a transaction since we weren't sure we will need it.
                 // Create it now.
-                // TODO: Perhaps just add it to the tentative collection.
                 this.conn.BeginTransaction();
                 if (this.processBlocksInfo != null)
                     this.processBlocksInfo.MustCommit = true;

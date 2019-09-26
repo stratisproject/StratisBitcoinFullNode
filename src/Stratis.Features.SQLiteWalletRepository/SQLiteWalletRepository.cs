@@ -9,7 +9,8 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Wallet;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Features.SQLiteWalletRepository.External;
 using Stratis.Features.SQLiteWalletRepository.Tables;
 using NBitcoin.DataEncoders;
@@ -214,7 +215,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             WalletContainer walletContainer = this.GetWalletContainer(walletName);
             (HDWallet wallet, DBConnection conn) = (walletContainer.Wallet, walletContainer.Conn);
 
-            var res = new Wallet()
+            var res = new Wallet(this)
             {
                 Name = walletName,
                 EncryptedSeed = wallet.EncryptedSeed,
@@ -224,7 +225,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             };
 
             res.AccountsRoot = new List<AccountRoot>();
-            res.AccountsRoot.Add(new AccountRoot()
+            res.AccountsRoot.Add(new AccountRoot(res)
             {
                 LastBlockSyncedHeight = wallet.LastBlockSyncedHeight,
                 LastBlockSyncedHash = (wallet.LastBlockSyncedHash == null) ? null : uint256.Parse(wallet.LastBlockSyncedHash),
@@ -361,7 +362,16 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             return GetWallet(walletName);
         }
-
+        /*
+        /// <inheritdoc />
+        public Wallet CreateWallet(string walletName, string encryptedSeed, byte[] chainCode, ChainedHeader lastBlockSynced = null, DateTimeOffset? creationTime = null)
+        {
+            return this.CreateWallet(walletName, encryptedSeed, chainCode,
+                (lastBlockSynced == null) ? null : new HashHeightPair(lastBlockSynced),
+                lastBlockSynced?.GetLocator(),
+                (lastBlockSynced == null) ? (int?)null : (int)lastBlockSynced.Header.Time + 1);
+        }
+        */
         /// <inheritdoc />
         public bool DeleteWallet(string walletName)
         {
@@ -514,6 +524,31 @@ namespace Stratis.Features.SQLiteWalletRepository
         }
 
         /// <inheritdoc />
+        public void AddWatchOnlyTransactions(string walletName, string accountName, HdAddress address, ICollection<TransactionData> transactions, bool force = false)
+        {
+            WalletContainer walletContainer = this.GetWalletContainer(walletName);
+            (HDWallet wallet, DBConnection conn) = (walletContainer.Wallet, walletContainer.Conn);
+
+            walletContainer.WriteLockWait();
+
+            try
+            {
+                conn.BeginTransaction();
+                HDAccount account = conn.GetAccountByName(walletName, accountName);
+                if (!force && !this.TestMode && account.ExtPubKey != null)
+                    throw new Exception("Transactions can only be added to watch-only addresses.");
+                conn.AddTransactions(account, address, transactions);
+                conn.Commit();
+
+                walletContainer.TransactionsOfInterest.AddAll(account.WalletId, account.AccountIndex);
+            }
+            finally
+            {
+                walletContainer.WriteLockRelease();
+            }
+        }
+
+        /// <inheritdoc />
         public void AddWatchOnlyAddresses(string walletName, string accountName, int addressType, List<HdAddress> addresses, bool force = false)
         {
             WalletContainer walletContainer = this.GetWalletContainer(walletName);
@@ -567,6 +602,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             walletContainer.WriteLockWait();
 
             DBConnection conn = walletContainer.Conn;
+            bool mustCommit = false;
 
             try
             {
@@ -581,29 +617,28 @@ namespace Stratis.Features.SQLiteWalletRepository
                     var tracker = new TopUpTracker(conn, account.WalletId, account.AccountIndex, isChange ? 1 : 0);
                     tracker.ReadAccount();
 
-                    conn.BeginTransaction();
+                    mustCommit = !conn.IsInTransaction;
 
-                    try
+                    while (addresses.Count < count)
                     {
-                        while (addresses.Count < count)
-                        {
-                            AddressIdentifier addressIdentifier = tracker.CreateAddress();
-                            var address = HDAddress.GetAddress(conn, addressIdentifier.WalletId, (int)addressIdentifier.AccountIndex, (int)addressIdentifier.AddressType, (int)addressIdentifier.AddressIndex);
-                            addresses.Add(address);
-                        }
-                    }
-                    finally
-                    {
-                        conn.Commit();
+                        AddressIdentifier addressIdentifier = tracker.CreateAddress();
+                        var address = HDAddress.GetAddress(conn, addressIdentifier.WalletId, (int)addressIdentifier.AccountIndex, (int)addressIdentifier.AddressType, (int)addressIdentifier.AddressIndex);
+                        addresses.Add(address);
                     }
 
                     walletContainer.AddressesOfInterest.AddAll(account.WalletId, account.AccountIndex, isChange ? 1 : 0);
+
+                    if (mustCommit)
+                        conn.Commit();
                 }
 
                 return addresses.Select(a => this.ToHdAddress(a));
             }
             finally
             {
+                if (mustCommit)
+                    conn.Rollback();
+
                 walletContainer.WriteLockRelease();
             }
         }
@@ -752,10 +787,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                     {
                         long flagFall = DateTime.Now.Ticks;
 
-                        if (!conn.IsInTransaction)
+                        if (!round.MustCommit && !conn.IsInTransaction)
                         {
-                            Guard.Assert(!round.MustCommit);
-
                             conn.BeginTransaction();
                             round.MustCommit = true;
                         }
@@ -854,7 +887,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                 round.NewTip = header;
             }
-            catch (Exception err)
+            catch (Exception)
             {
                 if (round.MustCommit)
                 {

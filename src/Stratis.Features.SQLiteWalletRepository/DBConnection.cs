@@ -72,7 +72,6 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 this.TransactionLock.Wait();
                 this.SQLiteConnection.BeginTransaction();
-                Guard.Assert(this.SQLiteConnection.IsInTransaction);
                 this.TransactionDepth = 0;
             }
 
@@ -81,11 +80,9 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal void Rollback()
         {
-            Guard.Assert(this.SQLiteConnection.IsInTransaction);
-
             this.TransactionDepth--;
 
-            if (this.TransactionDepth == 0)
+            if (this.TransactionDepth == 0 && this.SQLiteConnection.IsInTransaction)
             {
                 this.SQLiteConnection.Rollback();
                 this.CommitActions.Clear();
@@ -103,11 +100,9 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal void Commit()
         {
-            Guard.Assert(this.SQLiteConnection.IsInTransaction);
-
             this.TransactionDepth--;
 
-            if (this.TransactionDepth == 0)
+            if (this.TransactionDepth == 0 && this.SQLiteConnection.IsInTransaction)
             {
                 this.SQLiteConnection.Commit();
                 this.RollBackActions.Clear();
@@ -182,6 +177,29 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.CreateTable<HDPayment>();
         }
 
+        internal void AddTransactions(HDAccount account, HdAddress address, ICollection<TransactionData> transactions)
+        {
+            if (transactions.Count > 0)
+            {
+                HDWallet wallet = GetById(account.WalletId);
+                WalletContainer walletContainer = this.Repository.Wallets[wallet.Name];
+
+                var transactionsToLists = new TransactionsToLists(this.Repository.Network, this.Repository.ScriptAddressReader, walletContainer);
+                transactionsToLists.ProcessTransactionData(address, transactions);
+
+                var outputs = walletContainer.Outputs;
+                var prevouts = walletContainer.PrevOuts;
+
+                IEnumerable<IEnumerable<string>> blockToScript = (new TempTable[] { outputs, prevouts }).Select(list => list.CreateScript());
+
+                this.ProcessTransactions(blockToScript, wallet, null, null);
+
+                outputs.Clear();
+                prevouts.Clear();
+
+            }
+        }
+
         internal void AddAdresses(HDAccount account, int addressType, List<HdAddress> hdAddresses)
         {
             foreach (HdAddress hdAddress in hdAddresses)
@@ -191,6 +209,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 address.PubKey = hdAddress.Pubkey?.ToHex();
 
                 this.Insert(address);
+
+                this.AddTransactions(account, hdAddress, hdAddress.Transactions);
             }
         }
 
@@ -208,34 +228,6 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
 
             return addresses;
-        }
-
-        internal HDAddress CreateAddress(HDAccount account, int addressType, int addressIndex)
-        {
-            // Retrieve the pubkey associated with the private key of this address index.
-            var keyPath = new KeyPath($"{addressType}/{addressIndex}");
-
-            Script pubKeyScript = null;
-            Script scriptPubKey = null;
-
-            if (account.ExtPubKey != null)
-            {
-                ExtPubKey extPubKey = account.GetExtPubKey(this.Repository.Network).Derive(keyPath);
-                PubKey pubKey = extPubKey.PubKey;
-                pubKeyScript = pubKey.ScriptPubKey;
-                scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(pubKey);
-            }
-
-            // Add the new address details to the list of addresses.
-            return new HDAddress()
-            {
-                WalletId = account.WalletId,
-                AccountIndex = account.AccountIndex,
-                AddressType = addressType,
-                AddressIndex = addressIndex,
-                PubKey = pubKeyScript?.ToHex(),
-                ScriptPubKey = scriptPubKey?.ToHex()
-            };
         }
 
         internal IEnumerable<HDAddress> GetUsedAddresses(int walletId, int accountIndex, int addressType, int count)
@@ -535,6 +527,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             cmdReplacePayments.Bind("walletName", walletName);
             cmdReplacePayments.Bind("prevHash", prevHash);
             cmdReplacePayments.ExecuteNonQuery();
+
 
             // Update spending details on HDTransactionData records.
             // Performs checks that we do not affect a confirmed transaction's spends.

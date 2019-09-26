@@ -12,10 +12,10 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.ColdStaking;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Wallet;
 using Stratis.Features.SQLiteWalletRepository.External;
 using Xunit;
 
@@ -308,11 +308,13 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                     // Looking at the spending tx we see 90 coins sent out and 9 sent to internal change address.
                     List<PaymentDetails> payments = history[0].Transaction.SpendingDetails.Payments.ToList();
-                    Assert.Equal(2, payments.Count);
+                    List<PaymentDetails> change = history[0].Transaction.SpendingDetails.Change.ToList();
+                    Assert.Single(payments);
                     Assert.Equal(Money.COIN * 90, (long)payments[0].Amount);
                     Assert.Equal(dest, payments[0].DestinationScriptPubKey);
-                    Assert.Equal(Money.COIN * 9, (long)payments[1].Amount);
-                    Assert.Equal(changeAddress.ScriptPubKey, payments[1].DestinationScriptPubKey);
+                    Assert.Single(change);
+                    Assert.Equal(Money.COIN * 9, (long)change[0].Amount);
+                    Assert.Equal(changeAddress.ScriptPubKey, change[0].DestinationScriptPubKey);
 
                     // Verify 9 coins sent to first unused change address in the wallet.
                     Assert.Equal(changeAddress.Address, history[1].Address.Address);
@@ -322,10 +324,10 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
 
                     // FINDFORK
                     // See if FindFork can be run from multiple threads
-                    var forks = new ChainedHeader[100];
+                    var forks = new ChainedHeader[1];
                     Parallel.ForEach(forks.Select((f,n) => n), n =>
                     {
-                        forks[n] = repo.FindFork("wallettABA", chainedHeader2);
+                        forks[n] = repo.FindFork("test2", chainedHeader2);
                     });
 
                     Assert.DoesNotContain(forks, f => f.Height != chainedHeader2.Height);
@@ -338,7 +340,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     forks = new ChainedHeader[100];
                     Parallel.ForEach(forks.Select((f, n) => n), n =>
                     {
-                        forks[n] = repo.FindFork("wallettABA", chainedHeader2);
+                        forks[n] = repo.FindFork("test2", chainedHeader2);
                     });
 
                     Assert.DoesNotContain(forks, f => f.Height != chainedHeader1.Height);

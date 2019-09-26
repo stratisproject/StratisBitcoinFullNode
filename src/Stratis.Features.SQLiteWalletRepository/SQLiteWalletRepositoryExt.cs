@@ -25,14 +25,19 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal static HdAccount ToHdAccount(this SQLiteWalletRepository repo, HDAccount account)
         {
-            return new HdAccount()
+            var res = new HdAccount
             {
                 Name = account.AccountName,
                 CreationTime = DateTimeOffset.FromUnixTimeSeconds(account.CreationTime),
                 ExtendedPubKey = account.ExtPubKey,
                 Index = account.AccountIndex,
-                HdPath = repo.ToHdPath(account.AccountIndex)
+                HdPath = repo.ToHdPath(account.AccountIndex),
             };
+
+            res.ExternalAddresses = new AddressCollection(res, 0);
+            res.InternalAddresses = new AddressCollection(res, 1);
+
+            return res;
         }
 
         internal static HdAddress ToHdAddress(this SQLiteWalletRepository repo, HDAddress address)
@@ -40,10 +45,11 @@ namespace Stratis.Features.SQLiteWalletRepository
             var pubKeyScript = (address.PubKey == null) ? null : new Script(Encoders.Hex.DecodeData(address.PubKey)); // P2PK
             var scriptPubKey = new Script(Encoders.Hex.DecodeData(address.ScriptPubKey));
 
-            var res = new HdAddress()
+            var res = new HdAddress(null)
             {
                 Address = repo.ScriptAddressReader.GetAddressFromScriptPubKey(repo.Network, scriptPubKey),
                 Index = address.AddressIndex,
+                AddressType = address.AddressType,
                 HdPath = repo.ToHdPath(address.AccountIndex, address.AddressType, address.AddressIndex),
                 ScriptPubKey = new Script(Encoders.Hex.DecodeData(address.ScriptPubKey)),
                 Pubkey = pubKeyScript
@@ -74,7 +80,13 @@ namespace Stratis.Features.SQLiteWalletRepository
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds((long)transactionData.SpendTxTime),
                     IsCoinStake = transactionData.SpendTxIsCoinBase == 1,
                     TransactionId = uint256.Parse(transactionData.SpendTxId),
-                    Payments = payments.Select(p => new PaymentDetails()
+                    Change = payments.Where(p => p.SpendIsChange != 0).Select(p => new PaymentDetails()
+                    {
+                        Amount = new Money((decimal)p.SpendValue, MoneyUnit.BTC),
+                        DestinationScriptPubKey = new Script(Encoders.Hex.DecodeData(p.SpendScriptPubKey)),
+                        OutputIndex = p.SpendIndex
+                    }).ToList(),
+                    Payments = payments.Where(p => p.SpendIsChange == 0).Select(p => new PaymentDetails()
                     {
                         Amount = new Money((decimal)p.SpendValue, MoneyUnit.BTC),
                         DestinationScriptPubKey = new Script(Encoders.Hex.DecodeData(p.SpendScriptPubKey)),
@@ -88,7 +100,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             try
             {
-                IEnumerable<PaymentDetails> allDetails = txData.SpendingDetails.Payments;
+                IEnumerable<PaymentDetails> allDetails = txData.SpendingDetails.Change.Concat(txData.SpendingDetails.Payments);
                 var lookup = allDetails.Select(d => d.DestinationScriptPubKey).Distinct().ToDictionary(d => d, d => (string)null);
                 foreach (Script script in lookup.Keys.ToList())
                     lookup[script] = repo.ScriptAddressReader.GetAddressFromScriptPubKey(repo.Network, script);
