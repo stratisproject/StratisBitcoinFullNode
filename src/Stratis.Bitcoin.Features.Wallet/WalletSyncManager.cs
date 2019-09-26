@@ -27,19 +27,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly ISignals signals;
         private readonly IAsyncProvider asyncProvider;
         private List<(string name, ChainedHeader tipHeader)> wallets = new List<(string name, ChainedHeader tipHeader)>();
-        private ConcurrentDictionary<string, WalletSyncState> walletStateMap = new ConcurrentDictionary<string, WalletSyncState>();
         private readonly INodeLifetime nodeLifetime;
         private IAsyncLoop walletSynchronisationLoop;
         private SubscriptionToken transactionReceivedSubscription;
         private CancellationTokenSource syncCancellationToken;
         private object lockObject;
-
         protected ChainedHeader walletTip;
 
-        // ToDo this is frankly a controversial function that has to do with some weird concept of top wallet tip between the wallets for now I shall simply display this as highest tip
         public ChainedHeader WalletTip => this.walletTip;
-
-        public bool ContainsWallets => this.wallets.Any();
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ChainIndexer chainIndexer,
             Network network, IBlockStore blockStore, StoreSettings storeSettings, ISignals signals, IAsyncProvider asyncProvider, INodeLifetime nodeLifetime)
@@ -213,15 +208,5 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.Stop();
             }
         }
-    }
-
-    /// <summary>
-    /// This should be further developed for monitoring state per each wallet
-    /// </summary>
-    public enum WalletSyncState
-    {
-        Idle = 0,
-        Syncing = 1,
-        Completed = 2
     }
 }
