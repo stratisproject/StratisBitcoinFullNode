@@ -23,7 +23,6 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Wallet;
 
 namespace Stratis.Bitcoin.Features.Miner.Staking
 {
@@ -843,7 +842,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                         {
                             context.Logger.LogDebug("Kernel found with solution hash '{0}'.", contextInformation.HashProofOfStake);
 
-                            Wallet.Wallet wallet = this.walletManager.GetWalletByName(utxoStakeInfo.Secret.WalletName);
+                            Wallet.Wallet wallet = this.walletManager.GetWallet(utxoStakeInfo.Secret.WalletName);
                             context.CoinstakeContext.Key = wallet.GetExtendedPrivateKeyForAddress(utxoStakeInfo.Secret.WalletPassword, utxoStakeInfo.Address).PrivateKey;
                             utxoStakeInfo.Key = context.CoinstakeContext.Key;
 

@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         {
             Guard.NotEmpty(walletName, nameof(walletName));
             Guard.NotEmpty(walletPassword, nameof(walletPassword));
-            
+
             Wallet.Wallet wallet = this.walletManager.GetWallet(walletName);
 
             // Check the password
@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             }
 
             GetStakingInfoModel model = this.posMinting != null ? this.posMinting.GetGetStakingInfoModel() : new GetStakingInfoModel();
-            
+
             return model;
         }
     }
