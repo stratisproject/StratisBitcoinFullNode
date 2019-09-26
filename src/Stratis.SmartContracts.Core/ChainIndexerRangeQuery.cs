@@ -35,28 +35,23 @@ namespace Stratis.SmartContracts.Core
             // Return the start header.
             yield return fromHeader;
 
-            IEnumerable<ChainedHeader> blockHeaders = this.chainIndexer.EnumerateAfter(fromHeader);
+            // Enumerating the remaining headers in this way ensures that if a reorg occurs during enumeration
+            // we will only return headers up until the reorg point.
+            int i = fromHeader.Height + 1;
+            ChainedHeader prev = fromHeader;
 
-            if (toBlockHeight != null)
+            while (true)
             {
-                ChainedHeader toHeader = this.chainIndexer.GetHeader(toBlockHeight.Value);
-
-                if (toHeader == fromHeader)
-                {
-                    // We're done.
+                if (toBlockHeight.HasValue && i > toBlockHeight.Value)
                     yield break;
-                }
 
-                // If we have a toHeader and it's not the same as the start header.
-                if (toHeader != null)
-                {
-                    blockHeaders = blockHeaders.TakeWhile(b => b != toHeader).Append(toHeader);
-                }
-            }
+                ChainedHeader b = this.chainIndexer.GetHeader(i);
+                if ((b == null) || (b.Previous != prev))
+                    yield break;
 
-            foreach (ChainedHeader blockHeader in blockHeaders)
-            {
-                yield return blockHeader;
+                yield return b;
+                i++;
+                prev = b;
             }
         }
     }
