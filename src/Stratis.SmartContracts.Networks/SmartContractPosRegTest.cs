@@ -4,7 +4,12 @@ using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Features.MemoryPool.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.MempoolRules;
+using Stratis.Bitcoin.Features.SmartContracts.PoA.MempoolRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoS;
+using Stratis.Bitcoin.Features.SmartContracts.PoS.Rules;
 using Stratis.SmartContracts.Networks.Policies;
 
 namespace Stratis.SmartContracts.Networks
@@ -114,6 +119,80 @@ namespace Stratis.SmartContracts.Networks
             this.SeedNodes = new List<NetworkAddress>();
 
             this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
+
+            this.RegisterRules(this.Consensus);
+            this.RegisterMempoolRules(this.Consensus);
+        }
+
+        private void RegisterRules(IConsensus consensus)
+        {
+            // IHeaderValidationRule
+            consensus.ConsensusRules
+                .Register<HeaderTimeChecksRule>()
+                .Register<HeaderTimeChecksPosRule>()
+                .Register<StratisBugFixPosFutureDriftRule>()
+                .Register<CheckDifficultyPosRule>()
+                .Register<StratisHeaderVersionRule>();
+
+            // IIntegrityValidationConsensusRule
+            consensus.ConsensusRules
+                .Register<BlockMerkleRootRule>()
+                .Register<PosBlockSignatureRepresentationRule>()
+                .Register<SmartContractPosBlockSignatureRule>();
+
+            // IPartialValidationConsensusRule
+            consensus.ConsensusRules
+                .Register<SetActivationDeploymentsPartialValidationRule>()
+                .Register<PosTimeMaskRule>()
+                .Register<TransactionLocktimeActivationRule>()
+                .Register<CoinbaseHeightActivationRule>()
+                .Register<WitnessCommitmentsRule>()
+                .Register<BlockSizeRule>()
+                .Register<EnsureCoinbaseRule>()
+                .Register<CheckPowTransactionRule>()
+                .Register<CheckPosTransactionRule>()
+                .Register<CheckSigOpsRule>()
+                .Register<PosCoinstakeRule>();
+
+            // IFullValidationConsensusRule
+            // TODO: When looking to make PoS work again, will need to add several of the smart contract consensus rules below (see PoA and PoW implementations)
+            consensus.ConsensusRules
+                .Register<SetActivationDeploymentsFullValidationRule>()
+                .Register<CheckDifficultyHybridRule>()
+                .Register<LoadCoinviewRule>()
+                .Register<TransactionDuplicationActivationRule>()
+                .Register<SmartContractPosCoinviewRule>()
+                .Register<SaveCoinviewRule>();
+        }
+
+        private void RegisterMempoolRules(IConsensus consensus)
+        {
+            consensus.MempoolRules = new List<Type>()
+            {
+                typeof(OpSpendMempoolRule),
+                typeof(TxOutSmartContractExecMempoolRule),
+                typeof(AllowedScriptTypeMempoolRule),
+                typeof(P2PKHNotContractMempoolRule),
+
+                // The non- smart contract mempool rules
+                typeof(CheckConflictsMempoolRule),
+                typeof(CheckCoinViewMempoolRule),
+                typeof(CreateMempoolEntryMempoolRule),
+                typeof(CheckSigOpsMempoolRule),
+                typeof(CheckFeeMempoolRule),
+
+                // The smart contract mempool needs to do more fee checks than its counterpart, so include extra rules.
+                // These rules occur directly after the fee check rule in the non- smart contract mempool.
+                typeof(SmartContractFormatLogicMempoolRule),
+                typeof(CanGetSenderMempoolRule),
+                typeof(CheckMinGasLimitSmartContractMempoolRule),
+
+                // Remaining non-SC rules.
+                typeof(CheckRateLimitMempoolRule),
+                typeof(CheckAncestorsMempoolRule),
+                typeof(CheckReplacementMempoolRule),
+                typeof(CheckAllInputsMempoolRule)
+            };
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -109,8 +110,8 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
 
         public ulong GetWalletAddressBalance(string walletAddress)
         {
-            var jsonResult = (JsonResult) this.smartContractWalletController.GetAddressBalance(walletAddress);
-            return (ulong) (decimal) jsonResult.Value;
+            var jsonResult = (JsonResult)this.smartContractWalletController.GetAddressBalance(walletAddress);
+            return (ulong)(decimal)jsonResult.Value;
         }
 
         /// <summary>
@@ -124,16 +125,41 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
         /// <summary>
         /// Send a normal transaction.
         /// </summary>
-        public Result<WalletSendTransactionModel> SendTransaction(Script scriptPubKey, Money amount)
+        public Result<WalletSendTransactionModel> SendTransaction(Script scriptPubKey, Money amount, int utxos = 0, List<OutPoint> selectedInputs = null)
         {
+            Recipient[] recipients;
+
+            if (utxos > 0)
+            {
+                if (amount % utxos != 0)
+                {
+                    throw new ArgumentException("Amount should be divisible by utxos if utxos are specified!");
+                }
+
+                recipients = new Recipient[utxos];
+                for (int i = 0; i < recipients.Length; i++)
+                {
+                    recipients[i] = new Recipient { Amount = amount / utxos, ScriptPubKey = scriptPubKey };
+                }
+            }
+            else
+            {
+                recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = scriptPubKey } };
+            }
+
+            if (selectedInputs == null)
+            {
+                selectedInputs = this.CoreNode.FullNode.WalletManager().GetSpendableInputsForAddress(this.WalletName, this.MinerAddress.Address, 1); // Always send from the MinerAddress. Simplifies things.
+            }
+
             var txBuildContext = new TransactionBuildContext(this.CoreNode.FullNode.Network)
             {
                 AccountReference = new WalletAccountReference(this.WalletName, this.AccountName),
                 MinConfirmations = 1,
                 FeeType = FeeType.Medium,
                 WalletPassword = this.Password,
-                Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = scriptPubKey } }.ToList(),
-                SelectedInputs = this.CoreNode.FullNode.WalletManager().GetSpendableInputsForAddress(this.WalletName, this.MinerAddress.Address), // Always send from the MinerAddress. Simplifies things.
+                Recipients = recipients.ToList(),
+                SelectedInputs = selectedInputs,
                 ChangeAddress = this.MinerAddress // yes this is unconventional, but helps us to keep the balance on the same addresses
             };
 
@@ -163,7 +189,8 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             decimal feeAmount = 0.01M,
-            string sender = null)
+            string sender = null,
+            List<OutpointRequest> outpoints = null)
         {
             var request = new BuildCreateContractTransactionRequest
             {
@@ -176,10 +203,11 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 Parameters = parameters,
                 Password = this.Password,
                 Sender = sender ?? this.MinerAddress.Address,
-                WalletName = this.WalletName
+                WalletName = this.WalletName,
+                Outpoints = outpoints
             };
 
-            IActionResult result = this.smartContractsController.BuildAndSendCreateSmartContractTransaction(request);
+            IActionResult result = this.smartContractsController.BuildAndSendCreateSmartContractTransactionAsync(request).GetAwaiter().GetResult();
             if (result is JsonResult response)
             {
                 return (BuildCreateContractTransactionResponse)response.Value;
@@ -244,9 +272,10 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
-            decimal feeAmount = 0.01M,
-            string sender = null)
-        {
+            decimal feeAmount = 0.01M, 
+            string sender = null,
+            List<OutpointRequest> outpoints = null)
+            {
             var request = new BuildCallContractTransactionRequest
             {
                 AccountName = this.AccountName,
@@ -259,10 +288,11 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 Parameters = parameters,
                 Password = this.Password,
                 Sender = sender ?? this.MinerAddress.Address,
-                WalletName = this.WalletName
+                WalletName = this.WalletName,
+                Outpoints = outpoints
             };
 
-            JsonResult response = (JsonResult)this.smartContractsController.BuildAndSendCallSmartContractTransaction(request);
+            var response = (JsonResult)this.smartContractsController.BuildAndSendCallSmartContractTransactionAsync(request).GetAwaiter().GetResult();
 
             return (BuildCallContractTransactionResponse)response.Value;
         }
@@ -287,7 +317,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 Sender = sender ?? this.MinerAddress.Address
             };
             JsonResult response = (JsonResult)this.smartContractsController.LocalCallSmartContractTransaction(request);
-            return (ILocalExecutionResult) response.Value;
+            return (ILocalExecutionResult)response.Value;
         }
 
         /// <summary>

@@ -16,8 +16,8 @@ using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.BlockStore.Models;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
-using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
@@ -592,13 +592,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     })
                     .ReceiveJson<WalletBuildTransactionModel>();
 
-                    await $"http://localhost:{sendingNode.ApiPort}/api"
-                    .AppendPathSegment("wallet/send-transaction")
-                    .PostJsonAsync(new SendTransactionRequest
-                    {
-                        Hex = buildTransactionModel.Hex
-                    })
-                    .ReceiveJson<WalletSendTransactionModel>();
+                await $"http://localhost:{sendingNode.ApiPort}/api"
+                .AppendPathSegment("wallet/send-transaction")
+                .PostJsonAsync(new SendTransactionRequest
+                {
+                    Hex = buildTransactionModel.Hex
+                })
+                .ReceiveJson<WalletSendTransactionModel>();
 
                 // Assert.
                 // The sending node should have 50 (+ fee) fewer coins.
@@ -721,7 +721,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 BlockTransactionDetailsModel block = await $"http://localhost:{receivingNode.ApiPort}/api"
                     .AppendPathSegment("blockstore/block")
-                    .SetQueryParams(new {hash = lastBlockHash, showTransactionDetails = true, outputJson = true})
+                    .SetQueryParams(new { hash = lastBlockHash, showTransactionDetails = true, outputJson = true })
                     .GetJsonAsync<BlockTransactionDetailsModel>();
 
                 TransactionVerboseModel trx = block.Transactions.SingleOrDefault(t => t.TxId == buildTransactionModel.TransactionId.ToString());
@@ -739,9 +739,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         [Fact]
         public async Task GetBalancesAsync()
         {
-            int sendingAccountBalanceOnStart = 98000596;
-            int receivingAccountBalanceOnStart = 0;
-
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // Arrange.

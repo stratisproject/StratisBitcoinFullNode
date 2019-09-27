@@ -1388,7 +1388,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             HdAddress accountAddress = WalletTestsHelpers.CreateAddress(true);
             account.InternalAddresses.Add(accountAddress);
 
-            var addressBalance = new AddressBalance { Address = accountAddress.Address, AmountConfirmed = new Money(75000), AmountUnconfirmed = new Money(500000) };
+            var addressBalance = new AddressBalance { Address = accountAddress.Address, AmountConfirmed = new Money(75000), AmountUnconfirmed = new Money(500000), SpendableAmount = new Money(75000)};
 
             var mockWalletManager = new Mock<IWalletManager>();
             mockWalletManager.Setup(w => w.GetAddressBalance(accountAddress.Address)).Returns(addressBalance);
@@ -1405,8 +1405,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.NotNull(model);
             Assert.Equal(this.Network.Consensus.CoinType, (int)model.CoinType);
             Assert.Equal(accountAddress.Address, model.Address);
-            Assert.Equal(new Money(75000), model.AmountConfirmed);
-            Assert.Equal(new Money(500000), model.AmountUnconfirmed);
+            Assert.Equal(addressBalance.AmountConfirmed, model.AmountConfirmed);
+            Assert.Equal(addressBalance.SpendableAmount, model.SpendableAmount);
         }
 
         [Fact]

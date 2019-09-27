@@ -33,6 +33,7 @@ namespace Stratis.Bitcoin.Controllers
     /// <summary>
     /// Provides methods that interact with the full node.
     /// </summary>
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public class NodeController : Controller
     {

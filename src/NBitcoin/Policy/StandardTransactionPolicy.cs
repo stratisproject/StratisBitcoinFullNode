@@ -78,7 +78,7 @@ namespace NBitcoin.Policy
                 {
                     if (this.ScriptVerify != null)
                     {
-                        if(!input.VerifyScript(this.network, coin.TxOut.ScriptPubKey, coin.TxOut.Value, this.ScriptVerify.Value, out ScriptError error))
+                        if (!input.VerifyScript(this.network, coin.TxOut.ScriptPubKey, coin.TxOut.Value, this.ScriptVerify.Value, out ScriptError error))
                         {
                             errors.Add(new ScriptPolicyError(input, error, this.ScriptVerify.Value, coin.TxOut.ScriptPubKey));
                         }
@@ -180,11 +180,11 @@ namespace NBitcoin.Policy
             }
         }
 
-        protected static bool IsOpReturn(byte[] bytes)
+        public static bool IsOpReturn(byte[] bytes)
         {
             return bytes.Length > 0 && bytes[0] == (byte)OpcodeType.OP_RETURN;
         }
-        
+
         public StandardTransactionPolicy Clone()
         {
             return new StandardTransactionPolicy(this.network)

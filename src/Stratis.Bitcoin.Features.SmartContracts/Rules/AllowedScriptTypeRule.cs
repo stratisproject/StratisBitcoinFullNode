@@ -2,7 +2,6 @@
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.SmartContracts.Core;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
@@ -10,7 +9,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// <summary>
     /// Enforces that only certain script types are used on the network.
     /// </summary>
-    public class AllowedScriptTypeRule : PartialValidationConsensusRule, ISmartContractMempoolRule
+    public class AllowedScriptTypeRule : PartialValidationConsensusRule
     {
         private readonly Network network;
 
@@ -19,24 +18,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.network = network;
         }
 
+        /// <inheritdoc/>
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;
 
             foreach (Transaction transaction in block.Transactions)
             {
-                this.CheckTransaction(transaction);
+                CheckTransaction(this.network, transaction);
             }
 
             return Task.CompletedTask;
         }
 
-        public void CheckTransaction(MempoolValidationContext context)
-        {
-            this.CheckTransaction(context.Transaction);
-        }
-
-        private void CheckTransaction(Transaction transaction)
+        public static void CheckTransaction(Network network, Transaction transaction)
         {
             // Why dodge coinbase?
             // 1) Coinbase can only be written by Authority nodes anyhow.
@@ -45,17 +40,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             {
                 foreach (TxOut output in transaction.Outputs)
                 {
-                    this.CheckOutput(output);
+                    CheckOutput(output);
                 }
 
                 foreach (TxIn input in transaction.Inputs)
                 {
-                    this.CheckInput(input);
+                    CheckInput(network, input);
                 }
             }
         }
 
-        private void CheckOutput(TxOut output)
+        private static void CheckOutput(TxOut output)
         {
             if (output.ScriptPubKey.IsSmartContractExec())
                 return;
@@ -81,23 +76,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             new ConsensusError("disallowed-output-script", "Only the following script types are allowed on smart contracts network: P2PKH, P2SH, P2MultiSig, OP_RETURN and smart contracts").Throw();
         }
 
-        private void CheckInput(TxIn input)
+        private static void CheckInput(Network network, TxIn input)
         {
             if (input.ScriptSig.IsSmartContractSpend())
                 return;
 
-            if (PayToPubkeyHashTemplate.Instance.CheckScriptSig(this.network, input.ScriptSig))
+            if (PayToPubkeyHashTemplate.Instance.CheckScriptSig(network, input.ScriptSig))
                 return;
 
             // Currently necessary to spend premine. Could be stricter.
-            if (PayToPubkeyTemplate.Instance.CheckScriptSig(this.network, input.ScriptSig, null))
+            if (PayToPubkeyTemplate.Instance.CheckScriptSig(network, input.ScriptSig, null))
                 return;
 
-            if (PayToScriptHashTemplate.Instance.CheckScriptSig(this.network, input.ScriptSig, null))
+            if (PayToScriptHashTemplate.Instance.CheckScriptSig(network, input.ScriptSig, null))
                 return;
 
             // For cross-chain transfers
-            if (PayToMultiSigTemplate.Instance.CheckScriptSig(this.network, input.ScriptSig, null))
+            if (PayToMultiSigTemplate.Instance.CheckScriptSig(network, input.ScriptSig, null))
                 return;
 
             new ConsensusError("disallowed-input-script", "Only the following script types are allowed on smart contracts network: P2PKH, P2SH, P2MultiSig, OP_RETURN and smart contracts").Throw();

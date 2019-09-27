@@ -15,13 +15,13 @@ namespace Stratis.SmartContracts.IntegrationTests
 {
     public class WhitelistedContractTests : IDisposable
     {
-        private readonly SmartContractsPoARegTest network;
+        private readonly SmartContractsPoAWhitelistRegTest network;
         private readonly Func<int, CoreNode> nodeFactory;
         private readonly SmartContractNodeBuilder builder;
 
         public WhitelistedContractTests()
         {
-            this.network = new SmartContractsPoARegTest();
+            this.network = new SmartContractsPoAWhitelistRegTest();
 
             this.builder = SmartContractNodeBuilder.Create(this);
             this.nodeFactory = (nodeIndex) => this.builder.CreateWhitelistedContractPoANode(this.network, nodeIndex).Start();
@@ -60,7 +60,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         // TODO: Fix this.
         /*
         [Retry]
-        public async Task Create_NoWhitelist_Mempool_Rejects()
+        public async Task Create_NoWhitelist_Mempool_RejectsAsync()
         {
             using (var chain = new PoAMockChain(2, this.nodeFactory).Build())
             {
@@ -95,6 +95,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         private void SetupNodes(IMockChain chain, MockChainNode node1, MockChainNode node2)
         {
+            // TODO: Use ready chain data
             // Get premine
             chain.MineBlocks(10);
 

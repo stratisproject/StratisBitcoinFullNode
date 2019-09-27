@@ -42,7 +42,8 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Returns the receive handler method defined on the inherited contract type. If no receive handler was defined, returns null.
         /// </summary>
-        public MethodInfo ReceiveHandler {
+        public MethodInfo ReceiveHandler
+        {
             get
             {
                 if (this.receive == null)
@@ -77,8 +78,8 @@ namespace Stratis.SmartContracts.CLR
         /// </summary>
         public static bool ConstructorExists(Type type, IReadOnlyList<object> parameters)
         {
-            Type[] types = {typeof(ISmartContractState)};    
-            
+            Type[] types = { typeof(ISmartContractState) };
+
             if (parameters != null)
                 types = types.Concat(parameters.Select(p => p.GetType())).ToArray();
 
@@ -90,8 +91,8 @@ namespace Stratis.SmartContracts.CLR
         {
             // If it's a constructor we need to append the ISmartContractState to the start of the parameters array
             object[] invokeParams = { this.State };
-            
-            if(parameters != null)
+
+            if (parameters != null)
                 invokeParams = invokeParams.Concat(parameters).ToArray();
 
             Type[] types = invokeParams.Select(p => p.GetType()).ToArray();
@@ -178,13 +179,13 @@ namespace Stratis.SmartContracts.CLR
 
                 return ContractInvocationResult.Success(result);
             }
-            catch (TargetParameterCountException parameterException)
+            catch (TargetParameterCountException)
             {
                 // Parameter count incorrect
                 // This should not happen
                 return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterCountIncorrect);
             }
-            catch (ArgumentException argumentException)
+            catch (ArgumentException)
             {
                 // Parameters do not match
                 // This should not happen

@@ -191,6 +191,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>The total cost of the signature operations for the transaction.</summary>
         public long SigOpsCost { get; set; }
 
+        /// <summary>This is not transaction-specific, it is needed for rule evaluation.</summary>
+        public FeeRate MinRelayTxFee { get; set; }
+
         /// <summary>
         /// Constructs a memory pool validation context object.
         /// </summary>

@@ -2,7 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
-using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts;
@@ -39,8 +38,13 @@ namespace Stratis.Features.Collateral
     /// </summary>
     public static class FullNodeBuilderCollateralFeatureExtension
     {
+        // Both Cirrus Peg and Cirrus Miner calls this.
         public static IFullNodeBuilder CheckForPoAMembersCollateral(this IFullNodeBuilder fullNodeBuilder)
         {
+            // Inject the CheckCollateralFullValidationRule as the first Full Validation Rule.
+            // This is still a bit hacky and we need to properly review the dependencies again between the different side chain nodes.
+            fullNodeBuilder.Network.Consensus.ConsensusRules.FullValidationRules.Insert(0, typeof(CheckCollateralFullValidationRule));
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features.AddFeature<CollateralFeature>()
@@ -50,9 +54,6 @@ namespace Stratis.Features.Collateral
                     {
                         services.AddSingleton<IFederationManager, CollateralFederationManager>();
                         services.AddSingleton<ICollateralChecker, CollateralChecker>();
-
-                        new SmartContractCollateralPoARuleRegistration().RegisterRules(services);
-                        services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
                     });
             });
 
