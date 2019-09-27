@@ -594,6 +594,19 @@ namespace Stratis.Features.SQLiteWalletRepository
             return walletContainer;
         }
 
+        private HDAddress CreateAddress(AddressIdentifier addressId)
+        {
+            return new HDAddress()
+            {
+                WalletId = addressId.WalletId,
+                AccountIndex = (int)addressId.AccountIndex,
+                AddressType = (int)addressId.AddressType,
+                AddressIndex = (int)addressId.AddressIndex,
+                PubKey = addressId.PubKeyScript,
+                ScriptPubKey = addressId.ScriptPubKey
+            };
+        }
+
         /// <inheritdoc />
         public IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count, bool isChange = false)
         {
@@ -602,7 +615,6 @@ namespace Stratis.Features.SQLiteWalletRepository
             walletContainer.WriteLockWait();
 
             DBConnection conn = walletContainer.Conn;
-            bool mustCommit = false;
 
             try
             {
@@ -614,31 +626,36 @@ namespace Stratis.Features.SQLiteWalletRepository
                 List<HDAddress> addresses = conn.GetUnusedAddresses(account.WalletId, account.AccountIndex, isChange ? 1 : 0, count).ToList();
                 if (addresses.Count < count)
                 {
-                    var tracker = new TopUpTracker(conn, account.WalletId, account.AccountIndex, isChange ? 1 : 0);
-                    tracker.ReadAccount();
-
-                    mustCommit = !conn.IsInTransaction;
-
-                    while (addresses.Count < count)
+                    conn.BeginTransaction();
+                    try
                     {
-                        AddressIdentifier addressIdentifier = tracker.CreateAddress();
-                        var address = HDAddress.GetAddress(conn, addressIdentifier.WalletId, (int)addressIdentifier.AccountIndex, (int)addressIdentifier.AddressType, (int)addressIdentifier.AddressIndex);
-                        addresses.Add(address);
-                    }
+                        var tracker = new TopUpTracker(conn, account.WalletId, account.AccountIndex, isChange ? 1 : 0);
+                        tracker.ReadAccount();
 
-                    walletContainer.AddressesOfInterest.AddAll(account.WalletId, account.AccountIndex, isChange ? 1 : 0);
+                        while (addresses.Count < count)
+                        {
+                            AddressIdentifier addressIdentifier = tracker.CreateAddress();
+                            conn.Insert(this.CreateAddress(addressIdentifier));
 
-                    if (mustCommit)
+                            var address = HDAddress.GetAddress(conn, addressIdentifier.WalletId, (int)addressIdentifier.AccountIndex, (int)addressIdentifier.AddressType, (int)addressIdentifier.AddressIndex);
+                            addresses.Add(address);
+                        }
+
+                        walletContainer.AddressesOfInterest.AddAll(account.WalletId, account.AccountIndex, isChange ? 1 : 0);
+
                         conn.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        conn.Rollback();
+                        throw;
+                    }
                 }
 
                 return addresses.Select(a => this.ToHdAddress(a));
             }
             finally
             {
-                if (mustCommit)
-                    conn.Rollback();
-
                 walletContainer.WriteLockRelease();
             }
         }
@@ -796,25 +813,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                                 IEnumerable<IEnumerable<string>> blockToScript = (new[] { round.Outputs, round.PrevOuts }).Select(list => list.CreateScript());
 
                                 // Ensure that any new addresses are present in the database before accessing the HDAddress table.
-                                foreach (AddressIdentifier addressId in round.AddressesOfInterest.GetTentative())
-                                {
-                                    if (addressId.ScriptPubKey == null)
-                                    {
-
-                                    }
-
-                                    var address = new HDAddress()
-                                    {
-                                        WalletId = addressId.WalletId,
-                                        AccountIndex = (int)addressId.AccountIndex,
-                                        AddressType = (int)addressId.AddressType,
-                                        AddressIndex = (int)addressId.AddressIndex,
-                                        PubKey = addressId.PubKeyScript,
-                                        ScriptPubKey = addressId.ScriptPubKey
-                                    };
-
-                                    conn.Insert(address);
-                                }
+                                foreach (AddressIdentifier addressIdentifier in round.AddressesOfInterest.GetTentative())
+                                    conn.Insert(this.CreateAddress(addressIdentifier));
 
                                 conn.ProcessTransactions(blockToScript, wallet, round.NewTip, round.PrevTip?.Hash ?? 0);
 
