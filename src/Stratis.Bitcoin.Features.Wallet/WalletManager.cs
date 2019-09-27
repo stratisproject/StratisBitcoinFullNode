@@ -284,6 +284,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             foreach (string walletName in this.WalletRepository.GetWalletNames())
             {
+                if (walletTip == null)
+                    break;
+
                 ChainedHeader fork = this.WalletRepository.FindFork(walletName, this.ChainIndexer.Tip);
                 walletTip = (fork == null) ? null : walletTip.FindFork(fork);
             }
@@ -965,7 +968,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         this.WalletRepository.RewindWallet(walletName, fork);
 
                         // Update the lowest common tip.
-                        walletTip = (fork == null) ? null : walletTip.FindFork(fork);
+                        walletTip = (fork == null) ? null : walletTip?.FindFork(fork);
                     }
 
                     // First process genesis.
