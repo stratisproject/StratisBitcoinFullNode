@@ -3,9 +3,9 @@
     public class AddressIdentifier
     {
         public int WalletId { get; set; }
-        public int AccountIndex { get; set; }
-        public int AddressType { get; set; }
-        public int AddressIndex { get; set; }
+        public int? AccountIndex { get; set; }
+        public int? AddressType { get; set; }
+        public int? AddressIndex { get; set; }
         public string ScriptPubKey { get; set; }
 
         public override bool Equals(object obj)
@@ -19,7 +19,7 @@
 
         public override int GetHashCode()
         {
-            return (this.WalletId << 16) ^ (this.AccountIndex << 14) ^ (this.AddressType << 12) ^ this.AddressIndex;
+            return (this.WalletId << 16) ^ ((this.AccountIndex ?? 0) << 14) ^ ((this.AddressType ?? 0) << 12) ^ (this.AddressIndex ?? 0);
         }
     }
 }

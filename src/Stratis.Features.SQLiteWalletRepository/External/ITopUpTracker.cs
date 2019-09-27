@@ -1,4 +1,6 @@
-﻿namespace Stratis.Features.SQLiteWalletRepository.External
+﻿using Stratis.Bitcoin.Features.Wallet.Interfaces;
+
+namespace Stratis.Features.SQLiteWalletRepository.External
 {
     public interface ITopUpTracker
     {
@@ -8,5 +10,7 @@
         int AddressCount { get; }
         int NextAddressIndex { get; }
         bool IsWatchOnlyAccount { get; }
+
+        AddressIdentifier CreateAddress();
     }
 }

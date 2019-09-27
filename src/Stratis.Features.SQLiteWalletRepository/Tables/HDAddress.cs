@@ -5,8 +5,6 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 {
     internal class HDAddress
     {
-        public const int StandardAddressBuffer = 20;
-
         // AddressType constants.
         public const int External = 0;
         public const int Internal = 1;
@@ -31,8 +29,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 PRIMARY KEY(WalletId, AccountIndex, AddressType, AddressIndex)
             )";
 
-            yield return "CREATE UNIQUE INDEX UX_HDAddress_ScriptPubKey ON HDAddress(ScriptPubKey)";
-            yield return "CREATE UNIQUE INDEX UX_HDAddress_PubKey ON HDAddress(PubKey)";
+            yield return "CREATE UNIQUE INDEX UX_HDAddress_ScriptPubKey ON HDAddress(WalletId, ScriptPubKey)";
+            yield return "CREATE UNIQUE INDEX UX_HDAddress_PubKey ON HDAddress(WalletId, PubKey)";
         }
 
         internal static void CreateTable(SQLiteConnection conn)
@@ -41,7 +39,29 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 conn.Execute(command);
         }
 
-        internal static IEnumerable<HDAddress> GetUsedAddresses(SQLiteConnection conn, int walletId, int accountIndex, int addressType)
+        internal static IEnumerable<HDAddress> GetAccountAddresses(SQLiteConnection conn, int walletId, int accountIndex, int addressType, int count)
+        {
+            return conn.Query<HDAddress>($@"
+                SELECT  A.*
+                FROM    HDAddress A
+                LEFT    JOIN HDTransactionData D
+                ON      D.WalletId = A.WalletId
+                AND     D.AccountIndex = A.AccountIndex
+                AND     D.AddressType = A.AddressType
+                AND     D.AddressIndex = A.AddressIndex
+                WHERE   A.WalletId = ?
+                AND     A.AccountIndex = ?
+                AND     A.AddressType = ?
+                GROUP   BY A.WalletId, A.AccountIndex, A.AddressType, A.AddressIndex
+                ORDER   BY AddressType, AccountIndex
+                LIMIT   ?;",
+                walletId,
+                accountIndex,
+                addressType,
+                count);
+        }
+
+        internal static IEnumerable<HDAddress> GetUsedAddresses(SQLiteConnection conn, int walletId, int accountIndex, int addressType, int count)
         {
             return conn.Query<HDAddress>($@"
                 SELECT  A.*
@@ -56,10 +76,12 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 AND     A.AddressType = ?
                 GROUP   BY A.WalletId, A.AccountIndex, A.AddressType, A.AddressIndex
                 HAVING  MAX(D.WalletId) IS NOT NULL
-                ORDER   BY AddressType, AccountIndex",
+                ORDER   BY AddressType, AccountIndex
+                LIMIT   ?;",
                 walletId,
                 accountIndex,
-                addressType);
+                addressType,
+                count);
         }
 
         internal static IEnumerable<HDAddress> GetUnusedAddresses(SQLiteConnection conn, int walletId, int accountIndex, int addressType, int count)
@@ -83,6 +105,17 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 accountIndex,
                 addressType,
                 count);
+        }
+
+        internal static HDAddress GetAddress(SQLiteConnection conn, int walletId, int accountIndex, int addressType, int addressIndex)
+        {
+            return conn.FindWithQuery<HDAddress>($@"
+                SELECT  *
+                FROM    HDAddress
+                WHERE   WalletId = {walletId}
+                AND     AccountIndex = {accountIndex}
+                AND     AddressType = {addressType}
+                AND     AddressIndex = {addressIndex}");
         }
 
         internal static int GetAddressCount(SQLiteConnection conn, int walletId, int accountIndex, int addressType)

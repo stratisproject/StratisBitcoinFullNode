@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using NBitcoin;
 using SQLite;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.SQLiteWalletRepository.Commands;
 using Stratis.Features.SQLiteWalletRepository.Tables;
@@ -29,7 +31,20 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         public DBConnection(SQLiteWalletRepository repo, string dbFile)
         {
-            this.SQLiteConnection = new SQLiteConnection(Path.Combine(repo.DBPath, dbFile));
+            string path = Path.Combine(repo.DBPath, dbFile);
+
+            try
+            {
+                this.SQLiteConnection = new SQLiteConnection(path);
+            }
+            catch (SQLiteException err) when (err.Result == SQLite3.Result.CannotOpen)
+            {
+                if (!File.Exists(path) && path.Length > 259)
+                    throw new InvalidOperationException($"Your database path of {path.Length} characters may be too long: '{err.Message}'.");
+
+                throw;
+            }
+
             this.Repository = repo;
             this.TransactionLock = new DBLock();// new SemaphoreSlim(1, 1);
             this.TransactionDepth = 0;
@@ -57,6 +72,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             {
                 this.TransactionLock.Wait();
                 this.SQLiteConnection.BeginTransaction();
+                Guard.Assert(this.SQLiteConnection.IsInTransaction);
                 this.TransactionDepth = 0;
             }
 
@@ -65,9 +81,11 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal void Rollback()
         {
+            Guard.Assert(this.SQLiteConnection.IsInTransaction);
+
             this.TransactionDepth--;
 
-            if (this.TransactionDepth == 0 && this.SQLiteConnection.IsInTransaction)
+            if (this.TransactionDepth == 0)
             {
                 this.SQLiteConnection.Rollback();
                 this.CommitActions.Clear();
@@ -85,9 +103,11 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal void Commit()
         {
+            Guard.Assert(this.SQLiteConnection.IsInTransaction);
+
             this.TransactionDepth--;
 
-            if (this.TransactionDepth == 0 && this.SQLiteConnection.IsInTransaction)
+            if (this.TransactionDepth == 0)
             {
                 this.SQLiteConnection.Commit();
                 this.RollBackActions.Clear();
@@ -162,22 +182,16 @@ namespace Stratis.Features.SQLiteWalletRepository
             this.CreateTable<HDPayment>();
         }
 
-        internal List<HDAddress> AddAdresses(HDAccount account, int addressType, List<Script> scriptPubKeys)
+        internal void AddAdresses(HDAccount account, int addressType, List<HdAddress> hdAddresses)
         {
-            var addresses = new List<HDAddress>();
-
-            int addressCount = HDAddress.GetAddressCount(this.SQLiteConnection, account.WalletId, account.AccountIndex, addressType);
-            int addressIndex = addressCount;
-
-            for (int i= 0; i < scriptPubKeys.Count; addressIndex++, i++)
+            foreach (HdAddress hdAddress in hdAddresses)
             {
-                HDAddress address = CreateAddress(account, addressType, addressIndex);
-                address.ScriptPubKey = scriptPubKeys[i].ToHex();
-                this.Insert(address);
-                addresses.Add(address);
-            }
+                HDAddress address = this.Repository.CreateAddress(account, addressType, hdAddress.Index);
+                address.ScriptPubKey = hdAddress.ScriptPubKey?.ToHex();
+                address.PubKey = hdAddress.Pubkey?.ToHex();
 
-            return addresses;
+                this.Insert(address);
+            }
         }
 
         internal List<HDAddress> CreateAddresses(HDAccount account, int addressType, int addressesQuantity)
@@ -188,7 +202,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             for (int addressIndex = addressCount; addressIndex < (addressCount + addressesQuantity); addressIndex++)
             {
-                HDAddress address = CreateAddress(account, addressType, addressIndex);
+                HDAddress address = this.Repository.CreateAddress(account, addressType, addressIndex);
                 this.Insert(address);
                 addresses.Add(address);
             }
@@ -224,12 +238,12 @@ namespace Stratis.Features.SQLiteWalletRepository
             };
         }
 
-        internal IEnumerable<HDAddress> GetUsedAddresses(int walletId, int accountIndex, int addressType)
+        internal IEnumerable<HDAddress> GetUsedAddresses(int walletId, int accountIndex, int addressType, int count)
         {
-            return HDAddress.GetUsedAddresses(this, walletId, accountIndex, addressType);
+            return HDAddress.GetUsedAddresses(this, walletId, accountIndex, addressType, count);
         }
 
-        internal HDAccount CreateAccount(int walletId, int accountIndex, string accountName, string extPubKey, int creationTimeSeconds)
+        internal HDAccount CreateAccount(int walletId, int accountIndex, string accountName, string extPubKey, long creationTimeSeconds)
         {
             var account = new HDAccount()
             {
@@ -287,9 +301,9 @@ namespace Stratis.Features.SQLiteWalletRepository
                 WHERE   A.AccountName = ?", walletName, accountName);
         }
 
-        internal IEnumerable<HDAccount> GetAccounts(int walletId)
+        internal IEnumerable<HDAccount> GetAccounts(int walletId, string accountName = null)
         {
-            return HDAccount.GetAccounts(this, walletId);
+            return HDAccount.GetAccounts(this, walletId, accountName);
         }
 
         internal HDWallet GetById(int walletId)
@@ -317,8 +331,10 @@ namespace Stratis.Features.SQLiteWalletRepository
             return HDTransactionData.GetAllTransactions(this, walletId, accountIndex, addressType, addressIndex);
         }
 
-        private void RemoveTransactionsByTxToDelete(string outputFilter, string spendFilter)
+        private IEnumerable<(string txId, long unixTimeSeconds)> RemoveTransactionsByTxToDelete(string outputFilter, string spendFilter)
         {
+            var removedTxs = new Dictionary<string, long>();
+
             this.Execute($@"
             DROP    TABLE IF EXISTS temp.TxToDelete");
 
@@ -328,7 +344,9 @@ namespace Stratis.Features.SQLiteWalletRepository
             ,       AccountIndex INT
             ,       AddressType INT
             ,       AddressIndex INT
-            ,       RedeemScript TEXT)");
+            ,       OutputTxId TEXT
+            ,       OutputIndex INT
+            ,       ScriptPubKey TEXT)");
 
             this.Execute($@"
             INSERT  INTO temp.TxToDelete (
@@ -336,12 +354,16 @@ namespace Stratis.Features.SQLiteWalletRepository
             ,       AccountIndex
             ,       AddressType
             ,       AddressIndex
-            ,       RedeemScript)
+            ,       OutputTxId
+            ,       OutputIndex
+            ,       ScriptPubKey)
             SELECT  WalletId
             ,       AccountIndex
             ,       AddressType
             ,       AddressIndex
-            ,       RedeemScript
+            ,       OutputTxId
+            ,       OutputIndex
+            ,       ScriptPubKey
             FROM    HDTransactionData
             {outputFilter}");
 
@@ -356,11 +378,30 @@ namespace Stratis.Features.SQLiteWalletRepository
                     FROM   HDTransactionData
                     {spendFilter})");
 
+
+            foreach (HDTransactionData td in this.Query<HDTransactionData>($@"
+            SELECT  *
+            FROM    HDTransactionData
+            WHERE   (WalletId, AccountIndex, AddressType, AddressIndex, OutputTxId, OutputIndex, ScriptPubKey) IN (
+                    SELECT  WalletId, AccountIndex, AddressType, AddressIndex, OutputTxId, OutputIndex, ScriptPubKey
+                    FROM    temp.TxToDelete)"))
+            {
+                removedTxs[td.OutputTxId] = td.OutputTxTime;
+            }
+
             this.Execute($@"
             DELETE  FROM HDTransactionData
-            WHERE   (WalletId, AccountIndex, AddressType, AddressIndex, RedeemScript) IN (
-                    SELECT  WalletId, AccountIndex, AddressType, AddressIndex, RedeemScript
+            WHERE   (WalletId, AccountIndex, AddressType, AddressIndex, OutputTxId, OutputIndex, ScriptPubKey) IN (
+                    SELECT  WalletId, AccountIndex, AddressType, AddressIndex, OutputTxId, OutputIndex, ScriptPubKey
                     FROM    temp.TxToDelete)");
+
+            foreach (HDTransactionData td in this.Query<HDTransactionData>($@"
+            SELECT  *
+            FROM    HDTransactionData
+            {spendFilter}"))
+            {
+                removedTxs[td.SpendTxId] = (long)td.SpendTxTime;
+            }
 
             this.Execute($@"
             UPDATE  HDTransactionData
@@ -371,9 +412,11 @@ namespace Stratis.Features.SQLiteWalletRepository
             ,       SpendTxIsCoinBase = NULL
             ,       SpendTxTotalOut = NULL
             {spendFilter}");
+
+            return removedTxs.Select(kv => (kv.Key, kv.Value));
         }
 
-        internal void RemoveUnconfirmedTransaction(int walletId, uint256 txId)
+        internal long? RemoveUnconfirmedTransaction(int walletId, uint256 txId)
         {
             string outputFilter = $@"
             WHERE   OutputTxId = '{txId}'
@@ -384,12 +427,32 @@ namespace Stratis.Features.SQLiteWalletRepository
             string spendFilter = $@"
             WHERE   SpendTxId = '{txId}'
             AND     SpendBlockHeight IS NULL
-            AND     SpendBlockHash IS NULL";
+            AND     SpendBlockHash IS NULL
+            AND     WalletId = {walletId}";
 
-            this.RemoveTransactionsByTxToDelete(outputFilter, spendFilter);
+            var res = this.RemoveTransactionsByTxToDelete(outputFilter, spendFilter);
+
+            return !res.Any() ? (long?)null : res.First().unixTimeSeconds;
         }
 
-        internal void RemoveTransactionsAfterLastBlockSynced(int lastBlockSyncedHeight, int? walletId = null)
+        internal IEnumerable<(string txId, long creationTime)> RemoveAllUnconfirmedTransactions(int walletId)
+        {
+            string outputFilter = $@"
+            WHERE   OutputBlockHeight IS NULL
+            AND     OutputBlockHash IS NULL
+            AND     WalletId = {walletId}";
+
+            string spendFilter = $@"
+            WHERE   SpendBlockHeight IS NULL
+            AND     SpendBlockHash IS NULL
+            AND     WalletId = {walletId}";
+
+            var res = this.RemoveTransactionsByTxToDelete(outputFilter, spendFilter);
+
+            return res;
+        }
+
+        internal IEnumerable<(string txId, long unixTimeSeconds)> RemoveTransactionsAfterLastBlockSynced(int lastBlockSyncedHeight, int? walletId = null)
         {
             string outputFilter = (walletId == null) ? $@"
             WHERE   OutputBlockHeight > {lastBlockSyncedHeight}" : $@"
@@ -401,7 +464,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             WHERE   WalletId = {walletId}
             AND     SpendBlockHeight > {lastBlockSyncedHeight}";
 
-            this.RemoveTransactionsByTxToDelete(outputFilter, spendFilter);
+            return this.RemoveTransactionsByTxToDelete(outputFilter, spendFilter);
         }
 
         /// <summary>
@@ -409,7 +472,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         /// </summary>
         /// <param name="wallet">The wallet.</param>
         /// <param name="lastBlockSynced">The last block synced to set.</param>
-        internal void SetLastBlockSynced(HDWallet wallet, ChainedHeader lastBlockSynced)
+        internal IEnumerable<(string txId, long creationTime)> SetLastBlockSynced(HDWallet wallet, ChainedHeader lastBlockSynced)
         {
             if (this.IsInTransaction)
             {
@@ -428,13 +491,19 @@ namespace Stratis.Features.SQLiteWalletRepository
                 });
             }
 
-            this.RemoveTransactionsAfterLastBlockSynced(lastBlockSynced?.Height ?? -1, wallet.WalletId);
+            Guard.Assert(this.IsInTransaction);
+
+            IEnumerable<(string txId, long creationTime)> res = this.RemoveTransactionsAfterLastBlockSynced(lastBlockSynced?.Height ?? -1, wallet.WalletId);
             wallet.SetLastBlockSynced(lastBlockSynced, this.Repository.Network);
             this.SQLiteConnection.Update(wallet);
+
+            return res;
         }
 
-        internal void ProcessTransactions(IEnumerable<IEnumerable<string>> tableScripts, HDWallet wallet, ChainedHeader newLastSynced = null, HashHeightPair prevLastSynced = null)
+        internal void ProcessTransactions(IEnumerable<IEnumerable<string>> tableScripts, HDWallet wallet, ChainedHeader newLastSynced = null, uint256 prevTipHash = null)
         {
+            Guard.Assert(this.IsInTransaction);
+
             // Execute the scripts providing the temporary tables to merge with the wallet tables.
             foreach (IEnumerable<string> tableScript in tableScripts)
                 foreach (string command in tableScript)
@@ -442,7 +511,18 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             // Inserts or updates HDTransactionData records based on change or funds received.
             string walletName = wallet?.Name;
-            string prevHash = (prevLastSynced?.Hash ?? uint256.Zero).ToString();
+            string prevHash = prevTipHash?.ToString();
+
+            // Check for spending overlaps.
+            // Performs checks that we do not affect a confirmed transaction's spends.
+            var cmdUpdateOverlaps = this.Commands["CmdUpdateOverlaps"];
+            cmdUpdateOverlaps.Bind("walletName", walletName);
+            cmdUpdateOverlaps.Bind("prevHash", prevHash);
+            List<HDTransactionData> overlaps = cmdUpdateOverlaps.ExecuteQuery<HDTransactionData>();
+            foreach ((int walletId, string txId) in overlaps.Where(o => o.SpendBlockHash == null).Select(o => (o.WalletId, o.SpendTxId)).Distinct())
+            {
+                this.RemoveUnconfirmedTransaction(walletId, uint256.Parse(txId));
+            }
 
             DBCommand cmdUploadPrevOut = this.Commands["CmdUploadPrevOut"];
             cmdUploadPrevOut.Bind("walletName", walletName);
@@ -465,7 +545,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             // Advance participating wallets.
             if (newLastSynced != null)
-                HDWallet.AdvanceTip(this, wallet, newLastSynced, prevLastSynced);
+                HDWallet.AdvanceTip(this, wallet, newLastSynced, prevTipHash);
         }
     }
 }

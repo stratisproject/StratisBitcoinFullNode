@@ -64,7 +64,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 
         internal static string ObjectRow(PropertyInfo[] props, object obj)
         {
-            var res = props.Select(p => p.GetValue(obj)).Select(prop => (prop.GetType() == typeof(string)) ? $"'{prop}'" : prop);
+            var res = props.Select(p => p.GetValue(obj)).Select(prop => (prop?.GetType() == typeof(string)) ? $"'{prop}'" : prop ?? "NULL");
             var arr = string.Join(",", res);
             return $"({arr})";
         }

@@ -58,6 +58,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
             conn.Commands["CmdUploadPrevOut"] = CmdUploadPrevOut(conn);
             conn.Commands["CmdReplacePayments"] = CmdReplacePayments(conn);
             conn.Commands["CmdUpdateSpending"] = CmdUpdateSpending(conn);
+            conn.Commands["CmdUpdateOverlaps"] = CmdUpdateOverlaps(conn);
         }
 
         public static DBCommand CmdUploadPrevOut(this DBConnection conn)
@@ -113,6 +114,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
                 ,       O.OutputIndex SpendIndex
                 ,       O.RedeemScript SpendScriptPubKey
                 ,       O.Value SpendValue
+                ,       O.IsChange SpendIsChange
                 FROM    temp.TempPrevOut T
                 JOIN    temp.TempOutput O
                 ON      O.OutputTxTime = T.SpendTxTime
@@ -160,6 +162,23 @@ namespace Stratis.Features.SQLiteWalletRepository.Commands
                 AND    TD.ScriptPubKey = T.ScriptPubKey
                 AND    TD.SpendBlockHeight IS NULL
                 AND    TD.SpendBlockHash IS NULL
+                AND    TD.WalletId IN (
+                       SELECT   WalletId
+                       FROM     HDWallet
+                       WHERE    Name = IFNULL(@walletName, Name)
+                       AND      LastBlockSyncedHash = IFNULL(@prevHash, LastBlockSyncedHash))");
+        }
+
+        public static DBCommand CmdUpdateOverlaps(this DBConnection conn)
+        {
+            return conn.CreateCommand($@"
+                SELECT TD.*
+                FROM   temp.TempPrevOut T
+                JOIN   HDTransactionData TD
+                ON     TD.OutputTxID = T.OutputTxId
+                AND    TD.OutputIndex = T.OutputIndex
+                AND    TD.ScriptPubKey = T.ScriptPubKey
+                AND    TD.SpendTxId IS NOT NULL
                 AND    TD.WalletId IN (
                        SELECT   WalletId
                        FROM     HDWallet
