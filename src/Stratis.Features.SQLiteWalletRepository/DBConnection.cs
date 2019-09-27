@@ -476,10 +476,13 @@ namespace Stratis.Features.SQLiteWalletRepository
                     wallet.BlockLocator
                 }, (dynamic rollBackData) =>
                 {
-                    HDWallet wallet2 = this.Repository.Wallets[rollBackData.Name];
-                    wallet2.LastBlockSyncedHash = rollBackData.LastBlockSyncedHash;
-                    wallet2.LastBlockSyncedHeight = rollBackData.LastBlockSyncedHeight;
-                    wallet2.BlockLocator = rollBackData.BlockLocator;
+                    if (this.Repository.Wallets.TryGetValue(rollBackData.Name, out WalletContainer walletContainer))
+                    {
+                        HDWallet wallet2 = walletContainer.Wallet;
+                        wallet2.LastBlockSyncedHash = rollBackData.LastBlockSyncedHash;
+                        wallet2.LastBlockSyncedHeight = rollBackData.LastBlockSyncedHeight;
+                        wallet2.BlockLocator = rollBackData.BlockLocator;
+                    }
                 });
             }
 
