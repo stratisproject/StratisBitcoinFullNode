@@ -442,7 +442,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
             CanProcessBlocks(false, walletNames);
         }
 
-        [Fact]//(Skip = "Configure this test then run it manually. Comment this Skip.")]
+        [Fact(Skip = "Configure this test then run it manually. Comment this Skip.")]
         public void CanProcessBinanceAddresses()
         {
             // 180 Binance addresses.
