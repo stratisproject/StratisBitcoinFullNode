@@ -340,7 +340,7 @@ namespace Stratis.Features.SQLiteWalletRepository.Tests
                     forks = new ChainedHeader[100];
                     Parallel.ForEach(forks.Select((f, n) => n), n =>
                     {
-                        forks[n] = repo.FindFork("test2", chainedHeader2);
+                        forks[n] = repo.FindFork("test2", chainedHeader1);
                     });
 
                     Assert.DoesNotContain(forks, f => f.Height != chainedHeader1.Height);

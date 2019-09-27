@@ -166,23 +166,14 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 
         internal ChainedHeader GetFork(ChainedHeader chainTip)
         {
-            if (chainTip == null)
+            if (chainTip == null || this.LastBlockSyncedHeight < 0)
                 return null;
 
-            if (chainTip.Height > this.LastBlockSyncedHeight)
+            if (chainTip.Height >= this.LastBlockSyncedHeight)
             {
-                if (this.LastBlockSyncedHeight < 0)
-                    return null;
-
-                chainTip = chainTip.GetAncestor(this.LastBlockSyncedHeight);
-            }
-
-            if (chainTip.Height == this.LastBlockSyncedHeight)
-            {
-                if (chainTip.HashBlock == uint256.Parse(this.LastBlockSyncedHash))
-                    return chainTip;
-                else
-                    return null;
+                ChainedHeader fork = (chainTip.Height == this.LastBlockSyncedHeight) ? chainTip : chainTip.GetAncestor(this.LastBlockSyncedHeight);
+                if (fork.HashBlock == uint256.Parse(this.LastBlockSyncedHash))
+                    return fork;
             }
 
             var blockLocator = new BlockLocator()
@@ -192,10 +183,13 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 
             List<int> locatorHeights = ChainedHeaderExt.GetLocatorHeights(this.LastBlockSyncedHeight);
 
+            // Find a locator block at or below the chain tip.
             for (int i = 0; i < locatorHeights.Count; i++)
             {
-                if (chainTip.Height > locatorHeights[i])
-                    chainTip = chainTip.GetAncestor(locatorHeights[i]);
+                if (chainTip.Height < locatorHeights[i])
+                    continue;
+
+                chainTip = chainTip.GetAncestor(locatorHeights[i]);
 
                 if (chainTip.HashBlock == blockLocator.Blocks[i])
                     return chainTip;
