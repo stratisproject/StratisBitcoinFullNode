@@ -2,7 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <Version>0.0.3-beta</Version>
+    <Version>1.0.2.0</Version>
+    <Authors>Stratis Group Ltd.</Authors>
+    <Company>Stratis Group Ltd.Stratis Group Ltd.</Company>
   </PropertyGroup>
 
   <ItemGroup>
