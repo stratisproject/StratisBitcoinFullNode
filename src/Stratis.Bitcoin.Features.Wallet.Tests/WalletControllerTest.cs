@@ -1806,6 +1806,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal("Hex required.", error.Message);
         }
 
+        // TODO: Investigate the relevance of this test and remove it or fix it.
         /*
         [Fact]
         public void ListWalletFilesWithExistingWalletFilesReturnsWalletFileModel()
@@ -1871,6 +1872,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal("something happened.", error.Message);
         }
         */
+
         [Fact]
         public void CreateNewAccountWithValidModelReturnsAccountName()
         {

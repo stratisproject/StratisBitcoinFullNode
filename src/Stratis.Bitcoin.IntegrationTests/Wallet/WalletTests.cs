@@ -1,14 +1,11 @@
 ﻿using System.IO;
 using System.Linq;
-using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -202,7 +199,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
 
-        // TODO: Fix this.
+        // TODO: Investigate the relevance of this test and remove it or fix it.
         /*
         [Fact]
         public void Given_TheNodeHadAReorg_And_WalletTipIsBehindConsensusTip_When_ANewBlockArrives_Then_WalletCanRecover()
@@ -308,6 +305,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
         */
+
         [Fact(Skip = "Investigate PeerConnector shutdown timeout issue")]
         public void WalletCanRecoverOnStartup()
         {

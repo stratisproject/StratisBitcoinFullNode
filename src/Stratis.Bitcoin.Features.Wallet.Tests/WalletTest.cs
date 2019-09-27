@@ -47,6 +47,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.Empty(result);
         }
+
+        // TODO: Investigate the relevance of this test and remove it or fix it.
         /*
         [Fact]
         public void GetAllPubKeysReturnsPubkeysFromWallet()

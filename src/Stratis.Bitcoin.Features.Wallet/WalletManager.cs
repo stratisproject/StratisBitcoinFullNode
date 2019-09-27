@@ -1089,7 +1089,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             return new HashSet<(uint256, DateTimeOffset)>(result.Select(kv => (kv.txId, kv.creationTime)));
         }
 
-        // TODO: Fix this.
         /// <inheritdoc />
         public HashSet<(uint256, DateTimeOffset)> RemoveTransactionsFromDate(string walletName, DateTimeOffset fromDate)
         {
@@ -1114,11 +1113,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                     }
                 }
             }
-
-            //if (removedTransactions.Any())
-            //{
-            //    this.SaveWallet(wallet);
-            //}
 
             return removedTransactions;
         }

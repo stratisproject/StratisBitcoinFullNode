@@ -21,8 +21,6 @@ using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Features.Wallet;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
@@ -390,7 +388,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
 
-        // TODO: The wallet-with-funds does not have a corresponding chain to re-build itself from. Some blocks in the wallet may also be invalid.
+        // TODO: Investigate the relevance of this test and remove it or fix it.
+        // NOTE: The wallet-with-funds does not have a corresponding chain to re-build itself from. Some blocks in the wallet may also be invalid.
         /*
         [Fact]
         public async Task GetSpendableTransactionsInAccountAllowUnconfirmed()

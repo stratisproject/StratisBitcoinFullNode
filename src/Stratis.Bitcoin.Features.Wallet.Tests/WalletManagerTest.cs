@@ -1279,9 +1279,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             HdAccount account = wallet.AddNewAccount((ExtPubKey)null, accountName: "First expectation");
 
             WalletTestsHelpers.CreateUnspentTransactionsOfBlockHeights(account.ExternalAddresses, this.Network, 1, 9, 11);
-           // WalletTestsHelpers.CreateUnspentTransactionsOfBlockHeights(account.ExternalAddresses, this.Network, 1, 9, 11);
             WalletTestsHelpers.CreateUnspentTransactionsOfBlockHeights(account.InternalAddresses, this.Network, 2, 9, 11);
-          //  WalletTestsHelpers.CreateUnspentTransactionsOfBlockHeights(account.InternalAddresses, this.Network, 2, 9, 11);
 
             UnspentOutputReference[] result = walletManager.GetSpendableTransactionsInWallet("myWallet1", confirmations: 1).ToArray();
 
