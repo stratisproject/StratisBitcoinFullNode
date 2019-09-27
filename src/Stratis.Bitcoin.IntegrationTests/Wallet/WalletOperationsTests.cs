@@ -1162,7 +1162,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             errors.First().Message.Should().Be($"No wallet with name '{walletName}' could be found.");
         }
 
-        /*
         [Fact]
         public async Task GetAddressesInAccount()
         {
@@ -1177,7 +1176,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             addressesModel.Addresses.Where(a => a.IsUsed).Count().Should().Be(10);
             addressesModel.Addresses.Where(a => a.IsChange).Count().Should().Be(22);
         }
-        */
 
         [Fact]
         public async Task GetAddressesInAccountWhenNoWalletWithThisNameExists()
@@ -1516,7 +1514,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             errors.Should().ContainSingle();
             errors.First().Message.Should().Be($"No wallet with name '{walletName}' could be found.");
         }
-        /*
+
         [Fact]
         public async Task GetWalletFiles()
         {
@@ -1530,7 +1528,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             walletFileModel.WalletsFiles.Count().Should().BeGreaterThan(0);
             walletFileModel.WalletsFiles.Should().Contain(Path.GetFileName(this.fixture.WalletWithFundsFilePath));
         }
-        */
+
         [Fact]
         public async Task SignMessage()
         {

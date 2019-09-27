@@ -581,31 +581,14 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
         /// <summary>
         /// Creates a new wallet.
         /// </summary>
-        /// <remarks>
-        /// If it's the first time this wallet is created within this class, it is added to a collection for use by other tests.
-        /// If the same parameters have already been used to create a wallet, the wallet will be retrieved from the internal collection and a copy of this wallet will be returned.
-        /// </remarks>
         /// <param name="name">The name.</param>
         /// <param name="password">The password.</param>
         /// <returns>The generated wallet.</returns>
         public Features.Wallet.Wallet GenerateBlankWallet(string name, string password, IWalletRepository walletRepository = null)
         {
-            /*
-            if (this.walletsGenerated.TryGetValue((name, password), out Features.Wallet.Wallet existingWallet))
-            {
-                return existingWallet;
-                //string serializedExistingWallet = JsonConvert.SerializeObject(existingWallet, Formatting.None);
-                //return JsonConvert.DeserializeObject<Features.Wallet.Wallet>(serializedExistingWallet);
-            }
-            */
-
             Features.Wallet.Wallet newWallet = WalletTestsHelpers.GenerateBlankWallet(name, password, walletRepository);
-            //this.walletsGenerated.Add((name, password), newWallet);
 
             return newWallet;
-
-            //string serializedNewWallet = JsonConvert.SerializeObject(newWallet, Formatting.None);
-            //return JsonConvert.DeserializeObject<Features.Wallet.Wallet>(serializedNewWallet);
         }
     }
 }

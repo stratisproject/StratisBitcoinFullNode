@@ -107,6 +107,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 walletSyncManager.Start();
             });
         }
+
+        // TODO: Investigate the relevance of this test and remove it or fix it.
         /*
         [Fact]
         public void Start_BlockOnChain_DoesNotReorgWalletManager()
@@ -124,6 +126,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.walletManager.Verify(w => w.RemoveBlocks(It.IsAny<ChainedHeader>()), Times.Exactly(0));
         }
         */
+
+        // TODO: Investigate the relevance of this test and remove it or fix it.
         /*
         [Fact]
         public void Start_BlockNotChain_ReorgsWalletManagerUsingWallet()
@@ -149,6 +153,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(walletSyncManager.WalletTip.HashBlock.ToString(), forkBlock.HashBlock.ToString());
         }
         */
+
+        // TODO: Investigate the relevance of this test and remove it or fix it.
         /*
         /// <summary>
         /// When processing a new <see cref="Block"/> that has a previous hash that is the same as the <see cref="WalletSyncManager.WalletTip"/> pass it directly to the <see cref="WalletManager"/>
@@ -207,6 +213,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 It.Is<IEnumerable<(ChainedHeader header, Block block)>>(c => string.Join(",", c.Select(b => b.header.Height)) == "3,4,5"),
                 It.IsAny<string>()));
         }
+
+        // TODO: Investigate the relevance of this test and remove it or fix it.
         /*
         /// <summary>
         /// When processing a new <see cref="Block"/> that has a previous hash that is not the same as the <see cref="WalletSyncManager.WalletTip"/> and is on the best chain

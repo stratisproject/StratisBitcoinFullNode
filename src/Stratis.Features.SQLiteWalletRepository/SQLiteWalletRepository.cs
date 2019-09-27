@@ -362,16 +362,7 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             return GetWallet(walletName);
         }
-        /*
-        /// <inheritdoc />
-        public Wallet CreateWallet(string walletName, string encryptedSeed, byte[] chainCode, ChainedHeader lastBlockSynced = null, DateTimeOffset? creationTime = null)
-        {
-            return this.CreateWallet(walletName, encryptedSeed, chainCode,
-                (lastBlockSynced == null) ? null : new HashHeightPair(lastBlockSynced),
-                lastBlockSynced?.GetLocator(),
-                (lastBlockSynced == null) ? (int?)null : (int)lastBlockSynced.Header.Time + 1);
-        }
-        */
+
         /// <inheritdoc />
         public bool DeleteWallet(string walletName)
         {

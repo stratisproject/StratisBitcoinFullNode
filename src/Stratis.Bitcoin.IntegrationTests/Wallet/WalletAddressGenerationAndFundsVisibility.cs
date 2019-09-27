@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             When(getting_wallet_balance);
             Then(the_balance_is_zero);
         }
-        /*
+
         [Fact]
         public void CoinsBeyondDefaultLimitAreVisibleWhenAddressesRequestedBeforeSyncing()
         {
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             When(getting_wallet_balance);
             Then(the_balance_is_NOT_zero);
         }
-        */
+
         [Fact]
         public void CoinsBeyondDefaultGapLimitAREvisbleWhenGapLimitOverridden()
         {

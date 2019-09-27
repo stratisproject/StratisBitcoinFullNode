@@ -290,6 +290,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(100, hdAccount.ExternalAddresses.Count);
             Assert.Equal(100, hdAccount.InternalAddresses.Count);
         }
+
+        // TODO: Investigate the relevance of this test and remove it or fix it.
         /*
         [Fact]
         public void UpdateLastBlockSyncedHeightWhileWalletCreatedDoesNotThrowInvalidOperationException()
@@ -352,6 +354,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(network, walletManager.Wallets.ElementAt(0).Network);
         }
 
+        // TODO: Investigate the relevance of this test and remove it or fix it.
         /*
         [Fact]
         public void LoadWalletWithNonExistingWalletThrowsFileNotFoundException()
@@ -578,33 +581,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(expectedWallet.BlockLocator.ElementAt(1), recoveredWallet.BlockLocator.ElementAt(1));
             Assert.Equal(expectedWallet.EncryptedSeed, recoveredWallet.EncryptedSeed);
         }
-        /*
-        [Fact]
-        public void LoadKeysLookupInParallelDoesNotThrowInvalidOperationException()
-        {
-            DataFolder dataFolder = CreateDataFolder(this);
 
-            IWalletRepository walletRepository = new SQLiteWalletRepository(this.LoggerFactory.Object, dataFolder, this.Network, DateTimeProvider.Default, new ScriptAddressReader());
-
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new Mock<ChainIndexer>().Object, new WalletSettings(NodeSettings.Default(this.Network)),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader(), walletRepository);
-
-            // generate 3 wallet with 2 accounts containing 20 external and 20 internal addresses each.
-            walletManager.Wallets.Add(WalletTestsHelpers.CreateWallet("wallet1"));
-            walletManager.Wallets.Add(WalletTestsHelpers.CreateWallet("wallet2"));
-            walletManager.Wallets.Add(WalletTestsHelpers.CreateWallet("wallet3"));
-            WalletTestsHelpers.AddAddressesToWallet(walletManager, 20);
-
-            Parallel.For(0, 5000, new ParallelOptions { MaxDegreeOfParallelism = 10 }, (int iteration) =>
-            {
-                walletManager.LoadKeysLookupLock();
-                walletManager.LoadKeysLookupLock();
-                walletManager.LoadKeysLookupLock();
-            });
-
-            Assert.Equal(240, walletManager.scriptToAddressLookup.Count);
-        }
-        */
         [Fact]
         public void GetUnusedAccountUsingNameForNonExistinAccountThrowsWalletException()
         {
@@ -872,6 +849,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.NotNull(result.Address);
         }
+
+        // TODO: Investigate the relevance of this test and remove it or fix it.
         /*
         [Fact]
         public void GetUnusedAddressWithoutWalletHavingUnusedAddressCreatesAddressAndSavesWallet()
@@ -909,6 +888,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/myWallet.wallet.json")));
         }
         */
+
         [Fact]
         public void GetHistoryByNameWithExistingWalletReturnsAllAddressesWithTransactions()
         {
@@ -1159,6 +1139,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.Equal(chain.Tip.HashBlock, result);
         }
+
+        // TODO: Investigate the relevance of this test and remove it or fix it.
         /*
         [Fact]
         public void NoLastReceivedBlockHashInWalletReturnsChainTip()
@@ -1178,6 +1160,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(chainIndexer.Tip.HashBlock, result);
         }
         */
+
         [Fact]
         public void GetSpendableTransactionsWithChainOfHeightZeroReturnsNoTransactions()
         {
@@ -2273,6 +2256,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             }
         }
 
+        // TODO: Investigate the relevance of this test and remove it or fix it.
         /*
         [Fact]
         public void RemoveBlocksRemovesTransactionsWithHigherBlockHeightAndUpdatesLastSyncedBlockHeight()
@@ -2469,6 +2453,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(chainedBlock.HashBlock, wallet.AccountsRoot.ElementAt(0).LastBlockSyncedHash);
             Assert.Equal(chainedBlock.HashBlock, walletManager.WalletTipHash);
         }
+
+        // TODO: Investigate the relevance of this test and remove it or fix it.
         /*
         [Fact]
         public void ProcessBlockWithWalletTipBlockNotOnChainYetThrowsWalletException()
@@ -2494,6 +2480,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             });
         }
         */
+
+        // TODO: Investigate the relevance of this test and remove it or fix it.
         /*
         [Fact]
         public void ProcessBlockWithBlockAheadOfWalletThrowsWalletException()
@@ -2523,6 +2511,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             });
         }
         */
+
         [Fact]
         public void CheckWalletBalanceEstimationWithConfirmedTransactions()
         {
@@ -2743,6 +2732,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(0, firstAccount.GetBalances().ConfirmedAmount);
             Assert.Equal(40, firstAccount.GetBalances().UnConfirmedAmount);
         }
+
+        // TODO: Investigate the relevance of this test and remove it or fix it.
         /*
         [Fact]
         public void SaveToFileWithoutWalletParameterSavesAllWalletsOnManagerToDisk()
@@ -2811,6 +2802,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(wallet.AccountsRoot.Count, resultWallet.AccountsRoot.Count);
         }
         */
+
         [Fact]
         public void GetWalletFileExtensionReturnsWalletExtension()
         {
@@ -2857,61 +2849,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.Empty(result);
         }
-        /*
-        [Fact]
-        public void LoadKeysLookupWithKeysLoadsKeyLookup()
-        {
-            var dataFolder = CreateDataFolder(this);
-            IWalletRepository walletRepository = new SQLiteWalletRepository(this.LoggerFactory.Object, dataFolder, this.Network, DateTimeProvider.Default, new ScriptAddressReader());
 
-            Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password", walletRepository);
-            var account = new HdAccount(wallet.AccountsRoot.First())
-            {
-                Name = "First account"
-            };
-
-            wallet.AccountsRoot.ElementAt(0).Accounts.Add(account);
-
-            foreach (HdAddress addr in WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(this.Network, 1, 2, 3))
-                account.ExternalAddresses.Add(addr);
-
-            foreach (HdAddress addr in WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(this.Network, 1, 2, 3))
-                account.InternalAddresses.Add(addr);
-
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new Mock<ChainIndexer>().Object, new WalletSettings(NodeSettings.Default(this.Network)),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader(), walletRepository);
-
-            walletManager.LoadKeysLookupLock();
-
-            Assert.NotNull(walletManager.scriptToAddressLookup);
-            Assert.Equal(6, walletManager.scriptToAddressLookup.Count);
-
-            ICollection<HdAddress> externalAddresses = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses;
-            Assert.Equal(externalAddresses.ElementAt(0).Address, walletManager.scriptToAddressLookup[externalAddresses.ElementAt(0).ScriptPubKey].Address);
-            Assert.Equal(externalAddresses.ElementAt(1).Address, walletManager.scriptToAddressLookup[externalAddresses.ElementAt(1).ScriptPubKey].Address);
-            Assert.Equal(externalAddresses.ElementAt(2).Address, walletManager.scriptToAddressLookup[externalAddresses.ElementAt(2).ScriptPubKey].Address);
-
-            ICollection<HdAddress> internalAddresses = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses;
-            Assert.Equal(internalAddresses.ElementAt(0).Address, walletManager.scriptToAddressLookup[internalAddresses.ElementAt(0).ScriptPubKey].Address);
-            Assert.Equal(internalAddresses.ElementAt(1).Address, walletManager.scriptToAddressLookup[internalAddresses.ElementAt(1).ScriptPubKey].Address);
-            Assert.Equal(internalAddresses.ElementAt(2).Address, walletManager.scriptToAddressLookup[internalAddresses.ElementAt(2).ScriptPubKey].Address);
-        }
-        */
-        /*
-        [Fact]
-        public void LoadKeysLookupWithoutWalletsInitializesEmptyDictionary()
-        {
-            var dataFolder = CreateDataFolder(this);
-            IWalletRepository walletRepository = new SQLiteWalletRepository(this.LoggerFactory.Object, dataFolder, this.Network, DateTimeProvider.Default, new ScriptAddressReader());
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new Mock<ChainIndexer>().Object, new WalletSettings(NodeSettings.Default(this.Network)),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader(), walletRepository);
-
-            walletManager.LoadKeysLookupLock();
-
-            Assert.NotNull(walletManager.scriptToAddressLookup);
-            Assert.Empty(walletManager.scriptToAddressLookup.Values);
-        }
-        */
         [Fact]
         public void CreateBip44PathWithChangeAddressReturnsPath()
         {
@@ -2927,6 +2865,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.Equal("m/44'/105'/4'/0/3", result);
         }
+
+        // TODO: Investigate the relevance of this test and remove it or fix it.
         /*
         [Fact]
         public void StopSavesWallets()
@@ -3020,6 +2960,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.NotEqual(chainedBlock.HashBlock, wallet2.AccountsRoot.ElementAt(0).LastBlockSyncedHash);
         }
         */
+
         [Fact]
         public void RemoveAllTransactionsInWalletReturnsRemovedTransactionsList()
         {
@@ -3295,6 +3236,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.Null(trxConfirmed2.SpendingDetails);
         }
+
+        // TODO: Investigate the relevance of this test and remove it or fix it.
         /*
         [Fact]
         public void Start_takes_account_of_address_buffer_even_for_existing_wallets()
@@ -3324,6 +3267,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(30, hdAccount.InternalAddresses.Count);
         }
         */
+
         [Fact]
         public void Recover_via_xpubkey_can_recover_wallet_without_mnemonic()
         {

@@ -2,10 +2,13 @@
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Features.ColdStaking
 {
+    /// <summary>
+    /// This class and the base <see cref="ScriptDestinationReader"/> offers the ability to selectively replace <see cref="ScriptAddressReader"/>
+    /// which can only parse a single address from a ScriptPubKey. ColdStaking scripts contain two addresses / pub key hashes.
+    /// </summary>
     public class ColdStakingDestinationReader : ScriptDestinationReader, IScriptDestinationReader
     {
         public ColdStakingDestinationReader(ScriptAddressReader scriptAddressReader) : base(scriptAddressReader)

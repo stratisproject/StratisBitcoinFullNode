@@ -229,13 +229,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
             account = wallet.AddNewAccount(walletPassword,  accountIndex, accountName, this.dateTimeProvider.GetTimeOffset());
 
-            // Maintain at least one unused address at all times. This will ensure that wallet recovery will also work.
-            //IEnumerable<HdAddress> newAddresses = account.CreateAddresses(wallet.Network, 1, false);
-            //this.UpdateKeysLookupLocked(newAddresses);
-
-            // Save the changes to the file.
-            //this.SaveWallet(wallet);
-
             this.logger.LogTrace("(-):'{0}'", account.Name);
             return account;
         }
