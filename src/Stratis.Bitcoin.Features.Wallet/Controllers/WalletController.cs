@@ -291,8 +291,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 Wallet wallet = this.walletManager.RecoverWallet(request.Password, request.Name, request.Mnemonic, request.CreationDate, passphrase: request.Passphrase);
 
-                //this.SyncFromBestHeightForRecoveredWallets(request.CreationDate);
-
                 return this.Ok();
             }
             catch (WalletException e)
