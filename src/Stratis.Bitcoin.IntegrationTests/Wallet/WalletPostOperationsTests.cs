@@ -14,6 +14,8 @@ using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.BlockStore.Models;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -388,9 +390,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
 
-        // TODO: Investigate the relevance of this test and remove it or fix it.
-        // NOTE: The wallet-with-funds does not have a corresponding chain to re-build itself from. Some blocks in the wallet may also be invalid.
-        /*
         [Fact]
         public async Task GetSpendableTransactionsInAccountAllowUnconfirmed()
         {
@@ -401,6 +400,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode miningNode = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest150Miner).Start();
 
                 TestHelper.ConnectAndSync(node, miningNode);
+
+                // Prevent sync manager from affecting the wallet.
+                node.FullNode.NodeService<IWalletSyncManager>().Stop();
+
+                // Allow a wallet to be loaded that does not have verifiable blocks in the consensus chain.
+                ((WalletManager)node.FullNode.NodeService<IWalletManager>()).WalletLoadsOnlyConsensusBlocks = false;
 
                 this.AddAndLoadWalletFileToWalletFolder(node);
 
@@ -423,7 +428,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 transactionsOnlyConfirmed.SpendableTransactions.Sum(st => st.Amount).Should().Be(new Money(142190299995400));
             }
         }
-        */
 
         [Fact]
         public async Task SendingFromOneAddressToFiftyAddresses()
