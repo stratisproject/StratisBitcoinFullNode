@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     .AppendPathSegment("addressbook/address")
                     .PostJsonAsync(new { label = "label1", address = "TQNyrEPc4qHxWN96dBAjncBeB2ghJPqYVu" })
                     .ReceiveJson<AddressBookEntryModel>();
-                
+
                 // Act.
                 // Add an entry with the same address and label already exist.
                 Func<Task> firstAttempt = async () => await $"http://localhost:{node.ApiPort}/api"
@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 AddressBookModel addressBook = await $"http://localhost:{node.ApiPort}/api"
                     .AppendPathSegment("addressbook")
                     .GetJsonAsync<AddressBookModel>();
-                
+
                 // Assert.
                 addressBook.Addresses.Should().HaveCount(5);
                 addressBook.Addresses.First().Label.Should().Be("label1");
@@ -294,7 +294,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 queryResult.Addresses.First().Address.Should().Be("TC52WGLwE1KE1bXvD6f4MC7i5QtxNUGiUb");
                 queryResult.Addresses.Last().Label.Should().Be("label5");
                 queryResult.Addresses.Last().Address.Should().Be("TM9i96uQDFDancRp5bUR5ea16CMWLkCYhK");
-
             }
         }
     }
