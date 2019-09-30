@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using NBitcoin;
 using SQLite;
 using Stratis.Bitcoin.Features.Wallet;
@@ -23,7 +24,7 @@ namespace Stratis.Features.SQLiteWalletRepository
         internal Dictionary<string, DBCommand> Commands;
 
         // A given connection can't have two transactions running in parallel.
-        internal DBLock TransactionLock;
+        internal SemaphoreSlim TransactionLock;
         internal int TransactionDepth;
         internal bool IsInTransaction => this.SQLiteConnection.IsInTransaction;
 
@@ -46,7 +47,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             }
 
             this.Repository = repo;
-            this.TransactionLock = new DBLock();// new SemaphoreSlim(1, 1);
+            this.TransactionLock = new SemaphoreSlim(1, 1);
             this.TransactionDepth = 0;
             this.CommitActions = new Stack<(object, Action<object>)>();
             this.RollBackActions = new Stack<(object, Action<object>)>();
@@ -68,53 +69,67 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         internal void BeginTransaction()
         {
-            if (!this.IsInTransaction)
+            lock (this.TransactionLock)
             {
-                this.TransactionLock.Wait();
-                this.SQLiteConnection.BeginTransaction();
-                this.TransactionDepth = 0;
-            }
+                if (this.TransactionDepth == 0)
+                {
+                    Guard.Assert(!this.IsInTransaction);
 
-            this.TransactionDepth++;
+                    this.TransactionLock.Wait();
+                    this.SQLiteConnection.BeginTransaction();
+                }
+
+                this.TransactionDepth++;
+            }
         }
 
         internal void Rollback()
         {
-            this.TransactionDepth--;
-
-            if (this.TransactionDepth == 0 && this.SQLiteConnection.IsInTransaction)
+            lock (this.TransactionLock)
             {
-                this.SQLiteConnection.Rollback();
-                this.CommitActions.Clear();
+                this.TransactionDepth--;
 
-                while (this.RollBackActions.Count > 0)
+                if (this.TransactionDepth == 0)
                 {
-                    (dynamic rollBackData, Action<dynamic> rollBackAction) = this.RollBackActions.Pop();
+                    Guard.Assert(this.IsInTransaction);
 
-                    rollBackAction(rollBackData);
+                    this.SQLiteConnection.Rollback();
+                    this.CommitActions.Clear();
+
+                    while (this.RollBackActions.Count > 0)
+                    {
+                        (dynamic rollBackData, Action<dynamic> rollBackAction) = this.RollBackActions.Pop();
+
+                        rollBackAction(rollBackData);
+                    }
+
+                    this.TransactionLock.Release();
                 }
-
-                this.TransactionLock.Release();
             }
         }
 
         internal void Commit()
         {
-            this.TransactionDepth--;
-
-            if (this.TransactionDepth == 0 && this.SQLiteConnection.IsInTransaction)
+            lock (this.TransactionLock)
             {
-                this.SQLiteConnection.Commit();
-                this.RollBackActions.Clear();
+                this.TransactionDepth--;
 
-                while (this.CommitActions.Count > 0)
+                if (this.TransactionDepth == 0)
                 {
-                    (dynamic commitData, Action<dynamic> commitAction) = this.CommitActions.Pop();
+                    Guard.Assert(this.IsInTransaction);
 
-                    commitAction(commitData);
+                    this.SQLiteConnection.Commit();
+                    this.RollBackActions.Clear();
+
+                    while (this.CommitActions.Count > 0)
+                    {
+                        (dynamic commitData, Action<dynamic> commitAction) = this.CommitActions.Pop();
+
+                        commitAction(commitData);
+                    }
+
+                    this.TransactionLock.Release();
                 }
-
-                this.TransactionLock.Release();
             }
         }
 

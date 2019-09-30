@@ -790,7 +790,7 @@ namespace Stratis.Features.SQLiteWalletRepository
                         walletsJoining = round.Wallet.LastBlockSyncedHash == lastBlockSyncedHash;
 
                     // See if other threads are waiting to update any of the wallets.
-                    bool threadsWaiting = conn.TransactionLock.WaitingThreads >= 1 || round.ParticipatingWallets.Any(name => this.Wallets[name].HaveWaitingThreads);
+                    bool threadsWaiting = round.ParticipatingWallets.Any(name => this.Wallets[name].HaveWaitingThreads);
                     if (threadsWaiting || ((round.Outputs.Count + round.PrevOuts.Count) >= 10000) || header == null || walletsJoining || DateTime.Now.Ticks >= round.NextScheduledCatchup)
                     {
                         long flagFall = DateTime.Now.Ticks;
