@@ -376,20 +376,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             return It.Is<Block>(b => b.GetHash() == block.GetHash());
         }
 
-        private class WalletSyncManagerOverride : WalletSyncManager
-        {
-            public WalletSyncManagerOverride(ILoggerFactory loggerFactory, IWalletManager walletManager, ChainIndexer chainIndexer, Network network,
-                IBlockStore blockStore, StoreSettings storeSettings, ISignals signals, IAsyncProvider asyncProvider, IWalletRepository walletRepository, INodeLifetime nodeLifetime)
-                : base(loggerFactory, walletManager, chainIndexer, network, blockStore, storeSettings, signals, asyncProvider, nodeLifetime)
-            {
-            }
-
-            public void SetWalletTip(ChainedHeader tip)
-            {
-                this.walletTip = tip;
-            }
-        }
-
         private static void WaitLoop(Func<bool> act, string failureReason, int millisecondsTimeout = 50)
         {
             if (failureReason == null)
