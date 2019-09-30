@@ -347,9 +347,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         [ActionDescription("Returns a list of grouped addresses which have had their common ownership made public by common use as inputs or as the resulting change in past transactions.")]
         public AddressGroupingModel[] ListAddressGroupings()
         {
-            if (!this.storeSettings.TxIndex)
-                throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, $"{nameof(ListAddressGroupings)} is incompatible with transaction indexing turned off (i.e. -txIndex=0).");
-
             var walletReference = this.GetWalletAccountReference();
             var addressGroupings = this.walletManager.GetAddressGroupings(walletReference.WalletName);
             var addressGroupingModels = new List<AddressGroupingModel>();
