@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetMnemonicWithDefaultParameters()
+        public async Task GetMnemonicWithDefaultParametersAsync()
         {
             // Act.
             var mnemonic = await $"http://localhost:{this.fixture.Node.ApiPort}/api".AppendPathSegment("wallet/mnemonic").GetStringAsync();
@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetMnemonicWith24FrenchWords()
+        public async Task GetMnemonicWith24FrenchWordsAsync()
         {
             // Act.
             var mnemonic = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetMnemonicWithUnknownLanguageFails()
+        public async Task GetMnemonicWithUnknownLanguageFailsAsync()
         {
             // Act.
             Func<Task> act = async () => await $"http://localhost:{this.fixture.Node.ApiPort}/api"
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CreateWalletWithoutMnemonic()
+        public async Task CreateWalletWithoutMnemonicAsync()
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CreateWalletWith12WordsMnemonic()
+        public async Task CreateWalletWith12WordsMnemonicAsync()
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
@@ -307,7 +307,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CreateWalletWith24WordsMnemonic()
+        public async Task CreateWalletWith24WordsMnemonicAsync()
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
@@ -361,7 +361,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CreateWalletWithPassphrase()
+        public async Task CreateWalletWithPassphraseAsync()
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
@@ -412,7 +412,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CreateWalletWithoutPassword()
+        public async Task CreateWalletWithoutPasswordAsync()
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
@@ -438,7 +438,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CompareWalletsCreatedWithAndWithoutPassphrase()
+        public async Task CompareWalletsCreatedWithAndWithoutPassphraseAsync()
         {
             // Arrange.
             string walletWithPassphraseName = "wallet-with-passphrase";
@@ -499,7 +499,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CreateWalletsWithSameMnemonicPassphraseCombinationFails()
+        public async Task CreateWalletsWithSameMnemonicPassphraseCombinationFailsAsync()
         {
             // Arrange.
             string firstWalletName = this.fixture.GetUniqueWalletName();
@@ -526,7 +526,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             var walletManager = this.fixture.Node.FullNode.NodeService<IWalletManager>();
             walletManager.SaveWallet(firstWalletName);
-            Assert.Throws(typeof(WalletException), () => walletManager.SaveWallet(secondWalletName));
+            Assert.Throws<WalletException>(() => walletManager.SaveWallet(secondWalletName));
 
             // Check only one wallet has been created.
             string firstWalletPath = Path.Combine(walletsFolderPath, $"{firstWalletName}.wallet.json");
@@ -548,7 +548,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CreateWalletsWithSameNameFails()
+        public async Task CreateWalletsWithSameNameFailsAsync()
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
@@ -591,7 +591,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task LoadNonExistingWallet()
+        public async Task LoadNonExistingWalletAsync()
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
@@ -607,7 +607,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             var response = exception.Call.Response;
 
             var walletManager = this.fixture.Node.FullNode.NodeService<IWalletManager>();
-            Assert.Throws(typeof(WalletException), () => walletManager.SaveWallet(walletName));
+            Assert.Throws<WalletException>(() => walletManager.SaveWallet(walletName));
 
             // Assert.
             ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(await response.Content.ReadAsStringAsync());
@@ -619,7 +619,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task LoadWallet()
+        public async Task LoadWalletAsync()
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
@@ -630,7 +630,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             importedWallet.Name = walletName;
             File.WriteAllText(Path.Combine(walletsFolderPath, $"{walletName}.wallet.json"), JsonConvert.SerializeObject(importedWallet, Formatting.Indented));
 
-
             // Act.
             var response = await $"http://localhost:{this.fixture.Node.ApiPort}/api".AppendPathSegment("wallet/load").PostJsonAsync(new WalletLoadRequest
             {
@@ -639,20 +638,19 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             });
 
             // Assert.
-
             response.StatusCode = HttpStatusCode.Accepted;
 
             // Check the wallet is loaded.
             var getAccountsResponse = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/accounts")
-                .SetQueryParams(new { walletName = walletName })
+                .SetQueryParams(new { walletName })
                 .GetJsonAsync<IEnumerable<string>>();
 
             getAccountsResponse.First().Should().Be("account 0");
         }
 
         [Fact]
-        public async Task LoadWalletWithWrongPassword()
+        public async Task LoadWalletWithWrongPasswordAsync()
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
@@ -684,7 +682,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Check the wallet hasn't been loaded.
             Func<Task> getAccounts = async () => await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/accounts")
-                .SetQueryParams(new { walletName = walletName })
+                .SetQueryParams(new { walletName })
                 .GetJsonAsync<IEnumerable<string>>();
 
             var exception2 = getAccounts.Should().Throw<FlurlHttpException>().Which;
@@ -700,7 +698,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task RecoverWalletWithWrongNumberOfWordsInMnemonic()
+        public async Task RecoverWalletWithWrongNumberOfWordsInMnemonicAsync()
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
@@ -727,7 +725,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task RecoverWalletWithoutMnemonic()
+        public async Task RecoverWalletWithoutMnemonicAsync()
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
@@ -753,7 +751,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task RecoverWalletWithoutPassword()
+        public async Task RecoverWalletWithoutPasswordAsync()
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
@@ -779,7 +777,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task RecoverWalletWithPassphrase()
+        public async Task RecoverWalletWithPassphraseAsync()
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
@@ -827,7 +825,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task RecoverWalletWithoutPassphrase()
+        public async Task RecoverWalletWithoutPassphraseAsync()
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
@@ -875,7 +873,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task RecoverWalletWithSameMnemonicPassphraseAsExistingWalletFails()
+        public async Task RecoverWalletWithSameMnemonicPassphraseAsExistingWalletFailsAsync()
         {
             // Arrange.
             string firstWalletName = this.fixture.GetUniqueWalletName();
@@ -901,12 +899,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CreationDate = DateTime.Parse("2018-1-1")
             }).ReceiveString();
 
-
             // Assert.
-
             var walletManager = this.fixture.Node.FullNode.NodeService<IWalletManager>();
             walletManager.SaveWallet(firstWalletName);
-            Assert.Throws(typeof(WalletException), () => walletManager.SaveWallet(secondWalletName));
+            Assert.Throws<WalletException>(() => walletManager.SaveWallet(secondWalletName));
 
             // Check only one wallet has been created.
             string firstWalletPath = Path.Combine(walletsFolderPath, $"{firstWalletName}.wallet.json");
@@ -928,7 +924,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CheckBalancesInWallet()
+        public async Task CheckBalancesInWalletAsync()
         {
             // Act.
             var response = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
@@ -948,7 +944,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CheckBalancesWhenNoWalletWithThisNameExists()
+        public async Task CheckBalancesWhenNoWalletWithThisNameExistsAsync()
         {
             // Arrange.
             string walletName = "no-such-wallet";
@@ -956,7 +952,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             Func<Task> act = async () => await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/balance")
-                .SetQueryParams(new { walletName = walletName })
+                .SetQueryParams(new { walletName })
                 .GetJsonAsync<WalletBalanceModel>();
 
             // Assert.
@@ -972,7 +968,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CheckBalancesWhenNoAccountWithThisNameExists()
+        public async Task CheckBalancesWhenNoAccountWithThisNameExistsAsync()
         {
             // Act.
             Func<Task> act = async () => await $"http://localhost:{this.fixture.Node.ApiPort}/api"
@@ -993,7 +989,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task FundsReceivedByAddress()
+        public async Task FundsReceivedByAddressAsync()
         {
             // Arrange.
             string address = "TRCT9QP3ipb6zCvW15yKoEtaU418UaKVE2";
@@ -1001,7 +997,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             AddressBalanceModel addressBalance = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/received-by-address")
-                .SetQueryParams(new { address = address })
+                .SetQueryParams(new { address })
                 .GetJsonAsync<AddressBalanceModel>();
 
             addressBalance.Address.Should().Be(address);
@@ -1009,12 +1005,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             addressBalance.AmountConfirmed.Should().Be(new Money(10150100000000));
             addressBalance.AmountUnconfirmed.Should().Be(Money.Zero);
 
-            // Only one tx in the wallet for this address that is not spent and not a coinbase/coinstake.
-            addressBalance.SpendableAmount.Should().Be(new Money(150000000000));
+            // The spendable amount will be 0 as the prebuilt wallet transaction adds the transaction at height 36
+            // whilst the chain indexer is 0.
+            addressBalance.SpendableAmount.Should().Be(new Money(0));
         }
 
         [Fact]
-        public async Task FundsReceivedByAddressWhenNoSuchAddressExists()
+        public async Task FundsReceivedByAddressWhenNoSuchAddressExistsAsync()
         {
             // Arrange.
             string address = "TX725W9ngnnoNuXX6mxvx5iHwS9VEuTa4s";
@@ -1022,7 +1019,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             Func<Task> act = async () => await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/received-by-address")
-                .SetQueryParams(new { address = address })
+                .SetQueryParams(new { address })
                 .GetJsonAsync<AddressBalanceModel>();
 
             // Assert.
@@ -1038,7 +1035,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CheckMaxBalancesInWallet()
+        public async Task CheckMaxBalancesInWalletAsync()
         {
             // Act.
             var balanceResponse = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
@@ -1059,7 +1056,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CheckMaxBalancesInWalletWhenNoWalletWithThisNameExists()
+        public async Task CheckMaxBalancesInWalletWhenNoWalletWithThisNameExistsAsync()
         {
             // Arrange.
             string walletName = "no-such-wallet";
@@ -1067,7 +1064,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             Func<Task> act = async () => await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/maxbalance")
-                .SetQueryParams(new { walletName = walletName, accountName = "account 0", feetype = "low", allowunconfirmed = true })
+                .SetQueryParams(new { walletName, accountName = "account 0", feetype = "low", allowunconfirmed = true })
                 .GetJsonAsync<MaxSpendableAmountModel>();
 
             // Assert.
@@ -1083,7 +1080,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetExtPubKeyWhenNoAccountWithThisNameExists()
+        public async Task GetExtPubKeyWhenNoAccountWithThisNameExistsAsync()
         {
             // Arrange.
             string accountName = "account 1222";
@@ -1091,7 +1088,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             Func<Task> act = async () => await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/extpubkey")
-                .SetQueryParams(new { walletName = this.fixture.walletWithFundsName, accountName = accountName })
+                .SetQueryParams(new { walletName = this.fixture.walletWithFundsName, accountName })
                 .GetJsonAsync<string>();
 
             // Assert.
@@ -1107,7 +1104,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetExtPubKeyForAccount()
+        public async Task GetExtPubKeyForAccountAsync()
         {
             // Arrange.
             string accountName = "account 0";
@@ -1115,7 +1112,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             string extPubKey = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/extpubkey")
-                .SetQueryParams(new { walletName = this.fixture.walletWithFundsName, accountName = accountName })
+                .SetQueryParams(new { walletName = this.fixture.walletWithFundsName, accountName })
                 .GetJsonAsync<string>();
 
             // Assert.
@@ -1123,7 +1120,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetAccountsInWallet()
+        public async Task GetAccountsInWalletAsync()
         {
             // Act.
             IEnumerable<string> accountsNames = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
@@ -1139,7 +1136,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetAccountsInWalletWhenNoWalletWithThisNameExists()
+        public async Task GetAccountsInWalletWhenNoWalletWithThisNameExistsAsync()
         {
             // Arrange.
             string walletName = "no-such-wallet";
@@ -1147,7 +1144,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             Func<Task> act = async () => await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/accounts")
-                .SetQueryParams(new { walletName = walletName })
+                .SetQueryParams(new { walletName })
                 .GetJsonAsync<string>();
 
             // Assert.
@@ -1163,7 +1160,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetAddressesInAccount()
+        public async Task GetAddressesInAccountAsync()
         {
             // Act.
             AddressesModel addressesModel = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
@@ -1178,7 +1175,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetAddressesInAccountWhenNoWalletWithThisNameExists()
+        public async Task GetAddressesInAccountWhenNoWalletWithThisNameExistsAsync()
         {
             // Arrange.
             string walletName = "no-such-wallet";
@@ -1186,7 +1183,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             Func<Task> act = async () => await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/addresses")
-                .SetQueryParams(new { walletName = walletName, accountName = "account 0" })
+                .SetQueryParams(new { walletName, accountName = "account 0" })
                 .GetJsonAsync<string>();
 
             // Assert.
@@ -1202,14 +1199,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetAddressesInAccountWhenNoAccountWithThisNameExists()
+        public async Task GetAddressesInAccountWhenNoAccountWithThisNameExistsAsync()
         {
             // Arrange.
             string accountName = "account 122";
             // Act.
             Func<Task> act = async () => await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/addresses")
-                .SetQueryParams(new { walletName = this.fixture.walletWithFundsName, accountName = accountName })
+                .SetQueryParams(new { walletName = this.fixture.walletWithFundsName, accountName })
                 .GetJsonAsync<string>();
 
             // Assert.
@@ -1225,7 +1222,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetSingleUnusedAddressesInAccount()
+        public async Task GetSingleUnusedAddressesInAccountAsync()
         {
             // Act.
             IEnumerable<string> unusedaddresses = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
@@ -1241,7 +1238,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetWalletGeneralInfo()
+        public async Task GetWalletGeneralInfoAsync()
         {
             // Act.
             WalletGeneralInfoModel generalInfoModel = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
@@ -1259,7 +1256,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task BuildTransactionFromWallet()
+        public async Task BuildTransactionFromWalletAsync()
         {
             // Arrange.
             var address = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
@@ -1287,7 +1284,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task BuildTransactionWithSelectedInputs()
+        public async Task BuildTransactionWithSelectedInputsAsync()
         {
             // Arrange.
             var address = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
@@ -1327,7 +1324,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task BuildTransactionWithMultipleRecipients()
+        public async Task BuildTransactionWithMultipleRecipientsAsync()
         {
             // Arrange.
             var address1 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
@@ -1360,7 +1357,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task BuildTransactionFailsWhenUsingFeeAmountAndFeeType()
+        public async Task BuildTransactionFailsWhenUsingFeeAmountAndFeeTypeAsync()
         {
             // Arrange.
             var address = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
@@ -1395,7 +1392,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task BuildTransactionFailsWhenNoFeeMethodSpecified()
+        public async Task BuildTransactionFailsWhenNoFeeMethodSpecifiedAsync()
         {
             // Arrange.
             var address = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
@@ -1427,10 +1424,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     $"Please use '{nameof(BuildTransactionRequest.FeeAmount)}' if you'd like to set the fee manually, or '{nameof(BuildTransactionRequest.FeeType)}' if you want the wallet to calculate it for you.");
         }
 
-        /// TODO: I don't think this test is valid because it depends on coinselection algoritm.
-        /// would be better to pre-select Outpoints so that we know ahead the expected fee
+        // TODO: I don't think this test is valid because it depends on coinselection algoritm.
+        // would be better to pre-select Outpoints so that we know ahead the expected fee
         [Fact]
-        public async Task EstimateFeeAsync()
+        public async Task EstimateFeeAsyncAsync()
         {
             // Arrange.
             var address1 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
@@ -1458,8 +1455,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             act.Should().Be(new Money(10000));
         }
 
-        /// TODO: I don't think this test is valid because it depends on coinselection algoritm.
-        /// would be better to pre-select Outpoints so that we know ahead the expected fee
+        // TODO: I don't think this test is valid because it depends on coinselection algoritm.
+        // would be better to pre-select Outpoints so that we know ahead the expected fee
         [Fact]
         public async Task EstimateFeeWithOpReturnAsync()
         {
@@ -1492,7 +1489,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetWalletGeneralInfoWhenNoWalletWithThisNameExists()
+        public async Task GetWalletGeneralInfoWhenNoWalletWithThisNameExistsAsync()
         {
             // Arrange.
             string walletName = "no-such-wallet";
@@ -1516,7 +1513,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetWalletFiles()
+        public async Task GetWalletFilesAsync()
         {
             // Act.
             WalletFileModel walletFileModel = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
@@ -1530,7 +1527,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task SignMessage()
+        public async Task SignMessageAsync()
         {
             // Act.
             string signatureResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
@@ -1550,7 +1547,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task VerifyValidSignature()
+        public async Task VerifyValidSignatureAsync()
         {
             // Act.
             bool verifyMessageResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
@@ -1568,7 +1565,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task VerifyInvalidSignature()
+        public async Task VerifyInvalidSignatureAsync()
         {
             // Act.
             bool verifyMessageResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
@@ -1586,7 +1583,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task VerifyMessageWithInvalidAddress()
+        public async Task VerifyMessageWithInvalidAddressAsync()
         {
             // Act.
             bool verifyMessageResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
@@ -1604,7 +1601,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task VerifyMessageWithInvalidMessage()
+        public async Task VerifyMessageWithInvalidMessageAsync()
         {
             // Act.
             bool verifyMessageResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
@@ -1622,7 +1619,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task VerifyMessageWithAllInvalid()
+        public async Task VerifyMessageWithAllInvalidAsync()
         {
             // Act.
             bool verifyMessageResult = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
