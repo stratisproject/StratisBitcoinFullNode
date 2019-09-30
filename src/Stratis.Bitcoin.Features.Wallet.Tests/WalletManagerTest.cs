@@ -1146,29 +1146,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(chain.Tip.HashBlock, result);
         }
 
-        // TODO: Investigate the relevance of this test and remove it or fix it.
-        //       This test case is highly questionable.
-        //       If there are wallets present we should return the real wallet tip and not a made up value.
-        /*
-        [Fact]
-        public void NoLastReceivedBlockHashInWalletReturnsChainTip()
-        {
-            ChainIndexer chainIndexer = WalletTestsHelpers.GenerateChainWithHeight(2, this.Network);
-            var dataFolder = CreateDataFolder(this);
-            IWalletRepository walletRepository = new SQLiteWalletRepository(this.LoggerFactory.Object, dataFolder, this.Network, DateTimeProvider.Default, new ScriptAddressReader());
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chainIndexer, new WalletSettings(NodeSettings.Default(this.Network)),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader(), walletRepository);
-
-            walletManager.Start();
-
-            Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet", "password", walletRepository);
-            wallet.AccountsRoot.ElementAt(0).CoinType = CoinType.Stratis;
-
-            uint256 result = walletManager.LastReceivedBlockInfo().Hash;
-            Assert.Equal(chainIndexer.Tip.HashBlock, result);
-        }
-        */
-
         [Fact]
         public void GetSpendableTransactionsWithChainOfHeightZeroReturnsNoTransactions()
         {
