@@ -19,12 +19,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         private readonly HashSet<uint256> transactionsBeforeStaking = new HashSet<uint256>();
         private readonly ConcurrentDictionary<uint256, TransactionData> transactionLookup = new ConcurrentDictionary<uint256, TransactionData>();
 
-        [Fact(Skip = "Refactor once merged")]
+        [Fact]
         public void Staking_Wallet_Can_Mint_New_Coins()
         {
             using (var builder = NodeBuilder.Create(this))
             {
-                var configParameters = new NodeConfigParameters { { "savetrxhex", "true" } };
+                var configParameters = new NodeConfigParameters { { "txindex", "1" } };
                 var network = new StratisRegTest();
 
                 var minerA = builder.CreateStratisPosNode(network, "stake-1-minerA", configParameters: configParameters).OverrideDateTimeProvider().WithWallet().Start();
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                     {
                         if (!this.transactionsBeforeStaking.Contains(transactionData.Id) && (transactionData.IsCoinStake ?? false))
                         {
-                            Transaction coinstakeTransaction = minerA.FullNode.Network.CreateTransaction(transactionData.Hex);
+                            Transaction coinstakeTransaction = minerA.FullNode.BlockStore().GetTransactionById(transactionData.Id);
                             var balance = new Money(0);
 
                             // Add coinstake outputs to balance.
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                                 if (prevTransactionData == null)
                                     continue;
 
-                                Transaction prevTransaction = minerA.FullNode.Network.CreateTransaction(prevTransactionData.Hex);
+                                Transaction prevTransaction = minerA.FullNode.BlockStore().GetTransactionById(prevTransactionData.Id);
 
                                 balance -= prevTransaction.Outputs[input.PrevOut.N].Value;
                             }
