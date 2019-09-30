@@ -2747,6 +2747,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         // TODO: Investigate the relevance of this test and remove it or fix it.
+        // NOTE: Is saving wallets in JSON format still a requirement?
         /*
         [Fact]
         public void SaveToFileWithoutWalletParameterSavesAllWalletsOnManagerToDisk()
@@ -2784,7 +2785,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(wallet2.Network, resultWallet2.Network);
             Assert.Equal(wallet2.AccountsRoot.Count, resultWallet2.AccountsRoot.Count);
         }
+        */
 
+        // TODO: Investigate the relevance of this test and remove it or fix it.
+        // NOTE: Is saving wallets in JSON format still a requirement?
+        /*
         [Fact]
         public void SaveToFileWithWalletParameterSavesGivenWalletToDisk()
         {
@@ -2880,6 +2885,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         // TODO: Investigate the relevance of this test and remove it or fix it.
+        // NOTE: Is saving wallets in JSON format still a requirement?
         /*
         [Fact]
         public void StopSavesWallets()
@@ -2917,23 +2923,30 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(wallet2.Network, resultWallet2.Network);
             Assert.Equal(wallet2.AccountsRoot.Count, resultWallet2.AccountsRoot.Count);
         }
+        */
 
+        // TODO: Investigate the relevance of this test and remove it or fix it.
+        // NOTE: The test attempts to set the sync height to a height that has not been processed by the wallet.
+        /*
         [Fact]
         public void UpdateLastBlockSyncedHeightWithChainedBlockUpdatesWallets()
         {
             var dataFolder = CreateDataFolder(this);
             IWalletRepository walletRepository = new SQLiteWalletRepository(this.LoggerFactory.Object, dataFolder, this.Network, DateTimeProvider.Default, new ScriptAddressReader());
 
-            Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password", walletRepository);
-            Wallet wallet2 = this.walletFixture.GenerateBlankWallet("myWallet2", "password", walletRepository);
-
-            var chain = new ChainIndexer(wallet.Network);
+            var chain = new ChainIndexer(this.Network);
             ChainedHeader chainedBlock = WalletTestsHelpers.AppendBlock(this.Network, chain.Genesis, chain).ChainedHeader;
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, new WalletSettings(NodeSettings.Default(this.Network)),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader(), walletRepository);
             //walletManager.WalletTipHash = new uint256(125125125);
 
+            walletManager.Start();
+
+            Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password", walletRepository);
+            Wallet wallet2 = this.walletFixture.GenerateBlankWallet("myWallet2", "password", walletRepository);
+
+            // Bad test. Should not set wallet tip to a height that has bot been processed by the wallet.
             walletManager.UpdateLastBlockSyncedHeight(chainedBlock);
 
             Assert.Equal(chainedBlock.HashBlock, walletManager.WalletTipHash);
@@ -2944,7 +2957,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Assert.Equal(chainedBlock.HashBlock, w.AccountsRoot.ElementAt(0).LastBlockSyncedHash);
             }
         }
+        */
 
+        // TODO: Investigate the relevance of this test and remove it or fix it.
+        // NOTE: The test attempts to set the sync height to a height that has not been processed by the wallet.
+        /*
         [Fact]
         public void UpdateLastBlockSyncedHeightWithWalletAndChainedBlockUpdatesGivenWallet()
         {
@@ -3251,6 +3268,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         // TODO: Investigate the relevance of this test and remove it or fix it.
+        // NOTE: The buffer size is only taken into account when wallet addresses are created.
+        //       Is this functionality to change number of addresses on startup really required?
         /*
         [Fact]
         public void Start_takes_account_of_address_buffer_even_for_existing_wallets()
