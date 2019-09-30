@@ -86,6 +86,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         [JsonConverter(typeof(ScriptJsonConverter))]
         public Script ScriptPubKey { get; set; }
 
+        // WALLET TODO: Remove
         /// <summary>
         /// Hexadecimal representation of this transaction.
         /// </summary>

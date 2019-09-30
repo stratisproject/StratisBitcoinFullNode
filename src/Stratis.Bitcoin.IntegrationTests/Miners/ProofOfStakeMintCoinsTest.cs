@@ -19,9 +19,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         private readonly HashSet<uint256> transactionsBeforeStaking = new HashSet<uint256>();
         private readonly ConcurrentDictionary<uint256, TransactionData> transactionLookup = new ConcurrentDictionary<uint256, TransactionData>();
 
-        // TODO: Rewite this test to not use transaction "Hex".
-        /*
-        [Fact]
+        [Fact(Skip = "Refactor once merged")]
         public void Staking_Wallet_Can_Mint_New_Coins()
         {
             using (var builder = NodeBuilder.Create(this))
@@ -33,7 +31,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
 
                 var addressUsed = TestHelper.MineBlocks(minerA, (int)network.Consensus.PremineHeight).AddressUsed;
 
-                // Since the pre-mine will not be immediately spendable, the transactions have to be counted directly from the address.
+                //Since the pre - mine will not be immediately spendable, the transactions have to be counted directly from the address.
                 addressUsed.Transactions.Count().Should().Be((int)network.Consensus.PremineHeight);
 
                 addressUsed.Transactions.Sum(s => s.Amount).Should().Be(network.Consensus.PremineReward + network.Consensus.ProofOfWorkReward);
@@ -52,7 +50,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                 var minter = minerA.FullNode.NodeService<IPosMinting>();
                 minter.Stake(new WalletSecret() { WalletName = "mywallet", WalletPassword = "password" });
 
-                // If new transactions are appearing in the wallet, staking has been successful. Due to coin maturity settings the
+                // If new transactions are appearing in the wallet, staking has been successful.Due to coin maturity settings the
                 // spendable balance of the wallet actually drops after staking, so the wallet balance should not be used to
                 // determine whether staking occurred.
                 TestBase.WaitLoop(() =>
@@ -93,7 +91,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                                 balance += output.Value;
                             }
 
-                            // Subtract coinstake inputs from balance.
+                            //Subtract coinstake inputs from balance.
                             foreach (TxIn input in coinstakeTransaction.Inputs)
                             {
                                 this.transactionLookup.TryGetValue(input.PrevOut.Hash, out TransactionData prevTransactionData);
@@ -126,6 +124,5 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
             // Enumerate to a list otherwise the enumerable can change during enumeration as new transactions are added to the wallet.
             return node.FullNode.WalletManager().Wallets.First().GetAllTransactions().ToList();
         }
-        */
     }
 }

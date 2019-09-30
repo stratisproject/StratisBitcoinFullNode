@@ -263,6 +263,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 hex = transactionFromStore.ToHex();
 
             }
+            // WALLET TODO: Remove
             else if (transactionFromWallet != null)
             {
                 transactionTime = transactionFromWallet.CreationTime;
