@@ -32,9 +32,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         private SubscriptionToken transactionReceivedSubscription;
         private CancellationTokenSource syncCancellationToken;
         private object lockObject;
-        protected ChainedHeader walletTip;
 
-        public ChainedHeader WalletTip => this.walletTip;
+        public ChainedHeader WalletTip => this.walletManager.WalletCommonTip(this.chainIndexer.Tip);
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ChainIndexer chainIndexer,
             Network network, IBlockStore blockStore, StoreSettings storeSettings, ISignals signals, IAsyncProvider asyncProvider, INodeLifetime nodeLifetime)
