@@ -840,11 +840,18 @@ namespace Stratis.Bitcoin.Features.Wallet
                     if (!this.WalletRepository.GetWalletAddressLookup(walletName).Contains(scriptPubKey, out AddressIdentifier addressIdentifier))
                         continue;
 
-                    (Money amountConfirmed, Money amountUnconfirmed) result =
-                        HdAddress.GetBalances(this.WalletRepository.GetAllTransactions(addressIdentifier));
+                    Wallet wallet = this.WalletRepository.GetWallet(walletName);
+
+                    string accountName = wallet.AccountsRoot.First().Accounts.FirstOrDefault(a => a.Index == addressIdentifier.AccountIndex)?.Name;
+
+                    (Money amountTotal, Money amountConfirmed, Money amountSpendable) result =
+                        this.WalletRepository.GetAccountBalance(new WalletAccountReference(walletName, accountName),
+                        this.ChainIndexer.Height,
+                        address: ((int)addressIdentifier.AddressType, (int)addressIdentifier.AddressIndex));
 
                     balance.AmountConfirmed = result.amountConfirmed;
-                    balance.AmountUnconfirmed = result.amountUnconfirmed;
+                    balance.AmountUnconfirmed = result.amountTotal - result.amountConfirmed;
+                    balance.SpendableAmount = result.amountSpendable;
 
                     return balance;
                 }
