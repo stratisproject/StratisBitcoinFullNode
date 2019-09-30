@@ -362,5 +362,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="walletName">The wallet in question.</param>
         /// <returns>The grouped list of base58 addresses.</returns>
         IEnumerable<IEnumerable<string>> GetAddressGroupings(string walletName);
+
+        /// <summary>
+        /// Syncs the wallets from a specific height.
+        /// </summary>
+        /// <param name="tip">Identifies the height to sync from.</param>
+        /// <param name="walletName">The optional wallet name if only a specific wallet should be synced.</param>
+        void UpdateLastBlockSyncedHeight(ChainedHeader tip, string walletName = null);
     }
 }

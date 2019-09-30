@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -22,6 +23,67 @@ using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
+    public class WalletCollection : ICollection<Wallet>
+    {
+        public IWalletManager WalletManager { get; set; }
+
+        private IWalletRepository repository => this.WalletManager?.WalletRepository;
+
+        public int Count => this.GetWallets().Count();
+        public bool IsReadOnly => true;
+
+        private IEnumerable<Wallet> GetWallets()
+        {
+            foreach (string walletName in this.repository.GetWalletNames())
+            {
+                var wallet = this.repository.GetWallet(walletName);
+                wallet.WalletManager = this.WalletManager;
+                yield return wallet;
+            }
+        }
+
+        public WalletCollection(WalletManager walletManager)
+        {
+            this.WalletManager = walletManager;
+        }
+
+        public void Add(Wallet wallet)
+        {
+            wallet.WalletManager = this.WalletManager;
+        }
+
+        public void Clear()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Contains(Wallet wallet)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void CopyTo(Wallet[] arr, int index)
+        {
+            foreach (Wallet wallet in this.GetWallets())
+                arr[index++] = wallet;
+        }
+
+        public bool Remove(Wallet wallet)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerator<Wallet> GetEnumerator()
+        {
+            return GetWallets().GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetWallets().GetEnumerator();
+        }
+    }
+
     /// <summary>
     /// A manager providing operations on wallets.
     /// </summary>
@@ -60,18 +122,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncProvider asyncProvider;
 
-        public IEnumerable<Wallet> Wallets
-        {
-            get
-            {
-                foreach (string walletName in this.WalletRepository.GetWalletNames())
-                {
-                    var wallet = this.WalletRepository.GetWallet(walletName);
-                    wallet.WalletManager = this;
-                    yield return wallet;
-                }
-            }
-        }
+        public WalletCollection Wallets;
 
         /// <summary>The type of coin used in this manager.</summary>
         protected readonly CoinType coinType;
@@ -138,6 +189,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(scriptAddressReader, nameof(scriptAddressReader));
             Guard.NotNull(walletRepository, nameof(walletRepository));
 
+            this.Wallets = new WalletCollection(this);
             this.walletSettings = walletSettings;
             this.lockObject = new object();
             this.lockProcess = new object();
@@ -292,6 +344,15 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return walletTip;
+        }
+
+        public void UpdateLastBlockSyncedHeight(ChainedHeader tip, string walletName = null)
+        {
+            if (walletName != null)
+                this.RewindWallet(walletName, tip);
+            else
+                foreach (string wallet in this.GetWalletsNames())
+                    this.RewindWallet(wallet, tip);
         }
 
         public void RewindWallet(string walletName, ChainedHeader chainedHeader)
@@ -891,6 +952,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>Hash of the last block received by the wallets.</returns>
         public HashHeightPair LastReceivedBlockInfo()
         {
+            if (this.Wallets.Count == 0)
+                return new HashHeightPair(this.ChainIndexer.Tip);
+
             return new HashHeightPair(this.WalletTipHash, this.WalletTipHeight);
         }
 

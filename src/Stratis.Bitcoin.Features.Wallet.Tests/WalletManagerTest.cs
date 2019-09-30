@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -291,8 +293,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(100, hdAccount.InternalAddresses.Count);
         }
 
-        // TODO: Investigate the relevance of this test and remove it or fix it.
-        /*
         [Fact]
         public void UpdateLastBlockSyncedHeightWhileWalletCreatedDoesNotThrowInvalidOperationException()
         {
@@ -306,23 +306,24 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new WalletManager(loggerFactory.Object, this.Network, new Mock<ChainIndexer>().Object, new WalletSettings(NodeSettings.Default(this.Network)),
                                                   dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader(), walletRepository);
 
+            walletManager.Start();
+
             var concurrentChain = new ChainIndexer(this.Network);
             ChainedHeader tip = WalletTestsHelpers.AppendBlock(this.Network, null, concurrentChain).ChainedHeader;
 
-            walletManager.Wallets.Add(WalletTestsHelpers.CreateWallet("wallet1"));
-            walletManager.Wallets.Add(WalletTestsHelpers.CreateWallet("wallet2"));
+            walletManager.Wallets.Add(WalletTestsHelpers.CreateWallet("wallet1", walletRepository));
+            walletManager.Wallets.Add(WalletTestsHelpers.CreateWallet("wallet2", walletRepository));
 
             Parallel.For(0, 500, new ParallelOptions { MaxDegreeOfParallelism = 10 }, (int iteration) =>
             {
                 walletManager.UpdateLastBlockSyncedHeight(tip);
-                walletManager.Wallets.Add(WalletTestsHelpers.CreateWallet("wallet"));
+                walletManager.Wallets.Add(WalletTestsHelpers.CreateWallet("wallet" + (3 + iteration), walletRepository));
                 walletManager.UpdateLastBlockSyncedHeight(tip);
             });
 
             Assert.Equal(502, walletManager.Wallets.Count);
             Assert.True(walletManager.Wallets.All(w => w.BlockLocator != null));
         }
-        */
 
         [Fact]
         public void LoadWalletWithExistingWalletLoadsWalletOntoManager()
@@ -354,12 +355,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(network, walletManager.Wallets.ElementAt(0).Network);
         }
 
-        // TODO: Investigate the relevance of this test and remove it or fix it.
-        /*
         [Fact]
         public void LoadWalletWithNonExistingWalletThrowsFileNotFoundException()
         {
-            Assert.Throws<FileNotFoundException>(() =>
+            Assert.Throws<WalletException>(() =>
             {
                 DataFolder dataFolder = CreateDataFolder(this);
 
@@ -373,7 +372,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 walletManager.LoadWallet("password", "testWallet");
             });
         }
-        */
+
         [Fact]
         public void RecoverWalletWithEqualInputAsExistingWalletRecoversWallet()
         {
@@ -850,8 +849,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.NotNull(result.Address);
         }
 
-        // TODO: Investigate the relevance of this test and remove it or fix it.
-        /*
         [Fact]
         public void GetUnusedAddressWithoutWalletHavingUnusedAddressCreatesAddressAndSavesWallet()
         {
@@ -864,19 +861,30 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Start();
 
             Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet", "password", walletRepository);
-            HdAccount account = wallet.AddNewAccount("password", accountName: "myAccount");
+            HdAccount account = wallet.AddNewAccount("password", accountName: "myAccount", addressCounts:(0,0));
 
-            account.ExternalAddresses.Add(new HdAddress(new List<TransactionData> { new TransactionData() })
+            // Allow manual addition of addresses.
+            walletRepository.TestMode = true;
+
+            Script myUsedScriptPubKey = new Key().PubKey.Hash.ScriptPubKey;
+
+            account.ExternalAddresses.Add(new HdAddress(new List<TransactionData> {
+                new TransactionData() {
+                    ScriptPubKey = myUsedScriptPubKey,
+                    Id = 0,
+                    Index = 0
+                }
+            })
             {
                 Index = 0,
                 Address = "myUsedAddress",
-                ScriptPubKey = new Script(),
+                ScriptPubKey = myUsedScriptPubKey,
             });
 
             HdAddress result = walletManager.GetUnusedAddress(new WalletAccountReference("myWallet", "myAccount"));
 
             var keyPath = new KeyPath($"0/1");
-            ExtPubKey extPubKey = ExtPubKey.Parse(accountExtendedPubKey).Derive(keyPath);
+            ExtPubKey extPubKey = ExtPubKey.Parse(account.ExtendedPubKey).Derive(keyPath);
             PubKey pubKey = extPubKey.PubKey;
             BitcoinPubKeyAddress address = pubKey.GetAddress(wallet.Network);
             Assert.Equal(1, result.Index);
@@ -885,9 +893,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(pubKey.ScriptPubKey, result.Pubkey);
             Assert.Equal(address.ScriptPubKey, result.ScriptPubKey);
             Assert.Equal(0, result.Transactions.Count);
-            Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/myWallet.wallet.json")));
         }
-        */
 
         [Fact]
         public void GetHistoryByNameWithExistingWalletReturnsAllAddressesWithTransactions()
@@ -1141,6 +1147,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         // TODO: Investigate the relevance of this test and remove it or fix it.
+        //       This test case is highly questionable.
+        //       If there are wallets present we should return the real wallet tip and not a made up value.
         /*
         [Fact]
         public void NoLastReceivedBlockHashInWalletReturnsChainTip()
@@ -2254,7 +2262,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             }
         }
 
-        // TODO: Investigate the relevance of this test and remove it or fix it.
+        // TODO: The new wallet implementation is too strict to allow its tip to be set to a fictitious block height.
+        //       The included block chain data is only up to block 3 while the test creates blocks up to height 5. Rework this test.
         /*
         [Fact]
         public void RemoveBlocksRemovesTransactionsWithHigherBlockHeightAndUpdatesLastSyncedBlockHeight()
@@ -2283,6 +2292,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var intAddresses = new List<HdAddress>();
             foreach (HdAddress addr in WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(this.Network, 1, 2, 3, 4, 5))
                 intAddresses.Add(addr);
+
+            //walletManager.Stop();
 
             // TODO: Having blocks beyond the chain tip is not valid. Rework this test.
 
@@ -2453,6 +2464,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         // TODO: Investigate the relevance of this test and remove it or fix it.
+        //       It is probably better that a block that is significantly ahead of any given wallet simply does not get processed by that particular wallet...
         /*
         [Fact]
         public void ProcessBlockWithWalletTipBlockNotOnChainYetThrowsWalletException()
@@ -2464,13 +2476,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                 IWalletRepository walletRepository = new SQLiteWalletRepository(this.LoggerFactory.Object, dataFolder, this.Network, DateTimeProvider.Default, new ScriptAddressReader());
 
-                Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password", walletRepository);
-
-                var chain = new ChainIndexer(wallet.Network);
+                var chain = new ChainIndexer(this.Network);
                 (ChainedHeader ChainedHeader, Block Block) chainResult = WalletTestsHelpers.AppendBlock(this.Network, chain.Genesis, chain);
 
                 var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, new WalletSettings(NodeSettings.Default(this.Network)),
                     dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncProvider>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader(), walletRepository);
+
+                walletManager.Start();
+
+                Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password", walletRepository);
 
                 //walletManager.WalletTipHash = new uint256(15012522521);
 
@@ -2480,6 +2494,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         */
 
         // TODO: Investigate the relevance of this test and remove it or fix it.
+        //       It is probably better that a block that is significantly ahead of any given wallet simply does not get processed by that particular wallet...
         /*
         [Fact]
         public void ProcessBlockWithBlockAheadOfWalletThrowsWalletException()
