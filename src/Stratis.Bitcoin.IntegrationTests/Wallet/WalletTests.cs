@@ -3,9 +3,11 @@ using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -199,8 +201,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
 
-        // TODO: Investigate the relevance of this test and remove it or fix it.
-        /*
         [Fact]
         public void Given_TheNodeHadAReorg_And_WalletTipIsBehindConsensusTip_When_ANewBlockArrives_Then_WalletCanRecover()
         {
@@ -215,9 +215,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestHelper.ConnectAndSync(stratisReceiver, stratisReorg);
                 TestHelper.ConnectAndSync(stratisSender, stratisReorg);
 
-                // Load the wallet into the database.
-                stratisSender.FullNode.Services.ServiceProvider.GetService<IWalletManager>().LoadWallet(Password, WalletName);
-
                 // Remove the reorg node.
                 TestHelper.Disconnect(stratisReceiver, stratisReorg);
                 TestHelper.Disconnect(stratisSender, stratisReorg);
@@ -226,9 +223,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Advance both chains, one chain is longer.
                 TestHelper.MineBlocks(stratisSender, 2);
                 TestHelper.MineBlocks(stratisReorg, 10);
-
-                // Rewind the wallet for the stratisReceiver node.
-                //(stratisReceiver.FullNode.NodeService<IWalletSyncManager>() as WalletSyncManager).SyncFromHeight(5);
 
                 // Connect the reorg chain.
                 TestHelper.ConnectAndSync(stratisReceiver, stratisReorg);
@@ -254,9 +248,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode stratisSender = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
                 CoreNode stratisReceiver = builder.CreateStratisPowNode(this.network).Start();
                 CoreNode stratisReorg = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
-
-                // Load the wallet into the database.
-                stratisSender.FullNode.Services.ServiceProvider.GetService<IWalletManager>().LoadWallet(Password, WalletName);
 
                 // Sync all nodes.
                 TestHelper.ConnectAndSync(stratisReceiver, stratisSender);
@@ -299,12 +290,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode stratisminer = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
 
                 // Push the wallet back.
-                stratisminer.FullNode.Services.ServiceProvider.GetService<IWalletSyncManager>().SyncFromHeight(5);
+                stratisminer.FullNode.NodeService<IWalletSyncManager>().SyncFromHeight(5);
 
                 TestHelper.MineBlocks(stratisminer, 5);
             }
         }
-        */
 
         [Fact(Skip = "Investigate PeerConnector shutdown timeout issue")]
         public void WalletCanRecoverOnStartup()
