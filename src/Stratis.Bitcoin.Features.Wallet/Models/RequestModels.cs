@@ -769,59 +769,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public int UtxosCount { get; set; }
     }
 
-    public class DistributeUtxosRequest : RequestModel, IValidatableObject
-    {
-        public DistributeUtxosRequest()
-        {
-            this.AccountName = WalletManager.DefaultAccount;
-        }
-
-        [Required(ErrorMessage = "The name of the wallet is missing.")]
-        public string WalletName { get; set; }
-
-        public string AccountName { get; set; }
-
-        [Required(ErrorMessage = "A password is required.")]
-        public string WalletPassword { get; set; }
-
-        [DefaultValue(false)]
-        public bool UseUniqueAddressPerUtxo{ get; set; }
-
-        [Required]
-        public int UtxosCount { get; set; }
-
-        [Required]
-        public int UtxoPerTransaction { get; set; }
-
-        [DefaultValue(0)]
-        public int TimestampDifferenceBetweenTransactions { get; set; }
-
-        /// <summary>
-        /// The minimum number of confirmations a transaction needs to have to be included.
-        /// To include unconfirmed transactions, set this value to 0.
-        /// </summary>
-        [DefaultValue(1)]
-        public int MinConfirmations { get; set; }
-
-        /// <summary>
-        /// A list of outpoints to use as inputs for the transaction.
-        /// </summary> 
-        public List<OutpointRequest> Outpoints { get; set; }
-
-        [Required]
-        public bool DryRun { get; set; }
-
-        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
-        {
-            if (this.UtxoPerTransaction > this.UtxosCount)
-            {
-                yield return new ValidationResult(
-                    $"The number of UTXOs per transaction ('{nameof(this.UtxoPerTransaction)}') has to be equal or smaller than total number of UTXOs ('{nameof(this.UtxosCount)}')",
-                    new[] { $"{nameof(this.UtxoPerTransaction)}", $"{nameof(this.UtxosCount)}" });
-            }
-        }
-    }
-
     /// <summary>
     /// Object to sign a message.
     /// </summary>
