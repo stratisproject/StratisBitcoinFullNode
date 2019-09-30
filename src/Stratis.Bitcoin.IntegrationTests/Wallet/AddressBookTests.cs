@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task AddAnAddressBookEntry()
+        public async Task AddAnAddressBookEntryAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task AddAnAddressBookEntryWhenAnEntryAlreadyExists()
+        public async Task AddAnAddressBookEntryWhenAnEntryAlreadyExistsAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task RemoveAnAddressBookEntryWhenNoSuchEntryExists()
+        public async Task RemoveAnAddressBookEntryWhenNoSuchEntryExistsAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task RemoveAnAddressBookEntryWhenAnEntryExists()
+        public async Task RemoveAnAddressBookEntryWhenAnEntryExistsAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetAnAddressBook()
+        public async Task GetAnAddressBookAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -227,7 +227,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetAnAddressBookWithPagination()
+        public async Task GetAnAddressBookWithPaginationAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {

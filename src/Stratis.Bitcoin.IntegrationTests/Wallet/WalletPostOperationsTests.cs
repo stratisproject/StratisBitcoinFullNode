@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CreateAnAccountWhenAnUnusedAccountExists()
+        public async Task CreateAnAccountWhenAnUnusedAccountExistsAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CreateAnAccountWhenNoUnusedAccountExists()
+        public async Task CreateAnAccountWhenNoUnusedAccountExistsAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetWalletFilesWhenNoFilesArePresent()
+        public async Task GetWalletFilesWhenNoFilesArePresentAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetUnusedAddressesInAccountWhenAddressesNeedToBeCreated()
+        public async Task GetUnusedAddressesInAccountWhenAddressesNeedToBeCreatedAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetUnusedAddressesInAccountWhenNoAddressesNeedToBeCreated()
+        public async Task GetUnusedAddressesInAccountWhenNoAddressesNeedToBeCreatedAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -239,7 +239,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task RemoveAllTransactionsFromWallet()
+        public async Task RemoveAllTransactionsFromWalletAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -276,7 +276,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task RemoveTransactionsFromWalletWithoutFilters()
+        public async Task RemoveTransactionsFromWalletWithoutFiltersAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -315,7 +315,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task RemoveTransactionsFromWalletCalledWithMoreThanOneFilter()
+        public async Task RemoveTransactionsFromWalletCalledWithMoreThanOneFilterAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -391,7 +391,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetSpendableTransactionsInAccountAllowUnconfirmed()
+        public async Task GetSpendableTransactionsInAccountAllowUnconfirmedAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -430,7 +430,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task SendingFromOneAddressToFiftyAddresses()
+        public async Task SendingFromOneAddressToFiftyAddressesAsync()
         {
             int sendingAccountBalanceOnStart = 98000596;
             int receivingAccountBalanceOnStart = 0;
@@ -519,7 +519,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task SendingFromManyAddressesToOneAddress()
+        public async Task SendingFromManyAddressesToOneAddressAsync()
         {
             int sendingAccountBalanceOnStart = 98000596;
             int receivingAccountBalanceOnStart = 0;
@@ -628,7 +628,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task SendingATransactionWithAnOpReturn()
+        public async Task SendingATransactionWithAnOpReturnAsync()
         {
             int sendingAccountBalanceOnStart = 98000596;
             int receivingAccountBalanceOnStart = 0;
@@ -779,7 +779,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetHistoryFromMiningNode()
+        public async Task GetHistoryFromMiningNodeAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {

@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetTransactionDoesntExistInWalletOrBlockAsync()
+        public void GetTransactionDoesntExistInWalletOrBlock()
         {
             string txId = "f13effbbfc1b3d556dbfa25129e09209c9c57ed2737457f5080b78984a8c8554";
 
