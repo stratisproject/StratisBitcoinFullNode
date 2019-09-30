@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             // Mock wallet repository's 'FindFork'.
             this.walletRepository.Setup(r => r.FindFork(this.walletName, It.IsAny<ChainedHeader>())).Returns((string name, ChainedHeader chainedHeader) =>
             {
-                return chainedHeader.FindFork(this.walletTip);
+                return (this.walletTip == null) ? null : chainedHeader.FindFork(this.walletTip);
             });
 
             if (blocks != null)
