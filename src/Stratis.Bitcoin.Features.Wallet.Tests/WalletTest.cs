@@ -47,32 +47,5 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.Empty(result);
         }
-
-        // TODO: Investigate the relevance of this test and remove it or fix it.
-        /*
-        [Fact]
-        public void GetAllPubKeysReturnsPubkeysFromWallet()
-        {
-            var wallet = new Wallet();
-            AccountRoot stratisAccountRoot = CreateAccountRootWithHdAccountHavingAddresses("StratisAccount", CoinType.Stratis);
-            wallet.AccountsRoot.Add(stratisAccountRoot);
-
-            List<Script> result = wallet.GetAllPubKeys().ToList();
-
-            Assert.Equal(2, result.Count);
-            Assert.Equal(stratisAccountRoot.Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).ScriptPubKey, result[0]);
-            Assert.Equal(stratisAccountRoot.Accounts.ElementAt(0).InternalAddresses.ElementAt(0).ScriptPubKey, result[1]);
-        }
-
-        [Fact]
-        public void GetAllPubKeysWithoutAccountRootsReturnsEmptyList()
-        {
-            var wallet = new Wallet();
-
-            List<Script> result = wallet.GetAllPubKeys().ToList();
-
-            Assert.Empty(result);
-        }
-        */
     }
 }
