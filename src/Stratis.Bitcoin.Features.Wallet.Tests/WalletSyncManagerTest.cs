@@ -207,8 +207,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 It.IsAny<string>()));
         }
 
-        // TODO: Investigate the relevance of this test and remove it or fix it.
-        /*
         /// <summary>
         /// When processing a new <see cref="Block"/> that has a previous hash that is not the same as the <see cref="WalletSyncManager.WalletTip"/> and is on the best chain
         /// see which blocks are missing and retrieve blocks from the <see cref="BlockStore"/> to catchup the <see cref="WalletManager"/>.
@@ -221,20 +219,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.SetupMockObjects(result.Chain, result.Blocks);
 
             // Set 2nd block as tip.
-            //this.walletSyncManager.SyncFromHeight(3, this.walletName);
+            this.walletSyncManager.SyncFromHeight(3, this.walletName);
 
             // Process 4th block in the list does not have same prevhash as which is loaded
             Block blockToProcess = result.Blocks[3];
             blockToProcess.SetPrivatePropertyValue("BlockSize", 1L);
 
-            this.walletSyncManager.ProcessBlock(blockToProcess);
+            this.walletSyncManager.OrchestrateWalletSync();
 
             //verify manager processes each missing block until caught up.
             this.walletRepository.Verify(r => r.ProcessBlocks(
                 It.Is<IEnumerable<(ChainedHeader header, Block block)>>(c => string.Join(",", c.Select(b => b.header.Height)) == "3,4,5"),
                 It.IsAny<string>()));
         }
-
+        /*
         /// <summary>
         /// When using the <see cref="BlockStore"/> to catchup on the <see cref="WalletManager"/> and the <see cref="Block"/> is not in the BlockStore yet try to wait until it arrives.
         /// If it does use it to catchup the WalletManager.
