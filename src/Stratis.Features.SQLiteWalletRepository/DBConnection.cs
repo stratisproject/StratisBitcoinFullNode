@@ -278,16 +278,23 @@ namespace Stratis.Features.SQLiteWalletRepository
         {
             if (!this.TableExists(typeof(T).Name))
             {
-                if (typeof(T) == typeof(HDWallet))
-                    HDWallet.CreateTable(this);
-                else if (typeof(T) == typeof(HDAccount))
-                    HDAccount.CreateTable(this);
-                else if (typeof(T) == typeof(HDAddress))
-                    HDAddress.CreateTable(this);
-                else if (typeof(T) == typeof(HDTransactionData))
-                    HDTransactionData.CreateTable(this);
-                else if (typeof(T) == typeof(HDPayment))
-                    HDPayment.CreateTable(this);
+                try
+                {
+                    if (typeof(T) == typeof(HDWallet))
+                        HDWallet.CreateTable(this);
+                    else if (typeof(T) == typeof(HDAccount))
+                        HDAccount.CreateTable(this);
+                    else if (typeof(T) == typeof(HDAddress))
+                        HDAddress.CreateTable(this);
+                    else if (typeof(T) == typeof(HDTransactionData))
+                        HDTransactionData.CreateTable(this);
+                    else if (typeof(T) == typeof(HDPayment))
+                        HDPayment.CreateTable(this);
+                }
+                catch (Exception err)
+                {
+                    throw new Exception($"Table creation failed for database at { this.Repository.DBPath }: {err.Message}");
+                }
             }
         }
 
