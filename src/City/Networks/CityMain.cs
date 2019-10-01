@@ -190,7 +190,7 @@ namespace City.Networks
                 //.Register<StratisBugFixPosFutureDriftRule>()
                 .Register<PosFutureDriftRule>()
                 .Register<CheckDifficultyPosRule>()
-                //.Register<StratisHeaderVersionRule>()
+                .Register<StratisHeaderVersionRule>()
                 .Register<ProvenHeaderSizeRule>()
                 .Register<ProvenHeaderCoinstakeRule>();
 
