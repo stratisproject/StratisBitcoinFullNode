@@ -293,71 +293,74 @@ namespace Stratis.Features.SQLiteWalletRepository
 
         public Wallet CreateWallet(string walletName, string encryptedSeed = null, byte[] chainCode = null, HashHeightPair lastBlockSynced = null, BlockLocator blockLocator = null, long? creationTime = null)
         {
-            var wallet = new HDWallet()
-            {
-                Name = walletName,
-                EncryptedSeed = encryptedSeed,
-                ChainCode = (chainCode == null) ? null : Convert.ToBase64String(chainCode),
-                CreationTime = creationTime ?? (int)this.Network.GenesisTime
-            };
-
-            wallet.SetLastBlockSynced(lastBlockSynced, blockLocator, this.Network);
-
-            DBConnection conn = GetConnection(walletName);
-
             this.logger.LogDebug("Creating wallet '{0}'.", walletName);
 
-            conn.BeginTransaction();
-
-            try
+            lock (this.Wallets)
             {
-                if (encryptedSeed != null && HDWallet.GetWalletByEncryptedSeed(conn, encryptedSeed) != null)
-                    throw new WalletException("Cannot create this wallet as a wallet with the same private key already exists.");
-                if (HDWallet.GetByName(conn, walletName) != null)
+                if (this.Wallets.Any(w => w.Value.Wallet.Name == walletName))
                     throw new WalletException($"Wallet with name '{walletName}' already exists.");
 
-                wallet.CreateWallet(conn);
-                conn.Commit();
-            }
-            catch (Exception)
-            {
-                conn.Rollback();
-                throw;
-            }
+                if (encryptedSeed != null)
+                    if (this.Wallets.Any(w => w.Value.Wallet.EncryptedSeed == encryptedSeed))
+                        throw new WalletException("Cannot create this wallet as a wallet with the same private key already exists.");
 
-            this.logger.LogDebug("Adding wallet '{0}' to wallet collection.", walletName);
+                DBConnection conn = GetConnection(walletName);
 
-            WalletContainer walletContainer;
-            if (this.DatabasePerWallet)
-                walletContainer = new WalletContainer(conn, wallet);
-            else
-                walletContainer = new WalletContainer(conn, wallet, this.processBlocksInfo);
+                conn.BeginTransaction();
 
-            this.Wallets[wallet.Name] = walletContainer;
-
-            if (conn.IsInTransaction)
-            {
-                conn.AddRollbackAction(new
+                try
                 {
-                    wallet.Name,
-                }, (dynamic rollBackData) =>
-                {
-                    if (this.Wallets.TryGetValue(rollBackData.Name, out WalletContainer walletContainer2))
+                    var wallet = new HDWallet()
                     {
-                        walletContainer2.WriteLockWait();
+                        Name = walletName,
+                        EncryptedSeed = encryptedSeed,
+                        ChainCode = (chainCode == null) ? null : Convert.ToBase64String(chainCode),
+                        CreationTime = creationTime ?? (int)this.Network.GenesisTime
+                    };
 
-                        if (this.Wallets.TryRemove(rollBackData.Name, out WalletContainer _))
+                    wallet.SetLastBlockSynced(lastBlockSynced, blockLocator, this.Network);
+
+                    wallet.CreateWallet(conn);
+
+                    this.logger.LogDebug("Adding wallet '{0}' to wallet collection.", walletName);
+
+                    WalletContainer walletContainer;
+                    if (this.DatabasePerWallet)
+                        walletContainer = new WalletContainer(conn, wallet);
+                    else
+                        walletContainer = new WalletContainer(conn, wallet, this.processBlocksInfo);
+
+                    this.Wallets[wallet.Name] = walletContainer;
+
+                    conn.AddRollbackAction(new
+                    {
+                        wallet.Name,
+                    }, (dynamic rollBackData) =>
+                    {
+                        if (this.Wallets.TryGetValue(rollBackData.Name, out WalletContainer walletContainer2))
                         {
-                            if (this.DatabasePerWallet)
-                            {
-                                walletContainer2.Conn.Close();
-                                File.Delete(Path.Combine(this.DBPath, $"{walletContainer.Wallet.Name}.db"));
-                            }
-                        }
+                            walletContainer2.WriteLockWait();
 
-                        walletContainer2.WriteLockRelease();
-                    }
-                });
+                            if (this.Wallets.TryRemove(rollBackData.Name, out WalletContainer _))
+                            {
+                                if (this.DatabasePerWallet)
+                                {
+                                    walletContainer2.Conn.Close();
+                                    File.Delete(Path.Combine(this.DBPath, $"{walletContainer.Wallet.Name}.db"));
+                                }
+                            }
+
+                            walletContainer2.WriteLockRelease();
+                        }
+                    });
+
+                    conn.Commit();
+                }
+                catch (Exception)
+                {
+                    conn.Rollback();
+                    throw;
+                }
             }
 
             return GetWallet(walletName);
