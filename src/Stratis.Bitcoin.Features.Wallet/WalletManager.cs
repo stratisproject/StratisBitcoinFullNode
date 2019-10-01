@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     this.UnlockWallet(this.walletSettings.DefaultWalletPassword, this.walletSettings.DefaultWalletName, MaxWalletUnlockDurationInSeconds);
                 }
             }
-       }
+        }
 
         /// <inheritdoc />
         public void Stop()
@@ -752,7 +752,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 // No unused account was found, create a new one.
                 account = wallet.AddNewAccount(password, accountCreationTime: this.dateTimeProvider.GetTimeOffset());
-           }
+            }
 
             return account;
         }
@@ -946,6 +946,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public bool ContainsWallets => this.WalletRepository.GetWalletNames().Any();
 
+        /// WALLET TODO: We can remove this walletManager.LastReceivedBlockInfo()
         /// <summary>
         /// Gets the hash of the last block received by the wallets.
         /// </summary>

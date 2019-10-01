@@ -21,7 +21,6 @@ using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Features.SQLiteWalletRepository;
 
 namespace Stratis.Bitcoin.Features.ColdStaking
 {
@@ -143,7 +142,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
         private void AddInlineStats(StringBuilder benchLogs)
         {
-            var walletManager = this.coldStakingManager;
+            ColdStakingManager walletManager = this.coldStakingManager;
 
             if (walletManager != null)
             {
