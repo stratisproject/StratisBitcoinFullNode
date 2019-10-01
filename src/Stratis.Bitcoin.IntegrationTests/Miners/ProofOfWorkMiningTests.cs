@@ -20,8 +20,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
             this.regTest = new BitcoinRegTest();
         }
 
+        /// <summary>
+        /// MineBlockCheckPeerHasNewBlock
+        /// </summary>
         [Fact]
-        public void MiningAndPropagatingPOW_MineBlockCheckPeerHasNewBlock()
+        public void MiningAndPropagatingPOW_Scenario1_Async()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -46,8 +49,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
             }
         }
 
+        /// <summary>
+        /// MineBlockNotPushedToConsensusCode_SupercededByBetterBlockOnReorg_InitialBlockRejected
+        /// </summary>
         [Fact]
-        public async Task MiningAndPropagatingPOW_MineBlockNotPushedToConsensusCode_SupercededByBetterBlockOnReorg_InitialBlockRejectedAsync()
+        public async Task MiningAndPropagatingPOW_Scenario2_Async()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
