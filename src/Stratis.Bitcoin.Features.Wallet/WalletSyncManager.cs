@@ -94,9 +94,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         public void Stop()
         {
             this.syncCancellationToken.Cancel();
-            while (this.walletSynchronisationLoop?.RunningTask.Status != TaskStatus.Canceled &&
-                   this.walletSynchronisationLoop?.RunningTask.Status != TaskStatus.Faulted &&
-                   this.walletSynchronisationLoop?.RunningTask.Status != TaskStatus.RanToCompletion)
+            while (this.walletSynchronisationLoop != null &&
+                   this.walletSynchronisationLoop.RunningTask.Status != TaskStatus.Canceled &&
+                   this.walletSynchronisationLoop.RunningTask.Status != TaskStatus.Faulted &&
+                   this.walletSynchronisationLoop.RunningTask.Status != TaskStatus.RanToCompletion)
             {
                 Thread.Yield();
             }
