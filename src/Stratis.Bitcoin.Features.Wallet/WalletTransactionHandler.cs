@@ -206,6 +206,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 GroupByScriptPubKey = false
             };
 
+            context.TransactionBuilder.DustPrevention = false;
+
             // If inputs are selected by the user, we just choose them all.
             if (context.SelectedInputs != null && context.SelectedInputs.Any())
             {
