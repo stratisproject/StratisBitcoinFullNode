@@ -1037,7 +1037,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                     {
                         // A wallet ahead of consensus should be truncated.
                         ChainedHeader fork = this.WalletRepository.FindFork(walletName, this.ChainIndexer.Tip);
-                        this.WalletRepository.RewindWallet(walletName, fork);
+
+                        if (fork?.HashBlock != this.ChainIndexer.Tip?.HashBlock)
+                            this.WalletRepository.RewindWallet(walletName, fork);
 
                         // Update the lowest common tip.
                         walletTip = (fork == null) ? null : walletTip?.FindFork(fork);

@@ -109,6 +109,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         // TODO: Investigate the relevance of this test and remove it or fix it.
+        // NOTE: The test attempts to set the wallet tip height to a height that has not been processed by the wallet.
         /*
         [Fact]
         public void Start_BlockOnChain_DoesNotReorgWalletManager()
@@ -128,6 +129,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         */
 
         // TODO: Investigate the relevance of this test and remove it or fix it.
+        // NOTE: The test attempts to set the wallet tp to a height that has not been processed by the wallet.
         /*
         [Fact]
         public void Start_BlockNotChain_ReorgsWalletManagerUsingWallet()
@@ -154,8 +156,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
         */
 
-        // TODO: Investigate the relevance of this test and remove it or fix it.
-        /*
         /// <summary>
         /// When processing a new <see cref="Block"/> that has a previous hash that is the same as the <see cref="WalletSyncManager.WalletTip"/> pass it directly to the <see cref="WalletManager"/>
         /// and set it as the new WalletTip.
@@ -166,17 +166,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             (ChainIndexer Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, KnownNetworks.StratisMain);
             this.SetupMockObjects(result.Chain, result.Blocks);
 
-            Block blockToProcess = result.Blocks[3];
-            blockToProcess.SetPrivatePropertyValue("BlockSize", 1L);
-
             walletSyncManager.OrchestrateWalletSync();
 
-            this.walletRepository.Verify(r => r.ProcessBlocks(
-                It.Is<IEnumerable<(ChainedHeader header, Block block)>>(c => string.Join(",", c.Select(b => b.header.Height)) == "3,4,5"),
-                It.IsAny<string>()));
-
+            this.walletRepository.Verify(r => r.RewindWallet(It.IsAny<string>(), It.IsAny<ChainedHeader>()), Times.Never());
         }
-        */
 
         /// <summary>
         /// When processing a new <see cref="Block"/> that has a previous hash that is not the same as the <see cref="WalletSyncManager.WalletTip"/> and is not on the best chain
