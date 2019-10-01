@@ -220,6 +220,8 @@ namespace Stratis.Bitcoin.Features.RPC
                 using (StreamReader streamReader = new StreamReader(responseMemoryStream))
                 using (JsonTextReader textReader = new JsonTextReader(streamReader))
                 {
+                    // Ensure floats are parsed as decimals and not as doubles.
+                    textReader.FloatParseHandling = FloatParseHandling.Decimal;
                     response = await JObject.LoadAsync(textReader);
                 }
             }
@@ -231,6 +233,9 @@ namespace Stratis.Bitcoin.Features.RPC
                 using (StreamReader streamReader = new StreamReader(context.Response.Body, Encoding.Default, true, 1024, true))
                 using (JsonTextReader textReader = new JsonTextReader(streamReader))
                 {
+                    // Ensure floats are parsed as decimals and not as doubles.
+                    textReader.FloatParseHandling = FloatParseHandling.Decimal;
+
                     string val = streamReader.ReadToEnd();
                     context.Response.Body.Position = 0;
                     response = await JObject.LoadAsync(textReader);
