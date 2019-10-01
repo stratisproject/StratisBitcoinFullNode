@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 It.Is<IEnumerable<(ChainedHeader header, Block block)>>(c => string.Join(",", c.Select(b => b.header.Height)) == "3,4,5"),
                 It.IsAny<string>()));
         }
-        /*
+
         /// <summary>
         /// When using the <see cref="BlockStore"/> to catchup on the <see cref="WalletManager"/> and the <see cref="Block"/> is not in the BlockStore yet try to wait until it arrives.
         /// If it does use it to catchup the WalletManager.
@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 It.Is<IEnumerable<(ChainedHeader header, Block block)>>(c => string.Join(",", c.Select(b => b.header.Height)) == "3,4,5"),
                 It.IsAny<string>()));
         }
-        */
+
         [Fact]
         public void ProcessTransaction_CallsWalletManager()
         {
