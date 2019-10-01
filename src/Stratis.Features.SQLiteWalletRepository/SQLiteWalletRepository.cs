@@ -297,11 +297,11 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             lock (this.Wallets)
             {
-                if (this.Wallets.Any(w => w.Value.Wallet.Name == walletName))
+                if (this.Wallets.Any(w => w.Value.Wallet?.Name == walletName))
                     throw new WalletException($"Wallet with name '{walletName}' already exists.");
 
                 if (encryptedSeed != null)
-                    if (this.Wallets.Any(w => w.Value.Wallet.EncryptedSeed == encryptedSeed))
+                    if (this.Wallets.Any(w => w.Value.Wallet?.EncryptedSeed == encryptedSeed))
                         throw new WalletException("Cannot create this wallet as a wallet with the same private key already exists.");
 
                 DBConnection conn = GetConnection(walletName);
