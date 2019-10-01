@@ -138,7 +138,7 @@ namespace Stratis.Features.SQLiteWalletRepository
             return new DBCommand(this, cmdText, ps);
         }
 
-        internal List<T> Query<T>(string query, params object[] args) where T:new()
+        internal List<T> Query<T>(string query, params object[] args) where T : new()
         {
             return this.SQLiteConnection.Query<T>(query, args);
         }
@@ -211,7 +211,6 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                 outputs.Clear();
                 prevouts.Clear();
-
             }
         }
 
