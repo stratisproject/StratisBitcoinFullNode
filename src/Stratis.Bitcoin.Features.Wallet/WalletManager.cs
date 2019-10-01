@@ -262,7 +262,11 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // Ensure that any legacy JSON wallets are loaded to active storage.
             foreach (string walletName in this.fileStorage.GetFilesNames(WalletFileExtension))
+            {
+                this.logger.LogInformation("Loading legacy JSON wallet: {0}", walletName);
                 this.LoadWallet(walletName.Substring(0, walletName.Length - WalletFileExtension.Length - 1));
+                this.logger.LogInformation("Loading legacy JSON wallet: {0} done...", walletName);
+            }
 
             if (this.walletSettings.IsDefaultWalletEnabled())
             {
@@ -500,11 +504,13 @@ namespace Stratis.Bitcoin.Features.Wallet
                     // Determine the verifiable wallet tip.
                     foreach (HdAccount account in jsonWallet.AccountsRoot.First().Accounts)
                     {
+                        this.logger.LogInformation("Preprocessing {0} external addresses for account {1}.", account.ExternalAddresses.Count, account.Name);
                         foreach (HdAddress address in account.ExternalAddresses)
                         {
                             PreprocessTransactions(address.Transactions).ToList();
                         }
 
+                        this.logger.LogInformation("Preprocessing {0} internal addresses for account {1}.", account.InternalAddresses.Count, account.Name);
                         foreach (HdAddress address in account.InternalAddresses)
                         {
                             PreprocessTransactions(address.Transactions).ToList();
@@ -530,13 +536,15 @@ namespace Stratis.Bitcoin.Features.Wallet
                         this.WalletRepository.CreateAccount(jsonWallet.Name, account.Index, account.Name, ExtPubKey.Parse(account.ExtendedPubKey), account.CreationTime,
                             (lastUsedExternalAddress + 1 + buffer, lastUsedInternalAddress + 1 + buffer));
 
-                        foreach (HdAddress address in account.ExternalAddresses)
+                        foreach (HdAddress address in account.ExternalAddresses.Where(a => a.Transactions.Any()))
                         {
+                            this.logger.LogInformation("Adding {0} transactions for external address {1}.", address.Transactions.Count, address.Address);
                             this.WalletRepository.AddWatchOnlyTransactions(jsonWallet.Name, account.Name, address, PreprocessTransactions(address.Transactions).ToList(), true);
                         }
 
-                        foreach (HdAddress address in account.InternalAddresses)
+                        foreach (HdAddress address in account.InternalAddresses.Where(a => a.Transactions.Any()))
                         {
+                            this.logger.LogInformation("Adding {0} transactions for internal address {1}.", address.Transactions.Count, address.Address);
                             this.WalletRepository.AddWatchOnlyTransactions(jsonWallet.Name, account.Name, address, PreprocessTransactions(address.Transactions).ToList(), true);
                         }
                     }
