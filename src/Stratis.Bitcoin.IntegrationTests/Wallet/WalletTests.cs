@@ -32,8 +32,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisSender = builder.CreateStratisPowNode(this.network).WithWallet().Start();
-                CoreNode stratisReceiver = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+                CoreNode stratisSender = builder.CreateStratisPowNode(this.network, "stratisSender").WithWallet().Start();
+                CoreNode stratisReceiver = builder.CreateStratisPowNode(this.network, "stratisReceiver").WithWallet().Start();
 
                 int maturity = (int)stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 TestHelper.MineBlocks(stratisSender, maturity + 1 + 5);
@@ -46,20 +46,24 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestHelper.ConnectAndSync(stratisSender, stratisReceiver);
 
                 // Send coins to the receiver
-                HdAddress sendto = stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, Account));
+                HdAddress stratisReceiverAddress = stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, Account));
                 Transaction trx = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(stratisSender.FullNode.Network,
-                    new WalletAccountReference(WalletName, Account), Password, sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
+                    new WalletAccountReference(WalletName, Account), Password, stratisReceiverAddress.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
 
                 // Broadcast to the other node
                 stratisSender.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(trx.ToHex()));
 
                 // Wait for the transaction to arrive
                 TestBase.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
+
+                // Mine block to confirm transaction in database.
+                TestHelper.MineBlocks(stratisSender, 1);
+                TestHelper.WaitForNodeToSync(stratisReceiver);
+
                 TestBase.WaitLoop(() => stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Any());
 
                 long receivetotal = stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
                 Assert.Equal(Money.COIN * 100, receivetotal);
-                Assert.Null(stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).First().Transaction.BlockHeight);
 
                 // Generate two new blocks so the transaction is confirmed
                 TestHelper.MineBlocks(stratisSender, 2);
