@@ -7,14 +7,14 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Features.SQLiteWalletRepository.External;
 using Stratis.Features.SQLiteWalletRepository.Tables;
-using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Interfaces;
 using Script = NBitcoin.Script;
 
 [assembly: InternalsVisibleTo("Stratis.Features.SQLiteWalletRepository.Tests")]
@@ -1055,7 +1055,8 @@ namespace Stratis.Features.SQLiteWalletRepository
             WalletContainer walletContainer = this.Wallets.Values.FirstOrDefault(wc => wc.Wallet.WalletId == addressIdentifier.WalletId);
             DBConnection conn = walletContainer.Conn;
 
-            var prevTran = (prev == null) ? null : new HDTransactionData() {
+            var prevTran = (prev == null) ? null : new HDTransactionData()
+            {
                 OutputTxTime = prev.CreationTime.ToUnixTimeSeconds(),
                 OutputIndex = prev.Index
             };
