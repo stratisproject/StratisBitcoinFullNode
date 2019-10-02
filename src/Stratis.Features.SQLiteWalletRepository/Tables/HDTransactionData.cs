@@ -89,8 +89,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
                 SELECT  *
                 FROM    HDTransactionData
                 WHERE   (WalletId, AccountIndex) IN (SELECT {walletId}, {accountIndex})
-                AND     SpendTxTime IS NULL
-                AND     OutputBlockHeight <= {maxConfirmationHeight}
+                AND     SpendTxTime IS NULL {((confirmations == 0) ? "" : $@"
+                AND     OutputBlockHeight <= {maxConfirmationHeight}")}
                 AND     (OutputTxIsCoinBase = 0 OR OutputBlockHeight <= {maxCoinBaseHeight})
                 ORDER   BY OutputBlockHeight
                 ,       OutputTxId
