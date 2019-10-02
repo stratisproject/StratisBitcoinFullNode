@@ -165,13 +165,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode node = builder.CreateStratisPosNode(this.network).Start();
 
                 // Act.
-                WalletFileModel walletFileModel = await $"http://localhost:{node.ApiPort}/api"
+                WalletInfoModel walletFileModel = await $"http://localhost:{node.ApiPort}/api"
                 .AppendPathSegment("wallet/files")
-                .GetJsonAsync<WalletFileModel>();
+                .GetJsonAsync<WalletInfoModel>();
 
                 // Assert.
-                walletFileModel.WalletsPath.Should().Be(node.FullNode.DataFolder.WalletPath);
-                walletFileModel.WalletsFiles.Should().BeEmpty();
+                walletFileModel.WalletNames.Should().BeEmpty();
             }
         }
 

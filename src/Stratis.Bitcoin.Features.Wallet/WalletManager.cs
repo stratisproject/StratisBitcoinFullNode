@@ -833,12 +833,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return this.WalletRepository.GetUnusedAddresses(accountReference, count, isChange);
         }
-
-        /// <inheritdoc />
-        public (string folderPath, IEnumerable<string>) GetWalletsFiles()
-        {
-            return (this.fileStorage.FolderPath, this.fileStorage.GetFilesNames(this.GetWalletFileExtension()));
-        }
+//
+//        /// <inheritdoc />
+//        public (string folderPath, IEnumerable<string>) GetWalletsFiles()
+//        {
+//            return (this.fileStorage.FolderPath, this.fileStorage.GetFilesNames(this.GetWalletFileExtension()));
+//        }
 
         /// <inheritdoc />
         public IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null)
