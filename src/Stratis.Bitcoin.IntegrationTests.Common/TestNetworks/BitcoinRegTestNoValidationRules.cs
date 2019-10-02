@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.TestNetworks
     {
         public BitcoinRegTestNoValidationRules()
         {
-            this.Name = Guid.NewGuid().ToString();
+            this.Name = Guid.NewGuid().ToString("N").Substring(0, 7);
         }
     }
 }
