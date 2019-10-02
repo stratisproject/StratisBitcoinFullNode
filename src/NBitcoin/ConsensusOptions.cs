@@ -1,4 +1,6 @@
-﻿namespace NBitcoin
+﻿using NBitcoin.Protocol;
+
+namespace NBitcoin
 {
     /// <summary>
     /// An extension to <see cref="Consensus"/> to enable additional options to the consensus data.
@@ -42,6 +44,13 @@
         /// <summary>The maximum number of sigops we're willing to relay/mine in a single tx.</summary>
         public int MaxStandardTxSigopsCost { get; set; }
 
+        /// <summary>Block Height at which the node should enforce the use of <see cref="EnforcedMinProtocolVersion"/>.
+        /// Can be set to zero to indicate that the minimum supported protocol version will not change depending on the block height.</summary>
+        public int EnforceMinProtocolVersionAtBlockHeight { get; set; }
+
+        /// <summary>The minimum protocol version which should be used from block height defined in <see cref="EnforceMinProtocolVersionAtBlockHeight"/></summary>
+        public ProtocolVersion? EnforcedMinProtocolVersion { get; set; }
+
         /// <summary>
         /// Initializes the default values. Currently only used for initialising Bitcoin networks and testing.
         /// </summary>
@@ -56,6 +65,7 @@
             this.MaxBlockBaseSize = 1000000;
             this.MaxBlockSigopsCost = 80000;
             this.MaxStandardTxSigopsCost = this.MaxBlockSigopsCost / 5;
+            this.EnforceMinProtocolVersionAtBlockHeight = 0;
         }
 
         /// <summary>
@@ -181,7 +191,7 @@
         /// <param name="network">The network.</param>
         public virtual int GetStakeMinConfirmations(int height, Network network)
         {
-            if (network.Name.ToLowerInvariant().Contains("test")) // TODO: When rules are moved to network, we can use the extension method IsTest() from Stratis.Bitcoin.
+            if (network.NetworkType == NetworkType.Testnet || network.NetworkType == NetworkType.Regtest)
                 return height < CoinstakeMinConfirmationActivationHeightTestnet ? 10 : 20;
 
             return height < CoinstakeMinConfirmationActivationHeightMainnet ? 50 : 500;

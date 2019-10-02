@@ -3,13 +3,11 @@ using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts.PoS;
@@ -37,17 +35,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
                     services.AddSingleton<ConsensusOptions, ConsensusOptions>();
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<ICoinView, CachedCoinView>();
-                    services.AddSingleton<ConsensusController>();
-
-                    services.AddSingleton<PowConsensusRuleEngine>();
-                    services.AddSingleton<IRuleRegistration, SmartContractPowRuleRegistration>();
-                    services.AddSingleton<IConsensusRuleEngine>(f =>
-                    {
-                        var concreteRuleEngine = f.GetService<PowConsensusRuleEngine>();
-                        var ruleRegistration = f.GetService<IRuleRegistration>();
-
-                        return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
-                    });
+                    services.AddSingleton<IConsensusRuleEngine, PowConsensusRuleEngine>();
                 });
             });
 
@@ -75,8 +63,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
                         services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
                         services.AddSingleton<BlockDefinition, SmartContractBlockDefinition>();
                         services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();
-                        services.AddSingleton<MiningController>();
-                        services.AddSingleton<MiningRpcController>();
                         services.AddSingleton<MinerSettings>();
                     });
             });

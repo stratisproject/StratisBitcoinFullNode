@@ -23,6 +23,7 @@ using State = Stratis.Bitcoin.Features.Wallet.Broadcasting.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public sealed class SmartContractWalletController : Controller
     {
@@ -140,7 +141,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             return this.Json(balance.AmountConfirmed.ToUnit(MoneyUnit.Satoshi));
         }
 
-
         /// <summary>
         /// Gets the history of a specific wallet address.
         /// This includes the smart contract create and call transactions
@@ -157,89 +157,101 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// <returns>A list of smart contract create and call transaction items as well as transaction items at a specific wallet address.</returns>
         [Route("history")]
         [HttpGet]
-        public IActionResult GetHistory(string walletName, string address)
+        public IActionResult GetHistory(GetHistoryRequest request)
         {
-            if (string.IsNullOrWhiteSpace(walletName))
+            if (string.IsNullOrWhiteSpace(request.WalletName))
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No wallet name", "No wallet name provided");
 
-            if (string.IsNullOrWhiteSpace(address))
+            if (string.IsNullOrWhiteSpace(request.Address))
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No address", "No address provided");
 
             try
             {
                 var transactionItems = new List<ContractTransactionItem>();
 
-                HdAccount account = this.walletManager.GetAccounts(walletName).First();
+                HdAccount account = this.walletManager.GetAccounts(request.WalletName).First();
 
                 // Get a list of all the transactions found in an account (or in a wallet if no account is specified), with the addresses associated with them.
-                IEnumerable<AccountHistory> accountsHistory = this.walletManager.GetHistory(walletName, account.Name);
+                IEnumerable<AccountHistory> accountsHistory = this.walletManager.GetHistory(request.WalletName, account.Name);
 
                 // Wallet manager returns only 1 when an account name is specified.
                 AccountHistory accountHistory = accountsHistory.First();
 
-                List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.CreationTime).Where(x=>x.Address.Address == address).ToList();
+                List<FlatHistory> items = accountHistory.History.Where(x => x.Address.Address == request.Address).ToList();
 
                 // Represents a sublist of transactions associated with receive addresses + a sublist of already spent transactions associated with change addresses.
                 // In effect, we filter out 'change' transactions that are not spent, as we don't want to show these in the history.
                 List<FlatHistory> history = items.Where(t => !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && t.Transaction.IsSpent())).ToList();
 
-                foreach (FlatHistory item in history)
-                {
-                    bool hasSmartContract = this.receiptRepository.Retrieve(item.Transaction.Id) != null;
-                    TransactionData transaction = item.Transaction;
-
-                    // Record a receive transaction if it has a SC
-                    if (hasSmartContract)
+                // TransactionData in history is confusingly named. A "TransactionData" actually represents an input, and the outputs that spend it are "SpendingDetails".
+                // There can be multiple "TransactionData" which have the same "SpendingDetails".
+                // For SCs we need to group spending details by their transaction ID, to get all the inputs related to the same outputs.
+                // Each group represents 1 SC transaction.
+                // Each item.Transaction in a group is an input.
+                // Each item.Transaction.SpendingDetails in the group represent the outputs, and they should all be the same so we can pick any one.
+                var scTransactions = history
+                    .Where(item => item.Transaction.SpendingDetails != null)
+                    .Where(item => item.Transaction.SpendingDetails.Payments.Any(x => x.DestinationScriptPubKey.IsSmartContractExec()))
+                    .GroupBy(item => item.Transaction.SpendingDetails.TransactionId)
+                    .Skip(request.Skip ?? 0)
+                    .Take(request.Take ?? history.Count)
+                    .Select(g => new
                     {
-                        transactionItems.Add(new ContractTransactionItem
-                        {
-                            Amount = transaction.Amount.ToUnit(MoneyUnit.Satoshi),
-                            BlockHeight = transaction.BlockHeight,
-                            Hash = transaction.Id,
-                            Type = ReceivedTransactionType(transaction),
-                            To = address
-                        });
-                    }
+                        TransactionId = g.Key,
+                        InputAmount = g.Sum(i => i.Transaction.Amount), // Sum the inputs to the SC transaction.
+                        Outputs = g.First().Transaction.SpendingDetails.Payments, // Each item in the group will have the same outputs.
+                        OutputAmount = g.First().Transaction.SpendingDetails.Payments.Sum(o => o.Amount),
+                        BlockHeight = g.First().Transaction.SpendingDetails.BlockHeight // Each item in the group will have the same block height.
+                    })
+                    .ToList();
 
-                    // Add outgoing transaction details
-                    // Get if it's an SC transaction
-                    PaymentDetails scPayment = transaction.SpendingDetails?.Payments?.FirstOrDefault(x => x.DestinationScriptPubKey.IsSmartContractExec());
+                // Get all receipts in one transaction
+                IList<Receipt> receipts = this.receiptRepository.RetrieveMany(scTransactions.Select(x => x.TransactionId).ToList());
 
-                    if (scPayment == null) continue;
+                for (int i = 0; i < scTransactions.Count; i++)
+                {
+                    var scTransaction = scTransactions[i];
+                    Receipt receipt = receipts[i];
 
-                    Receipt receipt = this.receiptRepository.Retrieve(transaction.SpendingDetails.TransactionId);
-                    if (receipt == null) continue;
+                    // Consensus rules state that each transaction can have only one smart contract exec output.
+                    PaymentDetails scPayment = scTransaction.Outputs.First(x => x.DestinationScriptPubKey.IsSmartContractExec());
+
+                    // This will always give us a value - the transaction has to be serializable to get past consensus.
+                    Result<ContractTxData> txDataResult = this.callDataSerializer.Deserialize(scPayment.DestinationScriptPubKey.ToBytes());
+                    ContractTxData txData = txDataResult.Value;
+
+                    // If the receipt is not available yet, we don't know how much gas was consumed so use the full gas budget.
+                    ulong gasFee = receipt != null
+                        ? receipt.GasUsed * receipt.GasPrice
+                        : txData.GasCostBudget;
+
+                    long totalFees = scTransaction.InputAmount - scTransaction.OutputAmount;
+                    Money transactionFee = Money.FromUnit(totalFees, MoneyUnit.Satoshi) - Money.FromUnit(txData.GasCostBudget, MoneyUnit.Satoshi);
+
+                    var result = new ContractTransactionItem
+                    {
+                        Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
+                        BlockHeight = scTransaction.BlockHeight,
+                        Hash = scTransaction.TransactionId,
+                        TransactionFee = transactionFee.ToUnit(MoneyUnit.Satoshi),
+                        GasFee = gasFee
+                    };
 
                     if (scPayment.DestinationScriptPubKey.IsSmartContractCreate())
                     {
-                        // Create a record for a Create transaction
-                        transactionItems.Add(new ContractTransactionItem
-                        {
-                            Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
-                            BlockHeight = transaction.SpendingDetails.BlockHeight,
-                            Type = ContractTransactionItemType.ContractCreate,
-                            Hash = transaction.SpendingDetails.TransactionId,
-                            To = receipt.NewContractAddress?.ToBase58Address(this.network) ?? string.Empty
-                        });
+                        result.Type = ContractTransactionItemType.ContractCreate;
+                        result.To = receipt?.NewContractAddress?.ToBase58Address(this.network) ?? string.Empty;
                     }
-                    else
+                    else if (scPayment.DestinationScriptPubKey.IsSmartContractCall())
                     {
-                        // Create a record for a Call transaction
-                        Result<ContractTxData> txData =
-                            this.callDataSerializer.Deserialize(scPayment.DestinationScriptPubKey.ToBytes());
-
-                        transactionItems.Add(new ContractTransactionItem
-                        {
-                            Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
-                            BlockHeight = transaction.SpendingDetails.BlockHeight,
-                            Type = ContractTransactionItemType.ContractCall,
-                            Hash = transaction.SpendingDetails.TransactionId,
-                            To = txData.Value.ContractAddress.ToBase58Address(this.network)
-                        });
+                        result.Type = ContractTransactionItemType.ContractCall;
+                        result.To = txData.ContractAddress.ToBase58Address(this.network);
                     }
+
+                    transactionItems.Add(result);
                 }
 
-                return this.Json(transactionItems.OrderByDescending(x => x.BlockHeight ?? Int32.MaxValue).ThenBy(x => x.Hash.ToString()));
+                return this.Json(transactionItems.OrderByDescending(x => x.BlockHeight ?? Int32.MaxValue));
             }
             catch (Exception e)
             {
@@ -267,7 +279,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             BuildCreateContractTransactionResponse response = this.smartContractTransactionService.BuildCreateTx(request);
 
             if (!response.Success)
-                return this.BadRequest(this.Json(response));
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, response.Message, string.Empty);
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
 
@@ -303,8 +315,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
             BuildCallContractTransactionResponse response = this.smartContractTransactionService.BuildCallTx(request);
+
             if (!response.Success)
-                return this.BadRequest(this.Json(response));
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, response.Message,string.Empty);
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
 
@@ -382,23 +395,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
-        }
-
-        public static ContractTransactionItemType ReceivedTransactionType(TransactionData transaction)
-        {
-            bool isCoinBase = transaction.IsCoinBase.HasValue && transaction.IsCoinBase.Value;
-
-            bool isMiningReward = isCoinBase && transaction.Index == 0;
-
-            bool isGasRefund = isCoinBase && transaction.Index != 0;
-
-            if (isGasRefund)
-                return ContractTransactionItemType.GasRefund;
-
-            if (isMiningReward)
-                return ContractTransactionItemType.Staked;
-
-            return ContractTransactionItemType.Received;
         }
 
         /// <summary>

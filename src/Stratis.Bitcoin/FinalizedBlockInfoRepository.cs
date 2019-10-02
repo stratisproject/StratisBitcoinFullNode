@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin
 
                 this.keyValueRepo.SaveValue(FinalizedBlockKey, lastFinalizedBlock);
 
-                this.logger.LogTrace("Finalized info saved: '{0}'.", lastFinalizedBlock);
+                this.logger.LogDebug("Finalized info saved: '{0}'.", lastFinalizedBlock);
             }
         }
 

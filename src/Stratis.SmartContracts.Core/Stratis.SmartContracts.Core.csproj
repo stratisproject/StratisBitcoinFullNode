@@ -2,7 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <Version>0.0.2-beta</Version>
+    <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
+    <Version>1.0.2.0-beta</Version>
+    <Authors>Stratis Group Ltd.</Authors>
+    <Company>Stratis Group Ltd.</Company>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,7 +17,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="NStratis.HashLib" Version="1.0.0.1" />
     <PackageReference Include="Stratis.Patricia" Version="1.0.3" />
-    <PackageReference Include="Tracer.Fody" Version="2.2.0">
+    <PackageReference Include="Tracer.Fody" Version="3.1.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>

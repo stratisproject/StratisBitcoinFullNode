@@ -213,8 +213,12 @@ namespace Stratis.Bitcoin.Features.RPC
             }
 
             this.credentialString = credentials;
-            this.address = address;
             this.network = network;
+
+            if (address.Host == "0.0.0.0")
+                this.address = ReplaceHostName(address, "127.0.0.1");
+            else
+                this.address = address;
 
             if (credentials.UserPassword != null)
                 this.authentication = $"{credentials.UserPassword.UserName}:{credentials.UserPassword.Password}";
@@ -275,6 +279,15 @@ namespace Stratis.Bitcoin.Features.RPC
                     RegisterDefaultCookiePath(NetworkRegistration.Register(network), mainnet);
                 }
             }
+        }
+
+        private Uri ReplaceHostName(Uri originalUri, string newHostName)
+        {
+            var builder = new UriBuilder(originalUri)
+            {
+                Host = newHostName
+            };
+            return builder.Uri;
         }
 
         public static void RegisterDefaultCookiePath(Network network, string path)
@@ -415,37 +428,6 @@ namespace Stratis.Bitcoin.Features.RPC
             return defaultPaths.TryGetValue(network, out string path) ? path : null;
         }
 
-        private static Uri BuildUri(string hostOrUri, int port)
-        {
-            if (hostOrUri != null)
-            {
-                hostOrUri = hostOrUri.Trim();
-                try
-                {
-                    if (hostOrUri.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
-                        hostOrUri.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
-                        return new Uri(hostOrUri, UriKind.Absolute);
-                }
-                catch
-                {
-                }
-            }
-
-            hostOrUri = hostOrUri ?? "127.0.0.1";
-            int indexOfPort = hostOrUri.IndexOf(":");
-            if (indexOfPort != -1)
-            {
-                port = int.Parse(hostOrUri.Substring(indexOfPort + 1));
-                hostOrUri = hostOrUri.Substring(0, indexOfPort);
-            }
-
-            var builder = new UriBuilder();
-            builder.Host = hostOrUri;
-            builder.Scheme = "http";
-            builder.Port = port;
-            return builder.Uri;
-        }
-
         /// <summary>
         /// Create a new RPCClient instance
         /// </summary>
@@ -461,10 +443,10 @@ namespace Stratis.Bitcoin.Features.RPC
         /// Create a new RPCClient instance
         /// </summary>
         /// <param name="rpcSettings">The RPC settings.</param>
-        /// <param name="hostOrUri">The URI to use to connect with.</param>
+        /// <param name="address">The URI to use to connect with.</param>
         /// <param name="network">The network.</param>
-        public RPCClient(RpcSettings rpcSettings, string hostOrUri, Network network)
-            : this($"{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}", BuildUri(hostOrUri, rpcSettings.RPCPort), network)
+        public RPCClient(RpcSettings rpcSettings, Uri address, Network network)
+            : this($"{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}", address, network)
         {
         }
 

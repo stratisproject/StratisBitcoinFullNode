@@ -22,6 +22,7 @@ namespace Stratis.Bitcoin.Networks
             this.DefaultRPCPort = 18332;
             this.DefaultAPIPort = 38220;
             this.CoinTicker = "TBTC";
+            this.DefaultBanTimeSeconds = 60 * 60 * 24; // 24 Hours
 
             // Create the genesis block.
             this.GenesisTime = 1296688602;
@@ -44,9 +45,9 @@ namespace Stratis.Bitcoin.Networks
 
             var bip9Deployments = new BitcoinBIP9Deployments
             {
-                [BitcoinBIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 0, 999999999),
-                [BitcoinBIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 0, 999999999),
-                [BitcoinBIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999)
+                [BitcoinBIP9Deployments.TestDummy] = new BIP9DeploymentsParameters("TestDummy", 28, 0, 999999999),
+                [BitcoinBIP9Deployments.CSV] = new BIP9DeploymentsParameters("CSV",0, 0, 999999999),
+                [BitcoinBIP9Deployments.Segwit] = new BIP9DeploymentsParameters("Segwit", 1, BIP9DeploymentsParameters.AlwaysActive, 999999999)
             };
 
             this.Consensus = new NBitcoin.Consensus(
@@ -104,6 +105,9 @@ namespace Stratis.Bitcoin.Networks
             this.StandardScriptsRegistry = new BitcoinStandardScriptsRegistry();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
+
+            this.RegisterRules(this.Consensus);
+            this.RegisterMempoolRules(this.Consensus);
         }
     }
 }

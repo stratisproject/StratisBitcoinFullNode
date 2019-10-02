@@ -15,14 +15,19 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
+using Stratis.Bitcoin.Features.SmartContracts.PoW.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Signals;
@@ -114,7 +119,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             testContext.mempoolLock.ReadAsync(() => context.View.LoadViewLocked(tx)).GetAwaiter().GetResult();
 
-            return MempoolValidator.CheckSequenceLocks(testContext.network, chainedBlock, context, flags, uselock, false);
+            return CreateMempoolEntryMempoolRule.CheckSequenceLocks(testContext.network, chainedBlock, context, flags, uselock, false);
         }
 
         public class TestContext
@@ -146,9 +151,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             #region Smart Contract Components
 
             internal AddressGenerator AddressGenerator { get; private set; }
-            private bool useCheckpoints = true;
             public Key privateKey;
-            private ReflectionVirtualMachine vm;
             private ISerializer serializer;
             private ContractAssemblyLoader assemblyLoader;
             public ICallDataSerializer callDataSerializer;
@@ -189,12 +192,12 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 this.ChainIndexer = new ChainIndexer(this.network);
                 this.network.Consensus.Options = new ConsensusOptions();
 
-                IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
-                var inMemoryCoinView = new InMemoryCoinView(this.ChainIndexer.Tip.HashBlock);
-                this.cachedCoinView = new CachedCoinView(inMemoryCoinView, dateTimeProvider, new LoggerFactory(), new NodeStats(new DateTimeProvider()));
-
                 this.loggerFactory = new ExtendedLoggerFactory();
                 this.loggerFactory.AddConsoleWithFilters();
+
+                IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
+                var inMemoryCoinView = new InMemoryCoinView(this.ChainIndexer.Tip.HashBlock);
+                this.cachedCoinView = new CachedCoinView(inMemoryCoinView, dateTimeProvider, this.loggerFactory, new NodeStats(dateTimeProvider, this.loggerFactory));
 
                 this.NodeSettings = new NodeSettings(this.network, args: new string[] { "-checkpoints" });
                 var consensusSettings = new ConsensusSettings(this.NodeSettings);
@@ -210,12 +213,26 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                     BlockStoreTip = new ChainedHeader(genesis.Header, genesis.GetHash(), 0)
                 };
 
-                InitializeSmartContractComponents(callingMethod);
+                this.InitializeSmartContractComponents(callingMethod);
 
                 var receiptRepository = new PersistentReceiptRepository(new DataFolder(this.Folder));
 
-                var signals = new Signals(loggerFactory, null);
-                var asyncProvider = new AsyncProvider(loggerFactory, signals, new NodeLifetime());
+                var signals = new Signals(this.loggerFactory, null);
+                var asyncProvider = new AsyncProvider(this.loggerFactory, signals, new NodeLifetime());
+
+                var consensusRulesContainer = new ConsensusRulesContainer();
+
+                consensusRulesContainer.HeaderValidationRules.Add(Activator.CreateInstance(typeof(BitcoinHeaderVersionRule)) as HeaderValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new SetActivationDeploymentsFullValidationRule() as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new LoadCoinviewRule() as FullValidationConsensusRule);
+
+                consensusRulesContainer.FullValidationRules.Add(new TxOutSmartContractExecRule() as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new OpSpendRule() as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new CanGetSenderRule(senderRetriever) as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new P2PKHNotContractRule(this.StateRoot) as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new CanGetSenderRule(senderRetriever) as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new SmartContractPowCoinviewRule(this.network, this.StateRoot, this.ExecutorFactory, this.callDataSerializer, senderRetriever, receiptRepository, this.cachedCoinView, new LoggerFactory()) as FullValidationConsensusRule);
+                consensusRulesContainer.FullValidationRules.Add(new SaveCoinviewRule() as FullValidationConsensusRule);
 
                 this.consensusRules = new PowConsensusRuleEngine(
                         this.network,
@@ -227,14 +244,13 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                         new Checkpoints(),
                         this.cachedCoinView,
                         chainState,
-                        new InvalidBlockHashStore(DateTimeProvider.Default),
-                        new NodeStats(new DateTimeProvider()),
-                        asyncProvider)
-                    .Register();
+                        new InvalidBlockHashStore(dateTimeProvider),
+                        new NodeStats(dateTimeProvider, this.loggerFactory),
+                        asyncProvider,
+                        consensusRulesContainer)
+                    .SetupRulesEngineParent();
 
-                var ruleRegistration = new SmartContractPowRuleRegistration(this.network, this.StateRoot,
-                    this.ExecutorFactory, this.callDataSerializer, senderRetriever, receiptRepository, this.cachedCoinView);
-                this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chainIndexer: this.ChainIndexer, ruleRegistration: ruleRegistration, consensusRules: this.consensusRules);
+                this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chainIndexer: this.ChainIndexer, consensusRules: this.consensusRules);
 
                 await this.consensusManager.InitializeAsync(chainState.BlockStoreTip);
 
@@ -336,7 +352,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             await context.InitializeAsync();
 
             ulong gasPrice = 1;
-            var gasLimit = (RuntimeObserver.Gas) SmartContractFormatLogic.GasLimitMaximum;
+            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Token.cs");
@@ -477,7 +493,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             await context.InitializeAsync();
 
             ulong gasPrice = 1;
-            var gasLimit = (RuntimeObserver.Gas) SmartContractFormatLogic.GasLimitMaximum;
+            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
@@ -557,7 +573,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             await context.InitializeAsync();
 
             ulong gasPrice = 1;
-            var gasLimit = (RuntimeObserver.Gas) SmartContractFormatLogic.GasLimitMaximum;
+            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
@@ -694,7 +710,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             context.mempool.Clear();
 
             ulong fundsToSend = 1000;
-            object[] testMethodParameters =  { newContractAddress.ToAddress() };
+            object[] testMethodParameters = { newContractAddress.ToAddress() };
 
             var transferContractCall = new ContractTxData(1, gasPrice, gasLimit, newContractAddress2, "ContractTransfer", testMethodParameters);
             blockTemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferContractCall, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
@@ -725,7 +741,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             ulong gasPrice = 1;
             // This uses a lot of gas
-            var gasLimit = (RuntimeObserver.Gas) SmartContractFormatLogic.GasLimitMaximum;
+            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
 
             var compilationResult = ContractCompiler.CompileFile("SmartContracts/CountContract.cs");
@@ -748,7 +764,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             context.mempool.Clear();
 
             ulong fundsToSend = 1000;
-            object[] testMethodParameters =  { newContractAddress.ToAddress() };
+            object[] testMethodParameters = { newContractAddress.ToAddress() };
 
             var transferContractCallData = new ContractTxData(1, gasPrice, gasLimit, newContractAddress2, "Tester", testMethodParameters);
             blockTemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferContractCallData, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
@@ -830,7 +846,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             // Add the smart contract transaction to the mempool and mine as normal.
             ulong gasPrice = 1;
-            var gasLimit = (RuntimeObserver.Gas) SmartContractFormatLogic.GasLimitMaximum;
+            var gasLimit = (RuntimeObserver.Gas)SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/InterContract1.cs");
             Assert.True(compilationResult.Success);

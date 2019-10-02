@@ -315,7 +315,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             var logger = new Mock<ILogger>();
             bool receivedRequest = false;
-            logger.Setup(l => l.Log(LogLevel.Trace, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>())).Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((level, id, state, e, f) =>
+            logger.Setup(l => l.Log(LogLevel.Debug, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>())).Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((level, id, state, e, f) =>
             {
                 // Don't reset if we found the trace message we were looking for
                 if (!receivedRequest)
@@ -391,7 +391,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             var logger = new Mock<ILogger>();
             bool receivedRequest = false;
-            logger.Setup(l => l.Log(LogLevel.Trace, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>())).Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((level, id, state, e, f) =>
+            logger.Setup(l => l.Log(LogLevel.Debug, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>())).Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((level, id, state, e, f) =>
             {
                 // Don't reset if we found the trace message we were looking for
                 if (!receivedRequest)

@@ -26,6 +26,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             int change = isChange ? 1 : 0;
             var keyPath = new KeyPath($"{change}/{index}");
+            // TODO: Should probably explicitly be passing the network into Parse
             ExtPubKey extPubKey = ExtPubKey.Parse(accountExtPubKey).Derive(keyPath);
             return extPubKey.PubKey;
         }

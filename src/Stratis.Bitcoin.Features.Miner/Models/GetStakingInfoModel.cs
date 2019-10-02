@@ -48,6 +48,10 @@ namespace Stratis.Bitcoin.Features.Miner.Models
         [JsonProperty(PropertyName = "netStakeWeight")]
         public long NetStakeWeight { get; set; }
 
+        /// <summary>The amount in the wallet which is not suitable for staking due to having insufficient confirmations.</summary>
+        [JsonProperty(PropertyName = "immature")]
+        public long Immature { get; set; }
+
         /// <summary>Expected time of the node to find new block in seconds.</summary>
         [JsonProperty(PropertyName = "expectedTime")]
         public long ExpectedTime { get; set; }
@@ -67,6 +71,7 @@ namespace Stratis.Bitcoin.Features.Miner.Models
                 SearchInterval = this.SearchInterval,
                 Weight = this.Weight,
                 NetStakeWeight = this.NetStakeWeight,
+                Immature = this.Immature,
                 ExpectedTime = this.ExpectedTime
             };
 
@@ -111,6 +116,7 @@ namespace Stratis.Bitcoin.Features.Miner.Models
             this.SearchInterval = 0;
             this.Weight = 0;
             this.NetStakeWeight = 0;
+            this.Immature = 0;
             this.ExpectedTime = 0;
         }
     }

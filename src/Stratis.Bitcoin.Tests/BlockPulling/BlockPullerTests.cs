@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
             this.puller.RequestPeerServices(NetworkPeerServices.NODE_WITNESS);
 
-            Assert.Equal(1, this.puller.PullerBehaviorsByPeerId.Count);
+            Assert.Single(this.puller.PullerBehaviorsByPeerId);
         }
 
         [Fact]
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
             this.puller.NewPeerTipClaimed(peer1.Object, headers.Last());
 
-            Assert.Equal(0, this.puller.PullerBehaviorsByPeerId.Count);
+            Assert.Empty(this.puller.PullerBehaviorsByPeerId);
         }
 
         [Fact]
@@ -340,7 +340,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             this.puller.NewPeerTipClaimed(peer1, peer1Headers.Last());
             this.puller.NewPeerTipClaimed(peer2, peer2Headers.Last());
 
-            var job = new DownloadJob() {Headers = new List<ChainedHeader>(peer1Headers), Id = 1};
+            var job = new DownloadJob() { Headers = new List<ChainedHeader>(peer1Headers), Id = 1 };
             var failedHashes = new List<uint256>();
 
             List<AssignedDownload> assignedDownloads = this.puller.DistributeHeadersLocked(job, failedHashes, int.MaxValue);
@@ -598,7 +598,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             // Set 10 empty slots.
             this.puller.SetMaxBlocksBeingDownloaded(10);
 
-            var jobSizes = new[] {5, 4, 10};
+            var jobSizes = new[] { 5, 4, 10 };
 
             var behaviors = new List<ExtendedBlockPullerBehavior>(jobSizes.Length);
 

@@ -139,7 +139,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             {
                 Script script = this.GetTxOutScriptForAddress(balance.Key);
                 txOuts.Add(new TxOut(new Money(balance.Value), script));
-                
+
                 this.nVouts.Add(balance.Key, Convert.ToUInt32(txOuts.Count - 1));
             }
 
@@ -212,12 +212,12 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
 
                     if (this.txBalances.ContainsKey(uniqueAddress))
                     {
-                        this.logger.LogTrace("[TXBALANCE_CONTAINS_KEY]");
+                        this.logger.LogDebug("[TXBALANCE_CONTAINS_KEY]");
                         this.txBalances[uniqueAddress] += unspent.Value;
                     }
                     else
                     {
-                        this.logger.LogTrace("[TXBALANCE_DOESNOT_CONTAIN_KEY]");
+                        this.logger.LogDebug("[TXBALANCE_DOESNOT_CONTAIN_KEY]");
                         this.txBalances[uniqueAddress] = unspent.Value;
                     }
                 }
@@ -228,12 +228,12 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             {
                 if (this.txBalances.ContainsKey(transfer.To))
                 {
-                    this.logger.LogTrace("[TXBALANCE_CONTAINS_TRANSFER_TO]");
+                    this.logger.LogDebug("TXBALANCE_CONTAINS_TRANSFER_TO");
                     this.txBalances[transfer.To] += transfer.Value;
                 }
                 else
                 {
-                    this.logger.LogTrace("[TXBALANCE_DOES_NOT_CONTAIN_TRANSFER_TO]");
+                    this.logger.LogDebug("TXBALANCE_DOES_NOT_CONTAIN_TRANSFER_TO");
                     this.txBalances[transfer.To] = transfer.Value;
                 }
 

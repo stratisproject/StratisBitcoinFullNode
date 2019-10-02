@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -108,16 +109,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.AsyncProvider = new AsyncProvider(testChainContext.NodeSettings.LoggerFactory, testChainContext.Signals, new Mock<INodeLifetime>().Object);
 
             network.Consensus.Options = new ConsensusOptions();
-            new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(network.Consensus);
+            //new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(network.Consensus);
 
             var consensusSettings = new ConsensusSettings(testChainContext.NodeSettings);
             testChainContext.Checkpoints = new Checkpoints();
             testChainContext.ChainIndexer = new ChainIndexer(network);
             testChainContext.ChainState = new ChainState();
-            testChainContext.InitialBlockDownloadState = new InitialBlockDownloadState(testChainContext.ChainState, testChainContext.Network, consensusSettings, new Checkpoints(), testChainContext.NodeSettings.LoggerFactory);
+            testChainContext.InitialBlockDownloadState = new InitialBlockDownloadState(testChainContext.ChainState, testChainContext.Network, consensusSettings, new Checkpoints(), testChainContext.NodeSettings.LoggerFactory, testChainContext.DateTimeProvider);
 
             var inMemoryCoinView = new InMemoryCoinView(testChainContext.ChainIndexer.Tip.HashBlock);
-            var cachedCoinView = new CachedCoinView(inMemoryCoinView, DateTimeProvider.Default, testChainContext.LoggerFactory, new NodeStats(new DateTimeProvider()));
+            var cachedCoinView = new CachedCoinView(inMemoryCoinView, DateTimeProvider.Default, testChainContext.LoggerFactory, new NodeStats(testChainContext.DateTimeProvider, testChainContext.LoggerFactory));
 
             var dataFolder = new DataFolder(TestBase.AssureEmptyDir(dataDir));
             testChainContext.PeerAddressManager =
@@ -138,7 +139,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var deployments = new NodeDeployments(testChainContext.Network, testChainContext.ChainIndexer);
             testChainContext.ConsensusRules = new PowConsensusRuleEngine(testChainContext.Network, testChainContext.LoggerFactory, testChainContext.DateTimeProvider,
                 testChainContext.ChainIndexer, deployments, consensusSettings, testChainContext.Checkpoints, cachedCoinView, testChainContext.ChainState,
-                    new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), testChainContext.AsyncProvider).Register();
+                    new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider, testChainContext.LoggerFactory), testChainContext.AsyncProvider, new ConsensusRulesContainer()).SetupRulesEngineParent();
 
             testChainContext.HeaderValidator = new HeaderValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
             testChainContext.IntegrityValidator = new IntegrityValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);

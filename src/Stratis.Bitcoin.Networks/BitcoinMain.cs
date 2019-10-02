@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Features.MemoryPool.Rules;
 using Stratis.Bitcoin.Networks.Deployments;
 using Stratis.Bitcoin.Networks.Policies;
 
@@ -33,6 +35,7 @@ namespace Stratis.Bitcoin.Networks
             this.FallbackFee = 20000;
             this.MinRelayTxFee = 1000;
             this.CoinTicker = "BTC";
+            this.DefaultBanTimeSeconds = 60 * 60 * 24; // 24 Hours
 
             var consensusFactory = new ConsensusFactory();
 
@@ -56,9 +59,9 @@ namespace Stratis.Bitcoin.Networks
 
             var bip9Deployments = new BitcoinBIP9Deployments
             {
-                [BitcoinBIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 1199145601, 1230767999),
-                [BitcoinBIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 1462060800, 1493596800),
-                [BitcoinBIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 1479168000, 1510704000)
+                [BitcoinBIP9Deployments.TestDummy] = new BIP9DeploymentsParameters("TestDummy", 28, 1199145601, 1230767999),
+                [BitcoinBIP9Deployments.CSV] = new BIP9DeploymentsParameters("CSV", 0, 1462060800, 1493596800),
+                [BitcoinBIP9Deployments.Segwit] = new BIP9DeploymentsParameters("Segwit", 1, 1479168000, 1510704000)
             };
 
             this.Consensus = new NBitcoin.Consensus(
@@ -153,6 +156,60 @@ namespace Stratis.Bitcoin.Networks
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+
+            this.RegisterRules(this.Consensus);
+            this.RegisterMempoolRules(this.Consensus);
+        }
+
+        protected void RegisterRules(IConsensus consensus)
+        {
+            consensus.ConsensusRules
+                .Register<HeaderTimeChecksRule>()
+                .Register<CheckDifficultyPowRule>()
+                .Register<BitcoinActivationRule>()
+                .Register<BitcoinHeaderVersionRule>();
+
+            consensus.ConsensusRules
+                .Register<BlockMerkleRootRule>();
+
+            consensus.ConsensusRules
+                .Register<SetActivationDeploymentsPartialValidationRule>()
+
+                .Register<TransactionLocktimeActivationRule>() // implements BIP113
+                .Register<CoinbaseHeightActivationRule>() // implements BIP34
+                .Register<WitnessCommitmentsRule>() // BIP141, BIP144
+                .Register<BlockSizeRule>()
+
+                // rules that are inside the method CheckBlock
+                .Register<EnsureCoinbaseRule>()
+                .Register<CheckPowTransactionRule>()
+                .Register<CheckSigOpsRule>();
+
+            consensus.ConsensusRules
+                .Register<SetActivationDeploymentsFullValidationRule>()
+
+                // rules that require the store to be loaded (coinview)
+                .Register<LoadCoinviewRule>()
+                .Register<TransactionDuplicationActivationRule>() // implements BIP30
+                .Register<PowCoinviewRule>()// implements BIP68, MaxSigOps and BlockReward calculation
+                .Register<SaveCoinviewRule>();
+        }
+
+        protected void RegisterMempoolRules(IConsensus consensus)
+        {
+            consensus.MempoolRules = new List<Type>()
+            {
+                typeof(CheckConflictsMempoolRule),
+                typeof(CheckCoinViewMempoolRule),
+                typeof(CreateMempoolEntryMempoolRule),
+                typeof(CheckSigOpsMempoolRule),
+                typeof(CheckFeeMempoolRule),
+                typeof(CheckRateLimitMempoolRule),
+                typeof(CheckAncestorsMempoolRule),
+                typeof(CheckReplacementMempoolRule),
+                typeof(CheckAllInputsMempoolRule),
+                typeof(CheckTxOutDustRule)
+            };
         }
 
         /// <summary> Bitcoin maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>

@@ -9,5 +9,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         public uint256 Hash { get; set; }
         public string To { get; set; }
         public decimal Amount { get; set; }
+        public decimal TransactionFee { get; set; }
+        public decimal GasFee { get; set; }
     }
 }

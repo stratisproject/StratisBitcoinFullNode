@@ -2,6 +2,7 @@
 using System.Linq;
 using NBitcoin;
 using Stratis.SmartContracts.Core.Hashing;
+using TracerAttributes;
 
 namespace Stratis.SmartContracts.Core
 {
@@ -13,7 +14,7 @@ namespace Stratis.SmartContracts.Core
         /// <summary>
         /// Length of the bloom data in bytes. 2048 bits.
         /// </summary>
-        private const int BloomLength = 256; 
+        public const int BloomLength = 256;
 
         /// <summary>
         /// The actual bloom value represented as a byte array.
@@ -30,7 +31,7 @@ namespace Stratis.SmartContracts.Core
             if (data?.Length != BloomLength)
                 throw new ArgumentException($"Bloom byte array must be {BloomLength} bytes long.", nameof(data));
 
-            this.data = data;
+            this.data = CopyBloom(data);
         }
 
         /// <summary>
@@ -76,8 +77,19 @@ namespace Stratis.SmartContracts.Core
         {
             var compare = new Bloom();
             compare.Add(test);
-            compare.Or(this);
-            return this.Equals(compare);
+            return this.Test(compare);
+        }
+
+        /// <summary>
+        /// Determine whether a second bloom is possibly contained within the filter.
+        /// </summary>
+        /// <param name="bloom">The second bloom to test.</param>
+        /// <returns>Whether this data could be contained within the filter.</returns>
+        public bool Test(Bloom bloom)
+        {
+            var copy = new Bloom(bloom.ToBytes());
+            copy.Or(this);
+            return this.Equals(copy);
         }
 
         /// <summary>
@@ -92,11 +104,12 @@ namespace Stratis.SmartContracts.Core
             this.data[byteIndex] |= mask;
         }
 
+        [NoTrace]
         public void ReadWrite(BitcoinStream stream)
         {
             if (stream.Serializing)
             {
-                byte[] b = this.data.ToArray(); // doing this cos I'm scared af of that ref...
+                byte[] b = CopyBloom(this.data);
                 stream.ReadWrite(ref b);
             }
             else
@@ -107,9 +120,13 @@ namespace Stratis.SmartContracts.Core
             }
         }
 
+        /// <summary>
+        /// Returns the raw bytes of this filter.
+        /// </summary>
+        /// <returns></returns>
         public byte[] ToBytes()
         {
-            return this.data;
+            return CopyBloom(this.data);
         }
 
         public override string ToString()
@@ -149,6 +166,13 @@ namespace Stratis.SmartContracts.Core
         public override int GetHashCode()
         {
             return HashCode.Combine(this.data);
+        }
+
+        private static byte[] CopyBloom(byte[] bloom)
+        {
+            var result = new byte[BloomLength];
+            Buffer.BlockCopy(bloom, 0, result, 0, BloomLength);
+            return result;
         }
     }
 }

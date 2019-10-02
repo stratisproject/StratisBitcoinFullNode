@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             Task task = Task.Run(() =>
             {
-                this.logger.LogTrace("({0}.Count():{1})", nameof(headers), headers.Count());
+                this.logger.LogDebug("({0}.Count():{1})", nameof(headers), headers.Count());
 
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {

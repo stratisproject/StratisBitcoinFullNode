@@ -72,8 +72,7 @@ namespace Stratis.Bitcoin.Utilities
     /// </remarks>
     public class SchedulerLock : ISchedulerLock
     {
-        /// <inheritdoc />
-        private CancellationTokenSource cancellation;
+        private readonly CancellationTokenSource cancellation;
 
         /// <summary>Task factory that runs tasks using the concurrent scheduler. Serves as a reader lock.</summary>
         private readonly TaskFactory concurrentFactory;

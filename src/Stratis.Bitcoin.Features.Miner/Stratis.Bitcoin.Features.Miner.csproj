@@ -14,8 +14,9 @@
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <Version>3.0.5.0-beta</Version>
+    <Version>3.0.6.0-beta</Version>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <Authors>Stratis Group Ltd.</Authors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,9 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.1.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.1.11" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.1.1" />
-    <PackageReference Include="Tracer.Fody" Version="2.2.0" />
+    <PackageReference Include="Tracer.Fody" Version="3.1.0" />
   </ItemGroup>
 
   <ItemGroup>

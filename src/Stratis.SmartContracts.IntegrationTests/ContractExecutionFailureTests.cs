@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using CSharpFunctionalExtensions;
 using Mono.Cecil;
 using NBitcoin;
@@ -60,6 +61,42 @@ namespace Stratis.SmartContracts.IntegrationTests
             Result<WalletSendTransactionModel> result = this.node1.SendTransaction(new Script(garbageTxData), 25);
             Assert.True(result.IsFailure);
             Assert.Equal("Invalid ContractTxData format", result.Error); // TODO: const error message
+        }
+
+        [Fact]
+        public void EmptyMethodNameFails()
+        {
+            // Ensure fixture is funded.
+            this.mockChain.MineBlocks(1);
+
+            // Deploy contract to send to
+            ContractCompilationResult receiveCompilationResult = ContractCompiler.CompileFile("SmartContracts/BasicReceive.cs");
+            Assert.True(receiveCompilationResult.Success);
+            BuildCreateContractTransactionResponse receiveResponse = this.node1.SendCreateContractTransaction(receiveCompilationResult.Compilation, 0);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(receiveResponse.NewContractAddress));
+
+            decimal amount = 25;
+            Money senderBalanceBefore = this.node1.WalletSpendableBalance;
+            uint256 currentHash = this.node1.GetLastBlock().GetHash();
+
+            // Send to empty method name on contract
+            string[] parameters = new string[] { string.Format("{0}#{1}", (int)MethodParameterDataType.Address, receiveResponse.NewContractAddress) };
+            BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(
+                "",
+                receiveResponse.NewContractAddress,
+                amount,
+                parameters);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
+
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+
+            // Receipt shows failure
+            ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
+            Assert.False(receipt.Success);
+            Assert.Equal(StateTransitionErrors.NoMethodName, receipt.Error);
         }
 
         [Fact]
@@ -702,49 +739,55 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void ContractTransaction_Call_Method_Reach_Limit_Of_GasPerBlock_Transaction_NotIncluded_To_Block()
         {
-            const ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
-            var gasLimit = (Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
-            const ulong txGasPerBlockLimit = SmartContractFormatLogic.GasLimitMaximum * 10;
-            const int txCount = 25;
-            decimal amount = 0;
+            var gasPrice_100 = SmartContractMempoolValidator.MinGasPrice;
+            var gasLimit_50_000 = (Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
+            var txGasPerBlockLimit_1_000_000 = SmartContractFormatLogic.GasLimitMaximum * 10;
+            var txCount_25 = 25;
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/InfiniteLoop.cs");
             Assert.True(compilationResult.Success);
 
-            BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0, gasPrice: gasPrice);
+            // Create the contract and mine it.
+            BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0, gasPrice: gasPrice_100);
             this.mockChain.WaitAllMempoolCount(1);
             this.mockChain.MineBlocks(1);
+
+            // Ensure that the contract is created.
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
             var contractTransactionIds = new List<uint256>();
 
-            for (int i = 0; i < txCount; i++)
+            // Create 25 call contract transactions.
+            for (int i = 0; i < txCount_25; i++)
             {
-                BuildCallContractTransactionResponse response =
-                    this.node1.SendCallContractTransaction("Loop", preResponse.NewContractAddress, amount);
+                BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("Loop", preResponse.NewContractAddress, 0);
                 if (!response.Success)
                     Assert.True(response.Success);
+
                 contractTransactionIds.Add(response.TransactionId);
             }
 
-            this.mockChain.WaitAllMempoolCount(txCount);
+            // Try and include the 25 transactions in the block (only 20 will be added).
+            this.mockChain.WaitAllMempoolCount(txCount_25);
             this.mockChain.MineBlocks(1);
 
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
-            int expectedTxQty = Convert.ToInt32(txGasPerBlockLimit / gasLimit) + 1; // +1 is Coinbase Tx.
-            Assert.Equal(expectedTxQty, lastBlock.Transactions.Count);
+            // There should be 20 transactions in the last block as that is when the block gas expenditure limit was reached.
+            // 19 included transactions plus 1 coinbase.
+            int expectedTxCount_21 = Convert.ToInt32(txGasPerBlockLimit_1_000_000 / gasLimit_50_000) + 1; // +1 for coinbase
+            Assert.Equal(expectedTxCount_21, lastBlock.Transactions.Count);
 
-            foreach (Transaction transaction in lastBlock.Transactions)
+            // Ensure that all the transactions that were added is in the last block created.
+            foreach (Transaction transaction in lastBlock.Transactions.Where(tx => !tx.IsCoinBase))
             {
-                if (transaction.IsCoinBase) continue;
-
                 Assert.Contains(transaction.GetHash(), contractTransactionIds);
             }
 
+            // Mine the remaining 5 transactions (tx #21 to #25)
             this.mockChain.MineBlocks(1);
 
-            int restOfTx = txCount - Convert.ToInt32(txGasPerBlockLimit / gasLimit) + 1;
+            int restOfTx = txCount_25 - Convert.ToInt32(txGasPerBlockLimit_1_000_000 / gasLimit_50_000) + 1; // +1 for coinbase
             lastBlock = this.node1.GetLastBlock();
             Assert.Equal(restOfTx, lastBlock.Transactions.Count);
         }

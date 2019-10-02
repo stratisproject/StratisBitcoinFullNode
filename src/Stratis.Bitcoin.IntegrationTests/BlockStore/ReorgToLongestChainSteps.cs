@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.shorterChainTransaction = this.bobNode.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
             Money shortChainTransactionFee = this.bobNode.FullNode.WalletTransactionHandler().EstimateFee(transactionBuildContext);
 
-            this.bobNode.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(this.shorterChainTransaction.ToHex()));
+            this.bobNode.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(this.shorterChainTransaction.ToHex()));
         }
 
         private HdAddress GetSecondUnusedAddressToAvoidClashWithMiningAddress(CoreNode node)

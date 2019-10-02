@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -25,12 +24,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
     }
 
     /// <summary>Controller providing operations on a blockstore.</summary>
+    [ApiVersion("1")]
     [Route("api/[controller]")]
     public class BlockStoreController : Controller
     {
         private readonly IAddressIndexer addressIndexer;
 
-        /// <see cref="IBlockStore"/>
+        /// <summary>Provides access to the block store on disk.</summary>
         private readonly IBlockStore blockStore;
 
         /// <summary>Instance logger.</summary>
@@ -93,30 +93,46 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         /// <returns><see cref="BlockModel"/> if block is found, <see cref="NotFoundObjectResult"/> if not found. Returns <see cref="IActionResult"/> with error information if exception thrown.</returns>
         [Route(BlockStoreRouteEndPoint.GetBlock)]
         [HttpGet]
-        public async Task<IActionResult> GetBlockAsync([FromQuery] SearchByHashRequest query)
+        public IActionResult GetBlock([FromQuery] SearchByHashRequest query)
         {
             if (!this.ModelState.IsValid)
-            {
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
 
             try
             {
-                Block block = this.blockStore.GetBlock(uint256.Parse(query.Hash));
+                uint256 blockId = uint256.Parse(query.Hash);
 
+                ChainedHeader chainedHeader = this.chainIndexer.GetHeader(blockId);
+
+                if (chainedHeader == null)
+                    return this.Ok("Block not found");
+
+                Block block = chainedHeader.Block ?? this.blockStore.GetBlock(blockId);
+
+                // In rare occasions a block that is found in the
+                // indexer may not have been pushed to the store yet. 
                 if (block == null)
-                {
-                    return new NotFoundObjectResult("Block not found");
-                }
+                    return this.Ok("Block not found");
 
                 if (!query.OutputJson)
                 {
                     return this.Json(block);
                 }
 
-                return query.ShowTransactionDetails
-                    ? this.Json(new BlockTransactionDetailsModel(block, this.chainIndexer.GetHeader(block.GetHash()), this.chainIndexer.Tip, this.network))
-                    : this.Json(new BlockModel(block, this.chainIndexer.GetHeader(block.GetHash()), this.chainIndexer.Tip, this.network));
+                BlockModel blockModel = query.ShowTransactionDetails
+                    ? new BlockTransactionDetailsModel(block, chainedHeader, this.chainIndexer.Tip, this.network)
+                    : new BlockModel(block, chainedHeader, this.chainIndexer.Tip, this.network);
+
+                if (this.network.Consensus.IsProofOfStake)
+                {
+                    var posBlock = block as PosBlock;
+
+                    blockModel.PosBlockSignature = posBlock.BlockSignature.ToHex(this.network);
+                    blockModel.PosBlockTrust = new Target(chainedHeader.GetBlockProof()).ToUInt256().ToString();
+                    blockModel.PosChainTrust = chainedHeader.ChainWork.ToString(); // this should be similar to ChainWork
+                }
+
+                return this.Json(blockModel);
             }
             catch (Exception e)
             {
@@ -147,6 +163,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
         /// <summary>Provides balance of the given addresses confirmed with at least <paramref name="minConfirmations"/> confirmations.</summary>
         /// <param name="addresses">A comma delimited set of addresses that will be queried.</param>
+        /// <param name="minConfirmations">Only blocks below consensus tip less this parameter will be considered.</param>
         /// <returns>A result object containing the balance for each requested address and if so, a meesage stating why the indexer is not queryable.</returns>
         [Route(BlockStoreRouteEndPoint.GetAddressesBalances)]
         [HttpGet]
@@ -181,11 +198,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         {
             try
             {
-                string[] addressesArray = addresses.Split(',');
+                string[] addressesArray = addresses?.Split(',') ?? new string[] { };
 
                 this.logger.LogDebug("Asking data for {0} addresses.", addressesArray.Length);
 
-                VerboseAddressBalancesResult result = this.addressIndexer.GetVerboseAddressBalancesData(addressesArray);
+                VerboseAddressBalancesResult result = this.addressIndexer.GetAddressIndexerState(addressesArray);
 
                 return this.Json(result);
             }

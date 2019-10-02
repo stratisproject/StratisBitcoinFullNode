@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Features.Collateral.CounterChain;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 
@@ -19,6 +21,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly IFederatedPegSettings federatedPegSettings;
         private readonly IFederationWalletManager federationWalletManager;
         private readonly ICrossChainTransferStore crossChainTransferStore;
+        private readonly IWithdrawalExtractor withdrawalExtractor;
         private readonly MempoolManager mempoolManager;
 
         /// <summary>
@@ -29,17 +32,22 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <param name="federationWalletManager">Wallet manager which provides access to the wallet.</param>
         /// <param name="crossChainTransferStore">Store which provides access to the statuses.</param>
         /// <param name="mempoolManager">Mempool which provides information about transactions in the mempool.</param>
+        /// <param name="loggerFactory">Logger factory.</param>
+        /// <param name="counterChainNetworkWrapper">Counter chain network.</param>
         public WithdrawalHistoryProvider(
             Network network,
             IFederatedPegSettings federatedPegSettings,
             IFederationWalletManager federationWalletManager,
             ICrossChainTransferStore crossChainTransferStore,
-            MempoolManager mempoolManager)
+            MempoolManager mempoolManager,
+            ILoggerFactory loggerFactory,
+            CounterChainNetworkWrapper counterChainNetworkWrapper)
         {
             this.network = network;
             this.federatedPegSettings = federatedPegSettings;
             this.federationWalletManager = federationWalletManager;
             this.crossChainTransferStore = crossChainTransferStore;
+            this.withdrawalExtractor = new WithdrawalExtractor(loggerFactory, federatedPegSettings, new OpReturnDataReader(loggerFactory, counterChainNetworkWrapper), network);
             this.mempoolManager = mempoolManager;
         }
 
@@ -54,27 +62,21 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         public List<WithdrawalModel> GetHistory(int maximumEntriesToReturn)
         {
             var result = new List<WithdrawalModel>();
+            ICrossChainTransfer[] transfers = this.crossChainTransferStore.GetTransfersByStatus(new[] { CrossChainTransferStatus.SeenInBlock });
 
-            // Enumerate withdrawals starting with the most recent.
-            IWithdrawal[] withdrawals = this.federationWalletManager.FindWithdrawalTransactions(sort: true)
-                .Select(w => w.Item2)
-                .Where(x => x.BlockHash != null)
-                .Reverse()
-                .Take(maximumEntriesToReturn)
-                .ToArray();
-
-            if (withdrawals.Length > 0)
+            foreach (ICrossChainTransfer transfer in transfers.OrderByDescending(t => t.PartialTransaction.Time))
             {
-                ICrossChainTransfer[] transfers = this.crossChainTransferStore.QueryTransfersById(withdrawals.Select(w => w.DepositId).ToArray());
+                if (maximumEntriesToReturn-- <= 0)
+                    break;
 
-                for (int i = 0; i < withdrawals.Length; i++)
-                {
-                    ICrossChainTransfer transfer = transfers[i];
-                    var model = new WithdrawalModel();
-                    model.withdrawal = withdrawals[i];
-                    model.TransferStatus = transfer?.Status.ToString();
-                    result.Add(model);
-                }
+                // Extract the withdrawal details from the recorded "PartialTransaction".
+                IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(transfer.PartialTransaction, transfer.BlockHash, (int)transfer.BlockHeight);
+
+                var model = new WithdrawalModel();
+                model.withdrawal = withdrawal;
+                model.TransferStatus = transfer?.Status.ToString();
+
+                result.Add(model);
             }
 
             return result;
@@ -89,12 +91,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             var result = new List<WithdrawalModel>();
 
             // Get all Suspended, all Partial, and all FullySigned transfers.
-            ICrossChainTransfer[] inProgressTransfers = this.crossChainTransferStore.QueryTransfersByStatus(new CrossChainTransferStatus[]
+            ICrossChainTransfer[] inProgressTransfers = this.crossChainTransferStore.GetTransfersByStatus(new CrossChainTransferStatus[]
             {
                 CrossChainTransferStatus.Suspended,
                 CrossChainTransferStatus.Partial,
                 CrossChainTransferStatus.FullySigned
-            });
+            }, true, false);
 
             foreach (ICrossChainTransfer transfer in inProgressTransfers)
             {

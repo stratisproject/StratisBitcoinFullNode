@@ -26,13 +26,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
 
         private readonly CoinviewPrefetcher prefetcher;
 
-        /// <summary>
-        /// Initializes an instance of the object.
-        /// </summary>
         public PowConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ChainIndexer chainIndexer,
             NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IChainState chainState,
-            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IAsyncProvider asyncProvider)
-            : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, chainState, invalidBlockHashStore, nodeStats)
+            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IAsyncProvider asyncProvider, ConsensusRulesContainer consensusRulesContainer)
+            : base(network, loggerFactory, dateTimeProvider, chainIndexer, nodeDeployments, consensusSettings, checkpoints, chainState, invalidBlockHashStore, nodeStats, consensusRulesContainer)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -67,6 +64,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <inheritdoc />
         public override void Initialize(ChainedHeader chainTip)
         {
+            base.Initialize(chainTip);
+
             var breezeCoinView = (DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner;
 
             breezeCoinView.Initialize();

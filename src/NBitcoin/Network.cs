@@ -65,6 +65,14 @@ namespace NBitcoin
         protected Block Genesis;
 
         /// <summary>
+        /// The default amount of seconds to keep misbehaving peers from reconnecting.
+        /// <para>
+        /// This value should be calculated as (TargetSpacingSeconds * maxReorgLength) / 2.
+        /// </para>
+        /// </summary>
+        public int DefaultBanTimeSeconds { get; protected set; }
+
+        /// <summary>
         /// Maximal value for the calculated time offset.
         /// If the value is over this limit, the time syncing feature will be switched off.
         /// </summary>
@@ -117,6 +125,11 @@ namespace NBitcoin
         /// The default port on which nodes of this network communicate with external clients.
         /// </summary>
         public int DefaultPort { get; protected set; }
+        
+        /// <summary>
+        /// The default port on which SignalR broadcasts for this network.
+        /// </summary>
+        public int DefaultSignalRPort { get; protected set; }
 
         /// <summary>
         /// The default maximum number of outbound connections a node on this network will form.

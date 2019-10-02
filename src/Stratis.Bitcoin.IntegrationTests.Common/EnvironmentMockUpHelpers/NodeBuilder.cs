@@ -104,13 +104,23 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public CoreNode CreateBitcoinCoreNode(string version = "0.13.1", bool useCookieAuth = false)
         {
             string bitcoinDPath = GetBitcoinCorePath(version);
-            return CreateNode(new BitcoinCoreRunner(this.GetNextDataFolderName(), bitcoinDPath), useCookieAuth: useCookieAuth);
+            return this.CreateNode(new BitcoinCoreRunner(this.GetNextDataFolderName(), bitcoinDPath), useCookieAuth: useCookieAuth);
         }
 
         public CoreNode CreateStratisXNode(string version = "2.0.0.5", bool useCookieAuth = false)
         {
             string stratisDPath = GetStratisXPath(version);
-            return CreateNode(new StratisXRunner(this.GetNextDataFolderName(), stratisDPath), "stratis.conf", useCookieAuth);
+            return this.CreateNode(new StratisXRunner(this.GetNextDataFolderName(), stratisDPath), "stratis.conf", useCookieAuth);
+        }
+
+        public CoreNode CreateMainnetStratisXNode(string version = "2.0.0.5", bool useCookieAuth = false)
+        {
+            var parameters = new NodeConfigParameters();
+            parameters.Add("regtest", "0");
+            parameters.Add("server", "0");
+
+            string stratisDPath = GetStratisXPath(version);
+            return this.CreateNode(new StratisXRunner(this.GetNextDataFolderName(), stratisDPath), "stratis.conf", useCookieAuth, parameters);
         }
 
         /// <summary>
@@ -153,10 +163,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <param name="network">The network the node will run on.</param>
         /// <param name="agent">Overrides the node's agent prefix.</param>
         /// <param name="configParameters">Adds to the nodes configuration parameters.</param>
+        /// <param name="isGateway">Whether the node is a Proven Headers gateway node.</param>
         /// <returns>The constructed PoS node.</returns>
-        public CoreNode CreateStratisPosNode(Network network, string agent = "StratisBitcoin", NodeConfigParameters configParameters = null)
+        public CoreNode CreateStratisPosNode(Network network, string agent = "StratisBitcoin", NodeConfigParameters configParameters = null, bool isGateway = false)
         {
-            return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName(), network, agent), "stratis.conf", configParameters: configParameters);
+            return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName(), network, agent, isGateway), "stratis.conf", configParameters: configParameters);
         }
 
         public CoreNode CloneStratisNode(CoreNode cloneNode, string agent = "StratisBitcoin")

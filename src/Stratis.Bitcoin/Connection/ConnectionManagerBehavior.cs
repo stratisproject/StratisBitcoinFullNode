@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Connection
 
                 if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline))
                 {
-                    this.infoLogger.LogInformation("Peer '{0}' offline, reason: '{1}'.{2}", peer.RemoteSocketEndpoint, peer.DisconnectReason?.Reason ?? "unknown", peer.DisconnectReason?.Exception?.Message ?? string.Empty);
+                    this.infoLogger.LogInformation("Peer '{0}' ({1}) offline, reason: '{2}.{3}'", peer.RemoteSocketEndpoint, peer.Inbound ? "inbound" : "outbound", peer.DisconnectReason?.Reason ?? "unknown", peer.DisconnectReason?.Exception?.Message != null ? string.Format(" {0}.", peer.DisconnectReason.Exception.Message) : string.Empty);
 
                     this.connectionManager.RemoveConnectedPeer(peer, "Peer offline");
                 }

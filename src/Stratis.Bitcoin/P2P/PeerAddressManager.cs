@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.P2P
         {
             List<PeerAddress> loadedPeers = this.fileStorage.LoadByFileName(PeerFileName);
 
-            this.logger.LogTrace("{0} peers were loaded.", loadedPeers.Count);
+            this.logger.LogDebug("{0} peers were loaded.", loadedPeers.Count);
 
             foreach (PeerAddress peer in loadedPeers)
             {
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.P2P
                 {
                     peer.UnBan();
 
-                    this.logger.LogTrace("{0} no longer banned.", peer.Endpoint);
+                    this.logger.LogDebug("{0} no longer banned.", peer.Endpoint);
                 }
 
                 // Reset the peer if the attempt threshold has been reached and the attempt window has lapsed.

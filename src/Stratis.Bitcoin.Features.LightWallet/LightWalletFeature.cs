@@ -101,8 +101,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
             this.lightWalletBlockStoreService = lightWalletBlockStoreService;
 
-            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline);
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, this.GetType().Name);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, this.GetType().Name);
         }
 
         /// <summary>
@@ -226,7 +226,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
                             services.AddSingleton<IWalletFeePolicy, LightWalletBitcoinExternalFeePolicy>();
                         else
                             services.AddSingleton<IWalletFeePolicy, LightWalletFixedFeePolicy>();
-                        services.AddSingleton<WalletController>();
                         services.AddSingleton<IBroadcasterManager, LightWalletBroadcasterManager>();
                         services.AddSingleton<BroadcasterBehavior>();
                         services.AddSingleton<IInitialBlockDownloadState, LightWalletInitialBlockDownloadState>();

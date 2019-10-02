@@ -74,7 +74,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             if (this.storeSettings.PruningEnabled)
                 throw new WalletException("Wallet can not yet run on a pruned node");
 
-            this.logger.LogInformation("WalletSyncManager initialized. Wallet at block {0}.", this.walletManager.LastBlockHeight());
+            this.logger.LogInformation("WalletSyncManager initialized. Wallet at block {0}.", this.walletManager.LastBlockSyncedHashHeight().Height);
 
             this.walletTip = this.chain.GetHeader(this.walletManager.WalletTipHash);
             if (this.walletTip == null)
@@ -147,7 +147,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     this.walletManager.RemoveBlocks(fork);
                     this.walletTip = fork;
 
-                    this.logger.LogTrace("Wallet tip set to '{0}'.", this.walletTip);
+                    this.logger.LogDebug("Wallet tip set to '{0}'.", this.walletTip);
                 }
 
                 // The new tip can be ahead or behind the wallet.
@@ -162,7 +162,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         return;
                     }
 
-                    this.logger.LogTrace("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
+                    this.logger.LogDebug("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
 
                     ChainedHeader next = this.walletTip;
                     while (next != newTip)
@@ -221,10 +221,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
                         return;
                     }
 
-                    this.logger.LogTrace("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip);
+                    this.logger.LogDebug("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip);
                 }
             }
-            else this.logger.LogTrace("New block follows the previously known block '{0}'.", this.walletTip);
+            else this.logger.LogDebug("New block follows the previously known block '{0}'.", this.walletTip);
 
             this.walletTip = newTip;
             this.walletManager.ProcessBlock(block, newTip);

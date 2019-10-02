@@ -20,9 +20,9 @@ using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Features.Collateral;
+using Stratis.Features.Collateral.CounterChain;
 using Stratis.Features.FederatedPeg;
-using Stratis.Features.FederatedPeg.Collateral;
-using Stratis.Features.FederatedPeg.CounterChain;
 using Stratis.Sidechains.Networks;
 
 namespace Stratis.CirrusPegD
@@ -83,11 +83,17 @@ namespace Stratis.CirrusPegD
                 MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
             };
 
+            NetworkType networkType = nodeSettings.Network.NetworkType;
+
+            var fedPegOptions = new FederatedPegOptions(
+                walletSyncFromHeight: new int[] { FederatedPegSettings.StratisMainDepositStartBlock, 1, 1 }[(int)networkType]
+            );
+
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
                 .SetCounterChainNetwork(SidechainNetworks[nodeSettings.Network.NetworkType]())
-                .AddFederatedPeg()
+                .AddFederatedPeg(fedPegOptions)
                 .UseTransactionNotification()
                 .UseBlockNotification()
                 .UseApi()
@@ -103,17 +109,21 @@ namespace Stratis.CirrusPegD
 
         private static IFullNode GetSidechainFullNode(string[] args)
         {
-            var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args)
+            var nodeSettings = new NodeSettings(networksSelector: CirrusNetwork.NetworksSelector, protocolVersion: ProtocolVersion.CIRRUS_VERSION, args: args)
             {
                 MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
             };
+
+            var fedPegOptions = new FederatedPegOptions(
+                walletSyncFromHeight: new int[] { 1, 1, 1 }[(int)nodeSettings.Network.NetworkType]
+            );
 
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
                 .SetCounterChainNetwork(MainChainNetworks[nodeSettings.Network.NetworkType]())
                 .UseFederatedPegPoAMining()
-                .AddFederatedPeg()
+                .AddFederatedPeg(fedPegOptions)
                 .CheckForPoAMembersCollateral()
                 .UseTransactionNotification()
                 .UseBlockNotification()

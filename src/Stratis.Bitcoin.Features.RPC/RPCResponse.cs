@@ -13,17 +13,9 @@ namespace Stratis.Bitcoin.Features.RPC
             this.Message = (string)error.GetValue("message");
         }
 
-        public RPCErrorCode Code
-        {
-            get;
-            set;
-        }
+        public RPCErrorCode Code { get; set; }
 
-        public string Message
-        {
-            get;
-            set;
-        }
+        public string Message { get; set; }
     }
 
     //{"result":null,"error":{"code":-32601,"message":"Method not found"},"id":1}
@@ -40,6 +32,8 @@ namespace Stratis.Bitcoin.Features.RPC
 
             this.Result = json.GetValue("result") as JToken;
         }
+
+        public string Id { get; set; }
 
         public RPCError Error { get; set; }
 

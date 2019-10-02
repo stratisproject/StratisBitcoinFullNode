@@ -28,6 +28,7 @@ namespace Stratis.Bitcoin.Networks
             this.DefaultRPCPort = 18442;
             this.DefaultAPIPort = 38221;
             this.CoinTicker = "TSTRAT";
+            this.DefaultBanTimeSeconds = 16000; // 500 (MaxReorg) * 64 (TargetSpacing) / 2 = 4 hours, 26 minutes and 40 seconds
 
             var powLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
 
@@ -67,7 +68,7 @@ namespace Stratis.Bitcoin.Networks
             var bip9Deployments = new StratisBIP9Deployments()
             {
                 // Always active on StratisRegTest.
-                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999)
+                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters("ColdStaking", 1, BIP9DeploymentsParameters.AlwaysActive, 999999999)
             };
 
             this.Consensus = new NBitcoin.Consensus(
@@ -120,7 +121,12 @@ namespace Stratis.Bitcoin.Networks
 
             this.StandardScriptsRegistry = new StratisStandardScriptsRegistry();
 
+            // 64 below should be changed to TargetSpacingSeconds when we move that field.
+            Assert(this.DefaultBanTimeSeconds <= this.Consensus.MaxReorgLength * 64 / 2);
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
+
+            this.RegisterRules(this.Consensus);
+            this.RegisterMempoolRules(this.Consensus);
         }
     }
 }

@@ -2,12 +2,13 @@
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.Voting;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {
@@ -29,24 +30,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                     {
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<ICoinView, CachedCoinView>();
-                        services.AddSingleton<ConsensusController>();
                         services.AddSingleton<VotingManager>();
                         services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
 
-                        services.AddSingleton<PoAConsensusRuleEngine>();
-                        services.AddSingleton<IRuleRegistration, SmartContractPoARuleRegistration>();
-                        services.AddSingleton<IConsensusRuleEngine>(f =>
-                        {
-                            var concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
-                            var ruleRegistration = f.GetService<IRuleRegistration>();
-
-                            return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
-                        });
+                        services.AddSingleton(typeof(IContractTransactionPartialValidationRule), typeof(SmartContractFormatLogic));
+                        services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
 
                         // Voting.
                         services.AddSingleton<VotingManager>();
-                        services.AddSingleton<DefaultVotingController>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
                         services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
                         services.AddSingleton<IdleFederationMembersKicker>();

@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.AsyncWork;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
@@ -11,7 +11,6 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
@@ -31,7 +30,6 @@ namespace Stratis.Bitcoin.Tests.Common
             ChainState chainState = null,
             InMemoryCoinView inMemoryCoinView = null,
             ChainIndexer chainIndexer = null,
-            IRuleRegistration ruleRegistration = null,
             ConsensusRuleEngine consensusRules = null)
         {
             string[] param = dataDir == null ? new string[] { } : new string[] { $"-datadir={dataDir}" };
@@ -46,13 +44,8 @@ namespace Stratis.Bitcoin.Tests.Common
 
             network.Consensus.Options = new ConsensusOptions();
 
-            if (ruleRegistration == null)
-                ruleRegistration = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration();
-
-            ruleRegistration.RegisterRules(network.Consensus);
-
             // Dont check PoW of a header in this test.
-            network.Consensus.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));
+            network.Consensus.ConsensusRules.HeaderValidationRules.RemoveAll(x => x == typeof(CheckDifficultyPowRule));
 
             var consensusSettings = new ConsensusSettings(nodeSettings);
 
@@ -88,10 +81,8 @@ namespace Stratis.Bitcoin.Tests.Common
             if (consensusRules == null)
             {
                 consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chainIndexer, deployments, consensusSettings,
-                    new Checkpoints(), inMemoryCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), asyncProvider).Register();
+                    new Checkpoints(), inMemoryCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider, loggerFactory), asyncProvider, new ConsensusRulesContainer()).SetupRulesEngineParent();
             }
-
-            consensusRules.Register();
 
             var tree = new ChainedHeaderTree(network, loggerFactory, new HeaderValidator(consensusRules, loggerFactory), new Checkpoints(),
                 new ChainState(), new Mock<IFinalizedBlockInfoRepository>().Object, consensusSettings, new InvalidBlockHashStore(new DateTimeProvider()));
@@ -99,7 +90,7 @@ namespace Stratis.Bitcoin.Tests.Common
             var consensus = new ConsensusManager(tree, network, loggerFactory, chainState, new IntegrityValidator(consensusRules, loggerFactory),
                 new PartialValidator(asyncProvider, consensusRules, loggerFactory), new FullValidator(consensusRules, loggerFactory), consensusRules,
                 new Mock<IFinalizedBlockInfoRepository>().Object, new Signals.Signals(loggerFactory, null), peerBanning, new Mock<IInitialBlockDownloadState>().Object, chainIndexer,
-                new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object, new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object, new NodeLifetime(), consensusSettings);
+                new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object, new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object, new NodeLifetime(), consensusSettings, dateTimeProvider);
 
             return consensus;
         }

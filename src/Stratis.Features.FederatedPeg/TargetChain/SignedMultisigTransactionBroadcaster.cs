@@ -70,14 +70,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             if (this.ibdState.IsInitialBlockDownload() || !this.federationWalletManager.IsFederationWalletActive())
             {
-                this.logger.LogTrace("Federation wallet isn't active or in IBD. Not attempting to broadcast signed transactions.");
+                this.logger.LogDebug("Federation wallet isn't active or in IBD. Not attempting to broadcast signed transactions.");
                 return;
             }
 
             TxMempoolInfo txInfo = await this.mempoolManager.InfoAsync(@event.Transfer.PartialTransaction.GetHash()).ConfigureAwait(false);
             if (txInfo != null)
             {
-                this.logger.LogTrace("Deposit ID '{0}' already in the mempool.", @event.Transfer.DepositTransactionId);
+                this.logger.LogDebug("Deposit ID '{0}' already in the mempool.", @event.Transfer.DepositTransactionId);
                 return;
             }
 

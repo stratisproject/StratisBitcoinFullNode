@@ -21,6 +21,7 @@ using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
+    [ApiVersion("1")]
     public class WalletRPCController : FeatureController
     {
         /// <summary>Provides access to the block store database.</summary>
@@ -121,9 +122,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                 uint256 hash = transaction.GetHash();
                 return hash;
             }
-            catch (SecurityException exception)
+            catch (SecurityException)
             {
-                throw new RPCServerException(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED, exception.Message);
+                throw new RPCServerException(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED, "Wallet unlock needed");
             }
             catch (WalletException exception)
             {
@@ -204,7 +205,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>Transaction information.</returns>
         [ActionName("gettransaction")]
         [ActionDescription("Get detailed information about an in-wallet transaction.")]
-        public async Task<GetTransactionModel> GetTransactionAsync(string txid)
+        public GetTransactionModel GetTransaction(string txid)
         {
             if (!uint256.TryParse(txid, out uint256 trxid))
                 throw new ArgumentException(nameof(txid));
@@ -673,9 +674,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 return transaction.GetHash();
             }
-            catch (SecurityException exception)
+            catch (SecurityException)
             {
-                throw new RPCServerException(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED, exception.Message);
+                throw new RPCServerException(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED, "Wallet unlock needed");
             }
             catch (WalletException exception)
             {

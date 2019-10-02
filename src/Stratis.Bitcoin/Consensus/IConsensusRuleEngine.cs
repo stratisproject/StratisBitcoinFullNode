@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Register a new rule to the engine
         /// </summary>
-        ConsensusRuleEngine Register();
+        ConsensusRuleEngine SetupRulesEngineParent();
 
         /// <summary>
         /// Gets the consensus rule that is assignable to the supplied generic type.

@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Miner.Staking;
+using Stratis.Bitcoin.Mining;
 
 namespace Stratis.Bitcoin.Features.Miner.Interfaces
 {
@@ -16,13 +17,13 @@ namespace Stratis.Bitcoin.Features.Miner.Interfaces
         /// Creates a coinstake transaction with kernel that satisfies POS staking target.
         /// </summary>
         /// <param name="utxoStakeDescriptions">List of UTXOs that are available in the wallet for staking.</param>
-        /// <param name="block">Template of the block that we are trying to mine.</param>
+        /// <param name="blockTemplate">Template of the block that we are trying to stake.</param>
         /// <param name="chainTip">Tip of the best chain.</param>
         /// <param name="searchInterval">Length of an unexplored block time space in seconds. It only makes sense to look for a solution within this interval.</param>
-        /// <param name="fees">Transaction fees from the transactions included in the block if we mine it.</param>
+        /// <param name="fees">Transaction fees from the transactions included in the block if we stake it.</param>
         /// <param name="coinstakeContext">Information about coinstake transaction and its private key that is to be filled when the kernel is found.</param>
         /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
-        Task<bool> CreateCoinstakeAsync(List<UtxoStakeDescription> utxoStakeDescriptions, Block block, ChainedHeader chainTip, long searchInterval, long fees, CoinstakeContext coinstakeContext);
+        Task<bool> CreateCoinstakeAsync(List<UtxoStakeDescription> utxoStakeDescriptions, BlockTemplate blockTemplate, ChainedHeader chainTip, long searchInterval, long fees, CoinstakeContext coinstakeContext);
 
         /// <summary>
         /// Attempts to stake new blocks in a loop.
@@ -54,8 +55,8 @@ namespace Stratis.Bitcoin.Features.Miner.Interfaces
         /// Calculates the total balance from all UTXOs in the wallet that are mature.
         /// </summary>
         /// <param name="utxoStakeDescriptions">Description of coins in the wallet that will be used for staking.</param>
-        /// <returns>Total balance from all UTXOs in the wallet that are mature.</returns>
-        Task<Money> GetMatureBalanceAsync(List<UtxoStakeDescription> utxoStakeDescriptions);
+        /// <returns>Total balance from all UTXOs in the wallet that are mature, and the total immature balance.</returns>
+        Task<(Money balance, Money immature)> GetMatureBalanceAsync(List<UtxoStakeDescription> utxoStakeDescriptions);
 
         /// <summary>
         /// Estimates the total staking weight of the network.

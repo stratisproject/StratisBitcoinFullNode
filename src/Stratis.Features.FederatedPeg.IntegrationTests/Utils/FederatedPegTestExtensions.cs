@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
@@ -20,14 +19,6 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
         private const string WalletPassword = "password";
         private const string WalletPassphrase = "passphrase";
         private const string WalletAccount = "account 0";
-
-        public static void AppendToConfig(this CoreNode node, string configKeyValueItem)
-        {
-            using (StreamWriter sw = File.AppendText(node.Config))
-            {
-                sw.WriteLine(configKeyValueItem);
-            }
-        }
 
         public static string GetUnusedAddress(this CoreNode node)
         {

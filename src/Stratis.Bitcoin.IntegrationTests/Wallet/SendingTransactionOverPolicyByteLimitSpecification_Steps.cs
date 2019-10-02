@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void sending_the_transaction()
         {
-            this.firstNode.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(this.transaction.ToHex(this.firstNode.FullNode.Network)));
+            this.firstNode.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(this.transaction.ToHex(this.firstNode.FullNode.Network)));
         }
 
         private void Node1BuildsTransactionToSendToNode2(int txoutputs)

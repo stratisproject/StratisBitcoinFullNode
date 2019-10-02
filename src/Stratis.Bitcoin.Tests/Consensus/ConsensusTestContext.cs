@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.AsyncWork;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
@@ -18,7 +18,6 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Interfaces;
@@ -40,11 +39,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public Network Network;
 
         internal ChainedHeaderTree ChainedHeaderTree;
-        private INodeStats nodeStats;
-        private Mock<IInitialBlockDownloadState> ibd;
+        private readonly INodeStats nodeStats;
+        private readonly Mock<IInitialBlockDownloadState> ibd;
         public readonly Mock<IBlockPuller> BlockPuller;
         public readonly Mock<IBlockStore> BlockStore;
-        private Mock<ICheckpoints> checkpoints = new Mock<ICheckpoints>();
+        private readonly Mock<ICheckpoints> checkpoints = new Mock<ICheckpoints>();
         public TestConsensusManager TestConsensusManager;
         public Mock<IFinalizedBlockInfoRepository> FinalizedBlockMock = new Mock<IFinalizedBlockInfoRepository>();
         public readonly Mock<IInitialBlockDownloadState> ibdState = new Mock<IInitialBlockDownloadState>();
@@ -53,27 +52,26 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public readonly Mock<IPartialValidator> PartialValidator;
         public readonly Mock<IFullValidator> FullValidator;
         public BlockPuller.OnBlockDownloadedCallback blockPullerBlockDownloadCallback;
-        private IPeerBanning peerBanning;
-        private IConnectionManager connectionManager;
+        private readonly IPeerBanning peerBanning;
+        private readonly IConnectionManager connectionManager;
         private static int nonceValue;
         internal ChainIndexer chainIndexer;
-        private DateTimeProvider dateTimeProvider;
-        private InvalidBlockHashStore hashStore;
-        private NodeSettings nodeSettings;
-        private ILoggerFactory loggerFactory;
-        private IRuleRegistration ruleRegistration;
+        private readonly DateTimeProvider dateTimeProvider;
+        private readonly InvalidBlockHashStore hashStore;
+        private readonly NodeSettings nodeSettings;
+        private readonly ILoggerFactory loggerFactory;
         public ConsensusSettings ConsensusSettings;
-        private INetworkPeerFactory networkPeerFactory;
+        private readonly INetworkPeerFactory networkPeerFactory;
         public Mock<IChainState> ChainState;
         private readonly IConsensusRuleEngine consensusRules;
         public readonly TestInMemoryCoinView coinView;
-        private NodeDeployments deployments;
-        private ISelfEndpointTracker selfEndpointTracker;
-        private INodeLifetime nodeLifetime;
+        private readonly NodeDeployments deployments;
+        private readonly ISelfEndpointTracker selfEndpointTracker;
+        private readonly INodeLifetime nodeLifetime;
 
-        private PeerAddressManager peerAddressManager;
-        private ISignals signals;
-        private IAsyncProvider asyncProvider;
+        private readonly PeerAddressManager peerAddressManager;
+        private readonly ISignals signals;
+        private readonly IAsyncProvider asyncProvider;
 
         public TestContext()
         {
@@ -96,8 +94,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.BlockStore = new Mock<IBlockStore>();
             this.checkpoints = new Mock<ICheckpoints>();
             this.ChainState = new Mock<IChainState>();
-            this.nodeStats = new NodeStats(this.dateTimeProvider);
-
 
             string[] param = new string[] { };
             this.nodeSettings = new NodeSettings(this.Network, args: param);
@@ -105,18 +101,17 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             this.loggerFactory = this.nodeSettings.LoggerFactory;
 
+            this.nodeStats = new NodeStats(this.dateTimeProvider, this.loggerFactory);
+
             var connectionSettings = new ConnectionManagerSettings(this.nodeSettings);
             this.selfEndpointTracker = new SelfEndpointTracker(this.loggerFactory, connectionSettings);
             this.Network.Consensus.Options = new ConsensusOptions();
-
-            this.ruleRegistration = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration();
-            this.ruleRegistration.RegisterRules(this.Network.Consensus);
 
             this.signals = new Bitcoin.Signals.Signals(this.loggerFactory, null);
             this.asyncProvider = new AsyncProvider(this.loggerFactory, this.signals, this.nodeLifetime);
 
             // Dont check PoW of a header in this test.
-            this.Network.Consensus.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));
+            this.Network.Consensus.ConsensusRules.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));
 
             this.ChainedHeaderTree = new ChainedHeaderTree(
                   this.Network,
@@ -145,16 +140,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.deployments = new NodeDeployments(this.Network, this.chainIndexer);
 
             this.consensusRules = new PowConsensusRuleEngine(this.Network, this.loggerFactory, this.dateTimeProvider, this.chainIndexer, this.deployments, this.ConsensusSettings,
-                     this.checkpoints.Object, this.coinView, this.ChainState.Object, this.hashStore, this.nodeStats, this.asyncProvider);
+                     this.checkpoints.Object, this.coinView, this.ChainState.Object, this.hashStore, this.nodeStats, this.asyncProvider, new ConsensusRulesContainer());
 
-            this.consensusRules.Register();
+            this.consensusRules.SetupRulesEngineParent();
 
             var tree = new ChainedHeaderTree(this.Network, this.loggerFactory, this.HeaderValidator.Object, this.checkpoints.Object,
                 this.ChainState.Object, this.FinalizedBlockMock.Object, this.ConsensusSettings, this.hashStore);
 
             this.PartialValidator = new Mock<IPartialValidator>();
             this.FullValidator = new Mock<IFullValidator>();
-
 
             this.peerBanning = new PeerBanning(this.connectionManager, this.loggerFactory, this.dateTimeProvider, this.peerAddressManager);
 
@@ -164,7 +158,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ConsensusManager consensusManager = new ConsensusManager(tree, this.Network, this.loggerFactory, this.ChainState.Object, this.IntegrityValidator.Object,
                 this.PartialValidator.Object, this.FullValidator.Object, this.consensusRules,
                 this.FinalizedBlockMock.Object, this.signals, this.peerBanning, this.ibd.Object, this.chainIndexer,
-                this.BlockPuller.Object, this.BlockStore.Object, this.connectionManager, this.nodeStats, this.nodeLifetime, this.ConsensusSettings);
+                this.BlockPuller.Object, this.BlockStore.Object, this.connectionManager, this.nodeStats, this.nodeLifetime, this.ConsensusSettings, this.dateTimeProvider);
 
             this.TestConsensusManager = new TestConsensusManager(consensusManager);
         }
@@ -266,6 +260,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                         Script script = Script.FromBytesUnsafe(new string('A', requiredScriptWeight).Select(c => (byte)c).ToArray());
                         transaction.Outputs.Add(new TxOut(new Money(10000000000), script));
 
+                        this.ResetBlockSize(block);
                         block.GetSerializedSize();
 
                         if (block.BlockSize != avgBlockSize.Value)
@@ -282,6 +277,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
             }
 
             return previousHeader;
+        }
+
+        public void ResetBlockSize(Block block)
+        {
+            block.SetPrivatePropertyValue("BlockSize", default(long?));
         }
 
         public Block CreateBlock()

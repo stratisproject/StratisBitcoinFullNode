@@ -1,16 +1,21 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
+using System.Threading;
 using FluentAssertions;
 using Flurl;
 using Flurl.Http;
+using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.IntegrationTests;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
-using Stratis.Features.FederatedPeg.Collateral;
+using Stratis.Features.Collateral;
 using Stratis.Features.FederatedPeg.IntegrationTests.Utils;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
@@ -28,10 +33,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
 
         private readonly CirrusRegTest sidechainNetwork;
         private readonly Network mainNetwork;
-
-        private readonly (Script payToMultiSig, BitcoinAddress sidechainMultisigAddress, BitcoinAddress
-            mainchainMultisigAddress) scriptAndAddresses;
-
+        private readonly (Script payToMultiSig, BitcoinAddress sidechainMultisigAddress, BitcoinAddress mainchainMultisigAddress) scriptAndAddresses;
 
         public NodeInitialisationTests()
         {
@@ -46,11 +48,13 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
         {
             using (SidechainNodeBuilder nodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this))
             {
-                CoreNode user = nodeBuilder.CreateSidechainNode(this.sidechainNetwork);
+                CoreNode user = nodeBuilder.CreateSidechainNode(new CirrusSideChainStartsRegTest());
 
                 user.Start();
 
                 Assert.Equal(CoreNodeState.Running, user.State);
+
+                VerifyNodeComposition(user);
             }
         }
 
@@ -63,10 +67,25 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
 
                 CoreNode miner = nodeBuilder.CreateSidechainMinerNode(this.sidechainNetwork, this.mainNetwork, federationKey);
 
-                miner.Start();
+                this.StartNodeWithMockCounterNodeAPI(miner);
 
                 Assert.Equal(CoreNodeState.Running, miner.State);
+
+                VerifyNodeComposition(miner);
             }
+        }
+
+        private void StartNodeWithMockCounterNodeAPI(CoreNode node)
+        {
+            var mockClient = new Mock<IBlockStoreClient>();
+            mockClient.Setup(x => x.GetVerboseAddressesBalancesDataAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Bitcoin.Controllers.Models.VerboseAddressBalancesResult(100000));
+
+            node.Start(() =>
+            {
+                ICollateralChecker collateralChecker = node.FullNode.NodeService<ICollateralChecker>();
+                collateralChecker.SetPrivateVariableValue("blockStoreClient", mockClient.Object);
+            });
         }
 
         [Fact]
@@ -82,9 +101,11 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 gateway.AppendToConfig($"publickey={this.sidechainNetwork.FederationMnemonics[0].DeriveExtKey().PrivateKey.PubKey}");
                 gateway.AppendToConfig("federationips=0.0.0.0,0.0.0.1"); // Placeholders
 
-                gateway.Start();
+                this.StartNodeWithMockCounterNodeAPI(gateway);
 
                 Assert.Equal(CoreNodeState.Running, gateway.State);
+
+                VerifyNodeComposition(gateway);
             }
         }
 
@@ -102,6 +123,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 gateway.Start();
 
                 Assert.Equal(CoreNodeState.Running, gateway.State);
+
+                VerifyNodeComposition(gateway);
             }
         }
 
@@ -139,7 +162,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
         }
 
         [Fact]
-        public async Task GatewayPairStarts()
+        public void GatewayPairStarts()
         {
             using (SidechainNodeBuilder nodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this))
             {
@@ -160,8 +183,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 side.AppendToConfig($"counterchainapiport={main.ApiPort}");
                 main.AppendToConfig($"counterchainapiport={side.ApiPort}");
 
-                side.Start();
                 main.Start();
+                side.Start();
 
                 Assert.Equal(CoreNodeState.Running, main.State);
                 Assert.Equal(CoreNodeState.Running, side.State);
@@ -187,16 +210,36 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 //TestBase.WaitLoop(() => main.FullNode.NodeService<ICrossChainTransferStore>().NextMatureDepositHeight > 0);
             }
         }
+
+        /// <summary>
+        /// Verifies that the created node has certain properties.
+        /// </summary>
+        private static void VerifyNodeComposition(CoreNode node)
+        {
+            // TODO: Add more checks about the sanctity of the node. And add specific checks per particular daemon.
+
+            // We only want one consensus rule engine. Others can sneak in and will break the periodic log.
+            IEnumerable<IConsensusRuleEngine> consensusRuleEngines = node.FullNode.NodeService<IEnumerable<IConsensusRuleEngine>>();
+            Assert.Single(consensusRuleEngines);
+        }
     }
 
-    public class CirrusSingleCollateralRegTest : CirrusRegTest
+    internal class CirrusSingleCollateralRegTest : CirrusRegTest
     {
-        public CirrusSingleCollateralRegTest()
+        internal CirrusSingleCollateralRegTest()
         {
             this.Name = "CirrusSingleCollateralRegTest";
             CollateralFederationMember firstMember = this.ConsensusOptions.GenesisFederationMembers[0] as CollateralFederationMember;
             firstMember.CollateralAmount = Money.Coins(100m);
             firstMember.CollateralMainchainAddress = new Key().ScriptPubKey.GetDestinationAddress(this).ToString();
+        }
+    }
+
+    internal class CirrusSideChainStartsRegTest : CirrusRegTest
+    {
+        internal CirrusSideChainStartsRegTest()
+        {
+            this.Name = "CirrusSideChainStartsRegTest";
         }
     }
 }

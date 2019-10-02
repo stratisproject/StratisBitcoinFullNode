@@ -9,7 +9,7 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoS;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>
         /// Adds the smart contract feature to the node.
         /// </summary>
-        public static IFullNodeBuilder AddSmartContracts(this IFullNodeBuilder fullNodeBuilder, Action<SmartContractOptions> options = null)
+        public static IFullNodeBuilder AddSmartContracts(this IFullNodeBuilder fullNodeBuilder, Action<SmartContractOptions> options = null, Action<SmartContractOptions> preOptions = null)
         {
             LoggingConfiguration.RegisterFeatureNamespace<SmartContractFeature>("smartcontracts");
 
@@ -91,13 +91,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .AddFeature<SmartContractFeature>()
                     .FeatureServices(services =>
                     {
+                        // Before setting up, invoke any additional options.
+                        preOptions?.Invoke(new SmartContractOptions(services, fullNodeBuilder.Network));
+
                         // STATE ----------------------------------------------------------------------------
                         services.AddSingleton<DBreezeContractStateStore>();
                         services.AddSingleton<NoDeleteContractStateSource>();
                         services.AddSingleton<IStateRepositoryRoot, StateRepositoryRoot>();
 
                         // CONSENSUS ------------------------------------------------------------------------
-                        services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
+                        services.Replace(ServiceDescriptor.Singleton<IMempoolValidator, SmartContractMempoolValidator>());
                         services.AddSingleton<StandardTransactionPolicy, SmartContractTransactionPolicy>();
 
                         // CONTRACT EXECUTION ---------------------------------------------------------------
@@ -160,7 +163,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             // Controllers + utils
             services.AddSingleton<CSharpContractDecompiler>();
-            services.AddSingleton<SmartContractsController>();
 
             return options;
         }
