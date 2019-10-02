@@ -522,31 +522,44 @@ namespace Stratis.Bitcoin.Features.Wallet
                     var lastBlockSynced = new HashHeightPair((lastBlock == 0) ? this.network.GenesisHash : blockDict[lastBlock], lastBlock);
                     var blockLocator = this.ChainIndexer.GetHeader(lastBlock).GetLocator();
 
-                    this.WalletRepository.CreateWallet(jsonWallet.Name, jsonWallet.EncryptedSeed, jsonWallet.ChainCode, lastBlockSynced,
-                        blockLocator, jsonWallet.CreationTime.ToUnixTimeSeconds());
-
-                    wallet = this.GetWallet(jsonWallet.Name);
-
-                    foreach (HdAccount account in jsonWallet.AccountsRoot.First().Accounts)
+                    ITransactionContext transactionContext = this.WalletRepository.BeginTransaction(jsonWallet.Name);
+                    try
                     {
-                        int lastUsedExternalAddress = account.ExternalAddresses.LastOrDefault(p => p.Transactions.Any())?.Index ?? -1;
-                        int lastUsedInternalAddress = account.InternalAddresses.LastOrDefault(p => p.Transactions.Any())?.Index ?? -1;
-                        int buffer = this.walletSettings?.UnusedAddressesBuffer ?? 20;
 
-                        this.WalletRepository.CreateAccount(jsonWallet.Name, account.Index, account.Name, ExtPubKey.Parse(account.ExtendedPubKey), account.CreationTime,
-                            (lastUsedExternalAddress + 1 + buffer, lastUsedInternalAddress + 1 + buffer));
+                        this.WalletRepository.CreateWallet(jsonWallet.Name, jsonWallet.EncryptedSeed, jsonWallet.ChainCode, lastBlockSynced,
+                            blockLocator, jsonWallet.CreationTime.ToUnixTimeSeconds());
 
-                        foreach (HdAddress address in account.ExternalAddresses.Where(a => a.Transactions.Any()))
+                        wallet = this.GetWallet(jsonWallet.Name);
+
+                        foreach (HdAccount account in jsonWallet.AccountsRoot.First().Accounts)
                         {
-                            this.logger.LogInformation("Adding {0} transactions for external address {1}.", address.Transactions.Count, address.Address);
-                            this.WalletRepository.AddWatchOnlyTransactions(jsonWallet.Name, account.Name, address, PreprocessTransactions(address.Transactions).ToList(), true);
+                            int lastUsedExternalAddress = account.ExternalAddresses.LastOrDefault(p => p.Transactions.Any())?.Index ?? -1;
+                            int lastUsedInternalAddress = account.InternalAddresses.LastOrDefault(p => p.Transactions.Any())?.Index ?? -1;
+                            int buffer = this.walletSettings?.UnusedAddressesBuffer ?? 20;
+
+                            this.WalletRepository.CreateAccount(jsonWallet.Name, account.Index, account.Name, ExtPubKey.Parse(account.ExtendedPubKey), account.CreationTime,
+                                (lastUsedExternalAddress + 1 + buffer, lastUsedInternalAddress + 1 + buffer));
+
+                            foreach (HdAddress address in account.ExternalAddresses.Where(a => a.Transactions.Any()))
+                            {
+                                this.logger.LogInformation("Adding {0} transactions for external address {1}.", address.Transactions.Count, address.Address);
+                                this.WalletRepository.AddWatchOnlyTransactions(jsonWallet.Name, account.Name, address, PreprocessTransactions(address.Transactions).ToList(), true);
+                            }
+
+                            foreach (HdAddress address in account.InternalAddresses.Where(a => a.Transactions.Any()))
+                            {
+                                this.logger.LogInformation("Adding {0} transactions for internal address {1}.", address.Transactions.Count, address.Address);
+                                this.WalletRepository.AddWatchOnlyTransactions(jsonWallet.Name, account.Name, address, PreprocessTransactions(address.Transactions).ToList(), true);
+                            }
                         }
 
-                        foreach (HdAddress address in account.InternalAddresses.Where(a => a.Transactions.Any()))
-                        {
-                            this.logger.LogInformation("Adding {0} transactions for internal address {1}.", address.Transactions.Count, address.Address);
-                            this.WalletRepository.AddWatchOnlyTransactions(jsonWallet.Name, account.Name, address, PreprocessTransactions(address.Transactions).ToList(), true);
-                        }
+                        transactionContext.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        this.logger.LogError("Failed to import wallet '{0}'. Move the wallet to a backup location and use wallet recovery.", jsonWallet.Name);
+                        transactionContext.Rollback();
+                        throw;
                     }
                 }
                 else
@@ -556,29 +569,41 @@ namespace Stratis.Bitcoin.Features.Wallet
                     var lastBlockSynced = new HashHeightPair(accountRoot.LastBlockSyncedHash, (int)accountRoot.LastBlockSyncedHeight);
                     var blockLocator = new BlockLocator() { Blocks = jsonWallet.BlockLocator.ToList() };
 
-                    this.WalletRepository.CreateWallet(jsonWallet.Name, jsonWallet.EncryptedSeed, jsonWallet.ChainCode, lastBlockSynced,
-                        blockLocator, jsonWallet.CreationTime.ToUnixTimeSeconds());
-
-                    wallet = this.GetWallet(jsonWallet.Name);
-
-                    foreach (HdAccount account in jsonWallet.AccountsRoot.First().Accounts)
+                    ITransactionContext transactionContext = this.WalletRepository.BeginTransaction(jsonWallet.Name);
+                    try
                     {
-                        int lastUsedExternalAddress = account.ExternalAddresses.LastOrDefault(p => p.Transactions.Any())?.Index ?? -1;
-                        int lastUsedInternalAddress = account.InternalAddresses.LastOrDefault(p => p.Transactions.Any())?.Index ?? -1;
-                        int buffer = this.walletSettings?.UnusedAddressesBuffer ?? 20;
+                        this.WalletRepository.CreateWallet(jsonWallet.Name, jsonWallet.EncryptedSeed, jsonWallet.ChainCode, lastBlockSynced,
+                            blockLocator, jsonWallet.CreationTime.ToUnixTimeSeconds());
 
-                        this.WalletRepository.CreateAccount(jsonWallet.Name, account.Index, account.Name, ExtPubKey.Parse(account.ExtendedPubKey), account.CreationTime,
-                            (lastUsedExternalAddress + 1 + buffer, lastUsedInternalAddress + 1 + buffer));
+                        wallet = this.GetWallet(jsonWallet.Name);
 
-                        foreach (HdAddress address in account.ExternalAddresses)
+                        foreach (HdAccount account in jsonWallet.AccountsRoot.First().Accounts)
                         {
-                            this.WalletRepository.AddWatchOnlyTransactions(jsonWallet.Name, account.Name, address, address.Transactions, true);
+                            int lastUsedExternalAddress = account.ExternalAddresses.LastOrDefault(p => p.Transactions.Any())?.Index ?? -1;
+                            int lastUsedInternalAddress = account.InternalAddresses.LastOrDefault(p => p.Transactions.Any())?.Index ?? -1;
+                            int buffer = this.walletSettings?.UnusedAddressesBuffer ?? 20;
+
+                            this.WalletRepository.CreateAccount(jsonWallet.Name, account.Index, account.Name, ExtPubKey.Parse(account.ExtendedPubKey), account.CreationTime,
+                                (lastUsedExternalAddress + 1 + buffer, lastUsedInternalAddress + 1 + buffer));
+
+                            foreach (HdAddress address in account.ExternalAddresses)
+                            {
+                                this.WalletRepository.AddWatchOnlyTransactions(jsonWallet.Name, account.Name, address, address.Transactions, true);
+                            }
+
+                            foreach (HdAddress address in account.InternalAddresses)
+                            {
+                                this.WalletRepository.AddWatchOnlyTransactions(jsonWallet.Name, account.Name, address, address.Transactions, true);
+                            }
                         }
 
-                        foreach (HdAddress address in account.InternalAddresses)
-                        {
-                            this.WalletRepository.AddWatchOnlyTransactions(jsonWallet.Name, account.Name, address, address.Transactions, true);
-                        }
+                        transactionContext.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        this.logger.LogError("Failed to import wallet '{0}'. Move the wallet to a backup location and use wallet recovery.", jsonWallet.Name);
+                        transactionContext.Rollback();
+                        throw;
                     }
                 }
             }

@@ -5,6 +5,35 @@ using System.Reflection;
 
 namespace Stratis.Features.SQLiteWalletRepository.Tables
 {
+    internal static class LinqExtensions
+    {
+        public static IEnumerable<IEnumerable<T>> Batch<T>(this IEnumerable<T> source, int size)
+        {
+            T[] bucket = null;
+            var count = 0;
+
+            foreach (var item in source)
+            {
+                if (bucket == null)
+                    bucket = new T[size];
+
+                bucket[count++] = item;
+
+                if (count != size)
+                    continue;
+
+                yield return bucket.Select(x => x);
+
+                bucket = null;
+                count = 0;
+            }
+
+            // Return the last bucket with all remaining elements
+            if (bucket != null && count > 0)
+                yield return bucket.Take(count);
+        }
+    }
+
     internal class TempRow
     {
     }
@@ -58,8 +87,8 @@ namespace Stratis.Features.SQLiteWalletRepository.Tables
 
             var props = GetProperties(this.RowType);
 
-            if (this.Count > 0)
-                yield return $"INSERT INTO temp.{this.RowType.Name} {ObjectColumns()} VALUES {string.Join(Environment.NewLine + ",", this.Select(obj => ObjectRow(props, obj)))};";
+            foreach (IEnumerable<TempRow> batch in ((IEnumerable<TempRow>)this).Batch(500))
+                yield return $"INSERT INTO temp.{this.RowType.Name} {ObjectColumns()} VALUES {string.Join(Environment.NewLine + ",", batch.Select(obj => ObjectRow(props, obj)))};";
         }
 
         internal static string ObjectRow(PropertyInfo[] props, object obj)
