@@ -59,16 +59,13 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 Assert.Equal(Money.COIN * spendable * 50, (long)scSender.WalletSpendableBalance);
 
                 // Send coins to receiver.
-                HdAddress scReceiverAddress = scReceiver.GetUnusedAddress();
-                scSender.SendTransaction(scReceiverAddress.ScriptPubKey, Money.COIN * 100);
+                HdAddress address = scReceiver.GetUnusedAddress();
+                scSender.SendTransaction(address.ScriptPubKey, Money.COIN * 100);
                 scReceiver.WaitMempoolCount(1);
-
-                // Mine blocks so that transaction becomes spendable.
-                TestHelper.MineBlocks(scSender.CoreNode, 1);
-
                 TestBase.WaitLoop(() => (long)scReceiver.WalletSpendableBalance == Money.COIN * 100, waitTimeSeconds: 10); // Give the wallet a bit of time to process receiving the transaction
 
                 // Transaction is in chain in last block.
+                scReceiver.MineBlocks(1);
                 var lastBlock = scReceiver.GetLastBlock();
                 Assert.Equal(scReceiver.SpendableTransactions.First().Transaction.BlockHash, lastBlock.GetHash());
             }

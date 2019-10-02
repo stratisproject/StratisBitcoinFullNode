@@ -517,9 +517,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             sender.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
             TestBase.WaitLoop(() => receiver.CreateRPCClient().GetRawMempool().Length > 0);
-
-            MineBlocks(sender, 1);
-
             TestBase.WaitLoop(() => receiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Any());
 
             CheckWalletBalance(receiver, amount);

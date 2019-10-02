@@ -162,18 +162,18 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 TestHelper.SendCoins(minerA, syncer, Money.Coins(10));
 
                 // Miner A mines the transaction and advances onto 35.
-                // MinerA = 41
-                // MinerB = 21
-                // Syncer = 21
+                // MinerA = 40
+                // MinerB = 20
+                // Syncer = 20
                 TestHelper.MineBlocks(minerA, 15);
-                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 41));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 40));
                 TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerB, 20));
-                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(syncer, 41));
+                TestBase.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(syncer, 40));
 
-                // minerB mines to height 51
-                // MinerA = 41
-                // MinerB = 51
-                // Syncer = 41
+                // minerB mines to height 50
+                // MinerA = 40
+                // MinerB = 50
+                // Syncer = 40
                 TestHelper.MineBlocks(minerB, 40);
 
                 // Reconnect minerB (the longer chain), this will trigger the reorg.
