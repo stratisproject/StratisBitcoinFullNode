@@ -434,6 +434,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     yield return unspent;
             }
             else
+            // The HD objects are not always initialized with a repo argument in tests. This code allows the calculation to still be made in such circumstance.
             {
                 foreach (HdAddress address in this.GetCombinedAddresses())
                 {
