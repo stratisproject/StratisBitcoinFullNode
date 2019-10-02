@@ -139,7 +139,6 @@ namespace Stratis.Bitcoin.Features.Api
 
             app.UseMiddleware<SwaggerUIContractListMiddleware>();
 
-
             // Enable middleware to serve swagger-ui (HTML, JS, CSS etc.)
             app.UseSwaggerUI(c =>
             {
@@ -149,12 +148,6 @@ namespace Stratis.Bitcoin.Features.Api
                 foreach (ApiVersionDescription description in provider.ApiVersionDescriptions)
                 {
                     c.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", description.GroupName.ToUpperInvariant());
-                }
-
-                // Define 20 contract placeholders
-                for (var i = 0; i < 20; i++)
-                {
-                    c.SwaggerEndpoint($"/api/contracts/{i}", $"contracts-{i}");
                 }
 
                 // Massive hack
