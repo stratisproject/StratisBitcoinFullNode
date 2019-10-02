@@ -50,6 +50,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             if (httpMethod != "GET" || !Regex.IsMatch(path, $"/{this.config.RoutePrefix}/?index.html"))
             {
                 await this.next.Invoke(httpContext);
+                return;
             }
 
             // Enumerate all headers is fine for this test use case.
