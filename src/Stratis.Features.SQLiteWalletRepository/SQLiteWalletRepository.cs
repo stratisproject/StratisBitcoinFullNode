@@ -1004,14 +1004,13 @@ namespace Stratis.Features.SQLiteWalletRepository
                 var pubKeyScript = new Script(Encoders.Hex.DecodeData(transactionData.ScriptPubKey));
                 PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(pubKeyScript);
 
-                if (transactionData.OutputBlockHeight == null)
-                    continue;
+                int tdConfirmations = (transactionData.OutputBlockHeight == null) ? 0 : (currentChainHeight + 1) - (int)transactionData.OutputBlockHeight;
 
                 yield return new UnspentOutputReference()
                 {
                     Account = hdAccount,
                     Transaction = this.ToTransactionData(transactionData, HDPayment.GetAllPayments(conn, transactionData.SpendTxTime ?? 0, transactionData.SpendTxId, transactionData.OutputTxId, transactionData.OutputIndex, transactionData.ScriptPubKey)),
-                    Confirmations = (currentChainHeight + 1) - (int)transactionData.OutputBlockHeight,
+                    Confirmations = tdConfirmations,
                     Address = this.ToHdAddress(new HDAddress()
                     {
                         AccountIndex = transactionData.AccountIndex,
