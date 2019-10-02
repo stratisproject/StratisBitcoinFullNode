@@ -119,6 +119,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         [JsonIgnore]
         public AccountRoot AccountRoot => this.WalletAccounts?.AccountRoot;
 
+        [JsonIgnore]
+        private Wallet wallet => this.AccountRoot?.Wallet;
+
+        [JsonIgnore]
+        private IWalletRepository repository => this.wallet?.WalletRepository;
+
         [JsonConstructor]
         public HdAccount(ICollection<HdAddress> externalAddresses, ICollection<HdAddress> internalAddresses)
         {
@@ -408,6 +414,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             return addressesCreated;
         }
         */
+
         /// <summary>
         /// Lists all spendable transactions in the current account.
         /// </summary>
@@ -421,35 +428,43 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             // This will take all the spendable coins that belong to the account and keep the reference to the HdAddress and HdAccount.
             // This is useful so later the private key can be calculated just from a given UTXO.
-            foreach (HdAddress address in this.GetCombinedAddresses())
+            if (this.repository != null)
             {
-                // A block that is at the tip has 1 confirmation.
-                // When calculating the confirmations the tip must be advanced by one.
-
-                int countFrom = currentChainHeight + 1;
-                foreach (TransactionData transactionData in address.UnspentTransactions())
+                foreach (UnspentOutputReference unspent in this.repository.GetSpendableTransactionsInAccount(new WalletAccountReference(this.wallet.Name, this.Name), currentChainHeight, confirmations, (int?)coinbaseMaturity))
+                    yield return unspent;
+            }
+            else
+            {
+                foreach (HdAddress address in this.GetCombinedAddresses())
                 {
-                    int? confirmationCount = 0;
-                    if (transactionData.BlockHeight != null)
-                        confirmationCount = countFrom >= transactionData.BlockHeight ? countFrom - transactionData.BlockHeight : 0;
+                    // A block that is at the tip has 1 confirmation.
+                    // When calculating the confirmations the tip must be advanced by one.
 
-                    if (confirmationCount < confirmations)
-                        continue;
-
-                    bool isCoinBase = transactionData.IsCoinBase ?? false;
-                    bool isCoinStake = transactionData.IsCoinStake ?? false;
-
-                    // This output can unconditionally be included in the results.
-                    // Or this output is a CoinBase or CoinStake and has reached maturity.
-                    if ((!isCoinBase && !isCoinStake) || (confirmationCount > coinbaseMaturity))
+                    int countFrom = currentChainHeight + 1;
+                    foreach (TransactionData transactionData in address.UnspentTransactions())
                     {
-                        yield return new UnspentOutputReference
+                        int? confirmationCount = 0;
+                        if (transactionData.BlockHeight != null)
+                            confirmationCount = countFrom >= transactionData.BlockHeight ? countFrom - transactionData.BlockHeight : 0;
+
+                        if (confirmationCount < confirmations)
+                            continue;
+
+                        bool isCoinBase = transactionData.IsCoinBase ?? false;
+                        bool isCoinStake = transactionData.IsCoinStake ?? false;
+
+                        // This output can unconditionally be included in the results.
+                        // Or this output is a CoinBase or CoinStake and has reached maturity.
+                        if ((!isCoinBase && !isCoinStake) || (confirmationCount > coinbaseMaturity))
                         {
-                            Account = this,
-                            Address = address,
-                            Transaction = transactionData,
-                            Confirmations = confirmationCount.Value
-                        };
+                            yield return new UnspentOutputReference
+                            {
+                                Account = this,
+                                Address = address,
+                                Transaction = transactionData,
+                                Confirmations = confirmationCount.Value
+                            };
+                        }
                     }
                 }
             }
