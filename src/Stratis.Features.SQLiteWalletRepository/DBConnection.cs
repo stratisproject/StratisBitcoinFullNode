@@ -211,6 +211,8 @@ namespace Stratis.Features.SQLiteWalletRepository
 
                 outputs.Clear();
                 prevouts.Clear();
+
+                walletContainer.TransactionsOfInterest.Confirm();
             }
         }
 

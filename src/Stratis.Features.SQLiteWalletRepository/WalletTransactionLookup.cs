@@ -82,7 +82,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                 // Restrict to wallet if provided.
                 // "BETWEEN" boosts performance from half a seconds to 2ms.
                 ((this.walletId != null) ? $@"
-                AND     WalletId BETWEEN {this.walletId} AND {this.walletId}" : "")}",
+                AND     WalletId BETWEEN {this.walletId} AND {this.walletId}" : $@"
+                AND     WalletId IN (SELECT WalletId FROM HDWallet)")}",
                 outPoint.Hash.ToString(),
                 outPoint.N));
 
