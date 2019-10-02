@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             public BitcoinOverrideRegTest() : base()
             {
-                this.Name = Guid.NewGuid().ToString();
+                this.Name = Guid.NewGuid().ToString("N").Substring(0, 7);
             }
         }
 
@@ -358,7 +358,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void CM_Reorgs_Try_Connect_Longer_Chain_No_Connected_Blocks_Fails_Reverts_Back()
+        public void CMReorgsTryConnectLongerChainNoConnectedBlocksFailsReverts()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
