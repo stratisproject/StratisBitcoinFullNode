@@ -1189,7 +1189,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         /// <summary>
-        /// If the block height of the transaction is x+ away from the current chain top transactions must be returned where x is higher or equal to the specified amount of confirmations.
+        /// If the block height of the transaction is x+ away from the current chain tip, transactions must be returned where x is higher or equal to the specified amount of confirmations.
         /// </summary>
         [Fact]
         public void GetSpendableTransactionsReturnsTransactionsGivenBlockHeight()
@@ -1228,24 +1228,30 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             WalletTestsHelpers.CreateUnspentTransactionsOfBlockHeights(account3.ExternalAddresses, this.Network, 5, 9, 11);
             WalletTestsHelpers.CreateUnspentTransactionsOfBlockHeights(account3.InternalAddresses, this.Network, 6, 9, 11);
 
-            UnspentOutputReference[] result = walletManager.GetSpendableTransactionsInWallet("myWallet3", confirmations: 1).ToArray();
+            UnspentOutputReference[] result = walletManager.GetSpendableTransactionsInWallet("myWallet3", confirmations: 1).OrderBy(x => x.Address.AddressType).ToArray();
 
             Assert.Equal(4, result.Count());
+
+            var account0ToCheck = wallet3.AccountsRoot.ElementAt(0).Accounts.ElementAt(0);
+
             UnspentOutputReference info = result[0];
             Assert.Equal("Second expectation", info.Account.Name);
-            Assert.Equal(wallet3.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Address, info.Address.Address);
+            Assert.Equal(account0ToCheck.ExternalAddresses.ElementAt(0).Address, info.Address.Address);
             Assert.Equal(5, info.Transaction.BlockHeight);
+
             info = result[1];
             Assert.Equal("Second expectation", info.Account.Name);
-            Assert.Equal(wallet3.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Address, info.Address.Address);
+            Assert.Equal(account0ToCheck.ExternalAddresses.ElementAt(1).Address, info.Address.Address);
             Assert.Equal(9, info.Transaction.BlockHeight);
+
             info = result[2];
             Assert.Equal("Second expectation", info.Account.Name);
-            Assert.Equal(wallet3.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Address, info.Address.Address);
+            Assert.Equal(account0ToCheck.InternalAddresses.ElementAt(0).Address, info.Address.Address);
             Assert.Equal(6, info.Transaction.BlockHeight);
+
             info = result[3];
             Assert.Equal("Second expectation", info.Account.Name);
-            Assert.Equal(wallet3.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(1).Address, info.Address.Address);
+            Assert.Equal(account0ToCheck.InternalAddresses.ElementAt(1).Address, info.Address.Address);
             Assert.Equal(9, info.Transaction.BlockHeight);
         }
 
@@ -1268,25 +1274,33 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             UnspentOutputReference[] result = walletManager.GetSpendableTransactionsInWallet("myWallet1", confirmations: 1).ToArray();
 
+            result = result.OrderBy(r => r.Address.AddressType).ToArray();
+
             Assert.Equal(4, result.Count());
+
+            var account0 = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0);
+
             UnspentOutputReference info = result[0];
             Assert.Equal("First expectation", info.Account.Name);
-            Assert.Equal(wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Address, info.Address.Address);
+            Assert.Equal(account0.ExternalAddresses.ElementAt(0).Address, info.Address.Address);
             Assert.Equal(1, info.Transaction.BlockHeight);
             Assert.Null(info.Transaction.SpendingDetails);
+
             info = result[1];
             Assert.Equal("First expectation", info.Account.Name);
-            Assert.Equal(wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Address, info.Address.Address);
+            Assert.Equal(account0.ExternalAddresses.ElementAt(1).Address, info.Address.Address);
             Assert.Equal(9, info.Transaction.BlockHeight);
             Assert.Null(info.Transaction.SpendingDetails);
+
             info = result[2];
             Assert.Equal("First expectation", info.Account.Name);
-            Assert.Equal(wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Address, info.Address.Address);
+            Assert.Equal(account0.InternalAddresses.ElementAt(0).Address, info.Address.Address);
             Assert.Equal(2, info.Transaction.BlockHeight);
             Assert.Null(info.Transaction.SpendingDetails);
+
             info = result[3];
             Assert.Equal("First expectation", info.Account.Name);
-            Assert.Equal(wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(1).Address, info.Address.Address);
+            Assert.Equal(account0.InternalAddresses.ElementAt(1).Address, info.Address.Address);
             Assert.Equal(9, info.Transaction.BlockHeight);
             Assert.Null(info.Transaction.SpendingDetails);
         }
@@ -3061,13 +3075,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             uint256 trxId = uint256.Parse("d6043add63ec364fcb591cf209285d8e60f1cc06186d4dcbce496cdbb4303400");
             int counter = 0;
 
-            var extAddresses = new List<HdAddress>();
-            extAddresses.Add(WalletTestsHelpers.CreateAddress(false, firstAccount, 0));
-            extAddresses.Add(WalletTestsHelpers.CreateAddress(false, firstAccount, 1));
+            var extAddresses = new List<HdAddress>
+            {
+                WalletTestsHelpers.CreateAddress(false, firstAccount, 0),
+                WalletTestsHelpers.CreateAddress(false, firstAccount, 1)
+            };
 
-            var intAddresses = new List<HdAddress>();
-            intAddresses.Add(WalletTestsHelpers.CreateAddress(true, firstAccount, 0));
-            intAddresses.Add(WalletTestsHelpers.CreateAddress(true, firstAccount, 1));
+            var intAddresses = new List<HdAddress>
+            {
+                WalletTestsHelpers.CreateAddress(true, firstAccount, 0),
+                WalletTestsHelpers.CreateAddress(true, firstAccount, 1)
+            };
 
             var trxUnconfirmed1 = new TransactionData { Amount = 10, Id = trxId >> counter++ };
             var trxUnconfirmed2 = new TransactionData { Amount = 10, Id = trxId >> counter++ };
@@ -3092,7 +3110,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             HashSet<(uint256, DateTimeOffset)> result = walletManager.RemoveTransactionsByIds("wallet1", new[] { trxUnconfirmed1.Id, trxUnconfirmed2.Id, trxConfirmed1.Id, trxConfirmed2.Id });
 
             // Assert.
-            List<TransactionData> remainingTrxs = firstAccount.GetCombinedAddresses().SelectMany(a => a.Transactions).ToList();
+            var remainingTrxs = firstAccount.GetCombinedAddresses().SelectMany(a => a.Transactions).ToList();
             Assert.Equal(2, remainingTrxs.Count());
             Assert.Equal(2, result.Count);
             Assert.Contains((trxUnconfirmed1.Id, trxConfirmed1.CreationTime), result);
@@ -3199,13 +3217,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             // Unconfirmed transaction.
             var trxUnconfirmed1 = new TransactionData { Amount = 10, Id = unconfirmedTransactionId };
 
-            var extAddresses = new List<HdAddress>();
-            extAddresses.Add(WalletTestsHelpers.CreateAddress(false, firstAccount, 0));
-            extAddresses.Add(WalletTestsHelpers.CreateAddress(false, firstAccount, 1));
+            var extAddresses = new List<HdAddress>
+            {
+                WalletTestsHelpers.CreateAddress(false, firstAccount, 0),
+                WalletTestsHelpers.CreateAddress(false, firstAccount, 1)
+            };
 
-            var intAddresses = new List<HdAddress>();
-            intAddresses.Add(WalletTestsHelpers.CreateAddress(true, firstAccount, 0));
-            intAddresses.Add(WalletTestsHelpers.CreateAddress(true, firstAccount, 1));
+            var intAddresses = new List<HdAddress>
+            {
+                WalletTestsHelpers.CreateAddress(true, firstAccount, 0),
+                WalletTestsHelpers.CreateAddress(true, firstAccount, 1)
+            };
 
             extAddresses.ElementAt(0).Transactions.Add(trxUnconfirmed1);
             extAddresses.ElementAt(1).Transactions.Add(trxConfirmed1);
