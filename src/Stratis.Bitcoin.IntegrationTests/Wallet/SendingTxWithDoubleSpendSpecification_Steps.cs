@@ -69,13 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 new WalletAccountReference(Name, AccountName), Password, this.receivingAddress.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
 
             this.stratisSender.FullNode.NodeController<WalletController>().SendTransaction(new SendTransactionRequest(this.transaction.ToHex()));
-
             TestBase.WaitLoop(() => this.stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
-            TestBase.WaitLoop(() => this.stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Any());
-
-            var receivetotal = this.stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Sum(s => s.Transaction.Amount);
-            receivetotal.Should().Equals(Money.COIN * 100);
-            this.stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).First().Transaction.BlockHeight.Should().BeNull();
         }
 
         private void txn_mempool_conflict_error_occurs()
@@ -98,6 +92,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             this.stratisSender.FullNode.MempoolManager().GetMempoolAsync().Result.Should().NotContain(this.transaction.GetHash());
             this.stratisReceiver.FullNode.MempoolManager().GetMempoolAsync().Result.Should().NotContain(this.transaction.GetHash());
+
+            TestBase.WaitLoop(() => this.stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Any());
+
+            var receivetotal = this.stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Sum(s => s.Transaction.Amount);
+            receivetotal.Should().Equals(Money.COIN * 100);
         }
 
         private void trx_is_propagated_across_sending_and_receiving_mempools()
