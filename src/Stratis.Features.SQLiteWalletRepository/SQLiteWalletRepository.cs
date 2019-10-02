@@ -1001,9 +1001,13 @@ namespace Stratis.Features.SQLiteWalletRepository
 
             foreach (HDTransactionData transactionData in conn.GetSpendableOutputs(account.WalletId, account.AccountIndex, currentChainHeight, coinBaseMaturity ?? this.Network.Consensus.CoinbaseMaturity, confirmations))
             {
-                var pubKeyScript = new Script(Encoders.Hex.DecodeData(transactionData.ScriptPubKey));
-                PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(pubKeyScript);
+                // TODO: This will take time and is possible not needed.
+                /*
+                var keyPath = new KeyPath($"{transactionData.AddressType}/{transactionData.AddressIndex}");
 
+                ExtPubKey extPubKey = account.GetExtPubKey(this.Network).Derive(keyPath);
+                PubKey pubKey = extPubKey.PubKey;
+                */
                 int tdConfirmations = (transactionData.OutputBlockHeight == null) ? 0 : (currentChainHeight + 1) - (int)transactionData.OutputBlockHeight;
 
                 yield return new UnspentOutputReference()
@@ -1016,8 +1020,8 @@ namespace Stratis.Features.SQLiteWalletRepository
                         AccountIndex = transactionData.AccountIndex,
                         AddressIndex = transactionData.AddressIndex,
                         AddressType = (int)transactionData.AddressType,
-                        PubKey = transactionData.ScriptPubKey,
-                        ScriptPubKey = transactionData.RedeemScript
+                        PubKey = "", // pubKey.ScriptPubKey.ToHex(),  - See TODO
+                        ScriptPubKey = transactionData.ScriptPubKey
                     })
                 };
             }
