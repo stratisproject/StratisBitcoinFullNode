@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.engine = new PosConsensusRuleEngine(this.network, this.loggerFactory.Object, DateTimeProvider.Default,
                     this.ChainIndexer, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
                     this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new Mock<INodeStats>().Object,
-                    this.rewindDataIndexStore.Object, this.asyncProvider).Register();
+                    this.rewindDataIndexStore.Object, this.asyncProvider, new ConsensusRulesContainer());
 
             this.rule.Parent = this.engine;
         }
