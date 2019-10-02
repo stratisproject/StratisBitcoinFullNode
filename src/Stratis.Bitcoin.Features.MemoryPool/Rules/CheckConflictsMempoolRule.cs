@@ -57,6 +57,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Rules
 
                         if (replacementOptOut)
                         {
+                            this.logger.LogTrace("New transaction '{0}' and existing mempool transaction '{1}' both consume the same PrevOut: '{2}-{3}'", context.Transaction.GetHash(), ptxConflicting.GetHash(), txin.PrevOut.Hash, txin.PrevOut.N);
+                            this.logger.LogTrace("New transaction = {0}", context.Transaction.ToString(this.network, RawFormat.BlockExplorer));
+                            this.logger.LogTrace("Old transaction = {0}", ptxConflicting.ToString(this.network, RawFormat.BlockExplorer));
                             this.logger.LogTrace("(-)[INVALID_CONFLICT]");
                             context.State.Invalid(MempoolErrors.Conflict).Throw();
                         }
