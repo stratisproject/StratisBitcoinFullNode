@@ -386,6 +386,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                 var model = new WalletGeneralInfoModel
                 {
+                    WalletName = wallet.Name,
                     Network = wallet.Network,
                     CreationTime = wallet.CreationTime,
                     LastBlockSyncedHeight = wallet.AccountsRoot.Single().LastBlockSyncedHeight,
@@ -394,15 +395,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     IsChainSynced = this.chainIndexer.IsDownloaded(),
                     IsDecrypted = true
                 };
-
-                // Get the wallet's file path.
-                (string folder, IEnumerable<string> fileNameCollection) = this.walletManager.GetWalletsFiles();
-                string searchFile = Path.ChangeExtension(request.Name, this.walletManager.GetWalletFileExtension());
-                string fileName = fileNameCollection.FirstOrDefault(i => i.Equals(searchFile));
-                if (!string.IsNullOrEmpty(folder) && !string.IsNullOrEmpty(fileName))
-                {
-                    model.WalletFilePath = Path.Combine(folder, fileName);
-                }
 
                 return this.Json(model);
             }
@@ -1007,21 +999,19 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
-        /// Lists all the files found in the default wallet folder.
+        /// Lists all the files found in the database
         /// </summary>
-        /// <returns>A JSON object containing the wallet folder path and
-        /// the names of the files found within the folder.</returns>
-        [Route("files")]
+        /// <returns>A JSON object containing the available wallet name
+        /// </returns>
+        [Route("list-wallets")]
         [HttpGet]
-        public IActionResult ListWalletsFiles()
+        public IActionResult ListWallets()
         {
             try
             {
-                (string folderPath, IEnumerable<string> filesNames) result = this.walletManager.GetWalletsFiles();
-                var model = new WalletFileModel
+                var model = new WalletInfoModel()
                 {
-                    WalletsPath = result.folderPath,
-                    WalletsFiles = result.filesNames
+                    WalletNames = this.walletManager.GetWalletsNames()
                 };
 
                 return this.Json(model);

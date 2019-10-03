@@ -89,16 +89,6 @@ namespace Stratis.Bitcoin.Features.SignalR.Broadcasters
                         IsDecrypted = true,
                         AccountsBalances = accountBalanceModels
                     };
-
-                    // Get the wallet's file path.
-                    (string folder, IEnumerable<string> fileNameCollection) = this.walletManager.GetWalletsFiles();
-                    string searchFile =
-                        Path.ChangeExtension(walletName, this.walletManager.GetWalletFileExtension());
-                    string fileName = fileNameCollection.FirstOrDefault(i => i.Equals(searchFile));
-                    if (!string.IsNullOrEmpty(folder) && !string.IsNullOrEmpty(fileName))
-                    {
-                        clientEvent.WalletFilePath = Path.Combine(folder, fileName);
-                    }
                 }
                 catch (Exception e)
                 {

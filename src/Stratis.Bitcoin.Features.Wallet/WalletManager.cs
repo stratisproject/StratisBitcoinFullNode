@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>The private key cache for unlocked wallets.</summary>
         private readonly MemoryCache privateKeyCache;
 
-        internal bool WalletLoadsOnlyConsensusBlocks { get; set; }
+        internal bool ExcludeTransactionsFromWalletImports { get; set; }
 
         public IWalletRepository WalletRepository { get; private set; }
 
@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.scriptAddressReader = scriptAddressReader;
             this.dateTimeProvider = dateTimeProvider;
             this.WalletRepository = walletRepository;
-            this.WalletLoadsOnlyConsensusBlocks = true;
+            this.ExcludeTransactionsFromWalletImports = true;
 
             // register events
             if (this.broadcasterManager != null)
@@ -499,33 +499,16 @@ namespace Stratis.Bitcoin.Features.Wallet
                     }
                 }
 
-                if (this.WalletLoadsOnlyConsensusBlocks)
+                if (this.ExcludeTransactionsFromWalletImports)
                 {
-                    // Determine the verifiable wallet tip.
-                    foreach (HdAccount account in jsonWallet.AccountsRoot.First().Accounts)
-                    {
-                        this.logger.LogInformation("Preprocessing {0} external addresses for account {1}.", account.ExternalAddresses.Count, account.Name);
-                        foreach (HdAddress address in account.ExternalAddresses)
-                        {
-                            PreprocessTransactions(address.Transactions).ToList();
-                        }
-
-                        this.logger.LogInformation("Preprocessing {0} internal addresses for account {1}.", account.InternalAddresses.Count, account.Name);
-                        foreach (HdAddress address in account.InternalAddresses)
-                        {
-                            PreprocessTransactions(address.Transactions).ToList();
-                        }
-                    }
-
                     // Import the wallet to the database.
-                    int lastBlock = (blockDict.Keys.Count == 0) ? 0 : blockDict.Keys.Max();
-                    var lastBlockSynced = new HashHeightPair((lastBlock == 0) ? this.network.GenesisHash : blockDict[lastBlock], lastBlock);
+                    int lastBlock = 0;
+                    var lastBlockSynced = new HashHeightPair(this.network.GenesisHash, lastBlock);
                     var blockLocator = this.ChainIndexer.GetHeader(lastBlock).GetLocator();
 
                     ITransactionContext transactionContext = this.WalletRepository.BeginTransaction(jsonWallet.Name);
                     try
                     {
-
                         this.WalletRepository.CreateWallet(jsonWallet.Name, jsonWallet.EncryptedSeed, jsonWallet.ChainCode, lastBlockSynced,
                             blockLocator, jsonWallet.CreationTime.ToUnixTimeSeconds());
 
@@ -539,18 +522,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                             this.WalletRepository.CreateAccount(jsonWallet.Name, account.Index, account.Name, ExtPubKey.Parse(account.ExtendedPubKey), account.CreationTime,
                                 (lastUsedExternalAddress + 1 + buffer, lastUsedInternalAddress + 1 + buffer));
-
-                            foreach (HdAddress address in account.ExternalAddresses.Where(a => a.Transactions.Any()))
-                            {
-                                this.logger.LogInformation("Adding {0} transactions for external address {1}.", address.Transactions.Count, address.Address);
-                                this.WalletRepository.AddWatchOnlyTransactions(jsonWallet.Name, account.Name, address, PreprocessTransactions(address.Transactions).ToList(), true);
-                            }
-
-                            foreach (HdAddress address in account.InternalAddresses.Where(a => a.Transactions.Any()))
-                            {
-                                this.logger.LogInformation("Adding {0} transactions for internal address {1}.", address.Transactions.Count, address.Address);
-                                this.WalletRepository.AddWatchOnlyTransactions(jsonWallet.Name, account.Name, address, PreprocessTransactions(address.Transactions).ToList(), true);
-                            }
                         }
 
                         transactionContext.Commit();
@@ -833,12 +804,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return this.WalletRepository.GetUnusedAddresses(accountReference, count, isChange);
         }
-
-        /// <inheritdoc />
-        public (string folderPath, IEnumerable<string>) GetWalletsFiles()
-        {
-            return (this.fileStorage.FolderPath, this.fileStorage.GetFilesNames(this.GetWalletFileExtension()));
-        }
+//
+//        /// <inheritdoc />
+//        public (string folderPath, IEnumerable<string>) GetWalletsFiles()
+//        {
+//            return (this.fileStorage.FolderPath, this.fileStorage.GetFilesNames(this.GetWalletFileExtension()));
+//        }
 
         /// <inheritdoc />
         public IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null)

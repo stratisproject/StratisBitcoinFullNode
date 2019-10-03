@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             stratisNode.FullNode.NodeService<IWalletSyncManager>().Stop();
 
             // Prevent wallet transactions with non-consensus blocks from being omitted.
-            ((WalletManager)stratisNode.FullNode.NodeService<IWalletManager>()).WalletLoadsOnlyConsensusBlocks = false;
+            ((WalletManager)stratisNode.FullNode.NodeService<IWalletManager>()).ExcludeTransactionsFromWalletImports = false;
 
             // Ask the server to load the wallet to its repository.
             var result = $"http://localhost:{stratisNode.ApiPort}/api".AppendPathSegment("wallet/load").PostJsonAsync(new WalletLoadRequest
@@ -1513,17 +1513,17 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetWalletFilesAsync()
+        public async Task ListWalletsAsync()
         {
             // Act.
-            WalletFileModel walletFileModel = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/files")
-                .GetJsonAsync<WalletFileModel>();
+            WalletInfoModel walletFileModel = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/list-wallets")
+                .GetJsonAsync<WalletInfoModel>();
 
             // Assert.
-            walletFileModel.WalletsPath.Should().Be(Path.GetDirectoryName(this.fixture.WalletWithFundsFilePath));
-            walletFileModel.WalletsFiles.Count().Should().BeGreaterThan(0);
-            walletFileModel.WalletsFiles.Should().Contain(Path.GetFileName(this.fixture.WalletWithFundsFilePath));
+            walletFileModel.WalletNames.Count().Should().BeGreaterThan(0);
+            walletFileModel.WalletNames.Should().Contain(
+                Path.GetFileNameWithoutExtension(this.fixture.WalletWithFundsFilePath).Replace(".wallet",""));
         }
 
         [Fact]

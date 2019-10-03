@@ -49,6 +49,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.walletFilePath = Path.Combine(walletsFolderPath, filename);
             File.Copy(Path.Combine("Wallet", "Data", filename), this.walletFilePath, true);
 
+            ((WalletManager)node.FullNode.NodeService<IWalletManager>()).ExcludeTransactionsFromWalletImports = false;
+
             var result = $"http://localhost:{node.ApiPort}/api".AppendPathSegment("wallet/load").PostJsonAsync(new WalletLoadRequest
             {
                 Name = this.walletWithFundsName,
@@ -157,7 +159,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task GetWalletFilesWhenNoFilesArePresentAsync()
+        public async Task GetWalletNamesWhenNoWalletsArePresentAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -165,13 +167,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode node = builder.CreateStratisPosNode(this.network).Start();
 
                 // Act.
-                WalletFileModel walletFileModel = await $"http://localhost:{node.ApiPort}/api"
-                .AppendPathSegment("wallet/files")
-                .GetJsonAsync<WalletFileModel>();
+                WalletInfoModel walletFileModel = await $"http://localhost:{node.ApiPort}/api"
+                .AppendPathSegment("wallet/list-wallets")
+                .GetJsonAsync<WalletInfoModel>();
 
                 // Assert.
-                walletFileModel.WalletsPath.Should().Be(node.FullNode.DataFolder.WalletPath);
-                walletFileModel.WalletsFiles.Should().BeEmpty();
+                walletFileModel.WalletNames.Should().BeEmpty();
             }
         }
 
@@ -405,7 +406,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 node.FullNode.NodeService<IWalletSyncManager>().Stop();
 
                 // Allow a wallet to be loaded that does not have verifiable blocks in the consensus chain.
-                ((WalletManager)node.FullNode.NodeService<IWalletManager>()).WalletLoadsOnlyConsensusBlocks = false;
+                ((WalletManager)node.FullNode.NodeService<IWalletManager>()).ExcludeTransactionsFromWalletImports = false;
 
                 this.AddAndLoadWalletFileToWalletFolder(node);
 

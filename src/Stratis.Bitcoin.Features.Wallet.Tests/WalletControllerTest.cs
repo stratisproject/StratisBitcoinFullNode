@@ -739,8 +739,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             string testWalletPath = Path.Combine(AppContext.BaseDirectory, "stratisnode", testWalletFileName);
             string folder = Path.GetDirectoryName(testWalletPath);
             var files = new string[] { testWalletFileName };
-            mockWalletManager.Setup(w => w.GetWalletsFiles()).Returns((folder, files));
-            mockWalletManager.Setup(w => w.GetWalletFileExtension()).Returns(walletFileExtension);
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, connectionManagerMock.Object, this.Network, concurrentChain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
@@ -759,7 +757,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(0, resultValue.ConnectedNodes);
             Assert.Equal(tip.Height, resultValue.ChainTip);
             Assert.True(resultValue.IsDecrypted);
-            Assert.Equal(testWalletPath, resultValue.WalletFilePath);
+            Assert.Equal(wallet.Name, resultValue.WalletName);
         }
 
         [Fact]
@@ -1811,23 +1809,22 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             string walletPath = "walletPath";
             var walletManager = new Mock<IWalletManager>();
-            walletManager.Setup(m => m.GetWalletsFiles())
-                .Returns((walletPath, new[] { "wallet1.wallet.json", "wallet2.wallet.json" }));
+            walletManager.Setup(m => m.GetWalletsNames())
+                .Returns( new[] { "wallet1.wallet.json", "wallet2.wallet.json" });
 
             walletManager.Setup(m => m.GetWalletFileExtension()).Returns("wallet.json");
 
             var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
-            IActionResult result = controller.ListWalletsFiles();
+            IActionResult result = controller.ListWallets();
 
             var viewResult = Assert.IsType<JsonResult>(result);
-            var model = viewResult.Value as WalletFileModel;
+            var model = viewResult.Value as WalletInfoModel;
 
             Assert.NotNull(model);
-            Assert.Equal(walletPath, model.WalletsPath);
-            Assert.Equal(2, model.WalletsFiles.Count());
-            Assert.EndsWith("wallet1.wallet.json", model.WalletsFiles.ElementAt(0));
-            Assert.EndsWith("wallet2.wallet.json", model.WalletsFiles.ElementAt(1));
+            Assert.Equal(2, model.WalletNames.Count());
+            Assert.EndsWith("wallet1.wallet.json", model.WalletNames.ElementAt(0));
+            Assert.EndsWith("wallet2.wallet.json", model.WalletNames.ElementAt(1));
         }
 
         [Fact]
@@ -1835,31 +1832,30 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             string walletPath = "walletPath";
             var walletManager = new Mock<IWalletManager>();
-            walletManager.Setup(m => m.GetWalletsFiles())
-                .Returns((walletPath, Enumerable.Empty<string>()));
+            walletManager.Setup(m => m.GetWalletsNames())
+                .Returns(Enumerable.Empty<string>());
 
             var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
-            IActionResult result = controller.ListWalletsFiles();
+            IActionResult result = controller.ListWallets();
 
             var viewResult = Assert.IsType<JsonResult>(result);
-            var model = viewResult.Value as WalletFileModel;
+            var model = viewResult.Value as WalletInfoModel;
 
             Assert.NotNull(model);
-            Assert.Equal(walletPath, model.WalletsPath);
-            Assert.Empty(model.WalletsFiles);
+            Assert.Empty(model.WalletNames);
         }
 
         [Fact]
         public void ListWalletFilesWithExceptionReturnsBadRequest()
         {
             var walletManager = new Mock<IWalletManager>();
-            walletManager.Setup(m => m.GetWalletsFiles())
+            walletManager.Setup(m => m.GetWalletsNames())
                 .Throws(new Exception("something happened."));
 
             var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chainIndexer, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
-            IActionResult result = controller.ListWalletsFiles();
+            IActionResult result = controller.ListWallets();
 
             var errorResult = Assert.IsType<ErrorResult>(result);
             var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
